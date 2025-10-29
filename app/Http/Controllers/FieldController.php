@@ -37,25 +37,25 @@ class FieldController extends Controller
     public function create()
     {
         //
-        // Field::create([
-        //     // 'name' => 'Accra',
-        //     // 'user_id' => Auth::user()->id,
+        Field::create([
+            // 'name' => 'Accra',
+            // 'user_id' => Auth::user()->id,
 
-        //     // 'name' => 'Botwe',
-        //     // 'user_id' => Auth::user()->id,
+            // 'name' => 'Botwe',
+            // 'user_id' => Auth::user()->id,
 
-        //     // 'name' => 'Tema',
-        //     // 'user_id' => Auth::user()->id,
+            // 'name' => 'Tema',
+            // 'user_id' => Auth::user()->id,
 
-        //     // 'name' => 'Takoradi',
-        //     // 'user_id' => Auth::user()->id,
+            // 'name' => 'Takoradi',
+            // 'user_id' => Auth::user()->id,
 
-        //     // 'name' => 'Koforidua',
-        //     // 'user_id' => Auth::user()->id,
+            // 'name' => 'Koforidua',
+            // 'user_id' => Auth::user()->id,
 
-        //     // 'name' => 'Kumasi',
-        //     // 'user_id' => Auth::user()->id,
-        // ]);
+            // 'name' => 'Kumasi',
+            // 'user_id' => Auth::user()->id,
+        ]);
 
     }
 

@@ -35,12 +35,11 @@ class RoleController extends Controller
     {
         //
         Role::create([
-            // 'name' => 'Sales'
+            // 'name' => 'Invoice'
             // 'name' => 'Finance Manager'
-            // 'name' => 'HR Manager',
-            // 'name' => 'Director',
-            // 'name' => 'Receipt',
             // 'name' => 'Manager',
+            // 'name' => 'Director',
+            // 'name' => 'Recovery',
             // 'name' => 'Officer',
         ]);
     }

@@ -128,11 +128,11 @@
                                 <!-- Account -->
                                 <div class="card-body">
                                     <div class="d-flex align-items-start align-items-sm-center gap-6 pb-4 border-bottom">
-                                        <img
-                                            src="@if($user->path) {{asset('storage/'.$user->path)}} @else {{asset('img/user.png')}} @endif"
-                                            alt="user-avatar"
-                                            class="d-block w-px-100 h-px-100 rounded"
-                                            id="uploadedAvatar" />
+<img
+src="@if($user->path) {{asset('storage/'.$user->path)}} @else {{asset('img/user.png')}} @endif"
+alt="user-avatar"
+class="d-block w-px-100 h-px-100 rounded"
+id="uploadedAvatar" />
                                     </div>
                                 </div>
                                 <div class="card-body pt-4">

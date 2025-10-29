@@ -139,7 +139,7 @@
             </li>
             @endif
 
-            @if(Auth::user()->hasRole('Manager') || Auth::user()->hasRole('Officer') || Auth::user()->hasRole('Finance Manager') )
+            @if((Auth::user()->hasRole('Manager') && Auth::user()->hasPermission('Accounts')) || Auth::user()->hasRole('Officer') || Auth::user()->hasRole('Finance Manager') )
 
             <li class="menu-header small text-uppercase"> <span class="menu-header-text text-danger">Accounts</span></li>
 

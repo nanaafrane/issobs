@@ -149,9 +149,9 @@
 
                         @foreach($Locations as $field)
                         <tr>
-                            <td> {{$field->id}} </td>
-                            <td> {{$field->name}}</td>
-                            <td> {{$field->user->name}}</td>
+                            <td> {{$field?->id}} </td>
+                            <td> {{$field?->name}}</td>
+                            <td> {{$field->user?->name}}</td>
 
                             <td>
                                 <div class="dropdown">
@@ -159,10 +159,10 @@
                                         <i class="icon-base bx bx-dots-vertical-rounded"></i>
                                     </button>
                                     <div class="dropdown-menu">
-                                        <a class="dropdown-item" href="{{url('field', $field->id)}}"><i class="icon-base bx bxs-bullseye"></i> view</a>
-                                        <a class="dropdown-item" href="field/{{$field->id}}/edit"><i class="icon-base bx bx-edit-alt me-1"></i> Edit</a>
+                                        <a class="dropdown-item" href="{{url('field', $field?->id)}}"><i class="icon-base bx bxs-bullseye"></i> view</a>
+                                        <a class="dropdown-item" href="field/{{$field?->id}}/edit"><i class="icon-base bx bx-edit-alt me-1"></i> Edit</a>
 
-                                        <form action="field/{{$field->id}}" method="POST">
+                                        <form action="field/{{$field?->id}}" method="POST">
                                             @csrf
                                             @method('DELETE')
                                             <button class="dropdown-item" type="submit"><i class="icon-base bx bx-trash me-1"></i>Delete</button>
