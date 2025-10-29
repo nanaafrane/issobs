@@ -1,0 +1,46 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use App\Models\User;
+use App\Models\Client;
+use App\Models\Service;
+
+class Invoice extends Model
+{
+    //
+    protected $fillable = [
+        'client_id',
+        'nhil',
+        'getfund',
+        'chrl',
+        'sub_amount',
+        'vat_amount',
+        'sub_total',
+        'total',
+        'due_date',
+        'status',
+        'user_id',
+        'balance',
+        'wht_amount',
+        'amount_received',
+    ];
+
+    protected $casts = [
+        'due_date' => 'datetime'
+    ];
+
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function client()
+    {
+        return $this->belongsTo(Client::class);
+    }
+
+
+}

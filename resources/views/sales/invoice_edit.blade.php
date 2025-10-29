@@ -1,0 +1,282 @@
+<x-sales-dashboard>
+
+    @section('side_nav')
+    <!-- Menu -->
+    <aside id="layout-menu" class="layout-menu menu-vertical menu bg-menu-theme">
+        <div class="app-brand demo">
+            <a href="#" class="app-brand-link">
+                <span class="app-brand-logo demo">
+                    <img width="70px" src="{{asset('img/icons/brands/issobs.png')}}" alt="">
+                    <!-- Logo -->
+                </span>
+                <span class="app-brand-text demo menu-text fw-bold ms-2">ISSOBS</span>
+            </a>
+
+            <a href="javascript:void(0);" class="layout-menu-toggle menu-link text-large ms-auto">
+                <i class="bx bx-chevron-left d-block d-xl-none align-middle"></i>
+            </a>
+        </div>
+
+        <div class="menu-divider mt-0"></div>
+
+        <div class="menu-inner-shadow"></div>
+
+        <ul class="menu-inner py-1">
+            <!-- Dashboards -->
+            <li class="menu-item">
+                <a href="javascript:void(0);" class="menu-link menu-toggle">
+                    <i class="menu-icon tf-icons bx bx-home-smile"></i>
+                    <div class="text-truncate" data-i18n="Dashboards">Dashboard</div>
+                </a>
+                <ul class="menu-sub">
+                    <li class="menu-item">
+                        <a href="{{url('home')}}" class="menu-link">
+                            <div class="text-truncate" data-i18n="Dashboard">Dashboard</div>
+                        </a>
+                    </li>
+                </ul>
+            </li>
+            <!-- Apps & Pages -->
+            <li class="menu-header small text-uppercase ">
+                <span class="menu-header-text">Transactions</span>
+            </li>
+            <!-- Pages -->
+            <li class="menu-item">
+                <a href="{{url('transaction')}}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-transfer-alt"></i>
+                    <div class="text-truncate" data-i18n="Transaction">Transactions</div>
+                </a>
+            </li>
+            @if(Auth::user()->hasRole('Invoice') || Auth::user()->hasRole('Finance Manager'))
+            <li class="menu-item active">
+                <a href="{{ url('invoice') }}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-bxs-receipt"></i>
+                    <div class="text-truncate" data-i18n="Invoices">Invoices</div>
+                </a>
+            </li>
+            @endif
+            <li class="menu-item">
+                <a href="{{url('receipt')}}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-money-withdraw"></i>
+                    <div class="text-truncate" data-i18n="Receipts">Receipts</div>
+                </a>
+            </li>
+            <!-- Components -->
+            <li class="menu-header small text-uppercase"><span class="menu-header-text">Management</span></li>
+            <li class="menu-item">
+                <a href="{{url('client')}}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-bxs-user-detail"></i>
+                    <div class="text-truncate" data-i18n="Clients">Clients</div>
+                </a>
+            </li>
+
+            @if(Auth::user()->hasRole('Manager') || Auth::user()->hasRole('Officer') || Auth::user()->hasRole('Finance Manager') )
+
+            <li class="menu-header small text-uppercase"> <span class="menu-header-text text-danger">Accounts</span></li>
+
+            <li class="menu-item">
+                <a href="javascript:void(0);" class="menu-link menu-toggle">
+                    <i class="menu-icon tf-icons bx bxs-analyse bg-danger"></i>
+                    <div class="text-truncate" data-i18n="Accounts"> <strong>Accounts </strong></div>
+                </a>
+                <ul class="menu-sub">
+                    <li class="menu-item">
+                        <a href="{{url('collections')}}" class="menu-link">
+                            <i class="menu-icon tf-icons bx bx-add-to-queue bg-danger"></i>
+                            <div class="text-truncate" data-i18n="ARegister">Collections</div>
+                        </a>
+                    </li>
+                    <li class="menu-item">
+                        <a href="" class="menu-link">
+                            <i class="menu-icon tf-icons bx bx-arrow-from-left bg-danger"></i>
+                            <div class="text-truncate" data-i18n="AList">Bank Deposit</div>
+                        </a>
+                    </li>
+                    <li class="menu-item">
+                        <a href="" class="menu-link">
+                            <i class="menu-icon tf-icons bx bxs-bank bg-danger"></i>
+                            <div class="text-truncate" data-i18n="AList">Banks</div>
+                        </a>
+                    </li>
+                </ul>
+            </li>
+
+            @endif
+        </ul>
+    </aside>
+    <!-- / Menu -->
+    @endsection
+
+
+
+    @section('content')
+
+    <div class="content-wrapper">
+        <div class="container-xxl flex-grow-1 container-p-y">
+            <div class="row">
+                <div class="col-12">
+                    <!-- <div class="card"> -->
+                    <h3 class="card-header text-info"> <i class="icon-base bx bx-bxs-receipt"></i> Invoice <i class="icon-base bx bx-bxs-right-arrow-alt"></i> Edit </h3>
+                    <!-- <div class="card-body demo-vertical-spacing demo-only-element"> Invoice / Create </div> -->
+                    <!-- </div> -->
+                </div>
+            </div>
+            <!-- Invoice 1 - Bootstrap Brain Component -->
+            <section class="py-3 py-md-5">
+                <div class="row justify-content-center">
+                    <div class="col-12 col-lg-9 col-xl-8 col-xxl-7">
+                        <div class="row gy-3 mb-3">
+                            <div class="col-6">
+                                <h2 class="text-uppercase text-endx m-0 text-danger">Invoice</h2>
+                            </div>
+                            <div class="col-6">
+                                <a class="d-block text-end">
+                                    <img width="150px" src="{{asset('img/icons/brands/issobs.png')}}" class="img-fluid" alt="BootstrapBrain Logo" width="135" height="44">
+                                </a>
+                            </div>
+                            <div class="col-12" style="margin-top: -70px;">
+                                <h4 class="text-danger">From</h4>
+                                <address>
+                                    <strong>FIRST WATCH SECURITY SERVICE LIMITED.</strong><br>
+                                    P.O.BOX AN 18529,<br>
+                                    GPS: GA-105-4850,<br>
+                                    BOUNDARY ROAD, ACCRA NORTH.<br>
+                                    Tel: +233(0) 501 696 315, +233(0) 560 027 411.<br>
+                                    Email: info@firstwatchsecgh.com.
+                                </address>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-12 col-sm-6 col-md-8">
+                                <h4 class="text-danger">Bill To</h4>
+                                <address>
+                                    <strong>{{$invoice->client->name}}</strong><br>
+                                    Business Name: {{$invoice->client->business_name}} <br>
+                                    Location: {{$invoice->client->address}},<br>
+                                    {{$invoice->client->field->name}},<br>
+                                    Phone: {{$invoice->client->phone_number}},<br>
+                                </address>
+                            </div>
+                            <div class="col-12 col-sm-6 col-md-4">
+
+                                <h5 style="background: #f00d0dff;" class="row text-white">
+                                    <span class="col-12">Inv #: FWSSi{{$invoice->id}}</span>
+                                </h5>
+                                <address>
+                                    <span class="card-header"> Issued : </span>
+                                    <span class="col-6"> {{$invoice->created_at->format('d/m/Y H:i A')}} </span> <br>
+
+                                    <span class="card-header">Due : </span>
+                                    <span class="col-6">{{$invoice->due_date->format('d/m/Y H:i A')}} </span>
+
+                                </address>
+                            </div>
+                        </div>
+
+                        <hr />
+                        <form method="POST" action="/invoice/{{$invoice->id}}">
+                            @csrf
+                            @method('PUT')
+
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <!-- <h6 class="card-header">Due Date</h6> -->
+                                    <div class="input-group">
+                                        <input type="date" name="due_date" id="due_date" class="form-control" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 form-check form-switch">
+                                    <input name="vat_standard" class="form-check-input" type="checkbox" id="vat_standard" checked>
+                                    <label class="form-check-label" for="vat_standard"> VAT STANDARD RATE </label>
+                                </div>
+                            </div>
+                            <br>
+
+
+
+                            <div id="product_form">
+                                @foreach($invoice_data as $data)
+
+                                <div class="row">
+                                    <div class="col-2">
+                                        <h5 class="card-header" for="service_name" class="form-label"> Services </h5>
+                                        <select name="service_name[]" class="form-select" id="service_name">
+                                            @foreach($services as $service)
+                                            <option @if ($data->service_name == $service->name) selected @endif value="{{$service->name}}">{{$service->name}}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="col-3">
+                                        <h5 class="card-header" for="description" class="form-label">Description</h5>
+                                        <textarea name="description[]"
+                                            id="description"
+                                            class="form-control"
+                                            placeholder="Description" class="form-control" rows="1">{{$data->description}}</textarea>
+                                    </div>
+
+                                    <div class="col-2">
+                                        <h5 class="card-header">Quantity</h5>
+                                        <div class="input-group">
+                                            <input
+                                                type="number"
+                                                name="quantity[]"
+                                                id="quantity"
+                                                value="{{$data->quantity}}"
+                                                class="form-control"
+                                                placeholder="Quantity">
+                                        </div>
+                                    </div>
+
+                                    <div class="col-2">
+                                        <h5 class="card-header">Unit Price</h5>
+                                        <div class="input-group">
+                                            <input
+                                                type="number"
+                                                name="unit_price[]"
+                                                id="unit_price"
+                                                value="{{$data->unit_price}}"
+                                                oninput="unitPrice()"
+                                                class="form-control"
+                                                placeholder="GH&#8373;">
+                                        </div>
+                                    </div>
+
+                                    <div class="col-3">
+                                        <h5 class="card-header">Amount</h5>
+                                        <div class="input-group">
+                                            <input
+                                                type="number"
+                                                name="amount[]"
+                                                id="amount"
+                                                value="{{$data->amount}}"
+                                                class="form-control"
+                                                placeholder="GH&#8373;">
+                                        </div>
+                                    </div>
+
+                                </div>
+                                @endforeach
+
+
+                                <div style="padding-top: 30px;" class="row">
+                                    <div class="col-12">
+                                        <button type="submit" id="submit" class="btn btn-danger btn-lg btn-block" onclick="return confirm('Kindly Confirm?')"> Update </button>
+                                    </div>
+                                </div>
+
+
+                        </form>
+
+                    </div>
+                </div>
+        </div>
+        </section>
+
+
+    </div>
+    </div>
+
+    @endsection
+
+</x-sales-dashboard>
