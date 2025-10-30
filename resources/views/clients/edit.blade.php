@@ -206,7 +206,7 @@
                                 class="form-control @error('name') is-invalid @enderror"
                                 value="{{$client->name}}"
                                 placeholder="Full Name"
-                                required
+
                                 autocomplete="name"
                                 autofocus>
 
@@ -226,7 +226,7 @@
                                 name="phone_number"
                                 class="form-control @error('phone_number') is-invalid @enderror"
                                 value="{{$client->phone_number}}"
-                                required
+
                                 autocomplete="phone_number"
                                 autofocus>
 
@@ -247,7 +247,7 @@
                                 class="form-control @error('business_name') is-invalid @enderror"
                                 value="{{$client->business_name}}"
                                 placeholder="Business Name"
-                                required
+
                                 autocomplete="business_name"
                                 autofocus>
 
@@ -267,7 +267,7 @@
                                 class="form-control @error('address') is-invalid @enderror"
                                 value="{{$client->address}}"
                                 placeholder="Address"
-                                required
+
                                 autocomplete="address"
                                 autofocus>
 
