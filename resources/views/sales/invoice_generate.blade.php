@@ -201,12 +201,17 @@
                                 <div class="row">
                                     <div class="col-2">
                                         <h5 class="card-header" for="service" class="form-label"> Services </h5>
-                                        <select name="service[]" class="form-select" id="service" required>
+                                        <select name="service[]" class="form-select @error('service') is-invalid @enderror" id="service" required>
                                             <option selected disabled> Select </option>
                                             @foreach($services as $service)
                                             <option value="{{$service->name}}">{{$service->name}}</option>
                                             @endforeach
                                         </select>
+                                        @error('service')
+                                        <span class="invalid-feedback" role="alert">
+                                            <strong>{{ $message }}</strong>
+                                        </span>
+                                        @enderror
                                     </div>
                                     <div class="col-3">
                                         <h5 class="card-header" for="description" class="form-label">Description</h5>
