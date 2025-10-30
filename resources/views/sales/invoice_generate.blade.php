@@ -237,7 +237,7 @@
                                                 id="unit_price"
                                                 oninput="unitPrice()"
                                                 class="form-control"
-                                                placeholder="GH&#8373;" required>
+                                                placeholder="GH&#8373;" step="any" required>
                                         </div>
                                     </div>
 
@@ -250,7 +250,7 @@
                                                 id="amount"
 
                                                 class="form-control"
-                                                placeholder="GH&#8373;" required>
+                                                placeholder="GH&#8373;" step="any" required>
                                         </div>
                                     </div>
 
@@ -326,7 +326,7 @@
                                                 name="quantity[]"
                                                 id="quantity"
                                                 class="form-control"
-                                                placeholder="Quantity" required>
+                                                placeholder="Quantity" step="any" required>
                                         </div>
                                     </div>
 
@@ -339,7 +339,7 @@
                                                 id="unit_price"
                                                 oninput="unitPrice()"
                                                 class="form-control"
-                                                placeholder="GH&#8373;" required>
+                                                placeholder="GH&#8373;" step="any" required>
                                         </div>
                                     </div>
 
