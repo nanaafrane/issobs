@@ -10,6 +10,8 @@ class Bank extends Model
     protected $fillable = [
         'name',
         'branch',
-        'user_id'
+        'acc_number',
+        'user_id',
+        'total'
     ];
 }

@@ -91,7 +91,7 @@
             </a>
           </li>
           <li class="menu-item">
-            <a href="" class="menu-link">
+            <a href="{{url('deposit')}}" class="menu-link">
               <i class="menu-icon tf-icons bx bx-arrow-from-left bg-danger"></i>
               <div class="text-truncate" data-i18n="AList">Bank Deposit</div>
             </a>
@@ -735,95 +735,40 @@
     <div class="row">
 
       <!-- Transactions -->
-      <div class="col-md-4 col-lg-4 order-0 mb-6">
-        <div style="background: #000000ff; " class="card h-100 text-white">
+      <div class="col-md-8 col-lg-8 order-0 mb-6">
+        <div class="card h-100 bg-dark text-white">
           <div class="card-header d-flex align-items-center justify-content-between">
             <h5 class="card-title m-0 me-2 text-white">Banks</h5>
           </div>
           <hr style="color: white;" />
           <div class="card-body pt-4">
             <ul class="p-0 m-0">
+              @foreach($banks as $bank)
               <li class="d-flex align-items-center mb-6">
                 <div class="avatar flex-shrink-0 me-3">
                   <img src="img/icons/unicons/paypal.png" alt="User" class="rounded" />
                 </div>
                 <div class="d-flex w-100 flex-wrap align-items-center justify-content-between gap-2">
                   <div class="me-2">
-                    <small class="d-block">Branch</small>
-                    <h6 class="fw-normal mb-0 text-white">GCB</h6>
+                    <small class="d-block">BANK NAME:</small>
+                    <h6 class="fw-normal mb-0 text-white">{{$bank->name}}</h6>
                   </div>
-                  <div class="user-progress d-flex align-items-center gap-2">
-                    <span class="text-body-secondary">GH&#x20B5;</span>
-                    <h6 class="fw-normal mb-0 text-white">500,025.00</h6>
-
-                  </div>
-                </div>
-              </li>
-              <li class="d-flex align-items-center mb-6">
-                <div class="avatar flex-shrink-0 me-3">
-                  <img src="img/icons/unicons/wallet.png" alt="User" class="rounded" />
-                </div>
-                <div class="d-flex w-100 flex-wrap align-items-center justify-content-between gap-2">
                   <div class="me-2">
-                    <small class="d-block">Branch</small>
-                    <h6 class="fw-normal mb-0 text-white">ECOBANK</h6>
+                    <small class="d-block">BRANCH</small>
+                    <h6 class="fw-normal mb-0 text-white">{{$bank->branch}}</h6>
                   </div>
-                  <div class="user-progress d-flex align-items-center gap-2">
-                    <span class="text-body-secondary">GH&#x20B5;</span>
-                    <h6 class="fw-normal mb-0 text-white">648,354.00</h6>
-
-                  </div>
-                </div>
-              </li>
-              <li class="d-flex align-items-center mb-6">
-                <div class="avatar flex-shrink-0 me-3">
-                  <img src="img/icons/unicons/chart.png" alt="User" class="rounded" />
-                </div>
-                <div class="d-flex w-100 flex-wrap align-items-center justify-content-between gap-2">
                   <div class="me-2">
-                    <small class="d-block">Branch</small>
-                    <h6 class="fw-normal mb-0 text-white">ZENITH</h6>
+                    <small class="d-block">ACCOUNT NUMBER</small>
+                    <h6 class="fw-normal mb-0 text-white">{{$bank?->acc_number}}</h6>
                   </div>
                   <div class="user-progress d-flex align-items-center gap-2">
                     <span class="text-body-secondary">GH&#x20B5;</span>
-                    <h6 class="fw-normal mb-0 text-white">205,000.00</h6>
+                    <h6 class="fw-normal mb-0 text-white">{{number_format($bank?->total, 2)}}</h6>
 
                   </div>
                 </div>
               </li>
-              <li class="d-flex align-items-center mb-6">
-                <div class="avatar flex-shrink-0 me-3">
-                  <img src="img/icons/unicons/cc-primary.png" alt="User" class="rounded" />
-                </div>
-                <div class="d-flex w-100 flex-wrap align-items-center justify-content-between gap-2">
-                  <div class="me-2">
-                    <small class="d-block"> Branch </small>
-                    <h6 class="fw-normal mb-0 text-white">ACCESS</h6>
-                  </div>
-                  <div class="user-progress d-flex align-items-center gap-2">
-                    <span class="text-body-secondary">GH&#x20B5;</span>
-                    <h6 class="fw-normal mb-0 text-white">838,486.701</h6>
-
-                  </div>
-                </div>
-              </li>
-              <li class="d-flex align-items-center mb-6">
-                <div class="avatar flex-shrink-0 me-3">
-                  <img src="img/icons/unicons/wallet.png" alt="User" class="rounded" />
-                </div>
-                <div class="d-flex w-100 flex-wrap align-items-center justify-content-between gap-2">
-                  <div class="me-2">
-                    <small class="d-block">Branch</small>
-                    <h6 class="fw-normal mb-0 text-white">SGB</h6>
-                  </div>
-                  <div class="user-progress d-flex align-items-center gap-2">
-                    <span class="text-body-secondary">GH&#x20B5;</span>
-                    <h6 class="fw-normal mb-0 text-white">203,987.033</h6>
-
-                  </div>
-                </div>
-              </li>
-
+              @endforeach
             </ul>
           </div>
         </div>

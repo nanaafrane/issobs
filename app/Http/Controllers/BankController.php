@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Bank;
 use App\Http\Requests\StoreBankRequest;
 use App\Http\Requests\UpdateBankRequest;
+use App\Models\BankTransaction;
 
 class BankController extends Controller
 {
@@ -26,7 +27,9 @@ class BankController extends Controller
     public function index()
     {
         //
-        return view('banks.index');
+        $banks = Bank::all();
+        $bankTransactions = BankTransaction::all();
+        return view('banks.index', compact('banks', 'bankTransactions'));
     }
 
     /**
@@ -43,6 +46,9 @@ class BankController extends Controller
     public function store(StoreBankRequest $request)
     {
         //
+        $banks = new Bank();
+        $banks->create($request->all());
+        return back()->with('success', 'Bank Added Sucessfully');
     }
 
     /**
@@ -51,6 +57,7 @@ class BankController extends Controller
     public function show(Bank $bank)
     {
         //
+        return view('banks.show', compact('bank'));
     }
 
     /**
@@ -59,6 +66,7 @@ class BankController extends Controller
     public function edit(Bank $bank)
     {
         //
+
     }
 
     /**
@@ -67,6 +75,8 @@ class BankController extends Controller
     public function update(UpdateBankRequest $request, Bank $bank)
     {
         //
+        $bank->update($request->all());
+        return back()->with('success', 'Bank Updated Successfully');
     }
 
     /**
@@ -75,5 +85,6 @@ class BankController extends Controller
     public function destroy(Bank $bank)
     {
         //
+        return back()->with('danger', 'Delete Feature not functional yet');
     }
 }

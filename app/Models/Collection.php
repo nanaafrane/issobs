@@ -13,6 +13,9 @@ class Collection extends Model
         'momo_amount',
         'cheque_amount',
         'transfer_amount',
+        'status',
+        'expenses_id',
+        'expenses_amount',
         'total_amount',
         'field_id',
     ];

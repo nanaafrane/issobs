@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\BankController;
+use App\Http\Controllers\BankDepositController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\CollectionController;
 use App\Http\Controllers\DepartmentController;
@@ -60,6 +61,8 @@ Route::get('receiptWHTPayment', [ReceiptController::class, 'dashboardWHTPayment'
 Route::get('receiptCreate/{id}', [ReceiptController::class, 'receiptCreate']);
 
 Route::resource('collections', CollectionController::class);
+
+Route::resource('deposit', BankDepositController::class);
 
 Route::resource('banks', BankController::class);
 

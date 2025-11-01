@@ -89,19 +89,19 @@
                 </a>
                 <ul class="menu-sub">
                     <li class="menu-item active">
-                        <a href="" class="menu-link">
+                        <a href="{{url('collections')}}" class="menu-link">
                             <i class="menu-icon tf-icons bx bx-add-to-queue bg-danger"></i>
                             <div class="text-truncate" data-i18n="ARegister">Collections</div>
                         </a>
                     </li>
                     <li class="menu-item">
-                        <a href="" class="menu-link">
+                        <a href="{{url('deposit')}}" class="menu-link">
                             <i class="menu-icon tf-icons bx bx-arrow-from-left bg-danger"></i>
                             <div class="text-truncate" data-i18n="AList">Bank Deposit</div>
                         </a>
                     </li>
                     <li class="menu-item">
-                        <a href="" class="menu-link">
+                        <a href="{{url('banks')}}" class="menu-link">
                             <i class="menu-icon tf-icons bx bxs-bank bg-danger"></i>
                             <div class="text-truncate" data-i18n="AList">Banks</div>
                         </a>
@@ -142,7 +142,7 @@
                             </div>
                         </div>
                         <p class="mb-1"><strong> ACCRA </strong> </p>
-                        <h4 class="card-title mb-3 text-white"><strong>&#x20B5;{{number_format($accraTotal, 2)}} </strong> </h4>
+                        <h4 class="card-title mb-3 text-white"><strong>GH&#x20B5;{{number_format($accraTotal, 2)}} </strong> </h4>
                         <small class="fw-medium"> TOTAL COLLECTIONS : <strong> {{$accraCount}}</strong> </small>
                     </div>
                 </div>
@@ -160,7 +160,7 @@
                             </div>
                         </div>
                         <p class="mb-1"><strong> BOTWE </strong></p>
-                        <h4 class="card-title mb-3 text-white"><strong>&#x20B5;{{number_format($botweTotal, 2)}}</strong> </h4>
+                        <h4 class="card-title mb-3 text-white"><strong>GH&#x20B5;{{number_format($botweTotal, 2)}}</strong> </h4>
                         <small class="fw-medium"> TOTAL COLLECTIONS : <strong> {{$botweCount}} </strong> </small>
                     </div>
                 </div>
@@ -180,7 +180,7 @@
 
                         </div>
                         <p class="mb-1"><strong> TEMA </strong></p>
-                        <h4 class="card-title mb-3 text-white"><strong>&#x20B5;{{number_format($temaTotal, 2)}} </strong> </h4>
+                        <h4 class="card-title mb-3 text-white"><strong>GH&#x20B5;{{number_format($temaTotal, 2)}} </strong> </h4>
                         <small class="fw-medium"> TOTAL COLLECTIONS : <strong> {{$temaCount}} </strong> </small>
                     </div>
                 </div>
@@ -200,7 +200,7 @@
 
                         </div>
                         <p class="mb-1">TAKORADI</p>
-                        <h4 class="card-title mb-3 text-white">&#x20B5; {{number_format($takoradiTotal, 2)}}</h4>
+                        <h4 class="card-title mb-3 text-white">GH&#x20B5; {{number_format($takoradiTotal, 2)}}</h4>
                         <small class="fw-medium"> TOTAL COLLECTIONS : {{$takoradiCount}} </small>
                     </div>
                 </div>
@@ -218,7 +218,7 @@
 
                         </div>
                         <p class="mb-1"> <strong> KOFORIDUA </strong> </p>
-                        <h4 class="card-title mb-3 text-white">&#x20B5;{{number_format($koforiduaTotal, 2)}}</h4>
+                        <h4 class="card-title mb-3 text-white">GH&#x20B5;{{number_format($koforiduaTotal, 2)}}</h4>
                         <small class="fw-medium"> TOTAL COLLECTIONS : <strong> {{$koforiduaCount}} </strong> </small>
                     </div>
                 </div>
@@ -237,7 +237,7 @@
 
                         </div>
                         <p class="mb-1"><strong> KUMASI </strong> </p>
-                        <h4 class="card-title mb-3 text-white">&#x20B5;{{number_format($kumasiTotal, 2)}}</h4>
+                        <h4 class="card-title mb-3 text-white">GH&#x20B5;{{number_format($kumasiTotal, 2)}}</h4>
                         <small class="fw-medium"> TOTAL COLLECTIONS : <strong> {{$kumasiCount}} </strong> </small>
                     </div>
                 </div>
@@ -258,7 +258,7 @@
                             </div>
                         </div>
                         <p class="mb-1"><strong> ACCRA </strong> </p>
-                        <h4 class="card-title mb-3 text-white"><strong>&#x20B5;{{number_format($accraTotal, 2)}} </strong> </h4>
+                        <h4 class="card-title mb-3 text-white"><strong>GH&#x20B5;{{number_format($accraTotal, 2)}} </strong> </h4>
                         <small class="fw-medium"> TOTAL COLLECTIONS : <strong> {{$accraCount}}</strong> </small>
                     </div>
                 </div>
@@ -280,7 +280,7 @@
                             </div>
                         </div>
                         <p class="mb-1"><strong> BOTWE </strong> </p>
-                        <h4 class="card-title mb-3 text-white"><strong>&#x20B5;{{number_format($botweTotal, 2)}} </strong> </h4>
+                        <h4 class="card-title mb-3 text-white"><strong>GH&#x20B5;{{number_format($botweTotal, 2)}} </strong> </h4>
                         <small class="fw-medium"> TOTAL COLLECTIONS : <strong> {{$botweCount}}</strong> </small>
                     </div>
                 </div>
@@ -302,7 +302,7 @@
                             </div>
                         </div>
                         <p class="mb-1"><strong> TEMA </strong> </p>
-                        <h4 class="card-title mb-3 text-white"><strong>&#x20B5;{{number_format($temaTotal, 2)}} </strong> </h4>
+                        <h4 class="card-title mb-3 text-white"><strong>GH&#x20B5;;{{number_format($temaTotal, 2)}} </strong> </h4>
                         <small class="fw-medium"> TOTAL COLLECTIONS : <strong> {{$temaCount}}</strong> </small>
                     </div>
                 </div>
@@ -325,7 +325,7 @@
                             </div>
                         </div>
                         <p class="mb-1"><strong> TAKORADI </strong> </p>
-                        <h4 class="card-title mb-3 text-white"><strong>&#x20B5;{{number_format($takoradiTotal, 2)}} </strong> </h4>
+                        <h4 class="card-title mb-3 text-white"><strong>GH&#x20B5;;{{number_format($takoradiTotal, 2)}} </strong> </h4>
                         <small class="fw-medium"> TOTAL COLLECTIONS : <strong> {{$takoradiCount}}</strong> </small>
                     </div>
                 </div>
@@ -348,7 +348,7 @@
                             </div>
                         </div>
                         <p class="mb-1"><strong> KOFORIDUA </strong> </p>
-                        <h4 class="card-title mb-3 text-white"><strong>&#x20B5;{{number_format($koforiduaTotal, 2)}} </strong> </h4>
+                        <h4 class="card-title mb-3 text-white"><strong>GH&#x20B5;;{{number_format($koforiduaTotal, 2)}} </strong> </h4>
                         <small class="fw-medium"> TOTAL COLLECTIONS : <strong> {{$koforiduaCount}}</strong> </small>
                     </div>
                 </div>
@@ -371,7 +371,7 @@
                             </div>
                         </div>
                         <p class="mb-1"><strong> KUMASI </strong> </p>
-                        <h4 class="card-title mb-3 text-white"><strong>&#x20B5;{{number_format($kumasiTotal, 2)}} </strong> </h4>
+                        <h4 class="card-title mb-3 text-white"><strong>GH&#x20B5;;{{number_format($kumasiTotal, 2)}} </strong> </h4>
                         <small class="fw-medium"> TOTAL COLLECTIONS : <strong> {{$kumasiCount}}</strong> </small>
                     </div>
                 </div>
@@ -391,7 +391,10 @@
                             <th>Momo Amount</th>
                             <th>Cheque Amount </th>
                             <th> Transfer Amount </th>
-                            <th> Total Amount </th>
+                            <th>Status</th>
+                            <th>Exp id</th>
+                            <th>Expense Amount</th>
+                            <th> Total_Amount </th>
                             <th>Date Created</th>
                             <th>Branch</th>
                         </tr>
@@ -403,11 +406,20 @@
                         <tr>
                             <td> {{$collection->id}}</td>
                             <td> {{$collection->created_at->diffForHumans()}}</td>
-                            <td> {{number_format($collection->cash_amount, 2)}}</td>
-                            <td> {{number_format($collection->momo_amount, 2)}}</td>
-                            <td> {{number_format($collection->cheque_amount, 2)}}</td>
-                            <td> {{number_format($collection->transfer_amount, 2)}}</td>
-                            <td> {{number_format($collection->total_amount, 2)}}</td>
+                            <td>GH&#x20B5; {{number_format($collection->cash_amount, 2)}}</td>
+                            <td>GH&#x20B5; {{number_format($collection->momo_amount, 2)}}</td>
+                            <td>GH&#x20B5; {{number_format($collection->cheque_amount, 2)}}</td>
+                            <td>GH&#x20B5; {{number_format($collection->transfer_amount, 2)}}</td>
+
+                            @if($collection->status == 'Deposited')
+                            <td><span class="badge bg-label-success">{{$collection->status}}</span></td>
+                            @else
+                            <td><span class="badge bg-label-danger">{{$collection->status}}</span></td>
+                            @endif
+
+                            <td> {{$collection->expenses_id}} </td>
+                            <td>GH&#x20B5; {{number_format($collection->expenses_amount, 2)}} </td>
+                            <td>GH&#x20B5; {{number_format($collection->total_amount, 2)}}</td>
                             <td> {{$collection->created_at->format('l F d, Y, H:i A')}}</td>
                             <td> {{$collection->field?->name}} </td>
                         </tr>
@@ -417,11 +429,20 @@
                         <tr>
                             <td> {{$collection->id}}</td>
                             <td> {{$collection->created_at->diffForHumans()}}</td>
-                            <td> {{number_format($collection->cash_amount, 2)}}</td>
-                            <td> {{number_format($collection->momo_amount, 2)}}</td>
-                            <td> {{number_format($collection->cheque_amount, 2)}}</td>
-                            <td> {{number_format($collection->transfer_amount, 2)}}</td>
-                            <td> {{number_format($collection->total_amount, 2)}}</td>
+                            <td>GH&#x20B5; {{number_format($collection->cash_amount, 2)}}</td>
+                            <td>GH&#x20B5; {{number_format($collection->momo_amount, 2)}}</td>
+                            <td>GH&#x20B5; {{number_format($collection->cheque_amount, 2)}}</td>
+                            <td>GH&#x20B5; {{number_format($collection->transfer_amount, 2)}}</td>
+
+                            @if($collection->status == 'Deposited')
+                            <td><span class="badge bg-label-success">{{$collection->status}}</span></td>
+                            @else
+                            <td><span class="badge bg-label-danger">{{$collection->status}}</span></td>
+                            @endif
+
+                            <td> {{$collection->expenses_id}} </td>
+                            <td>GH&#x20B5; {{number_format($collection->expenses_amount, 2)}} </td>
+                            <td>GH&#x20B5; {{number_format($collection->total_amount, 2)}}</td>
                             <td> {{$collection->created_at->format('l F d, Y, H:i A')}}</td>
                             <td> {{$collection->field?->name}} </td>
                         </tr>
@@ -434,11 +455,20 @@
                         <tr>
                             <td> {{$collection->id}}</td>
                             <td> {{$collection->created_at->diffForHumans()}}</td>
-                            <td> {{number_format($collection->cash_amount, 2)}}</td>
-                            <td> {{number_format($collection->momo_amount, 2)}}</td>
-                            <td> {{number_format($collection->cheque_amount, 2)}}</td>
-                            <td> {{number_format($collection->transfer_amount, 2)}}</td>
-                            <td> {{number_format($collection->total_amount, 2)}}</td>
+                            <td>GH&#x20B5; {{number_format($collection->cash_amount, 2)}}</td>
+                            <td>GH&#x20B5; {{number_format($collection->momo_amount, 2)}}</td>
+                            <td>GH&#x20B5; {{number_format($collection->cheque_amount, 2)}}</td>
+                            <td>GH&#x20B5; {{number_format($collection->transfer_amount, 2)}}</td>
+
+                            @if($collection->status == 'Deposited')
+                            <td><span class="badge bg-label-success">{{$collection->status}}</span></td>
+                            @else
+                            <td><span class="badge bg-label-danger">{{$collection->status}}</span></td>
+                            @endif
+
+                            <td> {{$collection->expenses_id}} </td>
+                            <td>GH&#x20B5; {{number_format($collection->expenses_amount, 2)}} </td>
+                            <td>GH&#x20B5; {{number_format($collection->total_amount, 2)}}</td>
                             <td> {{$collection->created_at->format('l F d, Y, H:i A')}}</td>
                             <td> {{$collection->field?->name}} </td>
                         </tr>
@@ -451,11 +481,20 @@
                         <tr>
                             <td> {{$collection->id}}</td>
                             <td> {{$collection->created_at->diffForHumans()}}</td>
-                            <td> {{number_format($collection->cash_amount, 2)}}</td>
-                            <td> {{number_format($collection->momo_amount, 2)}}</td>
-                            <td> {{number_format($collection->cheque_amount, 2)}}</td>
-                            <td> {{number_format($collection->transfer_amount, 2)}}</td>
-                            <td> {{number_format($collection->total_amount, 2)}}</td>
+                            <td>GH&#x20B5; {{number_format($collection->cash_amount, 2)}}</td>
+                            <td>GH&#x20B5; {{number_format($collection->momo_amount, 2)}}</td>
+                            <td>GH&#x20B5; {{number_format($collection->cheque_amount, 2)}}</td>
+                            <td>GH&#x20B5; {{number_format($collection->transfer_amount, 2)}}</td>
+
+                            @if($collection->status == 'Deposited')
+                            <td><span class="badge bg-label-success">{{$collection->status}}</span></td>
+                            @else
+                            <td><span class="badge bg-label-danger">{{$collection->status}}</span></td>
+                            @endif
+
+                            <td> {{$collection->expenses_id}} </td>
+                            <td>GH&#x20B5; {{number_format($collection->expenses_amount, 2)}} </td>
+                            <td>GH&#x20B5; {{number_format($collection->total_amount, 2)}}</td>
                             <td> {{$collection->created_at->format('l F d, Y, H:i A')}}</td>
                             <td> {{$collection->field?->name}} </td>
                         </tr>
@@ -468,11 +507,20 @@
                         <tr>
                             <td> {{$collection->id}}</td>
                             <td> {{$collection->created_at->diffForHumans()}}</td>
-                            <td> {{number_format($collection->cash_amount, 2)}}</td>
-                            <td> {{number_format($collection->momo_amount, 2)}}</td>
-                            <td> {{number_format($collection->cheque_amount, 2)}}</td>
-                            <td> {{number_format($collection->transfer_amount, 2)}}</td>
-                            <td> {{number_format($collection->total_amount, 2)}}</td>
+                            <td>GH&#x20B5; {{number_format($collection->cash_amount, 2)}}</td>
+                            <td>GH&#x20B5; {{number_format($collection->momo_amount, 2)}}</td>
+                            <td>GH&#x20B5; {{number_format($collection->cheque_amount, 2)}}</td>
+                            <td>GH&#x20B5; {{number_format($collection->transfer_amount, 2)}}</td>
+
+                            @if($collection->status == 'Deposited')
+                            <td><span class="badge bg-label-success">{{$collection->status}}</span></td>
+                            @else
+                            <td><span class="badge bg-label-danger">{{$collection->status}}</span></td>
+                            @endif
+
+                            <td> {{$collection->expenses_id}} </td>
+                            <td>GH&#x20B5; {{number_format($collection->expenses_amount, 2)}} </td>
+                            <td>GH&#x20B5; {{number_format($collection->total_amount, 2)}}</td>
                             <td> {{$collection->created_at->format('l F d, Y, H:i A')}}</td>
                             <td> {{$collection->field?->name}} </td>
                         </tr>
@@ -485,11 +533,20 @@
                         <tr>
                             <td> {{$collection->id}}</td>
                             <td> {{$collection->created_at->diffForHumans()}}</td>
-                            <td> {{number_format($collection->cash_amount, 2)}}</td>
-                            <td> {{number_format($collection->momo_amount, 2)}}</td>
-                            <td> {{number_format($collection->cheque_amount, 2)}}</td>
-                            <td> {{number_format($collection->transfer_amount, 2)}}</td>
-                            <td> {{number_format($collection->total_amount, 2)}}</td>
+                            <td>GH&#x20B5; {{number_format($collection->cash_amount, 2)}}</td>
+                            <td>GH&#x20B5; {{number_format($collection->momo_amount, 2)}}</td>
+                            <td>GH&#x20B5; {{number_format($collection->cheque_amount, 2)}}</td>
+                            <td>GH&#x20B5; {{number_format($collection->transfer_amount, 2)}}</td>
+
+                            @if($collection->status == 'Deposited')
+                            <td><span class="badge bg-label-success">{{$collection->status}}</span></td>
+                            @else
+                            <td><span class="badge bg-label-danger">{{$collection->status}}</span></td>
+                            @endif
+
+                            <td> {{$collection->expenses_id}} </td>
+                            <td>GH&#x20B5; {{number_format($collection->expenses_amount, 2)}} </td>
+                            <td>GH&#x20B5; {{number_format($collection->total_amount, 2)}}</td>
                             <td> {{$collection->created_at->format('l F d, Y, H:i A')}}</td>
                             <td> {{$collection->field?->name}} </td>
                         </tr>
@@ -500,14 +557,22 @@
                         @if(Auth::user()->field?->name == 'Kumasi')
                         @foreach($kumasi as $collection)
                         <tr>
-
                             <td> {{$collection->id}}</td>
                             <td> {{$collection->created_at->diffForHumans()}}</td>
-                            <td> {{number_format($collection->cash_amount, 2)}}</td>
-                            <td> {{number_format($collection->momo_amount, 2)}}</td>
-                            <td> {{number_format($collection->cheque_amount, 2)}}</td>
-                            <td> {{number_format($collection->transfer_amount, 2)}}</td>
-                            <td> {{number_format($collection->total_amount, 2)}}</td>
+                            <td>GH&#x20B5; {{number_format($collection->cash_amount, 2)}}</td>
+                            <td>GH&#x20B5; {{number_format($collection->momo_amount, 2)}}</td>
+                            <td>GH&#x20B5; {{number_format($collection->cheque_amount, 2)}}</td>
+                            <td>GH&#x20B5; {{number_format($collection->transfer_amount, 2)}}</td>
+
+                            @if($collection->status == 'Deposited')
+                            <td><span class="badge bg-label-success">{{$collection->status}}</span></td>
+                            @else
+                            <td><span class="badge bg-label-danger">{{$collection->status}}</span></td>
+                            @endif
+
+                            <td> {{$collection->expenses_id}} </td>
+                            <td>GH&#x20B5; {{number_format($collection->expenses_amount, 2)}} </td>
+                            <td>GH&#x20B5; {{number_format($collection->total_amount, 2)}}</td>
                             <td> {{$collection->created_at->format('l F d, Y, H:i A')}}</td>
                             <td> {{$collection->field?->name}} </td>
                         </tr>

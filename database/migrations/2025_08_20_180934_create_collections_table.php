@@ -18,6 +18,9 @@ return new class extends Migration
             $table->decimal('momo_amount')->nullable();
             $table->decimal('cheque_amount')->nullable();
             $table->decimal('transfer_amount')->nullable();
+            $table->string('status')->default('undeposited');
+            $table->integer('expenses_id')->nullable();
+            $table->decimal('expenses_amount')->nullable();
             $table->decimal('total_amount')->nullable();
             $table->integer('field_id')->nullable();
             $table->timestamps();

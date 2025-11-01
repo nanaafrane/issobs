@@ -86,7 +86,7 @@
             <li class="menu-item">
                 <a href="javascript:void(0);" class="menu-link menu-toggle">
                     <i class="menu-icon tf-icons bx bxs-analyse bg-danger"></i>
-                    <div class="text-truncate" data-i18n="Accounts"> Accounts</div>
+                    <div class="text-truncate" data-i18n="Accounts"> Accounts </div>
                 </a>
                 <ul class="menu-sub">
                     <li class="menu-item">
@@ -96,13 +96,13 @@
                         </a>
                     </li>
                     <li class="menu-item">
-                        <a href="" class="menu-link">
+                        <a href="{{url('deposit')}}" class="menu-link">
                             <i class="menu-icon tf-icons bx bx-arrow-from-left bg-danger"></i>
                             <div class="text-truncate" data-i18n="AList">Bank Deposit</div>
                         </a>
                     </li>
                     <li class="menu-item">
-                        <a href="" class="menu-link">
+                        <a href="{{url('banks')}}" class="menu-link">
                             <i class="menu-icon tf-icons bx bxs-bank bg-danger"></i>
                             <div class="text-truncate" data-i18n="AList">Banks</div>
                         </a>

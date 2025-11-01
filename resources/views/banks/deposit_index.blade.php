@@ -3,8 +3,6 @@
     @section('css')
     <link rel="stylesheet" href="https://cdn.datatables.net/2.3.3/css/dataTables.dataTables.css" />
     <link rel="stylesheet" href="https://cdn.datatables.net/buttons/3.2.4/css/buttons.dataTables.css">
-
-    <link href="https://cdn.datatables.net/columncontrol/1.1.1/css/columnControl.dataTables.min.css" rel="stylesheet">
     @endsection
 
 
@@ -96,13 +94,13 @@
                             <div class="text-truncate" data-i18n="ARegister">Collections</div>
                         </a>
                     </li>
-                    <li class="menu-item">
+                    <li class="menu-item active">
                         <a href="{{url('deposit')}}" class="menu-link">
                             <i class="menu-icon tf-icons bx bx-arrow-from-left bg-danger"></i>
                             <div class="text-truncate" data-i18n="AList">Bank Deposit</div>
                         </a>
                     </li>
-                    <li class="menu-item active">
+                    <li class="menu-item ">
                         <a href="{{url('banks')}}" class="menu-link">
                             <i class="menu-icon tf-icons bx bxs-bank bg-danger"></i>
                             <div class="text-truncate" data-i18n="AList">Banks</div>
@@ -125,7 +123,7 @@
 
         <div class="row">
             <div class="col-12">
-                <h3 class="card-header text-dark"> <i class="icon-base bx bxs-bank"></i> Banks </h3>
+                <h3 class="card-header text-dark"> <i class="icon-base bx bx-arrow-from-left"></i> Bank Deposit </h3>
             </div>
         </div><br>
 
@@ -137,14 +135,14 @@
                         <div class="card-title d-flex align-items-start justify-content-between mb-4">
                             <div class="avatar flex-shrink-0">
                                 <img
-                                    src="img/icons/unicons/paypal.png"
+                                    src="{{asset('img/icons/unicons/paypal.png')}}"
                                     alt="chart success"
                                     class="rounded" />
                             </div>
                         </div>
                         <p class="mb-1"><strong> ACCRA </strong> </p>
-                        <h4 class="card-title mb-3 text-white"><strong>&#x20B5;{{number_format(0, 2)}} </strong> </h4>
-                        <small class="fw-medium"> TOTAL </small>
+                        <h4 class="card-title mb-3 text-white"><strong>GH&#x20B5;{{number_format(0, 2)}} </strong> </h4>
+                        <small class="fw-medium"> TOTAL DEPOSITS : <strong> {{0}}</strong> </small>
                     </div>
                 </div>
             </div>
@@ -155,14 +153,14 @@
                         <div class="card-title d-flex align-items-start justify-content-between mb-4">
                             <div class="avatar flex-shrink-0">
                                 <img
-                                    src="img/icons/unicons/paypal.png"
+                                    src="{{asset('img/icons/unicons/paypal.png')}}"
                                     alt="chart success"
                                     class="rounded" />
                             </div>
                         </div>
                         <p class="mb-1"><strong> BOTWE </strong></p>
-                        <h4 class="card-title mb-3 text-white"><strong>&#x20B5;{{number_format(0, 2)}}</strong> </h4>
-                        <small class="fw-medium"> TOTAL </small>
+                        <h4 class="card-title mb-3 text-white"><strong>GH&#x20B5;{{number_format(0, 2)}}</strong> </h4>
+                        <small class="fw-medium"> TOTAL DEPOSITS : <strong> {{0}} </strong> </small>
                     </div>
                 </div>
             </div>
@@ -174,7 +172,7 @@
                         <div class="card-title d-flex align-items-start justify-content-between mb-4">
                             <div class="avatar flex-shrink-0">
                                 <img
-                                    src="img/icons/unicons/paypal.png"
+                                    src="{{asset('img/icons/unicons/paypal.png')}}"
                                     alt="chart success"
                                     class="rounded" />
                             </div>
@@ -182,7 +180,7 @@
                         </div>
                         <p class="mb-1"><strong> TEMA </strong></p>
                         <h4 class="card-title mb-3 text-white"><strong>&#x20B5;{{number_format(0, 2)}} </strong> </h4>
-                        <small class="fw-medium"> TOTAL </small>
+                        <small class="fw-medium"> TOTAL DEPOSITS : <strong> {{0}} </strong> </small>
                     </div>
                 </div>
             </div>
@@ -195,14 +193,14 @@
                         <div class="card-title d-flex align-items-start justify-content-between mb-4">
                             <div class="avatar flex-shrink-0">
                                 <img
-                                    src="img/icons/unicons/paypal.png"
+                                    src="{{asset('img/icons/unicons/paypal.png')}}"
                                     class="rounded" />
                             </div>
 
                         </div>
                         <p class="mb-1">TAKORADI</p>
-                        <h4 class="card-title mb-3 text-white">&#x20B5; {{number_format(0, 2)}}</h4>
-                        <small class="fw-medium"> TOTAL </small>
+                        <h4 class="card-title mb-3 text-white">GH&#x20B5; {{number_format(0, 2)}}</h4>
+                        <small class="fw-medium"> TOTAL DEPOSITS : {{0}} </small>
                     </div>
                 </div>
             </div>
@@ -213,14 +211,14 @@
                         <div class="card-title d-flex align-items-start justify-content-between mb-4">
                             <div class="avatar flex-shrink-0">
                                 <img
-                                    src="img/icons/unicons/paypal.png"
+                                    src="{{asset('img/icons/unicons/paypal.png')}}"
                                     class="rounded" />
                             </div>
 
                         </div>
                         <p class="mb-1"> <strong> KOFORIDUA </strong> </p>
-                        <h4 class="card-title mb-3 text-white">&#x20B5;{{number_format(0, 2)}}</h4>
-                        <small class="fw-medium"> TOTAL </small>
+                        <h4 class="card-title mb-3 text-white">GH&#x20B5;{{number_format(0, 2)}}</h4>
+                        <small class="fw-medium"> TOTAL DEPOSITS : <strong> {{0}} </strong> </small>
                     </div>
                 </div>
             </div>
@@ -232,14 +230,14 @@
                         <div class="card-title d-flex align-items-start justify-content-between mb-4">
                             <div class="avatar flex-shrink-0">
                                 <img
-                                    src="img/icons/unicons/paypal.png"
+                                    src="{{asset('img/icons/unicons/paypal.png')}}"
                                     class="rounded" />
                             </div>
 
                         </div>
                         <p class="mb-1"><strong> KUMASI </strong> </p>
-                        <h4 class="card-title mb-3 text-white">&#x20B5;{{number_format(0, 2)}}</h4>
-                        <small class="fw-medium"> TOTAL </small>
+                        <h4 class="card-title mb-3 text-white">GH&#x20B5;{{number_format(0, 2)}}</h4>
+                        <small class="fw-medium"> TOTAL DEPOSITS : <strong> {{0}} </strong> </small>
                     </div>
                 </div>
             </div>
@@ -253,14 +251,14 @@
                         <div class="card-title d-flex align-items-start justify-content-between mb-4">
                             <div class="avatar flex-shrink-0">
                                 <img
-                                    src="img/icons/unicons/paypal.png"
+                                    src="{{asset('img/icons/unicons/paypal.png')}}"
                                     alt="chart success"
                                     class="rounded" />
                             </div>
                         </div>
                         <p class="mb-1"><strong> ACCRA </strong> </p>
-                        <h4 class="card-title mb-3 text-white"><strong>&#x20B5;{{number_format(0, 2)}} </strong> </h4>
-                        <small class="fw-medium"> TOTAL </small>
+                        <h4 class="card-title mb-3 text-white"><strong>GH&#x20B5;{{number_format(0, 2)}} </strong> </h4>
+                        <small class="fw-medium"> TOTAL DEPOSITS : <strong> {{0}}</strong> </small>
                     </div>
                 </div>
             </div>
@@ -275,14 +273,14 @@
                         <div class="card-title d-flex align-items-start justify-content-between mb-4">
                             <div class="avatar flex-shrink-0">
                                 <img
-                                    src="img/icons/unicons/paypal.png"
+                                    src="{{asset('img/icons/unicons/paypal.png')}}"
                                     alt="chart success"
                                     class="rounded" />
                             </div>
                         </div>
                         <p class="mb-1"><strong> BOTWE </strong> </p>
                         <h4 class="card-title mb-3 text-white"><strong>&#x20B5;{{number_format(0, 2)}} </strong> </h4>
-                        <small class="fw-medium"> TOTAL </small>
+                        <small class="fw-medium"> TOTAL DEPOSITS : <strong> {{0}}</strong> </small>
                     </div>
                 </div>
             </div>
@@ -297,14 +295,14 @@
                         <div class="card-title d-flex align-items-start justify-content-between mb-4">
                             <div class="avatar flex-shrink-0">
                                 <img
-                                    src="img/icons/unicons/paypal.png"
+                                    src="{{asset('img/icons/unicons/paypal.png')}}"
                                     alt="chart success"
                                     class="rounded" />
                             </div>
                         </div>
                         <p class="mb-1"><strong> TEMA </strong> </p>
-                        <h4 class="card-title mb-3 text-white"><strong>&#x20B5;{{number_format(0, 2)}} </strong> </h4>
-                        <small class="fw-medium"> TOTAL </small>
+                        <h4 class="card-title mb-3 text-white"><strong>GH&#x20B5;{{number_format(0, 2)}} </strong> </h4>
+                        <small class="fw-medium"> TOTAL DEPOSITS : <strong> {{0}}</strong> </small>
                     </div>
                 </div>
             </div>
@@ -320,14 +318,14 @@
                         <div class="card-title d-flex align-items-start justify-content-between mb-4">
                             <div class="avatar flex-shrink-0">
                                 <img
-                                    src="img/icons/unicons/paypal.png"
+                                    src="{{asset('img/icons/unicons/paypal.png')}}"
                                     alt="chart success"
                                     class="rounded" />
                             </div>
                         </div>
                         <p class="mb-1"><strong> TAKORADI </strong> </p>
                         <h4 class="card-title mb-3 text-white"><strong>&#x20B5;{{number_format(0, 2)}} </strong> </h4>
-                        <small class="fw-medium"> TOTAL </small>
+                        <small class="fw-medium"> TOTAL DEPOSITS : <strong> {{0}}</strong> </small>
                     </div>
                 </div>
             </div>
@@ -343,14 +341,14 @@
                         <div class="card-title d-flex align-items-start justify-content-between mb-4">
                             <div class="avatar flex-shrink-0">
                                 <img
-                                    src="img/icons/unicons/paypal.png"
+                                    src="{{asset('img/icons/unicons/paypal.png')}}"
                                     alt="chart success"
                                     class="rounded" />
                             </div>
                         </div>
                         <p class="mb-1"><strong> KOFORIDUA </strong> </p>
-                        <h4 class="card-title mb-3 text-white"><strong>&#x20B5;{{number_format(0, 2)}} </strong> </h4>
-                        <small class="fw-medium"> TOTAL </small>
+                        <h4 class="card-title mb-3 text-white"><strong>GH&#x20B5;{{number_format(0, 2)}} </strong> </h4>
+                        <small class="fw-medium"> TOTAL DEPOSITS : <strong> {{0}}</strong> </small>
                     </div>
                 </div>
             </div>
@@ -366,14 +364,14 @@
                         <div class="card-title d-flex align-items-start justify-content-between mb-4">
                             <div class="avatar flex-shrink-0">
                                 <img
-                                    src="img/icons/unicons/paypal.png"
+                                    src="{{asset('img/icons/unicons/paypal.png')}}"
                                     alt="chart success"
                                     class="rounded" />
                             </div>
                         </div>
                         <p class="mb-1"><strong> KUMASI </strong> </p>
-                        <h4 class="card-title mb-3 text-white"><strong>&#x20B5;{{number_format(0, 2)}} </strong> </h4>
-                        <small class="fw-medium"> TOTAL </small>
+                        <h4 class="card-title mb-3 text-white"><strong>GH&#x20B5;{{number_format(0, 2)}} </strong> </h4>
+                        <small class="fw-medium"> TOTAL DEPOSITS : <strong> {{0}}</strong> </small>
                     </div>
                 </div>
             </div>
@@ -381,337 +379,143 @@
         @endif
         <br><br>
 
-        <hr> <br>
+        <hr><br>
         <div class="card-header  ml-2  d-none d-lg-block">
             @include('flash-messages')
-        </div>
-        <div class="row">
-            <div class="col-8">
-                <h4 class="card-header text-dark"> Bank Transactions </h4>
-            </div>
-            <div class="col-4 ">
-                <!-- add bank -->
-                <div class="float-end">
-                    <button
-                        type="button"
-                        class="btn btn-dark"
-                        data-bs-toggle="modal"
-                        data-bs-target="#basicModal">
-                        <i class="icon-base bx bxs-bank"> </i>Add Bank
-                    </button>
-                </div>
-                <div class="modal fade" id="basicModal" tabindex="-1" aria-hidden="true">
-                    <div class="modal-dialog" role="document">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h5 class="modal-title" id="exampleModalLabel1">Add Bank</h5>
-                                <button
-                                    type="button"
-                                    class="btn-close"
-                                    data-bs-dismiss="modal"
-                                    aria-label="Close"></button>
-                            </div>
-
-                            <form method="POST" action="/banks">
-                                @csrf
-                                <div class="modal-body">
-                                    <div class="row">
-                                        <div class="col mb-0">
-                                            <label for="name" class="form-label"> {{ __('Name') }}</label>
-                                            <input
-                                                type="text"
-                                                name="name"
-                                                id="name"
-                                                class="form-control @error('name') is-invalid @enderror"
-                                                value="{{ old('name')}}"
-                                                placeholder="Bank Name"
-                                                required
-                                                autocomplete="name"
-                                                autofocus>
-
-                                            @error('name')
-                                            <span class="invalid-feedback" role="alert">
-                                                <strong>{{ $message }}</strong>
-                                            </span>
-                                            @enderror
-
-
-                                        </div>
-
-                                    </div>
-                                    <div class="row g-6">
-
-                                        <div class="col mb-0">
-                                            <label for="acc_number" class="form-label"> {{ __('Account Number') }} </label>
-                                            <input
-                                                type="text"
-                                                id="acc_number"
-                                                name="acc_number"
-                                                class="form-control @error('acc_number') is-invalid @enderror"
-                                                value="{{ old('acc_number')}}"
-                                                placeholder="Account Number"
-                                                autocomplete=" acc_number"
-                                                required
-                                                autofocus>
-
-                                            @error('acc_number')
-                                            <span class="invalid-feedback" role="alert">
-                                                <strong>{{ $message }}</strong>
-                                            </span>
-                                            @enderror
-                                        </div>
-
-                                    </div>
-
-                                    <div class="row g-6">
-
-                                        <div class="col mb-0">
-                                            <label for="branch" class="form-label"> {{ __('Branch') }} </label>
-                                            <input
-                                                type="text"
-                                                id="branch"
-                                                name="branch"
-                                                class="form-control @error('branch') is-invalid @enderror"
-                                                value="{{ old('branch')}}"
-                                                placeholder=" Branch"
-                                                required
-                                                autocomplete="branch"
-                                                autofocus>
-
-                                            @error('branch')
-                                            <span class="invalid-feedback" role="alert">
-                                                <strong>{{ $message }}</strong>
-                                            </span>
-                                            @enderror
-                                        </div>
-
-
-                                    </div>
-
-                                </div>
-                                <div class="modal-footer">
-                                    <button type="submit" class="btn btn-dark d-grid w-100">{{ __('Add') }}</button>
-                                </div>
-                            </form>
-
-                        </div>
-                    </div>
-                </div>
-
-            </div>
         </div>
         <br>
 
         <div class="row">
+            <form action="/deposit" method="POST">
+                @csrf
+
+                <div class="col">
+                    <input class="form-check-input form-check-inline" type="checkbox" value="" id="options" />
+
+                    <div class="form-check form-check-inline">
+                        <select name="collections" class="form-select">
+                            <option value="">Deposit All </option>
+                        </select>
+                    </div>
+
+                    <div class="form-check form-check-inline">
+                        <button class="btn btn-dark" type="submit"> <i class="icon-base bx bx-arrow-from-left"> </i> {{ __('Deposit') }}</button>
+                    </div>
+
+                    <table id="myTable1" class="display">
+                        <thead>
+                            <tr>
+                                <th> </th>
+                                <th>#</th>
+                                <th>Period</th>
+                                <th>Cash Amount</th>
+                                <th>Momo Amount</th>
+                                <th>Cheque Amount </th>
+                                <th> Transfer Amount </th>
+                                <th> Total Amount </th>
+                                <th>Date Created</th>
+                                <th>Branch</th>
+                                <th>status</th>
+                                <th>Bank</th>
+                                <!-- <th>Deposit</th> -->
+                            </tr>
+                        </thead>
+                        <tbody>
+
+                            @if(Auth::user()->hasRole('Invoice') || Auth::user()->hasRole('Finance Manager'))
+                            @foreach($collections as $collection)
+                            <tr>
+                                <td> <input class="checkBoxes form-check-input" type="checkbox" name="collections[]" value="{{$collection->id}}" /></td>
+                                <td> {{$collection->id}}</td>
+                                <td> {{$collection->created_at->diffForHumans()}}</td>
+                                <td>GH&#x20B5; {{number_format($collection->cash_amount, 2)}}</td>
+                                <td>GH&#x20B5; {{number_format($collection->momo_amount, 2)}}</td>
+                                <td>GH&#x20B5; {{number_format($collection->cheque_amount, 2)}}</td>
+                                <td>GH&#x20B5; {{number_format($collection->transfer_amount, 2)}}</td>
+                                <td>GH&#x20B5; {{number_format($collection->total_amount, 2)}}</td>
+                                <td> {{$collection->created_at->format('l F d, Y, H:i A')}}</td>
+                                <td> {{$collection->field?->name}} </td>
+                                <td><span class="badge bg-label-danger">{{$collection->status}}</span></td>
+                                <td>
+                                    <select name="bank_id[]" class="form-select @error('bank_id') is-invalid @enderror" id="bank_id" value="{{ old('bank_id')}}" required>
+                                        <option selected disabled>Choose...</option>
+                                        @foreach($banks as $bank)
+                                        <option value="{{$bank->id}}">{{$bank->name}}</option>
+                                        @endforeach
+                                    </select>
+                                </td>
+                                <!-- <td><button name="deposit_single" value="Deposit" class="btn btn-dark" type="submit"> <i class="icon-base bx bx-arrow-from-left"> </i></button> </td> -->
+
+                            </tr>
+                            @endforeach
+                            @elseif(Auth::user()->field?->name == 'Accra')
+
+                            <tr>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                            </tr>
+
+                            @endif
+
+
+                            @if(Auth::user()->field?->name == 'Botwe')
+
+                            <tr>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                            </tr>
+
+                            @endif
+
+
+                            @if(Auth::user()->field?->name == 'Tema')
+
+                            <tr>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                            </tr>
+
+                            @endif
+
+
+                            @if(Auth::user()->field?->name == 'Takoradi')
+
+                            <tr>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                            </tr>
 
-            <div class="col-8">
-                <table id="myTable" class="display">
-                    <thead>
-                        <tr>
-                            <!-- <th>#</th> -->
-                            <th>Bank ID</th>
-                            <th>Credit</th>
-                            <th>Deposit ID</th>
-                            <th>Receipt ID</th>
-                            <th>Debit</th>
-                            <th>Expense ID</th>
-                            <th>Closing Balance</th>
-                            <th>Date</th>
-                        </tr>
-                    </thead>
-                    <tbody>
+                            @endif
 
-                        @if(Auth::user()->hasRole('Invoice') || Auth::user()->hasRole('Finance Manager'))
-                        @foreach($bankTransactions as $transaction)
-                        <tr>
 
-                            <td> {{$transaction->bank->name}} </td>
-                            <td> {{$transaction->credit}} </td>
-                            <td> {{$transaction->deposit_id}} </td>
-                            <td> {{$transaction->receipt_id}} </td>
-                            <td> {{$transaction->debit}} </td>
-                            <td> {{$transaction->expense_id}} </td>
-                            <td> {{$transaction->balance}} </td>
-                            <td> {{$transaction->created_at->format('F l d, Y, H:i A')}} </td>
-                        </tr>
-                        @endforeach
-                        @elseif(Auth::user()->field?->name == 'Accra')
+                            @if(Auth::user()->field?->name == 'Koforidua')
 
-                        <tr>
-                            <td></td>
+                            <tr>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                            </tr>
 
+                            @endif
 
-                        </tr>
 
-                        @endif
+                            @if(Auth::user()->field?->name == 'Kumasi')
 
+                            <tr>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                            </tr>
 
-                        @if(Auth::user()->field?->name == 'Botwe')
-
-                        <tr>
-                            <td></td>
-
-
-                        </tr>
-
-                        @endif
-
-
-                        @if(Auth::user()->field?->name == 'Tema')
-
-                        <tr>
-                            <td></td>
-
-
-                        </tr>
-
-                        @endif
-
-
-                        @if(Auth::user()->field?->name == 'Takoradi')
-
-                        <tr>
-                            <td></td>
-
-
-                        </tr>
-
-                        @endif
-
-
-                        @if(Auth::user()->field?->name == 'Koforidua')
-
-                        <tr>
-                            <td></td>
-
-
-                        </tr>
-
-                        @endif
-
-
-                        @if(Auth::user()->field?->name == 'Kumasi')
-
-                        <tr>
-
-                            <td></td>
-
-
-                        </tr>
-
-                        @endif
-                    </tbody>
-                </table>
-            </div>
-
-            <div class="col-4">
-                <table id="myTable1" class="display">
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>Name</th>
-                            <th>Total</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-
-                        @if(Auth::user()->hasRole('Invoice') || Auth::user()->hasRole('Finance Manager'))
-                        @foreach($banks as $bank)
-                        <tr>
-                            <td>{{$bank->id}}</td>
-                            <td>{{$bank->name}} </td>
-                            <td>{{$bank->total}} </td>
-
-                            <td>
-                                <div class="dropdown">
-                                    <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown">
-                                        <i class="icon-base bx bx-dots-vertical-rounded"></i>
-                                    </button>
-                                    <div class="dropdown-menu">
-                                        <a class="dropdown-item" href="{{url('banks', $bank->id)}}"><i class="icon-base bx bxs-bullseye"></i> view</a>
-
-                                        <!-- <a class="dropdown-item" href="banks/{{$bank->id}}/edit"><i class="icon-base bx bx-edit-alt me-1"></i> Edit</a> -->
-
-                                        <form action="banks/{{$bank->id}}" method="POST">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button class="dropdown-item" type="submit"><i class="icon-base bx bx-trash me-1"></i>Delete</button>
-                                        </form>
-
-                                    </div>
-                                </div>
-                            </td>
-
-                        </tr>
-                        @endforeach
-                        @elseif(Auth::user()->field?->name == 'Accra')
-
-                        <tr>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                        </tr>
-
-                        @endif
-
-
-                        @if(Auth::user()->field?->name == 'Botwe')
-
-                        <tr>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                        </tr>
-
-                        @endif
-
-
-                        @if(Auth::user()->field?->name == 'Tema')
-
-                        <tr>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                        </tr>
-
-                        @endif
-
-
-                        @if(Auth::user()->field?->name == 'Takoradi')
-
-                        <tr>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                        </tr>
-
-                        @endif
-
-
-                        @if(Auth::user()->field?->name == 'Koforidua')
-
-                        <tr>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                        </tr>
-
-                        @endif
-
-
-                        @if(Auth::user()->field?->name == 'Kumasi')
-
-                        <tr>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                        </tr>
-
-                        @endif
-                    </tbody>
-                </table>
-            </div>
+                            @endif
+                        </tbody>
+                    </table>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -735,8 +539,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
     <script src="https://cdn.datatables.net/buttons/3.2.4/js/buttons.html5.min.js"></script>
 
-    <script src="https://cdn.datatables.net/columncontrol/1.1.1/js/dataTables.columnControl.min.js"></script>
-
 
     <script>
         new DataTable('#myTable', {
@@ -746,16 +548,28 @@
                 topStart: {
                     buttons: ['excelHtml5', 'pdfHtml5']
                 }
-            },
-            columnControl: [
-                ['search']
-            ]
+            }
         });
     </script>
 
     <script>
         new DataTable('#myTable1', {
             responsive: true
+        });
+    </script>
+
+    <script>
+        $(document).ready(function() {
+            $('#options').change(function() {
+                $('.checkBoxes').prop('checked', function(i, val) {
+                    return !val;
+                });
+                // if ($(this).is(':checked')) {
+                //     $('.checkBoxes').toggle();
+                // } else {
+                //     $('.checkBoxes').toggle();
+                // }
+            });
         });
     </script>
 

@@ -15,12 +15,12 @@ return new class extends Migration
             $table->id();
             $table->integer('bank_id')->nullable();
             $table->integer('user_id')->nullable();
-            $table->string('dpst_name')->nullable();
-            $table->string('reason')->nullable();
+            // $table->string('dpst_name')->nullable();
+            // $table->string('reason')->nullable();
             $table->decimal('cash_amount')->nullable();
-            $table->decimal('momo_amount')->nullable();
+            // $table->decimal('momo_amount')->nullable();
             $table->decimal('cheque_amount')->nullable();
-            $table->decimal('amount')->nullable();
+            $table->decimal('total')->nullable();
             $table->timestamps();
         });
     }

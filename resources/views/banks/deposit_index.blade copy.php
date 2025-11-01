@@ -3,8 +3,6 @@
     @section('css')
     <link rel="stylesheet" href="https://cdn.datatables.net/2.3.3/css/dataTables.dataTables.css" />
     <link rel="stylesheet" href="https://cdn.datatables.net/buttons/3.2.4/css/buttons.dataTables.css">
-
-    <link href="https://cdn.datatables.net/columncontrol/1.1.1/css/columnControl.dataTables.min.css" rel="stylesheet">
     @endsection
 
 
@@ -96,13 +94,13 @@
                             <div class="text-truncate" data-i18n="ARegister">Collections</div>
                         </a>
                     </li>
-                    <li class="menu-item">
+                    <li class="menu-item active">
                         <a href="{{url('deposit')}}" class="menu-link">
                             <i class="menu-icon tf-icons bx bx-arrow-from-left bg-danger"></i>
                             <div class="text-truncate" data-i18n="AList">Bank Deposit</div>
                         </a>
                     </li>
-                    <li class="menu-item active">
+                    <li class="menu-item ">
                         <a href="{{url('banks')}}" class="menu-link">
                             <i class="menu-icon tf-icons bx bxs-bank bg-danger"></i>
                             <div class="text-truncate" data-i18n="AList">Banks</div>
@@ -125,7 +123,7 @@
 
         <div class="row">
             <div class="col-12">
-                <h3 class="card-header text-dark"> <i class="icon-base bx bxs-bank"></i> Banks </h3>
+                <h3 class="card-header text-dark"> <i class="icon-base bx bx-arrow-from-left"></i> Bank Deposit </h3>
             </div>
         </div><br>
 
@@ -144,7 +142,7 @@
                         </div>
                         <p class="mb-1"><strong> ACCRA </strong> </p>
                         <h4 class="card-title mb-3 text-white"><strong>&#x20B5;{{number_format(0, 2)}} </strong> </h4>
-                        <small class="fw-medium"> TOTAL </small>
+                        <small class="fw-medium"> TOTAL DEPOSITS : <strong> {{0}}</strong> </small>
                     </div>
                 </div>
             </div>
@@ -162,7 +160,7 @@
                         </div>
                         <p class="mb-1"><strong> BOTWE </strong></p>
                         <h4 class="card-title mb-3 text-white"><strong>&#x20B5;{{number_format(0, 2)}}</strong> </h4>
-                        <small class="fw-medium"> TOTAL </small>
+                        <small class="fw-medium"> TOTAL DEPOSITS : <strong> {{0}} </strong> </small>
                     </div>
                 </div>
             </div>
@@ -182,7 +180,7 @@
                         </div>
                         <p class="mb-1"><strong> TEMA </strong></p>
                         <h4 class="card-title mb-3 text-white"><strong>&#x20B5;{{number_format(0, 2)}} </strong> </h4>
-                        <small class="fw-medium"> TOTAL </small>
+                        <small class="fw-medium"> TOTAL DEPOSITS : <strong> {{0}} </strong> </small>
                     </div>
                 </div>
             </div>
@@ -202,7 +200,7 @@
                         </div>
                         <p class="mb-1">TAKORADI</p>
                         <h4 class="card-title mb-3 text-white">&#x20B5; {{number_format(0, 2)}}</h4>
-                        <small class="fw-medium"> TOTAL </small>
+                        <small class="fw-medium"> TOTAL DEPOSITS : {{0}} </small>
                     </div>
                 </div>
             </div>
@@ -220,7 +218,7 @@
                         </div>
                         <p class="mb-1"> <strong> KOFORIDUA </strong> </p>
                         <h4 class="card-title mb-3 text-white">&#x20B5;{{number_format(0, 2)}}</h4>
-                        <small class="fw-medium"> TOTAL </small>
+                        <small class="fw-medium"> TOTAL DEPOSITS : <strong> {{0}} </strong> </small>
                     </div>
                 </div>
             </div>
@@ -239,7 +237,7 @@
                         </div>
                         <p class="mb-1"><strong> KUMASI </strong> </p>
                         <h4 class="card-title mb-3 text-white">&#x20B5;{{number_format(0, 2)}}</h4>
-                        <small class="fw-medium"> TOTAL </small>
+                        <small class="fw-medium"> TOTAL DEPOSITS : <strong> {{0}} </strong> </small>
                     </div>
                 </div>
             </div>
@@ -260,7 +258,7 @@
                         </div>
                         <p class="mb-1"><strong> ACCRA </strong> </p>
                         <h4 class="card-title mb-3 text-white"><strong>&#x20B5;{{number_format(0, 2)}} </strong> </h4>
-                        <small class="fw-medium"> TOTAL </small>
+                        <small class="fw-medium"> TOTAL DEPOSITS : <strong> {{0}}</strong> </small>
                     </div>
                 </div>
             </div>
@@ -282,7 +280,7 @@
                         </div>
                         <p class="mb-1"><strong> BOTWE </strong> </p>
                         <h4 class="card-title mb-3 text-white"><strong>&#x20B5;{{number_format(0, 2)}} </strong> </h4>
-                        <small class="fw-medium"> TOTAL </small>
+                        <small class="fw-medium"> TOTAL DEPOSITS : <strong> {{0}}</strong> </small>
                     </div>
                 </div>
             </div>
@@ -304,7 +302,7 @@
                         </div>
                         <p class="mb-1"><strong> TEMA </strong> </p>
                         <h4 class="card-title mb-3 text-white"><strong>&#x20B5;{{number_format(0, 2)}} </strong> </h4>
-                        <small class="fw-medium"> TOTAL </small>
+                        <small class="fw-medium"> TOTAL DEPOSITS : <strong> {{0}}</strong> </small>
                     </div>
                 </div>
             </div>
@@ -327,7 +325,7 @@
                         </div>
                         <p class="mb-1"><strong> TAKORADI </strong> </p>
                         <h4 class="card-title mb-3 text-white"><strong>&#x20B5;{{number_format(0, 2)}} </strong> </h4>
-                        <small class="fw-medium"> TOTAL </small>
+                        <small class="fw-medium"> TOTAL DEPOSITS : <strong> {{0}}</strong> </small>
                     </div>
                 </div>
             </div>
@@ -350,7 +348,7 @@
                         </div>
                         <p class="mb-1"><strong> KOFORIDUA </strong> </p>
                         <h4 class="card-title mb-3 text-white"><strong>&#x20B5;{{number_format(0, 2)}} </strong> </h4>
-                        <small class="fw-medium"> TOTAL </small>
+                        <small class="fw-medium"> TOTAL DEPOSITS : <strong> {{0}}</strong> </small>
                     </div>
                 </div>
             </div>
@@ -373,7 +371,7 @@
                         </div>
                         <p class="mb-1"><strong> KUMASI </strong> </p>
                         <h4 class="card-title mb-3 text-white"><strong>&#x20B5;{{number_format(0, 2)}} </strong> </h4>
-                        <small class="fw-medium"> TOTAL </small>
+                        <small class="fw-medium"> TOTAL DEPOSITS : <strong> {{0}}</strong> </small>
                     </div>
                 </div>
             </div>
@@ -381,30 +379,27 @@
         @endif
         <br><br>
 
-        <hr> <br>
+        <hr><br>
         <div class="card-header  ml-2  d-none d-lg-block">
             @include('flash-messages')
         </div>
         <div class="row">
-            <div class="col-8">
-                <h4 class="card-header text-dark"> Bank Transactions </h4>
-            </div>
-            <div class="col-4 ">
-                <!-- add bank -->
-                <div class="float-end">
-                    <button
-                        type="button"
-                        class="btn btn-dark"
-                        data-bs-toggle="modal"
-                        data-bs-target="#basicModal">
-                        <i class="icon-base bx bxs-bank"> </i>Add Bank
-                    </button>
-                </div>
+
+            <div class="col-6 ">
+                <!-- add client -->
+                <button
+                    type="button"
+                    class="btn btn-dark"
+                    data-bs-toggle="modal"
+                    data-bs-target="#basicModal">
+                    <i class="icon-base bx bx-arrow-from-left"> </i>Add Bank Deposit
+                </button>
+
                 <div class="modal fade" id="basicModal" tabindex="-1" aria-hidden="true">
                     <div class="modal-dialog" role="document">
                         <div class="modal-content">
                             <div class="modal-header">
-                                <h5 class="modal-title" id="exampleModalLabel1">Add Bank</h5>
+                                <h5 class="modal-title" id="exampleModalLabel1">Add Bank Deposit</h5>
                                 <button
                                     type="button"
                                     class="btn-close"
@@ -412,82 +407,117 @@
                                     aria-label="Close"></button>
                             </div>
 
-                            <form method="POST" action="/banks">
+                            <form method="POST" action="/deposit">
                                 @csrf
                                 <div class="modal-body">
+
                                     <div class="row">
                                         <div class="col mb-0">
-                                            <label for="name" class="form-label"> {{ __('Name') }}</label>
-                                            <input
-                                                type="text"
-                                                name="name"
-                                                id="name"
-                                                class="form-control @error('name') is-invalid @enderror"
-                                                value="{{ old('name')}}"
-                                                placeholder="Bank Name"
-                                                required
-                                                autocomplete="name"
-                                                autofocus>
+                                            <div class="input-group">
+                                                <label class="input-group-text" for="bank_id">{{ __('Bank') }}</label>
+                                                <select name="bank_id" class="form-select @error('bank_id') is-invalid @enderror" id="bank_id" value="{{ old('bank_id')}}" required>
+                                                    <option selected disabled>Choose...</option>
+                                                    @foreach($banks as $bank)
+                                                    <option value="{{$bank->id}}">{{$bank->name}}</option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
 
-                                            @error('name')
+                                            @error('bank_id')
                                             <span class="invalid-feedback" role="alert">
                                                 <strong>{{ $message }}</strong>
                                             </span>
                                             @enderror
-
-
                                         </div>
-
                                     </div>
-                                    <div class="row g-6">
 
+
+                                    <div class="row">
                                         <div class="col mb-0">
-                                            <label for="acc_number" class="form-label"> {{ __('Account Number') }} </label>
+                                            <label for="dpst_name" class="form-label"> {{ __('Name of Depositor') }}</label>
                                             <input
                                                 type="text"
-                                                id="acc_number"
-                                                name="acc_number"
-                                                class="form-control @error('acc_number') is-invalid @enderror"
-                                                value="{{ old('acc_number')}}"
-                                                placeholder="Account Number"
-                                                autocomplete=" acc_number"
+                                                name="dpst_name"
+                                                id="dpst_name"
+                                                class="form-control @error('dpst_name') is-invalid @enderror"
+                                                value="{{ old('dpst_name')}}"
+                                                placeholder="Name of Depositor"
+                                                autocomplete="dpst_name"
                                                 required
                                                 autofocus>
 
-                                            @error('acc_number')
+                                            @error('dpst_name')
                                             <span class="invalid-feedback" role="alert">
                                                 <strong>{{ $message }}</strong>
                                             </span>
                                             @enderror
                                         </div>
+                                    </div>
 
+                                    <div class="row">
+                                        <div class="col mb-0">
+                                            <label for="reason" class="form-label"> {{ __('Description') }}</label>
+                                            <input
+                                                type="text"
+                                                name="reason"
+                                                id="reason"
+                                                class="form-control @error('reason') is-invalid @enderror"
+                                                value="{{ old('reason')}}"
+                                                placeholder="Description"
+                                                autocomplete="reason"
+                                                autofocus>
+
+                                            @error('reason')
+                                            <span class="invalid-feedback" role="alert">
+                                                <strong>{{ $message }}</strong>
+                                            </span>
+                                            @enderror
+                                        </div>
                                     </div>
 
                                     <div class="row g-6">
-
                                         <div class="col mb-0">
-                                            <label for="branch" class="form-label"> {{ __('Branch') }} </label>
+                                            <label for="cash_amount" class="form-label"> {{ __('Cash Amount') }} </label>
                                             <input
-                                                type="text"
-                                                id="branch"
-                                                name="branch"
-                                                class="form-control @error('branch') is-invalid @enderror"
-                                                value="{{ old('branch')}}"
-                                                placeholder=" Branch"
-                                                required
-                                                autocomplete="branch"
+                                                type="number"
+                                                id="cash_amount"
+                                                name="cash_amount"
+                                                class="form-control @error('cash_amount') is-invalid @enderror"
+                                                value="{{ old('cash_amount')}}"
+                                                placeholder="Cash Amount"
+                                                autocomplete=" cash_amount"
+                                                step="any"
                                                 autofocus>
 
-                                            @error('branch')
+                                            @error('cash_amount')
                                             <span class="invalid-feedback" role="alert">
                                                 <strong>{{ $message }}</strong>
                                             </span>
                                             @enderror
                                         </div>
-
-
                                     </div>
 
+                                    <div class="row g-6">
+                                        <div class="col mb-0">
+                                            <label for="cheque_amount" class="form-label"> {{ __('Cheque Amount') }} </label>
+                                            <input
+                                                type="number"
+                                                id="cheque_amount"
+                                                name="cheque_amount"
+                                                class="form-control @error('cheque_amount') is-invalid @enderror"
+                                                value="{{ old('cheque_amount')}}"
+                                                placeholder="Cheque Amount"
+                                                autocomplete=" cheque_amount"
+                                                step="any"
+                                                autofocus>
+
+                                            @error('cheque_amount')
+                                            <span class="invalid-feedback" role="alert">
+                                                <strong>{{ $message }}</strong>
+                                            </span>
+                                            @enderror
+                                        </div>
+                                    </div>
                                 </div>
                                 <div class="modal-footer">
                                     <button type="submit" class="btn btn-dark d-grid w-100">{{ __('Add') }}</button>
@@ -504,144 +534,31 @@
 
         <div class="row">
 
-            <div class="col-8">
-                <table id="myTable" class="display">
-                    <thead>
-                        <tr>
-                            <!-- <th>#</th> -->
-                            <th>Bank ID</th>
-                            <th>Credit</th>
-                            <th>Deposit ID</th>
-                            <th>Receipt ID</th>
-                            <th>Debit</th>
-                            <th>Expense ID</th>
-                            <th>Closing Balance</th>
-                            <th>Date</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-
-                        @if(Auth::user()->hasRole('Invoice') || Auth::user()->hasRole('Finance Manager'))
-                        @foreach($bankTransactions as $transaction)
-                        <tr>
-
-                            <td> {{$transaction->bank->name}} </td>
-                            <td> {{$transaction->credit}} </td>
-                            <td> {{$transaction->deposit_id}} </td>
-                            <td> {{$transaction->receipt_id}} </td>
-                            <td> {{$transaction->debit}} </td>
-                            <td> {{$transaction->expense_id}} </td>
-                            <td> {{$transaction->balance}} </td>
-                            <td> {{$transaction->created_at->format('F l d, Y, H:i A')}} </td>
-                        </tr>
-                        @endforeach
-                        @elseif(Auth::user()->field?->name == 'Accra')
-
-                        <tr>
-                            <td></td>
-
-
-                        </tr>
-
-                        @endif
-
-
-                        @if(Auth::user()->field?->name == 'Botwe')
-
-                        <tr>
-                            <td></td>
-
-
-                        </tr>
-
-                        @endif
-
-
-                        @if(Auth::user()->field?->name == 'Tema')
-
-                        <tr>
-                            <td></td>
-
-
-                        </tr>
-
-                        @endif
-
-
-                        @if(Auth::user()->field?->name == 'Takoradi')
-
-                        <tr>
-                            <td></td>
-
-
-                        </tr>
-
-                        @endif
-
-
-                        @if(Auth::user()->field?->name == 'Koforidua')
-
-                        <tr>
-                            <td></td>
-
-
-                        </tr>
-
-                        @endif
-
-
-                        @if(Auth::user()->field?->name == 'Kumasi')
-
-                        <tr>
-
-                            <td></td>
-
-
-                        </tr>
-
-                        @endif
-                    </tbody>
-                </table>
-            </div>
-
-            <div class="col-4">
+            <div class="col">
                 <table id="myTable1" class="display">
                     <thead>
                         <tr>
                             <th>#</th>
-                            <th>Name</th>
+                            <th>Depositor</th>
+                            <th>Description</th>
+                            <th>Bank</th>
+                            <th>Cash Amount</th>
+                            <th>Cheque Amount</th>
                             <th>Total</th>
-                            <th>Action</th>
                         </tr>
                     </thead>
                     <tbody>
 
                         @if(Auth::user()->hasRole('Invoice') || Auth::user()->hasRole('Finance Manager'))
-                        @foreach($banks as $bank)
+                        @foreach($collections as $collection)
                         <tr>
-                            <td>{{$bank->id}}</td>
-                            <td>{{$bank->name}} </td>
-                            <td>{{$bank->total}} </td>
-
-                            <td>
-                                <div class="dropdown">
-                                    <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown">
-                                        <i class="icon-base bx bx-dots-vertical-rounded"></i>
-                                    </button>
-                                    <div class="dropdown-menu">
-                                        <a class="dropdown-item" href="{{url('banks', $bank->id)}}"><i class="icon-base bx bxs-bullseye"></i> view</a>
-
-                                        <!-- <a class="dropdown-item" href="banks/{{$bank->id}}/edit"><i class="icon-base bx bx-edit-alt me-1"></i> Edit</a> -->
-
-                                        <form action="banks/{{$bank->id}}" method="POST">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button class="dropdown-item" type="submit"><i class="icon-base bx bx-trash me-1"></i>Delete</button>
-                                        </form>
-
-                                    </div>
-                                </div>
-                            </td>
+                            <td>{{$collection?->id}}</td>
+                            <td>{{$collection?->dpst_name}} </td>
+                            <td>{{$collection?->reason}} </td>
+                            <td>{{$collection?->bank_id}} </td>
+                            <td>{{$collection?->cash_amount}} </td>
+                            <td>{{$collection?->cheque_amount}} </td>
+                            <td>{{$collection?->total}} </td>
 
                         </tr>
                         @endforeach
@@ -735,8 +652,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
     <script src="https://cdn.datatables.net/buttons/3.2.4/js/buttons.html5.min.js"></script>
 
-    <script src="https://cdn.datatables.net/columncontrol/1.1.1/js/dataTables.columnControl.min.js"></script>
-
 
     <script>
         new DataTable('#myTable', {
@@ -746,10 +661,7 @@
                 topStart: {
                     buttons: ['excelHtml5', 'pdfHtml5']
                 }
-            },
-            columnControl: [
-                ['search']
-            ]
+            }
         });
     </script>
 

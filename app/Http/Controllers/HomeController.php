@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Bank;
 use App\Models\Department;
 use App\Models\Field;
 use App\Models\User;
@@ -126,6 +127,7 @@ class HomeController extends Controller
 
         $receiept_TransferAmount = [$accra_receiept_TransferAmount, $botwe_receiept_TransferAmount,  $tema_receiept_TransferAmount, $takoradi_receiept_TransferAmount, $koforidua_receiept_TransferAmount, $kumasi_receiept_TransferAmount];
 
+        $banks = Bank::all();
 
         // $current_5_invoices = Invoice::orderBy('id', 'desc')->take(5)->get();
         // $current_5_receipts = Receipt::orderBy('id', 'desc')->take(5)->get();
@@ -138,7 +140,7 @@ class HomeController extends Controller
 
         if($user->department?->name == 'Accounts' )
         {
-            return view('sales.dashboard', compact('total_after_wht', 'total_wth' ,'sum_invoices' ,'invoices_outstanding','balance_outstanding', 'receiept_CashAmount', 'receiept_MoMoAmount', 'receiept_BankAmount', 'receiept_TransferAmount', 'receipt_AllPayment'));
+            return view('sales.dashboard', compact('banks','total_after_wht', 'total_wth' ,'sum_invoices' ,'invoices_outstanding','balance_outstanding', 'receiept_CashAmount', 'receiept_MoMoAmount', 'receiept_BankAmount', 'receiept_TransferAmount', 'receipt_AllPayment'));
         }
 
         if($user->department?->name == 'HR')

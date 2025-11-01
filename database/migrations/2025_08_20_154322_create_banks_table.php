@@ -15,6 +15,8 @@ return new class extends Migration
             $table->id();
             $table->string('name')->unique();
             $table->string('branch');
+            $table->string('acc_number');
+            $table->decimal('total')->nullable();
             $table->integer('user_id')->nullable();
             $table->timestamps();
         });
