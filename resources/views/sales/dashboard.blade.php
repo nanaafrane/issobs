@@ -105,6 +105,13 @@
         </ul>
       </li>
 
+      <li class="menu-item">
+        <a href="{{url('expense')}}" class="menu-link">
+          <i class="menu-icon tf-icons bx bx-bxs-credit-card bg-secondary"></i>
+          <div class="text-truncate" data-i18n="Expense"> Expense </div>
+        </a>
+      </li>
+
       @endif
 
     </ul>

@@ -5,6 +5,7 @@ use App\Http\Controllers\BankDepositController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\CollectionController;
 use App\Http\Controllers\DepartmentController;
+use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\FieldController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InvoiceController;
@@ -66,5 +67,5 @@ Route::resource('deposit', BankDepositController::class);
 
 Route::resource('banks', BankController::class);
 
-
+Route::resource('expense', ExpenseController::class);
 

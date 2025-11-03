@@ -237,7 +237,7 @@
                                                 id="unit_price"
                                                 value="{{$data->unit_price}}"
                                                 oninput="unitPrice()"
-                                                class="form-control"
+                                                class="form-control" step="any"
                                                 placeholder="GH&#8373;">
                                         </div>
                                     </div>
@@ -250,7 +250,7 @@
                                                 name="amount[]"
                                                 id="amount"
                                                 value="{{$data->amount}}"
-                                                class="form-control"
+                                                class="form-control" step="any"
                                                 placeholder="GH&#8373;">
                                         </div>
                                     </div>
@@ -277,6 +277,22 @@
     </div>
     </div>
 
+    @endsection
+
+    @section('scripts')
+    <script>
+        function unitPrice() {
+            let amount;
+            let quantity = document.getElementById("quantity").value;
+
+            let unit_price = document.getElementById("unit_price").value;
+            // console.log(unit_price);
+            amount = quantity * unit_price;
+
+            document.getElementById("amount").value = amount;
+            // // console.log(amount);
+        }
+    </script>
     @endsection
 
 </x-sales-dashboard>
