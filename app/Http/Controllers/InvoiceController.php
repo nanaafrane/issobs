@@ -204,7 +204,16 @@ class InvoiceController extends Controller
         $unit_price = $request->input('unit_price');
         $amount = $request->input('amount');
         $sum_amount_from_invoice = array_sum($amount);
+        $vat_standard = $request->input('vat_standard');
 
+        $nhilAmount = null;
+        $getfundAmount = null;
+        $chrlAmount = null;
+        $sub_total_without_vat = null;
+        $vatAmount = null;
+        $total = $sum_amount_from_invoice;
+
+        if($vat_standard == 'on'){
         // dd($description, $quantity, $quantity_count, $unit_price, $amount, $sum_amount_from_invoice);
         $vat =  new Vat();
         $nhilAmount = $vat->getNhilAmount($sum_amount_from_invoice);
@@ -216,7 +225,7 @@ class InvoiceController extends Controller
         $vatAmount = $vat->getVatAmount($sub_total_without_vat);
 
         $total = $sub_total_without_vat + $vatAmount;
-
+        }
 
         // dd($description, $service_name, $quantity, $quantity_count, $unit_price, $amount, $sum_amount_from_invoice, $nhilAmount, $getfundAmount, $chrlAmount, $sub_total_without_vat, $vatAmount, $total);
         if ($quantity_count > 0)
