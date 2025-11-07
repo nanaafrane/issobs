@@ -153,7 +153,7 @@
                                     <script>
                                         document.write(new Date().getFullYear());
                                     </script>
-                                    developed with Laravel by KONECT ENTERPRISE
+                                    developed with Laravel by AJKONECT ENTERPRISE
 
                                 </div>
 

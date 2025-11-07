@@ -350,6 +350,10 @@
         </div><br><br>
         @endif
 
+        <div class="card-header  ml-2  d-none d-lg-block">
+            @include('flash-messages')
+        </div>
+
         <div class="row">
             <div class="col">
                 <table id="myTable" class="display">
@@ -403,7 +407,6 @@
                             <td> {{$client->address}} </td>
                             <td> {{$client->branch}} </td>
 
-                            @if(Auth::user()->hasPermission('HR'))
                             <td>
                                 <div class="dropdown">
                                     <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown">
@@ -412,23 +415,17 @@
                                     <div class="dropdown-menu">
                                         <a class="dropdown-item" href="{{url('client', $client->id)}}"><i class="icon-base bx bxs-bullseye"></i> view</a>
                                         <a class="dropdown-item" href="client/{{$client->id}}/edit"><i class="icon-base bx bx-edit-alt me-1"></i> Edit</a>
-
+                                        @if(Auth::user()->hasPermission('HR'))
                                         <form action="client/{{$client->id}}" method="POST">
                                             @csrf
                                             @method('DELETE')
                                             <button class="dropdown-item" type="submit"><i class="icon-base bx bx-trash me-1"></i>Delete</button>
                                         </form>
-
+                                        @endif
                                     </div>
                                 </div>
                             </td>
-                            @else
-                            <td>
-                                <a href="{{url('client', $client->id)}}" class="btn btn-danger">
-                                    <i class="icon-base bx bxs-bullseye"></i>
-                                </a>
-                            </td>
-                            @endif
+
 
                         </tr>
                         @endforeach

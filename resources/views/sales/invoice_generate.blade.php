@@ -229,7 +229,7 @@
                                                 name="quantity[]"
                                                 id="quantity"
                                                 class="form-control"
-                                                placeholder="Quantity" required>
+                                                placeholder="Quantity" step="any" required>
                                         </div>
                                     </div>
 
@@ -331,7 +331,7 @@
                                                 name="quantity[]"
                                                 id="quantity"
                                                 class="form-control"
-                                                placeholder="Quantity" required>
+                                                placeholder="Quantity" step="any" required>
                                         </div>
                                     </div>
 

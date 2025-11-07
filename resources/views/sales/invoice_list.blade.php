@@ -186,7 +186,7 @@
                                                     </button>
                                                     <div class="dropdown-menu">
                                                         <a class="dropdown-item" href="{{url('invoice', $invoice->id)}}"><i class="icon-base bx bxs-bullseye"></i> view</a>
-                                                        @if($invoice->status !== 'completed' )
+                                                        @if($invoice->status !== 'completed' && $invoice->status !== 'uncompleted' )
                                                         <a class="dropdown-item" href="invoice/{{$invoice->id}}/edit"><i class="icon-base bx bx-edit-alt me-1"></i> Edit</a>
 
                                                         <!-- <a class="dropdown-item" href=""><i class="icon-base bx bx-trash me-1"></i> Delete</a> -->

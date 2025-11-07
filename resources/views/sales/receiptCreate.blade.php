@@ -230,7 +230,7 @@
                                             class="form-control"
                                             placeholder="GH&#8373;"
                                             autocomplete="cheque_amount"
-                                            step="0.01"
+                                            step="any"
                                             autofocus>
                                     </div>
 
@@ -273,7 +273,7 @@
                                             class="form-control"
                                             placeholder="GH&#8373;"
                                             autocomplete="transfer_amount"
-                                            step="0.01"
+                                            step="any"
                                             autofocus>
                                     </div>
 
@@ -316,7 +316,7 @@
                                             class="form-control"
                                             placeholder="GH&#8373;"
                                             autocomplete="momo_amount"
-                                            step="0.01"
+                                            step="any"
                                             autofocus>
                                     </div>
 
@@ -336,7 +336,7 @@
                                             class="form-control"
                                             placeholder="GH&#8373;"
                                             autocomplete="cash_amount"
-                                            step="0.01"
+                                            step="any"
                                             autofocus>
                                     </div>
                                     <!-- end of cash value -->

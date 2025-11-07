@@ -162,7 +162,7 @@ class ClientController extends Controller
     {
         //dd($request->all(), $client);
         $client->update($request->all());
-        return redirect('client')->with('info', 'Client Updated Sucessfully');
+        return redirect('client')->with('info', $client->id. ' '.'Client Updated Sucessfully');
 
     }
 

@@ -41,7 +41,7 @@ class InvoiceController extends Controller
     public function printInvoice($invoice_id)
     {
         $invoice = Invoice::findOrFail($invoice_id);
-        $invoice_data = DB::table('invoice_data')->where('invoice_number', $invoice_id)->get();
+        $invoice_data = DB::table('invoice_data')->where('invoice_number', $invoice_id)->orderBy('invoice_number', 'desc')->get();
         return view('sales.print', compact('invoice', 'invoice_data'));
     }
 
@@ -164,7 +164,7 @@ class InvoiceController extends Controller
     {
         //
         // dd($invoice);
-        $invoice_data = DB::table('invoice_data')->where('invoice_number', $invoice->id)->get();
+        $invoice_data = DB::table('invoice_data')->where('invoice_number', $invoice->id)->orderBy('invoice_number', 'desc')->get();
         return view('sales.invoice_show', compact('invoice', 'invoice_data'));
 
     }

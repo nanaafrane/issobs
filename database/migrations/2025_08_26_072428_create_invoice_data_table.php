@@ -15,7 +15,7 @@ return new class extends Migration
             $table->unsignedBigInteger('invoice_number')->nullable();
             $table->string('service_name')->nullable();
             $table->string('description')->nullable();
-            $table->integer('quantity')->nullable();
+            $table->decimal('quantity')->nullable();
             $table->decimal('unit_price')->nullable();
             $table->decimal('amount')->nullable();
             $table->timestamps();
