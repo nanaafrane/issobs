@@ -200,7 +200,7 @@
                                                 <strong> Business Name : {{$invoice->client->business_name}}, </strong> <br>
                                                 Location: {{$invoice->client->address}},<br>
                                                 {{$invoice->client->field->name}},<br>
-                                                Phone: {{$invoice->client->phone_number}},<br>
+                                                Phone: {{$invoice->client->phone_number}}, {{$invoice->client->phone_number1}}<br>
                                             </address>
                                         </div>
                                         <div class="col-12 col-sm-6 col-md-4">

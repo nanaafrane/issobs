@@ -171,18 +171,36 @@
 
                                             </div>
                                             <div class="col mb-0">
-                                                <label for="phone_number" class="form-label"> {{ __('Phone Number') }} </label>
+                                                <label for="phone_number" class="form-label"> {{ __('Phone Number 1') }} </label>
                                                 <input
                                                     type="number"
                                                     id="phone_number"
                                                     name="phone_number"
                                                     class="form-control @error('phone_number') is-invalid @enderror"
                                                     value="{{ old('phone_number')}}"
-
+                                                    placeholder="Phone Number 1"
                                                     autocomplete=" phone_number"
                                                     autofocus>
 
                                                 @error('phone_number')
+                                                <span class="invalid-feedback" role="alert">
+                                                    <strong>{{ $message }}</strong>
+                                                </span>
+                                                @enderror
+                                            </div>
+                                            <div class="col mb-0">
+                                                <label for="phone_number1" class="form-label"> {{ __('Phone Number 2') }} </label>
+                                                <input
+                                                    type="number"
+                                                    id="phone_number1"
+                                                    name="phone_number1"
+                                                    class="form-control @error('phone_number1') is-invalid @enderror"
+                                                    value="{{ old('phone_number1')}}"
+                                                    placeholder="Phone Number 2"
+                                                    autocomplete=" phone_number1"
+                                                    autofocus>
+
+                                                @error('phone_number1')
                                                 <span class="invalid-feedback" role="alert">
                                                     <strong>{{ $message }}</strong>
                                                 </span>
@@ -380,7 +398,7 @@
                                         <tr>
                                             <td> {{$client->id}} </td>
                                             <td> {{$client->name}}</td>
-                                            <td> {{$client->phone_number}} </td>
+                                            <td> {{$client->phone_number}}, {{$client->phone_number1}} </td>
                                             <td> {{$client->business_name}} </td>
                                             <td> {{$client->address}} </td>
                                             <td> {{$client->field->name}} </td>

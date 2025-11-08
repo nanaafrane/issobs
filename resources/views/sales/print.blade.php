@@ -89,7 +89,7 @@
                                                 <strong>{{$invoice->client->business_name}}.</strong> <br>
                                                 Location: {{$invoice->client->address}},<br>
                                                 {{$invoice->client->field->name}},<br>
-                                                Phone: {{$invoice->client->phone_number}},<br>
+                                                Phone: {{$invoice->client->phone_number}},{{$invoice->client->phone_number}}<br>
                                             </address>
                                         </div>
                                         <!-- <div class="col-3 col-sm-3 col-md-3"></div> -->
@@ -125,7 +125,7 @@
                                                 @foreach($invoice_data as $index => $data)
                                                 <tr style="font-size: 0.6rem">
                                                     <td> <strong>{{$index + 1}}</strong></td>
-                                                    <td >
+                                                    <td>
                                                         <h7 class="mb-1">{{$data->service_name}}</h7><br>
                                                         <h7> <strong>{{$data->description}}</strong></h7>
                                                     </td>

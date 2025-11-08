@@ -375,7 +375,7 @@
                         <tr>
                             <td> {{$client->id}} </td>
                             <td> {{$client->name}}</td>
-                            <td> {{$client->phone_number}} </td>
+                            <td> {{$client->phone_number}}, {{$client->phone_number1}} </td>
                             <td> {{$client->business_name}} </td>
                             <td>
                                 @if($client->field->name == 'Accra')

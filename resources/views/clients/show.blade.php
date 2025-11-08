@@ -200,7 +200,7 @@
                         <hr>
                         <p class="card-text">Client ID # : <strong> {{$client->id}}</strong> </p>
                         <p class="card-text">Client Name : <strong>{{$client->name}}</strong> </p>
-                        <p class="card-text">Phone Number : <strong>{{$client->phone_number}}</strong> </p>
+                        <p class="card-text">Phone Number : <strong>{{$client->phone_number}}, {{ $client->phone_number1}}</strong> </p>
                         <p class="card-text">Business Name : <strong>{{$client->business_name}}</strong> </p>
                         <p class="card-text">Address : <strong>{{$client->address}}</strong> </p>
                         <p class="card-text">Location : <strong>{{$client->field->name}}</strong> </p>

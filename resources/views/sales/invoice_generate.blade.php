@@ -160,7 +160,7 @@
                                     @endif
                                     Location: {{$client->address}},<br>
                                     {{$client->field->name}},<br>
-                                    Phone: {{$client->phone_number}},<br>
+                                    Phone: {{$client->phone_number}}, {{$client->phone_number1}}<br>
                                 </address>
                             </div>
                             <div class="col-12 col-sm-6 col-md-4">
