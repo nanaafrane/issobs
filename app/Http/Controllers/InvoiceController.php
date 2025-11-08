@@ -70,6 +70,7 @@ class InvoiceController extends Controller
            $invoice = new Invoice();
            $invoice->client_id = $request->input('client_id');
            $invoice->due_date = $request->input('due_date');
+           $invoice->invoice_month = $request->input('invoice_month');
            $vat_standard = $request->input('vat_standard');
            $invoice->status = 'unpaid';
 
@@ -151,7 +152,7 @@ class InvoiceController extends Controller
             // // select all transactions with this current invoice iD and assign value D to the checks culumn
             // Transaction::where('invoice_id', $invoice_number)->update(['checks' => 'd']);
 
-            return redirect('invoice')->with('success', 'Invoice Generated Successfully');
+            return redirect('invoice')->with('primary', 'Invoice Generated Successfully');
 
         }
         //    dd($invoice_number);
@@ -196,8 +197,9 @@ class InvoiceController extends Controller
     {
         //
         // dd($invoice, $request->all());
-        $service_name = $request->input('service_name');
+        $service_name = $request->input('service');
         $due_date = $request->input('due_date');
+        $invoice_month = $request->input('invoice_month');
         $description   = $request->input('description');
         $quantity   = $request->input('quantity');
         $quantity_count = count($quantity);
@@ -258,10 +260,11 @@ class InvoiceController extends Controller
             'sub_total' => $sub_total_without_vat,
             'total' => $total,
             'due_date' => $due_date,
+            'invoice_month' => $invoice_month,
             'user_id' => Auth::user()->id,
         ]);
 
-        return redirect('invoice')->with('info', 'Invoice Updated Successfully');
+        return redirect('invoice')->with('primary', 'Invoice Updated Successfully');
 
     }
 

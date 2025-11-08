@@ -125,7 +125,7 @@
         <div class="container-xxl flex-grow-1 container-p-y">
             <div class="row">
                 <div class="col-6">
-                    <h3 class="card-header text-info"> <i class="icon-base bx bx-bxs-receipt"></i> Receipt <i class="icon-base bx bx-bxs-right-arrow-alt"></i> List </h3>
+                    <h3 class="card-header text-primary"> <i class="icon-base bx bx-bxs-receipt"></i> Receipt <i class="icon-base bx bx-bxs-right-arrow-alt"></i> List </h3>
                 </div>
                 <div style="padding-left: 350px;" class="col-6">
                     <a class="btn btn-danger" href="{{url('receipt/create')}}"> <i class="icon-base bx bx-bxs-user-plus"></i> Create </a>

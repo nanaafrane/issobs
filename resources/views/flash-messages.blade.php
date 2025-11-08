@@ -5,6 +5,13 @@
 </div>
 @endif
 
+@if ($message = Session::get('primary'))
+<div class="alert alert-primary alert-dismissible fade show" role="alert">
+  <i class="bx bx-bxs-hand-up"> </i> <strong> {{ $message }}</strong>
+  <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+@endif
+
 @if ($message = Session::get('error'))
 <div class="alert alert-danger alert-dismissible fade show" role="alert">
   <i class="bx bx-bxs-hand-up"> </i> <strong> {{ $message }}</strong>

@@ -23,6 +23,7 @@ return new class extends Migration
             $table->decimal('sub_total')->nullable();
             $table->decimal('total')->nullable();
             $table->dateTime('due_date')->nullable();
+            $table->date('invoice_month')->nullable();
             $table->string('status')->nullable();
             $table->integer('user_id')->nullable();
             $table->decimal('balance')->default(0.00)->nullable();

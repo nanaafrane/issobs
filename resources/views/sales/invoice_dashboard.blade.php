@@ -124,7 +124,7 @@
 
         <div class="row">
             <div class="col-12">
-                <h3 class="card-header text-danger"> <i class="icon-base bx bx-bxs-receipt"></i> All Invoices </h3>
+                <h3 class="card-header text-primary"> <i class="icon-base bx bx-bxs-receipt"></i> All Invoices </h3>
             </div>
         </div><br>
 

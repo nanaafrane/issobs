@@ -117,7 +117,7 @@
             <div class="row">
                 <div class="col-12">
                     <!-- <div class="card"> -->
-                    <h3 class="card-header text-info"> <i class="icon-base bx bx-bxs-receipt"></i> Invoice <i class="icon-base bx bx-bxs-right-arrow-alt"></i> Generate </h3>
+                    <h3 class="card-header text-primary"> <i class="icon-base bx bx-bxs-receipt"></i> Invoice <i class="icon-base bx bx-bxs-right-arrow-alt"></i> Generate </h3>
                     <!-- <div class="card-body demo-vertical-spacing demo-only-element"> Invoice / Create </div> -->
                     <!-- </div> -->
                 </div>
@@ -180,6 +180,13 @@
                                     <h6 class="card-header">Due Date</h6>
                                     <div class="input-group">
                                         <input name="due_date" type="datetime-local" class="form-control" required>
+                                    </div>
+                                </div>
+                                <div class="col-3"></div>
+                                <div class="col-3">
+                                    <h6 class="card-header"> Invoice Month</h6>
+                                    <div class="input-group">
+                                        <input name="invoice_month" type="month" class="form-control" required>
                                     </div>
                                 </div>
                             </div> <br>
@@ -253,7 +260,6 @@
                                                 type="number"
                                                 name="amount[]"
                                                 id="amount"
-
                                                 class="form-control"
                                                 placeholder="GH&#8373;" step="any" required>
                                         </div>
@@ -301,67 +307,15 @@
 
     <script>
         $(document).ready(function() {
-
-            $('#add').click(function(e) {
-                e.preventDefault();
-
-                $('#product_form').prepend(`<div class="row">
-                                    <div class="col-2">
-                                        <h5 class="card-header" for="service" class="form-label"> Services </h5>
-                                        <select name="service[]" class="form-select" id="service" required>
-                                            <option selected disabled> Select </option>
-                                            @foreach($services as $service)
-                                            <option value="{{$service->name}}">{{$service->name}}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                    <div class="col-3">
-                                        <h5 class="card-header" for="description" class="form-label">Description</h5>
-                                        <textarea name="description[]"
-                                            id="description"
-                                            class="form-control"
-                                            placeholder="Description" class="form-control" rows="1" required></textarea>
-                                    </div>
-
-                                    <div class="col-2">
-                                        <h5 class="card-header">Quantity</h5>
-                                        <div class="input-group">
-                                            <input
-                                                type="number"
-                                                name="quantity[]"
-                                                id="quantity"
-                                                class="form-control"
-                                                placeholder="Quantity" step="any" required>
-                                        </div>
-                                    </div>
-
-                                    <div class="col-2">
-                                        <h5 class="card-header">Unit Price</h5>
-                                        <div class="input-group">
-                                            <input
-                                                type="number"
-                                                name="unit_price[]"
-                                                id="unit_price"
-                                                oninput="unitPrice()"
-                                                class="form-control"
-                                                placeholder="GH&#8373;" step="any" required>
-                                        </div>
-                                    </div>
-
-                                    <div class="col-3">
-                                        <h5 class="card-header">Amount</h5>
-                                        <div class="input-group">
-                                            <input
-                                                type="number"
-                                                name="amount[]"
-                                                id="amount"
-                                                step="any"
-                                                class="form-control"
-                                                placeholder="GH&#8373;" required>
-                                        </div>
-                                    </div>
-                                </div>
-                                `);
+            var i = 1;
+            $('#add').click(function() {
+                i++;
+                $('#product_form').prepend('<div class="row" id="row' + i + '"><div class="col-2"><h5 class="card-header" for="service" class="form-label"> Services </h5><select name="service[]" class="form-select" id="service" required><option selected disabled> Select </option>@foreach($services as $service)<option value="{{$service->name}}">{{$service->name}}</option>@endforeach</select></div><div class="col-3"><h5 class="card-header" for="description" class="form-label">Description</h5><textarea name="description[] "id="description" class="form-control" placeholder="Description" class="form-control" rows="1" required></textarea></div> <div class="col-2"><h5 class="card-header">Quantity</h5><div class="input-group"><input type="number" name="quantity[]" id="quantity" class="form-control" placeholder="Quantity" step="any" required></div></div> <div class="col-2"><h5 class="card-header">Unit Price</h5><div class="input-group"><input type="number" name="unit_price[] "id="unit_price" oninput="unitPrice()" class="form-control" placeholder="GH&#8373;" step="any" required></div></div> <div class="col-2"><h5 class="card-header">Amount</h5><div class="input-group"><input type="number" name="amount[]" id="amount" step="any" class="form-control" placeholder="GH&#8373;" required></div><button type="button" name="remove" id="' + i + '" class="btn btn-danger btn_remove" style="margin-left: 130px;margin-top: -65px;">-</button></div></div>');
+            });
+            $(document).on('click', '.btn_remove', function() {
+                var button_id = $(this).attr("id");
+                // console.log(button_id);
+                $('#row' + button_id + '').remove();
             });
 
         });

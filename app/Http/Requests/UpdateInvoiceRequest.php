@@ -22,7 +22,12 @@ class UpdateInvoiceRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'service' => 'required',
+            'due_date'  => 'required',
+            'invoice_month' => 'required',
+            'quantity' => 'required',
+            'unit_price' => 'required',
+            'amount'  => 'required',
         ];
     }
 }

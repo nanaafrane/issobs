@@ -124,7 +124,7 @@
         <div class="container-xxl flex-grow-1 container-p-y">
             <div class="row">
                 <div class="col-6">
-                    <h3 class="card-header text-info"> <i class="icon-base bx bx-bxs-receipt"></i> Invoice <i class="icon-base bx bx-bxs-right-arrow-alt"></i> List </h3>
+                    <h3 class="card-header text-primary"> <i class="icon-base bx bx-bxs-receipt"></i> Invoice <i class="icon-base bx bx-bxs-right-arrow-alt"></i> List </h3>
                 </div>
                 <div style="padding-left: 350px;" class="col-6">
                     <a class="btn btn-danger" href="{{url('invoice/create')}}"> <i class="icon-base bx bx-bxs-user-plus"></i> Create </a>
@@ -148,14 +148,15 @@
                                 <table id="myTable" class="display">
                                     <thead>
                                         <tr>
+                                            <th>#</th>
                                             <th>Invoice No.</th>
+                                            <th>Invoice Month</th>
                                             <th>Client Name</th>
                                             <th>Phone No.</th>
                                             <th>Business Name </th>
                                             <th> Field Office </th>
                                             <th> Staff </th>
                                             <th>Date Created</th>
-                                            <!-- <th>Date Updated</th> -->
                                             <th>Due Date</th>
                                             <th>Amount</th>
                                             <th>Status</th>
@@ -163,9 +164,11 @@
                                         </tr>
                                     </thead>
                                     <tbody class="table-border-bottom-0">
-                                        @foreach($invoices as $invoice)
+                                        @foreach($invoices as $key => $invoice)
                                         <tr>
+                                            <td>{{$key +1 }}</td>
                                             <td> #FWSSi{{$invoice->id}} </td>
+                                            <td> {{ $invoice->invoice_month?->format('F, Y') }}</td>
                                             <td> {{$invoice->client->name}}</td>
                                             <td> {{$invoice->client->phone_number}} </td>
                                             <td> {{$invoice->client->business_name}} </td>

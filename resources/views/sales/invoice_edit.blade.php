@@ -116,7 +116,7 @@
             <div class="row">
                 <div class="col-12">
                     <!-- <div class="card"> -->
-                    <h3 class="card-header text-info"> <i class="icon-base bx bx-bxs-receipt"></i> Invoice <i class="icon-base bx bx-bxs-right-arrow-alt"></i> Edit </h3>
+                    <h3 class="card-header text-primary"> <i class="icon-base bx bx-bxs-receipt"></i> Invoice <i class="icon-base bx bx-bxs-right-arrow-alt"></i> Edit </h3>
                     <!-- <div class="card-body demo-vertical-spacing demo-only-element"> Invoice / Create </div> -->
                     <!-- </div> -->
                 </div>
@@ -178,30 +178,38 @@
                             @csrf
                             @method('PUT')
 
-
                             <div class="row">
-                                <div class="col-md-6">
-                                    <!-- <h6 class="card-header">Due Date</h6> -->
+                                <div class="col-6">
+                                    <h6 class="card-header">Due Date</h6>
                                     <div class="input-group">
-                                        <input type="date" name="due_date" id="due_date" class="form-control" required>
+                                        <input value="{{$invoice->due_date}}" name="due_date" type="datetime-local" class="form-control" required>
                                     </div>
                                 </div>
+                                <div class="col-3"></div>
+                                <div class="col-3">
+                                    <h6 class="card-header"> Invoice Month</h6>
+                                    <div class="input-group">
+                                        <input name="invoice_month" type="date" value="{{$invoice->invoice_month}}" class="form-control" required>
+                                    </div>
+                                </div>
+                            </div> <br>
+                            <hr />
+                            <div class="row">
                                 <div class="col-md-6 form-check form-switch">
                                     <input name="vat_standard" class="form-check-input" type="checkbox" id="vat_standard" checked>
                                     <label class="form-check-label" for="vat_standard"> VAT STANDARD RATE </label>
                                 </div>
+                                <div class="col-md-6" style="padding-left: 250px;">
+                                    <button id="add" type="button" class="btn btn-danger">+</button>
+                                </div>
                             </div>
                             <br>
-
-
-
                             <div id="product_form">
-                                @foreach($invoice_data as $data)
-
-                                <div class="row">
+                                @foreach($invoice_data as $key => $data)
+                                <div class="row" id="roww{{$key}}">
                                     <div class="col-2">
-                                        <h5 class="card-header" for="service_name" class="form-label"> Services </h5>
-                                        <select name="service_name[]" class="form-select" id="service_name">
+                                        <h5 class="card-header" for="service" class="form-label"> Services </h5>
+                                        <select name="service[]" class="form-select" id="service">
                                             @foreach($services as $service)
                                             <option @if ($data->service_name == $service->name) selected @endif value="{{$service->name}}">{{$service->name}}</option>
                                             @endforeach
@@ -224,6 +232,7 @@
                                                 id="quantity"
                                                 value="{{$data->quantity}}"
                                                 class="form-control"
+                                                step="any"
                                                 placeholder="Quantity">
                                         </div>
                                     </div>
@@ -242,7 +251,7 @@
                                         </div>
                                     </div>
 
-                                    <div class="col-3">
+                                    <div class="col-2">
                                         <h5 class="card-header">Amount</h5>
                                         <div class="input-group">
                                             <input
@@ -253,6 +262,7 @@
                                                 class="form-control" step="any"
                                                 placeholder="GH&#8373;">
                                         </div>
+                                        <button type="button" id="del" class="btn btn-danger del" data-index="{{$key}}" style="margin-left: 130px;margin-top: -65px;">-</button>
                                     </div>
 
                                 </div>
@@ -293,6 +303,36 @@
             // // console.log(amount);
         }
     </script>
+
+    <script>
+        $(document).ready(function() {
+
+            $(".del").click(function() {
+                // var index = $(this).data('index');
+                var button_id1 = $(this).data('index');
+                $('#roww' + button_id1 + '').remove();
+                // console.log("Clicked button ID:", button_id1);
+            });
+        });
+    </script>
+
+    <script>
+        $(document).ready(function() {
+            var i = 1;
+            $('#add').click(function() {
+                i++;
+                $('#product_form').prepend('<div class="row" id="row' + i + '"><div class="col-2"><h5 class="card-header" for="service" class="form-label"> Services </h5><select name="service[]" class="form-select" id="service" required><option selected disabled> Select </option>@foreach($services as $service)<option value="{{$service->name}}">{{$service->name}}</option>@endforeach</select></div><div class="col-3"><h5 class="card-header" for="description" class="form-label">Description</h5><textarea name="description[] "id="description" class="form-control" placeholder="Description" class="form-control" rows="1" required></textarea></div> <div class="col-2"><h5 class="card-header">Quantity</h5><div class="input-group"><input type="number" name="quantity[]" id="quantity" class="form-control" placeholder="Quantity" step="any" required></div></div> <div class="col-2"><h5 class="card-header">Unit Price</h5><div class="input-group"><input type="number" name="unit_price[] "id="unit_price" oninput="unitPrice()" class="form-control" placeholder="GH&#8373;" step="any" required></div></div> <div class="col-2"><h5 class="card-header">Amount</h5><div class="input-group"><input type="number" name="amount[]" id="amount" step="any" class="form-control" placeholder="GH&#8373;" required></div><button type="button" name="remove" id="' + i + '" class="btn btn-danger btn_remove" style="margin-left: 130px;margin-top: -65px;">-</button></div></div>');
+            });
+            $(document).on('click', '.btn_remove', function() {
+                var button_id = $(this).attr("id");
+                // console.log(button_id);
+                $('#row' + button_id + '').remove();
+            });
+
+        });
+    </script>
+
+
     @endsection
 
 </x-sales-dashboard>

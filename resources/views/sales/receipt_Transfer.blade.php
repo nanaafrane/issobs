@@ -122,7 +122,7 @@
 
         <div class="row">
             <div class="col-12">
-                <h3 class="card-header text-info"> <i class="icon-base bx bx-bxs-receipt"></i> Transfer Payment </h3>
+                <h3 class="card-header text-primary"> <i class="icon-base bx bx-bxs-receipt"></i> Transfer Payment </h3>
             </div>
         </div><br>
 

@@ -20,6 +20,7 @@ class Invoice extends Model
         'sub_total',
         'total',
         'due_date',
+        'invoice_month',
         'status',
         'user_id',
         'balance',
@@ -28,7 +29,8 @@ class Invoice extends Model
     ];
 
     protected $casts = [
-        'due_date' => 'datetime'
+        'due_date' => 'datetime',
+        'invoice_month' => 'date',
     ];
 
 

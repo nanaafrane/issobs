@@ -68,9 +68,9 @@
                                                 <img width="150px" src="{{asset('img/icons/brands/issobs.png')}}" class="img-fluid" alt="BootstrapBrain Logo" width="135" height="44">
                                             </a>
                                         </div>
-                                        <div class="col-12" style="margin-top: -70px;">
-                                            <h4 class="text-danger">From</h4>
-                                            <address>
+                                        <div class="col-12" style="margin-top: -100px;">
+                                            <h5 class="text-danger">From</h5>
+                                            <address style="font-size: 0.7rem">
                                                 <strong>FIRST WATCH SECURITY SERVICE LIMITED.</strong><br>
                                                 P.O.BOX AN 18529,<br>
                                                 GPS: GA-105-4850,<br>
@@ -81,21 +81,23 @@
                                         </div>
                                     </div>
                                     <div class="row mb-3">
-                                        <div class="col-12 col-sm-6 col-md-8">
-                                            <h4 class="text-danger">Bill To</h4>
-                                            <address>
+                                        <div class="col-12 col-sm-6 col-md-6" style="margin-top: -20px;">
+                                            <h5 class="text-danger">Bill To</h5>
+                                            <address style="margin-top: -10px; font-size: 0.7rem">
                                                 <strong>{{$invoice->client->name}}</strong><br>
-                                                <strong> Business Name : {{$invoice->client->business_name}}, </strong> <br>
+                                                <strong> Business Name : </strong> <br>
+                                                <strong>{{$invoice->client->business_name}}.</strong> <br>
                                                 Location: {{$invoice->client->address}},<br>
                                                 {{$invoice->client->field->name}},<br>
                                                 Phone: {{$invoice->client->phone_number}},<br>
                                             </address>
                                         </div>
-                                        <div class="col-12 col-sm-6 col-md-4">
-                                            <h5 style="background: #f00d0dff;" class="row text-white">
+                                        <!-- <div class="col-3 col-sm-3 col-md-3"></div> -->
+                                        <div class="col-12 col-sm-6 col-md-3">
+                                            <h6 style="background: #f00d0dff;" class="row text-white">
                                                 <span class="col-12">Inv #: FWSSi{{$invoice->id}}</span>
-                                            </h5>
-                                            <address>
+                                            </h6>
+                                            <address style="font-size: 0.7rem">
                                                 <span class="card-header"> Issued : </span>
                                                 <span class="col-6"> {{$invoice->created_at->format('d/m/Y H:i A')}} </span> <br>
 
@@ -110,26 +112,26 @@
                                     <div class="table-responsive text-normal">
                                         <table class="table table-bordered">
                                             <thead class="table-light">
-                                                <tr>
+                                                <tr style="font-size: 0.3rem">
                                                     <th>#</th>
                                                     <th>Description</th>
                                                     <th>Quantity</th>
-                                                    <th>Unit Price</th>
-                                                    <th>Amount</th>
+                                                    <th>Unit_Price</th>
+                                                    <th style="white-space: nowrap; overflow: hidden;">Amount</th>
                                                 </tr>
                                             </thead>
                                             <tbody class="table-border-bottom-0">
 
                                                 @foreach($invoice_data as $index => $data)
-                                                <tr>
+                                                <tr style="font-size: 0.6rem">
                                                     <td> <strong>{{$index + 1}}</strong></td>
-                                                    <td>
-                                                        <h6 class="mb-1">{{$data->service_name}}</h6>
-                                                        <span class="fs-7"> <strong>{{$data->description}}</strong></span>
+                                                    <td >
+                                                        <h7 class="mb-1">{{$data->service_name}}</h7><br>
+                                                        <h7> <strong>{{$data->description}}</strong></h7>
                                                     </td>
                                                     <td><strong> {{$data->quantity}}</strong> </td>
                                                     <td> <strong> GH&#8373; {{number_format($data->unit_price, 2)}} </strong> </td>
-                                                    <td><strong> GH&#8373; {{number_format($data->amount, 2)}}</strong> </td>
+                                                    <td style="white-space: nowrap; overflow: hidden;"><strong> GH&#8373; {{number_format($data->amount, 2)}}</strong> </td>
                                                     @endforeach
                                                 </tr>
                                             </tbody>
@@ -138,31 +140,31 @@
 
                                     <div class="row mb-3">
                                         <div class="col-12 col-sm-6 col-md-8">
-                                            <address class="mt-5">
-                                                <span><strong><small> Bank Details</small> </strong> </span><br>
-                                                <span><small> <strong> Bank : ECOBANK</strong> </small> </span><br>
-                                                <span><small> <strong> A/C Name. : FIRST WATCH SECURITY SERVICES LIMITED </strong> </small> </span><br>
-                                                <span> <small> <strong> A/C No. : 1441003309093 </strong> </small> </span><br>
-                                                <span> <small> <strong> Branch : RE INSURANCE-H3 </strong> </small> </span><br><br>
+                                            <address style="font-size: 0.7em" class="mt-5">
+                                                <div> <strong> BANK DETAILS </strong> </div><br>
+                                                <strong> Bank : ECOBANK</strong><br>
+                                                <strong> A/C Name. : FIRST WATCH SECURITY SERVICES LIMITED </strong> <br>
+                                                <strong> A/C No. : 1441003309093 </strong> <br>
+                                                <strong> Branch : RE INSURANCE-H3 </strong> <br><br>
                                                 <!-- <hr class="text-dark"> -->
-                                                <span><strong> <small> MoMo Details </small> </strong> </span><br>
-                                                <span> <small> <strong> MoMo No. : 0555062422 </strong> </small> </span><br>
-                                                <span> <small> <strong> MoMo Name : FIRST WATCH SECURITY SERVICES LIMITED </strong> </small> </span><br>
+                                                <div> <strong> MOMO DETAILS </strong> </div><br>
+                                                <strong> MoMo No. : 0555062422 </strong> <br>
+                                                <strong> MoMo Name : FIRST WATCH SECURITY SERVICES LIMITED </strong> <br>
                                             </address>
                                         </div>
                                         <div class="col-12 col-sm-6 col-md-4 text-end">
-                                            <address>
-                                                <h6><strong>Sub Amount : GH&#8373; {{number_format($invoice->sub_amount, 2) }}</strong> </h6>
-                                                <h6> NHIL (2.5%) : GH&#8373; {{number_format($invoice->nhil, 2) }}</h6>
-                                                <h6>GETFUND (2.5%) : GH&#8373; {{ number_format($invoice->getfund, 2) }}</h6>
-                                                <h6> CHRL (1%) : GH&#8373; {{number_format($invoice->chrl, 2) }}</h6>
-                                                <h6><strong> SUB TOTAL : GH&#8373; {{ number_format($invoice->sub_total, 2) }} </strong> </h6>
-                                                <h6>VAT (15%) : GH&#8373; {{number_format($invoice->vat_amount, 2) }}</h6>
-                                                <h6><strong>GRAND TOTAL: GH&#8373; {{number_format($invoice->total, 2) }}</strong></h6>
+                                            <address style="font-size: 0.8rem">
+                                                <strong>Sub Amount : GH&#8373; {{number_format($invoice->sub_amount, 2) }}</strong><br> <br>
+                                                NHIL (2.5%) : GH&#8373; {{number_format($invoice->nhil, 2) }} <br>
+                                                GETFUND (2.5%) : GH&#8373; {{ number_format($invoice->getfund, 2) }} <br>
+                                                CHRL (1%) : GH&#8373; {{number_format($invoice->chrl, 2) }} <br> <br>
+                                                <strong> SUB TOTAL : GH&#8373; {{ number_format($invoice->sub_total, 2) }} </strong> <br> <br>
+                                                VAT (15%) : GH&#8373; {{number_format($invoice->vat_amount, 2) }} <br> <br>
+                                                <strong>GRAND TOTAL: GH&#8373; {{number_format($invoice->total, 2) }}</strong> <br>
                                             </address>
                                         </div>
                                     </div>
-                                    <h5><small> Invoice created by {{$invoice->user->name}} on {{$invoice->updated_at}} </small></h5>
+                                    <h7><small> Invoice created by {{$invoice->user->name}} on {{$invoice->updated_at}} </small></h7>
                                 </div>
                         </section>
                     </div>

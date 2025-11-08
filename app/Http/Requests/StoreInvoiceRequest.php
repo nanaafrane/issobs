@@ -22,7 +22,13 @@ class StoreInvoiceRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'service' => 'required'
+            'service' => 'required',
+            'due_date'  => 'required',
+            'invoice_month' => 'required',
+            'quantity' => 'required',
+            'client_id' => 'required|exists:clients,id',
+            'unit_price' => 'required',
+            'amount'  => 'required',
         ];
     }
 }

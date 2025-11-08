@@ -116,7 +116,7 @@
     <div class="container-xxl flex-grow-1 container-p-y">
         <div class="row">
             <div class="col-6 mb-8">
-                <h3 class="card-header text-info"> <i class="icon-base bx bx-bxs-receipt"></i> Receipt </h3>
+                <h3 class="card-header text-primary"> <i class="icon-base bx bx-bxs-receipt"></i> Receipt </h3>
             </div>
         </div>
 
