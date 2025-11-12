@@ -189,7 +189,7 @@ class ReceiptController extends Controller
         // dd($client->field->id, $fields);
         $current_collection = Collection::where('field_id', $client->field->id)->latest()->first();
 
-
+        // dd($client, $current_collection);
         // if payment is one time and is complete //
         if($status == 'completed' && $check1 == $total)
         {
@@ -214,14 +214,14 @@ class ReceiptController extends Controller
                 $transaction->status = $status;
                 $transaction->save();
 
-            // CREATE A COLLECTION HERE.................
+            // // CREATE A COLLECTION HERE.................
             $this->create_collection($current_collection, $cash_amount, $momo_amount, $cheque_amount, $transfer_amount, $total, $client->field->id);
             // END OF CREATE COLLECTIONS //
 
             //     // select all transactions with this current invoice iD and assign value d to the checks culumn
             Transaction::where('invoice_id', $invoice_id)->update(['checks' => 'd']);
 
-                return redirect('receipt')->with('success', 'Receipt created Successfully');
+                return redirect('receipt')->with('primary', 'Receipt created Successfully');
         }
         elseif($status == 'completed' && $check2 == 0 )
         {
@@ -259,7 +259,7 @@ class ReceiptController extends Controller
             return redirect('receipt')->with('success', 'Receipt created Successfully');
         }
         else {
-            // return "you're here! part payment ";
+            return "you're here! part payment ";
 
             // get the balance of the invoice
             if($invoice_data->balance > 0)
