@@ -29,6 +29,8 @@ return new class extends Migration
             $table->decimal('balance')->default(0.00)->nullable();
             $table->decimal('wht_amount')->nullable();
             $table->decimal('amount_received')->nullable();
+            $table->decimal('vat7_value')->nullable();
+            $table->decimal('vat7_amount')->nullable();
             $table->timestamps();
 
 

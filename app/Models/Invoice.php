@@ -26,6 +26,8 @@ class Invoice extends Model
         'balance',
         'wht_amount',
         'amount_received',
+        'vat7_value',
+        'vat7_amount',
     ];
 
     protected $casts = [

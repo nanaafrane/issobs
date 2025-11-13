@@ -159,17 +159,50 @@
                                 </div>
 
                                 <div id="wht_value" style="display: none;" class="col-md-6">
-                                    <input name="wht_amount" type="text" class="form-control" value="{{number_format($invoice->sub_amount * 0.075, 2)}}">
+                                    <input name="wht_amount" type="number" class="form-control" value="{{$invoice->sub_amount * 0.075}}" step="any">
+                                </div>
+                            </div>
+                            <br>
+                            <div class="row">
+                                <div class="col-md-6 form-check form-switch">
+                                    <input name="vat" class="form-check-input" type="checkbox" id="vat" >
+                                    <label class="form-check-label" for="vat"> 7 % VAT </label>
+                                </div>
+
+                                <div id="vat7_value" style="display: none;" class="col-md-6">
+                                    <input name="vat7_value" type="number" class="form-control" value="{{$invoice->sub_total * 0.07 }}" step="any">
                                 </div>
                             </div>
 
+                            <br>
+                            <div class="row">
+                                <div class="col-md-6 form-check form-switch">
+                                    <input name="deductions" class="form-check-input" type="checkbox" id="deductions" >
+                                    <label class="form-check-label" for="deductions"> OTHER DEDUCTIONS </label>
+                                </div>
+
+                                <div class="col mb-0">
+                                        <label for="receipt_month" class="form-label"> {{ __('RECEIPT DATE') }}</label>
+                                        <input
+                                           name="receipt_month" type="date"
+                                           class="form-control @error('receipt_month') is-invalid @enderror"
+                                            required>
+
+                                        @error('receipt_month')
+                                        <span class="invalid-feedback" role="alert">
+                                            <strong>{{ $message }}</strong>
+                                        </span>
+                                        @enderror
+                                </div>
+                            </div>
+                            <br>
 
                             <input type="number" name="invoice_id" value="{{$invoice->id}}" hidden>
                             <input type="number" name="client_id" value="{{$invoice->client_id}}" hidden>
                             <div class="modal-body">
                                 <div class="row">
                                     <div class="col mb-0">
-                                        <label for="from" class="form-label"> {{ __('From') }}</label>
+                                        <label for="from" class="form-label"> {{ __('FROM') }}</label>
                                         <input
                                             type="text"
                                             name="from"
@@ -190,7 +223,7 @@
 
                                     <div class="col mt-6">
                                         <div class="input-group">
-                                            <label class="input-group-text" for="inputGroupSelect01">{{ __('Mode') }}</label>
+                                            <label class="input-group-text" for="inputGroupSelect01">{{ __('MODE') }}</label>
                                             <select name="mode" class="form-select @error('mode') is-invalid @enderror" id="mode" required>
                                                 <option disabled selected>Choose...</option>
                                                 <option value="cheque">Cheque </option>
@@ -207,10 +240,52 @@
                                     </div>
                                 </div>
                                 <br>
+                                <div class="row"  id="deduction_field"  style="display: none;">
+                                    <div class="col mb-0">
+                                        <label for="dAmount" class="form-label"> {{ __('DEDUCTED AMOUNT') }}</label>
+                                        <input
+                                            type="number"
+                                            name="dAmount"
+                                            id="dAmount"
+                                            class="form-control @error('dAmount') is-invalid @enderror"
+
+                                            placeholder="Deducted Amount"
+                                            
+                                            autocomplete="dAmount"
+                                            autofocus
+                                            step="any">
+
+                                        @error('dAmount')
+                                        <span class="invalid-feedback" role="alert">
+                                            <strong>{{ $message }}</strong>
+                                        </span>
+                                        @enderror
+                                    </div>
+
+                                    <div class="col mb-0">
+                                        <label for="description" class="form-label"> {{ __('DESCRIPTION') }}</label>
+                                        <input
+                                            type="text"
+                                            name="description"
+                                            id="description"
+                                            class="form-control @error('description') is-invalid @enderror"
+                                            placeholder="Description"
+                                            autocomplete="description"
+                                            autofocus>
+
+                                        @error('description')
+                                        <span class="invalid-feedback" role="alert">
+                                            <strong>{{ $message }}</strong>
+                                        </span>
+                                        @enderror
+                                    </div>
+
+                                </div> <br>
+
                                 <!-- show if cheque value is selected -->
                                 <div id="chequerow" style="display: none;" class="row g-6">
                                     <div class="col mb-0">
-                                        <label for="cheque_reference" class="form-label"> {{ __('Cheque Reference #') }} </label>
+                                        <label for="cheque_reference" class="form-label"> {{ __('CHEQUE REFERENCE #') }} </label>
                                         <input
                                             type="text"
                                             id="cheque_reference"
@@ -222,7 +297,7 @@
                                     </div>
 
                                     <div class="col mb-0">
-                                        <label for="cheque_amount" class="form-label"> {{ __('Cheque Amount') }} </label>
+                                        <label for="cheque_amount" class="form-label"> {{ __('CHEQUE AMOUNT') }} </label>
                                         <input
                                             type="number"
                                             id="cheque_amount"
@@ -235,7 +310,7 @@
                                     </div>
 
                                     <div class="col mb-0">
-                                        <label for="cheque_bank" class="form-label"> {{ __('Cheque Bank') }} </label>
+                                        <label for="cheque_bank" class="form-label"> {{ __('CHEQUE BANK') }} </label>
                                         <input
                                             type="text"
                                             id="cheque_bank"
@@ -253,7 +328,7 @@
                                 <!-- show if Bank Transfer value is selected -->
                                 <div id="transferrow" style="display: none;" class="row g-6">
                                     <div class="col mb-0">
-                                        <label for="transfer_reference" class="form-label"> {{ __('Transfer Reference #') }} </label>
+                                        <label for="transfer_reference" class="form-label"> {{ __('TRANSFER REFERENCE #') }} </label>
                                         <input
                                             type="text"
                                             id="transfer_reference"
@@ -265,7 +340,7 @@
                                     </div>
 
                                     <div class="col mb-0">
-                                        <label for="transfer_amount" class="form-label"> {{ __('Transfer Amount') }} </label>
+                                        <label for="transfer_amount" class="form-label"> {{ __('TRANSFER AMOUNT') }} </label>
                                         <input
                                             type="number"
                                             id="transfer_amount"
@@ -278,7 +353,7 @@
                                     </div>
 
                                     <div class="col mb-0">
-                                        <label for="transfer_bank" class="form-label"> {{ __('Transfer Bank') }} </label>
+                                        <label for="transfer_bank" class="form-label"> {{ __('TRANSFER BANK') }} </label>
                                         <input
                                             type="text"
                                             id="transfer_bank"
@@ -296,7 +371,7 @@
                                 <!-- show if Momo value is selected -->
                                 <div id="momorow" style="display: none;" class="row g-6">
                                     <div class="col mb-0">
-                                        <label for="momo_transactin_id" class="form-label"> {{ __('MoMo Transaction id') }} </label>
+                                        <label for="momo_transactin_id" class="form-label"> {{ __('MOMO TRANSACTION ID') }} </label>
                                         <input
                                             type="text"
                                             id="momo_transactin_id"
@@ -308,7 +383,7 @@
                                     </div>
 
                                     <div class="col mb-0">
-                                        <label for="momo_amount" class="form-label"> {{ __('MoMo Amount') }} </label>
+                                        <label for="momo_amount" class="form-label"> {{ __('MOMO AMOUNT') }} </label>
                                         <input
                                             type="number"
                                             id="momo_amount"
@@ -328,7 +403,7 @@
                                 <div class="row">
                                     <!-- show if cash value is selected -->
                                     <div id="cashrow" style="display: none;" class="col mb-0">
-                                        <label for="cash_amount" class="form-label"> {{ __('Cash Amount') }}</label>
+                                        <label for="cash_amount" class="form-label"> {{ __('CASH AMOUNT') }}</label>
                                         <input
                                             type="number"
                                             name="cash_amount"
@@ -343,7 +418,7 @@
 
                                     <div class="col mt-6">
                                         <div class="input-group">
-                                            <label class="input-group-text" for="status">{{ __('Status') }}</label>
+                                            <label class="input-group-text" for="status">{{ __('STATUS') }}</label>
                                             <select name="status" class="form-select @error('status') is-invalid @enderror" id="status" required>
                                                 <option selected disabled>Choose...</option>
                                                 <option value="completed">Full Payment </option>
@@ -438,14 +513,33 @@
                     $('#wht_value').toggle();
                 }
             });
-
-
-
-            // var wth_value = $('#wth:checked').val();
-            // console.log(wth_value);
-
-
         });
     </script>
+
+    <script>
+        $(document).ready(function() {
+            $('#vat').change(function() {
+                if ($(this).is(':checked')) {
+                    $('#vat7_value').toggle();
+                    // console.log("Checkbox checked! Value: " + value);
+                } else {
+                    $('#vat7_value').toggle();
+                }
+            });
+        });
+    </script>
+
+    <script>
+    $(document).ready(function() {
+        $('#deductions').change(function() {
+            if ($(this).is(':checked')) {
+                $('#deduction_field').toggle();
+                // console.log("Checkbox checked! Value: " + value);
+            } else {
+                $('#deduction_field').toggle();
+            }
+        });
+    });
+</script>
     @endsection
 </x-sales-dashboard>

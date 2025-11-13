@@ -115,8 +115,8 @@
                                                 <tr style="font-size: 0.3rem">
                                                     <th>#</th>
                                                     <th>Description</th>
-                                                    <th>Quantity</th>
-                                                    <th>Unit_Price</th>
+                                                    <th>Qty</th>
+                                                    <th>Unit_price</th>
                                                     <th style="white-space: nowrap; overflow: hidden;">Amount</th>
                                                 </tr>
                                             </thead>
@@ -163,8 +163,9 @@
                                                 <strong>GRAND TOTAL: GH&#8373; {{number_format($invoice->total, 2) }}</strong> <br>
                                             </address>
                                         </div>
-                                    </div>
                                     <h7><small> Invoice created by {{$invoice->user->name}} on {{$invoice->updated_at}} </small></h7>
+
+                                    </div>
                                 </div>
                         </section>
                     </div>

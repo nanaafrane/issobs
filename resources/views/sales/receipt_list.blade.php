@@ -152,7 +152,7 @@
                                             <th>id</th>
                                             <th>Invoice No.</th>
                                             <th>Client Name</th>
-                                            <th>Phone No.</th>
+                                            <th>R. Month</th>
                                             <th>Business Name </th>
                                             <th> Field Office </th>
                                             <th> Staff </th>
@@ -161,7 +161,7 @@
                                             <!-- <th>Owing</th> -->
                                             <th>Paid</th>
                                             <th>Status</th>
-                                            <th>View</th>
+                                            <th>Action</th>
                                         </tr>
                                     </thead>
                                     <tbody class="table-border-bottom-0">
@@ -170,7 +170,7 @@
                                             <td>FWSSR{{$receipt->id}}</td>
                                             <td>FWSSi{{$receipt->invoice_id}} </td>
                                             <td> {{$receipt->client->name}}</td>
-                                            <td> {{$receipt->client->phone_number}} </td>
+                                            <td> {{$receipt->receipt_month?->format('F l d, Y')}} </td>
                                             <td> {{$receipt->client->business_name}} </td>
                                             <td> {{$receipt->client->field->name}} </td>
                                             <td> {{$receipt->user->name}} </td>
@@ -187,9 +187,22 @@
                                             @endif
 
                                             <td>
-                                                <a href="{{url('receipt', $receipt->id)}}" class="btn btn-info">
-                                                    <i class="icon-base bx bxs-bullseye"></i>
-                                                </a>
+                                                <div class="dropdown">
+                                                    <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown">
+                                                        <i class="icon-base bx bx-dots-vertical-rounded"></i>
+                                                    </button>
+                                                    <div class="dropdown-menu">
+                                                        <a class="dropdown-item" href="{{url('receipt', $receipt->id)}}"><i class="icon-base bx bxs-bullseye"></i> view</a>
+                                                        <a class="dropdown-item" href="receipt/{{$receipt->id}}/edit"><i class="icon-base bx bx-edit-alt me-1"></i> Edit</a>
+                                                        @if( Auth::user()->hasRole('Finance Manager') ||  Auth::user()->hasRole('Manager') )
+                                                        <form action="receipt/{{$receipt->id}}" method="POST">
+                                                            @csrf
+                                                            @method('DELETE')
+                                                            <button class="dropdown-item" type="submit"><i class="icon-base bx bx-trash me-1"></i>Delete</button>
+                                                        </form>
+                                                        @endif
+                                                    </div>
+                                                </div>
                                             </td>
                                         </tr>
                                         @endforeach

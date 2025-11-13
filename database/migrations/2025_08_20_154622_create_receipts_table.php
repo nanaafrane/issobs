@@ -17,6 +17,9 @@ return new class extends Migration
             $table->integer('client_id')->nullable();
             $table->string('from')->nullable();
             $table->string('mode')->nullable();
+            $table->decimal('dAmount')->nullable();
+            $table->date('receipt_month')->nullable();
+            $table->string('description')->nullable();
             $table->string('cheque_reference')->nullable();
             $table->decimal('cheque_amount')->nullable();
             $table->string('cheque_bank')->nullable();
@@ -31,6 +34,8 @@ return new class extends Migration
             $table->decimal('total')->nullable();
             $table->decimal('wht_amount')->nullable();
             $table->decimal('amount_received')->nullable();
+            $table->decimal('vat7_value')->nullable();
+            $table->decimal('vat7_amount')->nullable();
             $table->string('image', 512)->nullable();
             $table->timestamps();
         });

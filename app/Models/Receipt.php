@@ -12,6 +12,9 @@ class Receipt extends Model
         'client_id',
         'from',
         'mode',
+        'receipt_month',
+        'dAmount',
+        'description',
         'cheque_reference',
         'cheque_amount',
         'cheque_bank',
@@ -26,7 +29,14 @@ class Receipt extends Model
         'total',
         'wht_amount',
         'amount_received',
+        'vat7_value',
+        'vat7_amount',
         'image',
+    ];
+
+
+    protected $casts = [
+        'receipt_month' => 'date',
     ];
 
 

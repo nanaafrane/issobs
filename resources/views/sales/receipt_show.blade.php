@@ -174,19 +174,25 @@
                     <div class="card-body">
                         <h4 class="card-title"> Receipt Details <span class="badge bg-dark"> {{$receipt->status}} </span></h4>
                         <hr>
-                        <p class="card-text"><strong>Receipt #. : FWSSR{{$receipt->id}} </strong> </p>
-                        <p class="card-text"> <strong>From : {{$receipt->from}} </strong> </p>
-                        <p class="card-text"> <strong>Date Created : {{$receipt->created_at->format('l F d, Y, H:i A')}} </strong> </p>
-                        <div class="divider divider-dashed">
-                            <div class="divider-text"></div>
-                        </div>
-                        <p class="card-text"> <strong>AMOUNT RECEIVED : GH&#8373; {{number_format($receipt->amount_received, 2)}} </strong> </p>
-                        <p class="card-text"> <strong>WITHHOLDING TAX {{$wht->wht_rate * 100}}% : GH&#8373; {{number_format($receipt->wht_amount, 2)}} </strong> </p>
+                        <p class="card-text text-dark"><strong>Receipt #. : FWSSR{{$receipt->id}} </strong> </p>
+                        <p class="card-text text-dark"> <strong>From : {{$receipt->from}} </strong> </p>
+                        <p class="card-text text-dark"> <strong>Receipt Date : {{$receipt->receipt_month?->format('l F d, Y')}} </strong> <i class="icon-base bx bx-bxs-time"></i>  {{$receipt->receipt_month?->diffForHumans()}}</p>
+                       
+                        <p class="card-text text-dark"> <strong>Date System Generated : {{$receipt->created_at->format('l F d, Y, H:i A')}} </strong> </p>
+                        <p class="card-text text-dark"> <strong><i class="icon-base bx bx-bxs-time"></i> {{$receipt->created_at?->diffForHumans()}} </strong> </p>
+                        <hr>
+                        <p class="card-text text-dark"> <strong>WITHHOLDING TAX {{$wht->wht_rate * 100}}% : GH&#8373; {{number_format($receipt->wht_amount, 2)}} </strong> </p>
+                        <p class="card-text text-dark"> <strong>AMOUNT AFTER WTH : GH&#8373; {{number_format($receipt->amount_received, 2)}} </strong> </p>
+                        <p class="card-text text-dark"> <strong>7% VAT AMOUNT : GH&#8373; {{number_format($receipt->vat7_value, 2)}} </strong> </p>
+                        <p class="card-text text-dark"> <strong>AMOUNT AFTER 7% VAT : GH&#8373; {{number_format($receipt->vat7_amount, 2)}} </strong> </p>
+                        <hr>
+                        <p class="card-text text-dark"> <strong>OTHER DEDUCTIONS  : GH&#8373; {{number_format($receipt->dAmount, 2)}} </strong> </p>
+                        <p class="card-text text-dark"> <strong>DESCRIPTION  : {{$receipt->description}} </strong> </p>
                         <h4 class="card-text text-dark"> <strong>Receipt Total : GH&#8373; {{number_format($receipt->total, 2) }} </strong> </h4>
                     </div>
                 </div>
 
-                @if($receipt->cash_amount !== NULL )
+                @if($receipt->cash_amount > 0.00 )
                 <br>
                 <div class="card text-bg-success">
                     <div class="card-body">
@@ -198,7 +204,7 @@
                 @endif
                 <br>
 
-                @if($receipt->momo_amount !== NULL)
+                @if($receipt->momo_amount > 0.00)
                 <div class="card text-bg-warning">
                     <div class="card-body">
                         <h5 class="card-title text-white"> MOMO </h5>
@@ -210,7 +216,7 @@
                 <br>
                 @endif
 
-                @if($receipt->cheque_amount !== NULL)
+                @if($receipt->cheque_amount > 0.00)
                 <div class="card text-bg-info">
                     <img class="card-img-top" src="@if($receipt->image) {{asset('storage/'.$receipt->image)}} @else {{asset('img/deafImage.jpg')}}  @endif" alt="Card image cap" />
                     <div class="card-body">
@@ -223,7 +229,7 @@
                 @endif
 
                 <br>
-                @if($receipt->transfer_amount !== NULL)
+                @if($receipt->transfer_amount > 0.00)
                 <div class="card text-bg-secondary">
                     <div class="card-body">
                         <h5 class="card-title text-white"> TRANSFER </h5>
@@ -254,8 +260,8 @@
                         <div class="divider divider-dashed">
                             <div class="divider-text"></div>
                         </div>
-                        <p class="card-text text-danger">Total Amount Receiced : <strong> GH&#8373; {{number_format($receipt->invoice->amount_received, 2) }} </strong> </p>
-                        <p class="card-text text-danger">Total With Holdings : <strong> GH&#8373; {{number_format($receipt->invoice->wht_amount, 2) }} </strong> </p>
+                        <!-- <p class="card-text text-danger">Total Amount Receiced : <strong> GH&#8373; {{number_format($receipt->invoice->amount_received, 2) }} </strong> </p>
+                        <p class="card-text text-danger">Total With Holdings : <strong> GH&#8373; {{number_format($receipt->invoice->wht_amount, 2) }} </strong> </p> -->
                         @endif
                     </div>
                 </div>

@@ -274,6 +274,20 @@
                                             </address>
                                         </div>
                                     </div>
+                                    <hr>
+                                    <div class="row mb-3">
+                                        <div class="col-12 float-end">
+                                            <address>
+                                                <h6><strong>WITHHOLDING TAX 7.5 % : GH&#8373; {{number_format($invoice->wht_amount, 2) }} </strong> </h6>
+                                                <h6><strong> AMOUNT AFTER WTH : GH&#8373; {{number_format($invoice->amount_received, 2) }} </strong></h6>
+                                                <h6><strong> 7 % VAT AMOUNT : GH&#8373; {{ number_format($invoice->vat7_value, 2) }} </strong></h6>
+                                                <h6><strong> AMOUNT AFTER 7 % VAT : GH&#8373; {{number_format($invoice->vat7_amount, 2) }} </strong></h6>
+                                                <h6><strong> OTHER DEDUCTIONS : GH&#8373; {{ number_format($invoice->dAmount, 2) }} </strong> </h6>
+                                                <h6><strong> PAYMENT STATUS :  {{ $invoice->status }} </strong> </h6>
+                                            </address>
+                                        </div>
+                                    </div>
+
                                     <h5><small> Invoice created by {{$invoice->user->name}} on {{$invoice->updated_at}} </small></h5>
                                 </div>
                         </section>

@@ -132,9 +132,10 @@ class ReceiptController extends Controller
     {
 
         // Get all values from receipt form
-
         $status = $request->input('status');
         $wth_from_form = $request->input('wth');
+        $vat_from_form = $request->input('vat');
+        $deductions_from_form = $request->input('deductions');
         $invoice_id = $request->input('invoice_id');
         // dd($invoice_id);
         $invoice_data = Invoice::where('id',$invoice_id)->first();
@@ -142,18 +143,22 @@ class ReceiptController extends Controller
         $client_id = $request->input('client_id');
         $from = $request->input('from');
         $mode = $request->input('mode');
+        $receipt_date = $request->input('receipt_month');
+        $vat7_value = $request->float('vat7_value');
+        $dAmount = $request->float('dAmount');
+        $description = $request->input('description');
 
         $transfer_reference = $request->input('transfer_reference');
-        $transfer_amount = $request->input('transfer_amount');
+        $transfer_amount = $request->float('transfer_amount');
         $transfer_bank = $request->input('transfer_bank');
 
         $cheque_reference = $request->input('cheque_reference');
-        $cheque_amount = $request->input('cheque_amount');
+        $cheque_amount = $request->float('cheque_amount');
         $cheque_bank = $request->input('cheque_bank');
 
         $momo_transactin_id = $request->input('momo_transactin_id');
-        $momo_amount = $request->input('momo_amount');
-        $cash_amount = $request->input('cash_amount');
+        $momo_amount = $request->float('momo_amount');
+        $cash_amount = $request->float('cash_amount');
         $user_id = Auth::user()->id;
 
         // if receipt has image
@@ -167,41 +172,53 @@ class ReceiptController extends Controller
         $total = $cheque_amount + $momo_amount + $cash_amount + $transfer_amount;
         $sum_of_amountPaid_minus_wht = null;
         $wht_amount = null;
+        $vat7_amount = null;
+
 
         // if the payment has with holding turned on;
         if($wth_from_form == "on")
         {
-            $wht_amount = $request->input('wht_amount');
-
+            $wht_amount = $request->float('wht_amount');
+            // dd($wht_amount, $total);
             //    $wht = new Wht();
                $this->wht_amount = $wht_amount;
                $sum_of_amountPaid_minus_wht = $total;
                $total = $total + $wht_amount;
         }
+        if($vat_from_form == "on")
+        {
+            $vat7_amount = $sum_of_amountPaid_minus_wht - $vat7_value ;
+        }
+        // if($deductions_from_form == "on")
+        // {
+        //     $dAmount;
+        // }
         // dd($sum_of_amountPaid_minus_wht, $total);
         // end of if the payment has with holding turned on
 
         $check1 =  $invoice_data->total + $invoice_data->balance;
-        $check2 = $invoice_data->balance - $total;
+        $check2 = $invoice_data->balance - $total - $dAmount ;
 
     //    $fields = Field::pluck('id');
         $client = Client::findOrFail($client_id);
         // dd($client->field->id, $fields);
         $current_collection = Collection::where('field_id', $client->field->id)->latest()->first();
 
-        // dd($client, $current_collection);
+        // dd( $check1, $check2, $total );
         // if payment is one time and is complete //
-        if($status == 'completed' && $check1 == $total)
+        if($status == 'completed' && $check1 == $total + $dAmount )
         {
             // return "you're here! full payment one time payment";
 
             // // create Receipt
-               $receipt_id = $this->createReceipt($invoice_id, $client_id, $from, $mode, $cheque_reference, $cheque_amount, $cheque_bank, $transfer_reference, $transfer_amount, $transfer_bank, $momo_transactin_id, $momo_amount, $cash_amount, $user_id, $status, $total, $this->wht_amount, $sum_of_amountPaid_minus_wht, $image);
+               $receipt_id = $this->createReceipt($invoice_id, $dAmount, $description, $receipt_date, $vat7_value, $vat7_amount, $client_id, $from, $mode, $cheque_reference, $cheque_amount, $cheque_bank, $transfer_reference, $transfer_amount, $transfer_bank, $momo_transactin_id, $momo_amount, $cash_amount, $user_id, $status, $total, $this->wht_amount, $sum_of_amountPaid_minus_wht, $image);
 
                 // update the invoice status to completed and update the balance to 0
                 $invoice_data->status = $status;
                 $invoice_data->wht_amount = $invoice_data->wht_amount + $this->wht_amount;
                 $invoice_data->amount_received = $invoice_data->amount_received + $sum_of_amountPaid_minus_wht;
+                $invoice_data->vat7_value = $vat7_value;
+                $invoice_data->vat7_amount = $vat7_amount;
                 $invoice_data->save();
 
                 $transaction = new Transaction();
@@ -227,7 +244,7 @@ class ReceiptController extends Controller
         {
 
             // return "you're here! full payment after part payment";
-            $receipt_id = $this->createReceipt($invoice_id, $client_id, $from, $mode, $cheque_reference, $cheque_amount, $cheque_bank, $transfer_reference, $transfer_amount, $transfer_bank, $momo_transactin_id, $momo_amount, $cash_amount, $user_id, $status, $total, $this->wht_amount, $sum_of_amountPaid_minus_wht, $image);
+            $receipt_id = $this->createReceipt($invoice_id, $dAmount, $description, $receipt_date, $vat7_value, $vat7_amount, $client_id, $from, $mode, $cheque_reference, $cheque_amount, $cheque_bank, $transfer_reference, $transfer_amount, $transfer_bank, $momo_transactin_id, $momo_amount, $cash_amount, $user_id, $status, $total, $this->wht_amount, $sum_of_amountPaid_minus_wht, $image);
 
             // get balance
             $balance = $invoice_data->balance - $total;
@@ -237,6 +254,8 @@ class ReceiptController extends Controller
             $invoice_data->wht_amount = $invoice_data->wht_amount + $this->wht_amount;
             $invoice_data->amount_received = $invoice_data->amount_received + $sum_of_amountPaid_minus_wht;
             $invoice_data->status = $status;
+            $invoice_data->vat7_value = $vat7_value;
+            $invoice_data->vat7_amount = $vat7_amount;
             $invoice_data->save();
 
 
@@ -261,7 +280,7 @@ class ReceiptController extends Controller
         else {
             return "you're here! part payment ";
 
-            // get the balance of the invoice
+            // // get the balance of the invoice
             if($invoice_data->balance > 0)
             {
                 $balance = $invoice_data->balance - $total;
@@ -273,13 +292,15 @@ class ReceiptController extends Controller
 
             // create a receipt
             // $sum_of_amountPaid_minus_wht = null;
-            $receipt_id = $this->createReceipt($invoice_id, $client_id, $from, $mode, $cheque_reference, $cheque_amount, $cheque_bank, $transfer_reference, $transfer_amount, $transfer_bank, $momo_transactin_id, $momo_amount, $cash_amount, $user_id, $status, $total, $this->wht_amount, $sum_of_amountPaid_minus_wht, $image);
+            $receipt_id = $this->createReceipt($invoice_id, $dAmount, $description, $receipt_date, $vat7_value, $vat7_amount, $client_id, $from, $mode, $cheque_reference, $cheque_amount, $cheque_bank, $transfer_reference, $transfer_amount, $transfer_bank, $momo_transactin_id, $momo_amount, $cash_amount, $user_id, $status, $total, $this->wht_amount, $sum_of_amountPaid_minus_wht, $image);
 
             // update the invoice status to partpayment(uncomplete) and update the balance to current balance
             $invoice_data->balance = $balance;
             $invoice_data->wht_amount = $invoice_data->wht_amount + $this->wht_amount;
             $invoice_data->amount_received = $invoice_data->amount_received + $sum_of_amountPaid_minus_wht;
             $invoice_data->status = $status;
+            $invoice_data->vat7_value = $vat7_value;
+            $invoice_data->vat7_amount = $vat7_amount;
             $invoice_data->save();
 
             // create a new transaction
@@ -304,9 +325,24 @@ class ReceiptController extends Controller
     }
 
 
-    public function create_new_Collection($cash_amount, $momo_amount, $cheque_amount, $transfer_amount, $total, $field_id)
+    // public function create_new_Collection($cash_amount, $momo_amount, $cheque_amount, $transfer_amount, $total, $field_id)
+    // {
+    //     // create a collection
+    //     $collection = new Collection();
+    //     $collection->user_id = Auth::user()->id;
+    //     $collection->cash_amount = $cash_amount;
+    //     $collection->momo_amount = $momo_amount;
+    //     $collection->cheque_amount = $cheque_amount;
+    //     $collection->transfer_amount = $transfer_amount;
+    //     $collection->total_amount = $total;
+    //     $collection->field_id = $field_id;
+    //     $collection->save();
+    // }
+
+
+    public function create_collection ($current_collection, $cash_amount, $momo_amount, $cheque_amount, $transfer_amount, $total, $field_id)
     {
-        // create a collection
+                // create a collection
         $collection = new Collection();
         $collection->user_id = Auth::user()->id;
         $collection->cash_amount = $cash_amount;
@@ -316,37 +352,33 @@ class ReceiptController extends Controller
         $collection->total_amount = $total;
         $collection->field_id = $field_id;
         $collection->save();
-    }
 
-
-    public function create_collection ($current_collection, $cash_amount, $momo_amount, $cheque_amount, $transfer_amount, $total, $field_id)
-    {
-        if (is_null($current_collection)) {
-            //  create a collection
-            $this->create_new_Collection($cash_amount, $momo_amount, $cheque_amount, $transfer_amount, $total,  $field_id);
-        } elseif (!is_null($current_collection)) {
-            // dd($current_collection);
-            // echo $current_collection->created_at->toDateString();
-            // if()
-            $currentTime = Carbon::now();
-            // echo $currentTime->toDateString();
-            if ($currentTime->toDateString() == $current_collection->created_at->toDateString()) {
-                // add current collections to the same day collections
-                // return true;
-                $current_collection->user_id = Auth::user()->id;
-                $current_collection->cash_amount += $cash_amount;
-                $current_collection->momo_amount += $momo_amount;
-                $current_collection->cheque_amount += $cheque_amount;
-                $current_collection->transfer_amount += $transfer_amount;
-                $current_collection->total_amount += $total;
-                $current_collection->field_id =  $field_id;
-                $current_collection->save();
-            } else {
-                // return false;
-                // // create a collection
-                $this->create_new_Collection($cash_amount, $momo_amount, $cheque_amount, $transfer_amount, $total,  $field_id);
-            }
-        }
+        // if (is_null($current_collection)) {
+        //     //  create a collection
+        //     $this->create_new_Collection($cash_amount, $momo_amount, $cheque_amount, $transfer_amount, $total,  $field_id);
+        // } elseif (!is_null($current_collection)) {
+        //     // dd($current_collection);
+        //     // echo $current_collection->created_at->toDateString();
+        //     // if()
+        //     $currentTime = Carbon::now();
+        //     // echo $currentTime->toDateString();
+        //     if ($currentTime->toDateString() == $current_collection->created_at->toDateString()) {
+        //         // add current collections to the same day collections
+        //         // return true;
+        //         $current_collection->user_id = Auth::user()->id;
+        //         $current_collection->cash_amount += $cash_amount;
+        //         $current_collection->momo_amount += $momo_amount;
+        //         $current_collection->cheque_amount += $cheque_amount;
+        //         $current_collection->transfer_amount += $transfer_amount;
+        //         $current_collection->total_amount += $total;
+        //         $current_collection->field_id =  $field_id;
+        //         $current_collection->save();
+        //     } else {
+        //         // return false;
+        //         // // create a collection
+        //         $this->create_new_Collection($cash_amount, $momo_amount, $cheque_amount, $transfer_amount, $total,  $field_id);
+        //     }
+        // }
     }
 
 
@@ -366,6 +398,7 @@ class ReceiptController extends Controller
     public function edit(Receipt $receipt)
     {
         //
+        dd($receipt);
     }
 
     /**
@@ -382,6 +415,21 @@ class ReceiptController extends Controller
     public function destroy(Receipt $receipt)
     {
         //
+        // dd($receipt->id);
+        // REMOVE FROM COLLECTIONS
+        // $deleteCollections = Collection::where()->deleteOrFail();
+        //   dd($deleteCollections);
+        // if(isset($deleteCollections))
+        // {
+        // DELETE FROM TRANSACTION
+        // Transaction::where('receipt_id', $receipt->id)->deleteOrFail();
+
+        // UPDATE THE INVOICE TO DEFAULT
+        //  $receipt->deleteOrFail();
+        // }
+
+        
+        
     }
 
 
@@ -398,7 +446,7 @@ class ReceiptController extends Controller
 
 
 
-    public function createReceipt($invoice_id, $client_id, $from, $mode, $cheque_reference, $cheque_amount, $cheque_bank, $transfer_reference, $transfer_amount, $transfer_bank, $momo_transactin_id, $momo_amount, $cash_amount, $user_id, $status, $total, $wht_amount, $sum_of_amountPaid_minus_wht, $image)
+    public function createReceipt($invoice_id, $dAmount, $description, $receipt_date, $vat7_value, $vat7_amount, $client_id, $from, $mode, $cheque_reference, $cheque_amount, $cheque_bank, $transfer_reference, $transfer_amount, $transfer_bank, $momo_transactin_id, $momo_amount, $cash_amount, $user_id, $status, $total, $wht_amount, $sum_of_amountPaid_minus_wht, $image)
     {
         $newReceipt = new Receipt();
 
@@ -406,6 +454,11 @@ class ReceiptController extends Controller
         $newReceipt->client_id = $client_id;
         $newReceipt->from = $from;
         $newReceipt->mode = $mode;
+        $newReceipt->dAmount = $dAmount;
+        $newReceipt->description = $description;
+        $newReceipt->receipt_month = $receipt_date;
+        $newReceipt->vat7_value = $vat7_value;
+        $newReceipt->vat7_amount = $vat7_amount;
 
         $newReceipt->transfer_reference = $transfer_reference;
         $newReceipt->transfer_amount = $transfer_amount;

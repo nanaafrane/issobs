@@ -9,6 +9,7 @@ class Collection extends Model
     //
     protected $fillable = [
         'user_id',
+        'receipt_id',
         'cash_amount',
         'momo_amount',
         'cheque_amount',
