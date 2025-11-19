@@ -119,6 +119,17 @@
             </div>
         </div>
         <br>
+
+        @if ($errors->any())
+            <div class="alert alert-danger">
+                <ul>
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
         <div class="row mb-6 gy-6">
             <div class="col-xl">
                 <div class="card">
@@ -154,7 +165,7 @@
 
                             <div class="row">
                                 <div class="col-md-6 form-check form-switch">
-                                    <input name="wth" class="form-check-input" type="checkbox" id="wth" @if($invoice->wht_amount > 0.00) checked @endif>
+                                    <input name="wth" class="form-check-input" type="checkbox" id="wth">
                                     <label class="form-check-label" for="wth"> {{$wht_rate->wht_rate * 100}} % WITHHOLDING TAX </label>
                                 </div>
 

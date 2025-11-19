@@ -23,11 +23,27 @@ class StoreReceiptRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
-            // 'status' => ['in:completed, uncompleted'],
             'status' => ['required', Rule::in(['completed', 'uncompleted'])],
             'mode' => ['required', Rule::in(['cheque', 'transfer', 'momo', 'cash'])],
             'image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            'invoice_id' => ['required',
+                              Rule::unique('invoices', 'id')->where(function ($query) {
+                              return $query->where('status', 'completed');
+                           }),
+                         ],
+        //     'invoice_id' => [ 'required',  function (string $attribute, mixed $value, Closure $fail) 
+        //                 {
+        //                     $count = DB::table('invoices')
+        //                         ->where('id', $value)
+        //                         ->where('status', 'completed')
+        //                         ->count();
+
+        //                     if ($count > 0) {
+        //                         $fail("The user has already completed the action and cannot be added again.");
+        //                     }
+        //                 },
+        // ],
+
         ];
     }
 }

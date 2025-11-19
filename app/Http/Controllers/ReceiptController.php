@@ -278,7 +278,7 @@ class ReceiptController extends Controller
             return redirect('receipt')->with('success', 'Receipt created Successfully');
         }
         else {
-            return "you're here! part payment ";
+            // return "you're here! part payment ";
 
             // // get the balance of the invoice
             if($invoice_data->balance > 0)
