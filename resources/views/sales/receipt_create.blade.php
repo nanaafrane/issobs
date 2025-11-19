@@ -137,11 +137,13 @@
                         </div>
                         <div class="card-header">
                             <div class="table-responsive text-normal-dark">
-                                <!-- <div class="card-body demo-vertical-spacing demo-only-element"> Clients </div> -->
                                 <table id="myTable" class="display">
                                     <thead>
                                         <tr>
+
+                                            <th>#</th>
                                             <th>Invoice No.</th>
+                                            <th>Invoice Month</th>
                                             <th>Client Name</th>
                                             <th>Phone No.</th>
                                             <th>Business Name </th>
@@ -151,13 +153,15 @@
                                             <th>Due Date</th>
                                             <th>Amount</th>
                                             <th>Status</th>
-                                            <th>Generate</th>
+                                            <th>Action</th>
                                         </tr>
                                     </thead>
                                     <tbody class="table-border-bottom-0">
-                                        @foreach($invoices as $invoice)
+                                        @foreach($invoices as $key => $invoice)
                                         <tr>
+                                             <td>{{$key +1 }}</td>
                                             <td>FWSSi {{$invoice->id}} </td>
+                                            <td> {{ $invoice->invoice_month?->format('F, Y') }}</td>
                                             <td> {{$invoice->client->name}}</td>
                                             <td> {{$invoice->client->phone_number}} </td>
                                             <td> {{$invoice->client->business_name}} </td>

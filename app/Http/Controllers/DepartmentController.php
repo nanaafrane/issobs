@@ -41,6 +41,8 @@ class DepartmentController extends Controller
             // 'name' => 'HR',
             // 'name' => 'System'
             // 'name' => 'Branch'
+            // 'name' => 'Operations'
+
         ]);
 
     }
