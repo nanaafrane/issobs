@@ -47,4 +47,45 @@ class employee extends Model
         'date_of_birth' => 'date',
         'date_of_joining' => 'date',    
     ];
+
+    public function department()
+    {
+        return $this->belongsTo(Department::class);
+    }
+
+    public function role()
+    {
+        return $this->belongsTo(Role::class);
+    }
+
+    public function field()
+    {
+        return $this->belongsTo(Field::class);
+    }
+
+    public function client()
+    {
+        return $this->belongsTo(Client::class);
+    }   
+
+    public function paymentInfo()
+    {
+        return $this->hasOne(PaymentInfo::class);
+    }
+
+    public function salary()
+    {
+        return $this->hasMany(Salary::class);
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    
+
+
+
+
 }

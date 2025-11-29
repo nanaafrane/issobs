@@ -11,7 +11,7 @@ class StorePaymentInfoRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -23,6 +23,11 @@ class StorePaymentInfoRequest extends FormRequest
     {
         return [
             //
+            'bank_id' => 'nullable|exists:banks,id',
+            'acc_number' => 'nullable|string|max:50|unique:payment_infos,acc_number',
+            'branch' => 'nullable|string|max:255',
+            'tin_number' => 'nullable|string|max:50|unique:payment_infos,tin_number',
+            'ssnit_number' => 'nullable|string|max:50|unique:payment_infos,ssnit_number',   
         ];
     }
 }

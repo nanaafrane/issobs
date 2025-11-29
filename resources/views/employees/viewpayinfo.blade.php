@@ -1,11 +1,5 @@
 <x-hr-dashboard>
 
-    @section('css')
-    <link rel="stylesheet" href="https://cdn.datatables.net/2.3.3/css/dataTables.dataTables.css" />
-    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/3.2.4/css/buttons.dataTables.css">
-    @endsection
-    
-
 
   @section('side_nav')
   <!-- Menu -->
@@ -70,12 +64,12 @@
           <div class="text-truncate" data-i18n="Staffs">Employees</div>
         </a>
         <ul class="menu-sub">
-          <li class="menu-item active">
+          <li class="menu-item ">
             <a href="{{url('employees/create')}}" class="menu-link">
               <div class="text-truncate" data-i18n="SRegister">Register</div>
             </a>
           </li>
-          <li class="menu-item ">
+          <li class="menu-item active">
             <a href="{{url('employees')}}" class="menu-link">
               <div class="text-truncate" data-i18n="SList">List</div>
             </a>
@@ -113,13 +107,35 @@
       <li class="menu-item">
         <a href="javascript:void(0);" class="menu-link menu-toggle">
           <i class="menu-icon tf-icons bx bx-money-withdraw"></i>
-          <div class="text-truncate" data-i18n="Payroll">PAYROLL</div>
+          <div class="text-truncate" data-i18n="Payroll">Payroll</div>
         </a>
         <ul class="menu-sub">
           <li class="menu-item">
-            <a href="" class="menu-link">
+            <a href="{{ url('salaries') }}" class="menu-link">
               <i class="menu-icon tf-icons bx bxs-user-account"></i>
               <div class="text-truncate" data-i18n="Locations">Employees</div>
+            </a>
+          </li>
+
+          <li class="menu-item">
+            <a href="{{ url('salaries/create') }}" class="menu-link">
+              <i class="menu-icon tf-icons bx bx-money-withdraw"></i>
+              <div class="text-truncate" data-i18n="Locations">Salaries</div>
+            </a>
+          </li>
+
+          <li class="menu-item">
+            <a href="{{ url('salariesTransaction') }}" class="menu-link">
+              <i class="menu-icon tf-icons bx bx-transfer-alt"></i>
+              <div class="text-truncate" data-i18n="Locations">Transactions</div>
+            </a>
+          </li>
+
+
+          <li class="menu-item">
+            <a href="{{ url('salariesInvPayroll') }}" class="menu-link">
+              <i class="menu-icon tf-icons bx bx-git-compare"></i>
+              <div class="text-truncate" data-i18n="Locations">Invoice to Payroll</div>
             </a>
           </li>
 
@@ -139,106 +155,60 @@
             <!-- Content -->
 
             <div class="container-xxl flex-grow-1 container-p-y">
-              <h4 class="fw-bold py-3 mb-4"><span class="text-muted fw-light"> <i class="bx bxs-user-account"></i> Employee /</span> Account</h4>
+              <h4 class="fw-bold py-3 mb-4"><span class="text-muted fw-light"> <i class="bx bxs-user-account"></i> Employee /</span> Show</h4>
 
-
-
-                <div class="row">
-
+              <div class="row">
                 <div class="col-md-12">
                   <ul class="nav nav-pills flex-column flex-md-row mb-3">
                     <li class="nav-item">
-                      <a class="nav-link" href="{{ url('/employees/create') }}"><i class="bx bx-user me-1"></i> Employee Details</a>
+                      <a class="nav-link" href="{{url('employees', $employee_pay_info->employee_id)}}"><i class="bx bx-user me-1"></i> Employee Details</a>
                     </li>
                     <li class="nav-item ">
-                      <a class="nav-link " href="{{url('/employeesPayInfo')}}" ><i class="bx bxs-comment-detail"></i> Payment Info </a
-                      >
+                      <a class="nav-link active" href=" javascript:void(0);" ><i class="bx bxs-comment-detail"></i> Payment Info </a>
                     </li>
                     <li class="nav-item">
-                      <a class="nav-link active" href="{{ }}" ><i class="bx bx-money-withdraw"></i> Salaries </a>
+                      <a class="nav-link" href="" ><i class="bx bx-money-withdraw"></i> Salaries </a>
                     </li>
                   </ul>
-
                   <div class="card mb-4">
-
-                    <div class="card h-100">
-                        <div class="card-body">
-                            <div class="card-title d-flex align-items-start justify-content-between mb-4">
-                                <div class="avatar flex-shrink-0">
-                                    <img
-                                        src="{{asset('img/icons/unicons/paypal.png')  }}"
-                                        alt="chart success"
-                                        class="rounded" />
-                                </div>
-                            </div>
-                            <p class="mb-1"><strong> ACCRA </strong> </p>
-                            <h4 class="card-title mb-3 text-white"><strong>GH&#x20B5;  </strong> </h4>
-                            <small class="fw-medium"> TOTAL COLLECTIONS : <strong>  </strong> </small>
-                        </div>
-                    </div>
-                    <hr class="my-0" />
-
-                    <h5 class="card-header">Profile Details</h5>
-                    <!-- Account -->
                     <div class="card-body">
 
-                                    <table id="myTable" class="display">
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>Period</th>
-                            <th>Cash Amount</th>
-                            <th>Momo Amount</th>
-                            <th>Cheque Amount </th>
-                            <th> Transfer Amount </th>
-                            <th>Status</th>
-                            <th>Exp id</th>
-                            <th>Expense Amount</th>
-                            <th> Total_Amount </th>
-                            <th>Date Created</th>
-                            <th>Branch</th>
-                        </tr>
-                    </thead>
-                    <tbody>
+                            <div class="row" id="payment_field"> 
+                                <h5 class="card-header"> <strong> Payment Infomation</strong> </h5> 
+                                <hr class="mb-3" />
+                            
+                                <div class="mb-3 col-md-4">
+                                  <label for="bank_id" class="form-label"> <strong> {{ __('Bank') }} * </strong>  </label>
+                                    <h5> <strong> {{$employee_pay_info->bank?->name}} </strong> </h5> 
+                                </div>
 
-                        @if(Auth::user()->hasRole('Invoice') || Auth::user()->hasRole('HR Manager'))
-                       
-                        <tr>
-                            <td>  </td>
-                            <td>  </td>
-                            <td>GH&#x20B5;  </td>
-                            <td>GH&#x20B5;  </td>
-                            <td>GH&#x20B5;  </td>
-                            <td>GH&#x20B5;  </td>
-
-                            <td><span class="badge bg-label-success"> </span></td>
-                       
-                            <td>   </td>
-                            <td>GH&#x20B5;   </td>
-                            <td>GH&#x20B5;  </td>
-                            <td>  </td>
-                            <td>  </td>
-                        </tr>
-                        @endif
+                                  <div class="mb-3 col-md-4">
+                                  <label for="acc_number" class="form-label"> <strong>   Account Number * </strong> </label>
+                                    <h5> <strong> {{$employee_pay_info->acc_number}} </strong> </h5> 
+                                </div>
 
 
+                                  <div class="mb-3 col-md-4">
+                                  <label for="branch" class="form-label"> <strong>    Branch * </strong> </label>
+                                    <h5> <strong> {{$employee_pay_info->branch}} </strong> </h5> 
+                                </div>
 
+                                  <div class="mb-3 col-md-4">
+                                  <label for="tin_number" class="form-label"> <strong>    TIN Number  </strong> </label>
+                                    <h5> <strong> {{$employee_pay_info->tin_number}} </strong> </h5> 
+                                  </div>
 
-
-
-
-
-                    </tbody>
-                </table>
-
-
+                                <div class="mb-3 col-md-4">
+                                  <label for="ssnit_number" class="form-label"> <strong>  SSNIT Number </strong> </label>
+                                    <h5> <strong> {{$employee_pay_info->ssnit_number}} </strong> </h5> 
+                                </div>
+                            </div>
                     </div>
-                   <!-- /Account -->
+                    <!-- /Account -->
                   </div>
+
                 </div>
-             
-                </div>
-            
+              </div>
             </div>
             <!-- / Content -->
 
@@ -247,32 +217,6 @@
   <!-- / Content -->
 
   @endsection
-
-
-
-    @section('scripts')
-    <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
-    <script src="https://cdn.datatables.net/2.3.3/js/dataTables.js"></script>
-    <script src="https://cdn.datatables.net/buttons/3.2.4/js/dataTables.buttons.js"></script>
-    <script src="https://cdn.datatables.net/buttons/3.2.4/js/buttons.dataTables.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
-    <script src="https://cdn.datatables.net/buttons/3.2.4/js/buttons.html5.min.js"></script>
-
-
-    <script>
-        new DataTable('#myTable', {
-            responsive: true,
-
-            layout: {
-                topStart: {
-                    buttons: ['excelHtml5', 'pdfHtml5']
-                }
-            }
-        });
-    </script>
-    @endsection
 
 
 </x-hr-dashboard>

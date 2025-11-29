@@ -5,11 +5,16 @@ namespace App\Http\Controllers;
 use App\Models\employee;
 use App\Http\Requests\StoreemployeeRequest;
 use App\Http\Requests\UpdateemployeeRequest;
+use App\Http\Requests\StorePaymentInfoRequest;
 use App\Models\Bank;
 use App\Models\Client;
 use App\Models\Department;
 use App\Models\Field;
+use App\Models\PaymentInfo;
 use App\Models\Role;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
+use Symfony\Component\HttpKernel\HttpCache\Store;
 
 class EmployeeController extends Controller
 {
@@ -25,7 +30,13 @@ class EmployeeController extends Controller
     public function index()
     {
         //
-        return view('employees.index');
+        $employees = employee::all();
+        $Departments = Department::all();
+        $Roles = Role::all();
+        $Fields = Field::all();
+        $clients = Client::all();
+        $banks = Bank::all();
+        return view('employees.index', compact('employees','Departments', 'Roles', 'Fields', 'clients', 'banks'));
     }
 
     /**
@@ -42,11 +53,23 @@ class EmployeeController extends Controller
         return view('employees.create', compact('Departments', 'Roles', 'Fields', 'clients', 'banks'));
     }
 
-    public function EmpPayInfo()
+    public function EmpPayInfo($id)
     {
         //
-        return view('employees.payinfo');
+        $employee_pay_info = PaymentInfo::where('employee_id', $id)->first();
+        $banks =  Bank::all();
+        return view('employees.payinfo', compact('employee_pay_info', 'banks'));
     }
+
+    public function EmpViewPayInfo($id)
+    {
+        //
+        $employee_pay_info = PaymentInfo::where('employee_id', $id)->first();
+        $banks =  Bank::all();
+        return view('employees.viewpayinfo', compact('employee_pay_info', 'banks'));
+    }
+
+
 
     public function EmpSalaryInfo()
     {
@@ -54,13 +77,73 @@ class EmployeeController extends Controller
         return view('employees.salaryinfo');
     }
 
+
+    public function EmpViewSalaryInfo()
+    {
+        //
+        return view('employees.viewsalaryinfo');
+    }   
+
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreemployeeRequest $request)
+    public function store(StoreemployeeRequest $request, StorePaymentInfoRequest $payRequest) 
     {
         //
-        dd($request->all());
+        // dd($request->all());
+        // dd(Auth::id());
+
+        $image = null;
+        if($request->file('image'))
+        {
+           $image = ($request->file('image'))->store('images', 'public');
+        }
+
+        $employee = new employee();
+        $employee->name = $request->input('name');
+        $employee->user_id = Auth::id();
+        $employee->status = 'Active';
+        $employee->gender = $request->input('gender');
+        $employee->phone_number = $request->input('phone_number');
+        $employee->date_of_birth = $request->input('date_of_birth');
+        $employee->nia_number = $request->input('nia_number');
+        $employee->address = $request->input('address');
+        $employee->marital_status = $request->input('marital_status');
+        $employee->worker_type = $request->input('worker_type');
+        $employee->date_of_joining = $request->input('date_of_joining');
+        $employee->department_id = $request->input('department_id');
+        $employee->role_id = $request->input('role_id');
+        $employee->field_id = $request->input('field_id');
+        $employee->client_id = $request->input('client_id');
+        $employee->location = $request->input('location');
+        $employee->basic_salary = $request->input('basic_salary');
+        $employee->payment_type = $request->input('payment_type');
+        $employee->gurantor_name = $request->input('gurantor_name');
+        $employee->gurantor_number = $request->input('gurantor_number');
+        $employee->gurantor_address = $request->input('gurantor_address');
+        $employee->gurantor_nia_number = $request->input('gurantor_nia_number');
+        $employee->relationship = $request->input('relationship');
+        $employee->image = $image;
+        $employee->save();
+
+
+        $employee_pay_info = new PaymentInfo();
+        $employee_pay_info->employee_id = $employee->id;
+        $employee_pay_info->bank_id = $payRequest->input('bank_id');
+        $employee_pay_info->acc_number = $payRequest->input('acc_number');
+        $employee_pay_info->branch = $payRequest->input('branch');
+        $employee_pay_info->tin_number = $payRequest->input('tin_number');
+        $employee_pay_info->ssnit_number = $payRequest->input('ssnit_number');
+        $employee_pay_info->user_id = Auth::id();
+        $employee_pay_info->save();
+
+
+        // LAST STEP: UPDATE EMPLOYEE WITH PAYMENT INFO ID
+        $employee->payment_infos_id = $employee_pay_info->id;
+        $employee->save();
+
+        return redirect()->route('employees.index')->with('success', 'Employee created successfully.');
+
     }
 
     /**
@@ -69,6 +152,12 @@ class EmployeeController extends Controller
     public function show(employee $employee)
     {
         //
+        $Departments = Department::all();
+        $Roles = Role::all();
+        $Fields = Field::all();
+        $clients = Client::all();
+        $banks = Bank::all();
+        return view('employees.show', compact('employee', 'Departments', 'Roles', 'Fields', 'clients', 'banks')); 
     }
 
     /**
@@ -77,6 +166,13 @@ class EmployeeController extends Controller
     public function edit(employee $employee)
     {
         //
+        // dd($employee);
+        $Departments = Department::all();
+        $Roles = Role::all();
+        $Fields = Field::all();
+        $clients = Client::all();
+        $banks = Bank::all();
+        return view('employees.edit', compact('employee', 'Departments', 'Roles', 'Fields', 'clients', 'banks'));
     }
 
     /**
@@ -85,6 +181,18 @@ class EmployeeController extends Controller
     public function update(UpdateemployeeRequest $request, employee $employee)
     {
         //
+        if($request->file('image'))
+        {
+            Storage::disk('public')->delete($employee->image);
+
+           $image = ($request->file('image'))->store('images', 'public');
+           $request->merge(['image' => $image  ]);
+        }
+      
+        $employee->update($request->all());
+        return back()->with('success', 'Employee updated successfully.');
+       
+        // dd($request->all());
     }
 
     /**

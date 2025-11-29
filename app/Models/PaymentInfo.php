@@ -15,4 +15,14 @@ class PaymentInfo extends Model
         'tin_number',
         'ssnit_number',
     ];
+
+    public function bank()
+    {
+        return $this->belongsTo(Bank::class);
+    }
+    public function employee()
+    {
+        return $this->belongsTo(employee::class);
+    }
+
 }

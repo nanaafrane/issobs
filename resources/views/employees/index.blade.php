@@ -112,13 +112,35 @@
       <li class="menu-item">
         <a href="javascript:void(0);" class="menu-link menu-toggle">
           <i class="menu-icon tf-icons bx bx-money-withdraw"></i>
-          <div class="text-truncate" data-i18n="Payroll">PAYROLL</div>
+          <div class="text-truncate" data-i18n="Payroll">Payroll</div>
         </a>
         <ul class="menu-sub">
           <li class="menu-item">
-            <a href="" class="menu-link">
+            <a href="{{ url('salaries') }}" class="menu-link">
               <i class="menu-icon tf-icons bx bxs-user-account"></i>
               <div class="text-truncate" data-i18n="Locations">Employees</div>
+            </a>
+          </li>
+
+          <li class="menu-item">
+            <a href="{{ url('salaries/create') }}" class="menu-link">
+              <i class="menu-icon tf-icons bx bx-money-withdraw"></i>
+              <div class="text-truncate" data-i18n="Locations">Salaries</div>
+            </a>
+          </li>
+
+          <li class="menu-item">
+            <a href="{{ url('salariesTransaction') }}" class="menu-link">
+              <i class="menu-icon tf-icons bx bx-transfer-alt"></i>
+              <div class="text-truncate" data-i18n="Locations">Transactions</div>
+            </a>
+          </li>
+
+
+          <li class="menu-item">
+            <a href="{{ url('salariesInvPayroll') }}" class="menu-link">
+              <i class="menu-icon tf-icons bx bx-git-compare"></i>
+              <div class="text-truncate" data-i18n="Locations">Invoice to Payroll</div>
             </a>
           </li>
 
@@ -146,7 +168,7 @@
         @if(Auth::user()->hasRole('Invoice') || Auth::user()->hasRole('Manager'))
         <div class="row">
             <div class="col-lg-2">
-                <div style="background: crimson; color: white;" class="card h-100">
+                <div  class="card h-100 bg-dark text-white">
                     <div class="card-body">
                         <div class="card-title d-flex align-items-start justify-content-between mb-4">
                             <div class="avatar flex-shrink-0">
@@ -157,14 +179,14 @@
                             </div>
                         </div>
                         <p class="mb-1"><strong> ACCRA </strong> </p>
-                        <h4 class="card-title mb-3 text-white"><strong>GH&#x20B5;  </strong> </h4>
-                        <small class="fw-medium"> TOTAL COLLECTIONS : <strong>  </strong> </small>
+                        <h4 class="card-title mb-3 text-white"><strong> 0  </strong> </h4>
+                        <small class="fw-medium"> TOTAL EMPLOYEES  </small>
                     </div>
                 </div>
             </div>
 
             <div class="col-lg-2">
-                <div style="background: crimson; color: white;" class="card h-100">
+                <div  class="card h-100 bg-dark text-white">
                     <div class="card-body">
                         <div class="card-title d-flex align-items-start justify-content-between mb-4">
                             <div class="avatar flex-shrink-0">
@@ -175,15 +197,15 @@
                             </div>
                         </div>
                         <p class="mb-1"><strong> BOTWE </strong></p>
-                        <h4 class="card-title mb-3 text-white"><strong>GH&#x20B5; </strong> </h4>
-                        <small class="fw-medium"> TOTAL COLLECTIONS : <strong>   </strong> </small>
+                        <h4 class="card-title mb-3 text-white"><strong>0 </strong> </h4>
+                        <small class="fw-medium"> TOTAL EMPLOYEES </small>
                     </div>
                 </div>
             </div>
 
 
             <div class="col-lg-2">
-                <div style="background: crimson; color: white;" class="card h-100">
+                <div  class="card h-100 bg-dark text-white">
                     <div class="card-body">
                         <div class="card-title d-flex align-items-start justify-content-between mb-4">
                             <div class="avatar flex-shrink-0">
@@ -195,8 +217,8 @@
 
                         </div>
                         <p class="mb-1"><strong> TEMA </strong></p>
-                        <h4 class="card-title mb-3 text-white"><strong>GH&#x20B5;  </strong> </h4>
-                        <small class="fw-medium"> TOTAL COLLECTIONS : <strong>   </strong> </small>
+                        <h4 class="card-title mb-3 text-white"><strong>0 </strong> </h4>
+                        <small class="fw-medium"> TOTAL EMPLOYEES </small>
                     </div>
                 </div>
             </div>
@@ -204,7 +226,7 @@
 
 
             <div class="col-lg-2">
-                <div style="background: crimson; color: white;" class="card h-100">
+                <div  class="card h-100 bg-dark text-white">
                     <div class="card-body">
                         <div class="card-title d-flex align-items-start justify-content-between mb-4">
                             <div class="avatar flex-shrink-0">
@@ -215,14 +237,14 @@
 
                         </div>
                         <p class="mb-1">TAKORADI</p>
-                        <h4 class="card-title mb-3 text-white">GH&#x20B5;  </h4>
-                        <small class="fw-medium"> TOTAL COLLECTIONS :   </small>
+                        <h4 class="card-title mb-3 text-white">0 </h4>
+                        <small class="fw-medium"> TOTAL EMPLOYEES   </small>
                     </div>
                 </div>
             </div>
 
             <div class="col-lg-2">
-                <div style="background: crimson; color: white;" class="card h-100">
+                <div  class="card h-100 bg-dark text-white">
                     <div class="card-body">
                         <div class="card-title d-flex align-items-start justify-content-between mb-4">
                             <div class="avatar flex-shrink-0">
@@ -233,15 +255,15 @@
 
                         </div>
                         <p class="mb-1"> <strong> KOFORIDUA </strong> </p>
-                        <h4 class="card-title mb-3 text-white">GH&#x20B5; </h4>
-                        <small class="fw-medium"> TOTAL COLLECTIONS : <strong>   </strong> </small>
+                        <h4 class="card-title mb-3 text-white">0</h4>
+                        <small class="fw-medium"> TOTAL EMPLOYEES  </small>
                     </div>
                 </div>
             </div>
 
 
             <div class="col-lg-2">
-                <div style="background: crimson; color: white;" class="card h-100">
+                <div  class="card h-100 bg-dark text-white">
                     <div class="card-body">
                         <div class="card-title d-flex align-items-start justify-content-between mb-4">
                             <div class="avatar flex-shrink-0">
@@ -252,16 +274,18 @@
 
                         </div>
                         <p class="mb-1"><strong> KUMASI </strong> </p>
-                        <h4 class="card-title mb-3 text-white">GH&#x20B5; </h4>
-                        <small class="fw-medium"> TOTAL COLLECTIONS : <strong>   </strong> </small>
+                        <h4 class="card-title mb-3 text-white">0 </h4>
+                        <small class="fw-medium"> TOTAL EMPLOYEES  </small>
                     </div>
                 </div>
             </div>
 
         </div> <br>
-       
-       
         @endif
+
+        <div class="card-header  ml-2  d-none d-lg-block">
+            @include('flash-messages')
+        </div>
 
         <div class="row">
             <div class="col">
@@ -269,48 +293,61 @@
                     <thead>
                         <tr>
                             <th>#</th>
-                            <th>Period</th>
-                            <th>Cash Amount</th>
-                            <th>Momo Amount</th>
-                            <th>Cheque Amount </th>
-                            <th> Transfer Amount </th>
+                            <th> Employee ID </th>
+                            <th>Name</th>
+                            <th>Gender</th>
+                            <th>Number</th>
+                            <th> Employment Date </th>
+                            <th> Department </th>
+                            <th>Role</th>
+                            <th>Field Office</th>
+                            <th>Client </th>
+                            <th> Location </th>
+                            <th>Payment Type</th>
                             <th>Status</th>
-                            <th>Exp id</th>
-                            <th>Expense Amount</th>
-                            <th> Total_Amount </th>
-                            <th>Date Created</th>
-                            <th>Branch</th>
+                            <th>Action</th>
                         </tr>
                     </thead>
                     <tbody>
 
-                        @if(Auth::user()->hasRole('Invoice') || Auth::user()->hasRole('HR Manager'))
-                       
+                          @foreach ($employees as $key => $employee )
                         <tr>
-                            <td>  </td>
-                            <td>  </td>
-                            <td>GH&#x20B5;  </td>
-                            <td>GH&#x20B5;  </td>
-                            <td>GH&#x20B5;  </td>
-                            <td>GH&#x20B5;  </td>
-
-                            <td><span class="badge bg-label-success"> </span></td>
-                       
-                            <td>   </td>
-                            <td>GH&#x20B5;   </td>
-                            <td>GH&#x20B5;  </td>
-                            <td>  </td>
-                            <td>  </td>
+                            <td> {{ $key + 1 }} </td>
+                            <td> FWSS {{ $employee->id }}  </td>
+                            <td>{{$employee->name}}  </td>
+                            <td>{{ $employee->gender }}  </td>
+                            <td>{{ $employee->phone_number }}  </td>
+                            <td>{{ $employee->date_of_joining->diffForHumans() }} </td>
+                            <td> {{ $employee->department?->name }} </td>
+                            <td> {{ $employee->role?->name }}  </td>
+                            <td> {{ $employee->field?->name }}   </td>
+                            <td>{{ $employee->client?->name }} {{ $employee->client?->business_name }} </td>
+                            <td> {{ $employee->location }} </td>
+                            <td> {{ $employee->payment_type }}  </td>
+                            @if($employee->status == 'Active')
+                            <td><span class="badge bg-label-success">{{$employee->status}}</span></td>
+                            @else
+                            <td><span class="badge bg-label-danger">{{$employee->status}}</span></td>
+                            @endif
+                            
+                            <td>
+                              <div class="dropdown">
+                                  <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown">
+                                      <i class="icon-base bx bx-dots-vertical-rounded"></i>
+                                  </button>
+                                  <div class="dropdown-menu">
+                                      <a class="dropdown-item" href="{{url('employees', $employee->id)}}"><i class="icon-base bx bxs-bullseye"></i> view</a>
+                                      <a class="dropdown-item" href="employees/{{$employee->id}}/edit"><i class="icon-base bx bx-edit-alt me-1"></i> Edit</a>
+                                      <form action="employees/{{$employee->id}}" method="POST">
+                                          @csrf
+                                          @method('DELETE')
+                                          <button class="dropdown-item" type="submit"><i class="icon-base bx bx-trash me-1"></i>Delete</button>
+                                      </form>
+                                  </div>
+                              </div>
+                          </td>
                         </tr>
-                        @endif
-
-
-
-
-
-
-
-
+                           @endforeach
                     </tbody>
                 </table>
 
