@@ -56,6 +56,26 @@
           </li>
         </ul>
       </li>
+
+        <li class="menu-item ">
+        <a href="javascript:void(0);" class="menu-link menu-toggle">
+          <i class="menu-icon tf-icons bx bxs-user-account"></i>
+          <div class="text-truncate" data-i18n="Staffs">Employees</div>
+        </a>
+        <ul class="menu-sub">
+          <li class="menu-item ">
+            <a href="{{url('employees/create')}}" class="menu-link">
+              <div class="text-truncate" data-i18n="SRegister">Register</div>
+            </a>
+          </li>
+          <li class="menu-item">
+            <a href="{{url('employees')}}" class="menu-link">
+              <div class="text-truncate" data-i18n="SList">List</div>
+            </a>
+          </li>
+        </ul>
+      </li>
+
       <li class="menu-item">
         <a href="javascript:void(0);" class="menu-link menu-toggle">
           <i class="menu-icon tf-icons bx bx-bxs-user-detail"></i>
@@ -84,10 +104,41 @@
 
       <li class="menu-header small text-uppercase"><span class="menu-header-text">PAYROLL</span></li>
       <li class="menu-item">
-        <a href="" class="menu-link">
+        <a href="javascript:void(0);" class="menu-link menu-toggle">
           <i class="menu-icon tf-icons bx bx-money-withdraw"></i>
-          <div class="text-truncate" data-i18n="Locations">Payroll</div>
+          <div class="text-truncate" data-i18n="Payroll">Payroll</div>
         </a>
+        <ul class="menu-sub">
+          <li class="menu-item">
+            <a href="{{ url('salaries') }}" class="menu-link">
+              <i class="menu-icon tf-icons bx bxs-user-account"></i>
+              <div class="text-truncate" data-i18n="Locations">Employees</div>
+            </a>
+          </li>
+
+          <li class="menu-item">
+            <a href="{{ url('salaries/create') }}" class="menu-link">
+              <i class="menu-icon tf-icons bx bx-money-withdraw"></i>
+              <div class="text-truncate" data-i18n="Locations">Salaries</div>
+            </a>
+          </li>
+
+          <li class="menu-item">
+            <a href="{{ url('salariesTransaction') }}" class="menu-link">
+              <i class="menu-icon tf-icons bx bx-transfer-alt"></i>
+              <div class="text-truncate" data-i18n="Locations">Transactions</div>
+            </a>
+          </li>
+
+
+          <li class="menu-item">
+            <a href="{{ url('salariesInvPayroll') }}" class="menu-link">
+              <i class="menu-icon tf-icons bx bx-git-compare"></i>
+              <div class="text-truncate" data-i18n="Locations">Invoice to Payroll</div>
+            </a>
+          </li>
+
+        </ul>
       </li>
 
 

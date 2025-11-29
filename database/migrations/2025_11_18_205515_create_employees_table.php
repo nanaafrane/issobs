@@ -13,6 +13,33 @@ return new class extends Migration
     {
         Schema::create('employees', function (Blueprint $table) {
             $table->id();
+            $table->string('name')->nullable();
+            $table->string('gender')->nullable();
+            $table->string('phone_number')->nullable();
+            $table->date('date_of_birth')->nullable();
+            $table->string('nia_number')->nullable();
+            $table->string('address')->nullable();
+            $table->string('marital_status')->nullable();
+            $table->unsignedBigInteger('department_id')->nullable();
+            $table->unsignedBigInteger('role_id')->nullable();
+            $table->date('date_of_joining')->nullable();
+            $table->string('worker_type')->nullable();
+            $table->unsignedBigInteger('field_id')->nullable();
+            $table->unsignedBigInteger('client_id')->nullable();
+            $table->string('location')->nullable();
+            $table->string('image')->nullable();
+            $table->string('status')->nullable();
+            $table->string('payment_type')->nullable();
+            $table->unsignedBigInteger('user_id');
+            $table->unsignedBigInteger('payment_infos_id')->nullable();
+            $table->unsignedBigInteger('salary_id')->nullable();
+            $table->string('gurantor_name')->nullable();
+            $table->string('gurantor_number')->nullable();
+            $table->string('gurantor_address')->nullable();
+            $table->string('gurantor_nia_number')->nullable();
+            $table->string('gurantor_nia_image')->nullable();
+            $table->string('relationship')->nullable();
+            $table->decimal('basic_salary', 15, 2)->nullable();
             $table->timestamps();
         });
     }

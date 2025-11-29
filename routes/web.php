@@ -5,12 +5,14 @@ use App\Http\Controllers\BankDepositController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\CollectionController;
 use App\Http\Controllers\DepartmentController;
+use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\FieldController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\ReceiptController;
 use App\Http\Controllers\RoleController;
+use App\Http\Controllers\SalaryController;
 use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\TransactionController;
 use Illuminate\Support\Facades\Auth;
@@ -69,3 +71,10 @@ Route::resource('banks', BankController::class);
 
 Route::resource('expense', ExpenseController::class);
 
+Route::resource('employees', EmployeeController::class); 
+Route::get('employeesPayInfo', [EmployeeController::class, 'EmpPayInfo']);
+Route::get('employeesSalaryInfo', [EmployeeController::class, 'EmpSalaryInfo']);
+
+Route::resource('salaries', SalaryController::class);
+Route::get('salariesTransaction', [SalaryController::class, 'transactionSalary']);
+Route::get('salariesInvPayroll', [SalaryController::class, 'InvToParoll']);
