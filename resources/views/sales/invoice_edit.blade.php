@@ -121,6 +121,10 @@
                     <!-- </div> -->
                 </div>
             </div>
+
+            <div class="card-header  ml-2  d-none d-lg-block">
+                @include('flash-messages')
+            </div> 
             <!-- Invoice 1 - Bootstrap Brain Component -->
             <section class="py-3 py-md-5">
                 <div class="row justify-content-center">
@@ -286,6 +290,10 @@
 
     </div>
     </div>
+        <div class="buy-now">
+            <button id="print"
+                class="btn btn-danger btn-buy-now"> <i class="icon-base bx bxs-printer"></i> Print Invoice</button>
+        </div> 
 
     @endsection
 
@@ -332,6 +340,26 @@
         });
     </script>
 
+    <script>
+        $(document).ready(function() {
+            $('#print').on('click', function() {
+                $.ajax({
+                    url: '/printInvoice/{{$invoice->id}}', // The route to your dedicated print view
+                    method: 'GET',
+                    success: function(response) {
+                        var printWindow = window.open('url', '_parent');
+                        var originalContents = $('body').html();
+                        printWindow.document.write(response);
+                        printWindow.print();
+                        $('body').html(originalContents);
+                    },
+                    error: function(xhr, status, error) {
+                        console.error("Error fetching print content:", error);
+                    }
+                });
+            });
+        });
+    </script>
 
     @endsection
 

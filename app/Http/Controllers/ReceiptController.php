@@ -283,12 +283,15 @@ class ReceiptController extends Controller
             // // get the balance of the invoice
             if($invoice_data->balance > 0)
             {
-                $balance = $invoice_data->balance - $total;
+                $balance = $invoice_data->balance - $total - $dAmount ;
             }
             else{
                 // get the balance of the invoice
-                $balance = $invoice_data->total - $total;
+                $balance = $invoice_data->total - $total - $dAmount ;
             }
+
+
+            // dd($balance, $invoice_data->balance, $invoice_data->total, $total, $dAmount);
 
             // create a receipt
             // $sum_of_amountPaid_minus_wht = null;

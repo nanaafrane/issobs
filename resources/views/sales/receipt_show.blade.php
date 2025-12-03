@@ -188,60 +188,10 @@
                         <hr>
                         <p class="card-text text-dark"> <strong>OTHER DEDUCTIONS  : GH&#8373; {{number_format($receipt->dAmount, 2)}} </strong> </p>
                         <p class="card-text text-dark"> <strong>DESCRIPTION  : {{$receipt->description}} </strong> </p>
-                        <h4 class="card-text text-dark"> <strong>Receipt Total : GH&#8373; {{number_format($receipt->total, 2) }} </strong> </h4>
+                        
+                        <h4 class="card-text text-dark"> <strong>Receipt Total : GH&#8373; {{number_format($receipt->total + $receipt->dAmount, 2) }} </strong> </h4>
                     </div>
                 </div>
-
-                @if($receipt->cash_amount > 0.00 )
-                <br>
-                <div class="card text-bg-success">
-                    <div class="card-body">
-                        <h5 class="card-title text-white"> CASH </h5>
-                        <hr>
-                        <p class="card-text"><strong>Amount : GH&#8373; {{ number_format($receipt->cash_amount, 2) }} </strong> </p>
-                    </div>
-                </div>
-                @endif
-                <br>
-
-                @if($receipt->momo_amount > 0.00)
-                <div class="card text-bg-warning">
-                    <div class="card-body">
-                        <h5 class="card-title text-white"> MOMO </h5>
-                        <hr>
-                        <p class="card-text"><strong>Transaction ID : {{$receipt->momo_transactin_id}} </strong> </p>
-                        <p class="card-text"><strong>Amount : GH&#8373; {{number_format($receipt->momo_amount, 2) }} </strong> </p>
-                    </div>
-                </div>
-                <br>
-                @endif
-
-                @if($receipt->cheque_amount > 0.00)
-                <div class="card text-bg-info">
-                    <img class="card-img-top" src="@if($receipt->image) {{asset('storage/'.$receipt->image)}} @else {{asset('img/deafImage.jpg')}}  @endif" alt="Card image cap" />
-                    <div class="card-body">
-                        <h5 class="card-title text-white">CHEQUE</h5>
-                        <p class="card-text"><strong>Reference : {{$receipt->cheque_reference}} </strong> </p>
-                        <p class="card-text"><strong>Bank : {{$receipt->cheque_bank}} </strong> </p>
-                        <p class="card-text"><strong>Amount : GH&#8373; {{ number_format($receipt->cheque_amount, 2) }} </strong> </p>
-                    </div>
-                </div>
-                @endif
-
-                <br>
-                @if($receipt->transfer_amount > 0.00)
-                <div class="card text-bg-secondary">
-                    <div class="card-body">
-                        <h5 class="card-title text-white"> TRANSFER </h5>
-                        <hr>
-                        <p class="card-text"><strong>Reference : {{$receipt->transfer_reference}} </strong> </p>
-                        <p class="card-text"><strong>Bank : {{$receipt->transfer_bank}} </strong> </p>
-                        <p class="card-text"><strong>Amount : GH&#8373; {{ number_format($receipt->transfer_amount, 2) }} </strong> </p>
-                    </div>
-                </div>
-                @endif
-
-
             </div>
 
             <div class="col-md-5 col-xl-5">
@@ -265,6 +215,59 @@
                         @endif
                     </div>
                 </div>
+
+                                @if($receipt->cash_amount > 0.00 )
+                <br>
+                <div class="card text-bg-success">
+                    <div class="card-body">
+                        <h5 class="card-title text-white"> CASH </h5>
+                        <hr>
+                        <p class="card-text"><strong>Amount : GH&#8373; {{ number_format($receipt->cash_amount, 2) }} </strong> </p>
+                    </div>
+                </div>
+                @endif
+                <br>
+
+                @if($receipt->momo_amount > 0.00)
+                <div class="card text-bg-warning">
+                    <div class="card-body">
+                        <h5 class="card-title text-white"> MOMO </h5>
+                        <hr>
+                        <p class="card-text"><strong>Transaction ID : {{$receipt->momo_transactin_id}} </strong> </p>
+                        <p class="card-text"><strong>Amount : GH&#8373; {{number_format($receipt->momo_amount, 2) }} </strong> </p>
+                    </div>
+                </div>
+                <br>
+                @endif
+
+                
+                @if($receipt->transfer_amount > 0.00)
+                <div class="card text-bg-secondary">
+                    <div class="card-body">
+                        <h5 class="card-title text-white"> TRANSFER </h5>
+                        <hr>
+                        <p class="card-text"><strong>Reference : {{$receipt->transfer_reference}} </strong> </p>
+                        <p class="card-text"><strong>Bank : {{$receipt->transfer_bank}} </strong> </p>
+                        <p class="card-text"><strong>Amount : GH&#8373; {{ number_format($receipt->transfer_amount, 2) }} </strong> </p>
+                    </div>
+                </div>
+                <br>
+                @endif
+                
+                
+                @if($receipt->cheque_amount > 0.00)
+                <div class="card text-bg-info">
+                    <div class="card-body">
+                        <h5 class="card-title text-white">CHEQUE</h5>
+                        <p class="card-text"><strong>Reference : {{$receipt->cheque_reference}} </strong> </p>
+                        <p class="card-text"><strong>Bank : {{$receipt->cheque_bank}} </strong> </p>
+                        <p class="card-text"><strong>Amount : GH&#8373; {{ number_format($receipt->cheque_amount, 2) }} </strong> </p>
+                    </div>
+                    @if($receipt->image)
+                    <img class="card-img-top" src="@if($receipt->image) {{asset('storage/'.$receipt->image)}}  @endif" alt="Card image cap" />
+                    @endif
+                </div>
+                @endif
             </div>
         </div>
     </div>

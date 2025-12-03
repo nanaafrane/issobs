@@ -307,6 +307,10 @@
         <!-- / Layout wrapper -->
 
         <div class="buy-now">
+            <a style="margin-bottom: 75px;" href="/invoice/{{$invoice->id}}/edit" class="btn btn-danger btn-buy-now"> <i class="icon-base bx bx-edit-alt me-1"></i> Edit</a>
+
+        </div>
+        <div class="buy-now">
             <button id="print"
                 class="btn btn-danger btn-buy-now"> <i class="icon-base bx bxs-printer"></i> Print Invoice</button>
         </div>
