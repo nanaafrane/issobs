@@ -305,7 +305,7 @@
             <div class="layout-overlay layout-menu-toggle"></div>
         </div>
         <!-- / Layout wrapper -->
-        @if($invoice->status != 'completed')
+        @if($invoice->status != 'completed' && $invoice->status != 'uncompleted')
         <div class="buy-now">
             <a style="margin-bottom: 75px;" href="/invoice/{{$invoice->id}}/edit" class="btn btn-danger btn-buy-now"> <i class="icon-base bx bx-edit-alt me-1"></i> Edit</a>
         </div>
