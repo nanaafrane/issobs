@@ -10,6 +10,7 @@ use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\FieldController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\PaymentInfoController;
 use App\Http\Controllers\ReceiptController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SalaryController;
@@ -73,10 +74,16 @@ Route::resource('expense', ExpenseController::class);
 
 Route::resource('employees', EmployeeController::class); 
 Route::get('employeesPayInfo/{id}', [EmployeeController::class, 'EmpPayInfo']);
+
+Route::put('employeesPayInfoUpdate/{id}', [EmployeeController::class, 'EmpPayInfoUpdate']);
+// Route::resource('paymentinfo', PaymentInfoController::class); 
+
+
 Route::get('employeesViewPayInfo/{id}', [EmployeeController::class, 'EmpViewPayInfo']);
 Route::get('employeesSalaryInfo', [EmployeeController::class, 'EmpSalaryInfo']);
 Route::get('employeesViewSalaryInfo', [EmployeeController::class, 'EmpViewSalaryInfo']);
 
 Route::resource('salaries', SalaryController::class);
+Route::post('salariesDeleteMultiple', [SalaryController::class, 'deleteMultiple'])->name('salaries.deletMultiple');
 Route::get('salariesTransaction', [SalaryController::class, 'transactionSalary']);
 Route::get('salariesInvPayroll', [SalaryController::class, 'InvToParoll']);

@@ -157,6 +157,10 @@
             <div class="container-xxl flex-grow-1 container-p-y">
               <h4 class="fw-bold py-3 mb-4"><span class="text-muted fw-light"> <i class="bx bxs-user-account"></i> Employee /</span> Edit</h4>
 
+              <div class="card-header  ml-2  d-none d-lg-block">
+                  @include('flash-messages')
+              </div>
+
               <div class="row">
                 <div class="col-md-12">
                   <ul class="nav nav-pills flex-column flex-md-row mb-3">
@@ -170,7 +174,9 @@
                   </ul>
                   <div class="card mb-4">
                     <div class="card-body">
-                        <form action="">
+                        <form action="/employeesPayInfoUpdate/{{$employee_pay_info->id}}"  method="POST">
+                            @csrf
+                            @method('PUT')
                             <div class="row" id="payment_field"> 
                                 <h5 class="card-header"> <strong> Payment Infomation</strong> </h5> 
                                 <hr class="mb-3" />
