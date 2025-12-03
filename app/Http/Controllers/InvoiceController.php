@@ -264,7 +264,12 @@ class InvoiceController extends Controller
             'user_id' => Auth::user()->id,
         ]);
 
-        return redirect('invoice')->with('primary', 'Invoice Updated Successfully');
+        Transaction::where('invoice_id', $invoice->id)->update([
+            'invoice_amount' => $total,
+        ]);
+
+
+        return back()->with('primary', 'Invoice Updated Successfully');
 
     }
 

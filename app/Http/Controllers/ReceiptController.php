@@ -226,7 +226,7 @@ class ReceiptController extends Controller
                 $transaction->invoice_id = $invoice_id;
                 $transaction->invoice_amount = $invoice_data->total;
                 $transaction->receipt_id = $receipt_id;
-                $transaction->receipt_amount = $total;
+                $transaction->receipt_amount = $total + $dAmount;
                 $transaction->balance = 0;
                 $transaction->status = $status;
                 $transaction->save();
@@ -264,7 +264,7 @@ class ReceiptController extends Controller
             $transaction->invoice_id = $invoice_id;
             $transaction->invoice_amount = $invoice_data->total;
             $transaction->receipt_id = $receipt_id;
-            $transaction->receipt_amount = $total;
+            $transaction->receipt_amount = $total + $dAmount;
             $transaction->balance = 0;
             $transaction->status = $status;
             $transaction->save();
@@ -283,12 +283,15 @@ class ReceiptController extends Controller
             // // get the balance of the invoice
             if($invoice_data->balance > 0)
             {
-                $balance = $invoice_data->balance - $total;
+                $balance = $invoice_data->balance - $total - $dAmount ;
             }
             else{
                 // get the balance of the invoice
-                $balance = $invoice_data->total - $total;
+                $balance = $invoice_data->total - $total - $dAmount ;
             }
+
+
+            // dd($balance, $invoice_data->balance, $invoice_data->total, $total, $dAmount);
 
             // create a receipt
             // $sum_of_amountPaid_minus_wht = null;
@@ -309,7 +312,7 @@ class ReceiptController extends Controller
             $transaction->invoice_id = $invoice_id;
             $transaction->invoice_amount = $invoice_data->total;
             $transaction->receipt_id = $receipt_id;
-            $transaction->receipt_amount = $total;
+            $transaction->receipt_amount = $total + $dAmount;
             $transaction->balance = $balance;
             $transaction->status = $status;
             $transaction->save();
