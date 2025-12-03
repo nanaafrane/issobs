@@ -6,6 +6,7 @@ use App\Models\employee;
 use App\Http\Requests\StoreemployeeRequest;
 use App\Http\Requests\UpdateemployeeRequest;
 use App\Http\Requests\StorePaymentInfoRequest;
+use App\Http\Requests\UpdatePaymentInfoRequest;
 use App\Models\Bank;
 use App\Models\Client;
 use App\Models\Department;
@@ -14,7 +15,6 @@ use App\Models\PaymentInfo;
 use App\Models\Role;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
-use Symfony\Component\HttpKernel\HttpCache\Store;
 
 class EmployeeController extends Controller
 {
@@ -61,6 +61,24 @@ class EmployeeController extends Controller
         return view('employees.payinfo', compact('employee_pay_info', 'banks'));
     }
 
+    public function EmpPayInfoUpdate(UpdatePaymentInfoRequest $request, $id)
+    {
+        //
+        $employee_pay_info = PaymentInfo::findOrFail($id);
+        // dd($employee_pay_info);
+        $employee_pay_info->bank_id = $request->input('bank_id');
+        $employee_pay_info->acc_number = $request->input('acc_number');
+        $employee_pay_info->branch = $request->input('branch');
+        $employee_pay_info->tin_number = $request->input('tin_number');
+        $employee_pay_info->ssnit_number = $request->input('ssnit_number');
+        $employee_pay_info->user_id = Auth::id();
+        $employee_pay_info->save();
+
+        return back()->with('success', 'Employee Payment Information updated successfully.');
+    }
+
+    
+
     public function EmpViewPayInfo($id)
     {
         //
@@ -70,13 +88,11 @@ class EmployeeController extends Controller
     }
 
 
-
     public function EmpSalaryInfo()
     {
         //
         return view('employees.salaryinfo');
     }
-
 
     public function EmpViewSalaryInfo()
     {
@@ -126,7 +142,6 @@ class EmployeeController extends Controller
         $employee->image = $image;
         $employee->save();
 
-
         $employee_pay_info = new PaymentInfo();
         $employee_pay_info->employee_id = $employee->id;
         $employee_pay_info->bank_id = $payRequest->input('bank_id');
@@ -136,7 +151,6 @@ class EmployeeController extends Controller
         $employee_pay_info->ssnit_number = $payRequest->input('ssnit_number');
         $employee_pay_info->user_id = Auth::id();
         $employee_pay_info->save();
-
 
         // LAST STEP: UPDATE EMPLOYEE WITH PAYMENT INFO ID
         $employee->payment_infos_id = $employee_pay_info->id;
@@ -181,18 +195,45 @@ class EmployeeController extends Controller
     public function update(UpdateemployeeRequest $request, employee $employee)
     {
         //
-        if($request->file('image'))
-        {
+        if ($request->hasFile('image')) {
+            // remove old file — ensure the stored value matches what you saved earlier
             Storage::disk('public')->delete($employee->image);
+            // store returns a string path (or false on failure)
+            $path = $request->file('image')->store('images', 'public');
 
-           $image = ($request->file('image'))->store('images', 'public');
-           $request->merge(['image' => $image  ]);
+            if ($path === false) {
+                return back()->withErrors(['image' => 'Failed to store image.']);
+            }
+            // save the stored path (or use basename($path) if you only store filename)
+            // dd($path);
         }
-      
-        $employee->update($request->all());
+
+        $employee->image = $path ?? $employee->image;
+        $employee->name = $request->input('name');
+        $employee->gender = $request->input('gender');
+        $employee->phone_number = $request->input('phone_number');
+        $employee->date_of_birth = $request->input('date_of_birth');
+        $employee->nia_number = $request->input('nia_number');
+        $employee->address = $request->input('address');
+        $employee->marital_status = $request->input('marital_status');
+        $employee->worker_type = $request->input('worker_type');
+        $employee->date_of_joining = $request->input('date_of_joining');
+        $employee->department_id = $request->input('department_id');
+        $employee->role_id = $request->input('role_id');
+        $employee->field_id = $request->input('field_id');
+        $employee->client_id = $request->input('client_id');
+        $employee->location = $request->input('location');
+        $employee->payment_type = $request->input('payment_type');
+        $employee->basic_salary = $request->input('basic_salary');
+        $employee->gurantor_name = $request->input('gurantor_name');
+        $employee->gurantor_number = $request->input('gurantor_number');
+        $employee->gurantor_address = $request->input('gurantor_address');
+        $employee->gurantor_nia_number = $request->input('gurantor_nia_number');
+        $employee->relationship = $request->input('relationship');
+        $employee->user_id = Auth::id();
+        $employee->save();
+
         return back()->with('success', 'Employee updated successfully.');
-       
-        // dd($request->all());
     }
 
     /**

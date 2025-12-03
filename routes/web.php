@@ -74,9 +74,15 @@ Route::resource('expense', ExpenseController::class);
 Route::resource('employees', EmployeeController::class); 
 Route::get('employeesPayInfo/{id}', [EmployeeController::class, 'EmpPayInfo']);
 Route::get('employeesViewPayInfo/{id}', [EmployeeController::class, 'EmpViewPayInfo']);
+Route::put('employeesPayInfoUpdate/{id}', [EmployeeController::class, 'EmpPayInfoUpdate']);
 Route::get('employeesSalaryInfo', [EmployeeController::class, 'EmpSalaryInfo']);
 Route::get('employeesViewSalaryInfo', [EmployeeController::class, 'EmpViewSalaryInfo']);
 
 Route::resource('salaries', SalaryController::class);
 Route::get('salariesTransaction', [SalaryController::class, 'transactionSalary']);
 Route::get('salariesInvPayroll', [SalaryController::class, 'InvToParoll']);
+Route::post('salariesDeleteMultiple', [SalaryController::class, 'deleteMultiple'])->name('salaries.deletMultiple');
+Route::get('salariesTransaction', [SalaryController::class, 'transactionSalary']);
+Route::get('salariesInvPayroll', [SalaryController::class, 'InvToParoll']);
+
+// Route::resource('paymentinfo', PaymentInfoController::class); 

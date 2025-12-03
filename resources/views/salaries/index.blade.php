@@ -280,63 +280,72 @@
                 </div>
             </div>
 
-        </div> <br>
-       
-       
+        </div> <br> <br>
         @endif
-
+        <br>
+              <div class="card-header  ml-2  d-none d-lg-block">
+                  @include('flash-messages')
+              </div> <br>
         <div class="row">
-            <div class="col">
-                <table id="myTable" class="display">
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>Period</th>
-                            <th>Cash Amount</th>
-                            <th>Momo Amount</th>
-                            <th>Cheque Amount </th>
-                            <th> Transfer Amount </th>
-                            <th>Status</th>
-                            <th>Exp id</th>
-                            <th>Expense Amount</th>
-                            <th> Total_Amount </th>
-                            <th>Date Created</th>
-                            <th>Branch</th>
-                        </tr>
-                    </thead>
-                    <tbody>
+            <form action="/salaries" method="POST">
+                @csrf
+                <div class="col">
+                    <input class="form-check-input form-check-inline" type="checkbox" value="" id="options" />
 
-                        @if(Auth::user()->hasRole('Invoice') || Auth::user()->hasRole('HR Manager'))
-                       
-                        <tr>
-                            <td>  </td>
-                            <td>  </td>
-                            <td>GH&#x20B5;  </td>
-                            <td>GH&#x20B5;  </td>
-                            <td>GH&#x20B5;  </td>
-                            <td>GH&#x20B5;  </td>
+                    <div class="form-check form-check-inline">
+                        <select name="employees" class="form-select">
+                            <option value=""> Select All </option>
+                        </select>
+                    </div>
+                   
+                    <div class="form-check form-check-inline">
+                         <input type="month" name="salary_month" required/>
+                        
+                        <button class="btn btn-dark" type="submit" onclick="return confirm('Kindly Confirm?')"> <i class="icon-base bx bx-arrow-from-left"> </i> {{ __('Add To Salaries') }}</button>
+                    </div>
 
-                            <td><span class="badge bg-label-success"> </span></td>
-                       
-                            <td>   </td>
-                            <td>GH&#x20B5;   </td>
-                            <td>GH&#x20B5;  </td>
-                            <td>  </td>
-                            <td>  </td>
-                        </tr>
-                        @endif
+                    <table id="myTable" class="display">
+                        <thead>
+                            <tr>
+                              <th> </th>
+                              <th>#</th>
+                              <th> Employee ID </th>
+                              <th>Name</th>
+                              <th>Gender</th>
+                              <th>Number</th>
+                              <th> Employment Date </th>
+                              <th> Department </th>
+                              <th>Role</th>
+                              <th>Field Office</th>
+                              <th>Client </th>
+                              <th> Location </th>
+                              <th>Payment Type</th>
+                            </tr>
+                        </thead>
+                        <tbody>
 
+                            @foreach ($employees as $key => $employee )
+                            <tr>
+                                <td> <input class="checkBoxes form-check-input" type="checkbox" name="employees[]" value="{{ $employee->id }}" /></td>
+                                <td> {{ $key + 1 }} </td>
+                                <td>  FWSS {{ $employee->id }}  </td>
+                                <td> {{$employee->name}}  </td>
+                                <td> {{ $employee->gender }}  </td>
+                                <td> {{ $employee->phone_number }}  </td>
+                                <td> {{ $employee->date_of_joining->diffForHumans() }} </td>
+                                <td> {{ $employee->department?->name }} </td>
+                                <td> {{ $employee->role?->name }}  </td>
+                                <td> {{ $employee->field?->name }}   </td>
+                                <td> {{ $employee->client?->name }} {{ $employee->client?->business_name }} </td>
+                                <td> {{ $employee->location }} </td>
+                                <td> {{ $employee->payment_type }}  </td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
 
-
-
-
-
-
-
-                    </tbody>
-                </table>
-
-            </div>
+            </form>
         </div>
     </div>
   <!-- / Content -->
@@ -360,11 +369,22 @@
             responsive: true,
 
             layout: {
-                topStart: {
-                    buttons: ['excelHtml5', 'pdfHtml5']
-                }
+              topStart: {
+                // buttons: [] // No export/download buttons
+              }
             }
         });
     </script>
+
+        <script>
+        $(document).ready(function() {
+            $('#options').change(function() {
+                $('.checkBoxes').prop('checked', function(i, val) {
+                    return !val;
+                });
+            });
+        });
+    </script>
+
     @endsection
 </x-hr-dashboard>

@@ -5,16 +5,36 @@ namespace App\Http\Controllers;
 use App\Models\Salary;
 use App\Http\Requests\StoreSalaryRequest;
 use App\Http\Requests\UpdateSalaryRequest;
+use App\Models\Bank;
+use App\Models\Client;
+use App\Models\Department;
+use App\Models\employee;
+use App\Models\Field;
+use App\Models\Role;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\SalariesExport;
 
 class SalaryController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
-        //
-        return view('salaries.index');
+        // Pass only active employees to the salaries index view, as it displays salary data for currently active staff.
+        $employees =  employee::where('status', 'Active')->get();
+        $Departments = Department::all(); 
+        $Roles = Role::all();
+        $Fields = Field::all();
+        $clients = Client::all();
+        $banks = Bank::all();
+        return view('salaries.index', compact('employees','Departments', 'Roles', 'Fields', 'clients', 'banks'));
     }
 
     /**
@@ -23,16 +43,16 @@ class SalaryController extends Controller
     public function create()
     {
         //
-        return view('salaries.create');
-    }
 
+        $salaries =  Salary::where('payment_status', 'pending')->get();
+        return view('salaries.create', compact('salaries'));
+    }
 
     public function transactionSalary()
     {
         //
         return view('salaries.transaction');
     }
-
 
     /**
      * Show the form for converting invoices to payroll.
@@ -43,13 +63,76 @@ class SalaryController extends Controller
         return view('salaries.invpayroll');
     }
 
-
     /**
      * Store a newly created resource in storage.
      */
     public function store(StoreSalaryRequest $request)
     {
-        //
+
+        $employees = $request->input('employees', []);
+        // dd($salaryIds);
+        if (empty($employees)) {
+            return back()->with('error', 'No employee selected to add to  salaries.');
+        }
+
+        // get current month and year
+        $date = Carbon::parse($request->input('salary_month'));
+
+        // dd($date->format('Y-m-d H:i:s'));
+        // get date of the last salary entry
+        $lastSalary = Salary::where('payment_status', 'pending')->orderBy('created_at', 'desc')->first();
+        $lastSalaryMonth = $lastSalary ? Carbon::parse($lastSalary->salary_month) : null;   
+       
+        // Check if a salary entry for the current month already exists
+        if ($lastSalaryMonth && $lastSalaryMonth->format('F Y') === $date->format('F Y')) {
+            return back()->with('error', 'Salary for this month has already been added.');
+        }   
+      
+        // Process salary entries for selected employees
+        $alreadyProcessed = [];
+        $employees = employee::findOrFail($request->employees);
+       
+        // dd($employees);
+
+        if ($request->has('employees')) {
+            foreach ($employees as $employee) {
+                $exists = Salary::where('employee_id', $employee->id)
+                    ->where('salary_month', $date->format('F Y'))
+                    ->exists();
+                if ($exists) {
+                    $alreadyProcessed[] = $employee->id;
+                    continue;
+                }
+
+                // return "Processing salary for Employee payment ID: " . $employee->paymentInfo->id . "\n";
+
+                $salary = new Salary();
+                $salary->employee_id = $employee->id;
+                $salary->salary_month = $request->input('salary_month');
+                $salary->field_id = $employee->field_id;
+                $salary->department_id = $employee->department_id;
+                $salary->role_id = $employee->role_id;
+                $salary->client_id = $employee->client_id;
+                $salary->location = $employee->location;
+                $salary->payment_type = $employee->payment_type;
+                $salary->account_number = $employee->paymentInfo?->acc_number;
+                $salary->bank_name = $employee->paymentInfo?->bank_name;
+                $salary->branch = $employee->paymentInfo?->branch;
+                $salary->payment_type = $employee->payment_type;
+                $salary->basic_salary = $employee->basic_salary;
+                $salary->user_id = Auth::id();
+                $salary->save();
+
+
+            }
+        }
+        if (!empty($alreadyProcessed)) {
+            return back()->with('error', 'Some employees already have been add to salary to be processed for this month: ' . implode(', ', $alreadyProcessed));
+        }
+        return back()->with('success', 'Employees added for this month salary to be processed.'); 
+
+        // dd($request->all(), $date->format('F Y'));
+
     }
 
     /**
@@ -82,5 +165,25 @@ class SalaryController extends Controller
     public function destroy(Salary $salary)
     {
         //
+        // dd($salary);
+        // $salary->delete();
     }
+
+    public function deleteMultiple(StoreSalaryRequest $request)
+    {
+        $salaryIds = $request->input('salary', []);
+        // dd($salaryIds);
+        if (empty($salaryIds)) {
+            return back()->with('error', 'No salaries selected for deletion.');
+        }
+
+        Salary::whereIn('id', $salaryIds)->delete();
+        // return "Deleting salaries with IDs: " . implode(', ', $salaryIds);
+
+        return back()->with('success', 'Selected salaries have been deleted successfully.');
+    }
+
+
+
+
 }

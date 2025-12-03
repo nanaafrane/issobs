@@ -281,34 +281,32 @@
             </div>
 
         </div> <br> <br>
-       
+                     <div class="card-header  ml-2  d-none d-lg-block">
+                  @include('flash-messages')
+              </div> <br>
        
         @endif
 
         <div class="row">
             <div class="col-lg-12 mb-8 float-start">
-                <a href="{{ url('salaries/create') }}" class="btn btn-dark"> <i class="bx bxs-cloud-upload"> </i>  Upload Monthly Salaries </a> 
+                <a href="" class="btn btn-dark"> <i class="bx bxs-cloud-download"> </i>  Download Employee Salaries To Work On</a> 
         </div> 
 
 
         <div class="row">
-            <form action="/" method="POST">
+            <form action="/salariesDeleteMultiple" method="POST">
                 @csrf
                 <div class="col">
                     <input class="form-check-input form-check-inline" type="checkbox" value="" id="options" />
 
                     <div class="form-check form-check-inline">
-                        <select name="collections" class="form-select">
+                        <select name="salary" class="form-select">
                             <option value=""> Select All </option>
                         </select>
                     </div>
 
                     <div class="form-check form-check-inline">
-                        <button class="btn btn-danger" type="submit"> <i class="icon-base bx bx-recycle"> </i> {{ __('Delete') }}</button>
-
-                        <button class="btn btn-dark" type="submit"> <i class="icon-base bx bx-arrow-from-left"> </i> {{ __('Approve') }}</button>
-                        <button class="btn btn-success" type="submit"> <i class="icon-base bx bx-arrow-from-left"> </i> {{ __('Approve') }}</button>
-                   
+                        <button class="btn btn-danger" onclick="return confirm('Kindly Confirm?')" type="submit"> <i class="icon-base bx bx-recycle"> </i> {{ __('Delete') }}</button>                   
                     </div>
 
                     <table id="myTable" class="display">
@@ -316,40 +314,36 @@
                             <tr>
                                 <th> </th>
                                 <th>#</th>
-                                <th>Period</th>
-                                <th>Cash Amount</th>
-                                <th>Momo Amount</th>
-                                <th>Cheque Amount </th>
-                                <th> Transfer Amount </th>
-                                <th> Total Amount </th>
+                                <th>Emp. ID </th>
+                                <th>Name</th>
+                                <th> Department </th>
+                                <th>Role</th>
+                                <th>Emp. Type </th>
+                                <th> Field </th>
+                                <th> Client </th>
                                 <th>Date Created</th>
-                                <th>Branch</th>
-                                <th>status</th>
-                                <th>Bank</th>
+                                <th>staff </th>
+
                             </tr>
                         </thead>
                         <tbody>
 
-
+                        @foreach ($salaries as $key => $salary )
                             <tr>
-                                <td> <input class="checkBoxes form-check-input" type="checkbox" name="collections[]" value="" /></td>
-                                <td> </td>
-                                <td>  </td>
-                                <td>GH&#x20B5; </td>
-                                <td>GH&#x20B5; </td>
-                                <td>GH&#x20B5; </td>
-                                <td>GH&#x20B5; </td>
-                                <td>GH&#x20B5; </td>
-                                <td>  </td>
-                                <td>   </td>
-                                <td><span class="badge bg-label-danger"> </span></td>
-                                <td>
-                                    <select name="bank_id[]" class="form-select @error('bank_id') is-invalid @enderror" id="bank_id" value="{{ old('bank_id')}}" required>
-                                        <option selected disabled>Choose...</option>
-                                    </select>
-                                </td>
-                            </tr>
+                                <td> <input class="checkBoxes form-check-input" type="checkbox" name="salary[]" value="{{ $salary->id }}" /> </td>
+                                <td> {{ $salary->id }} </td>
+                                <td> FWSS {{ $salary->employee_id }} </td>
+                                <td> {{ $salary->employee?->name }} </td>
+                                <td> {{ $salary->department?->name }} </td>
+                                <td> {{ $salary->role?->name }} </td>
+                                <td> {{ $salary->employee?->worker_type }} </td>
+                                <td> {{ $salary->field?->name }} </td>
+                                <td> {{ $salary->client?->name }} {{ $salary->client?->business_name }}</td>
+                                <td> {{ $salary->created_at }} </td>
+                                <td> {{ $salary->user?->name}}  </td>
 
+                            </tr>
+                          @endforeach
                         </tbody>
                     </table>
                 </div>
@@ -378,12 +372,6 @@
     <script>
         new DataTable('#myTable', {
             responsive: true,
-
-            layout: {
-                topStart: {
-                    buttons: ['excelHtml5', 'pdfHtml5']
-                }
-            }
         });
     </script>
 
