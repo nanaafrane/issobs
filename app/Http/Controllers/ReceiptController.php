@@ -226,7 +226,7 @@ class ReceiptController extends Controller
                 $transaction->invoice_id = $invoice_id;
                 $transaction->invoice_amount = $invoice_data->total;
                 $transaction->receipt_id = $receipt_id;
-                $transaction->receipt_amount = $total;
+                $transaction->receipt_amount = $total + $dAmount;
                 $transaction->balance = 0;
                 $transaction->status = $status;
                 $transaction->save();
@@ -264,7 +264,7 @@ class ReceiptController extends Controller
             $transaction->invoice_id = $invoice_id;
             $transaction->invoice_amount = $invoice_data->total;
             $transaction->receipt_id = $receipt_id;
-            $transaction->receipt_amount = $total;
+            $transaction->receipt_amount = $total + $dAmount;
             $transaction->balance = 0;
             $transaction->status = $status;
             $transaction->save();
@@ -312,7 +312,7 @@ class ReceiptController extends Controller
             $transaction->invoice_id = $invoice_id;
             $transaction->invoice_amount = $invoice_data->total;
             $transaction->receipt_id = $receipt_id;
-            $transaction->receipt_amount = $total;
+            $transaction->receipt_amount = $total + $dAmount;
             $transaction->balance = $balance;
             $transaction->status = $status;
             $transaction->save();

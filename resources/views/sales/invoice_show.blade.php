@@ -305,11 +305,11 @@
             <div class="layout-overlay layout-menu-toggle"></div>
         </div>
         <!-- / Layout wrapper -->
-
+        @if($invoice->status != 'completed')
         <div class="buy-now">
             <a style="margin-bottom: 75px;" href="/invoice/{{$invoice->id}}/edit" class="btn btn-danger btn-buy-now"> <i class="icon-base bx bx-edit-alt me-1"></i> Edit</a>
-
         </div>
+        @endif
         <div class="buy-now">
             <button id="print"
                 class="btn btn-danger btn-buy-now"> <i class="icon-base bx bxs-printer"></i> Print Invoice</button>
