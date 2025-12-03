@@ -61,6 +61,7 @@ class EmployeeController extends Controller
         return view('employees.payinfo', compact('employee_pay_info', 'banks'));
     }
 
+
     public function EmpPayInfoUpdate(UpdatePaymentInfoRequest $request, $id)
     {
         //
@@ -88,11 +89,13 @@ class EmployeeController extends Controller
     }
 
 
+
     public function EmpSalaryInfo()
     {
         //
         return view('employees.salaryinfo');
     }
+
 
     public function EmpViewSalaryInfo()
     {
@@ -142,6 +145,7 @@ class EmployeeController extends Controller
         $employee->image = $image;
         $employee->save();
 
+
         $employee_pay_info = new PaymentInfo();
         $employee_pay_info->employee_id = $employee->id;
         $employee_pay_info->bank_id = $payRequest->input('bank_id');
@@ -151,6 +155,7 @@ class EmployeeController extends Controller
         $employee_pay_info->ssnit_number = $payRequest->input('ssnit_number');
         $employee_pay_info->user_id = Auth::id();
         $employee_pay_info->save();
+
 
         // LAST STEP: UPDATE EMPLOYEE WITH PAYMENT INFO ID
         $employee->payment_infos_id = $employee_pay_info->id;
@@ -232,6 +237,7 @@ class EmployeeController extends Controller
         $employee->relationship = $request->input('relationship');
         $employee->user_id = Auth::id();
         $employee->save();
+
 
         return back()->with('success', 'Employee updated successfully.');
     }

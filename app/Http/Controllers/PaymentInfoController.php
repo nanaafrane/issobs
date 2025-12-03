@@ -8,6 +8,10 @@ use App\Http\Requests\UpdatePaymentInfoRequest;
 
 class PaymentInfoController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
     /**
      * Display a listing of the resource.
      */
@@ -54,6 +58,9 @@ class PaymentInfoController extends Controller
     public function update(UpdatePaymentInfoRequest $request, PaymentInfo $paymentInfo)
     {
         //
+        // dd( $paymentInfo);
+        // $paymentInfo->update($request->all());
+        // return back()->with('success', 'Payment Information updated successfully.');
     }
 
     /**

@@ -48,11 +48,13 @@ class SalaryController extends Controller
         return view('salaries.create', compact('salaries'));
     }
 
+
     public function transactionSalary()
     {
         //
         return view('salaries.transaction');
     }
+
 
     /**
      * Show the form for converting invoices to payroll.
@@ -62,6 +64,7 @@ class SalaryController extends Controller
         //
         return view('salaries.invpayroll');
     }
+
 
     /**
      * Store a newly created resource in storage.
@@ -74,6 +77,7 @@ class SalaryController extends Controller
         if (empty($employees)) {
             return back()->with('error', 'No employee selected to add to  salaries.');
         }
+
 
         // get current month and year
         $date = Carbon::parse($request->input('salary_month'));
@@ -124,6 +128,7 @@ class SalaryController extends Controller
                 $salary->save();
 
 
+
             }
         }
         if (!empty($alreadyProcessed)) {
@@ -132,6 +137,7 @@ class SalaryController extends Controller
         return back()->with('success', 'Employees added for this month salary to be processed.'); 
 
         // dd($request->all(), $date->format('F Y'));
+
 
     }
 
@@ -180,8 +186,10 @@ class SalaryController extends Controller
         Salary::whereIn('id', $salaryIds)->delete();
         // return "Deleting salaries with IDs: " . implode(', ', $salaryIds);
 
+
         return back()->with('success', 'Selected salaries have been deleted successfully.');
     }
+
 
 
 
