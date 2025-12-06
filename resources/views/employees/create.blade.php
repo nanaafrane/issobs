@@ -398,17 +398,29 @@
                                 @enderror
                             </div>                       
 
-                            <center> 
-                            <div class="mb-3 col-md-4">
-                              <label for="basic_salary" class="form-label"> <strong>  Basic Salary * </strong> </label>
-                              <input  class="form-control @error('basic_salary') is-invalid @enderror" type="number" id="basic_salary" name="basic_salary" placeholder="GH&#x20B5;" value="{{old('basic_salary')}}" autofocus required step="any"/>
-                                @error('basic_salary')
-                                <span class="invalid-feedback" role="alert">
-                                    <strong>{{ $message }}</strong>
-                                </span>
-                                @enderror
-                            </div>
-                            </center> 
+                              <div class="row"> 
+                                <div class="col-md-2"></div>
+                                <div class="mb-3 col-md-4">
+                                  <label for="basic_salary" class="form-label"> <strong>  Basic Salary * </strong> </label>
+                                  <input  class="form-control @error('basic_salary') is-invalid @enderror" type="number" id="basic_salary" name="basic_salary" placeholder="GH&#x20B5;" value="{{old('basic_salary')}}" autofocus required step="any"/>
+                                    @error('basic_salary')
+                                    <span class="invalid-feedback" role="alert">
+                                        <strong>{{ $message }}</strong>
+                                    </span>
+                                    @enderror
+                                </div>
+
+                                <div class="mb-3 col-md-4">
+                                  <label for="allowances" class="form-label"> <strong>  Allawonce * </strong> </label>
+                                  <input  class="form-control @error('allowances') is-invalid @enderror" type="number" id="allowances" name="allowances" placeholder="GH&#x20B5;" value="{{old('allowances')}}" autofocus required step="any"/>
+                                    @error('allowances')
+                                    <span class="invalid-feedback" role="alert">
+                                        <strong>{{ $message }}</strong>
+                                    </span>
+                                    @enderror
+                                </div>
+                                <div class="col-md-2"></div>
+                              </div>
 
                           <div class="row" id="payment_field" style="display: none;"> 
                             <h5 class="card-header"> <strong> Payment Infomation</strong> </h5> 
@@ -444,6 +456,16 @@
                               <label for="branch" class="form-label"> <strong>    Branch * </strong> </label>
                               <input  class="form-control @error('branch') is-invalid @enderror" type="text" id="branch" name="branch" placeholder=" Branch " value="{{old('branch')}}" autofocus />
                                 @error('branch')
+                                <span class="invalid-feedback" role="alert">
+                                    <strong>{{ $message }}</strong>
+                                </span>
+                                @enderror
+                            </div>
+
+                            <div class="mb-3 col-md-4">
+                              <label for="branch_code" class="form-label"> <strong>    Branch Code </strong> </label>
+                              <input  class="form-control @error('branch_code') is-invalid @enderror" type="text" id="branch_code" name="branch_code" placeholder=" branch_code " value="{{old('branch_code')}}" autofocus />
+                                @error('branch_code')
                                 <span class="invalid-feedback" role="alert">
                                     <strong>{{ $message }}</strong>
                                 </span>

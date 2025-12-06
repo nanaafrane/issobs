@@ -11,6 +11,7 @@ class PaymentInfo extends Model
         'bank_id',
         'acc_number',
         'branch',
+        'branch_code',
         'employee_id',
         'tin_number',
         'ssnit_number',

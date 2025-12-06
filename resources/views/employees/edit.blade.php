@@ -407,17 +407,29 @@
                                 @enderror
                             </div>                       
 
-                            <center> 
-                            <div class="mb-3 col-md-4">
-                              <label for="basic_salary" class="form-label"> <strong>  Basic Salary * </strong> </label>
-                              <input  class="form-control @error('basic_salary') is-invalid @enderror" type="number" id="basic_salary" name="basic_salary" placeholder="GH&#x20B5;" value="{{$employee->basic_salary}}" autofocus required step="any"/>
-                                @error('basic_salary')
-                                <span class="invalid-feedback" role="alert">
-                                    <strong>{{ $message }}</strong>
-                                </span>
-                                @enderror
+                            <div class="row"> 
+                                <div class="col-md-2"></div>
+                              <div class="mb-3 col-md-4">
+                                <label for="basic_salary" class="form-label"> <strong>  Basic Salary * </strong> </label>
+                                <input  class="form-control @error('basic_salary') is-invalid @enderror" type="number" id="basic_salary" name="basic_salary" placeholder="GH&#x20B5;" value="{{$employee->basic_salary}}" autofocus required step="any"/>
+                                  @error('basic_salary')
+                                  <span class="invalid-feedback" role="alert">
+                                      <strong>{{ $message }}</strong>
+                                  </span>
+                                  @enderror
+                              </div>
+
+                              <div class="mb-3 col-md-4">
+                                <label for="allowances" class="form-label"> <strong>  Allowances * </strong> </label>
+                                <input  class="form-control @error('allowances') is-invalid @enderror" type="number" id="allowances" name="allowances" placeholder="GH&#x20B5;" value="{{$employee->allowances}}" autofocus required step="any"/>
+                                  @error('allowances')
+                                  <span class="invalid-feedback" role="alert">
+                                      <strong>{{ $message }}</strong>
+                                  </span>
+                                  @enderror
+                              </div> 
+                                <div class="col-md-2"></div>
                             </div>
-                            </center> 
 
 
                             <h5 class="card-header"> <strong>Gurantor Infomation</strong> </h5> 
@@ -492,6 +504,10 @@
             </div>
   <!-- / Content -->
 
+            <div class="buy-now">
+            <a style="margin-bottom: 70px;" href="/employees/{{$employee->id}}/edit" class="btn btn-danger btn-buy-now"> <i class="icon-base bx bx-edit-alt me-1"></i> Re-Instate </a>
+            <a  href="/employees/{{$employee->id}}/edit" class="btn btn-danger btn-buy-now"> <i class="icon-base bx bx-trash me-1"></i> Terminate </a>  
+          </div>
   @endsection
 
 

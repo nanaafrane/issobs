@@ -39,6 +39,7 @@ class UpdateemployeeRequest extends FormRequest
             'client_id'=> 'nullable|exists:clients,id',
             'location'=> 'required|string|max:255',
             'basic_salary'=> 'required|numeric|min:0',
+            'allowances'=> 'required|numeric|min:0',
             'payment_type'=> 'required|string|in:cash,bank',
             'gurantor_name'=> 'required|string|max:255',
             'gurantor_number'=> 'required|string|max:20',

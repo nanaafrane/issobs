@@ -167,6 +167,10 @@
             <div class="content-wrapper">
                 <div id="printContent" class="content-wrapper">
                     <div class="container-xxl flex-grow-1 container-p-y">
+
+                    <div class="card-header  ml-2  d-none d-lg-block">
+                        @include('flash-messages')
+                    </div>
                         <!-- Invoice 1 - Bootstrap Brain Component -->
                         <section class="py-3 py-md-5">
                             <div class="row justify-content-center">

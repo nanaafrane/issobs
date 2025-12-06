@@ -152,7 +152,7 @@ class InvoiceController extends Controller
             // // select all transactions with this current invoice iD and assign value D to the checks culumn
             // Transaction::where('invoice_id', $invoice_number)->update(['checks' => 'd']);
 
-            return redirect('invoice')->with('primary', 'Invoice Generated Successfully');
+            return redirect()->route('invoice.show',['invoice' => $invoice_number])->with('primary', 'Invoice Generated Successfully');
 
         }
         //    dd($invoice_number);
@@ -269,7 +269,8 @@ class InvoiceController extends Controller
         ]);
 
 
-        return back()->with('primary', 'Invoice Updated Successfully');
+        // return back()->with('primary', 'Invoice Updated Successfully');
+        return redirect()->route('invoice.show',['invoice' => $invoice])->with('primary', 'Invoice  Updated Successfully');
 
     }
 

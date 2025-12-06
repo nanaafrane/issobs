@@ -20,19 +20,19 @@ return new class extends Migration
             $table->string('nia_number')->nullable();
             $table->string('address')->nullable();
             $table->string('marital_status')->nullable();
-            $table->unsignedBigInteger('department_id')->nullable();
-            $table->unsignedBigInteger('role_id')->nullable();
+            $table->integer('department_id')->nullable();
+            $table->integer('role_id')->nullable();
             $table->date('date_of_joining')->nullable();
             $table->string('worker_type')->nullable();
-            $table->unsignedBigInteger('field_id')->nullable();
-            $table->unsignedBigInteger('client_id')->nullable();
+            $table->integer('field_id')->nullable();
+            $table->integer('client_id')->nullable();
             $table->string('location')->nullable();
             $table->string('image')->nullable();
             $table->string('status')->nullable();
             $table->string('payment_type')->nullable();
-            $table->unsignedBigInteger('user_id');
-            $table->unsignedBigInteger('payment_infos_id')->nullable();
-            $table->unsignedBigInteger('salary_id')->nullable();
+            $table->integer('user_id');
+            $table->integer('payment_infos_id')->nullable();
+            $table->integer('salary_id')->nullable();
             $table->string('gurantor_name')->nullable();
             $table->string('gurantor_number')->nullable();
             $table->string('gurantor_address')->nullable();
@@ -40,6 +40,7 @@ return new class extends Migration
             $table->string('gurantor_nia_image')->nullable();
             $table->string('relationship')->nullable();
             $table->decimal('basic_salary', 15, 2)->nullable();
+            $table->decimal('allowances', 15, 2)->nullable();
             $table->timestamps();
         });
     }

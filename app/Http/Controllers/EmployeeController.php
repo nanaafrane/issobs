@@ -70,12 +70,15 @@ class EmployeeController extends Controller
         $employee_pay_info->bank_id = $request->input('bank_id');
         $employee_pay_info->acc_number = $request->input('acc_number');
         $employee_pay_info->branch = $request->input('branch');
+        $employee_pay_info->branch_code = $request->input('branch_code');
         $employee_pay_info->tin_number = $request->input('tin_number');
         $employee_pay_info->ssnit_number = $request->input('ssnit_number');
         $employee_pay_info->user_id = Auth::id();
         $employee_pay_info->save();
 
-        return back()->with('success', 'Employee Payment Information updated successfully.');
+        return redirect()->route('employees.ViewPayInfo',['id' => $employee_pay_info->employee_id])->with('success', 'Employee Payment Information updated successfully.');
+        
+        // return back()->with('success', 'Employee Payment Information updated successfully.');
     }
 
     
@@ -136,6 +139,7 @@ class EmployeeController extends Controller
         $employee->client_id = $request->input('client_id');
         $employee->location = $request->input('location');
         $employee->basic_salary = $request->input('basic_salary');
+        $employee->allowances = $request->input('allowances');
         $employee->payment_type = $request->input('payment_type');
         $employee->gurantor_name = $request->input('gurantor_name');
         $employee->gurantor_number = $request->input('gurantor_number');
@@ -151,6 +155,7 @@ class EmployeeController extends Controller
         $employee_pay_info->bank_id = $payRequest->input('bank_id');
         $employee_pay_info->acc_number = $payRequest->input('acc_number');
         $employee_pay_info->branch = $payRequest->input('branch');
+        $employee_pay_info->branch_code = $payRequest->input('branch_code');
         $employee_pay_info->tin_number = $payRequest->input('tin_number');
         $employee_pay_info->ssnit_number = $payRequest->input('ssnit_number');
         $employee_pay_info->user_id = Auth::id();
@@ -161,7 +166,8 @@ class EmployeeController extends Controller
         $employee->payment_infos_id = $employee_pay_info->id;
         $employee->save();
 
-        return redirect()->route('employees.index')->with('success', 'Employee created successfully.');
+        return redirect()->route('employees.show',['employee' => $employee->id])->with('success', 'Employee created successfully.');
+        //return redirect()->route('employees.index')->with('success', 'Employee created successfully.');
 
     }
 
@@ -201,8 +207,13 @@ class EmployeeController extends Controller
     {
         //
         if ($request->hasFile('image')) {
+
+            // get current image path to delete old file
+            $employee = employee::findOrFail($employee->id);
+            $employeeImagePath = $employee?->image; 
             // remove old file — ensure the stored value matches what you saved earlier
-            Storage::disk('public')->delete($employee->image);
+            $employeeImagePath = $employeeImagePath ? Storage::disk('public')->path($employeeImagePath) : null;
+            // Storage::disk('public')->delete($employee?->image);
             // store returns a string path (or false on failure)
             $path = $request->file('image')->store('images', 'public');
 
@@ -230,6 +241,7 @@ class EmployeeController extends Controller
         $employee->location = $request->input('location');
         $employee->payment_type = $request->input('payment_type');
         $employee->basic_salary = $request->input('basic_salary');
+        $employee->allowances = $request->input('allowances');
         $employee->gurantor_name = $request->input('gurantor_name');
         $employee->gurantor_number = $request->input('gurantor_number');
         $employee->gurantor_address = $request->input('gurantor_address');
@@ -238,8 +250,7 @@ class EmployeeController extends Controller
         $employee->user_id = Auth::id();
         $employee->save();
 
-
-        return back()->with('success', 'Employee updated successfully.');
+        return redirect()->route('employees.show',['employee' => $employee])->with('success', 'Employee updated successfully.');
     }
 
     /**

@@ -72,8 +72,8 @@ Route::resource('banks', BankController::class);
 Route::resource('expense', ExpenseController::class);
 
 Route::resource('employees', EmployeeController::class); 
-Route::get('employeesPayInfo/{id}', [EmployeeController::class, 'EmpPayInfo']);
-Route::get('employeesViewPayInfo/{id}', [EmployeeController::class, 'EmpViewPayInfo']);
+Route::get('employeesPayInfo/{id}', [EmployeeController::class, 'EmpPayInfo'])->name('employees.PayInfo');
+Route::get('employeesViewPayInfo/{id}', [EmployeeController::class, 'EmpViewPayInfo'])->name('employees.ViewPayInfo');
 Route::put('employeesPayInfoUpdate/{id}', [EmployeeController::class, 'EmpPayInfoUpdate']);
 Route::get('employeesSalaryInfo', [EmployeeController::class, 'EmpSalaryInfo']);
 Route::get('employeesViewSalaryInfo', [EmployeeController::class, 'EmpViewSalaryInfo']);

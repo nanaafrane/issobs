@@ -155,7 +155,18 @@
             <!-- Content -->
 
             <div class="container-xxl flex-grow-1 container-p-y">
-              <h4 class="fw-bold py-3 mb-4"><span class="text-muted fw-light"> <i class="bx bxs-user-account"></i> Employee /</span> Show</h4>
+              <div class="card-header  ml-2  d-none d-lg-block">
+                  @include('flash-messages')
+              </div>
+              <div class="row"> 
+                <div class="col-md-6">
+                <h5 class="fw-bold mb-4"><span class="text-muted fw-light"><i class="bx bxs-user-account"></i> Employee /</span> Show</h5>
+                </div>
+
+                  <div class="col-md-6 text-end">
+                    <a href="{{url('employeesPayInfo/'.$employee_pay_info->employee_id)}}" class="btn btn-dark mb-3"><i class="bx bx-edit-alt"></i> Edit Payment Info</a>  
+                </div>
+              </div>
 
               <div class="row">
                 <div class="col-md-12">
@@ -179,28 +190,34 @@
                             
                                 <div class="mb-3 col-md-4">
                                   <label for="bank_id" class="form-label"> <strong> {{ __('Bank') }} * </strong>  </label>
-                                    <h5> <strong> {{$employee_pay_info->bank?->name}} </strong> </h5> 
+                                    <h4> <strong> {{$employee_pay_info->bank?->name}} </strong> </h4> 
                                 </div>
 
                                   <div class="mb-3 col-md-4">
                                   <label for="acc_number" class="form-label"> <strong>   Account Number * </strong> </label>
-                                    <h5> <strong> {{$employee_pay_info->acc_number}} </strong> </h5> 
+                                    <h4> <strong> {{$employee_pay_info->acc_number}} </strong> </h4> 
                                 </div>
 
 
                                   <div class="mb-3 col-md-4">
                                   <label for="branch" class="form-label"> <strong>    Branch * </strong> </label>
-                                    <h5> <strong> {{$employee_pay_info->branch}} </strong> </h5> 
+                                    <h4> <strong> {{$employee_pay_info->branch}} </strong> </h4> 
+                                </div>
+
+
+                                  <div class="mb-3 col-md-4">
+                                  <label for="branch" class="form-label"> <strong>    Branch Code * </strong> </label>
+                                    <h4> <strong> {{$employee_pay_info->branch_code}} </strong> </h4> 
                                 </div>
 
                                   <div class="mb-3 col-md-4">
                                   <label for="tin_number" class="form-label"> <strong>    TIN Number  </strong> </label>
-                                    <h5> <strong> {{$employee_pay_info->tin_number}} </strong> </h5> 
+                                    <h4> <strong> {{$employee_pay_info->tin_number}} </strong> </h4> 
                                   </div>
 
                                 <div class="mb-3 col-md-4">
                                   <label for="ssnit_number" class="form-label"> <strong>  SSNIT Number </strong> </label>
-                                    <h5> <strong> {{$employee_pay_info->ssnit_number}} </strong> </h5> 
+                                    <h4> <strong> {{$employee_pay_info->ssnit_number}} </strong> </h4> 
                                 </div>
                             </div>
                     </div>

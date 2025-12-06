@@ -165,7 +165,7 @@
                 <div class="col-md-12">
                   <ul class="nav nav-pills flex-column flex-md-row mb-3">
                     <li class="nav-item">
-                      <a class="nav-link" href="/employees/{{$employee_pay_info->employee_id}}/edit"><i class="bx bx-user me-1"></i> Employee Details</a>
+                      <a class="nav-link" href="/employees/{{$employee_pay_info?->employee_id}}/edit"><i class="bx bx-user me-1"></i> Employee Details</a>
                     </li>
                     <li class="nav-item ">
                       <a class="nav-link active" href=" javascript:void(0);" ><i class="bx bxs-comment-detail"></i> Payment Info </a>
@@ -210,6 +210,16 @@
                                   <label for="branch" class="form-label"> <strong>    Branch * </strong> </label>
                                   <input  class="form-control @error('branch') is-invalid @enderror" type="text" id="branch" name="branch" placeholder=" Branch " value="{{$employee_pay_info->branch}}" autofocus />
                                     @error('branch')
+                                    <span class="invalid-feedback" role="alert">
+                                        <strong>{{ $message }}</strong>
+                                    </span>
+                                    @enderror
+                                </div>
+
+                                <div class="mb-3 col-md-4">
+                                  <label for="branch_code" class="form-label"> <strong>    Branch Code </strong> </label>
+                                  <input  class="form-control @error('branch_code') is-invalid @enderror" type="text" id="branch_code" name="branch_code" placeholder=" branch_code " value="{{$employee_pay_info->branch_code}}" autofocus />
+                                    @error('branch_code')
                                     <span class="invalid-feedback" role="alert">
                                         <strong>{{ $message }}</strong>
                                     </span>

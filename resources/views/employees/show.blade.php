@@ -153,7 +153,23 @@
 
   <!-- Content -->
             <div class="container-xxl flex-grow-1 container-p-y">
-              <h4 class="fw-bold py-3 mb-4"><span class="text-muted fw-light"><i class="bx bxs-user-account"></i> Employee /</span> Show</h4>
+
+              <div class="card-header  ml-2  d-none d-lg-block">
+                  @include('flash-messages')
+              </div>
+
+
+              <div class="row"> 
+                <div class="col-md-6">
+                <h5 class="fw-bold mb-4"><span class="text-muted fw-light"><i class="bx bxs-user-account"></i> Employee /</span> Show</h5>
+
+                </div>
+
+                  <div class="col-md-6 text-end">
+                    <a href="{{url('employees/'.$employee->id.'/edit')}}" class="btn btn-dark mb-3"><i class="bx bx-edit-alt"></i> Edit Employee</a>  
+                </div>
+              </div>
+
 
               <div class="row">
                 <div class="col-md-12">
@@ -188,92 +204,99 @@
                           <div class="row">
                             <div class="mb-3 col-md-4">
                               <label for="name" class="form-label"> <strong>Full Name  </strong> </label>
-                                <h5> <strong> {{$employee->name}} </strong> </h5> 
+                                <h4> <strong> {{$employee->name}} </strong> </h4> 
                             
                             </div>
                            
                            
                             <div class="mb-3 col-md-4">
                               <label for="gender" class="form-label"> <strong>Gender  </strong> </label>
-                                    <h5> <strong> {{$employee->gender}} </strong> </h5> 
+                                    <h4> <strong> {{$employee->gender}} </strong> </h4> 
                             </div>
                            
                            
                             <div class="mb-3 col-md-4">
                                 <label for="phone_number" class="form-label"> <strong>{{ __('Phone Number') }} </strong> </label>
-                                <h5> <strong> {{$employee->phone_number}} </strong> </h5> 
+                                <h4> <strong> {{$employee->phone_number}} </strong> </h4> 
                             </div>
                             
                             <div class="mb-3 col-md-4">
                               <label for="date_of_birth" class="form-label"> <strong>Date Of Birth </strong> </label>
-                              <h5> <strong> {{$employee->date_of_birth?->format('l F d, Y')}} </strong> </h5> 
+                              <h4> <strong> {{$employee->date_of_birth?->format('l F d, Y')}} </strong> </h4> 
 
                             </div>
 
                             <div class="mb-3 col-md-4">
                               <label for="nia_number" class="form-label"> <strong>NIA Number  </strong> </label>
-                                <h5> <strong> {{$employee->nia_number}} </strong> </h5> 
+                                <h4> <strong> {{$employee->nia_number}} </strong> </h4> 
                             </div>
 
                             <div class="mb-3 col-md-4">
                               <label for="address" class="form-label"> <strong> Digital Address  </strong> </label>
-                                <h5> <strong> {{$employee->address}} </strong> </h5> 
+                                <h4> <strong> {{$employee->address}} </strong> </h4> 
                             </div>
 
                             <div class="mb-3 col-md-4">
                               <label for="marital_status" class="form-label"><strong>Marital Status </strong> </label>
-                                <h5> <strong> {{$employee->marital_status}} </strong> </h5> 
+                                <h4> <strong> {{$employee->marital_status}} </strong> </h4> 
                             </div>
 
                             <div class="mb-3 col-md-4">
                               <label for="worker_type" class="form-label"><strong>Worker Type </strong> </label>
-                                <h5> <strong> {{$employee->worker_type}} </strong> </h5> 
+                                <h4> <strong> {{$employee->worker_type}} </strong> </h4> 
                             </div>
 
                             <div class="mb-3 col-md-4">
                               <label for="date_of_joining" class="form-label"> <strong>  Date Of Joining  </strong> </label>
-                                <h5> <strong> {{$employee->date_of_joining?->format('l F d, Y')}} </strong> </h5> 
+                                <h4> <strong> {{$employee->date_of_joining?->format('l F d, Y')}} </strong> </h4> 
                             </div>
 
                             <div class="mb-3 col-md-4">
                               <label for="department_id" class="form-label"> <strong> {{ __('Department') }}  </strong>  </label>
-                                <h5> <strong> {{$employee->department?->name}} </strong> </h5> 
+                                <h4> <strong> {{$employee->department?->name}} </strong> </h4> 
                             </div>
 
                             <div class="mb-3 col-md-4">
                               <label for="role_id" class="form-label"> <strong> {{ __('Role') }}  </strong>  </label>
-                                <h5> <strong> {{$employee->role?->name}} </strong> </h5> 
+                                <h4> <strong> {{$employee->role?->name}} </strong> </h4> 
                                 
                             </div>
 
 
                             <div class="mb-3 col-md-4">
                               <label for="field_id" class="form-label"> <strong> {{ __('Field Office') }}  </strong>  </label>
-                                <h5> <strong> {{$employee->field?->name}} </strong> </h5> 
+                                <h4> <strong> {{$employee->field?->name}} </strong> </h4> 
                             </div>
 
                             <div class="mb-3 col-md-4">
                               <label for="client_id" class="form-label"> <strong> {{ __('Client') }} </strong>  </label>
-                                <h5> <strong> {{$employee->client?->name}} </strong> </h5> 
+                                <h4> <strong> {{$employee->client?->name}} </strong> </h4> 
                             </div>
 
 
                             <div class="mb-3 col-md-4">
                               <label for="location" class="form-label"> <strong>  {{ __('Location') }}  </strong> </label>
-                                <h5> <strong> {{$employee->location}} </strong> </h5> 
+                                <h4> <strong> {{$employee->location}} </strong> </h4> 
                             </div>
                            
                             <div class="mb-3 col-md-4">
                               <label for="payment_type" class="form-label"> <strong> {{ __('Payment Type') }} </strong>  </label>
-                                <h5> <strong> {{$employee->payment_type}} </strong> </h5> 
+                                <h4> <strong> {{$employee->payment_type}} </strong> </h4> 
                             </div>                       
 
-                            <center> 
+                            <div class="row"> 
+                              <div class="col-md-2"></div>
                             <div class="mb-3 col-md-4">
                               <label for="basic_salary" class="form-label"> <strong>  Basic Salary  </strong> </label>
-                                <h5> <strong> {{$employee->basic_salary}} </strong> </h5> 
+                                <h4> <strong> {{$employee->basic_salary}} </strong> </h4> 
                             </div>
-                            </center> 
+
+                            <div class="mb-3 col-md-4">
+                              <label for="allowances" class="form-label"> <strong>  Allowances  </strong> </label>
+                                <h4> <strong> {{$employee->allowances}} </strong> </h4> 
+                            </div>
+                            <div class="col-md-2"></div>
+                            </div> 
 
                             <hr class="mb-3" />
                             <h5 class="card-header"> <strong>Gurantor Infomation</strong> </h5> 
@@ -281,28 +304,28 @@
 
                             <div class="mb-3 col-md-4">
                               <label for="gurantor_name" class="form-label"> <strong>   Gurantor Name  </strong> </label>
-                                <h5> <strong> {{$employee->gurantor_name}} </strong> </h5> 
+                                <h4> <strong> {{$employee->gurantor_name}} </strong> </h4> 
                             </div>
 
                               <div class="mb-3 col-md-4">
                               <label for="gurantor_number" class="form-label"> <strong>   Gurantor Number  </strong> </label>
-                                <h5> <strong> {{$employee->gurantor_number}} </strong> </h5> 
+                                <h4> <strong> {{$employee->gurantor_number}} </strong> </h4> 
                             </div>
 
 
                               <div class="mb-3 col-md-4">
                               <label for="gurantor_address" class="form-label"> <strong>   Gurantor Address  </strong> </label>
-                                <h5> <strong> {{$employee->gurantor_address}} </strong> </h5> 
+                                <h4> <strong> {{$employee->gurantor_address}} </strong> </h4> 
                             </div>
 
                               <div class="mb-3 col-md-4">
                               <label for="gurantor_nia_number" class="form-label"> <strong>   Gurantor NIA Number  </strong> </label>
-                                <h5> <strong> {{$employee->gurantor_nia_number}} </strong> </h5> 
+                                <h4> <strong> {{$employee->gurantor_nia_number}} </strong> </h4> 
                               </div>
 
                             <div class="mb-3 col-md-4">
                               <label for="relationship" class="form-label"> <strong>  Relationship with Gurantor  </strong> </label>
-                                <h5> <strong> {{$employee->relationship}} </strong> </h5> 
+                                <h4> <strong> {{$employee->relationship}} </strong> </h4> 
                             </div>
 
 
@@ -322,6 +345,10 @@
             </div>
   <!-- / Content -->
 
+          <div class="buy-now">
+            <a style="margin-bottom: 70px;" href="/employees/{{$employee->id}}/edit" class="btn btn-danger btn-buy-now"> <i class="icon-base bx bx-edit-alt me-1"></i> Re-Instate </a>
+            <a  href="/employees/{{$employee->id}}/edit" class="btn btn-danger btn-buy-now"> <i class="icon-base bx bx-trash me-1"></i> Terminate </a>  
+          </div>
   @endsection
 
 

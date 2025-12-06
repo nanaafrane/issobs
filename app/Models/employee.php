@@ -26,6 +26,7 @@ class employee extends Model
         'client_id',
         'location', 
         'basic_salary',
+        'allowances',
         'user_id',
 
         'status',
