@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class employee extends Model
 {
@@ -84,6 +85,10 @@ class employee extends Model
         return $this->belongsTo(User::class);
     }
 
+    // public function clients() : BelongsToMany
+    // {
+    //     return $this->belongsToMany(Client::class);
+    // }
     
 
 

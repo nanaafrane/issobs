@@ -96,9 +96,16 @@
       </li>
 
       <li class="menu-item">
+        <a href="{{url('departments')}}" class="menu-link">
+          <i class="menu-icon tf-icons bx bxs-buildings"></i>
+          <div class="text-truncate" data-i18n="depnroles">Department & Roles </div>
+        </a>
+      </li>
+
+      <li class="menu-item">
         <a href="{{url('field')}}" class="menu-link">
           <i class="menu-icon tf-icons bx bx-bxs-location-plus"></i>
-          <div class="text-truncate" data-i18n="Locations">Locations</div>
+          <div class="text-truncate" data-i18n="fOffices">Field Offices</div>
         </a>
       </li>
 
@@ -112,21 +119,21 @@
           <li class="menu-item">
             <a href="{{ url('salaries') }}" class="menu-link">
               <i class="menu-icon tf-icons bx bxs-user-account"></i>
-              <div class="text-truncate" data-i18n="Locations">Employees</div>
+              <div class="text-truncate" data-i18n="Employees">Employees</div>
             </a>
           </li>
 
           <li class="menu-item">
             <a href="{{ url('salaries/create') }}" class="menu-link">
               <i class="menu-icon tf-icons bx bx-money-withdraw"></i>
-              <div class="text-truncate" data-i18n="Locations">Salaries</div>
+              <div class="text-truncate" data-i18n="Salaries">Salaries</div>
             </a>
           </li>
 
           <li class="menu-item">
             <a href="{{ url('salariesTransaction') }}" class="menu-link">
               <i class="menu-icon tf-icons bx bx-transfer-alt"></i>
-              <div class="text-truncate" data-i18n="Locations">Transactions</div>
+              <div class="text-truncate" data-i18n="Transaction">Transactions</div>
             </a>
           </li>
 
@@ -134,7 +141,7 @@
           <li class="menu-item">
             <a href="{{ url('salariesInvPayroll') }}" class="menu-link">
               <i class="menu-icon tf-icons bx bx-git-compare"></i>
-              <div class="text-truncate" data-i18n="Locations">Invoice to Payroll</div>
+              <div class="text-truncate" data-i18n="InvtoPayroll">Invoice to Payroll</div>
             </a>
           </li>
 

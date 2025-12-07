@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Department;
 use App\Http\Requests\StoreDepartmentRequest;
 use App\Http\Requests\UpdateDepartmentRequest;
+use App\Models\Role;
+use Illuminate\Support\Facades\Auth;
 
 class DepartmentController extends Controller
 {
@@ -26,6 +28,12 @@ class DepartmentController extends Controller
     public function index()
     {
         //
+        $departments = Department::all();
+        $roles = Role::all();
+        $departmentsCount = count($departments);
+        $rolesCount = count($roles);
+
+        return view('department.index', compact('departments', 'departmentsCount', 'roles', 'rolesCount'));
     }
 
     /**
@@ -34,16 +42,16 @@ class DepartmentController extends Controller
     public function create()
     {
         //
-        Department::create([
-            // 'name' => 'Accounts',
-            // 'name' => 'IT',
-            // 'name' => 'Guest',
-            // 'name' => 'HR',
-            // 'name' => 'System'
-            // 'name' => 'Branch'
-            // 'name' => 'Operations'
+        // Department::create([
+        //     // 'name' => 'Accounts',
+        //     // 'name' => 'IT',
+        //     // 'name' => 'Guest',
+        //     // 'name' => 'HR',
+        //     // 'name' => 'System'
+        //     // 'name' => 'Branch'
+        //     // 'name' => 'Operations'
 
-        ]);
+        // ]);
 
     }
 
@@ -53,6 +61,11 @@ class DepartmentController extends Controller
     public function store(StoreDepartmentRequest $request)
     {
         //
+        $department = new Department();
+        // $department->create($request->all());
+        $department->name = $request->input('name');
+        $department->save();
+        return back()->with('success', 'Department Created Sucessfully');
     }
 
     /**
@@ -69,6 +82,8 @@ class DepartmentController extends Controller
     public function edit(Department $department)
     {
         //
+        return view('department.edit', compact('department'));
+
     }
 
     /**
@@ -77,6 +92,17 @@ class DepartmentController extends Controller
     public function update(UpdateDepartmentRequest $request, Department $department)
     {
         //
+        // dd($request->all(), $department);
+        $department->name = $request->input('name');
+
+        if($department->isDirty()) {
+            $department->name = $request->input('name');
+            $department->save();
+            return redirect()->route('departments.index')->with('success', 'Department has been successfully updated!');
+        }
+        else{
+            return back()->with('error', 'No changes detected. Please edit Department Name to Update.');
+        }
     }
 
     /**
@@ -85,5 +111,8 @@ class DepartmentController extends Controller
     public function destroy(Department $department)
     {
         //
+        // dd($department);
+        $department->delete();
+        return back()->with('error', 'Department has been successfully deleted!');
     }
 }

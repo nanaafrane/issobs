@@ -56,7 +56,7 @@ class ClientController extends Controller
         $kumasiCount = count($kumasi);
         // dd($accraCount, $botweCount, $temaCount, $takoradiCount, $koforiduaCount, $kumasiCount);
 
-        if($user->role->name == 'Invoice' || $user->role->name == 'Finance Manager' )
+        if($user->role->name == 'Invoice' || $user->role->name == 'Finance Manager' || $user->role->name == 'Manager' )
         {
             return view('clients.index', compact('clients', 'clientsCount', 'fields', 'accraCount', 'botweCount', 'temaCount', 'takoradiCount', 'koforiduaCount', 'kumasiCount'));
 

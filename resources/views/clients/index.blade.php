@@ -54,7 +54,7 @@
                     <div class="text-truncate" data-i18n="Transaction">Transactions</div>
                 </a>
             </li>
-            @if(Auth::user()->hasRole('Invoice') || Auth::user()->hasRole('Finance Manager'))
+            @if(Auth::user()->hasRole(['Invoice', 'Finance Manager']))
             <li class="menu-item">
                 <a href="{{ url('invoice') }}" class="menu-link">
                     <i class="menu-icon tf-icons bx bx-bxs-receipt bg-primary"></i>
@@ -139,7 +139,7 @@
             </li>
             @endif
 
-            @if((Auth::user()->hasRole('Manager') && Auth::user()->hasPermission('Accounts')) || Auth::user()->hasRole('Officer') || Auth::user()->hasRole('Finance Manager') )
+            @if((Auth::user()->hasRole(['Manager', 'Officer', 'Finance Manager']) && Auth::user()->hasPermission('Accounts')) )
 
             <li class="menu-header small text-uppercase"> <span class="menu-header-text text-danger">Accounts</span></li>
 
@@ -196,7 +196,7 @@
                         <div class="col-sm-7">
                             <div class="card-body">
                                 <h1 class="text-white">
-                                    @if(Auth::user()->hasRole('Invoice') || Auth::user()->hasRole('Finance Manager'))
+                                    @if(Auth::user()->hasRole(['Invoice', 'Finance Manager', 'Manager']) )
                                     {{$clientsCount}}
                                     @elseif(Auth::user()->field?->name == 'Accra')
                                     {{$accraCount}}
@@ -232,7 +232,7 @@
         </div>
 
 
-        @if(Auth::user()->hasRole('Invoice') || Auth::user()->hasRole('Finance Manager'))
+        @if(Auth::user()->hasRole(['Invoice', 'Finance Manager', 'Manager']))
         <div class="row">
             <div class="col-lg-2">
                 <div class="card shadow-none bg-transparent border border-danger">
@@ -422,6 +422,9 @@
                                             <button class="dropdown-item" type="submit"><i class="icon-base bx bx-trash me-1"></i>Delete</button>
                                         </form>
                                         @endif
+                                        <hr>
+                                        <a class="dropdown-item" href="{{url('employeesGuardClient', $client->id)}}"><i class="icon-base bx bxs-bullseye"></i> View Guards </a>
+
                                     </div>
                                 </div>
                             </td>

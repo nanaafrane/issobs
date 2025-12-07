@@ -78,7 +78,7 @@
             <li class="menu-item">
                 <a href="{{url('field')}}" class="menu-link">
                     <i class="menu-icon tf-icons bx bx-bxs-location-plus"></i>
-                    <div class="text-truncate" data-i18n="Locations">Locations</div>
+                    <div class="text-truncate" data-i18n="fOffices">Field Offices</div>
                 </a>
             </li>
 

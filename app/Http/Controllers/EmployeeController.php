@@ -260,4 +260,24 @@ class EmployeeController extends Controller
     {
         //
     }
+
+    
+    /**
+     * Get All Employees with role of security guard for incoming client.
+     */
+    public function GuardClient($id)
+    {
+       $guards =  employee::where('client_id',$id)->where('role_id', 7)->get();
+
+    //    return redirect()->route('employees.GuardView', ['guards', ]);
+        return view('employees.GuardView', compact('guards'));
+    }
+
+
+    // public function GuardsView($guards)
+    // {
+    //     dd($guards);
+    // }
+
+
 }

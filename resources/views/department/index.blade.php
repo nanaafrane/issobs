@@ -79,34 +79,41 @@
           </li>
         </ul>
       </li>
-            <li class="menu-item">
-                <a href="javascript:void(0);" class="menu-link menu-toggle">
-                    <i class="menu-icon tf-icons bx bx-bxs-user-detail"></i>
-                    <div class="text-truncate" data-i18n="Clients">Clients</div>
-                </a>
-                <ul class="menu-sub">
-                    <li class="menu-item">
-                        <a href="{{url('client/create')}}" class="menu-link">
-                            <div class="text-truncate" data-i18n="CRegister">Register</div>
-                        </a>
-                    </li>
-                    <li class="menu-item">
-                        <a href="{{url('client')}}" class="menu-link">
-                            <div class="text-truncate" data-i18n="CList">List</div>
-                        </a>
-                    </li>
-                </ul>
-            </li>
+        <li class="menu-item">
+            <a href="javascript:void(0);" class="menu-link menu-toggle">
+                <i class="menu-icon tf-icons bx bx-bxs-user-detail"></i>
+                <div class="text-truncate" data-i18n="Clients">Clients</div>
+            </a>
+            <ul class="menu-sub">
+                <li class="menu-item">
+                    <a href="{{url('client/create')}}" class="menu-link">
+                        <div class="text-truncate" data-i18n="CRegister">Register</div>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="{{url('client')}}" class="menu-link">
+                        <div class="text-truncate" data-i18n="CList">List</div>
+                    </a>
+                </li>
+            </ul>
+        </li>
 
-            <li class="menu-item active">
-                <a href="{{url('field')}}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-bxs-location-plus"></i>
-                    <div class="text-truncate" data-i18n="fOffices">Field Offices</div>
-                </a>
-            </li>
+        <li class="menu-item active">
+        <a href="{{url('departments')}}" class="menu-link">
+          <i class="menu-icon tf-icons bx bxs-buildings"></i>
+          <div class="text-truncate" data-i18n="depnroles">Department & Roles </div>
+        </a>
+        </li>
+
+        <li class="menu-item ">
+            <a href="{{url('field')}}" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-bxs-location-plus"></i>
+                <div class="text-truncate" data-i18n="fOffices">Field Offices</div>
+            </a>
+        </li>
 
             <li class="menu-header small text-uppercase"><span class="menu-header-text">PAYROLL</span></li>
-  <li class="menu-item">
+        <li class="menu-item">
         <a href="javascript:void(0);" class="menu-link menu-toggle">
           <i class="menu-icon tf-icons bx bx-money-withdraw"></i>
           <div class="text-truncate" data-i18n="Payroll">Payroll</div>
@@ -158,18 +165,30 @@
 
         <div class="row">
             <div class="col-12">
-                <h3 class="card-header text-info"> <i class="icon-base bx bx-bxs-receipt"></i> Field Offices </h3>
+                <h3 class="card-header text-info"> <i class="icon-base bx bx-bxs-receipt"></i> Departments & Roles </h3>
             </div>
         </div><br>
 
         <div class="row">
-            <div class="col-xxl-12 mb-6 order-0">
+            <div class="col-xxl-6 mb-6 order-0">
                 <div style="background: #cbfcffff;" class="card">
                     <div class="d-flex align-items-start row">
                         <div class="col-sm-7">
                             <div class="card-body">
-                                <h1>{{$LocationsCount}}</h1>
-                                <h6 class="card-title  mb-3">TOTAL NUMBER OF LOCATIONS </h6>
+                                <h1>{{$departmentsCount}}</h1>
+                                <h6 class="card-title  mb-3">TOTAL NUMBER OF DEPARTMENTS </h6>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xxl-6 mb-6 order-0">
+                <div style="background: #cbfcffff;" class="card">
+                    <div class="d-flex align-items-start row">
+                        <div class="col-sm-7">
+                            <div class="card-body">
+                                <h1>{{$rolesCount}}</h1>
+                                <h6 class="card-title  mb-3">TOTAL NUMBER OF ROLES </h6>
                             </div>
                         </div>
                     </div>
@@ -190,30 +209,23 @@
                         <tr>
                             <th> # ID.</th>
                             <th> Name</th>
-                            <th>Created By</th>
                             <th>Action</th>
                         </tr>
                     </thead>
                     <tbody>
 
-                        @foreach($Locations as $field)
+                        @foreach($departments as $department)
                         <tr>
-                            <td> {{$field?->id}} </td>
-                            <td> {{$field?->name}}</td>
-                            <td> {{$field->user?->name}}</td>
-
+                            <td> {{$department?->id}} </td>
+                            <td> {{$department?->name}}</td>
                             <td>
                                 <div class="dropdown">
                                     <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown">
                                         <i class="icon-base bx bx-dots-vertical-rounded"></i>
                                     </button>
                                     <div class="dropdown-menu">
-                                        <a class="dropdown-item" href="field/{{$field?->id}}/edit"><i class="icon-base bx bx-edit-alt me-1"></i> Edit</a>
-                                        <form action="field/{{$field?->id}}" method="POST">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button class="dropdown-item" type="submit"><i class="icon-base bx bx-trash me-1"></i>Delete</button>
-                                        </form>
+                                        <a class="dropdown-item" href="departments/{{$department?->id}}/edit"><i class="icon-base bx bx-edit-alt me-1"></i> Edit</a>
+
 
                                     </div>
                                 </div>
@@ -227,10 +239,10 @@
 
             <div class="col-4">
                 <br>
-                <h3 class="card-header text-info"> <i class="icon-base bx bx-bxs-receipt"></i> Add Field Office </h3>
+                <h3 class="card-header text-info"> <i class="icon-base bx bxs-buildings"></i> Add Department </h3>
                 <br>
 
-                <form method="POST" action="field">
+                <form method="POST" action="departments">
                     @csrf
                     <div class="row">
                         <div class="col mb-0">
@@ -241,7 +253,82 @@
                                 id="name"
                                 class="form-control @error('name') is-invalid @enderror"
                                 value="{{ old('name')}}"
-                                placeholder="Field Office Name"
+                                placeholder="Department Name"
+                                required
+                                autocomplete="name"
+                                autofocus>
+
+                            @error('name')
+                            <span class="invalid-feedback" role="alert">
+                                <strong>{{ $message }}</strong>
+                            </span>
+                            @enderror
+
+
+                        </div>
+
+                    </div>
+
+                    <br>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-info d-grid w-100">{{ __('Add') }}</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <br><hr><br>
+
+        <div class="row">
+            <div class="col-8">
+                <table id="myTable1" class="display">
+                    <thead>
+                        <tr>
+                            <th> # ID.</th>
+                            <th> Name</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+
+                        @foreach($roles as $role)
+                        <tr>
+                            <td> {{$role?->id}} </td>
+                            <td> {{$role?->name}}</td>
+                            <td>
+                                <div class="dropdown">
+                                    <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown">
+                                        <i class="icon-base bx bx-dots-vertical-rounded"></i>
+                                    </button>
+                                    <div class="dropdown-menu">
+                                        <a class="dropdown-item" href="role/{{$role?->id}}/edit"><i class="icon-base bx bx-edit-alt me-1"></i> Edit</a>
+
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+
+            </div>
+
+            <div class="col-4">
+                <br>
+                <h3 class="card-header text-info"> <i class="icon-base bx bxs-buildings"></i> Add Role </h3>
+                <br>
+
+                <form method="POST" action="role">
+                    @csrf
+                    <div class="row">
+                        <div class="col mb-0">
+                            <label for="name" class="form-label"> {{ __('Name') }}</label>
+                            <input
+                                type="text"
+                                name="name"
+                                id="name"
+                                class="form-control @error('name') is-invalid @enderror"
+                                value="{{ old('name')}}"
+                                placeholder="Role Name"
                                 required
                                 autocomplete="name"
                                 autofocus>
@@ -292,6 +379,19 @@
         });
     </script>
 
+    <script>
+        new DataTable('#myTable1', {
+            responsive: true,
+           
+            //             layout: {
+            //     topStart: {
+            //         buttons: ['excelHtml5']
+            //     }
+            // }
+
+
+        });
+    </script>
 
     @endsection
 

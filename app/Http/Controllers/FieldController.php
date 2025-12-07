@@ -70,7 +70,7 @@ class FieldController extends Controller
         $field->name = $request->input('name');
         $field->user_id = Auth::user()->id;
         $field->save();
-        return back()->with('success', 'Client Added Sucessfully');
+        return back()->with('success', 'Field Office Added Sucessfully');
       }
 
     /**
@@ -87,6 +87,8 @@ class FieldController extends Controller
     public function edit(Field $field)
     {
         //
+        // dd($field);
+        return view('locations.edit', compact('field'));
     }
 
     /**
@@ -95,6 +97,19 @@ class FieldController extends Controller
     public function update(UpdateFieldRequest $request, Field $field)
     {
         //
+        // dd($request->all(), $field);
+         $field->name = $request->input('name');
+
+        if($field->isDirty()) {
+            $field->name = $request->input('name');
+            $field->user_id = Auth::user()->id;
+            $field->save();
+            return redirect()->route('field.index')->with('success', 'Field Office has been successfully updated!');
+        }
+        else{
+            return back()->with('error', 'No changes detected. Please edit Field Office Name to Update.');
+        }
+
     }
 
     /**
@@ -103,7 +118,8 @@ class FieldController extends Controller
     public function destroy(Field $field)
     {
         //
+        // dd($field);
         $field->delete();
-        return back()->with('error', 'Location has been successfully deleted!');
+        return back()->with('error', 'Field Office has been successfully deleted!');
     }
 }

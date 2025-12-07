@@ -37,7 +37,7 @@ Route::patch('staffPassword/{id}', [HomeController::class, 'staffPasswordReset']
 
 
 
-Route::resource('department', DepartmentController::class);
+Route::resource('departments', DepartmentController::class);
 Route::resource('role', RoleController::class);
 Route::resource('field', FieldController::class);
 Route::resource('client', ClientController::class);
@@ -77,6 +77,8 @@ Route::get('employeesViewPayInfo/{id}', [EmployeeController::class, 'EmpViewPayI
 Route::put('employeesPayInfoUpdate/{id}', [EmployeeController::class, 'EmpPayInfoUpdate']);
 Route::get('employeesSalaryInfo', [EmployeeController::class, 'EmpSalaryInfo']);
 Route::get('employeesViewSalaryInfo', [EmployeeController::class, 'EmpViewSalaryInfo']);
+Route::get('employeesGuardClient/{id}', [EmployeeController::class, 'GuardClient']);
+// Route::get('employeesGuardView', [EmployeeController::class, 'GuardsView'])->name('employees.GuardView');
 
 Route::resource('salaries', SalaryController::class);
 Route::get('salariesTransaction', [SalaryController::class, 'transactionSalary']);
