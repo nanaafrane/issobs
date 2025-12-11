@@ -54,7 +54,7 @@
                 </a>
             </li>
 
-            @if(Auth::user()->hasRole('Invoice') || Auth::user()->hasRole('Finance Manager'))
+            @if(Auth::user()->hasRole(['Invoice','Finance Manager']))
             <li class="menu-item">
                 <a href="{{ url('invoice') }}" class="menu-link">
                     <i class="menu-icon tf-icons bx bx-bxs-receipt bg-primary"></i>
@@ -77,7 +77,7 @@
                 </a>
             </li>
 
-            @if(Auth::user()->hasRole('Manager') || Auth::user()->hasRole('Officer') || Auth::user()->hasRole('Finance Manager') )
+            @if(Auth::user()->hasRole(['Manager','Officer', 'Finance Manager']) )
 
             <li class="menu-header small text-uppercase"> <span class="menu-header-text text-danger">Accounts</span></li>
 
@@ -127,7 +127,7 @@
             </div>
         </div><br>
 
-        @if(Auth::user()->hasRole('Invoice') || Auth::user()->hasRole('Finance Manager'))
+        @if(Auth::user()->hasRole(['Invoice', 'Finance Manager']))
         <div class="row">
             <div class="col-lg-2">
                 <div class="card h-100">
@@ -401,7 +401,7 @@
                     </thead>
                     <tbody>
 
-                        @if(Auth::user()->hasRole('Invoice') || Auth::user()->hasRole('Finance Manager'))
+                        @if(Auth::user()->hasRole(['Invoice', 'Finance Manager']))
                         @foreach($reportInvoices as $invoice)
                         <tr>
                             <td> #FWSSi{{$invoice->id}} </td>

@@ -14,15 +14,16 @@ return new class extends Migration
         Schema::create('salaries', function (Blueprint $table) {
             $table->id();
             $table->string('salary_month')->nullable();
-            $table->unsignedBigInteger('employee_id')->nullable();
-            $table->unsignedBigInteger('field_id')->nullable();
-            $table->unsignedBigInteger('role_id')->nullable();
-            $table->unsignedBigInteger('client_id')->nullable();
+            $table->integer('employee_id')->nullable();
+            $table->integer('department_id')->nullable();
+            $table->integer('field_id')->nullable();
+            $table->integer('role_id')->nullable();
+            $table->integer('client_id')->nullable();
             $table->string('location')->nullable();
             $table->string('status1')->nullable();
             $table->string('status2')->nullable();
             $table->string('account_number')->nullable();
-            $table->string('bank_name')->nullable();
+            $table->integer('bank_id')->nullable();
             $table->string('branch')->nullable();
             $table->string('payment_type')->nullable();
             $table->string('payment_status')->default('pending');
@@ -55,7 +56,7 @@ return new class extends Migration
             $table->decimal('ssnit_comp_cont_13', 15, 2)->default(0);
             $table->decimal('ssnit_tobe_paid13_5', 15, 2)->default(0);
             $table->decimal('cost_to_company', 15, 2)->default(0);
-            $table->unsignedBigInteger('user_id');
+            $table->integer('user_id');
             $table->timestamps();
         });
     }

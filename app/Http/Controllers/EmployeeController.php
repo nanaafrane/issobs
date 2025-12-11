@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\EmployeeClientRequest;
 use App\Models\employee;
 use App\Http\Requests\StoreemployeeRequest;
 use App\Http\Requests\UpdateemployeeRequest;
@@ -267,17 +268,55 @@ class EmployeeController extends Controller
      */
     public function GuardClient($id)
     {
+
+
        $guards =  employee::where('client_id',$id)->where('role_id', 7)->get();
 
-    //    return redirect()->route('employees.GuardView', ['guards', ]);
-        return view('employees.GuardView', compact('guards'));
+       if($guards->isEmpty())
+       {
+            return back()->with('error', 'Client has no current Guards');
+       }
+
+       $clients = $guards->isNotEmpty() ? Client::where('field_id', $guards[0]->field_id)->get() : null ;
+
+        return view('employees.GuardView', compact('guards', 'clients'));
     }
 
+    public function GuardReAassign(EmployeeClientRequest $request) 
+    {
+        // dd($request->all());
 
-    // public function GuardsView($guards)
-    // {
-    //     dd($guards);
-    // }
+        $employees = $request->input('employees', []);
+        $clients = $request->input('client_id', []);
+        $locations = $request->input('location', []);
+
+        // dd($employees, $clients, $locations);
+        if (empty($employees)) {
+            return back()->with('error', 'No Guard Selected to ReAssign.');
+        }
+
+        // dd($employees);
+        foreach ($employees as $key => $employee)
+        {
+            // echo $employee .' ' . $clients[$key]. ' ' .$locations[$key] .'<br>';
+            $employee = employee::findOrFail($employee);
+            $employee->client_id = $clients[$key];
+            $alreadyProcessed[] =  $clients[$key];
+            $employee->location = $locations[$key];
+            $employee->save();
+
+            // $employee->update([
+            //     'client_id' => $clients[$key],
+            //     'location' => $locations[$key],
+            // ]);
+        }
+
+        if(!empty( $alreadyProcessed))
+        {
+            return redirect()->route('client.index')->with('success', 'Guard successfully ReAssigned! Client: '. implode(', ', $alreadyProcessed));
+        }
+        // return back()->with('success', 'Guard successfully ReAssigned!');
+    }
 
 
 }

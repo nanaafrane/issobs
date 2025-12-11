@@ -423,7 +423,7 @@
                                         </form>
                                         @endif
                                         <hr>
-                                        <a class="dropdown-item" href="{{url('employeesGuardClient', $client->id)}}"><i class="icon-base bx bxs-bullseye"></i> View Guards </a>
+                                        <a class="dropdown-item" href="{{url('employeesGuardClient', $client->id)}}"><i class="icon-base bx bxs-user-account"></i> View Guards </a>
 
                                     </div>
                                 </div>

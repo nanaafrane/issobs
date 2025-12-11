@@ -165,7 +165,7 @@
             </div>
         </div><br>
 
-        @if(Auth::user()->hasRole('Invoice') || Auth::user()->hasRole('Manager'))
+        @if(Auth::user()->hasRole(['Invoice','Manager' ]))
         <div class="row">
             <div class="col-lg-2">
                 <div  class="card h-100 bg-dark text-white">

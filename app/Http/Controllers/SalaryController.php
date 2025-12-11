@@ -13,8 +13,7 @@ use App\Models\Field;
 use App\Models\Role;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
-use Maatwebsite\Excel\Facades\Excel;
-use App\Exports\SalariesExport;
+
 
 class SalaryController extends Controller
 {
@@ -73,7 +72,7 @@ class SalaryController extends Controller
     {
 
         $employees = $request->input('employees', []);
-        // dd($salaryIds);
+        // dd($employees);
         if (empty($employees)) {
             return back()->with('error', 'No employee selected to add to  salaries.');
         }
@@ -84,32 +83,34 @@ class SalaryController extends Controller
 
         // dd($date->format('Y-m-d H:i:s'));
         // get date of the last salary entry
-        $lastSalary = Salary::where('payment_status', 'pending')->orderBy('created_at', 'desc')->first();
-        $lastSalaryMonth = $lastSalary ? Carbon::parse($lastSalary->salary_month) : null;   
+        // $lastSalary = Salary::where('payment_status', 'pending')->orderBy('created_at', 'desc')->first();
+
+        // $lastSalaryMonth = $lastSalary ? Carbon::parse($lastSalary->salary_month) : null;   
        
-        // Check if a salary entry for the current month already exists
-        if ($lastSalaryMonth && $lastSalaryMonth->format('F Y') === $date->format('F Y')) {
-            return back()->with('error', 'Salary for this month has already been added.');
-        }   
+        // // Check if a salary entry for the current month already exists
+        // if ($lastSalaryMonth && $lastSalaryMonth->format('F Y') === $date->format('F Y')) {
+           
+           
+        //     return back()->with('error', 'Salary for this month has already been added.');
+        // }   
       
         // Process salary entries for selected employees
         $alreadyProcessed = [];
         $employees = employee::findOrFail($request->employees);
        
-        // dd($employees);
+        // dd($employees, $date->format('Y-m-d'));
 
         if ($request->has('employees')) {
             foreach ($employees as $employee) {
                 $exists = Salary::where('employee_id', $employee->id)
-                    ->where('salary_month', $date->format('F Y'))
-                    ->exists();
+                                ->where('salary_month', $date->format('Y-m-d'))
+                                ->exists();
                 if ($exists) {
                     $alreadyProcessed[] = $employee->id;
                     continue;
                 }
 
                 // return "Processing salary for Employee payment ID: " . $employee->paymentInfo->id . "\n";
-
                 $salary = new Salary();
                 $salary->employee_id = $employee->id;
                 $salary->salary_month = $request->input('salary_month');
@@ -120,10 +121,12 @@ class SalaryController extends Controller
                 $salary->location = $employee->location;
                 $salary->payment_type = $employee->payment_type;
                 $salary->account_number = $employee->paymentInfo?->acc_number;
-                $salary->bank_name = $employee->paymentInfo?->bank_name;
+                $salary->bank_id = $employee->paymentInfo?->bank_id;
                 $salary->branch = $employee->paymentInfo?->branch;
                 $salary->payment_type = $employee->payment_type;
+               
                 $salary->basic_salary = $employee->basic_salary;
+                $salary->allowances = $employee->allowances;
                 $salary->user_id = Auth::id();
                 $salary->save();
 
@@ -131,8 +134,11 @@ class SalaryController extends Controller
 
             }
         }
+
+        // dd($alreadyProcessed);
+
         if (!empty($alreadyProcessed)) {
-            return back()->with('error', 'Some employees already have been add to salary to be processed for this month: ' . implode(', ', $alreadyProcessed));
+            return back()->with('error', 'Some employees with the IDs have already been add to salary to be processed for this month: '. implode(', ', $alreadyProcessed)) ;
         }
         return back()->with('success', 'Employees added for this month salary to be processed.'); 
 

@@ -102,6 +102,13 @@
       </li>
 
       <li class="menu-item">
+        <a href="{{url('departments')}}" class="menu-link">
+          <i class="menu-icon tf-icons bx bxs-buildings"></i>
+          <div class="text-truncate" data-i18n="depnroles">Department & Roles </div>
+        </a>
+      </li>
+
+      <li class="menu-item">
         <a href="{{url('field')}}" class="menu-link">
           <i class="menu-icon tf-icons bx bx-bxs-location-plus"></i>
           <div class="text-truncate" data-i18n="Locations">Locations</div>
@@ -165,194 +172,97 @@
             </div>
         </div><br>
 
-        @if(Auth::user()->hasRole(['Invoice','Manager']))
+
         <div class="row">
-            <div class="col-lg-2">
-                <div  class="card h-100 bg-dark text-white">
-                    <div class="card-body">
-                        <div class="card-title d-flex align-items-start justify-content-between mb-4">
-                            <div class="avatar flex-shrink-0">
-                                <img
-                                    src="{{asset('img/icons/unicons/paypal.png')}}"
-                                    alt="chart success"
-                                    class="rounded" />
+            <div class="col-xxl-12 mb-6 order-0">
+                <div class="card bg-dark">
+                    <div class="d-flex align-items-start row">
+                        <div class="col-sm-7">
+                            <div class="card-body">
+                               <p class="mb-1 text-white"><strong> ACCRA </strong> </p>
+                                <h1 class="text-white"> 0 </h1>
+                                <h6 class="card-title text-white mb-3">TOTAL NUMBER OF GUARDS </h6>
                             </div>
                         </div>
-                        <p class="mb-1"><strong> ACCRA </strong> </p>
-                        <h4 class="card-title mb-3 text-white"><strong> 0  </strong> </h4>
-                        <small class="fw-medium"> TOTAL EMPLOYEES  </small>
                     </div>
                 </div>
             </div>
-
-            <div class="col-lg-2">
-                <div  class="card h-100 bg-dark text-white">
-                    <div class="card-body">
-                        <div class="card-title d-flex align-items-start justify-content-between mb-4">
-                            <div class="avatar flex-shrink-0">
-                                <img
-                                    src="{{asset('img/icons/unicons/paypal.png')}}"
-                                    alt="chart success"
-                                    class="rounded" />
-                            </div>
-                        </div>
-                        <p class="mb-1"><strong> BOTWE </strong></p>
-                        <h4 class="card-title mb-3 text-white"><strong>0 </strong> </h4>
-                        <small class="fw-medium"> TOTAL EMPLOYEES </small>
-                    </div>
-                </div>
-            </div>
-
-
-            <div class="col-lg-2">
-                <div  class="card h-100 bg-dark text-white">
-                    <div class="card-body">
-                        <div class="card-title d-flex align-items-start justify-content-between mb-4">
-                            <div class="avatar flex-shrink-0">
-                                <img
-                                    src="{{asset('img/icons/unicons/paypal.png')}}"
-                                    alt="chart success"
-                                    class="rounded" />
-                            </div>
-
-                        </div>
-                        <p class="mb-1"><strong> TEMA </strong></p>
-                        <h4 class="card-title mb-3 text-white"><strong>0 </strong> </h4>
-                        <small class="fw-medium"> TOTAL EMPLOYEES </small>
-                    </div>
-                </div>
-            </div>
-
-
-
-            <div class="col-lg-2">
-                <div  class="card h-100 bg-dark text-white">
-                    <div class="card-body">
-                        <div class="card-title d-flex align-items-start justify-content-between mb-4">
-                            <div class="avatar flex-shrink-0">
-                                <img
-                                    src="{{asset('img/icons/unicons/paypal.png')}}"
-                                    class="rounded" />
-                            </div>
-
-                        </div>
-                        <p class="mb-1">TAKORADI</p>
-                        <h4 class="card-title mb-3 text-white">0 </h4>
-                        <small class="fw-medium"> TOTAL EMPLOYEES   </small>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-lg-2">
-                <div  class="card h-100 bg-dark text-white">
-                    <div class="card-body">
-                        <div class="card-title d-flex align-items-start justify-content-between mb-4">
-                            <div class="avatar flex-shrink-0">
-                                <img
-                                    src="{{asset('img/icons/unicons/paypal.png')}}"
-                                    class="rounded" />
-                            </div>
-
-                        </div>
-                        <p class="mb-1"> <strong> KOFORIDUA </strong> </p>
-                        <h4 class="card-title mb-3 text-white">0</h4>
-                        <small class="fw-medium"> TOTAL EMPLOYEES  </small>
-                    </div>
-                </div>
-            </div>
-
-
-            <div class="col-lg-2">
-                <div  class="card h-100 bg-dark text-white">
-                    <div class="card-body">
-                        <div class="card-title d-flex align-items-start justify-content-between mb-4">
-                            <div class="avatar flex-shrink-0">
-                                <img
-                                    src="{{asset('img/icons/unicons/paypal.png')}}"
-                                    class="rounded" />
-                            </div>
-
-                        </div>
-                        <p class="mb-1"><strong> KUMASI </strong> </p>
-                        <h4 class="card-title mb-3 text-white">0 </h4>
-                        <small class="fw-medium"> TOTAL EMPLOYEES  </small>
-                    </div>
-                </div>
-            </div>
-
-        </div> <br>
-        @endif
+        </div> <br><br>
 
         <div class="card-header  ml-2  d-none d-lg-block">
             @include('flash-messages')
         </div>
 
-        <div class="row">
-            <div class="col">
-                <table id="myTable" class="display">
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th> Employee ID </th>
-                            <th>Name</th>
-                            <th>Gender</th>
-                            <th>Number</th>
-                            <th> Employment Date </th>
-                            <th> Department </th>
-                            <th>Role</th>
-                            <th>Field Office</th>
-                            <th>Client </th>
-                            <th> Location </th>
-                            <th>Payment Type</th>
-                            <th>Status</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
 
-                          @foreach ($guards as $key => $employee )
-                        <tr>
-                            <td> {{ $key + 1 }} </td>
-                            <td> FWSS {{ $employee->id }}  </td>
-                            <td>{{$employee->name}}  </td>
-                            <td>{{ $employee->gender }}  </td>
-                            <td>{{ $employee->phone_number }}  </td>
-                            <td>{{ $employee->date_of_joining->diffForHumans() }} </td>
-                            <td> {{ $employee->department?->name }} </td>
-                            <td> {{ $employee->role?->name }}  </td>
-                            <td> {{ $employee->field?->name }}   </td>
-                            <td>{{ $employee->client?->name }} {{ $employee->client?->business_name }} </td>
-                            <td> {{ $employee->location }} </td>
-                            <td> {{ $employee->payment_type }}  </td>
-                            @if($employee->status == 'Active')
-                            <td><span class="badge bg-label-success">{{$employee->status}}</span></td>
-                            @else
-                            <td><span class="badge bg-label-danger">{{$employee->status}}</span></td>
-                            @endif
-                            
-                            <td>
-                              <div class="dropdown">
-                                  <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown">
-                                      <i class="icon-base bx bx-dots-vertical-rounded"></i>
-                                  </button>
-                                  <div class="dropdown-menu">
-                                      <a class="dropdown-item" href="{{url('employees', $employee->id)}}"><i class="icon-base bx bxs-bullseye"></i> view</a>
-                                      <a class="dropdown-item" href="employees/{{$employee->id}}/edit"><i class="icon-base bx bx-edit-alt me-1"></i> Edit</a>
-                                      <form action="employees/{{$employee->id}}" method="POST">
-                                          @csrf
-                                          @method('DELETE')
-                                          <button class="dropdown-item" type="submit"><i class="icon-base bx bx-trash me-1"></i>Delete</button>
-                                      </form>
-                                  </div>
-                              </div>
-                          </td>
-                        </tr>
-                           @endforeach
-                    </tbody>
-                </table>
+          <div class="row">
 
-            </div>
-        </div>
+            <form action="/employeesGuardReAassign"  method="POST">
+              @csrf
+
+              <input class="form-check-input form-check-inline" type="checkbox" value="" id="options" />
+
+              <div class="form-check form-check-inline">
+                  <select name="employees" class="form-select">
+                      <option value=""> Select All </option>
+                  </select>
+              </div>
+
+              <div class="form-check form-check-inline">
+                <button class="btn btn-dark" type="submit" onclick="return confirm('Kindly Confirm?')"> <i class="icon-base bx bx-arrow-from-left"> </i> {{ __('Re-Assign') }}</button>
+              </div>
+
+              <div class="col">
+                  <table id="myTable" class="display">
+                      <thead>
+                          <tr>
+                              <th> </th>
+                              <th>#</th>
+                              <th> Employee ID </th>
+                              <th>Name</th>
+                              <th>Gender</th>
+                              <th>Number</th>
+                              <th>Role</th>
+                              <th>Field Office</th>
+                              <th>Client </th>
+                              <th> Location </th>
+                              <th>Status</th>
+                          </tr>
+                      </thead>
+                      <tbody>
+
+                            @foreach ($guards as $key => $employee )
+                          <tr>
+                              <td> <input class="checkBoxes form-check-input" type="checkbox" name="employees[]" value="{{ $employee->id }}" /></td>
+                              <td> {{ $key + 1 }} </td>
+                              <td> FWSS {{ $employee->id }}  </td>
+                              <td>{{$employee->name}}  </td>
+                              <td>{{ $employee->gender }}  </td>
+                              <td>{{ $employee->phone_number }}  </td>
+                              <td> {{ $employee->role?->name }}  </td>
+                              <td> {{ $employee->field?->name }}   </td>
+
+                                  <td> 
+                                      <select name="client_id[]" class="form-select @error('client_id') is-invalid @enderror" id="client_id">
+                                          @foreach($clients as $client)
+                                          <option  @if($client->id == $employee->client?->id) selected @endif  value="{{$client->id}}">{{$client->name}} {{$client->business_name}}</option>
+                                          @endforeach
+                                      </select>                            
+                                  </td>
+                                  <td> <input type="text" name="location[]" value="{{ $employee->location }} " class="form-control"> </td>
+                              @if($employee->status == 'Active')
+                              <td><span class="badge bg-label-success">{{$employee->status}}</span></td>
+                              @else
+                              <td><span class="badge bg-label-danger">{{$employee->status}}</span></td>
+                              @endif
+                              
+                          </tr>
+                            @endforeach
+                      </tbody>
+                  </table>
+              </form>
+
+              </div>
+          </div>
     </div>
   <!-- / Content -->
 
@@ -371,14 +281,16 @@
 
 
     <script>
-        new DataTable('#myTable', {
-            responsive: true,
+        new DataTable('#myTable', { responsive: true, });
+    </script>
 
-            layout: {
-                topStart: {
-                    buttons: ['excelHtml5', 'pdfHtml5']
-                }
-            }
+      <script>
+        $(document).ready(function() {
+            $('#options').change(function() {
+                $('.checkBoxes').prop('checked', function(i, val) {
+                    return !val;
+                });
+            });
         });
     </script>
     @endsection

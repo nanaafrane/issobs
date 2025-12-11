@@ -51,7 +51,7 @@
                     <div class="text-truncate" data-i18n="Transaction"><strong>Transactions</strong> </div>
                 </a>
             </li>
-            @if(Auth::user()->hasRole('Invoice') || Auth::user()->hasRole('Finance Manager'))
+            @if(Auth::user()->hasRole(['Invoice','Finance Manager']))
             <li class="menu-item">
                 <a href="{{ url('invoice') }}" class="menu-link">
                     <i class="menu-icon tf-icons bx bx-bxs-receipt bg-primary"></i>
@@ -74,7 +74,7 @@
                 </a>
             </li>
 
-            @if(Auth::user()->hasRole('Manager') || Auth::user()->hasRole('Officer') || Auth::user()->hasRole('Finance Manager') )
+            @if(Auth::user()->hasRole(['Manager', 'Officer', 'Finance Manager']) )
 
             <li class="menu-header small text-uppercase"> <span class="menu-header-text text-danger">Accounts</span></li>
 
@@ -134,7 +134,7 @@
                 <div class="nav-align-top">
                     <ul class="nav nav-pills mb-4 nav-fill" role="tablist">
 
-                        @if(Auth::user()->field?->name == 'Accra' || Auth::user()->hasRole('Finance Manager') || Auth::user()->hasRole('Invoice') )
+                        @if(Auth::user()->field?->name == 'Accra' || Auth::user()->hasRole(['Finance Manager', 'Invoice']) )
                         <li class="nav-item mb-1 mb-sm-0">
                             <button
                                 type="button"
@@ -153,7 +153,7 @@
                         </li>
                         @endif
 
-                        @if(Auth::user()->field?->name == 'Botwe' || Auth::user()->hasRole('Finance Manager') || Auth::user()->hasRole('Invoice') )
+                        @if(Auth::user()->field?->name == 'Botwe' || Auth::user()->hasRole(['Finance Manager', 'Invoice']) )
                         <li class="nav-item">
                             <button
                                 type="button"
@@ -171,7 +171,7 @@
                         </li>
                         @endif
 
-                        @if(Auth::user()->field?->name == 'Tema' || Auth::user()->hasRole('Finance Manager') || Auth::user()->hasRole('Invoice') )
+                        @if(Auth::user()->field?->name == 'Tema' || Auth::user()->hasRole(['Finance Manager', 'Invoice']) )
                         <li class="nav-item mb-1 mb-sm-0">
                             <button
                                 type="button"
@@ -189,7 +189,7 @@
                         </li>
                         @endif
 
-                        @if(Auth::user()->field?->name == 'Takoradi' || Auth::user()->hasRole('Finance Manager') || Auth::user()->hasRole('Invoice') )
+                        @if(Auth::user()->field?->name == 'Takoradi' || Auth::user()->hasRole(['Finance Manager','Invoice' ]) )
                         <li class="nav-item">
                             <button
                                 type="button"
@@ -207,7 +207,7 @@
                         </li>
                         @endif
 
-                        @if(Auth::user()->field?->name == 'Koforidua' || Auth::user()->hasRole('Finance Manager') || Auth::user()->hasRole('Invoice') )
+                        @if(Auth::user()->field?->name == 'Koforidua' || Auth::user()->hasRole(['Finance Manager','Invoice']) )
                         <li class="nav-item">
                             <button
                                 type="button"
@@ -225,7 +225,7 @@
                         </li>
                         @endif
 
-                        @if(Auth::user()->field?->name == 'Kumasi' || Auth::user()->hasRole('Finance Manager') || Auth::user()->hasRole('Invoice') )
+                        @if(Auth::user()->field?->name == 'Kumasi' || Auth::user()->hasRole(['Finance Manager', 'Invoice']))
                         <li class="nav-item">
                             <button
                                 type="button"

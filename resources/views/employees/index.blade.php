@@ -165,7 +165,7 @@
             </div>
         </div><br>
 
-        @if(Auth::user()->hasRole('Invoice') || Auth::user()->hasRole('Manager'))
+        @if(Auth::user()->hasRole(['Invoice','Manager']))
         <div class="row">
             <div class="col-lg-2">
                 <div  class="card h-100 bg-dark text-white">
@@ -173,7 +173,7 @@
                         <div class="card-title d-flex align-items-start justify-content-between mb-4">
                             <div class="avatar flex-shrink-0">
                                 <img
-                                    src="img/icons/unicons/paypal.png"
+                                    src="{{ asset('img/icons/unicons/paypal.png') }}"
                                     alt="chart success"
                                     class="rounded" />
                             </div>
@@ -191,7 +191,7 @@
                         <div class="card-title d-flex align-items-start justify-content-between mb-4">
                             <div class="avatar flex-shrink-0">
                                 <img
-                                    src="img/icons/unicons/paypal.png"
+                                    src="{{ asset('img/icons/unicons/paypal.png') }}"
                                     alt="chart success"
                                     class="rounded" />
                             </div>
@@ -210,7 +210,7 @@
                         <div class="card-title d-flex align-items-start justify-content-between mb-4">
                             <div class="avatar flex-shrink-0">
                                 <img
-                                    src="img/icons/unicons/paypal.png"
+                                    src="{{ asset('img/icons/unicons/paypal.png') }}"
                                     alt="chart success"
                                     class="rounded" />
                             </div>
@@ -231,7 +231,7 @@
                         <div class="card-title d-flex align-items-start justify-content-between mb-4">
                             <div class="avatar flex-shrink-0">
                                 <img
-                                    src="img/icons/unicons/paypal.png"
+                                    src="{{ asset('img/icons/unicons/paypal.png') }}"
                                     class="rounded" />
                             </div>
 
@@ -249,7 +249,7 @@
                         <div class="card-title d-flex align-items-start justify-content-between mb-4">
                             <div class="avatar flex-shrink-0">
                                 <img
-                                    src="img/icons/unicons/paypal.png"
+                                    src="{{ asset('img/icons/unicons/paypal.png') }}"
                                     class="rounded" />
                             </div>
 
@@ -268,7 +268,7 @@
                         <div class="card-title d-flex align-items-start justify-content-between mb-4">
                             <div class="avatar flex-shrink-0">
                                 <img
-                                    src="img/icons/unicons/paypal.png"
+                                    src="{{ asset('img/icons/unicons/paypal.png') }}"
                                     class="rounded" />
                             </div>
 

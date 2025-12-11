@@ -52,7 +52,7 @@
                     <div class="text-truncate" data-i18n="Transaction">Transactions</div>
                 </a>
             </li>
-            @if(Auth::user()->hasRole('Invoice') || Auth::user()->hasRole('Finance Manager'))
+            @if(Auth::user()->hasRole(['Invoice', 'Finance Manager']))
             <li class="menu-item">
                 <a href="{{ url('invoice') }}" class="menu-link">
                     <i class="menu-icon tf-icons bx bx-bxs-receipt bg-primary"></i>
@@ -75,7 +75,7 @@
                 </a>
             </li>
 
-            @if(Auth::user()->hasRole('Manager') || Auth::user()->hasRole('Officer') || Auth::user()->hasRole('Finance Manager') )
+            @if(Auth::user()->hasRole(['Manager', 'Officer', 'Finance Manager']) )
 
             <li class="menu-header small text-uppercase"> <span class="menu-header-text text-danger">Accounts</span></li>
 
@@ -126,7 +126,7 @@
             </div>
         </div><br>
 
-        @if(Auth::user()->hasRole('Invoice') || Auth::user()->hasRole('Finance Manager'))
+        @if(Auth::user()->hasRole(['Invoice', 'Finance Manager']))
         <div class="row">
             <div class="col-lg-2">
                 <div style="background: #152356; color: white;" class="card h-100">
@@ -399,7 +399,7 @@
 
                     <tbody>
 
-                        @if(Auth::user()->hasRole('Invoice') || Auth::user()->hasRole('Finance Manager'))
+                        @if(Auth::user()->hasRole(['Invoice', 'Finance Manager']))
                         @foreach($chequeReceipt as $receipt)
                         <tr>
                             <td>FWSSR{{$receipt->id}}</td>

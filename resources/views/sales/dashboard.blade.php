@@ -48,7 +48,7 @@
         </a>
       </li>
 
-      @if(Auth::user()->hasRole('Invoice') || Auth::user()->hasRole('Finance Manager'))
+      @if(Auth::user()->hasRole(['Invoice','Finance Manager']))
       <li class="menu-item">
         <a href="{{ url('invoice') }}" class="menu-link">
           <i class="menu-icon tf-icons bx bx-bxs-receipt bg-primary"></i>
@@ -74,7 +74,7 @@
         </a>
       </li>
 
-      @if(Auth::user()->hasRole('Manager') || Auth::user()->hasRole('Officer') || Auth::user()->hasRole('Finance Manager') )
+      @if(Auth::user()->hasRole(['Manager','Officer','Finance Manager']) )
 
       <li class="menu-header small text-uppercase"> <span class="menu-header-text text-danger">Accounts</span></li>
 
@@ -155,7 +155,7 @@
                 </div>
                 <p class="mb-1">Invoice</p>
                 <h4 class="card-title mb-3 text-white"><strong>&#x20B5;
-                    @if(Auth::user()->hasRole('Invoice') || Auth::user()->hasRole('Finance Manager'))
+                    @if(Auth::user()->hasRole(['Invoice','Finance Manager']))
                     {{number_format(array_sum( $sum_invoices),2)}}
                     @elseif(Auth::user()->field?->name == 'Accra')
                     {{number_format($sum_invoices[0], 2)}}
@@ -214,7 +214,7 @@
                 </div>
                 <p class="mb-1">Invoice</p>
                 <h4 class="card-title mb-3">&#x20B5;
-                  @if(Auth::user()->hasRole('Invoice') || Auth::user()->hasRole('Finance Manager'))
+                  @if(Auth::user()->hasRole(['Invoice', 'Finance Manager']))
                   {{number_format(array_sum( $invoices_outstanding),2)}}
                   @elseif(Auth::user()->field?->name == 'Accra')
                   {{number_format($invoices_outstanding[0], 2)}}
@@ -272,7 +272,7 @@
                 </div>
                 <p class="mb-1">PAYMENTS WITH </p>
                 <h4 class="card-title mb-3">&#x20B5;
-                  @if(Auth::user()->hasRole('Invoice') || Auth::user()->hasRole('Finance Manager'))
+                  @if(Auth::user()->hasRole(['Invoice', 'Finance Manager']) )
                   {{number_format(array_sum( $total_after_wht),2)}}
                   @elseif(Auth::user()->field?->name == 'Accra')
                   {{number_format($total_after_wht[0], 2)}}
@@ -318,7 +318,7 @@
                 <p class="mb-1">WITH HOLDINGS TAX</p>
                 <h4 class="card-title mb-3">&#x20B5;
 
-                  @if(Auth::user()->hasRole('Invoice') || Auth::user()->hasRole('Finance Manager'))
+                  @if(Auth::user()->hasRole(['Invoice', 'Finance Manager']))
                   {{number_format(array_sum( $total_wth),2)}}
                   @elseif(Auth::user()->field?->name == 'Accra')
                   {{number_format($total_wth[0], 2)}}
@@ -383,7 +383,7 @@
                 <p class="mb-1 text-info">Part Payment</p>
                 <h4 class="card-title mb-3"> &#x20B5;
 
-                  @if(Auth::user()->hasRole('Invoice') || Auth::user()->hasRole('Finance Manager'))
+                  @if(Auth::user()->hasRole(['Invoice','Finance Manager']))
                   {{number_format(array_sum($balance_outstanding), 2)}}
                   @elseif(Auth::user()->field?->name == 'Accra')
                   {{number_format($balance_outstanding[0], 2)}}
@@ -443,7 +443,7 @@
                 </div>
                 <p class="mb-1">Payments</p>
                 <h4 style="color:white" class="card-title mb-3"> &#x20B5;
-                  @if(Auth::user()->hasRole('Invoice') || Auth::user()->hasRole('Finance Manager'))
+                  @if(Auth::user()->hasRole(['Invoice', 'Finance Manager']))
                   {{number_format(array_sum($receipt_AllPayment), 2)}}
                   @elseif(Auth::user()->field?->name == 'Accra')
                   {{number_format($receipt_AllPayment[0], 2)}}
@@ -539,7 +539,7 @@
                 <p class="mb-1">Payments</p>
                 <h4 class="card-title mb-3">&#x20B5;
 
-                  @if(Auth::user()->hasRole('Invoice') || Auth::user()->hasRole('Finance Manager'))
+                  @if(Auth::user()->hasRole(['Invoice','Finance Manager']))
                   {{number_format(array_sum($receiept_TransferAmount), 2)}}
                   @elseif(Auth::user()->field?->name == 'Accra')
                   {{number_format($receiept_TransferAmount[0], 2)}}
@@ -597,7 +597,7 @@
                 <p class="mb-1">Payments</p>
                 <h4 class="card-title mb-3">&#x20B5;
 
-                  @if(Auth::user()->hasRole('Invoice') || Auth::user()->hasRole('Finance Manager'))
+                  @if(Auth::user()->hasRole(['Invoice', 'Finance Manager']))
                   {{number_format(array_sum($receiept_CashAmount), 2)}}
                   @elseif(Auth::user()->field?->name == 'Accra')
                   {{number_format($receiept_CashAmount[0], 2)}}
@@ -650,7 +650,7 @@
                 <p class="mb-1">Payments</p>
                 <h4 class="card-title mb-3">&#x20B5;
 
-                  @if(Auth::user()->hasRole('Invoice') || Auth::user()->hasRole('Finance Manager'))
+                  @if(Auth::user()->hasRole(['Invoice', 'Finance Manager']))
                   {{number_format(array_sum($receiept_BankAmount), 2)}}
                   @elseif(Auth::user()->field?->name == 'Accra')
                   {{number_format($receiept_BankAmount[0], 2)}}
@@ -702,7 +702,7 @@
                 <p class="mb-1">Payments</p>
                 <h4 class="card-title mb-3">&#x20B5;
 
-                  @if(Auth::user()->hasRole('Invoice') || Auth::user()->hasRole('Finance Manager'))
+                  @if(Auth::user()->hasRole(['Invoice', 'Finance Manager']))
                   {{number_format(array_sum($receiept_MoMoAmount), 2)}}
                   @elseif(Auth::user()->field?->name == 'Accra')
                   {{number_format($receiept_MoMoAmount[0], 2)}}

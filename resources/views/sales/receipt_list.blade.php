@@ -56,7 +56,7 @@
                 </a>
             </li>
 
-            @if(Auth::user()->hasRole('Invoice') || Auth::user()->hasRole('Finance Manager'))
+            @if(Auth::user()->hasRole(['Invoice', 'Finance Manager']))
             <li class="menu-item">
                 <a href="{{ url('invoice') }}" class="menu-link">
                     <i class="menu-icon tf-icons bx bx-bxs-receipt bg-primary"></i>
@@ -79,7 +79,7 @@
                 </a>
             </li>
 
-            @if(Auth::user()->hasRole('Manager') || Auth::user()->hasRole('Officer') || Auth::user()->hasRole('Finance Manager') )
+            @if(Auth::user()->hasRole(['Manager','Officer' ,'Finance Manager']) )
 
             <li class="menu-header small text-uppercase"> <span class="menu-header-text text-danger">Accounts</span></li>
 
@@ -194,7 +194,7 @@
                                                     <div class="dropdown-menu">
                                                         <a class="dropdown-item" href="{{url('receipt', $receipt->id)}}"><i class="icon-base bx bxs-bullseye"></i> view</a>
                                                         <a class="dropdown-item" href="receipt/{{$receipt->id}}/edit"><i class="icon-base bx bx-edit-alt me-1"></i> Edit</a>
-                                                        @if( Auth::user()->hasRole('Finance Manager') ||  Auth::user()->hasRole('Manager') )
+                                                        @if( Auth::user()->hasRole(['Finance Manager', 'Manager']) )
                                                         <form action="receipt/{{$receipt->id}}" method="POST">
                                                             @csrf
                                                             @method('DELETE')

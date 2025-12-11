@@ -49,7 +49,7 @@
                     <div class="text-truncate" data-i18n="Transaction">Transactions</div>
                 </a>
             </li>
-            @if(Auth::user()->hasRole('Invoice') || Auth::user()->hasRole('Finance Manager'))
+            @if(Auth::user()->hasRole(['Invoice', 'Finance Manager']))
             <li class="menu-item">
                 <a href="{{ url('invoice') }}" class="menu-link">
                     <i class="menu-icon tf-icons bx bx-bxs-receipt bg-primary"></i>
@@ -134,7 +134,7 @@
             </li>
             @endif
 
-            @if((Auth::user()->hasRole('Manager') && Auth::user()->hasPermission('Accounts')) || Auth::user()->hasRole('Officer') || Auth::user()->hasRole('Finance Manager') )
+            @if((Auth::user()->hasRole(['Manager', 'Accounts', 'Officer', 'Finance Manager']) && Auth::user()->hasPermission()))
 
             <li class="menu-header small text-uppercase"> <span class="menu-header-text text-danger">Accounts</span></li>
 

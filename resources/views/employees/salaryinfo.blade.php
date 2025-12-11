@@ -201,7 +201,7 @@
                     </thead>
                     <tbody>
 
-                        @if(Auth::user()->hasRole('Invoice') || Auth::user()->hasRole('HR Manager'))
+                        @if(Auth::user()->hasRole(['Invoice', 'HR Manager']))
                        
                         <tr>
                             <td>  </td>
