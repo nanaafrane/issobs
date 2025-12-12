@@ -357,7 +357,7 @@ class InvoiceController extends Controller
     public function dashboardPartPaymentOutstanding ()
     {
 
-        $part_payment_outstanding = Invoice::where('balance', '>', 0.00)->where('status', 'uncompleted')->get();
+        $reportInvoices = Invoice::where('balance', '>', 0.00)->where('status', 'uncompleted')->get();
 
         // dd($part_payment_outstanding);->orwhere('status', 'uncompleted')
         $accra = Invoice::whereRelation('client', 'field_id', 1)->where('balance', '>', 0.00)->where('status', 'uncompleted')->get();
@@ -385,7 +385,7 @@ class InvoiceController extends Controller
         $kumasiTotal = $kumasi->sum('balance');
         $kumasiCount = count($kumasi);
 
-        return view('sales.part_payment_outstanding', compact('part_payment_outstanding', 'accra', 'botwe', 'tema', 'takoradi', 'koforidua', 'kumasi', 'accraTotal', 'accraCount', 'botweTotal', 'botweCount', 'temaTotal', 'temaCount', 'takoradiTotal', 'takoradiCount', 'koforiduaTotal', 'koforiduaCount', 'kumasiTotal', 'kumasiCount'));
+        return view('sales.part_payment_outstanding', compact('reportInvoices', 'accra', 'botwe', 'tema', 'takoradi', 'koforidua', 'kumasi', 'accraTotal', 'accraCount', 'botweTotal', 'botweCount', 'temaTotal', 'temaCount', 'takoradiTotal', 'takoradiCount', 'koforiduaTotal', 'koforiduaCount', 'kumasiTotal', 'kumasiCount'));
 
 
     }
