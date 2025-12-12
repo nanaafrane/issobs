@@ -194,7 +194,7 @@ class HomeController extends Controller
         if ($user->path) {
             Storage::disk('public')->delete($user->path);
         }
-        $user->path   = $request->file('image')->store('images', 'public');
+        $user->path   = $request->file('image')->store('images', 'public_html_disk');
         $user->save();
 
         return back()->with('success', 'Staff Image Updated Successfully');
