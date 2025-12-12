@@ -105,7 +105,7 @@
                     </ul>
             </li>
             @endif
-            <li class="menu-item active open ">
+            <li class="menu-item ">
                 <a href="javascript:void(0);" class="menu-link menu-toggle">
                 <i class="menu-icon tf-icons bx bxs-user-account"></i>
                 <div class="text-truncate" data-i18n="Staffs">Employees</div>
@@ -116,7 +116,7 @@
                     <div class="text-truncate" data-i18n="SRegister">Register</div>
                     </a>
                 </li>
-                <li class="menu-item active">
+                <li class="menu-item">
                     <a href="{{url('employees')}}" class="menu-link">
                     <div class="text-truncate" data-i18n="SList">List</div>
                     </a>
@@ -200,14 +200,14 @@
             @endif
 
             <li class="menu-header small text-uppercase"><span class="menu-header-text">PAYROLL</span></li>
-            <li class="menu-item">
+            <li class="menu-item active open">
                     <a href="javascript:void(0);" class="menu-link menu-toggle">
                     <i class="menu-icon tf-icons bx bx-money-withdraw"></i>
                     <div class="text-truncate" data-i18n="Payroll">Payroll</div>
                     </a>
                     <ul class="menu-sub">
                     @if(Auth::user()->hasPermission('HR') || Auth::user()->hasRole(['Invoice']))
-                    <li class="menu-item">
+                    <li class="menu-item active">
                         <a href="{{ url('salaries') }}" class="menu-link">
                         <i class="menu-icon tf-icons bx bxs-user-account"></i>
                         <div class="text-truncate" data-i18n="Employees">Add to Salaries</div>
