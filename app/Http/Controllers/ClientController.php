@@ -54,11 +54,14 @@ class ClientController extends Controller
 
         $kumasi = Client::where('field_id', 6)->get();
         $kumasiCount = count($kumasi);
+
+        $shyhills = Client::where('field_id', 7)->get();
+        $shyhillsCount = count($shyhills);
         // dd($accraCount, $botweCount, $temaCount, $takoradiCount, $koforiduaCount, $kumasiCount);
 
         if($user->role->name == 'Invoice' || $user->role->name == 'Finance Manager' || $user->role->name == 'Manager' )
         {
-            return view('clients.index', compact('clients', 'clientsCount', 'fields', 'accraCount', 'botweCount', 'temaCount', 'takoradiCount', 'koforiduaCount', 'kumasiCount'));
+            return view('clients.index', compact('clients', 'clientsCount', 'fields', 'accraCount', 'botweCount', 'temaCount', 'takoradiCount', 'koforiduaCount', 'kumasiCount', 'shyhills', 'shyhillsCount'));
 
         }elseif($user->field?->name == 'Accra')
         {
@@ -69,7 +72,7 @@ class ClientController extends Controller
         if ($user->field?->name == 'Botwe')
         {
             $clients = $botwe;
-            return view('clients.index', compact('clients', 'clientsCount', 'fields', 'botweCount'));
+            return view('clients.index', compact('clients', 'clientsCount', 'fields', 'botweCount', 'shyhills', 'shyhillsCount'));
 
         }
 

@@ -73,34 +73,52 @@
             <li class="menu-header small text-uppercase"><span class="menu-header-text text-info">Management</span></li>
 
             @if(Auth::user()->hasPermission('HR'))
-            <li class="menu-item">
+                <li class="menu-item">
+                    <a href="javascript:void(0);" class="menu-link menu-toggle">
+                        <i class="menu-icon tf-icons bx bx-bxs-group"></i>
+                        <div class="text-truncate" data-i18n="Staffs">System Users</div>
+                    </a>
+                    <ul class="menu-sub">
+                        <li class="menu-item">
+                            <a href="{{url('staffAdd')}}" class="menu-link">
+                                <div class="text-truncate" data-i18n="SRegister">Register</div>
+                            </a>
+                        </li>
+                        <li class="menu-item">
+                            <a href="{{url('staff')}}" class="menu-link">
+                                <div class="text-truncate" data-i18n="SList">List</div>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+
+                <li class="menu-item ">
                 <a href="javascript:void(0);" class="menu-link menu-toggle">
-                    <i class="menu-icon tf-icons bx bx-bxs-group"></i>
-                    <div class="text-truncate" data-i18n="Staffs">Staffs</div>
+                <i class="menu-icon tf-icons bx bxs-user-account"></i>
+                <div class="text-truncate" data-i18n="Staffs">Employees</div>
                 </a>
                 <ul class="menu-sub">
-                    <li class="menu-item">
-                        <a href="{{url('staffAdd')}}" class="menu-link">
-                            <div class="text-truncate" data-i18n="SRegister">Register</div>
-                        </a>
-                    </li>
-                    <li class="menu-item">
-                        <a href="{{url('staff')}}" class="menu-link">
-                            <div class="text-truncate" data-i18n="SList">List</div>
-                        </a>
-                    </li>
+                <li class="menu-item ">
+                    <a href="{{url('employees/create')}}" class="menu-link">
+                    <div class="text-truncate" data-i18n="SRegister">Register</div>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="{{url('employees')}}" class="menu-link">
+                    <div class="text-truncate" data-i18n="SList">List</div>
+                    </a>
+                </li>
+
                 </ul>
             </li>
-            @endif
 
-            @if(Auth::user()->hasPermission('HR'))
             <li class="menu-item active open">
                 <a class="menu-link menu-toggle">
                     <i class="menu-icon tf-icons bx bx-bxs-user-detail"></i>
                     <div class="text-truncate" data-i18n="Clients"><strong>Clients</strong></div>
                 </a>
                 <ul class="menu-sub">
-                    <li class="menu-item">
+                    <li class="menu-item ">
                         <a href="{{url('client/create')}}" class="menu-link">
                             <div class="text-truncate" data-i18n="CRegister">Register</div>
                         </a>
@@ -112,29 +130,18 @@
                     </li>
                 </ul>
             </li>
-            @else
-            <li class="menu-item active">
-                <a href="{{url('client')}}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-bxs-user-detail"></i>
-                    <div class="text-truncate" data-i18n="Clients"><strong>Clients</strong></div>
+
+            <li class="menu-item">
+                <a href="{{url('departments')}}" class="menu-link">
+                <i class="menu-icon tf-icons bx bxs-buildings"></i>
+                <div class="text-truncate" data-i18n="depnroles">Department & Roles </div>
                 </a>
             </li>
 
-            @endif
-
-            @if(Auth::user()->hasPermission('HR'))
             <li class="menu-item">
                 <a href="{{url('field')}}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-bxs-location-plus"></i>
-                    <div class="text-truncate" data-i18n="Locations">Locations</div>
-                </a>
-            </li>
-
-            <li class="menu-header small text-uppercase"><span class="menu-header-text">PAYROLL</span></li>
-            <li class="menu-item">
-                <a href="" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-money-withdraw"></i>
-                    <div class="text-truncate" data-i18n="Locations">Payroll</div>
+                <i class="menu-icon tf-icons bx bx-bxs-location-plus"></i>
+                <div class="text-truncate" data-i18n="fOffices">Field Offices</div>
                 </a>
             </li>
             @endif
@@ -172,6 +179,46 @@
 
             @endif
 
+        <li class="menu-header small text-uppercase"><span class="menu-header-text">PAYROLL</span></li>
+        <li class="menu-item">
+                <a href="javascript:void(0);" class="menu-link menu-toggle">
+                <i class="menu-icon tf-icons bx bx-money-withdraw"></i>
+                <div class="text-truncate" data-i18n="Payroll">Payroll</div>
+                </a>
+                <ul class="menu-sub">
+                
+                <li class="menu-item">
+                    <a href="{{ url('salaries') }}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bxs-user-account"></i>
+                    <div class="text-truncate" data-i18n="Employees">Add to Salaries</div>
+                    </a>
+                </li>
+                @if(Auth::user()->hasPermission('Accounts'))
+                <li class="menu-item">
+                    <a href="{{ url('salaries/create') }}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-money-withdraw"></i>
+                    <div class="text-truncate" data-i18n="Salaries">Salaries</div>
+                    </a>
+                </li>
+
+                <li class="menu-item">
+                    <a href="{{ url('salariesTransaction') }}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-transfer-alt"></i>
+                    <div class="text-truncate" data-i18n="Transaction">Transactions</div>
+                    </a>
+                </li>
+
+                <li class="menu-item">
+                    <a href="{{ url('salariesInvPayroll') }}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-git-compare"></i>
+                    <div class="text-truncate" data-i18n="InvtoPayroll">Invoice to Payroll</div>
+                    </a>
+                </li>
+                @endif
+                </ul>
+            </li>
+
+
 
         </ul>
     </aside>
@@ -204,7 +251,7 @@
 
 
                                     @if(Auth::user()->field?->name == 'Botwe')
-                                    {{$botweCount}}
+                                    {{$botweCount}} + {{ $shyhillsCount }}
                                     @endif
 
                                     @if(Auth::user()->field?->name == 'Tema')
@@ -265,6 +312,24 @@
                         </div>
                         <p class="mb-1"><strong> BOTWE </strong></p>
                         <h4 class="card-title mb-3"><strong> {{$botweCount}}</strong> </h4>
+                        <small class="fw-medium"> TOTAL CLIENTS </small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-2">
+                <div class="card shadow-none bg-transparent border border-secondary">
+                    <div class="card-body">
+                        <div class="card-title d-flex align-items-start justify-content-between mb-4">
+                            <div class="avatar flex-shrink-0">
+                                <img
+                                    src="img/icons/unicons/paypal.png"
+                                    alt="chart success"
+                                    class="rounded" />
+                            </div>
+                        </div>
+                        <p class="mb-1"><strong> SHYHILLS </strong></p>
+                        <h4 class="card-title mb-3"><strong> {{$shyhillsCount}}</strong> </h4>
                         <small class="fw-medium"> TOTAL CLIENTS </small>
                     </div>
                 </div>

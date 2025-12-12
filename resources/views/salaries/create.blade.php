@@ -47,7 +47,7 @@
       <li class="menu-item">
         <a href="javascript:void(0);" class="menu-link menu-toggle">
           <i class="menu-icon tf-icons bx bx-bxs-group"></i>
-          <div class="text-truncate" data-i18n="Staffs">Staffs</div>
+          <div class="text-truncate" data-i18n="Staffs">System Users</div>
         </a>
         <ul class="menu-sub">
           <li class="menu-item">

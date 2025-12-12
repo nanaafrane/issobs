@@ -98,12 +98,12 @@ class SalaryController extends Controller
         $alreadyProcessed = [];
         $employees = employee::findOrFail($request->employees);
        
-        // dd($employees, $date->format('Y-m-d'));
+        // dd($employees, $date->format('Y-m-d H:i:s'));
 
         if ($request->has('employees')) {
             foreach ($employees as $employee) {
                 $exists = Salary::where('employee_id', $employee->id)
-                                ->where('salary_month', $date->format('Y-m-d'))
+                                ->where('salary_month', $date->format('Y-m-d H:i:s'))
                                 ->exists();
                 if ($exists) {
                     $alreadyProcessed[] = $employee->id;
@@ -138,7 +138,7 @@ class SalaryController extends Controller
         // dd($alreadyProcessed);
 
         if (!empty($alreadyProcessed)) {
-            return back()->with('error', 'Some employees with the IDs have already been add to salary to be processed for this month: '. implode(', ', $alreadyProcessed)) ;
+            return back()->with('error', 'The employees with the IDs have already been add to salary to be processed for this month: '. implode(', ', $alreadyProcessed)) ;
         }
         return back()->with('success', 'Employees added for this month salary to be processed.'); 
 
