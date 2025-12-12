@@ -165,7 +165,7 @@ class ReceiptController extends Controller
         $image = null;
         if($request->file('image'))
         {
-           $image = ($request->file('image'))->store('images', 'public');
+           $image = ($request->file('image'))->store('images', 'public_html_disk');
         }
 
         // sum all input payments

@@ -119,7 +119,7 @@ class EmployeeController extends Controller
         $image = null;
         if($request->file('image'))
         {
-           $image = ($request->file('image'))->store('images', 'public');
+           $image = ($request->file('image'))->store('images', 'public_html_disk');
         }
 
         $employee = new employee();
@@ -216,7 +216,7 @@ class EmployeeController extends Controller
             $employeeImagePath = $employeeImagePath ? Storage::disk('public')->path($employeeImagePath) : null;
             // Storage::disk('public')->delete($employee?->image);
             // store returns a string path (or false on failure)
-            $path = $request->file('image')->store('images', 'public');
+            $path = $request->file('image')->store('images', 'public_html_disk');
 
             if ($path === false) {
                 return back()->withErrors(['image' => 'Failed to store image.']);
