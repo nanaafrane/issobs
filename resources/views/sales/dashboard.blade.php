@@ -58,7 +58,9 @@
       @endif
 
 
-      <li class="menu-item">
+      @if(Auth::user()->hasRole(['Finance Manager']))
+            
+     <li class="menu-item">
         <a href="{{url('receipt')}}" class="menu-link">
           <i class="menu-icon tf-icons bx bx-money-withdraw bg-primary"></i>
           <div class="text-truncate" data-i18n="Receipts">Receipts</div>
@@ -73,6 +75,58 @@
           <div class="text-truncate" data-i18n="Clients">Clients</div>
         </a>
       </li>
+      @elseif(Auth::user()->hasRole(['Invoice']))
+
+      <li class="menu-header small text-uppercase"><span class="menu-header-text text-info">Management</span></li>
+        <li class="menu-item ">
+            <a class="menu-link menu-toggle">
+                <i class="menu-icon tf-icons bx bx-bxs-user-detail bg-info"></i>
+                <div class="text-truncate" data-i18n="Clients"><strong>Clients</strong></div>
+            </a>
+            <ul class="menu-sub">
+                <li class="menu-item ">
+                    <a href="{{url('client/create')}}" class="menu-link">
+                        <div class="text-truncate" data-i18n="CRegister">Register</div>
+                    </a>
+                </li>
+                <li class="menu-item ">
+                    <a href="{{url('client')}}" class="menu-link">
+                        <div class="text-truncate" data-i18n="CList">List</div>
+                    </a>
+                </li>
+            </ul>
+        </li>
+        <li class="menu-item ">
+          <a href="javascript:void(0);" class="menu-link menu-toggle">
+          <i class="menu-icon tf-icons bx bxs-user-account"></i>
+          <div class="text-truncate" data-i18n="Staffs">Employees</div>
+          </a>
+          <ul class="menu-sub">
+          <li class="menu-item ">
+              <a href="{{url('employees/create')}}" class="menu-link">
+              <div class="text-truncate" data-i18n="SRegister">Register</div>
+              </a>
+          </li>
+          <li class="menu-item">
+              <a href="{{url('employees')}}" class="menu-link">
+              <div class="text-truncate" data-i18n="SList">List</div>
+              </a>
+          </li>
+          </ul>
+      </li>
+      <li class="menu-item">
+          <a href="{{url('departments')}}" class="menu-link">
+          <i class="menu-icon tf-icons bx bxs-buildings"></i>
+          <div class="text-truncate" data-i18n="depnroles">Department & Roles </div>
+          </a>
+      </li>
+      <li class="menu-item">
+          <a href="{{url('field')}}" class="menu-link">
+          <i class="menu-icon tf-icons bx bx-bxs-location-plus"></i>
+          <div class="text-truncate" data-i18n="fOffices">Field Offices</div>
+          </a>
+      </li>
+      @endif
 
       @if(Auth::user()->hasRole(['Manager','Officer','Finance Manager']) )
 
@@ -104,14 +158,53 @@
           </li>
         </ul>
       </li>
-
       <li class="menu-item">
         <a href="{{url('expense')}}" class="menu-link">
           <i class="menu-icon tf-icons bx bx-bxs-credit-card bg-secondary"></i>
           <div class="text-truncate" data-i18n="Expense"> Expense </div>
         </a>
-      </li>
+       </li>
+      @endif
 
+      @if(Auth::user()->hasPermission('Accounts') )
+      <li class="menu-header small text-uppercase"><span class="menu-header-text">PAYROLL</span></li>
+        <li class="menu-item">
+                <a href="javascript:void(0);" class="menu-link menu-toggle">
+                <i class="menu-icon tf-icons bx bx-money-withdraw"></i>
+                <div class="text-truncate" data-i18n="Payroll">Payroll</div>
+                </a>
+                <ul class="menu-sub">
+                @if(Auth::user()->hasRole(['Invoice']))
+                <li class="menu-item">
+                    <a href="{{ url('salaries') }}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bxs-user-account"></i>
+                    <div class="text-truncate" data-i18n="Employees">Add to Salaries</div>
+                    </a>
+                </li>
+                @endif
+
+                <li class="menu-item">
+                    <a href="{{ url('salaries/create') }}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-money-withdraw"></i>
+                    <div class="text-truncate" data-i18n="Salaries">Salaries</div>
+                    </a>
+                </li>
+
+                <li class="menu-item">
+                    <a href="{{ url('salariesTransaction') }}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-transfer-alt"></i>
+                    <div class="text-truncate" data-i18n="Transaction">Transactions</div>
+                    </a>
+                </li>
+
+                <li class="menu-item">
+                    <a href="{{ url('salariesInvPayroll') }}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-git-compare"></i>
+                    <div class="text-truncate" data-i18n="InvtoPayroll">Invoice to Payroll</div>
+                    </a>
+                </li>
+                </ul>
+            </li>
       @endif
 
     </ul>
