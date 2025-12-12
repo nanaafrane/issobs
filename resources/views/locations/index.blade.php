@@ -46,7 +46,7 @@
             <li class="menu-item">
                 <a href="javascript:void(0);" class="menu-link menu-toggle">
                     <i class="menu-icon tf-icons bx bx-bxs-group"></i>
-                    <div class="text-truncate" data-i18n="Staffs">Staffs</div>
+                    <div class="text-truncate" data-i18n="Staffs">System Users</div>
                 </a>
                 <ul class="menu-sub">
                     <li class="menu-item">
@@ -98,27 +98,35 @@
                 </ul>
             </li>
 
-            <li class="menu-item active">
-                <a href="{{url('field')}}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-bxs-location-plus"></i>
-                    <div class="text-truncate" data-i18n="fOffices">Field Offices</div>
-                </a>
-            </li>
+      <li class="menu-item">
+        <a href="{{url('departments')}}" class="menu-link">
+          <i class="menu-icon tf-icons bx bxs-buildings"></i>
+          <div class="text-truncate" data-i18n="depnroles">Department & Roles </div>
+        </a>
+      </li>
 
-            <li class="menu-header small text-uppercase"><span class="menu-header-text">PAYROLL</span></li>
-  <li class="menu-item">
+      <li class="menu-item">
+        <a href="{{url('field')}}" class="menu-link">
+          <i class="menu-icon tf-icons bx bx-bxs-location-plus"></i>
+          <div class="text-truncate" data-i18n="fOffices">Field Offices</div>
+        </a>
+      </li>
+
+      <li class="menu-header small text-uppercase"><span class="menu-header-text">PAYROLL</span></li>
+      <li class="menu-item">
         <a href="javascript:void(0);" class="menu-link menu-toggle">
           <i class="menu-icon tf-icons bx bx-money-withdraw"></i>
           <div class="text-truncate" data-i18n="Payroll">Payroll</div>
         </a>
         <ul class="menu-sub">
+          
           <li class="menu-item">
             <a href="{{ url('salaries') }}" class="menu-link">
               <i class="menu-icon tf-icons bx bxs-user-account"></i>
-              <div class="text-truncate" data-i18n="Employees">Employees</div>
+              <div class="text-truncate" data-i18n="Employees">Add to Salaries</div>
             </a>
           </li>
-
+           @if(Auth::user()->hasPermission('Accounts'))
           <li class="menu-item">
             <a href="{{ url('salaries/create') }}" class="menu-link">
               <i class="menu-icon tf-icons bx bx-money-withdraw"></i>
@@ -133,14 +141,13 @@
             </a>
           </li>
 
-
           <li class="menu-item">
             <a href="{{ url('salariesInvPayroll') }}" class="menu-link">
               <i class="menu-icon tf-icons bx bx-git-compare"></i>
               <div class="text-truncate" data-i18n="InvtoPayroll">Invoice to Payroll</div>
             </a>
           </li>
-
+        @endif
         </ul>
       </li>
 
@@ -209,11 +216,6 @@
                                     </button>
                                     <div class="dropdown-menu">
                                         <a class="dropdown-item" href="field/{{$field?->id}}/edit"><i class="icon-base bx bx-edit-alt me-1"></i> Edit</a>
-                                        <form action="field/{{$field?->id}}" method="POST">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button class="dropdown-item" type="submit"><i class="icon-base bx bx-trash me-1"></i>Delete</button>
-                                        </form>
 
                                     </div>
                                 </div>

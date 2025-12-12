@@ -41,7 +41,7 @@
       <li class="menu-item">
         <a href="javascript:void(0);" class="menu-link menu-toggle">
           <i class="menu-icon tf-icons bx bx-bxs-group"></i>
-          <div class="text-truncate" data-i18n="Staffs">Staffs</div>
+          <div class="text-truncate" data-i18n="Staffs">System Users</div>
         </a>
         <ul class="menu-sub">
           <li class="menu-item">
@@ -116,13 +116,14 @@
           <div class="text-truncate" data-i18n="Payroll">Payroll</div>
         </a>
         <ul class="menu-sub">
+          
           <li class="menu-item">
             <a href="{{ url('salaries') }}" class="menu-link">
               <i class="menu-icon tf-icons bx bxs-user-account"></i>
-              <div class="text-truncate" data-i18n="Employees">Employees</div>
+              <div class="text-truncate" data-i18n="Employees">Add to Salaries</div>
             </a>
           </li>
-
+           @if(Auth::user()->hasPermission('Accounts'))
           <li class="menu-item">
             <a href="{{ url('salaries/create') }}" class="menu-link">
               <i class="menu-icon tf-icons bx bx-money-withdraw"></i>
@@ -137,14 +138,13 @@
             </a>
           </li>
 
-
           <li class="menu-item">
             <a href="{{ url('salariesInvPayroll') }}" class="menu-link">
               <i class="menu-icon tf-icons bx bx-git-compare"></i>
               <div class="text-truncate" data-i18n="InvtoPayroll">Invoice to Payroll</div>
             </a>
           </li>
-
+        @endif
         </ul>
       </li>
 
@@ -189,7 +189,7 @@
                   </div>
                 </div>
                 <p class="mb-1"><strong>ACCRA</strong></p>
-                <h4 class="card-title mb-3"><strong> 0 </strong> </h4>
+                <h4 class="card-title mb-3"><strong> {{ $accraGuardsCount }} </strong> </h4>
                 <small class="fw-medium"> TOTAL GUARDS </small>
               </div>
             </div>
@@ -220,7 +220,7 @@
                   </div>
                 </div>
                 <p class="mb-1"><strong> BOTWE </strong></p>
-                <h4 class="card-title mb-3 ">{{ 0 }}</h4>
+                <h4 class="card-title mb-3 ">{{ $botweGuardsCount }}</h4>
                 <small class="fw-medium"> TOTAL GUARDS </small>
               </div>
             </div>
@@ -250,8 +250,8 @@
                     </div>
                   </div>
                 </div>
-                <p class="mb-1"><strong>TEMA</strong> </p>
-                <h4 class="card-title mb-3 ">0</h4>
+                <p class="mb-1"><strong>SHY HILLS </strong> </p>
+                <h4 class="card-title mb-3 ">{{ $shyhillsGuardsCount }}</h4>
                 <small class="fw-medium"> TOTAL GUARDS </small>
               </div>
             </div>
@@ -282,8 +282,8 @@
                     </div>
                   </div>
                 </div>
-                <p class="mb-1"> <strong>TAKORADI</strong></p>
-                <h4 class="card-title mb-3 ">0</h4>
+                <p class="mb-1"> <strong> TEMA </strong></p>
+                <h4 class="card-title mb-3 ">{{ $temaGuardsCount }}</h4>
                 <small class="fw-medium"> TOTAL GUARDS </small>
               </div>
             </div>
@@ -319,12 +319,45 @@
                     </div>
                   </div>
                 </div>
-                <p class="mb-1"><strong> KOFORIDUA </strong></p>
-                <h4 class="card-title mb-3 "> 0 </h4>
+                <p class="mb-1"><strong> TAKORADI  </strong></p>
+                <h4 class="card-title mb-3 "> {{ $takoradiGuardsCount }} </h4>
                 <small class="fw-medium"> TOTAL GUARDS </small>
               </div>
             </div>
           </div>
+
+          <div class="col-lg-6 col-md-12 col-6 mb-6">
+            <div class="card shadow-none bg-transparent border border-primary">
+              <div class="card-body">
+                <div class="card-title d-flex align-items-start justify-content-between mb-4">
+                  <div class="avatar flex-shrink-0">
+                    <img
+                      src="img/icons/unicons/wallet-info.png"
+                      alt="wallet info"
+                      class="rounded" />
+                  </div>
+                  <div class="dropdown">
+                    <button
+                      class="btn p-0"
+                      type="button"
+                      id="cardOpt6"
+                      data-bs-toggle="dropdown"
+                      aria-haspopup="true"
+                      aria-expanded="false">
+                      <i class="icon-base bx bx-dots-vertical-rounded text-body-secondary"></i>
+                    </button>
+                    <div class="dropdown-menu dropdown-menu-end" aria-labelledby="cardOpt6">
+                      <a class="dropdown-item" href="">View</a>
+                    </div>
+                  </div>
+                </div>
+                <p class="mb-1"><strong> KOFORIDUA </strong></p>
+                <h4 class="card-title mb-3">{{ $koforiduaGuardsCount }} </h4>
+                <small class="fw-medium"> TOTAL GUARDS </small>
+              </div>
+            </div>
+          </div>
+
           <div class="col-lg-6 col-md-12 col-6 mb-6">
             <div class="card shadow-none bg-transparent border border-primary">
               <div class="card-body">
@@ -351,7 +384,7 @@
                   </div>
                 </div>
                 <p class="mb-1"><strong> KUMASI </strong></p>
-                <h4 class="card-title mb-3">0 </h4>
+                <h4 class="card-title mb-3">{{ $shyhillsGuardsCount }} </h4>
                 <small class="fw-medium"> TOTAL GUARDS </small>
               </div>
             </div>
@@ -404,7 +437,7 @@
                   </div>
                 </div>
                 <p class="mb-1"><strong>ACCOUNTS</strong></p>
-                <h4 class="card-title mb-3 text-white"> 0 </h4>
+                <h4 class="card-title mb-3 text-white"> {{ $AccountsCount }} </h4>
                 <small class="text-default fw-medium"> TOTAL STAFFS </small>
               </div>
             </div>
@@ -433,7 +466,7 @@
                   </div>
                 </div>
                 <p class="mb-1">HR</p>
-                <h4 class="card-title mb-3 text-white">0</h4>
+                <h4 class="card-title mb-3 text-white">{{ $HRCount }}</h4>
                 <small class="text-default fw-medium">TOTAL STAFFS</small>
               </div>
             </div>
@@ -457,7 +490,7 @@
                   </div>
                 </div>
                 <p class="mb-1">OPERATIONS</p>
-                <h4 class="card-title mb-3 text-white"> 0 </h4>
+                <h4 class="card-title mb-3 text-white"> {{ $OperationCount }} </h4>
                 <small class="text-default fw-medium">TOTAL STAFFS</small>
               </div>
             </div>
@@ -481,7 +514,7 @@
                   </div>
                 </div>
                 <p class="mb-1">GUARDS</p>
-                <h4 class="card-title mb-3 text-white">0 </h4>
+                <h4 class="card-title mb-3 text-white">{{ $GuardsCount }} </h4>
                 <small class="text-default fw-medium">TOTAL STAFFS</small>
               </div>
             </div>
