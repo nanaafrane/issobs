@@ -432,8 +432,6 @@
                                           @method('DELETE')
                                           <button class="dropdown-item" type="submit"><i class="icon-base bx bx-trash me-1"></i>Delete</button>
                                       </form>
-                                      <hr>
-                                      <a class="dropdown-item" href="{{url('employeesSalaryInfo', $employee->id)}}"><i class="icon-base bx bx-money-withdraw"></i> Salaries</a>
                                   </div>
                               </div>
                           </td>

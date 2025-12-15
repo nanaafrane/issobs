@@ -54,10 +54,6 @@ class EmployeeController extends Controller
         return view('employees.create', compact('Departments', 'Roles', 'Fields', 'clients', 'banks'));
     }
 
-
-    /**
-     * show for edit employee payment info.
-     */
     public function EmpPayInfo($id)
     {
         //
@@ -67,9 +63,6 @@ class EmployeeController extends Controller
     }
 
 
-    /**
-     * employee update payment info.
-     */
     public function EmpPayInfoUpdate(UpdatePaymentInfoRequest $request, $id)
     {
         //
@@ -90,9 +83,7 @@ class EmployeeController extends Controller
     }
 
     
-    /**
-     *  View Employee Bank Payment Info
-     */
+
     public function EmpViewPayInfo($id)
     {
         //
@@ -102,23 +93,14 @@ class EmployeeController extends Controller
     }
 
 
-    /**
-     *  View Employee Employee Salary Info
-     */
-    public function EmpSalaryInfo($id)
+
+    public function EmpSalaryInfo()
     {
         //
-        $employee = employee::findOrFail($id);
-
-        $salaries = $employee->salary;
-        // dd($salaries);
-
-        return view('employees.salaryinfo' , compact('salaries'));
+        return view('employees.salaryinfo');
     }
 
-    /**
-     *  View Employee Employee Salary Info
-     */
+
     public function EmpViewSalaryInfo()
     {
         //

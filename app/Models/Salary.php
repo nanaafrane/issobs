@@ -90,11 +90,6 @@ class Salary extends Model
         return $this->belongsTo(Client::class);
     }   
 
-    public function bank()
-    {
-        return $this->belongsTo(Bank::class);
-    }
-
     public function paymentInfo()
     {
         return $this->hasOneThrough(PaymentInfo::class, Employee::class, 'id', 'employee_id', 'employee_id', 'id');

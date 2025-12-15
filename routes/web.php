@@ -75,7 +75,7 @@ Route::resource('employees', EmployeeController::class);
 Route::get('employeesPayInfo/{id}', [EmployeeController::class, 'EmpPayInfo'])->name('employees.PayInfo');
 Route::get('employeesViewPayInfo/{id}', [EmployeeController::class, 'EmpViewPayInfo'])->name('employees.ViewPayInfo');
 Route::put('employeesPayInfoUpdate/{id}', [EmployeeController::class, 'EmpPayInfoUpdate']);
-Route::get('employeesSalaryInfo/{id}', [EmployeeController::class, 'EmpSalaryInfo']);
+Route::get('employeesSalaryInfo', [EmployeeController::class, 'EmpSalaryInfo']);
 Route::get('employeesViewSalaryInfo', [EmployeeController::class, 'EmpViewSalaryInfo']);
 Route::get('employeesGuardClient/{id}', [EmployeeController::class, 'GuardClient']);
 // Route::put('employeesGuardReAassign/{id}', [EmployeeController::class, 'GuardReAassign'])->name('employees.GuardReAassign');
@@ -87,6 +87,5 @@ Route::get('salariesInvPayroll', [SalaryController::class, 'InvToParoll']);
 Route::post('salariesDeleteMultiple', [SalaryController::class, 'deleteMultiple'])->name('salaries.deletMultiple');
 Route::get('salariesTransaction', [SalaryController::class, 'transactionSalary']);
 Route::get('salariesInvPayroll', [SalaryController::class, 'InvToParoll']);
-Route::post('uploadSalaries', [SalaryController::class, 'uploadSalaries'])->name('salaries.upload');
 
 // Route::resource('paymentinfo', PaymentInfoController::class); 

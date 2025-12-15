@@ -267,7 +267,7 @@
                       <a class="nav-link active" href=" javascript:void(0);" ><i class="bx bxs-comment-detail"></i> Payment Info </a>
                     </li>
                     <li class="nav-item">
-                      <a class="nav-link" href=" {{ url('employeesSalaryInfo', $employee_pay_info->employee_id) }} " ><i class="bx bx-money-withdraw"></i> Salaries </a>
+                      <a class="nav-link" href="" ><i class="bx bx-money-withdraw"></i> Salaries </a>
                     </li>
                   </ul>
                   <div class="card mb-4">

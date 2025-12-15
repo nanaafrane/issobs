@@ -270,7 +270,7 @@
                       <a class="nav-link" href=" {{url('employeesViewPayInfo', $employee->id)}}" ><i class="bx bxs-comment-detail"></i> Payment Info </a>
                     </li>
                     <li class="nav-item">
-                      <a class="nav-link" href=" {{ url('employeesSalaryInfo',  $employee->id) }} " ><i class="bx bx-money-withdraw"></i> Salaries </a>
+                      <a class="nav-link" href="" ><i class="bx bx-money-withdraw"></i> Salaries </a>
                     </li>
                   </ul>
 

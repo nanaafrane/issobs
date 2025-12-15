@@ -376,29 +376,17 @@
         @endif
 
         <div class="row">
-          <form action="{{ route('salaries.upload') }}" method="POST" enctype="multipart/form-data"> 
-            @csrf
-                
-            <label for="" class="form-label"> <strong>   UPLOAD SALARIES: </strong> </label>
+          <form action="" method="POST" enctype="multipart/form-data"> 
+            <div class="col">
+                <label for="acc_number" class="form-label"> <strong>   UPLOAD SALARIES: </strong> </label>
+                <input
+                      type="file"
+                      id="excelFile"
+                      name="excelFile"
+                      class="account-file-input  @error('excelFile') is-invalid @enderror"
+                      accept=".xls, .xlsx"/>
 
-            <div class="button-wrapper">
-                <label for="excelFile" class="btn btn-dark  me-6 mb-0" tabindex="0">
-                    <!-- <span class="d-none d-sm-block"> Attach   </span> -->
-                    <input
-                        type="file"
-                        id="excelFile"
-                        name="excelFile"
-                        class="account-file-input  @error('excelFile') is-invalid @enderror"
-                        accept=".xls, .xlsx"
-                         />
-                    @error('excelFile')
-                    <span class="invalid-feedback" role="alert">
-                        <strong>{{ $message }}</strong>
-                    </span>
-                    @enderror
-                </label>
                 <button class="btn btn-dark" onclick="return confirm('Kindly Confirm?')" type="submit"> <i class="icon-base bx bx-recycle"> </i> {{ __('Upload') }}</button>
-
             </div>
           </form>
         </div> <br> <br>
@@ -425,10 +413,9 @@
                         <thead>
                             <tr>
                                 <th> </th>
-                                <th>Edit</th>
                                 <th> #</th>
-                                <th> salary_month </th>
-                                <th> employee_id </th>
+                                <th> Salary Month</th>
+                                <th> Emp. ID </th>
                                 <th> Name</th>
                                 <th> Department </th>
                                 <th> Role</th>
@@ -480,23 +467,20 @@
                         @foreach ($salaries as $key => $salary )
                             <tr>
                                 <td> <input class="checkBoxes form-check-input" type="checkbox" name="salary[]" value="{{ $salary->id }}" /> </td>
-                                <td>  
-                                    <a class="dropdown-item" href="/salaries/{{$salary->id}}/edit"><i class="icon-base bx bx-edit-alt me-1"></i> </a>
-                                </td>
                                 <td> {{ $salary->id }} </td>
                                 <td> {{$salary->salary_month?->format('F, Y')}} </td>
                                 <td> {{ $salary->employee_id }} </td>
                                 <td> {{ $salary->employee?->name }} </td>
-                                <td> {{ $salary->department?->name }} </td>
-                                <td> {{ $salary->role?->name }} </td>
-                                <td> {{ $salary->field?->name }} </td>
+                                <td> {{ $salary->department_id }} </td>
+                                <td> {{ $salary->role_id }} </td>
+                                <td> {{ $salary->field_id }} </td>
                                 <td> {{ $salary->employee?->worker_type }} </td>
-                                <td> {{ $salary->client?->name }}{{ $salary->client?->business_name }}</td>
+                                <td> {{ $salary->client_id }}</td>
                                 <td> {{ $salary->location }} </td>
                                 <td> {{$salary->ssnit_number}}</td>
                                 <td> {{$salary->tin_number}}</td>
                                 <td> {{$salary->payment_type}}</td>
-                                <td> {{$salary->bank?->name}}</td>
+                                <td> {{$salary->bank_id}}</td>
                                 <td> {{$salary->branch}}</td>
                                 <td> {{$salary->account_number}}</td>
                                 <td> {{$salary->basic_salary}}</td>
