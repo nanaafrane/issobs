@@ -182,7 +182,11 @@ class SalaryController extends Controller
     public function update(UpdateSalaryRequest $request, Salary $salary)
     {
         //
-        dd($request->all());
+        // dd($request->all()); 
+
+        $salary->update($request->all());
+        return back()->with('success', 'Salary Updated Successfully');
+
     }
 
     /**

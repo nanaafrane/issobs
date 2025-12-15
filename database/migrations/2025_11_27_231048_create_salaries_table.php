@@ -29,9 +29,11 @@ return new class extends Migration
             $table->string('payment_status')->default('pending');
             $table->decimal('basic_salary', 15, 2)->default(0);
             $table->decimal('allowances', 15, 2)->default(0);
+            $table->decimal('airtime_allowance')->default(0);
             $table->decimal('overtime', 15, 2)->default(0);
             $table->decimal('reimbursements', 15, 2)->default(0 );
             $table->decimal('transport_allowance', 15, 2)->default(0);
+            $table->decimal('ssnit_tier2_5d', 15, 2)->default(0);
             $table->decimal('ssnit_tier2_5', 15, 2)->default(0);
             $table->decimal('tax', 15, 2)->default(0);
             $table->decimal('ssnit_tier1_0_5', 15, 2)->default(0);

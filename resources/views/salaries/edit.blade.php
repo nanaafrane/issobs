@@ -99,7 +99,7 @@
                     </ul>
             </li>
             @endif
-            <li class="menu-item active open ">
+            <li class="menu-item  ">
                 <a href="javascript:void(0);" class="menu-link menu-toggle">
                 <i class="menu-icon tf-icons bx bxs-user-account"></i>
                 <div class="text-truncate" data-i18n="Staffs">Employees</div>
@@ -110,7 +110,7 @@
                     <div class="text-truncate" data-i18n="SRegister">Register</div>
                     </a>
                 </li>
-                <li class="menu-item active">
+                <li class="menu-item ">
                     <a href="{{url('employees')}}" class="menu-link">
                     <div class="text-truncate" data-i18n="SList">List</div>
                     </a>
@@ -194,7 +194,7 @@
             @endif
 
             <li class="menu-header small text-uppercase"><span class="menu-header-text">PAYROLL</span></li>
-            <li class="menu-item">
+            <li class="menu-item active open">
                     <a href="javascript:void(0);" class="menu-link menu-toggle">
                     <i class="menu-icon tf-icons bx bx-money-withdraw"></i>
                     <div class="text-truncate" data-i18n="Payroll">Payroll</div>
@@ -209,7 +209,7 @@
                     </li>
                     @endif
 
-                    <li class="menu-item">
+                    <li class="menu-item active">
                         <a href="{{ url('salaries/create') }}" class="menu-link">
                         <i class="menu-icon tf-icons bx bx-money-withdraw"></i>
                         <div class="text-truncate" data-i18n="Salaries">Salaries</div>
@@ -245,7 +245,9 @@
 
             <div class="container-xxl flex-grow-1 container-p-y">
               <h4 class="fw-bold py-3 mb-4"><span class="text-muted fw-light"> <i class="bx bx-money-withdraw"></i> Salary /</span> Edit </h4>
-
+        <div class="card-header  ml-2  d-none d-lg-block">
+            @include('flash-messages')
+        </div>
 
             <form  action="/salaries/{{$salary->id}}" method="POST" >
                 @csrf
@@ -298,7 +300,7 @@
                                     </div>
 
                                     <div class="mb-3 col-md-4">
-                                    <label for="ssnit_tobe_paid13_5" class="form-label"> <strong>  SSNIT To be Paid * </strong> </label>
+                                    <label for="ssnit_tobe_paid13_5" class="form-label"> <strong>  SSNIT To be Paid 13.5%* </strong> </label>
                                     <input  class="form-control @error('ssnit_tobe_paid13_5') is-invalid @enderror" type="number" id="ssnit_tobe_paid13_5" name="ssnit_tobe_paid13_5" placeholder="GH&#x20B5;" value="{{$salary->ssnit_tobe_paid13_5}}" autofocus required step="any"/>
                                         @error('ssnit_tobe_paid13_5')
                                         <span class="invalid-feedback" role="alert">
@@ -308,17 +310,14 @@
                                     </div>
 
                                     <div class="mb-3 col-md-4">
-                                    <label for="gross_salary" class="form-label"> <strong>  Gross Salary * </strong> </label>
-                                    <input  class="form-control @error('gross_salary') is-invalid @enderror" type="number" id="gross_salary" name="gross_salary" placeholder="GH&#x20B5;" value="{{$salary->gross_salary}}" autofocus required step="any"/>
-                                        @error('gross_salary')
+                                    <label for="cost_to_company" class="form-label"> <strong>  Cost to Company * </strong> </label>
+                                    <input  class="form-control @error('cost_to_company') is-invalid @enderror" type="number" id="cost_to_company" name="cost_to_company" placeholder="GH&#x20B5;" value="{{$salary->cost_to_company}}" autofocus required step="any"/>
+                                        @error('cost_to_company')
                                         <span class="invalid-feedback" role="alert">
                                             <strong>{{ $message }}</strong>
                                         </span>
                                         @enderror
                                     </div>
-
-
-
 
                                     <div class="mb-3 col-md-4">
                                     <label for="salary_month" class="form-label"> <strong>Salary Month  </strong> </label>
@@ -355,24 +354,53 @@
                                         @enderror
                                     </div>
 
-                                    <div class="mb-3 col-md-4">
-                                            <label for="payment_type" class="form-label"> <strong>{{ __('Payment Type *') }} </strong> </label>
-                                            <input
-                                                type="text"
-                                                id="payment_type"
-                                                name="payment_type"
-                                                class="form-control @error('payment_type') is-invalid @enderror"
-                                                value="{{ $salary->payment_type }}"
-                                                placeholder="Payment Status  "
-                                                autocomplete=" payment_type"
-                                                autofocus
-                                                required>
+                                    <div class="mb-3 col-md-2">
+                                    <label for="payment_type" class="form-label"> <strong> {{ __('Payment Type') }} *</strong>  </label>
+                                        <select name="payment_type" class="form-select @error('payment_type') is-invalid @enderror" id="payment_type" required>
+                                            <option @if ($salary->payment_type == 'bank') selected @endif value="bank">Bank</option>
+                                            <option  @if ($salary->payment_type == 'cash') selected @endif value="cash">Cash</option>
+                                        </select>
+                                        @error('payment_type')
+                                        <span class="invalid-feedback" role="alert">
+                                            <strong>{{ $message }}</strong>
+                                        </span>
+                                        @enderror
+                                    </div>  
+                               
+                                    <div class="mb-3 col-md-2">
+                                    <label for="bank_id" class="form-label"> <strong> {{ __('Bank') }}  </strong>  </label>
+                                        <select name="bank_id" class="form-select @error('bank_id') is-invalid @enderror" id="bank_id">
+                                            <option selected value="0"> Choose... </option>
+                                           
+                                             @foreach($banks as $bank)
+                                            <option  @if($bank->id == $salary->bank_id) selected @endif  value="{{$bank->id}}">{{$bank->name}}</option>
+                                            @endforeach
+                                        </select>
+                                        @error('bank_id')
+                                        <span class="invalid-feedback" role="alert">
+                                            <strong>{{ $message }}</strong>
+                                        </span>
+                                        @enderror
+                                    </div>  
 
-                                            @error('payment_type')
-                                            <span class="invalid-feedback" role="alert">
-                                                <strong>{{ $message }}</strong>
-                                            </span>
-                                            @enderror
+                                    <div class="mb-3 col-md-4">
+                                    <label for="account_number" class="form-label"> <strong>  {{ __('Account Number') }}  </strong> </label>
+                                    <input  class="form-control @error('account_number') is-invalid @enderror" type="text" id="account_number" name="account_number"  placeholder="Account Number" value="{{$salary->account_number}}" autofocus />
+                                        @error('account_number')
+                                        <span class="invalid-feedback" role="alert">
+                                            <strong>{{ $message }}</strong>
+                                        </span>
+                                        @enderror
+                                    </div>
+
+                                    <div class="mb-3 col-md-4">
+                                    <label for="branch" class="form-label"> <strong>  {{ __('Branch') }} * </strong> </label>
+                                    <input  class="form-control @error('branch') is-invalid @enderror" type="text" id="branch" name="branch"  placeholder="Branch" value="{{$salary->branch}}" autofocus />
+                                        @error('branch')
+                                        <span class="invalid-feedback" role="alert">
+                                            <strong>{{ $message }}</strong>
+                                        </span>
+                                        @enderror
                                     </div>
                                 </div>
                                 <div class="mt-2">
@@ -386,13 +414,13 @@
 
                 <div class="row">
                     <div class="col-3">
-                        <div class="card">
-                                    <h5 class="card-header text-secondary"><strong>  Earnings </strong> </h5>
+                        <div class="card bg-dark text-white">
+                                    <h5 class="card-header text-white"><strong>  Earnings </strong> </h5>
                                     <hr>
                             <div class="card-body"> 
                                     <div class="mb-3 ">
-                                    <label for="basic_salary" class="form-label"> <strong>  Basic Salary * </strong> </label>
-                                    <input  class="form-control @error('basic_salary') is-invalid @enderror" type="number" id="basic_salary" name="basic_salary" placeholder="GH&#x20B5;" value="{{$salary->basic_salary}}" autofocus required step="any"/>
+                                    <label for="basic_salary" class="form-label text-white"> <strong>  Basic Salary * </strong> </label>
+                                    <input  class="form-control @error('basic_salary') is-invalid @enderror text-white" type="number" id="basic_salary" name="basic_salary" placeholder="GH&#x20B5;" value="{{$salary->basic_salary}}" autofocus required step="any"/>
                                         @error('basic_salary')
                                         <span class="invalid-feedback" role="alert">
                                             <strong>{{ $message }}</strong>
@@ -401,8 +429,8 @@
                                     </div>
 
                                     <div class="mb-3 ">
-                                    <label for="allowances" class="form-label"> <strong>  Allawonce * </strong> </label>
-                                    <input  class="form-control @error('allowances') is-invalid @enderror" type="number" id="allowances" name="allowances" placeholder="GH&#x20B5;" value="{{$salary->allowances}}" autofocus required step="any"/>
+                                    <label for="allowances" class="form-label text-white"> <strong>  Allawonce * </strong> </label>
+                                    <input  class="form-control @error('allowances') is-invalid @enderror text-white" type="number" id="allowances" name="allowances" placeholder="GH&#x20B5;" value="{{$salary->allowances}}" autofocus required step="any"/>
                                         @error('allowances')
                                         <span class="invalid-feedback" role="alert">
                                             <strong>{{ $message }}</strong>
@@ -411,8 +439,8 @@
                                     </div>
 
                                     <div class="mb-3 ">
-                                    <label for="airtime_allowance" class="form-label"> <strong>{{ __('Airtime Allowance *') }} </strong> </label>
-                                    <input  class="form-control @error('airtime_allowance') is-invalid @enderror" type="number" id="airtime_allowance" name="airtime_allowance" placeholder="GH&#x20B5;" value="{{$salary->airtime_allowance}}" autofocus required step="any"/>
+                                    <label for="airtime_allowance" class="form-label text-white"> <strong>{{ __('Airtime Allowance *') }} </strong> </label>
+                                    <input  class="form-control @error('airtime_allowance') is-invalid @enderror text-white" type="number" id="airtime_allowance" name="airtime_allowance" placeholder="GH&#x20B5;" value="{{$salary->airtime_allowance}}" autofocus required step="any"/>
                                     @error('airtime_allowance')
                                     <span class="invalid-feedback" role="alert">
                                         <strong>{{ $message }}</strong>
@@ -421,8 +449,8 @@
                                     </div>
 
                                     <div class="mb-3 ">
-                                    <label for="overtime" class="form-label"> <strong>  Overtime * </strong> </label>
-                                    <input  class="form-control @error('overtime') is-invalid @enderror" type="number" id="overtime" name="overtime" placeholder="GH&#x20B5;" value="{{$salary->overtime}}" autofocus required step="any"/>
+                                    <label for="overtime" class="form-label text-white"> <strong>  Overtime * </strong> </label>
+                                    <input  class="form-control @error('overtime') is-invalid @enderror text-white" type="number" id="overtime" name="overtime" placeholder="GH&#x20B5;" value="{{$salary->overtime}}" autofocus required step="any"/>
                                         @error('overtime')
                                         <span class="invalid-feedback" role="alert">
                                             <strong>{{ $message }}</strong>
@@ -431,8 +459,8 @@
                                     </div>
 
                                     <div class="mb-3 ">
-                                    <label for="reimbursements" class="form-label"> <strong>  Reimbursements * </strong> </label>
-                                    <input  class="form-control @error('reimbursements') is-invalid @enderror" type="number" id="reimbursements" name="reimbursements" placeholder="GH&#x20B5;" value="{{$salary->reimbursements}}" autofocus required step="any"/>
+                                    <label for="reimbursements" class="form-label text-white"> <strong>  Reimbursements * </strong> </label>
+                                    <input  class="form-control @error('reimbursements') is-invalid @enderror text-white" type="number" id="reimbursements" name="reimbursements" placeholder="GH&#x20B5;" value="{{$salary->reimbursements}}" autofocus required step="any"/>
                                         @error('reimbursements')
                                         <span class="invalid-feedback" role="alert">
                                             <strong>{{ $message }}</strong>
@@ -442,8 +470,8 @@
 
 
                                     <div class="mb-3 ">
-                                        <label for="transport_allowance" class="form-label"> <strong>  Transport Allowance * </strong> </label>
-                                        <input  class="form-control @error('transport_allowance') is-invalid @enderror" type="number" id="transport_allowance" name="transport_allowance" placeholder="GH&#x20B5;" value="{{$salary->transport_allowance}}" autofocus required step="any"/>
+                                        <label for="transport_allowance" class="form-label text-white"> <strong>  Transport Allowance * </strong> </label>
+                                        <input  class="form-control @error('transport_allowance') is-invalid @enderror text-white" type="number" id="transport_allowance" name="transport_allowance" placeholder="GH&#x20B5;" value="{{$salary->transport_allowance}}" autofocus required step="any"/>
                                             @error('transport_allowance')
                                             <span class="invalid-feedback" role="alert">
                                                 <strong>{{ $message }}</strong>
@@ -452,8 +480,8 @@
                                     </div>
 
                                     <div class="mb-3 ">
-                                    <label for="ssnit_tier2_5" class="form-label"> <strong>  SSNIT TIER 2.5% * </strong> </label>
-                                    <input  class="form-control @error('ssnit_tier2_5') is-invalid @enderror" type="number" id="ssnit_tier2_5" name="ssnit_tier2_5" placeholder="GH&#x20B5;" value="{{$salary->ssnit_tier2_5}}" autofocus required step="any"/>
+                                    <label for="ssnit_tier2_5" class="form-label text-white"> <strong>  SSNIT TIER 2.5% * </strong> </label>
+                                    <input  class="form-control @error('ssnit_tier2_5') is-invalid @enderror text-white" type="number" id="ssnit_tier2_5" name="ssnit_tier2_5" placeholder="GH&#x20B5;" value="{{$salary->ssnit_tier2_5}}" autofocus required step="any"/>
                                         @error('ssnit_tier2_5')
                                         <span class="invalid-feedback" role="alert">
                                             <strong>{{ $message }}</strong>
@@ -467,14 +495,14 @@
 
 
                     <div class="col-9">
-                        <div class="card"> 
-                                    <h5 class="card-header text-secondary"><strong>  Deductions </strong> </h5>
+                        <div style="background: crimson;" class="card text white"> 
+                                    <h5 class="card-header text-white"><strong>  Deductions </strong> </h5>
                                     <hr>
                         <div class="card-body"> 
                                     <div class="row">
                                     <div class="mb-3 col-md-4">
-                                    <label for="tax" class="form-label"> <strong>{{ __('TAX *') }} </strong> </label>
-                                    <input  class="form-control @error('tax') is-invalid @enderror" type="number" id="tax" name="tax" placeholder="GH&#x20B5;" value="{{$salary->tax}}" autofocus required step="any"/>
+                                    <label for="tax" class="form-label text-white"> <strong>{{ __('TAX *') }} </strong> </label>
+                                    <input  class="form-control @error('tax') is-invalid @enderror text-white" type="number" id="tax" name="tax" placeholder="GH&#x20B5;" value="{{$salary->tax}}" autofocus required step="any"/>
                                     @error('tax')
                                     <span class="invalid-feedback" role="alert">
                                         <strong>{{ $message }}</strong>
@@ -483,9 +511,9 @@
                                     </div>
 
                                     <div class="mb-3 col-md-4">
-                                    <label for="ssnit_tier2_5" class="form-label"> <strong>  SSNIT TIER 2.5% * </strong> </label>
-                                    <input  class="form-control @error('ssnit_tier2_5') is-invalid @enderror" type="number" id="ssnit_tier2_5" name="ssnit_tier2_5" placeholder="GH&#x20B5;" value="{{$salary->ssnit_tier2_5}}" autofocus required step="any"/>
-                                        @error('ssnit_tier2_5')
+                                    <label for="ssnit_tier2_5d" class="form-label text-white"> <strong>  SSNIT TIER 2.5% * </strong> </label>
+                                    <input  class="form-control @error('ssnit_tier2_5d') is-invalid @enderror text-white" type="number" id="ssnit_tier2_5d" name="ssnit_tier2_5d" placeholder="GH&#x20B5;" value="{{$salary->ssnit_tier2_5d}}" autofocus required step="any"/>
+                                        @error('ssnit_tier2_5d')
                                         <span class="invalid-feedback" role="alert">
                                             <strong>{{ $message }}</strong>
                                         </span>
@@ -493,8 +521,8 @@
                                     </div>
 
                                     <div class="mb-3 col-md-4">
-                                    <label for="ssnit_tier1_0_5" class="form-label"> <strong>  SSNIT TIER 10.5% * </strong> </label>
-                                    <input  class="form-control @error('ssnit_tier1_0_5') is-invalid @enderror" type="number" id="ssnit_tier1_0_5" name="ssnit_tier1_0_5" placeholder="GH&#x20B5;" value="{{$salary->ssnit_tier1_0_5}}" autofocus required step="any"/>
+                                    <label for="ssnit_tier1_0_5" class="form-label text-white"> <strong>  SSNIT TIER 10.5% * </strong> </label>
+                                    <input  class="form-control @error('ssnit_tier1_0_5') is-invalid @enderror text-white" type="number" id="ssnit_tier1_0_5" name="ssnit_tier1_0_5" placeholder="GH&#x20B5;" value="{{$salary->ssnit_tier1_0_5}}" autofocus required step="any"/>
                                         @error('ssnit_tier1_0_5')
                                         <span class="invalid-feedback" role="alert">
                                             <strong>{{ $message }}</strong>
@@ -506,8 +534,8 @@
 
                                     <div class="row"> 
                                     <div class="mb-3 col-md-4">
-                                    <label for="welfare" class="form-label"> <strong>  Welfare * </strong> </label>
-                                    <input  class="form-control @error('welfare') is-invalid @enderror" type="number" id="welfare" name="welfare" placeholder="GH&#x20B5;" value="{{$salary->welfare}}" autofocus required step="any"/>
+                                    <label for="welfare" class="form-label text-white"> <strong>  Welfare * </strong> </label>
+                                    <input  class="form-control @error('welfare') is-invalid @enderror text-white" type="number" id="welfare" name="welfare" placeholder="GH&#x20B5;" value="{{$salary->welfare}}" autofocus required step="any"/>
                                         @error('welfare')
                                         <span class="invalid-feedback" role="alert">
                                             <strong>{{ $message }}</strong>
@@ -516,8 +544,8 @@
                                     </div>
 
                                     <div class="mb-3 col-md-4">
-                                    <label for="maintenance" class="form-label"> <strong>  Maintenance * </strong> </label>
-                                    <input  class="form-control @error('maintenance') is-invalid @enderror" type="number" id="maintenance" name="maintenance" placeholder="GH&#x20B5;" value="{{$salary->maintenance}}" autofocus required step="any"/>
+                                    <label for="maintenance" class="form-label text-white"> <strong>  Maintenance * </strong> </label>
+                                    <input  class="form-control @error('maintenance') is-invalid @enderror text-white" type="number" id="maintenance" name="maintenance" placeholder="GH&#x20B5;" value="{{$salary->maintenance}}" autofocus required step="any"/>
                                         @error('maintenance')
                                         <span class="invalid-feedback" role="alert">
                                             <strong>{{ $message }}</strong>
@@ -526,8 +554,8 @@
                                     </div>
 
                                     <div class="mb-3 col-md-4">
-                                    <label for="absent" class="form-label"> <strong>  Absent * </strong> </label>
-                                    <input  class="form-control @error('absent') is-invalid @enderror" type="number" id="absent" name="absent" placeholder="GH&#x20B5;" value="{{$salary->absent}}" autofocus required step="any"/>
+                                    <label for="absent" class="form-label text-white"> <strong>  Absent * </strong> </label>
+                                    <input  class="form-control @error('absent') is-invalid @enderror text-white" type="number" id="absent" name="absent" placeholder="GH&#x20B5;" value="{{$salary->absent}}" autofocus required step="any"/>
                                         @error('absent')
                                         <span class="invalid-feedback" role="alert">
                                             <strong>{{ $message }}</strong>
@@ -539,8 +567,8 @@
 
                                     <div class="row">
                                     <div class="mb-3 col-md-4">
-                                    <label for="boot" class="form-label"> <strong>  Boot * </strong> </label>
-                                    <input  class="form-control @error('boot') is-invalid @enderror" type="number" id="boot" name="boot" placeholder="GH&#x20B5;" value="{{$salary->boot}}" autofocus required step="any"/>
+                                    <label for="boot" class="form-label text-white"> <strong>  Boot * </strong> </label>
+                                    <input  class="form-control @error('boot') is-invalid @enderror text-white" type="number" id="boot" name="boot" placeholder="GH&#x20B5;" value="{{$salary->boot}}" autofocus required step="any"/>
                                         @error('boot')
                                         <span class="invalid-feedback" role="alert">
                                             <strong>{{ $message }}</strong>
@@ -549,8 +577,8 @@
                                     </div>
 
                                     <div class="mb-3 col-md-4">
-                                    <label for="iou" class="form-label"> <strong>  IOU * </strong> </label>
-                                    <input  class="form-control @error('iou') is-invalid @enderror" type="number" id="iou" name="iou" placeholder="GH&#x20B5;" value="{{$salary->iou}}" autofocus required step="any"/>
+                                    <label for="iou" class="form-label text-white"> <strong>  IOU * </strong> </label>
+                                    <input  class="form-control @error('iou') is-invalid @enderror text-white" type="number" id="iou" name="iou" placeholder="GH&#x20B5;" value="{{$salary->iou}}" autofocus required step="any"/>
                                         @error('iou')
                                         <span class="invalid-feedback" role="alert">
                                             <strong>{{ $message }}</strong>
@@ -559,8 +587,8 @@
                                     </div>
 
                                     <div class="mb-3 col-md-4">
-                                    <label for="hostel" class="form-label"> <strong>  Hostel * </strong> </label>
-                                    <input  class="form-control @error('hostel') is-invalid @enderror" type="number" id="hostel" name="hostel" placeholder="GH&#x20B5;" value="{{$salary->hostel}}" autofocus required step="any"/>
+                                    <label for="hostel" class="form-label text-white"> <strong>  Hostel * </strong> </label>
+                                    <input  class="form-control @error('hostel') is-invalid @enderror text-white" type="number" id="hostel" name="hostel" placeholder="GH&#x20B5;" value="{{$salary->hostel}}" autofocus required step="any"/>
                                         @error('hostel')
                                         <span class="invalid-feedback" role="alert">
                                             <strong>{{ $message }}</strong>
@@ -571,8 +599,8 @@
 
                                     <div class="row"> 
                                     <div class="mb-3 col-md-4">
-                                    <label for="insurance" class="form-label"> <strong>  Insurance * </strong> </label>
-                                    <input  class="form-control @error('insurance') is-invalid @enderror" type="number" id="insurance" name="insurance" placeholder="GH&#x20B5;" value="{{$salary->insurance}}" autofocus required step="any"/>
+                                    <label for="insurance" class="form-label text-white"> <strong>  Insurance * </strong> </label>
+                                    <input  class="form-control @error('insurance') is-invalid @enderror text-white" type="number" id="insurance" name="insurance" placeholder="GH&#x20B5;" value="{{$salary->insurance}}" autofocus required step="any"/>
                                         @error('insurance')
                                         <span class="invalid-feedback" role="alert">
                                             <strong>{{ $message }}</strong>
@@ -581,8 +609,8 @@
                                     </div>
 
                                     <div class="mb-3 col-md-4">
-                                    <label for="reprimand" class="form-label"> <strong>  Reprimand * </strong> </label>
-                                    <input  class="form-control @error('reprimand') is-invalid @enderror" type="number" id="reprimand" name="reprimand" placeholder="GH&#x20B5;" value="{{$salary->reprimand}}" autofocus required step="any"/>
+                                    <label for="reprimand" class="form-label text-white"> <strong>  Reprimand * </strong> </label>
+                                    <input  class="form-control @error('reprimand') is-invalid @enderror text-white" type="number" id="reprimand" name="reprimand" placeholder="GH&#x20B5;" value="{{$salary->reprimand}}" autofocus required step="any"/>
                                         @error('reprimand')
                                         <span class="invalid-feedback" role="alert">
                                             <strong>{{ $message }}</strong>
@@ -591,8 +619,8 @@
                                     </div>
 
                                     <div class="mb-3 col-md-4">
-                                    <label for="scouter" class="form-label"> <strong>  Scouter * </strong> </label>
-                                    <input  class="form-control @error('scouter') is-invalid @enderror" type="number" id="scouter" name="scouter" placeholder="GH&#x20B5;" value="{{$salary->scouter}}" autofocus required step="any"/>
+                                    <label for="scouter" class="form-label text-white"> <strong>  Scouter * </strong> </label>
+                                    <input  class="form-control @error('scouter') is-invalid @enderror text-white" type="number" id="scouter" name="scouter" placeholder="GH&#x20B5;" value="{{$salary->scouter}}" autofocus required step="any"/>
                                         @error('scouter')
                                         <span class="invalid-feedback" role="alert">
                                             <strong>{{ $message }}</strong>
@@ -603,8 +631,8 @@
 
                                     <div class="row">
                                     <div class="mb-3 col-md-4">
-                                    <label for="raincoat" class="form-label"> <strong>  raincoat * </strong> </label>
-                                    <input  class="form-control @error('raincoat') is-invalid @enderror" type="number" id="raincoat" name="raincoat" placeholder="GH&#x20B5;" value="{{$salary->raincoat}}" autofocus required step="any"/>
+                                    <label for="raincoat" class="form-label text-white"> <strong>  raincoat * </strong> </label>
+                                    <input  class="form-control @error('raincoat') is-invalid @enderror text-white" type="number" id="raincoat" name="raincoat" placeholder="GH&#x20B5;" value="{{$salary->raincoat}}" autofocus required step="any"/>
                                         @error('raincoat')
                                         <span class="invalid-feedback" role="alert">
                                             <strong>{{ $message }}</strong>
@@ -613,8 +641,8 @@
                                     </div>
 
                                     <div class="mb-3 col-md-4">
-                                    <label for="meal" class="form-label"> <strong>  meal * </strong> </label>
-                                    <input  class="form-control @error('meal') is-invalid @enderror" type="number" id="meal" name="meal" placeholder="GH&#x20B5;" value="{{$salary->meal}}" autofocus required step="any"/>
+                                    <label for="meal" class="form-label text-white"> <strong>  meal * </strong> </label>
+                                    <input  class="form-control @error('meal') is-invalid @enderror text-white" type="number" id="meal" name="meal" placeholder="GH&#x20B5;" value="{{$salary->meal}}" autofocus required step="any"/>
                                         @error('meal')
                                         <span class="invalid-feedback" role="alert">
                                             <strong>{{ $message }}</strong>
@@ -623,8 +651,8 @@
                                     </div>
 
                                     <div class="mb-3 col-md-4">
-                                    <label for="loan" class="form-label"> <strong>  loan * </strong> </label>
-                                    <input  class="form-control @error('loan') is-invalid @enderror" type="number" id="loan" name="loan" placeholder="GH&#x20B5;" value="{{$salary->loan}}" autofocus required step="any"/>
+                                    <label for="loan" class="form-label text-white"> <strong>  loan * </strong> </label>
+                                    <input  class="form-control @error('loan') is-invalid @enderror text-white" type="number" id="loan" name="loan" placeholder="GH&#x20B5;" value="{{$salary->loan}}" autofocus required step="any"/>
                                         @error('loan')
                                         <span class="invalid-feedback" role="alert">
                                             <strong>{{ $message }}</strong>
@@ -635,8 +663,8 @@
 
                                      <div class="row"> 
                                     <div class="mb-3 col-md-4">
-                                    <label for="walkin" class="form-label"> <strong>  walkin * </strong> </label>
-                                    <input  class="form-control @error('walkin') is-invalid @enderror" type="number" id="walkin" name="walkin" placeholder="GH&#x20B5;" value="{{$salary->walkin}}" autofocus required step="any"/>
+                                    <label for="walkin" class="form-label text-white"> <strong>  walkin * </strong> </label>
+                                    <input  class="form-control @error('walkin') is-invalid @enderror text-white" type="number" id="walkin" name="walkin" placeholder="GH&#x20B5;" value="{{$salary->walkin}}" autofocus required step="any"/>
                                         @error('walkin')
                                         <span class="invalid-feedback" role="alert">
                                             <strong>{{ $message }}</strong>
@@ -645,8 +673,8 @@
                                     </div>
 
                                     <div class="mb-3 col-md-4">
-                                    <label for="amnt_ded_cof_start_date" class="form-label"> <strong>  Amount Cos Of Start Date * </strong> </label>
-                                    <input  class="form-control @error('amnt_ded_cof_start_date') is-invalid @enderror" type="number" id="amnt_ded_cof_start_date" name="amnt_ded_cof_start_date" placeholder="GH&#x20B5;" value="{{$salary->amnt_ded_cof_start_date}}" autofocus required step="any"/>
+                                    <label for="amnt_ded_cof_start_date" class="form-label text-white"> <strong>  Amount Cos Of Start Date * </strong> </label>
+                                    <input  class="form-control @error('amnt_ded_cof_start_date') is-invalid @enderror text-white" type="number" id="amnt_ded_cof_start_date" name="amnt_ded_cof_start_date" placeholder="GH&#x20B5;" value="{{$salary->amnt_ded_cof_start_date}}" autofocus required step="any"/>
                                         @error('amnt_ded_cof_start_date')
                                         <span class="invalid-feedback" role="alert">
                                             <strong>{{ $message }}</strong>
@@ -655,8 +683,8 @@
                                     </div>
 
                                     <div class="mb-3 col-md-4">
-                                    <label for="other_deductions" class="form-label"> <strong>  Other Deductions * </strong> </label>
-                                    <input  class="form-control @error('other_deductions') is-invalid @enderror" type="number" id="other_deductions" name="other_deductions" placeholder="GH&#x20B5;" value="{{$salary->other_deductions}}" autofocus required step="any"/>
+                                    <label for="other_deductions" class="form-label text-white"> <strong>  Other Deductions * </strong> </label>
+                                    <input  class="form-control @error('other_deductions') is-invalid @enderror text-white" type="number" id="other_deductions" name="other_deductions" placeholder="GH&#x20B5;" value="{{$salary->other_deductions}}" autofocus required step="any"/>
                                         @error('other_deductions')
                                         <span class="invalid-feedback" role="alert">
                                             <strong>{{ $message }}</strong>
