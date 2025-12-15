@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\SalariesUploadRequest;
 use App\Models\Salary;
 use App\Http\Requests\StoreSalaryRequest;
 use App\Http\Requests\UpdateSalaryRequest;
+use App\Imports\SalariesImport;
 use App\Models\Bank;
 use App\Models\Client;
 use App\Models\Department;
@@ -13,6 +15,7 @@ use App\Models\Field;
 use App\Models\Role;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Maatwebsite\Excel\Facades\Excel;
 
 
 class SalaryController extends Controller
@@ -161,6 +164,16 @@ class SalaryController extends Controller
     public function edit(Salary $salary)
     {
         //
+        // dd($salary);
+        // $employee = employee::finOrFail($salary->employee_id)
+        $Departments = Department::all();
+        $Roles = Role::all();
+        $Fields = Field::all();
+        $clients = Client::where('field_id', $salary->employee->field_id)->get();
+        // dd($clients);
+        
+        $banks = Bank::all();
+        return view('salaries.edit', compact('salary', 'Departments', 'Roles', 'Fields', 'clients', 'banks'));
     }
 
     /**
@@ -169,6 +182,7 @@ class SalaryController extends Controller
     public function update(UpdateSalaryRequest $request, Salary $salary)
     {
         //
+        dd($request->all());
     }
 
     /**
@@ -194,6 +208,15 @@ class SalaryController extends Controller
 
 
         return back()->with('success', 'Selected salaries have been deleted successfully.');
+    }
+
+
+    public function uploadSalaries(SalariesUploadRequest $request)
+    {
+
+        // dd($request->validated());
+        Excel::import(new SalariesImport, $request->file('excelFile')); 
+
     }
 
 

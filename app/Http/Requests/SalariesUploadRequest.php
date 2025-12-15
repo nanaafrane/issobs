@@ -4,7 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class UpdateSalaryRequest extends FormRequest
+class SalariesUploadRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -23,6 +23,7 @@ class UpdateSalaryRequest extends FormRequest
     {
         return [
             //
+            'excelFile' => 'required|mimes:xls,xlsx,csv'
         ];
     }
 }
