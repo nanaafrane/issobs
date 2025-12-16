@@ -2,11 +2,8 @@
 
 namespace App\Http\Controllers;
 
-<<<<<<< HEAD
-=======
 use App\Http\Requests\InvoiceToPayrollSearchRequest;
 use App\Http\Requests\SalariesUploadRequest;
->>>>>>> payroll
 use App\Models\Salary;
 use App\Http\Requests\StoreSalaryRequest;
 use App\Http\Requests\UpdateSalaryRequest;
@@ -19,11 +16,8 @@ use App\Models\Invoice;
 use App\Models\Role;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
-<<<<<<< HEAD
-=======
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
->>>>>>> payroll
 
 
 class SalaryController extends Controller
@@ -202,14 +196,11 @@ class SalaryController extends Controller
     public function update(UpdateSalaryRequest $request, Salary $salary)
     {
         //
-<<<<<<< HEAD
-=======
         // dd($request->all()); 
 
         $salary->update($request->all());
         return back()->with('success', 'Salary Updated Successfully');
 
->>>>>>> payroll
     }
 
     /**
