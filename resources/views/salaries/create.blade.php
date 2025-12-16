@@ -414,13 +414,8 @@
                             <tr>
                                 <th> </th>
                                 <th> #</th>
-<<<<<<< HEAD
-                                <th> Salary Month</th>
-                                <th> Emp. ID </th>
-=======
                                 <th> Salary Month </th>
                                 <th> employee_id </th>
->>>>>>> payroll
                                 <th> Name</th>
                                 <th> Department </th>
                                 <th> Role</th>
