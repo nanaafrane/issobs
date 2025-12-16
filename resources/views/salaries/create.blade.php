@@ -414,8 +414,13 @@
                             <tr>
                                 <th> </th>
                                 <th> #</th>
+<<<<<<< HEAD
                                 <th> Salary Month</th>
                                 <th> Emp. ID </th>
+=======
+                                <th> Salary Month </th>
+                                <th> employee_id </th>
+>>>>>>> payroll
                                 <th> Name</th>
                                 <th> Department </th>
                                 <th> Role</th>
@@ -431,11 +436,12 @@
                                 <th> Account No.</th>
                                 <th> Basic Salary</th>
                                 <th> Allowance</th>
-                                <th> Airtime Allowance</th>
-                                <th> Overtime</th>
-                                <th> Reimbursements </th>
-                                <th> Transport Allowance</th>
+                                <th> airtime_allowance</th>
+                                <th> overtime</th>
+                                <th> reimbursements </th>
+                                <th> transport_allowance</th>
                                 <th> ssnit_tier2_5</th>
+                                <th> ssnit_tier2_5d</th>
                                 <th> tax</th>
                                 <th> ssnit_tier1_0_5</th>
                                 <th> welfare </th>
@@ -458,7 +464,7 @@
                                 <th> net_salary </th>
                                 <th> ssnit_comp_cont_13 </th>
                                 <th> ssnit_tobe_paid13_5</th>
-                                <th>Total </th>
+                                <th> cost_to_company </th>
 
                             </tr>
                         </thead>
@@ -489,7 +495,8 @@
                                 <td> {{$salary->overtime}}</td>
                                 <td> {{$salary->reimbursements}}</td>
                                 <td> {{$salary->transport_allowance}}</td>
-                                <td> {{$salary->ssnit_tier2_5}}</td>   
+                                <td> {{$salary->ssnit_tier2_5}}</td>
+                                <td> {{$salary->ssnit_tier2_5d}}</td>   
                                 <td> {{$salary->tax}} </td>                            
                                 <td> {{$salary->ssnit_tier1_0_5}} </td>                            
                                 <td> {{$salary->welfare}} </td>                            

@@ -28,6 +28,7 @@ class Salary extends Model
         'overtime',
         'reimbursements',
         'transport_allowance',
+        'ssnit_tier2_5d',
         'ssnit_tier2_5',
         'tax',
         'ssnit_tier1_0_5',

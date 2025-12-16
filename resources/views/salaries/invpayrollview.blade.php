@@ -222,14 +222,14 @@
                         </a>
                     </li>
 
-                    <li class="menu-item active">
+                    <li class="menu-item">
                         <a href="{{ url('salariesTransaction') }}" class="menu-link">
                         <i class="menu-icon tf-icons bx bx-transfer-alt"></i>
                         <div class="text-truncate" data-i18n="Transaction">Transactions</div>
                         </a>
                     </li>
 
-                    <li class="menu-item ">
+                    <li class="menu-item active">
                         <a href="{{ url('salariesInvPayroll') }}" class="menu-link">
                         <i class="menu-icon tf-icons bx bx-git-compare"></i>
                         <div class="text-truncate" data-i18n="InvtoPayroll">Invoice to Payroll</div>
@@ -375,7 +375,9 @@
               <div class="card-header  ml-2  d-none d-lg-block">
                   @include('flash-messages')
               </div> <br>
-        <div class="row">
+
+
+                      <div class="row">
             <form action="/salaries" method="POST">
                 @csrf
                 <div class="col">
@@ -396,51 +398,44 @@
                     <table id="myTable" class="display">
                         <thead>
                             <tr>
-                              <th> </th>
-                              <th>#</th>
-                              <th> Employee ID </th>
-                              <th>Name</th>
-                              <th>Gender</th>
-                              <th>Number</th>
-                              <th> Employment Date </th>
-                              <th> Department </th>
-                              <th>Role</th>
-                              <th>Field Office</th>
-                              <th>Client </th>
-                              <th> Location </th>
-                              <th>Payment Type</th>
+                              <th>invoice ID </th>
+                              <th> Client Invoive Amount </th>
+                              <th>Client ID</th>
+                              <th> Guards Salary Amount for Client  </th>
+                              <th>Status</th>
+                      
                             </tr>
                         </thead>
                         <tbody>
-
+                            @foreach ( $invoices as $invoice )
                             <tr>
-                                <td> <input class="checkBoxes form-check-input" type="checkbox" name="employees[]" value="" /></td>
+                                <td> FWSSi{{$invoice->id }}</td>
+                                <td> GH&#x20B5;  {{$invoice->total }} </td>
+                                    @foreach ($salaries as $salary)
+                                        @if ($invoice->client_id == $salary->client_id)
+                                        <td> {{$invoice->client->name }} {{$invoice->client->business_name }} </td>
+                                        <td>GH&#x20B5; {{$salary->total_salary }} </td>
+                                        @endif
+                                    @endforeach
                                 <td>  </td>
-                                <td>   </td>
-                                <td>  </td>
-                                <td>   </td>
-                                <td>   </td>
-                                <td>  </td>
-                                <td>  </td>
-                                <td>   </td>
-                                <td>    </td>
-                                <td>  </td>
-                                <td>  </td>
-                                <td>   </td>
+
                             </tr>
+                            @endforeach
                         </tbody>
                     </table>
                 </div>
 
             </form>
         </div>
+
     </div>
   <!-- / Content -->
-
   @endsection
 
 
-    @section('scripts')
+
+
+   @section('scripts')
     <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
     <script src="https://cdn.datatables.net/2.3.3/js/dataTables.js"></script>
     <script src="https://cdn.datatables.net/buttons/3.2.4/js/dataTables.buttons.js"></script>
@@ -474,4 +469,6 @@
     </script>
 
     @endsection
+
+
 </x-hr-dashboard>
