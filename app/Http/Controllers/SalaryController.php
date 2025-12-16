@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\InvoiceToPayrollSearchRequest;
 use App\Http\Requests\SalariesUploadRequest;
 use App\Models\Salary;
 use App\Http\Requests\StoreSalaryRequest;
@@ -12,9 +13,11 @@ use App\Models\Client;
 use App\Models\Department;
 use App\Models\employee;
 use App\Models\Field;
+use App\Models\Invoice;
 use App\Models\Role;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
 
 
@@ -59,12 +62,34 @@ class SalaryController extends Controller
 
 
     /**
-     * Show the form for converting invoices to payroll.
+     * Show the form for comparing invoices to payroll.
      */
     public function InvToParoll()
     {
         //
+
         return view('salaries.invpayroll');
+    }
+
+
+        /**
+     * get all invoices and salaries for incoming month request.
+     */
+    public function InvToParollMonth(InvoiceToPayrollSearchRequest $request)
+    {
+        // format date of incoming request
+        // dd($request->all()); 
+
+        // get invoices for incoming month
+        $invoices = Invoice::where('invoice_month', Carbon::parse($request->month)->format('Y-m-d'))->get();
+        // dd($invoices);
+        
+        // get salaries for incoming month
+        $salaries = Salary::select('client_id', DB::raw('SUM(cost_to_company) as total_salary'))
+                            ->groupBy('client_id')
+                            ->get();
+        // dd($salaries);
+        return view('salaries.invpayrollview', compact('invoices', 'salaries'));
     }
 
 

@@ -82,11 +82,10 @@ Route::get('employeesGuardClient/{id}', [EmployeeController::class, 'GuardClient
 Route::post('employeesGuardReAassign', [EmployeeController::class, 'GuardReAassign'])->name('employees.GuardReAassign');
 
 Route::resource('salaries', SalaryController::class);
-Route::get('salariesTransaction', [SalaryController::class, 'transactionSalary']);
-Route::get('salariesInvPayroll', [SalaryController::class, 'InvToParoll']);
 Route::post('salariesDeleteMultiple', [SalaryController::class, 'deleteMultiple'])->name('salaries.deletMultiple');
 Route::get('salariesTransaction', [SalaryController::class, 'transactionSalary']);
 Route::get('salariesInvPayroll', [SalaryController::class, 'InvToParoll']);
+Route::get('invToPayroll', [SalaryController::class, 'InvToParollMonth'])->name('salaries.invToPayroll');
 Route::post('uploadSalaries', [SalaryController::class, 'uploadSalaries'])->name('salaries.upload');
 
 // Route::resource('paymentinfo', PaymentInfoController::class); 
