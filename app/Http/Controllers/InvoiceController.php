@@ -316,8 +316,12 @@ class InvoiceController extends Controller
         $kumasiTotal = $kumasi->sum('total');
         $kumasiCount = count($kumasi);
 
+        $shyhills = Invoice::whereRelation('client', 'field_id', 7)->get();
+        $shyhillsTotal = $shyhills->sum('total');
+        $shyhillsCount = count($shyhills);
+
         // dd($koforidua->sum('total'), count($koforidua));
-       return view('sales.invoice_dashboard', compact('reportInvoices', 'accra' , 'botwe' , 'tema' , 'takoradi' , 'koforidua' , 'kumasi' ,'accraTotal', 'accraCount', 'botweTotal', 'botweCount', 'temaTotal', 'temaCount', 'takoradiTotal', 'takoradiCount', 'koforiduaTotal', 'koforiduaCount', 'kumasiTotal', 'kumasiCount'));
+       return view('sales.invoice_dashboard', compact('reportInvoices', 'accra' , 'botwe' , 'tema','shyhills' , 'takoradi' , 'koforidua' , 'kumasi' ,'accraTotal', 'accraCount', 'botweTotal', 'botweCount', 'temaTotal', 'shyhillsTotal', 'shyhillsCount' ,'temaCount', 'takoradiTotal', 'takoradiCount', 'koforiduaTotal', 'koforiduaCount', 'kumasiTotal', 'kumasiCount'));
     }
 
     public function dashboardInvoiceWithOutstanding()
@@ -349,8 +353,12 @@ class InvoiceController extends Controller
         $kumasiTotal = $kumasi->sum('total');
         $kumasiCount = count($kumasi);
 
+        $shyhills = Invoice::whereRelation('client', 'field_id', 7)->where('status', 'unpaid')->get();
+        $shyhillsTotal = $shyhills->sum('total');
+        $shyhillsCount = count($shyhills);
 
-        return view('sales.invoice_outstanding', compact('reportInvoices', 'accra', 'botwe', 'tema', 'takoradi', 'koforidua', 'kumasi','accraTotal', 'accraCount', 'botweTotal', 'botweCount', 'temaTotal', 'temaCount', 'takoradiTotal', 'takoradiCount', 'koforiduaTotal', 'koforiduaCount', 'kumasiTotal', 'kumasiCount'));
+
+        return view('sales.invoice_outstanding', compact('reportInvoices', 'accra', 'botwe', 'tema', 'shyhills','takoradi', 'koforidua', 'kumasi','accraTotal', 'accraCount', 'botweTotal', 'botweCount', 'temaTotal', 'shyhillsTotal', 'shyhillsCount','temaCount', 'takoradiTotal', 'takoradiCount', 'koforiduaTotal', 'koforiduaCount', 'kumasiTotal', 'kumasiCount'));
     }
 
 
@@ -385,7 +393,11 @@ class InvoiceController extends Controller
         $kumasiTotal = $kumasi->sum('balance');
         $kumasiCount = count($kumasi);
 
-        return view('sales.part_payment_outstanding', compact('reportInvoices', 'accra', 'botwe', 'tema', 'takoradi', 'koforidua', 'kumasi', 'accraTotal', 'accraCount', 'botweTotal', 'botweCount', 'temaTotal', 'temaCount', 'takoradiTotal', 'takoradiCount', 'koforiduaTotal', 'koforiduaCount', 'kumasiTotal', 'kumasiCount'));
+        $shyhills = Invoice::whereRelation('client', 'field_id', 7)->where('balance', '>', 0.00)->where('status', 'uncompleted')->get();
+        $shyhillsTotal = $shyhills->sum('balance');
+        $shyhillsCount = count($shyhills);
+
+        return view('sales.part_payment_outstanding', compact('reportInvoices', 'accra', 'botwe', 'tema',  'shyhills','takoradi', 'koforidua', 'kumasi', 'accraTotal', 'accraCount', 'botweTotal', 'botweCount', 'temaTotal', 'temaCount', 'shyhillsTotal', 'shyhillsCount','takoradiTotal', 'takoradiCount', 'koforiduaTotal', 'koforiduaCount', 'kumasiTotal', 'kumasiCount'));
 
 
     }

@@ -267,11 +267,11 @@
 
 
                                     @if(Auth::user()->field?->name == 'Botwe')
-                                    {{$botweCount}} + {{ $shyhillsCount }}
+                                    {{$botweCount}} 
                                     @endif
 
                                     @if(Auth::user()->field?->name == 'Tema')
-                                    {{$temaCount}}
+                                    {{$temaCount}} + {{ $shyhillsCount }}
                                     @endif
 
                                     @if(Auth::user()->field?->name == 'Takoradi')
@@ -334,7 +334,7 @@
             </div>
 
             <div class="col-lg-2">
-                <div class="card shadow-none bg-transparent border border-secondary">
+                <div class="card shadow-none bg-transparent border border-info">
                     <div class="card-body">
                         <div class="card-title d-flex align-items-start justify-content-between mb-4">
                             <div class="avatar flex-shrink-0">
@@ -410,7 +410,7 @@
             </div>
 
 
-            <div class="col-lg-2">
+            <div class="col-lg-2 m-3">
                 <div class="card shadow-none bg-transparent border border-primary">
                     <div class="card-body">
                         <div class="card-title d-flex align-items-start justify-content-between mb-4">
@@ -468,6 +468,10 @@
                                 @endif
 
                                 @if($client->field->name == 'Tema')
+                                <span class="badge bg-label-info">{{$client->field->name}} </span>
+                                @endif
+
+                                @if($client->field->name == 'Shy Hills')
                                 <span class="badge bg-label-info">{{$client->field->name}} </span>
                                 @endif
 

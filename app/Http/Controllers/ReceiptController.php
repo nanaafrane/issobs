@@ -515,7 +515,11 @@ class ReceiptController extends Controller
         $kumasiTotal = $kumasi->sum('total');
         $kumasiCount = count($kumasi);
 
-        return view('sales.receipt_dashboard', compact('reportReceipt', 'accra', 'botwe', 'tema', 'takoradi', 'koforidua', 'kumasi' ,'accraTotal', 'accraCount', 'botweTotal', 'botweCount', 'temaTotal', 'temaCount', 'takoradiTotal', 'takoradiCount', 'koforiduaTotal', 'koforiduaCount', 'kumasiTotal', 'kumasiCount'));
+        $shyhills = Receipt::whereRelation('client', 'field_id', 7)->get();
+        $shyhillsTotal = $shyhills->sum('total');
+        $shyhillsCount = count($shyhills);
+
+        return view('sales.receipt_dashboard', compact('reportReceipt', 'accra', 'botwe', 'tema', 'shyhills','takoradi', 'koforidua', 'kumasi' ,'accraTotal', 'accraCount', 'botweTotal', 'botweCount', 'temaTotal', 'temaCount', 'shyhillsTotal', 'shyhillsCount', 'takoradiTotal', 'takoradiCount', 'koforiduaTotal', 'koforiduaCount', 'kumasiTotal', 'kumasiCount'));
     }
 
 
@@ -550,7 +554,11 @@ class ReceiptController extends Controller
         $kumasiTotal = $kumasi->sum('total');
         $kumasiCount = count($kumasi);
 
-        return view('sales.receipt_Cash', compact('cashReceipt', 'accra', 'botwe', 'tema', 'takoradi', 'koforidua', 'kumasi' ,'accraTotal', 'accraCount', 'botweTotal', 'botweCount', 'temaTotal', 'temaCount', 'takoradiTotal', 'takoradiCount', 'koforiduaTotal', 'koforiduaCount', 'kumasiTotal', 'kumasiCount'));
+        $shyhills = Receipt::whereRelation('client', 'field_id', 7)->where('cash_amount', '>', 0.00)->get();
+        $shyhillsTotal = $shyhills->sum('total');
+        $shyhillsCount = count($shyhills);
+
+        return view('sales.receipt_Cash', compact('cashReceipt', 'accra', 'botwe', 'tema', 'shyhills', 'takoradi', 'koforidua', 'kumasi' ,'accraTotal', 'accraCount', 'botweTotal', 'botweCount', 'temaTotal', 'temaCount', 'shyhillsTotal', 'shyhillsCount', 'takoradiTotal', 'takoradiCount', 'koforiduaTotal', 'koforiduaCount', 'kumasiTotal', 'kumasiCount'));
     }
 
 
@@ -585,7 +593,11 @@ class ReceiptController extends Controller
         $kumasiTotal = $kumasi->sum('transfer_amount');
         $kumasiCount = count($kumasi);
 
-        return view('sales.receipt_Transfer', compact('transferReceipt', 'accra', 'botwe', 'tema', 'takoradi', 'koforidua', 'kumasi', 'accraTotal', 'accraCount', 'botweTotal', 'botweCount', 'temaTotal', 'temaCount', 'takoradiTotal', 'takoradiCount', 'koforiduaTotal', 'koforiduaCount', 'kumasiTotal', 'kumasiCount'));
+        $shyhills = Receipt::whereRelation('client', 'field_id', 7)->where('transfer_amount', '>', 0.00)->get();
+        $shyhillsTotal = $shyhills->sum('transfer_amount');
+        $shyhillsCount = count($shyhills);
+
+        return view('sales.receipt_Transfer', compact('transferReceipt', 'accra', 'botwe', 'tema', 'shyhills', 'takoradi', 'koforidua', 'kumasi', 'accraTotal', 'accraCount', 'botweTotal', 'botweCount', 'temaTotal', 'temaCount', 'shyhillsTotal', 'shyhillsCount', 'takoradiTotal', 'takoradiCount', 'koforiduaTotal', 'koforiduaCount', 'kumasiTotal', 'kumasiCount'));
 
     }
 
@@ -620,7 +632,11 @@ class ReceiptController extends Controller
         $kumasiTotal = $kumasi->sum('cheque_amount');
         $kumasiCount = count($kumasi);
 
-        return view('sales.receipt_Cheque', compact('chequeReceipt', 'accra', 'botwe', 'tema', 'takoradi', 'koforidua', 'kumasi', 'accraTotal', 'accraCount', 'botweTotal', 'botweCount', 'temaTotal', 'temaCount', 'takoradiTotal', 'takoradiCount', 'koforiduaTotal', 'koforiduaCount', 'kumasiTotal', 'kumasiCount'));
+        $shyhills = Receipt::whereRelation('client', 'field_id', 7)->where('cheque_amount', '>', 0.00)->get();
+        $shyhillsTotal = $shyhills->sum('cheque_amount');
+        $shyhillsCount = count($shyhills);
+
+        return view('sales.receipt_Cheque', compact('chequeReceipt', 'accra', 'botwe', 'tema', 'shyhills', 'takoradi', 'koforidua', 'kumasi', 'accraTotal', 'accraCount', 'botweTotal', 'botweCount', 'temaTotal', 'temaCount', 'shyhillsTotal', 'shyhillsCount', 'takoradiTotal', 'takoradiCount', 'koforiduaTotal', 'koforiduaCount', 'kumasiTotal', 'kumasiCount'));
     }
 
 
@@ -654,7 +670,13 @@ class ReceiptController extends Controller
         $kumasiTotal = $kumasi->sum('momo_amount');
         $kumasiCount = count($kumasi);
 
-        return view('sales.receipt_MoMo', compact('momoReceipt', 'accra', 'botwe', 'tema', 'takoradi', 'koforidua', 'kumasi', 'accraTotal', 'accraCount', 'botweTotal', 'botweCount', 'temaTotal', 'temaCount', 'takoradiTotal', 'takoradiCount', 'koforiduaTotal', 'koforiduaCount', 'kumasiTotal', 'kumasiCount'));
+        $shyhills = Receipt::whereRelation('client', 'field_id', 7)->where('momo_amount', '>', 0.00)->get();
+        $shyhillsTotal = $shyhills->sum('momo_amount');
+        $shyhillsCount = count($shyhills);
+
+        
+
+        return view('sales.receipt_MoMo', compact('momoReceipt', 'accra', 'botwe', 'tema', 'shyhills', 'takoradi', 'koforidua', 'kumasi', 'accraTotal', 'accraCount', 'botweTotal', 'botweCount', 'temaTotal', 'temaCount', 'shyhillsTotal', 'shyhillsCount', 'takoradiTotal', 'takoradiCount', 'koforiduaTotal', 'koforiduaCount', 'kumasiTotal', 'kumasiCount'));
     }
 
 
@@ -690,7 +712,11 @@ class ReceiptController extends Controller
         $kumasiTotal = $kumasi->sum('amount_received');
         $kumasiCount = $kumasi->sum('wht_amount');
 
-        return view('sales.receipt_whtAmount', compact('whtAmountReceipt', 'accra', 'botwe', 'tema', 'takoradi', 'koforidua', 'kumasi', 'accraTotal', 'accraCount', 'botweTotal', 'botweCount', 'temaTotal', 'temaCount', 'takoradiTotal', 'takoradiCount', 'koforiduaTotal', 'koforiduaCount', 'kumasiTotal', 'kumasiCount'));
+        $shyhills = Receipt::whereRelation('client', 'field_id', 7)->where('amount_received', '>', 0.00)->get();
+        $shyhillsTotal = $shyhills->sum('amount_received');
+        $shyhillsCount = $shyhills->sum('wht_amount');
+
+        return view('sales.receipt_whtAmount', compact('whtAmountReceipt', 'accra', 'botwe', 'tema', 'shyhills', 'takoradi', 'koforidua', 'kumasi', 'accraTotal', 'accraCount', 'botweTotal', 'botweCount', 'temaTotal', 'temaCount', 'shyhillsTotal', 'shyhillsCount', 'takoradiTotal', 'takoradiCount', 'koforiduaTotal', 'koforiduaCount', 'kumasiTotal', 'kumasiCount'));
     }
 
 

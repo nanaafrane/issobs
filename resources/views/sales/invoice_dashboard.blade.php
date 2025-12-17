@@ -280,6 +280,24 @@
                             </div>
 
                         </div>
+                        <p class="mb-1"><strong> SHY HILLS </strong></p>
+                        <h4 class="card-title mb-3 text-white"><strong>&#x20B5;{{$shyhillsTotal}} </strong> </h4>
+                        <small class="fw-medium"> TOTAL INVOICES : <strong> {{$shyhillsCount}} </strong> </small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-2">
+                <div style="background: crimson; color: white;" class="card h-100">
+                    <div class="card-body">
+                        <div class="card-title d-flex align-items-start justify-content-between mb-4">
+                            <div class="avatar flex-shrink-0">
+                                <img
+                                    src="img/icons/unicons/paypal.png"
+                                    alt="chart success"
+                                    class="rounded" />
+                            </div>
+
+                        </div>
                         <p class="mb-1"><strong> TEMA </strong></p>
                         <h4 class="card-title mb-3 text-white"><strong>&#x20B5;{{$temaTotal}} </strong> </h4>
                         <small class="fw-medium"> TOTAL INVOICES : <strong> {{$temaCount}} </strong> </small>
@@ -326,7 +344,7 @@
             </div>
 
 
-            <div class="col-lg-2">
+            <div class="col-lg-2 m-3">
                 <div style="background: crimson; color: white;" class="card h-100">
                     <div class="card-body">
                         <div class="card-title d-flex align-items-start justify-content-between mb-4">
@@ -391,7 +409,25 @@
 
         @if(Auth::user()->field?->name == 'Tema')
         <div class="row">
-            <div class="col-xxl-12 mb-6 order-0">
+            <div class="col-xxl-6 mb-6 order-0">
+                <div style="background: crimson; color: white;" class="card h-100">
+                    <div class="card-body">
+                        <div class="card-title d-flex align-items-start justify-content-between mb-4">
+                            <div class="avatar flex-shrink-0">
+                                <img
+                                    src="img/icons/unicons/paypal.png"
+                                    alt="chart success"
+                                    class="rounded" />
+                            </div>
+                        </div>
+                        <p class="mb-1"><strong> SHY HILLS </strong> </p>
+                        <h4 class="card-title mb-3 text-white"><strong>&#x20B5;{{$shyhillsTotal}} </strong> </h4>
+                        <small class="fw-medium"> TOTAL INVOICES : <strong> {{$shyhillsCount}}</strong> </small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xxl-6 mb-6 order-0">
                 <div style="background: crimson; color: white;" class="card h-100">
                     <div class="card-body">
                         <div class="card-title d-flex align-items-start justify-content-between mb-4">

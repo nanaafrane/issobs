@@ -278,6 +278,24 @@
                                 class="nav-link"
                                 role="tab"
                                 data-bs-toggle="tab"
+                                data-bs-target="#navs-pills-justified-shyhills"
+                                aria-controls="navs-pills-justified-shyhills"
+                                aria-selected="false">
+                                <span class="d-none d-sm-inline-flex align-items-center"><i class="icon-base bx bx-home icon-sm me-1_5"></i>Shy Hills
+                                    <span class="badge rounded-pill bg-danger ms-1_5">{{$count_shyhillsTransactions}}</span>
+                                </span>
+                                <i class="icon-base bx bx-home icon-sm d-sm-none"></i>
+                            </button>
+                        </li>
+                        @endif
+
+                        @if(Auth::user()->field?->name == 'Tema' || Auth::user()->hasRole(['Finance Manager', 'Invoice']) )
+                        <li class="nav-item mb-1 mb-sm-0">
+                            <button
+                                type="button"
+                                class="nav-link"
+                                role="tab"
+                                data-bs-toggle="tab"
                                 data-bs-target="#navs-pills-justified-tema"
                                 aria-controls="navs-pills-justified-tema"
                                 aria-selected="false">
@@ -435,6 +453,46 @@
                             </div>
                         </div>
 
+                        <div class="tab-pane fade" id="navs-pills-justified-shyhills" role="tabpanel">
+                            <div class="table-responsive text-nowrap">
+                                <table id="myTableiShyhills" class="display">
+                                    <thead>
+                                        <tr>
+                                            <!-- <th>#</th> -->
+                                            <th>Invoice No.</th>
+                                            <th>Receipt No.</th>
+                                            <th>Client Name</th>
+                                            <th>Business Name </th>
+                                            <th>Invoice Amount </th>
+                                            <th>Receipt Amount</th>
+                                            <th> Date </th>
+                                            <th>Balance</th>
+                                            <th> Status </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="table-border-bottom-0">
+                                        @foreach($shyhillsTransactions as $shyhills)
+                                        <tr>
+                                            <td> FWSSi{{$shyhills->invoice_id}} </td>
+                                            <td> FWSSR{{$shyhills->receipt_id}} </td>
+                                            <td> {{$shyhills->client->name}} </td>
+                                            <td> {{$shyhills->client->business_name}} </td>
+                                            <td> GH&#8373; {{$shyhills->invoice_amount}} </td>
+                                            <td> GH&#8373;{{$shyhills->receipt_amount}} </td>
+                                            <td> {{$shyhills->created_at->diffForHumans()}} </td>
+                                            <td> {{$shyhills->balance}} </td>
+                                            @if($shyhills->status == 'completed')
+                                            <td> <span class="badge bg-label-success"> {{$shyhills->status}} </span> </td>
+                                            @else
+                                            <td> <span class="badge bg-label-danger"> {{$shyhills->status}} </span> </td>
+                                            @endif
+                                        </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+
+                        </div>
 
                         <div class="tab-pane fade" id="navs-pills-justified-tema" role="tabpanel">
                             <div class="table-responsive text-nowrap">
@@ -624,6 +682,7 @@
     <script>
         let myTableiAccra = new DataTable('#myTableiAccra');
         let myTableiBotwe = new DataTable('#myTableiBotwe');
+        let myTableiShyhills = new DataTable('#myTableiShyhills');
         let myTableiTema = new DataTable('#myTableiTema');
         let myTableiTakoradi = new DataTable('#myTableiTakoradi');
         let myTableiKoforidua = new DataTable('#myTableiKoforidua');

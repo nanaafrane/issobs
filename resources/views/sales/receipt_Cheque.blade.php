@@ -277,6 +277,24 @@
                             </div>
 
                         </div>
+                        <p class="mb-1"><strong> SHY HILLS </strong></p>
+                        <h4 class="card-title mb-3 text-white"> <strong>&#x20B5;{{number_format($shyhillsTotal, 2)}} </strong> </h4>
+                        <small class="fw-medium"> TOTAL PAYMENTS : <strong> {{$shyhillsCount}} </strong> </small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-2">
+                <div style="background: #152356; color: white;" class="card h-100">
+                    <div class="card-body">
+                        <div class="card-title d-flex align-items-start justify-content-between mb-4">
+                            <div class="avatar flex-shrink-0">
+                                <img
+                                    src="img/icons/unicons/wallet-info.png"
+                                    alt="chart success"
+                                    class="rounded" />
+                            </div>
+
+                        </div>
                         <p class="mb-1"><strong> TEMA </strong></p>
                         <h4 class="card-title mb-3 text-white"> <strong>&#x20B5;{{number_format($temaTotal, 2)}} </strong> </h4>
                         <small class="fw-medium"> TOTAL PAYMENTS : <strong> {{$temaCount}} </strong> </small>
@@ -323,7 +341,7 @@
             </div>
 
 
-            <div class="col-lg-2">
+            <div class="col-lg-2 m-3">
                 <div style="background: #152356; color: white;" class="card h-100">
                     <div class="card-body">
                         <div class="card-title d-flex align-items-start justify-content-between mb-4">
