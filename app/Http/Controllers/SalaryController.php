@@ -33,12 +33,21 @@ class SalaryController extends Controller
     {
         // Pass only active employees to the salaries index view, as it displays salary data for currently active staff.
         $employees =  employee::where('status', 'Active')->get();
+        $employeeAccra =  employee::where('field_id', 1)->where('status', 'Active')->count();
+        $employeeBotwe =  employee::where('field_id', 2)->where('status', 'Active')->count();
+        $employeeTema =  employee::where('field_id', 3)->where('status', 'Active')->count();
+        $employeeTakoradi =  employee::where('field_id', 4)->where('status', 'Active')->count();
+        $employeeKoforidua =  employee::where('field_id', 5)->where('status', 'Active')->count();
+        $employeeKumasi =  employee::where('field_id', 6)->where('status', 'Active')->count();
+        $employeeShyhills =  employee::where('field_id', 7)->where('status', 'Active')->count();
+
+
         $Departments = Department::all(); 
         $Roles = Role::all();
         $Fields = Field::all();
         $clients = Client::all();
         $banks = Bank::all();
-        return view('salaries.index', compact('employees','Departments', 'Roles', 'Fields', 'clients', 'banks'));
+        return view('salaries.index', compact('employees', 'employeeAccra', 'employeeBotwe', 'employeeTema', 'employeeTakoradi', 'employeeKoforidua', 'employeeKumasi', 'employeeShyhills','Departments', 'Roles', 'Fields', 'clients', 'banks'));
     }
 
     /**
@@ -47,9 +56,16 @@ class SalaryController extends Controller
     public function create()
     {
         //
-
         $salaries =  Salary::where('payment_status', 'pending')->get();
-        return view('salaries.create', compact('salaries'));
+        $salariesAccra =  Salary::where('field_id', 1)->where('payment_status', 'pending')->count();
+        $salariesBotwe =  Salary::where('field_id', 2)->where('payment_status', 'pending')->count();
+        $salariesTema =  Salary::where('field_id', 3)->where('payment_status', 'pending')->count();
+        $salariesTakoradi =  Salary::where('field_id', 4)->where('payment_status', 'pending')->count();
+        $salariesKoforidua =  Salary::where('field_id', 5)->where('payment_status', 'pending')->count();
+        $salariesKumasi =  Salary::where('field_id', 6)->where('payment_status', 'pending')->count();
+        $salariesShyhills =  Salary::where('field_id', 7)->where('payment_status', 'pending')->count();
+
+        return view('salaries.create', compact('salaries', 'salariesAccra', 'salariesBotwe','salariesTema', 'salariesTakoradi', 'salariesKoforidua', 'salariesKumasi', 'salariesShyhills'));
     }
 
 
@@ -188,6 +204,11 @@ class SalaryController extends Controller
     public function edit(Salary $salary)
     {
         //
+        // dd($salary);
+        $banks = Bank::all();
+        $clients = Client::where('field_id', $salary->field_id)->get();
+        
+        return view('salaries.edit', compact('salary', 'clients', 'banks'));
     }
 
     /**

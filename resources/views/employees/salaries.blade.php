@@ -250,7 +250,7 @@
             <!-- Content -->
 
             <div class="container-xxl flex-grow-1 container-p-y">
-              <h4 class="fw-bold py-3 mb-4"><span class="text-muted fw-light"> <i class="bx bxs-user-account"></i> Employee /</span> Account</h4>
+              <h4 class="fw-bold py-3 mb-4"><span class="text-muted fw-light"> <i class="bx bxs-user-account"></i> Employee /</span> Salaries</h4>
 
 
 
@@ -259,86 +259,51 @@
                 <div class="col-md-12">
                   <ul class="nav nav-pills flex-column flex-md-row mb-3">
                     <li class="nav-item">
-                      <a class="nav-link" href="{{ url('/employees/create') }}"><i class="bx bx-user me-1"></i> Employee Details</a>
+                      <a class="nav-link" href="{{url('employees', $employee->id)}}"><i class="bx bx-user me-1"></i> Employee Details</a>
                     </li>
                     <li class="nav-item ">
                       <a class="nav-link " href="{{url('/employeesPayInfo')}}" ><i class="bx bxs-comment-detail"></i> Payment Info </a
                       >
                     </li>
                     <li class="nav-item">
-                      <a class="nav-link active" href="{{ }}" ><i class="bx bx-money-withdraw"></i> Salaries </a>
+                      <a class="nav-link active" href="javascript:void(0);" ><i class="bx bx-money-withdraw"></i> Salaries </a>
                     </li>
                   </ul>
 
                   <div class="card mb-4">
 
-                    <div class="card h-100">
-                        <div class="card-body">
-                            <div class="card-title d-flex align-items-start justify-content-between mb-4">
-                                <div class="avatar flex-shrink-0">
-                                    <img
-                                        src="{{asset('img/icons/unicons/paypal.png')  }}"
-                                        alt="chart success"
-                                        class="rounded" />
-                                </div>
-                            </div>
-                            <p class="mb-1"><strong> ACCRA </strong> </p>
-                            <h4 class="card-title mb-3 text-white"><strong>GH&#x20B5;  </strong> </h4>
-                            <small class="fw-medium"> TOTAL COLLECTIONS : <strong>  </strong> </small>
-                        </div>
-                    </div>
-                    <hr class="my-0" />
-
-                    <h5 class="card-header">Profile Details</h5>
+                    <h5 class="card-header">Employee Salaries</h5>
                     <!-- Account -->
                     <div class="card-body">
 
-                                    <table id="myTable" class="display">
+                    <table id="myTable" class="display">
                     <thead>
                         <tr>
                             <th>#</th>
-                            <th>Period</th>
-                            <th>Cash Amount</th>
-                            <th>Momo Amount</th>
-                            <th>Cheque Amount </th>
-                            <th> Transfer Amount </th>
-                            <th>Status</th>
-                            <th>Exp id</th>
-                            <th>Expense Amount</th>
-                            <th> Total_Amount </th>
-                            <th>Date Created</th>
-                            <th>Branch</th>
+                            <th>Salary Month</th>
+                            <th>Client</th>
+                            <th>Location</th>
+                            <th>Gross Salary</th>
+                            <th>Deductions </th>
+                            <th>Total</th>
+                            <th>Edit</th>
+                          
                         </tr>
                     </thead>
                     <tbody>
 
-                        @if(Auth::user()->hasRole(['Invoice', 'HR Manager']))
-                       
+                       @foreach ( $employee->salaries as $salary )
                         <tr>
-                            <td>  </td>
-                            <td>  </td>
-                            <td>GH&#x20B5;  </td>
-                            <td>GH&#x20B5;  </td>
-                            <td>GH&#x20B5;  </td>
-                            <td>GH&#x20B5;  </td>
-
-                            <td><span class="badge bg-label-success"> </span></td>
-                       
-                            <td>   </td>
-                            <td>GH&#x20B5;   </td>
-                            <td>GH&#x20B5;  </td>
-                            <td>  </td>
-                            <td>  </td>
+                            <td> {{ $salary->id }}  </td>
+                            <td> {{ $salary->salary_month?->format('F, Y') }} </td>
+                            <td> {{ $salary->client?->name }}{{ $salary->client?->business_name }} </td>
+                            <td> {{ $salary->location }} </td>
+                            <td>GH&#x20B5; {{ $salary->gross_salary }} </td>
+                            <td>GH&#x20B5; {{ $salary->total_deductions }} </td>
+                            <td>GH&#x20B5; {{ $salary->cost_to_company }}  </td>
+                            <td> <a class="dropdown-item" href="/salaries/{{$salary->id}}/edit"><i class="icon-base bx bx-edit-alt me-1"></i></a> </td>
                         </tr>
-                        @endif
-
-
-
-
-
-
-
-
+                        @endforeach
                     </tbody>
                 </table>
 

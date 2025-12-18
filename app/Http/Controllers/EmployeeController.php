@@ -32,12 +32,20 @@ class EmployeeController extends Controller
     {
         //
         $employees = employee::all();
+        $employeeAccra = employee::where('field_id', 1)->count();
+        $employeeBotwe = employee::where('field_id', 2)->count();
+        $employeeTema = employee::where('field_id', 3)->count();
+        $employeeTakoradi = employee::where('field_id', 4)->count();
+        $employeeKoforidua = employee::where('field_id', 5)->count();
+        $employeeKumasi = employee::where('field_id', 6)->count();
+        $employeeShyhills = employee::where('field_id', 7)->count();
+
         $Departments = Department::all();
         $Roles = Role::all();
         $Fields = Field::all();
         $clients = Client::all();
         $banks = Bank::all();
-        return view('employees.index', compact('employees','Departments', 'Roles', 'Fields', 'clients', 'banks'));
+        return view('employees.index', compact('employees', 'employeeAccra', 'employeeBotwe', 'employeeTema', 'employeeTakoradi', 'employeeKoforidua', 'employeeKumasi', 'employeeShyhills','Departments', 'Roles', 'Fields', 'clients', 'banks'));
     }
 
     /**
@@ -94,10 +102,13 @@ class EmployeeController extends Controller
 
 
 
-    public function EmpSalaryInfo()
+    public function EmpSalary($id)
     {
-        //
-        return view('employees.salaryinfo');
+        // employee Id to get employee salaries
+        $employee = employee::findOrFail($id);
+        // dd($employee->salaries);
+
+        return view('employees.salaries', compact('employee'));
     }
 
 
@@ -260,6 +271,7 @@ class EmployeeController extends Controller
     public function destroy(employee $employee)
     {
         //
+        dd($employee);
     }
 
     
@@ -318,5 +330,13 @@ class EmployeeController extends Controller
         // return back()->with('success', 'Guard successfully ReAssigned!');
     }
 
+    public function terminateEmployee($id)
+    {
+        // dd($id);
+        $employee = employee::findOrFail($id);
+        $employee->update(['status' => 'Terminated']);
+        return redirect()->route('employees.index')->with('error', 'Employee successfully Terminated! ');
+
+    }
 
 }

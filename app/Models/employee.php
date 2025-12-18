@@ -89,6 +89,10 @@ class employee extends Model
     // {
     //     return $this->belongsToMany(Client::class);
     // }
+    public function salaries()
+    {
+        return $this->hasMany(Salary::class);
+    }
     
 
 

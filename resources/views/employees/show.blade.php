@@ -270,7 +270,7 @@
                       <a class="nav-link" href=" {{url('employeesViewPayInfo', $employee->id)}}" ><i class="bx bxs-comment-detail"></i> Payment Info </a>
                     </li>
                     <li class="nav-item">
-                      <a class="nav-link" href="" ><i class="bx bx-money-withdraw"></i> Salaries </a>
+                      <a class="nav-link" href="{{url('employeesSalary', $employee->id)}}" ><i class="bx bx-money-withdraw"></i> Salaries </a>
                     </li>
                   </ul>
 
@@ -436,7 +436,7 @@
 
           <div class="buy-now">
             <a style="margin-bottom: 70px;" href="/employees/{{$employee->id}}/edit" class="btn btn-danger btn-buy-now"> <i class="icon-base bx bx-edit-alt me-1"></i> Re-Instate </a>
-            <a  href="/employees/{{$employee->id}}/edit" class="btn btn-danger btn-buy-now"> <i class="icon-base bx bx-trash me-1"></i> Terminate </a>  
+            <a  href="{{url('terminateEmployee', $employee->id )}}" class="btn btn-danger btn-buy-now"> <i class="icon-base bx bx-trash me-1"></i> Terminate </a>  
           </div>
   @endsection
 

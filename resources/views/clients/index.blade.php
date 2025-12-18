@@ -500,7 +500,7 @@
                                     <div class="dropdown-menu">
                                         <a class="dropdown-item" href="{{url('client', $client->id)}}"><i class="icon-base bx bxs-bullseye"></i> view</a>
                                         <a class="dropdown-item" href="client/{{$client->id}}/edit"><i class="icon-base bx bx-edit-alt me-1"></i> Edit</a>
-                                        @if(Auth::user()->hasPermission('HR'))
+                                        @if(Auth::user()->hasPermission('HR') || Auth::user()->hasRole(['Invoice'])  )
                                         <form action="client/{{$client->id}}" method="POST">
                                             @csrf
                                             @method('DELETE')

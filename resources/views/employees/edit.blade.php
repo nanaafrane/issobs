@@ -595,7 +595,7 @@
 
             <div class="buy-now">
             <a style="margin-bottom: 70px;" href="/employees/{{$employee->id}}/edit" class="btn btn-danger btn-buy-now"> <i class="icon-base bx bx-edit-alt me-1"></i> Re-Instate </a>
-            <a  href="/employees/{{$employee->id}}/edit" class="btn btn-danger btn-buy-now"> <i class="icon-base bx bx-trash me-1"></i> Terminate </a>  
+            <a  href="{{url('terminateEmployee', $employee->id )}}" class="btn btn-danger btn-buy-now"> <i class="icon-base bx bx-trash me-1"></i> Terminate </a>  
           </div>
   @endsection
 

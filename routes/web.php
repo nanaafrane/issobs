@@ -75,10 +75,10 @@ Route::resource('employees', EmployeeController::class);
 Route::get('employeesPayInfo/{id}', [EmployeeController::class, 'EmpPayInfo'])->name('employees.PayInfo');
 Route::get('employeesViewPayInfo/{id}', [EmployeeController::class, 'EmpViewPayInfo'])->name('employees.ViewPayInfo');
 Route::put('employeesPayInfoUpdate/{id}', [EmployeeController::class, 'EmpPayInfoUpdate']);
-Route::get('employeesSalaryInfo', [EmployeeController::class, 'EmpSalaryInfo']);
+Route::get('employeesSalary/{id}', [EmployeeController::class, 'EmpSalary']);
 Route::get('employeesViewSalaryInfo', [EmployeeController::class, 'EmpViewSalaryInfo']);
 Route::get('employeesGuardClient/{id}', [EmployeeController::class, 'GuardClient']);
-// Route::put('employeesGuardReAassign/{id}', [EmployeeController::class, 'GuardReAassign'])->name('employees.GuardReAassign');
+Route::get('terminateEmployee/{id}', [EmployeeController::class, 'terminateEmployee'])->name('employees.terminateEmployee');
 Route::post('employeesGuardReAassign', [EmployeeController::class, 'GuardReAassign'])->name('employees.GuardReAassign');
 
 Route::resource('salaries', SalaryController::class);

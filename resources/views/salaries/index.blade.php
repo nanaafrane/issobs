@@ -268,7 +268,7 @@
                             </div>
                         </div>
                         <p class="mb-1"><strong> ACCRA </strong> </p>
-                        <h4 class="card-title mb-3 text-white"><strong> 0  </strong> </h4>
+                        <h4 class="card-title mb-3 text-white"><strong> {{ $employeeAccra }}  </strong> </h4>
                         <small class="fw-medium"> TOTAL EMPLOYEES  </small>
                     </div>
                 </div>
@@ -286,7 +286,7 @@
                             </div>
                         </div>
                         <p class="mb-1"><strong> BOTWE </strong></p>
-                        <h4 class="card-title mb-3 text-white"><strong>0 </strong> </h4>
+                        <h4 class="card-title mb-3 text-white"><strong> {{ $employeeBotwe }} </strong> </h4>
                         <small class="fw-medium"> TOTAL EMPLOYEES </small>
                     </div>
                 </div>
@@ -305,8 +305,26 @@
                             </div>
 
                         </div>
+                        <p class="mb-1"><strong> SHY HILLS </strong></p>
+                        <h4 class="card-title mb-3 text-white"><strong> {{ $employeeShyhills }} </strong> </h4>
+                        <small class="fw-medium"> TOTAL EMPLOYEES </small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-2">
+                <div  class="card h-100 bg-dark text-white">
+                    <div class="card-body">
+                        <div class="card-title d-flex align-items-start justify-content-between mb-4">
+                            <div class="avatar flex-shrink-0">
+                                <img
+                                    src="img/icons/unicons/paypal.png"
+                                    alt="chart success"
+                                    class="rounded" />
+                            </div>
+
+                        </div>
                         <p class="mb-1"><strong> TEMA </strong></p>
-                        <h4 class="card-title mb-3 text-white"><strong>0 </strong> </h4>
+                        <h4 class="card-title mb-3 text-white"><strong> {{ $employeeTema }} </strong> </h4>
                         <small class="fw-medium"> TOTAL EMPLOYEES </small>
                     </div>
                 </div>
@@ -326,7 +344,7 @@
 
                         </div>
                         <p class="mb-1">TAKORADI</p>
-                        <h4 class="card-title mb-3 text-white">0 </h4>
+                        <h4 class="card-title mb-3 text-white"> {{ $employeeTakoradi }} </h4>
                         <small class="fw-medium"> TOTAL EMPLOYEES   </small>
                     </div>
                 </div>
@@ -344,14 +362,14 @@
 
                         </div>
                         <p class="mb-1"> <strong> KOFORIDUA </strong> </p>
-                        <h4 class="card-title mb-3 text-white">0</h4>
+                        <h4 class="card-title mb-3 text-white">{{ $employeeKoforidua }}</h4>
                         <small class="fw-medium"> TOTAL EMPLOYEES  </small>
                     </div>
                 </div>
             </div>
 
 
-            <div class="col-lg-2">
+            <div class="col-lg-2 m-3">
                 <div  class="card h-100 bg-dark text-white">
                     <div class="card-body">
                         <div class="card-title d-flex align-items-start justify-content-between mb-4">
@@ -363,7 +381,7 @@
 
                         </div>
                         <p class="mb-1"><strong> KUMASI </strong> </p>
-                        <h4 class="card-title mb-3 text-white">0 </h4>
+                        <h4 class="card-title mb-3 text-white"> {{ $employeeKumasi }} </h4>
                         <small class="fw-medium"> TOTAL EMPLOYEES  </small>
                     </div>
                 </div>

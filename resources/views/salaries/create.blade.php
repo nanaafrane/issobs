@@ -268,7 +268,7 @@
                             </div>
                         </div>
                         <p class="mb-1"><strong> ACCRA </strong> </p>
-                        <h4 class="card-title mb-3 text-white"><strong> 0  </strong> </h4>
+                        <h4 class="card-title mb-3 text-white"><strong> {{ $salariesAccra }}  </strong> </h4>
                         <small class="fw-medium"> TOTAL EMPLOYEES  </small>
                     </div>
                 </div>
@@ -286,7 +286,7 @@
                             </div>
                         </div>
                         <p class="mb-1"><strong> BOTWE </strong></p>
-                        <h4 class="card-title mb-3 text-white"><strong>0 </strong> </h4>
+                        <h4 class="card-title mb-3 text-white"><strong>{{ $salariesBotwe }} </strong> </h4>
                         <small class="fw-medium"> TOTAL EMPLOYEES </small>
                     </div>
                 </div>
@@ -305,8 +305,26 @@
                             </div>
 
                         </div>
+                        <p class="mb-1"><strong> SHY HILLS </strong></p>
+                        <h4 class="card-title mb-3 text-white"><strong>{{ $salariesShyhills }} </strong> </h4>
+                        <small class="fw-medium"> TOTAL EMPLOYEES </small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-2">
+                <div  class="card h-100 bg-dark text-white">
+                    <div class="card-body">
+                        <div class="card-title d-flex align-items-start justify-content-between mb-4">
+                            <div class="avatar flex-shrink-0">
+                                <img
+                                    src="{{ asset('img/icons/unicons/paypal.png') }}"
+                                    alt="chart success"
+                                    class="rounded" />
+                            </div>
+
+                        </div>
                         <p class="mb-1"><strong> TEMA </strong></p>
-                        <h4 class="card-title mb-3 text-white"><strong>0 </strong> </h4>
+                        <h4 class="card-title mb-3 text-white"><strong>{{ $salariesTema }} </strong> </h4>
                         <small class="fw-medium"> TOTAL EMPLOYEES </small>
                     </div>
                 </div>
@@ -326,7 +344,7 @@
 
                         </div>
                         <p class="mb-1">TAKORADI</p>
-                        <h4 class="card-title mb-3 text-white">0 </h4>
+                        <h4 class="card-title mb-3 text-white">{{ $salariesTakoradi }} </h4>
                         <small class="fw-medium"> TOTAL EMPLOYEES   </small>
                     </div>
                 </div>
@@ -344,14 +362,14 @@
 
                         </div>
                         <p class="mb-1"> <strong> KOFORIDUA </strong> </p>
-                        <h4 class="card-title mb-3 text-white">0</h4>
+                        <h4 class="card-title mb-3 text-white">{{ $salariesKoforidua }}</h4>
                         <small class="fw-medium"> TOTAL EMPLOYEES  </small>
                     </div>
                 </div>
             </div>
 
 
-            <div class="col-lg-2">
+            <div class="col-lg-2 m-3">
                 <div  class="card h-100 bg-dark text-white">
                     <div class="card-body">
                         <div class="card-title d-flex align-items-start justify-content-between mb-4">
@@ -363,7 +381,7 @@
 
                         </div>
                         <p class="mb-1"><strong> KUMASI </strong> </p>
-                        <h4 class="card-title mb-3 text-white">0 </h4>
+                        <h4 class="card-title mb-3 text-white">{{ $salariesKumasi }} </h4>
                         <small class="fw-medium"> TOTAL EMPLOYEES  </small>
                     </div>
                 </div>
@@ -413,7 +431,8 @@
                         <thead>
                             <tr>
                                 <th> </th>
-                                <th> #</th>
+                                <th> Edit </th>
+                                <th> id</th>
                                 <th> Salary Month </th>
                                 <th> employee_id </th>
                                 <th> Name</th>
@@ -468,15 +487,16 @@
                         @foreach ($salaries as $key => $salary )
                             <tr>
                                 <td> <input class="checkBoxes form-check-input" type="checkbox" name="salary[]" value="{{ $salary->id }}" /> </td>
+                                <td><a class="dropdown-item" href="/salaries/{{$salary->id}}/edit"><i class="icon-base bx bx-edit-alt me-1"></i></a> </td>
                                 <td> {{ $salary->id }} </td>
                                 <td> {{$salary->salary_month?->format('F, Y')}} </td>
                                 <td> {{ $salary->employee_id }} </td>
                                 <td> {{ $salary->employee?->name }} </td>
-                                <td> {{ $salary->department_id }} </td>
-                                <td> {{ $salary->role_id }} </td>
-                                <td> {{ $salary->field_id }} </td>
+                                <td> {{ $salary->department?->name }} </td>
+                                <td> {{ $salary->role?->name }} </td>
+                                <td> {{ $salary->field?->name }} </td>
                                 <td> {{ $salary->employee?->worker_type }} </td>
-                                <td> {{ $salary->client_id }}</td>
+                                <td> {{ $salary->client?->name }} {{ $salary->client?->business_name }}</td>
                                 <td> {{ $salary->location }} </td>
                                 <td> {{$salary->ssnit_number}}</td>
                                 <td> {{$salary->tin_number}}</td>

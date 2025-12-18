@@ -180,7 +180,7 @@ class ClientController extends Controller
         if($invoice->isNotEmpty())
         {
             // dd($invoice);
-            return back()->with('info', 'Client Have an Unpaid Invoice');
+            return back()->with('warning', 'Client Have an Unpaid Invoice');
         }else{
 
             $client->delete();
