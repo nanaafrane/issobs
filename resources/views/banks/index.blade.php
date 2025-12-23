@@ -414,6 +414,7 @@
 
                             <form method="POST" action="/banks">
                                 @csrf
+                                <input type="text" name="user_id" value="{{auth()->user()->id}}" hidden>
                                 <div class="modal-body">
                                     <div class="row">
                                         <div class="col mb-0">

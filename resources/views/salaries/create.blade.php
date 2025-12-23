@@ -501,7 +501,7 @@
                                 <td> {{$salary->ssnit_number}}</td>
                                 <td> {{$salary->tin_number}}</td>
                                 <td> {{$salary->payment_type}}</td>
-                                <td> {{$salary->bank_id}}</td>
+                                <td> {{$salary->bank?->name}}</td>
                                 <td> {{$salary->branch}}</td>
                                 <td> {{$salary->account_number}}</td>
                                 <td> {{$salary->basic_salary}}</td>
