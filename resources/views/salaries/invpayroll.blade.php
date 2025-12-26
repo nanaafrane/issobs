@@ -244,131 +244,14 @@
 
         <div class="row">
             <div class="col-12">
-                <h3 class="card-header"> <i class="icon-base bx bx-bxs-user-detail"></i> Active Employees </h3>
+                <h3 class="card-header"> <i class="icon-base bx bx-git-compare"></i> Invoices to Salary </h3>
             </div>
         </div><br>
+        <hr />
 
-        @if(Auth::user()->hasRole(['Invoice','Manager', 'Finance Manager' ]))
-        <div class="row">
-            <div class="col-lg-2">
-                <div  class="card h-100 bg-dark text-white">
-                    <div class="card-body">
-                        <div class="card-title d-flex align-items-start justify-content-between mb-4">
-                            <div class="avatar flex-shrink-0">
-                                <img
-                                    src="img/icons/unicons/paypal.png"
-                                    alt="chart success"
-                                    class="rounded" />
-                            </div>
-                        </div>
-                        <p class="mb-1"><strong> ACCRA </strong> </p>
-                        <h4 class="card-title mb-3 text-white"><strong> 0  </strong> </h4>
-                        <small class="fw-medium"> TOTAL EMPLOYEES  </small>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-lg-2">
-                <div  class="card h-100 bg-dark text-white">
-                    <div class="card-body">
-                        <div class="card-title d-flex align-items-start justify-content-between mb-4">
-                            <div class="avatar flex-shrink-0">
-                                <img
-                                    src="img/icons/unicons/paypal.png"
-                                    alt="chart success"
-                                    class="rounded" />
-                            </div>
-                        </div>
-                        <p class="mb-1"><strong> BOTWE </strong></p>
-                        <h4 class="card-title mb-3 text-white"><strong>0 </strong> </h4>
-                        <small class="fw-medium"> TOTAL EMPLOYEES </small>
-                    </div>
-                </div>
-            </div>
-
-
-            <div class="col-lg-2">
-                <div  class="card h-100 bg-dark text-white">
-                    <div class="card-body">
-                        <div class="card-title d-flex align-items-start justify-content-between mb-4">
-                            <div class="avatar flex-shrink-0">
-                                <img
-                                    src="img/icons/unicons/paypal.png"
-                                    alt="chart success"
-                                    class="rounded" />
-                            </div>
-
-                        </div>
-                        <p class="mb-1"><strong> TEMA </strong></p>
-                        <h4 class="card-title mb-3 text-white"><strong>0 </strong> </h4>
-                        <small class="fw-medium"> TOTAL EMPLOYEES </small>
-                    </div>
-                </div>
-            </div>
-
-
-
-            <div class="col-lg-2">
-                <div  class="card h-100 bg-dark text-white">
-                    <div class="card-body">
-                        <div class="card-title d-flex align-items-start justify-content-between mb-4">
-                            <div class="avatar flex-shrink-0">
-                                <img
-                                    src="img/icons/unicons/paypal.png"
-                                    class="rounded" />
-                            </div>
-
-                        </div>
-                        <p class="mb-1">TAKORADI</p>
-                        <h4 class="card-title mb-3 text-white">0 </h4>
-                        <small class="fw-medium"> TOTAL EMPLOYEES   </small>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-lg-2">
-                <div  class="card h-100 bg-dark text-white">
-                    <div class="card-body">
-                        <div class="card-title d-flex align-items-start justify-content-between mb-4">
-                            <div class="avatar flex-shrink-0">
-                                <img
-                                    src="img/icons/unicons/paypal.png"
-                                    class="rounded" />
-                            </div>
-
-                        </div>
-                        <p class="mb-1"> <strong> KOFORIDUA </strong> </p>
-                        <h4 class="card-title mb-3 text-white">0</h4>
-                        <small class="fw-medium"> TOTAL EMPLOYEES  </small>
-                    </div>
-                </div>
-            </div>
-
-
-            <div class="col-lg-2">
-                <div  class="card h-100 bg-dark text-white">
-                    <div class="card-body">
-                        <div class="card-title d-flex align-items-start justify-content-between mb-4">
-                            <div class="avatar flex-shrink-0">
-                                <img
-                                    src="img/icons/unicons/paypal.png"
-                                    class="rounded" />
-                            </div>
-
-                        </div>
-                        <p class="mb-1"><strong> KUMASI </strong> </p>
-                        <h4 class="card-title mb-3 text-white">0 </h4>
-                        <small class="fw-medium"> TOTAL EMPLOYEES  </small>
-                    </div>
-                </div>
-            </div>
-
-        </div> <br> <br>
-        @endif
-        <br>
-              <div class="card-header  ml-2  d-none d-lg-block">
-                  @include('flash-messages')
-              </div> <br>
+        <div class="card-header  ml-2  d-none d-lg-block">
+            @include('flash-messages')
+        </div> <br>
         <div class="row">
             <form action="/invToPayroll" method="GET">
                 @csrf

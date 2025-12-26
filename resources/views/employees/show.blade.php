@@ -253,10 +253,13 @@
                 <h5 class="fw-bold mb-4"><span class="text-muted fw-light"><i class="bx bxs-user-account"></i> Employee /</span> Show</h5>
 
                 </div>
-
+                @if ($employee->status == 'Active')
                   <div class="col-md-6 text-end">
                     <a href="{{url('employees/'.$employee->id.'/edit')}}" class="btn btn-dark mb-3"><i class="bx bx-edit-alt"></i> Edit Employee</a>  
                 </div>
+                @endif
+
+
               </div>
 
 
@@ -435,8 +438,13 @@
   <!-- / Content -->
 
           <div class="buy-now">
-            <a style="margin-bottom: 70px;" href="/employees/{{$employee->id}}/edit" class="btn btn-danger btn-buy-now"> <i class="icon-base bx bx-edit-alt me-1"></i> Re-Instate </a>
-            <a  href="{{url('terminateEmployee', $employee->id )}}" class="btn btn-danger btn-buy-now"> <i class="icon-base bx bx-trash me-1"></i> Terminate </a>  
+            @if ($employee->status !== 'Active')
+            <a style="margin-bottom: 70px;" href="{{url('employeeReinstate', $employee->id )}}" class="btn btn-danger btn-buy-now" onclick="return confirm('Kindly Confirm?')"> <i class="icon-base bx bx-edit-alt me-1"></i> Re-Instate </a>
+              
+            @else
+            <a  href="{{url('terminateEmployee', $employee->id )}}" class="btn btn-danger btn-buy-now" onclick="return confirm('Kindly Confirm?')"> <i class="icon-base bx bx-trash me-1"></i> Terminate </a>  
+              
+            @endif
           </div>
   @endsection
 

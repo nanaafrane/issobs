@@ -335,8 +335,15 @@ class EmployeeController extends Controller
         // dd($id);
         $employee = employee::findOrFail($id);
         $employee->update(['status' => 'Terminated']);
-        return redirect()->route('employees.index')->with('error', 'Employee successfully Terminated! ');
+        return redirect()->route('employees.index')->with('error', 'Employee successfully Terminated!, ID No: and Name'. implode(', ', [$employee->id, $employee->name]));
 
+    }
+
+    public function employeeReinstate($id)
+    {
+        $employee = employee::findOrFail($id);
+        $employee->update(['status' => 'Active']);
+        return redirect()->route('employees.index')->with('success', 'Employee successfully Re-instated! ID No: and Name'. implode(', ', [$employee->id, $employee->name]));
     }
 
 }

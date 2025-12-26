@@ -301,7 +301,11 @@
                             <td>GH&#x20B5; {{ $salary->gross_salary }} </td>
                             <td>GH&#x20B5; {{ $salary->total_deductions }} </td>
                             <td>GH&#x20B5; {{ $salary->cost_to_company }}  </td>
+                             @if ($employee->status == 'Active')
                             <td> <a class="dropdown-item" href="/salaries/{{$salary->id}}/edit"><i class="icon-base bx bx-edit-alt me-1"></i></a> </td>
+                            @else
+                                <td></td>
+                            @endif
                         </tr>
                         @endforeach
                     </tbody>

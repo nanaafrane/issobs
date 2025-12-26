@@ -48,7 +48,7 @@
         </a>
       </li>
 
-      @if(Auth::user()->hasRole(['Invoice','Finance Manager']))
+      @if(Auth::user()->hasRole(['Invoice','Finance Manager', 'Director']))
       <li class="menu-item">
         <a href="{{ url('invoice') }}" class="menu-link">
           <i class="menu-icon tf-icons bx bx-bxs-receipt bg-primary"></i>
@@ -75,7 +75,7 @@
           <div class="text-truncate" data-i18n="Clients">Clients</div>
         </a>
       </li>
-      @elseif(Auth::user()->hasRole(['Invoice']))
+      @elseif(Auth::user()->hasRole(['Invoice' ,'Director']))
 
       <li class="menu-header small text-uppercase"><span class="menu-header-text text-info">Management</span></li>
         <li class="menu-item ">
@@ -128,7 +128,7 @@
       </li>
       @endif
 
-      @if(Auth::user()->hasRole(['Manager','Officer','Finance Manager']) )
+      @if(Auth::user()->hasRole(['Manager','Officer','Finance Manager', 'Director']) )
 
       <li class="menu-header small text-uppercase"> <span class="menu-header-text text-danger">Accounts</span></li>
 
@@ -166,7 +166,7 @@
        </li>
       @endif
 
-      @if(Auth::user()->hasPermission('Accounts') )
+      @if(Auth::user()->hasPermission('Accounts') || Auth::user()->hasRole(['Director']) )
       <li class="menu-header small text-uppercase"><span class="menu-header-text">PAYROLL</span></li>
         <li class="menu-item">
                 <a href="javascript:void(0);" class="menu-link menu-toggle">
@@ -174,7 +174,7 @@
                 <div class="text-truncate" data-i18n="Payroll">Payroll</div>
                 </a>
                 <ul class="menu-sub">
-                @if(Auth::user()->hasRole(['Invoice']))
+                @if(Auth::user()->hasRole(['Invoice', 'Director']))
                 <li class="menu-item">
                     <a href="{{ url('salaries') }}" class="menu-link">
                     <i class="menu-icon tf-icons bx bxs-user-account"></i>

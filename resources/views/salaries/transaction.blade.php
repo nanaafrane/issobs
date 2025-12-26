@@ -1,8 +1,8 @@
 <x-hr-dashboard>
 
     @section('css')
-    <link rel="stylesheet" href="https://cdn.datatables.net/2.3.3/css/dataTables.dataTables.css" />
-    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/3.2.4/css/buttons.dataTables.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/2.3.5/css/dataTables.dataTables.css" />
+    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/3.2.5/css/buttons.dataTables.css">    
     @endsection
 
 
@@ -215,7 +215,7 @@
                     </li>
                     @endif
 
-                    <li class="menu-item">
+                    <li class="menu-item ">
                         <a href="{{ url('salaries/create') }}" class="menu-link">
                         <i class="menu-icon tf-icons bx bx-money-withdraw"></i>
                         <div class="text-truncate" data-i18n="Salaries">Salaries</div>
@@ -229,7 +229,7 @@
                         </a>
                     </li>
 
-                    <li class="menu-item ">
+                    <li class="menu-item">
                         <a href="{{ url('salariesInvPayroll') }}" class="menu-link">
                         <i class="menu-icon tf-icons bx bx-git-compare"></i>
                         <div class="text-truncate" data-i18n="InvtoPayroll">Invoice to Payroll</div>
@@ -254,7 +254,7 @@
             </div>
         </div><br>
 
-        @if(Auth::user()->hasRole(['Invoice','Manager', 'Finance Manager' ]))
+         @if(Auth::user()->hasRole(['Invoice','Manager', 'Finance Manager' ]))
         <div class="row">
             <div class="col-lg-2">
                 <div  class="card h-100 bg-dark text-white">
@@ -262,14 +262,14 @@
                         <div class="card-title d-flex align-items-start justify-content-between mb-4">
                             <div class="avatar flex-shrink-0">
                                 <img
-                                    src="img/icons/unicons/paypal.png"
+                                    src="{{ asset('img/icons/unicons/paypal.png') }}"
                                     alt="chart success"
                                     class="rounded" />
                             </div>
                         </div>
                         <p class="mb-1"><strong> ACCRA </strong> </p>
-                        <h4 class="card-title mb-3 text-white"><strong> 0  </strong> </h4>
-                        <small class="fw-medium"> TOTAL EMPLOYEES  </small>
+                        <h4 class="card-title mb-3 text-white"><strong> {{ number_format($salariesAccraSum, 2) }} </strong> </h4>
+                        <small class="fw-medium"> TOTAL : {{ $salariesAccraCount}}  </small>
                     </div>
                 </div>
             </div>
@@ -280,14 +280,14 @@
                         <div class="card-title d-flex align-items-start justify-content-between mb-4">
                             <div class="avatar flex-shrink-0">
                                 <img
-                                    src="img/icons/unicons/paypal.png"
+                                    src="{{ asset('img/icons/unicons/paypal.png') }}"
                                     alt="chart success"
                                     class="rounded" />
                             </div>
                         </div>
                         <p class="mb-1"><strong> BOTWE </strong></p>
-                        <h4 class="card-title mb-3 text-white"><strong>0 </strong> </h4>
-                        <small class="fw-medium"> TOTAL EMPLOYEES </small>
+                        <h4 class="card-title mb-3 text-white"><strong> {{ number_format($salariesBotweSum, 2) }} </strong> </h4>
+                        <small class="fw-medium"> TOTAL : {{ $salariesBotweCount }} </small>
                     </div>
                 </div>
             </div>
@@ -299,15 +299,33 @@
                         <div class="card-title d-flex align-items-start justify-content-between mb-4">
                             <div class="avatar flex-shrink-0">
                                 <img
-                                    src="img/icons/unicons/paypal.png"
+                                    src="{{ asset('img/icons/unicons/paypal.png') }}"
+                                    alt="chart success"
+                                    class="rounded" />
+                            </div>
+
+                        </div>
+                        <p class="mb-1"><strong> SHY HILLS </strong></p>
+                        <h4 class="card-title mb-3 text-white"><strong> {{ number_format($salariesShyhillsSum, 2) }} </strong> </h4>
+                        <small class="fw-medium"> TOTAL : {{ $salariesShyhillsCount }} </small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-2">
+                <div  class="card h-100 bg-dark text-white">
+                    <div class="card-body">
+                        <div class="card-title d-flex align-items-start justify-content-between mb-4">
+                            <div class="avatar flex-shrink-0">
+                                <img
+                                    src="{{ asset('img/icons/unicons/paypal.png') }}"
                                     alt="chart success"
                                     class="rounded" />
                             </div>
 
                         </div>
                         <p class="mb-1"><strong> TEMA </strong></p>
-                        <h4 class="card-title mb-3 text-white"><strong>0 </strong> </h4>
-                        <small class="fw-medium"> TOTAL EMPLOYEES </small>
+                        <h4 class="card-title mb-3 text-white"><strong> {{ number_format($salariesTemaSum, 2) }} </strong> </h4>
+                        <small class="fw-medium"> TOTAL : {{ $salariesTemaCount }} </small>
                     </div>
                 </div>
             </div>
@@ -320,14 +338,14 @@
                         <div class="card-title d-flex align-items-start justify-content-between mb-4">
                             <div class="avatar flex-shrink-0">
                                 <img
-                                    src="img/icons/unicons/paypal.png"
+                                    src="{{ asset('img/icons/unicons/paypal.png') }}"
                                     class="rounded" />
                             </div>
 
                         </div>
                         <p class="mb-1">TAKORADI</p>
-                        <h4 class="card-title mb-3 text-white">0 </h4>
-                        <small class="fw-medium"> TOTAL EMPLOYEES   </small>
+                        <h4 class="card-title mb-3 text-white">  {{ number_format($salariesTakoradiSum, 2) }} </h4>
+                        <small class="fw-medium"> TOTAL : {{ $salariesTakoradiCount }}   </small>
                     </div>
                 </div>
             </div>
@@ -338,102 +356,93 @@
                         <div class="card-title d-flex align-items-start justify-content-between mb-4">
                             <div class="avatar flex-shrink-0">
                                 <img
-                                    src="img/icons/unicons/paypal.png"
+                                    src="{{ asset('img/icons/unicons/paypal.png') }}"
                                     class="rounded" />
                             </div>
 
                         </div>
                         <p class="mb-1"> <strong> KOFORIDUA </strong> </p>
-                        <h4 class="card-title mb-3 text-white">0</h4>
-                        <small class="fw-medium"> TOTAL EMPLOYEES  </small>
+                        <h4 class="card-title mb-3 text-white"> {{ number_format($salariesKoforiduaSum, 2) }} </h4>
+                        <small class="fw-medium"> TOTAL : {{ $salariesKoforiduaCount }}  </small>
                     </div>
                 </div>
             </div>
 
 
-            <div class="col-lg-2">
+            <div class="col-lg-2 m-3">
                 <div  class="card h-100 bg-dark text-white">
                     <div class="card-body">
                         <div class="card-title d-flex align-items-start justify-content-between mb-4">
                             <div class="avatar flex-shrink-0">
                                 <img
-                                    src="img/icons/unicons/paypal.png"
+                                    src="{{ asset('img/icons/unicons/paypal.png') }}"
                                     class="rounded" />
                             </div>
 
                         </div>
                         <p class="mb-1"><strong> KUMASI </strong> </p>
-                        <h4 class="card-title mb-3 text-white">0 </h4>
-                        <small class="fw-medium"> TOTAL EMPLOYEES  </small>
+                        <h4 class="card-title mb-3 text-white"> {{ number_format($salariesKumasiSum, 2) }} </h4>
+                        <small class="fw-medium"> TOTAL : {{ $salariesKumasiCount }}  </small>
                     </div>
                 </div>
             </div>
 
         </div> <br> <br>
-        @endif
-        <br>
-              <div class="card-header  ml-2  d-none d-lg-block">
+                     <div class="card-header  ml-2  d-none d-lg-block">
                   @include('flash-messages')
-              </div> <br>
+        </div> <br>
+        @endif
+
+        <!-- Table -->  
+        <hr> <br> <br>
         <div class="row">
-            <form action="/salaries" method="POST">
-                @csrf
                 <div class="col">
-                    <input class="form-check-input form-check-inline" type="checkbox" value="" id="options" />
-
-                    <div class="form-check form-check-inline">
-                        <select name="employees" class="form-select">
-                            <option value=""> Select All </option>
-                        </select>
-                    </div>
-                   
-                    <div class="form-check form-check-inline">
-                         <input type="month" name="salary_month" required/>
-                        
-                        <button class="btn btn-dark" type="submit" onclick="return confirm('Kindly Confirm?')"> <i class="icon-base bx bx-arrow-from-left"> </i> {{ __('Add To Salaries') }}</button>
-                    </div>
-
+                <div class="table-responsive text-normal-dark">
                     <table id="myTable" class="display">
                         <thead>
                             <tr>
-                              <th> </th>
-                              <th>#</th>
-                              <th> Employee ID </th>
-                              <th>Name</th>
-                              <th>Gender</th>
-                              <th>Number</th>
-                              <th> Employment Date </th>
-                              <th> Department </th>
-                              <th>Role</th>
-                              <th>Field Office</th>
-                              <th>Client </th>
-                              <th> Location </th>
-                              <th>Payment Type</th>
+                                <th> id</th>
+                                <th> Salary Month </th>
+                                <th> Name</th>
+                                <th> Field </th>
+                                <th>Client </th>
+                                <th> SSNIT No.</th>
+                                <th> TIN No.</th>
+                                <th> Payment Type</th>
+                                <th> Bank Name </th>
+                                <th> Branch </th>
+                                <th>Acc No</th>
+                                <th> Total_Salary </th>
+                                <th>status</th>
                             </tr>
                         </thead>
                         <tbody>
 
+                        @foreach ($salaries as $key => $salary )
                             <tr>
-                                <td> <input class="checkBoxes form-check-input" type="checkbox" name="employees[]" value="" /></td>
-                                <td>  </td>
-                                <td>   </td>
-                                <td>  </td>
-                                <td>   </td>
-                                <td>   </td>
-                                <td>  </td>
-                                <td>  </td>
-                                <td>   </td>
-                                <td>    </td>
-                                <td>  </td>
-                                <td>  </td>
-                                <td>   </td>
+                                <td> {{ $salary->id }} </td>
+                                <td> {{$salary->salary_month?->format('F, Y')}} </td>
+                                <td> {{ $salary->employee?->name }} </td>
+                                <td> {{ $salary->field?->name }} </td>
+                                <td> {{ $salary->client?->name }} {{ $salary->client?->business_name }} </td>
+                                <td> {{$salary->paymentInfo?->ssnit_number}}</td>
+                                <td> {{$salary->paymentInfo?->tin_number}}</td>
+                                <td> {{$salary->payment_type}}</td>
+                                <td> {{$salary->bank?->name}}</td>
+                                <td> {{$salary->branch}}</td>   
+                                 <td> {{$salary->account_number}}</td>             
+                                <td>GHGH&#x20B5; {{$salary->cost_to_company }}</td>
+                                <td><span class="badge bg-label-success">{{$salary->payment_status}}</span></td>
                             </tr>
+                          @endforeach
                         </tbody>
                     </table>
                 </div>
+                </div>
 
-            </form>
         </div>
+
+
     </div>
   <!-- / Content -->
 
@@ -454,22 +463,13 @@
     <script>
         new DataTable('#myTable', {
             responsive: true,
-
-            layout: {
-              topStart: {
-                // buttons: [] // No export/download buttons
-              }
-            }
-        });
-    </script>
-
-        <script>
-        $(document).ready(function() {
-            $('#options').change(function() {
-                $('.checkBoxes').prop('checked', function(i, val) {
-                    return !val;
-                });
-            });
+            //   dom: 'lfrtip',
+            //   lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
+                          layout: {
+                topStart: {
+                    buttons: ['excelHtml5', 'pdfHtml5']
+                }
+            },
         });
     </script>
 

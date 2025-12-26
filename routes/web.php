@@ -79,6 +79,7 @@ Route::get('employeesSalary/{id}', [EmployeeController::class, 'EmpSalary']);
 Route::get('employeesViewSalaryInfo', [EmployeeController::class, 'EmpViewSalaryInfo']);
 Route::get('employeesGuardClient/{id}', [EmployeeController::class, 'GuardClient']);
 Route::get('terminateEmployee/{id}', [EmployeeController::class, 'terminateEmployee'])->name('employees.terminateEmployee');
+Route::get('employeeReinstate/{id}', [EmployeeController::class, 'employeeReinstate']);
 Route::post('employeesGuardReAassign', [EmployeeController::class, 'GuardReAassign'])->name('employees.GuardReAassign');
 
 Route::resource('salaries', SalaryController::class);

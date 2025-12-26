@@ -474,12 +474,8 @@
     <script>
         new DataTable('#myTable', {
             responsive: true,
-
-            layout: {
-              topStart: {
-                // buttons: [] // No export/download buttons
-              }
-            }
+              dom: 'lfrtip',
+              lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
         });
     </script>
 

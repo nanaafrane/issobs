@@ -593,9 +593,14 @@
             </div>
   <!-- / Content -->
 
-            <div class="buy-now">
-            <a style="margin-bottom: 70px;" href="/employees/{{$employee->id}}/edit" class="btn btn-danger btn-buy-now"> <i class="icon-base bx bx-edit-alt me-1"></i> Re-Instate </a>
+          <div class="buy-now">
+            @if ($employee->status !== 'Active')
+            <a style="margin-bottom: 70px;" href="{{url('employeeReinstate', $employee->id )}}" class="btn btn-danger btn-buy-now"> <i class="icon-base bx bx-edit-alt me-1"></i> Re-Instate </a>
+              
+            @else
             <a  href="{{url('terminateEmployee', $employee->id )}}" class="btn btn-danger btn-buy-now"> <i class="icon-base bx bx-trash me-1"></i> Terminate </a>  
+              
+            @endif
           </div>
   @endsection
 

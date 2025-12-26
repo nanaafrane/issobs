@@ -139,7 +139,7 @@ class HomeController extends Controller
             return view('auth.login');
         }
 
-        if($user->department?->name == 'Accounts' )
+        if($user->department?->name == 'Accounts' || $user->department?->name == 'Administration')
         {
             return view('sales.dashboard', compact('banks','total_after_wht', 'total_wth' ,'sum_invoices' ,'invoices_outstanding','balance_outstanding', 'receiept_CashAmount', 'receiept_MoMoAmount', 'receiept_BankAmount', 'receiept_TransferAmount', 'receipt_AllPayment'));
         }

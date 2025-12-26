@@ -268,8 +268,8 @@
                             </div>
                         </div>
                         <p class="mb-1"><strong> ACCRA </strong> </p>
-                        <h4 class="card-title mb-3 text-white"><strong> {{ $salariesAccra }}  </strong> </h4>
-                        <small class="fw-medium"> TOTAL EMPLOYEES  </small>
+                        <h4 class="card-title mb-3 text-white"><strong> {{ number_format($salariesAccraSum, 2) }} </strong> </h4>
+                        <small class="fw-medium"> TOTAL : {{ $salariesAccraCount}}  </small>
                     </div>
                 </div>
             </div>
@@ -286,8 +286,8 @@
                             </div>
                         </div>
                         <p class="mb-1"><strong> BOTWE </strong></p>
-                        <h4 class="card-title mb-3 text-white"><strong>{{ $salariesBotwe }} </strong> </h4>
-                        <small class="fw-medium"> TOTAL EMPLOYEES </small>
+                        <h4 class="card-title mb-3 text-white"><strong> {{ number_format($salariesBotweSum, 2) }} </strong> </h4>
+                        <small class="fw-medium"> TOTAL : {{ $salariesBotweCount }} </small>
                     </div>
                 </div>
             </div>
@@ -306,8 +306,8 @@
 
                         </div>
                         <p class="mb-1"><strong> SHY HILLS </strong></p>
-                        <h4 class="card-title mb-3 text-white"><strong>{{ $salariesShyhills }} </strong> </h4>
-                        <small class="fw-medium"> TOTAL EMPLOYEES </small>
+                        <h4 class="card-title mb-3 text-white"><strong> {{ number_format($salariesShyhillsSum, 2) }} </strong> </h4>
+                        <small class="fw-medium"> TOTAL : {{ $salariesShyhillsCount }} </small>
                     </div>
                 </div>
             </div>
@@ -324,8 +324,8 @@
 
                         </div>
                         <p class="mb-1"><strong> TEMA </strong></p>
-                        <h4 class="card-title mb-3 text-white"><strong>{{ $salariesTema }} </strong> </h4>
-                        <small class="fw-medium"> TOTAL EMPLOYEES </small>
+                        <h4 class="card-title mb-3 text-white"><strong> {{ number_format($salariesTemaSum, 2) }} </strong> </h4>
+                        <small class="fw-medium"> TOTAL : {{ $salariesTemaCount }} </small>
                     </div>
                 </div>
             </div>
@@ -344,8 +344,8 @@
 
                         </div>
                         <p class="mb-1">TAKORADI</p>
-                        <h4 class="card-title mb-3 text-white">{{ $salariesTakoradi }} </h4>
-                        <small class="fw-medium"> TOTAL EMPLOYEES   </small>
+                        <h4 class="card-title mb-3 text-white">  {{ number_format($salariesTakoradiSum, 2) }} </h4>
+                        <small class="fw-medium"> TOTAL : {{ $salariesTakoradiCount }}   </small>
                     </div>
                 </div>
             </div>
@@ -362,8 +362,8 @@
 
                         </div>
                         <p class="mb-1"> <strong> KOFORIDUA </strong> </p>
-                        <h4 class="card-title mb-3 text-white">{{ $salariesKoforidua }}</h4>
-                        <small class="fw-medium"> TOTAL EMPLOYEES  </small>
+                        <h4 class="card-title mb-3 text-white"> {{ number_format($salariesKoforiduaSum, 2) }} </h4>
+                        <small class="fw-medium"> TOTAL : {{ $salariesKoforiduaCount }}  </small>
                     </div>
                 </div>
             </div>
@@ -381,8 +381,8 @@
 
                         </div>
                         <p class="mb-1"><strong> KUMASI </strong> </p>
-                        <h4 class="card-title mb-3 text-white">{{ $salariesKumasi }} </h4>
-                        <small class="fw-medium"> TOTAL EMPLOYEES  </small>
+                        <h4 class="card-title mb-3 text-white"> {{ number_format($salariesKumasiSum, 2) }} </h4>
+                        <small class="fw-medium"> TOTAL : {{ $salariesKumasiCount }}  </small>
                     </div>
                 </div>
             </div>
@@ -394,7 +394,8 @@
         @endif
 
         <div class="row">
-          <form action="" method="POST" enctype="multipart/form-data"> 
+          <form action="{{ route('salaries.upload') }}" method="POST" enctype="multipart/form-data"> 
+            @csrf
             <div class="col">
                 <label for="acc_number" class="form-label"> <strong>   UPLOAD SALARIES: </strong> </label>
                 <input
@@ -422,11 +423,14 @@
                     </div>
 
                     <div class="form-check form-check-inline">
-                        <button class="btn btn-danger" onclick="return confirm('Kindly Confirm?')" type="submit"> <i class="icon-base bx bx-recycle"> </i> {{ __('Delete') }}</button>                   
+                        <button class="btn btn-danger" name="submit" value="delete" onclick="return confirm('Kindly Confirm?')" type="submit"> <i class="icon-base bx bx-recycle"> </i> {{ __('Delete') }}</button>                   
                     </div>
-                    <div class="form-check form-check-inline">
-                        <button class="btn btn-success" onclick="return confirm('Kindly Confirm?')" type="submit"> <i class="icon-base bx bx-recycle"> </i> {{ __('Approve') }}</button>                   
-                    </div>
+                    @if(Auth::user()->hasRole(['Director' ]))
+                        <div class="form-check form-check-inline">
+                            <button class="btn btn-success" name="submit" value="approve" onclick="return confirm('Kindly Confirm?')" type="submit"> <i class="icon-base bx bx-recycle"> </i> {{ __('Approve') }}</button>                   
+                        </div>
+                    @endif
+
                     <table id="myTable" class="display">
                         <thead>
                             <tr>
@@ -443,13 +447,13 @@
                                 <th> Client </th>
                                 <th> Location </th>
                                 <th> SSNIT No.</th>
-                                <th> TIN #</th>
+                                <th> TIN No.</th>
                                 <th> Payment Type</th>
                                 <th> Bank Name </th>
                                 <th> Branch </th>
                                 <th> Account No.</th>
                                 <th> Basic Salary</th>
-                                <th> Allowance</th>
+                                <th> Allowances</th>
                                 <th> airtime_allowance</th>
                                 <th> overtime</th>
                                 <th> reimbursements </th>
@@ -498,8 +502,8 @@
                                 <td> {{ $salary->employee?->worker_type }} </td>
                                 <td> {{ $salary->client?->name }} {{ $salary->client?->business_name }}</td>
                                 <td> {{ $salary->location }} </td>
-                                <td> {{$salary->ssnit_number}}</td>
-                                <td> {{$salary->tin_number}}</td>
+                                <td> {{$salary->paymentInfo?->ssnit_number}}</td>
+                                <td> {{$salary->paymentInfo?->tin_number}}</td>
                                 <td> {{$salary->payment_type}}</td>
                                 <td> {{$salary->bank?->name}}</td>
                                 <td> {{$salary->branch}}</td>
@@ -566,6 +570,8 @@
     <script>
 
       new DataTable('#myTable', {
+        //  dom: 'lfrtip',
+        //  lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
         layout: {
             topStart: {
                 buttons: [

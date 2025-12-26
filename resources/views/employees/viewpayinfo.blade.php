@@ -251,10 +251,11 @@
                 <div class="col-md-6">
                 <h5 class="fw-bold mb-4"><span class="text-muted fw-light"><i class="bx bxs-user-account"></i> Employee /</span> Show</h5>
                 </div>
-
+                @if ($employee_pay_info->employee?->status == 'Active')
                   <div class="col-md-6 text-end">
                     <a href="{{url('employeesPayInfo/'.$employee_pay_info->employee_id)}}" class="btn btn-dark mb-3"><i class="bx bx-edit-alt"></i> Edit Payment Info</a>  
                 </div>
+                @endif
               </div>
 
               <div class="row">
