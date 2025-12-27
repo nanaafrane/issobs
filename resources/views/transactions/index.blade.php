@@ -281,7 +281,7 @@
                                 data-bs-target="#navs-pills-justified-shyhills"
                                 aria-controls="navs-pills-justified-shyhills"
                                 aria-selected="false">
-                                <span class="d-none d-sm-inline-flex align-items-center"><i class="icon-base bx bx-home icon-sm me-1_5"></i>Shy Hills
+                                <span class="d-none d-sm-inline-flex align-items-center"><i class="icon-base bx bx-home icon-sm me-1_5"></i>ShaiHills
                                     <span class="badge rounded-pill bg-danger ms-1_5">{{$count_shyhillsTransactions}}</span>
                                 </span>
                                 <i class="icon-base bx bx-home icon-sm d-sm-none"></i>

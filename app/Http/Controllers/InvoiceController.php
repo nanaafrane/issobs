@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Invoice;
 use App\Http\Requests\StoreInvoiceRequest;
 use App\Http\Requests\UpdateInvoiceRequest;
+use App\Http\Requests\InvoiceToPayrollSearchRequest;
 use App\Models\Client;
 use App\Models\Field;
 use App\Models\Service;
@@ -12,6 +13,7 @@ use App\Models\Transaction;
 use App\Models\Vat;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 
 class InvoiceController extends Controller
 {
@@ -177,6 +179,22 @@ class InvoiceController extends Controller
         $client = Client::findOrFail($client_id);
         return view('sales.invoice_generate', compact('client', 'services'));
     }
+
+    /**
+     * Search the invoices per month.
+     */
+    public function invoiceSearch(InvoiceToPayrollSearchRequest $request) 
+
+    {
+        $month = Carbon::parse($request->month)->format('Y-m-d');
+
+        // dd($month);
+        $invoices = Invoice::where('invoice_month', $month)->get();
+        $invoiceTotal = $invoices->sum('total');
+        $invoiceCount = $invoices->count();
+        // dd($invoicemonth);
+        return view('sales.invoice_list', compact('invoiceTotal', 'invoiceCount', 'invoices'));
+    }   
 
     /**
      * Show the form for editing the specified resource.

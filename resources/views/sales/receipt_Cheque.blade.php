@@ -277,7 +277,7 @@
                             </div>
 
                         </div>
-                        <p class="mb-1"><strong> SHY HILLS </strong></p>
+                        <p class="mb-1"><strong> SHAIHILLS </strong></p>
                         <h4 class="card-title mb-3 text-white"> <strong>&#x20B5;{{number_format($shyhillsTotal, 2)}} </strong> </h4>
                         <small class="fw-medium"> TOTAL PAYMENTS : <strong> {{$shyhillsCount}} </strong> </small>
                     </div>

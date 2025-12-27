@@ -344,7 +344,7 @@
                                     class="rounded" />
                             </div>
                         </div>
-                        <p class="mb-1"><strong> SHYHILLS </strong></p>
+                        <p class="mb-1"><strong> SHAIHILLS </strong></p>
                         <h4 class="card-title mb-3"><strong> {{$shyhillsCount}}</strong> </h4>
                         <small class="fw-medium"> TOTAL CLIENTS </small>
                     </div>
@@ -471,7 +471,7 @@
                                 <span class="badge bg-label-info">{{$client->field->name}} </span>
                                 @endif
 
-                                @if($client->field->name == 'Shy Hills')
+                                @if($client->field->name == 'ShaiHills')
                                 <span class="badge bg-label-info">{{$client->field->name}} </span>
                                 @endif
 

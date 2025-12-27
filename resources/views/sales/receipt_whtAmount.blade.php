@@ -279,7 +279,7 @@
                             </div>
 
                         </div>
-                        <p class="mb-1"><strong> SHY HILLS </strong></p>
+                        <p class="mb-1"><strong> SHAIHILLS </strong></p>
                         <h4 class="card-title mb-3"><strong>&#x20B5;{{$shyhillsTotal}} </strong> </h4>
                         <small class="fw-medium"> WHT 7.5% : <strong> {{$shyhillsCount}} </strong> </small>
                         <small class="fw-medium"> TOTAL : <strong> {{$shyhillsTotal + $shyhillsCount}} </strong> </small>

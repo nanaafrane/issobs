@@ -280,7 +280,7 @@
                             </div>
 
                         </div>
-                        <p class="mb-1"><strong> SHY HILLS </strong></p>
+                        <p class="mb-1"><strong> SHAIILLS </strong></p>
                         <h4 class="card-title mb-3 text-white"><strong>&#x20B5;{{$shyhillsTotal}} </strong> </h4>
                         <small class="fw-medium"> TOTAL INVOICES : <strong> {{$shyhillsCount}} </strong> </small>
                     </div>
@@ -420,7 +420,7 @@
                                     class="rounded" />
                             </div>
                         </div>
-                        <p class="mb-1"><strong> SHY HILLS </strong> </p>
+                        <p class="mb-1"><strong> SHAIILLS </strong> </p>
                         <h4 class="card-title mb-3 text-white"><strong>&#x20B5;{{$shyhillsTotal}} </strong> </h4>
                         <small class="fw-medium"> TOTAL INVOICES : <strong> {{$shyhillsCount}}</strong> </small>
                     </div>

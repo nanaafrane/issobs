@@ -52,6 +52,7 @@ Route::get('printInvoice/{id}', [InvoiceController::class, 'printInvoice']);
 Route::get('invoiceDashboard', [InvoiceController::class, 'dashboardViewAllInvoices']);
 Route::get('invoiceOutstanding', [InvoiceController::class, 'dashboardInvoiceWithOutstanding']);
 Route::get('partPaymentOutstanding', [InvoiceController::class, 'dashboardPartPaymentOutstanding']);
+Route::get('invoiceSearch', [InvoiceController::class, 'invoiceSearch'])->name('invoice.invoiceSearch');
 
 Route::resource('receipt', ReceiptController::class);
 Route::get('receiptAllpayment', [ReceiptController::class, 'dashboardAllPayment']);
