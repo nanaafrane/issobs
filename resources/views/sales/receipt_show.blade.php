@@ -278,8 +278,10 @@
                         <p class="card-text text-dark"> <strong>From : {{$receipt->from}} </strong> </p>
                         <p class="card-text text-dark"> <strong>Receipt Date : {{$receipt->receipt_month?->format('l F d, Y')}} </strong> <i class="icon-base bx bx-bxs-time"></i>  {{$receipt->receipt_month?->diffForHumans()}}</p>
                        
-                        <p class="card-text text-dark"> <strong>Date System Generated : {{$receipt->created_at->format('l F d, Y, H:i A')}} </strong> </p>
+                        <p class="card-text text-dark"> <strong>Date Generated : {{$receipt->created_at->format('l F d, Y, H:i A')}} </strong> </p>
                         <p class="card-text text-dark"> <strong><i class="icon-base bx bx-bxs-time"></i> {{$receipt->created_at?->diffForHumans()}} </strong> </p>
+                        <p class="card-text text-dark"> <strong>Date Updated : {{$receipt->updated_at->format('l F d, Y, H:i A')}} </strong> </p>
+                        <p class="card-text text-dark"> <strong><i class="icon-base bx bx-bxs-time"></i> {{$receipt->updated_at?->diffForHumans()}} </strong> </p>
                         <hr>
                         <p class="card-text text-dark"> <strong>WITHHOLDING TAX {{$wht->wht_rate * 100}}% : GH&#8373; {{number_format($receipt->wht_amount, 2)}} </strong> </p>
                         <p class="card-text text-dark"> <strong>AMOUNT AFTER WTH : GH&#8373; {{number_format($receipt->amount_received, 2)}} </strong> </p>
@@ -370,6 +372,11 @@
                 @endif
             </div>
         </div>
+    </div>
+
+
+    <div class="buy-now">
+        <a style="margin-bottom: 75px;" href="/receipt/{{$receipt->id}}/edit" class="btn btn-danger btn-buy-now"> <i class="icon-base bx bx-edit-alt me-1"></i> Edit</a>
     </div>
 
     @endsection

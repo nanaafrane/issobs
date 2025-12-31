@@ -13,6 +13,7 @@ use App\Models\Transaction;
 use App\Models\Wht;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 class ReceiptController extends Controller
@@ -232,7 +233,7 @@ class ReceiptController extends Controller
                 $transaction->save();
 
             // // CREATE A COLLECTION HERE.................
-            $this->create_collection($current_collection, $cash_amount, $momo_amount, $cheque_amount, $transfer_amount, $total, $client->field->id);
+            $this->create_collection($current_collection, $receipt_id, $cash_amount, $momo_amount, $cheque_amount, $transfer_amount, $total, $client->field->id);
             // END OF CREATE COLLECTIONS //
 
             //     // select all transactions with this current invoice iD and assign value d to the checks culumn
@@ -270,7 +271,7 @@ class ReceiptController extends Controller
             $transaction->save();
 
             // CREATE A COLLECTION HERE.................
-            $this->create_collection($current_collection, $cash_amount, $momo_amount, $cheque_amount, $transfer_amount, $total, $client->field->id);
+            $this->create_collection($current_collection, $receipt_id, $cash_amount, $momo_amount, $cheque_amount, $transfer_amount, $total, $client->field->id);
 
             // // select all transactions with this current invoice iD and assign value D to the checks culumn
             Transaction::where('invoice_id', $invoice_id)->update(['checks' => 'd']);
@@ -319,7 +320,7 @@ class ReceiptController extends Controller
             // // echo "uncompleted " . " " . $invoice_data->total - $total ." ". "Balance is ";
 
             // CREATE A COLLECTION HERE.................
-            $this->create_collection($current_collection, $cash_amount, $momo_amount, $cheque_amount, $transfer_amount, $total, $client->field->id );
+            $this->create_collection($current_collection, $receipt_id, $cash_amount, $momo_amount, $cheque_amount, $transfer_amount, $total, $client->field->id );
 
 
             return redirect('receipt')->with('success', 'Receipt created Successfully');
@@ -343,11 +344,12 @@ class ReceiptController extends Controller
     // }
 
 
-    public function create_collection ($current_collection, $cash_amount, $momo_amount, $cheque_amount, $transfer_amount, $total, $field_id)
+    public function create_collection ($current_collection, $receipt_id, $cash_amount, $momo_amount, $cheque_amount, $transfer_amount, $total, $field_id)
     {
                 // create a collection
         $collection = new Collection();
         $collection->user_id = Auth::user()->id;
+        $collection->receipt_id = $receipt_id;
         $collection->cash_amount = $cash_amount;
         $collection->momo_amount = $momo_amount;
         $collection->cheque_amount = $cheque_amount;
@@ -401,7 +403,12 @@ class ReceiptController extends Controller
     public function edit(Receipt $receipt)
     {
         //
-        dd($receipt);
+        // dd($receipt);
+        $mode = DB::table('receipt_mode')->get();
+        $status = DB::table('receipt_status')->get();
+         $wht = new Wht();
+         $invoice = Invoice::findorFail($receipt->invoice_id);
+        return view('sales.receipt_edit', compact('receipt','wht','invoice','mode','status'));
     }
 
     /**
@@ -410,6 +417,132 @@ class ReceiptController extends Controller
     public function update(UpdateReceiptRequest $request, Receipt $receipt)
     {
         //
+        // dd($request->all());
+
+        // if receipt has been deposited, do not allow update   
+        $collection = Collection::where('receipt_id', $receipt->id)->first();
+
+        if($collection?->status == 'deposited')
+        {
+            return redirect()->back()->with('error', 'Receipt has been Deposited and cannot be edited');
+        }
+
+        // update receipt 
+        // $receipt->update($request->all()); 
+        $image = null;
+        if($request->file('image'))
+        {
+           $image = ($request->file('image'))->store('images', 'public_html_disk');
+        }
+
+        $cheque_amount = $request->float('cheque_amount');
+        $momo_amount = $request->float('momo_amount');
+        $cash_amount = $request->float('cash_amount');
+        $transfer_amount = $request->float('transfer_amount');
+
+        // sum all input payments
+        $total = $cheque_amount + $momo_amount + $cash_amount + $transfer_amount;
+        $sum_of_amountPaid_minus_wht = null;
+        $wht_amount = null;
+        $vat7_amount = null;
+        $sum_of_amountPaid_minus_wht = null;
+        $wth_from_form = $request->input('wth');
+        $vat_from_form = $request->input('vat');
+        $vat7_value = $request->float('vat7_value');
+        $dAmount = $request->float('dAmount');
+
+
+
+        // if the payment has with holding turned on;
+        if($wth_from_form == "on")
+        {
+            $wht_amount = $request->float('wht_amount');
+
+               $this->wht_amount = $wht_amount;
+               $sum_of_amountPaid_minus_wht = $total;
+               $total = $total + $wht_amount;
+        }
+        if($vat_from_form == "on")
+        {
+            $vat7_amount = $sum_of_amountPaid_minus_wht - $vat7_value ;
+        }
+
+        $receipt->invoice_id = $request->input('invoice_id');
+        $receipt->client_id = $request->input('client_id');
+        $receipt->from = $request->input('from');
+        $receipt->mode = $request->input('mode');
+        $receipt->dAmount = $dAmount;
+        $receipt->description = $request->input('description');
+        $receipt->receipt_month = $request->input('receipt_month');
+        $receipt->vat7_value = $request->input('vat7_value');
+        $receipt->vat7_amount = $vat7_amount;
+
+        $receipt->transfer_reference = $request->input('transfer_reference');
+        $receipt->transfer_amount = $request->float('transfer_amount');
+        $receipt->transfer_bank = $request->input('transfer_bank');
+
+        $receipt->cheque_reference = $request->input('cheque_reference');
+        $receipt->cheque_amount = $request->float('cheque_amount');
+        $receipt->cheque_bank = $request->input('cheque_bank');
+
+        $receipt->momo_transactin_id = $request->input('momo_transactin_id');
+        $receipt->momo_amount = $request->float('momo_amount');
+        $receipt->cash_amount = $request->float('cash_amount');
+        $receipt->user_id = Auth::user()->id;
+        $receipt->status = $request->input('status');
+        $receipt->total = $total;
+        $receipt->wht_amount = $this->wht_amount;
+        $receipt->amount_received = $sum_of_amountPaid_minus_wht;
+        $receipt->image = $image;
+        $receipt->save();
+
+
+        // update the invoice 
+        $invoice = Invoice::findorFail($receipt->invoice_id);
+        $invoice->balance = $invoice->total - $total - $dAmount;
+        $invoice->status = $request->input('status');
+        $invoice->wht_amount = $this->wht_amount;
+        $invoice->amount_received = $sum_of_amountPaid_minus_wht;
+        $invoice->vat7_value = $vat7_value;
+        $invoice->vat7_amount = $vat7_amount;
+        $invoice->save();
+
+        if($receipt->status == "completed")
+        {
+            // update transaction
+            Transaction::where('receipt_id', $receipt->id)->update([ 
+                'receipt_amount' => $total,
+                'status' => $request->input('status'),
+                'balance' => 0,
+                'checks' => 'd',
+            ]);
+        }
+        elseif($receipt->status == "uncompleted")
+        {
+            // update transaction
+            $transaction = Transaction::where('receipt_id', $receipt->id)->first();
+            $transaction->receipt_amount = $total;
+            $transaction->status = $request->input('status');
+            $transaction->balance = $transaction->invoice->balance;
+            $transaction->checks = null;
+            $transaction->save();
+        }
+
+
+        // update collection
+        $collection = Collection::where('receipt_id', $receipt->id);
+        $collection->update([
+            'receipt_id' => $receipt->id,
+            'cash_amount' => $cash_amount,
+            'momo_amount' => $momo_amount,
+            'cheque_amount' => $cheque_amount,
+            'transfer_amount' => $transfer_amount,
+            'total_amount' => $total,
+        ]); 
+
+        return redirect()->route('receipt.show',['receipt' => $receipt->id])->with('primary', 'Receipt  Updated Successfully');
+
+
     }
 
     /**

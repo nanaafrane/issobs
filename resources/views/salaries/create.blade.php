@@ -425,11 +425,9 @@
                     <div class="form-check form-check-inline">
                         <button class="btn btn-danger" name="submit" value="delete" onclick="return confirm('Kindly Confirm?')" type="submit"> <i class="icon-base bx bx-recycle"> </i> {{ __('Delete') }}</button>                   
                     </div>
-                    @if(Auth::user()->hasRole(['Director' ]))
                         <div class="form-check form-check-inline">
                             <button class="btn btn-success" name="submit" value="approve" onclick="return confirm('Kindly Confirm?')" type="submit"> <i class="icon-base bx bx-recycle"> </i> {{ __('Approve') }}</button>                   
                         </div>
-                    @endif
 
                     <table id="myTable" class="display">
                         <thead>

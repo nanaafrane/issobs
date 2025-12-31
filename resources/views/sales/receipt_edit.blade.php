@@ -214,7 +214,7 @@
     <div class="container-xxl flex-grow-1 container-p-y">
         <div class="row">
             <div class="col-6">
-                <h3 class="card-header text-primary"> <i class="icon-base bx bx-bxs-receipt"></i> Receipt <i class="icon-base bx bx-bxs-right-arrow-alt"></i> Create </h3>
+                <h3 class="card-header text-primary"> <i class="icon-base bx bx-bxs-receipt"></i> Receipt <i class="icon-base bx bx-bxs-right-arrow-alt"></i> Edit </h3>
             </div>
         </div>
         <br>
@@ -232,15 +232,15 @@
         <div class="row mb-6 gy-6">
             <div class="col-xl">
                 <div class="card">
-                    <form method="POST" action="/receipt" enctype="multipart/form-data">
+                    <form method="POST" action="/receipt/{{$receipt->id}}" enctype="multipart/form-data">
                         @csrf
+                        @method('PUT')
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <h5 class="mb-0"> Receipt </h5>
                             <!-- <small class="text-body float-end">Merged input group</small> -->
 
                             <div class="button-wrapper">
                                 <label for="image" class="btn btn-dark  me-3 mb-4" tabindex="0">
-                                    <!-- <span class="d-none d-sm-block"> Attach   </span> -->
                                     <input
                                         type="file"
                                         id="image"
@@ -257,37 +257,36 @@
 
                             </div>
 
-
                         </div>
                         <hr>
                         <div class="card-body">
 
                             <div class="row">
                                 <div class="col-md-6 form-check form-switch">
-                                    <input name="wth" class="form-check-input" type="checkbox" id="wth">
-                                    <label class="form-check-label" for="wth"> {{$wht_rate->wht_rate * 100}} % WITHHOLDING TAX </label>
+                                    <input name="wth" class="form-check-input" type="checkbox" @if ($receipt->wht_amount > 0) checked @endif id="wth">
+                                    <label class="form-check-label" for="wth">  % WITHHOLDING TAX </label>
                                 </div>
 
-                                <div id="wht_value" style="display: none;" class="col-md-6">
+                                <div id="wht_value" @if ($receipt->wht_amount > 0) style="display: flex;" @else style="display: none;" @endif  class="col-md-6">
                                     <input name="wht_amount" type="number" class="form-control" value="{{$invoice->sub_amount * 0.075}}" step="any">
                                 </div>
                             </div>
                             <br>
                             <div class="row">
                                 <div class="col-md-6 form-check form-switch">
-                                    <input name="vat" class="form-check-input" type="checkbox" id="vat" >
+                                    <input name="vat" class="form-check-input" type="checkbox" @if ($receipt->vat7_value > 0) checked @endif id="vat" >
                                     <label class="form-check-label" for="vat"> 7 % VAT </label>
                                 </div>
 
-                                <div id="vat7_value" style="display: none;" class="col-md-6">
+                                <div id="vat7_value" @if ($receipt->vat7_value > 0) style="display: flex;" @else style="display: none;" @endif class="col-md-6">
                                     <input name="vat7_value" type="number" class="form-control" value="{{$invoice->sub_total * 0.07 }}" step="any">
                                 </div>
                             </div>
-
                             <br>
-                            <div class="row">
+                                                     
+                            <div class="row" >
                                 <div class="col-md-6 form-check form-switch">
-                                    <input name="deductions" class="form-check-input" type="checkbox" id="deductions" >
+                                    <input name="deductions" class="form-check-input" type="checkbox" id="deductions"  @if ($receipt->dAmount > 0 )   checked  @endif>
                                     <label class="form-check-label" for="deductions"> OTHER DEDUCTIONS </label>
                                 </div>
 
@@ -297,7 +296,6 @@
                                            name="receipt_month" type="date"
                                            class="form-control @error('receipt_month') is-invalid @enderror"
                                             required>
-
                                         @error('receipt_month')
                                         <span class="invalid-feedback" role="alert">
                                             <strong>{{ $message }}</strong>
@@ -306,7 +304,7 @@
                                 </div>
                             </div>
                             <br>
-
+                
                             <input type="number" name="invoice_id" value="{{$invoice->id}}" hidden>
                             <input type="number" name="client_id" value="{{$invoice->client_id}}" hidden>
                             <div class="modal-body">
@@ -318,7 +316,7 @@
                                             name="from"
                                             id="from"
                                             class="form-control @error('from') is-invalid @enderror"
-
+                                            value=" {{$receipt->from}} "
                                             placeholder="Full Name"
                                             required
                                             autocomplete="from"
@@ -335,11 +333,11 @@
                                         <div class="input-group">
                                             <label class="input-group-text" for="inputGroupSelect01">{{ __('MODE') }}</label>
                                             <select name="mode" class="form-select @error('mode') is-invalid @enderror" id="mode" required>
-                                                <option disabled selected>Choose...</option>
+                                               @foreach ($mode as $modes )      
+                                                <option @if ($receipt->mode == $modes->name ) selected @endif  value="{{ $modes->name }}"> {{ $modes->name }}</option>                                                  
+                                               @endforeach
                                                 <option value="cheque">Cheque </option>
-                                                <option value="transfer">Bank Transfer </option>
-                                                <option value="momo">MoMo</option>
-                                                <option value="cash">Cash</option>
+                                               
                                             </select>
                                             @error('mode')
                                             <span class="invalid-feedback" role="alert">
@@ -350,7 +348,7 @@
                                     </div>
                                 </div>
                                 <br>
-                                <div class="row"  id="deduction_field"  style="display: none;">
+                                <div class="row"  id="deduction_field" @if ($receipt->dAmount > 0 ) style="display: flex;" @else style="display: none;" @endif>
                                     <div class="col mb-0">
                                         <label for="dAmount" class="form-label"> {{ __('DEDUCTED AMOUNT') }}</label>
                                         <input
@@ -358,9 +356,8 @@
                                             name="dAmount"
                                             id="dAmount"
                                             class="form-control @error('dAmount') is-invalid @enderror"
-
                                             placeholder="Deducted Amount"
-                                            
+                                            value="{{$receipt->dAmount}}"
                                             autocomplete="dAmount"
                                             autofocus
                                             step="any">
@@ -377,6 +374,7 @@
                                         <input
                                             type="text"
                                             name="description"
+                                            value="{{$receipt->description}}"
                                             id="description"
                                             class="form-control @error('description') is-invalid @enderror"
                                             placeholder="Description"
@@ -393,13 +391,14 @@
                                 </div> <br>
 
                                 <!-- show if cheque value is selected -->
-                                <div id="chequerow" style="display: none;" class="row g-6">
+                                <div id="chequerow" @if ($receipt->mode == 'cheque') style="display: flex;" @else style="display: none;" @endif   class="row g-6">
                                     <div class="col mb-0">
                                         <label for="cheque_reference" class="form-label"> {{ __('CHEQUE REFERENCE #') }} </label>
                                         <input
                                             type="text"
                                             id="cheque_reference"
                                             name="cheque_reference"
+                                            value="{{$receipt->cheque_reference}}"
                                             class="form-control"
                                             placeholder="Cheque Reference"
                                             autocomplete="cheque_reference"
@@ -412,6 +411,7 @@
                                             type="number"
                                             id="cheque_amount"
                                             name="cheque_amount"
+                                            value="{{$receipt->cheque_amount}}"
                                             class="form-control"
                                             placeholder="GH&#8373;"
                                             autocomplete="cheque_amount"
@@ -425,6 +425,7 @@
                                             type="text"
                                             id="cheque_bank"
                                             name="cheque_bank"
+                                            value="{{$receipt->cheque_bank}}"
                                             class="form-control"
                                             placeholder="Cheque Bank"
                                             autocomplete="cheque_bank"
@@ -436,13 +437,14 @@
                                 <br>
 
                                 <!-- show if Bank Transfer value is selected -->
-                                <div id="transferrow" style="display: none;" class="row g-6">
+                                <div id="transferrow" @if ($receipt->mode == 'bank_transfer') style="display: flex;" @else style="display: none;" @endif  class="row g-6">
                                     <div class="col mb-0">
                                         <label for="transfer_reference" class="form-label"> {{ __('TRANSFER REFERENCE #') }} </label>
                                         <input
                                             type="text"
                                             id="transfer_reference"
                                             name="transfer_reference"
+                                            value="{{$receipt->transfer_reference}}"
                                             class="form-control"
                                             placeholder="Transfer Reference"
                                             autocomplete="transfer_reference"
@@ -455,6 +457,7 @@
                                             type="number"
                                             id="transfer_amount"
                                             name="transfer_amount"
+                                            value="{{$receipt->transfer_amount}}"
                                             class="form-control"
                                             placeholder="GH&#8373;"
                                             autocomplete="transfer_amount"
@@ -468,6 +471,7 @@
                                             type="text"
                                             id="transfer_bank"
                                             name="transfer_bank"
+                                            value="{{$receipt->transfer_bank}}"
                                             class="form-control"
                                             placeholder="Cheque Bank"
                                             autocomplete="transfer_bank"
@@ -479,13 +483,14 @@
                                 <br>
 
                                 <!-- show if Momo value is selected -->
-                                <div id="momorow" style="display: none;" class="row g-6">
+                                <div id="momorow" @if ($receipt->mode == 'momo') style="display: flex;" @else style="display: none;" @endif class="row g-6">
                                     <div class="col mb-0">
                                         <label for="momo_transactin_id" class="form-label"> {{ __('MOMO TRANSACTION ID') }} </label>
                                         <input
                                             type="text"
                                             id="momo_transactin_id"
                                             name="momo_transactin_id"
+                                            value="{{$receipt->momo_transactin_id}}"
                                             class="form-control"
                                             placeholder="MoMo Transaction ID"
                                             autocomplete="momo_transactin_id"
@@ -498,25 +503,24 @@
                                             type="number"
                                             id="momo_amount"
                                             name="momo_amount"
+                                            value="{{$receipt->momo_amount}}"
                                             class="form-control"
                                             placeholder="GH&#8373;"
                                             autocomplete="momo_amount"
                                             step="any"
                                             autofocus>
                                     </div>
-
                                 </div>
                                 <!-- end of MoMo field -->
                                 <br>
-
-
                                 <div class="row">
                                     <!-- show if cash value is selected -->
-                                    <div id="cashrow" style="display: none;" class="col mb-0">
+                                    <div id="cashrow" @if ($receipt->mode == 'cash') style="display: flex;" @else style="display: none;" @endif  class="col mb-0">
                                         <label for="cash_amount" class="form-label"> {{ __('CASH AMOUNT') }}</label>
                                         <input
                                             type="number"
                                             name="cash_amount"
+                                            value="{{$receipt->cash_amount}}"
                                             id="cash_amount"
                                             class="form-control"
                                             placeholder="GH&#8373;"
@@ -530,9 +534,9 @@
                                         <div class="input-group">
                                             <label class="input-group-text" for="status">{{ __('STATUS') }}</label>
                                             <select name="status" class="form-select @error('status') is-invalid @enderror" id="status" required>
-                                                <option selected disabled>Choose...</option>
-                                                <option value="completed">Full Payment </option>
-                                                <option value="uncompleted">Part Payment</option>
+                                                @foreach ( $status as $stat )      
+                                                <option @if ($receipt->status == $stat->name ) selected @endif  value="{{ $stat->name }}"> {{ $stat->name }}</option>
+                                                @endforeach
                                             </select>
                                             @error('status')
                                             <span class="invalid-feedback" role="alert">
@@ -543,11 +547,10 @@
 
                                     </div>
                                 </div>
-
                             </div>
                             <br>
                             <div class="modal-footer">
-                                <button type="submit" class="btn btn-info d-grid w-100" onclick="return confirm('Kindly Confirm?')">{{ __('Generate') }}</button>
+                                <button type="submit" class="btn btn-info d-grid w-100" onclick="return confirm('Kindly Confirm?')">{{ __('Update') }}</button>
                             </div>
                     </form>
 
