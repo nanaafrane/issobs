@@ -94,6 +94,65 @@ class SalaryController extends Controller
     }
 
 
+    /**
+     * Display salaries transaction view.
+     */
+    public function salariesMonth(InvoiceToPayrollSearchRequest $request)
+    {
+        //
+        // dd($request->month);
+        //  Carbon::createFromFormat('F, Y',$request->input('salary_month'))->startOfMonth()->format('Y-m-d H:i:s');
+         $date = Carbon::createFromFormat('Y-m',$request->month)->startOfMonth()->format('Y-m-d H:i:s');
+
+        //  dd($date);
+         $salaries = Salary::where('salary_month', $date)->get();
+        //  dd($salaries);
+        $banks = Bank::all();
+        $groupedBankSalaries = Salary::select('bank_id', DB::raw('SUM(cost_to_company) as total_salary'))
+                                    ->whereIn('bank_id', $banks->pluck('id')->toArray())
+                                    ->groupBy('bank_id')
+                                    ->get();
+
+        // $salariesBanks = Salary::where('salary_month', $date)->get();
+        // $groupedBankSalaries = $salariesBanks->groupBy('bank_id');
+        // dd($groupedBankSalaries);
+
+
+
+        $salariesAccra =  Salary::where('field_id', 1)->where('salary_month', $date)->get();
+        $salariesAccraSum = $salariesAccra->sum('cost_to_company');
+        $salariesAccraCount = $salariesAccra->count();
+        // dd( $salariesAccra->sum('cost_to_company'));
+
+        $salariesBotwe =  Salary::where('field_id', 2)->where('salary_month', $date)->get();
+        $salariesBotweSum = $salariesBotwe->sum('cost_to_company');
+        $salariesBotweCount = $salariesBotwe->count();
+
+        $salariesTema =  Salary::where('field_id', 3)->where('salary_month', $date)->get();
+        $salariesTemaSum = $salariesTema->sum('cost_to_company');
+        $salariesTemaCount = $salariesTema->count();
+
+        $salariesTakoradi =  Salary::where('field_id', 4)->where('salary_month', $date)->get();
+        $salariesTakoradiSum = $salariesTakoradi->sum('cost_to_company');
+        $salariesTakoradiCount = $salariesTakoradi->count();
+
+        $salariesKoforidua =  Salary::where('field_id', 5)->where('salary_month', $date)->get();
+        $salariesKoforiduaSum = $salariesKoforidua->sum('cost_to_company');
+        $salariesKoforiduaCount = $salariesKoforidua->count();  
+
+        $salariesKumasi =  Salary::where('field_id', 6)->where('salary_month', $date)->get();
+        $salariesKumasiSum = $salariesKumasi->sum('cost_to_company');
+        $salariesKumasiCount = $salariesKumasi->count();    
+
+        $salariesShyhills =  Salary::where('field_id', 7)->where('salary_month', $date)->get();
+        $salariesShyhillsSum = $salariesShyhills->sum('cost_to_company');
+        $salariesShyhillsCount = $salariesShyhills->count(); 
+
+
+        return view('salaries.salariesmonth', compact('groupedBankSalaries','salaries', 'salariesAccra','salariesAccraSum', 'salariesAccraCount',  'salariesBotwe','salariesBotweSum', 'salariesBotweCount', 'salariesTema','salariesTemaSum', 'salariesTemaCount',  'salariesTakoradi','salariesTakoradiSum', 'salariesTakoradiCount', 'salariesKoforidua','salariesKoforiduaSum', 'salariesKoforiduaCount', 'salariesKumasi','salariesKumasiSum', 'salariesKumasiCount', 'salariesShyhills','salariesShyhillsSum', 'salariesShyhillsCount'));
+    }
+
+
     public function transactionSalary()
     {
         //
@@ -369,13 +428,14 @@ class SalaryController extends Controller
         $collection = (new SalaryImport)->toCollection( $request->file('excelFile'));
         // dd($collection);
         foreach ($collection[0] as $row) {
-            // echo 'Importing salary for Employee ID: ' .Carbon::parse($row['salary_month'])->startOfMonth()->format('Y-m-d H:i:s') . '<br>';   
-            
+            // echo 'Updating salary for Employee ID: '. $row['employee_id']. ' -  ' . Carbon::createFromFormat('F, Y', $row['salary_month'])->startOfMonth()->format('Y-m-d H:i:s') . '<br>';   
+        //  change date to start of month format Y-m-d H:i:s
+
             $salary = Salary::where('employee_id', $row['employee_id'])
-                            ->where('salary_month', Carbon::parse($row['salary_month'])->startOfMonth()->format('Y-m-d H:i:s'))
+                            ->where('salary_month', Carbon::createFromFormat('F, Y', $row['salary_month'])->startOfMonth()->format('Y-m-d H:i:s'))
                             ->first();
           
-        //   echo 'Importing salary for Employee ID: ' . $salary . '<br>';   
+        //   echo 'Updating salary for Employees: ' . $salary . '<br>';   
             
             $salary->gross_salary = $row['gross_salary'] ?? $salary->gross_salary ;
             $salary->total_deductions = $row['total_deductions'] ?? $salary->total_deductions ;
@@ -409,6 +469,8 @@ class SalaryController extends Controller
             $salary->save();    
             
             }
+
+        return back()->with('success', 'Salaries uploaded and updated successfully.');
     }
 
 

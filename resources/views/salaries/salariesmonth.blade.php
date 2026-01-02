@@ -2,8 +2,8 @@
 
     @section('css')
     <link rel="stylesheet" href="https://cdn.datatables.net/2.3.5/css/dataTables.dataTables.css" />
-    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/3.2.5/css/buttons.dataTables.css">    
-    <link href="https://cdn.datatables.net/columncontrol/1.1.1/css/columnControl.dataTables.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/3.2.5/css/buttons.dataTables.css">   
+     <link rel="stylesheet" href="{{asset('vendor/css/datatables.css')}}" /> 
     @endsection
 
 
@@ -216,14 +216,14 @@
                     </li>
                     @endif
 
-                    <li class="menu-item active">
+                    <li class="menu-item ">
                         <a href="{{ url('salaries/create') }}" class="menu-link">
                         <i class="menu-icon tf-icons bx bx-money-withdraw"></i>
                         <div class="text-truncate" data-i18n="Salaries">Salaries</div>
                         </a>
                     </li>
 
-                    <li class="menu-item">
+                    <li class="menu-item active">
                         <a href="{{ url('salariesTransaction') }}" class="menu-link">
                         <i class="menu-icon tf-icons bx bx-transfer-alt"></i>
                         <div class="text-truncate" data-i18n="Transaction">Transactions</div>
@@ -251,7 +251,8 @@
 
         <div class="row">
             <div class="col-12">
-                <h3 class="card-header"> <i class="icon-base bx bx-bxs-user-detail"></i> Active Employees </h3>
+                <h3 class="card-header"> <i class="icon-base bx bx-transfer-alt"></i> Salaries Transaction </h3>
+
             </div>
         </div><br>
 
@@ -394,165 +395,326 @@
         </div> <br>
         @endif
 
-        <div class="row">
-          <form action="{{ route('salaries.upload') }}" method="POST" enctype="multipart/form-data"> 
-            @csrf
-            <div class="col">
-                <label for="acc_number" class="form-label"> <strong>   UPLOAD SALARIES: </strong> </label>
-                <input
-                      type="file"
-                      id="excelFile"
-                      name="excelFile"
-                      class="account-file-input  @error('excelFile') is-invalid @enderror"
-                      accept=".xls, .xlsx"/>
-
-                <button class="btn btn-dark" onclick="return confirm('Kindly Confirm?')" type="submit"> <i class="icon-base bx bx-recycle"> </i> {{ __('Upload') }}</button>
-            </div>
-          </form>
-        </div> <br> <br>
+        <!-- Table -->  
         <hr> <br> <br>
-        <div class="row">
-            <form action="/salariesDeleteMultiple" method="POST">
-                @csrf
-                <div class="col">
-                    <input class="form-check-input form-check-inline" type="checkbox" value="" id="options" />
+        <div class="nav-align-top">
+            <ul class="nav nav-pills mb-4 nav-fill" role="tablist">
 
-                    <div class="form-check form-check-inline">
-                        <select name="salary" class="form-select">
-                            <option value=""> Select All </option>
-                        </select>
+                @if(Auth::user()->field?->name == 'Accra' || Auth::user()->hasRole(['Finance Manager', 'Invoice']) )
+                <li class="nav-item mb-1 mb-sm-0">
+                    <button
+                        type="button"
+                        class="nav-link active"
+                        role="tab"
+                        data-bs-toggle="tab"
+                        data-bs-target="#navs-pills-justified-accra"
+                        aria-controls="navs-pills-justified-accra"
+                        aria-selected="true">
+                        <span class="d-none d-sm-inline-flex align-items-center">
+                            <i class="icon-base bx bx-home icon-sm me-1_5"></i>Accra
+                            <span class="badge rounded-pill bg-danger ms-1_5">{{$salariesAccraCount}}</span>
+                        </span>
+                        <i class="icon-base bx bx-home icon-sm d-sm-none"></i>
+                    </button>
+                </li>
+                @endif
+
+                @if(Auth::user()->field?->name == 'Botwe' || Auth::user()->hasRole(['Finance Manager', 'Invoice']) )
+                <li class="nav-item">
+                    <button
+                        type="button"
+                        class="nav-link"
+                        role="tab"
+                        data-bs-toggle="tab"
+                        data-bs-target="#navs-pills-justified-botwe"
+                        aria-controls="navs-pills-justified-botwe"
+                        aria-selected="false">
+                        <span class="d-none d-sm-inline-flex align-items-center"><i class="icon-base bx bx-home icon-sm me-1_5"></i>Botwe
+                            <span class="badge rounded-pill bg-danger ms-1_5">{{$salariesBotweCount}}</span>
+                        </span>
+                        <i class="icon-base bx bx-home icon-sm d-sm-none"></i>
+                    </button>
+                </li>
+                @endif
+
+                @if(Auth::user()->field?->name == 'Tema' || Auth::user()->hasRole(['Finance Manager', 'Invoice']) )
+                <li class="nav-item mb-1 mb-sm-0">
+                    <button
+                        type="button"
+                        class="nav-link"
+                        role="tab"
+                        data-bs-toggle="tab"
+                        data-bs-target="#navs-pills-justified-shyhills"
+                        aria-controls="navs-pills-justified-shyhills"
+                        aria-selected="false">
+                        <span class="d-none d-sm-inline-flex align-items-center"><i class="icon-base bx bx-home icon-sm me-1_5"></i>ShaiHills
+                            <span class="badge rounded-pill bg-danger ms-1_5">{{$salariesShyhillsCount}}</span>
+                        </span>
+                        <i class="icon-base bx bx-home icon-sm d-sm-none"></i>
+                    </button>
+                </li>
+                @endif
+
+                @if(Auth::user()->field?->name == 'Tema' || Auth::user()->hasRole(['Finance Manager', 'Invoice']) )
+                <li class="nav-item mb-1 mb-sm-0">
+                    <button
+                        type="button"
+                        class="nav-link"
+                        role="tab"
+                        data-bs-toggle="tab"
+                        data-bs-target="#navs-pills-justified-tema"
+                        aria-controls="navs-pills-justified-tema"
+                        aria-selected="false">
+                        <span class="d-none d-sm-inline-flex align-items-center"><i class="icon-base bx bx-home icon-sm me-1_5"></i>Tema
+                            <span class="badge rounded-pill bg-danger ms-1_5">{{$salariesTemaCount}}</span>
+                        </span>
+                        <i class="icon-base bx bx-home icon-sm d-sm-none"></i>
+                    </button>
+                </li>
+                @endif
+
+                @if(Auth::user()->field?->name == 'Takoradi' || Auth::user()->hasRole(['Finance Manager','Invoice' ]) )
+                <li class="nav-item">
+                    <button
+                        type="button"
+                        class="nav-link"
+                        role="tab"
+                        data-bs-toggle="tab"
+                        data-bs-target="#navs-pills-justified-takoradi"
+                        aria-controls="navs-pills-justified-takoradi"
+                        aria-selected="false">
+                        <span class="d-none d-sm-inline-flex align-items-center"><i class="icon-base bx bx-home icon-sm me-1_5"></i>Takoradi
+                            <span class="badge rounded-pill bg-danger ms-1_5">{{$salariesTakoradiCount}}</span>
+                        </span>
+                        <i class="icon-base bx bx-home icon-sm d-sm-none"></i>
+                    </button>
+                </li>
+                @endif
+
+                @if(Auth::user()->field?->name == 'Koforidua' || Auth::user()->hasRole(['Finance Manager','Invoice']) )
+                <li class="nav-item">
+                    <button
+                        type="button"
+                        class="nav-link"
+                        role="tab"
+                        data-bs-toggle="tab"
+                        data-bs-target="#navs-pills-justified-koforidua"
+                        aria-controls="navs-pills-justified-koforidua"
+                        aria-selected="false">
+                        <span class="d-none d-sm-inline-flex align-items-center"><i class="icon-base bx bx-home icon-sm me-1_5"></i>Koforidua
+                            <span class="badge rounded-pill bg-danger ms-1_5">{{$salariesKoforiduaCount}}</span>
+                        </span>
+                        <i class="icon-base bx bx-home icon-sm d-sm-none"></i>
+                    </button>
+                </li>
+                @endif
+
+                @if(Auth::user()->field?->name == 'Kumasi' || Auth::user()->hasRole(['Finance Manager', 'Invoice']))
+                <li class="nav-item">
+                    <button
+                        type="button"
+                        class="nav-link"
+                        role="tab"
+                        data-bs-toggle="tab"
+                        data-bs-target="#navs-pills-justified-kumasi"
+                        aria-controls="navs-pills-justified-kumasi"
+                        aria-selected="false">
+                        <span class="d-none d-sm-inline-flex align-items-center"><i class="icon-base bx bx-home icon-sm me-1_5"></i>Kumasi
+                            <span class="badge rounded-pill bg-danger ms-1_5">{{$salariesKumasiCount}}</span>
+                        </span>
+                        <i class="icon-base bx bx-home icon-sm d-sm-none"></i>
+                    </button>
+                </li>
+                @endif
+
+            </ul>
+
+
+            <div class="tab-content">
+                @if(Auth::user()->field?->name == 'Accra')
+                <div class="tab-pane fade show active" id="navs-pills-justified-accra" role="tabpanel">
+                    <div class="table-responsive">
+                        <table id="myTableiAccra" class="display">
+                            <thead>
+                                <tr>
+                                    <!-- <th>#</th> -->
+                                    <th>#</th>
+                                    <th>Bank ID.</th>
+                                    <th>Bank Name</th>
+                                    <th>Total Amount </th>
+                                    <th> View Employees</th>
+     
+                                </tr>
+                            </thead>
+                            <tbody class="table-border-bottom-0">
+                                @foreach($groupedBankSalaries as $key => $banks)
+
+                                <tr>
+                                    <td> {{ $key + 1 }} </td>
+                                    <td> {{ $banks->bank_id }} </td>
+                                    <td> {{ $banks->bank->name }} </td>
+                                    <td> GH&#x20B5; {{ number_format($banks->total_salary, 2) }} </td>
+                                    <td> 
+
+                                    </td>
+                                </tr>
+
+                                @endforeach
+                            </tbody>
+                        </table>
                     </div>
+                </div>
+                @endif
 
-                    <div class="form-check form-check-inline">
-                        <button class="btn btn-danger" name="submit" value="delete" onclick="return confirm('Kindly Confirm?')" type="submit"> <i class="icon-base bx bx-recycle"> </i> {{ __('Delete') }}</button>                   
+
+                <div class="tab-pane fade" id="navs-pills-justified-botwe" role="tabpanel">
+
+                    <div class="table-responsive text-nowrap">
+                        <table id="myTableiBotwe" class="display">
+                            <thead>
+                                <tr>
+                                    <!-- <th>#</th> -->
+                                    <th>Invoice No.</th>
+                                  
+                                </tr>
+                            </thead>
+                            <tbody class="table-border-bottom-0">
+
+                                @foreach($salariesBotwe as $botwe)
+                                <tr>
+                                    <td>  </td>
+                                   
+                                </tr>
+                                @endforeach
+
+                            </tbody>
+                        </table>
                     </div>
-                    <div class="form-check form-check-inline">
-                        <button class="btn btn-success" name="submit" value="approve" onclick="return confirm('Kindly Confirm?')" type="submit"> <i class="icon-base bx bx-recycle"> </i> {{ __('Approve') }}</button>                   
+                </div>
+
+                <div class="tab-pane fade" id="navs-pills-justified-shyhills" role="tabpanel">
+                    <div class="table-responsive text-nowrap">
+                        <table id="myTableiShyhills" class="display">
+                            <thead>
+                                <tr>
+                                    <!-- <th>#</th> -->
+                                    <th>Invoice No.</th>
+                                   
+                                </tr>
+                            </thead>
+                            <tbody class="table-border-bottom-0">
+                                @foreach($salariesShyhills as $shyhills)
+                                <tr>
+                                    <td>  </td>
+                                    
+                                </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
                     </div>
-                
-                        <div class="card"> 
-                            <div class="card-body"> 
-                                <div class="table-responsive text-normal-dark"> 
-
-                                    <table id="myTable" class="display">
-                                        <thead>
-                                            <tr>
-                                                <th> </th>
-                                                <th> Edit </th>
-                                                <th> id</th>
-                                                <th> Salary Month </th>
-                                                <th> employee_id </th>
-                                                <th> Name</th>
-                                                <th> Department </th>
-                                                <th> Role</th>
-                                                <th> Field </th>
-                                                <th> Emp. Type </th>
-                                                <th> Client </th>
-                                                <th> Location </th>
-                                                <th> SSNIT No.</th>
-                                                <th> TIN No.</th>
-                                                <th> Payment Type</th>
-                                                <th> Bank Name </th>
-                                                <th> Branch </th>
-                                                <th> Account No.</th>
-                                                <th> Basic Salary</th>
-                                                <th> Allowances</th>
-                                                <th> airtime_allowance</th>
-                                                <th> overtime</th>
-                                                <th> reimbursements </th>
-                                                <th> transport_allowance</th>
-                                                <th> ssnit_tier2_5</th>
-                                                <th> ssnit_tier2_5d</th>
-                                                <th> tax</th>
-                                                <th> ssnit_tier1_0_5</th>
-                                                <th> welfare </th>
-                                                <th> maintenance</th>
-                                                <th> absent</th>
-                                                <th> boot</th>
-                                                <th> iou</th>
-                                                <th> hostel</th>
-                                                <th> insurance</th>
-                                                <th> reprimand</th>
-                                                <th> scouter </th>
-                                                <th> raincoat </th>
-                                                <th> meal</th>
-                                                <th> loan</th>
-                                                <th> walkin</th>
-                                                <th> amnt_ded_cof_start_date</th>
-                                                <th> other_deductions</th>
-                                                <th> gross_salary </th>
-                                                <th> total_deductions</th>
-                                                <th> net_salary </th>
-                                                <th> ssnit_comp_cont_13 </th>
-                                                <th> ssnit_tobe_paid13_5</th>
-                                                <th> cost_to_company </th>
-
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-
-                                        @foreach ($salaries as $key => $salary )
-                                            <tr>
-                                                <td> <input class="checkBoxes form-check-input" type="checkbox" name="salary[]" value="{{ $salary->id }}" /> </td>
-                                                <td><a class="dropdown-item" href="/salaries/{{$salary->id}}/edit"><i class="icon-base bx bx-edit-alt me-1"></i></a> </td>
-                                                <td> {{ $salary->id }} </td>
-                                                <td> {{$salary->salary_month?->format('F, Y')}} </td>
-                                                <td> {{ $salary->employee_id }} </td>
-                                                <td> {{ $salary->employee?->name }} </td>
-                                                <td> {{ $salary->department?->name }} </td>
-                                                <td> {{ $salary->role?->name }} </td>
-                                                <td> {{ $salary->field?->name }} </td>
-                                                <td> {{ $salary->employee?->worker_type }} </td>
-                                                <td> {{ $salary->client?->name }} {{ $salary->client?->business_name }}</td>
-                                                <td> {{ $salary->location }} </td>
-                                                <td> {{$salary->paymentInfo?->ssnit_number}}</td>
-                                                <td> {{$salary->paymentInfo?->tin_number}}</td>
-                                                <td> {{$salary->payment_type}}</td>
-                                                <td> {{$salary->bank?->name}}</td>
-                                                <td> {{$salary->branch}}</td>
-                                                <td> {{$salary->account_number}}</td>
-                                                <td> {{$salary->basic_salary}}</td>
-                                                <td> {{$salary->allowances}}</td>
-                                                <td> {{$salary->airtime_allowance}}</td>
-                                                <td> {{$salary->overtime}}</td>
-                                                <td> {{$salary->reimbursements}}</td>
-                                                <td> {{$salary->transport_allowance}}</td>
-                                                <td> {{$salary->ssnit_tier2_5}}</td>
-                                                <td> {{$salary->ssnit_tier2_5d}}</td>   
-                                                <td> {{$salary->tax}} </td>                            
-                                                <td> {{$salary->ssnit_tier1_0_5}} </td>                            
-                                                <td> {{$salary->welfare}} </td>                            
-                                                <td> {{$salary->maintenance}} </td>                            
-                                                <td> {{$salary->absent}} </td>                            
-                                                <td> {{$salary->boot}} </td>                            
-                                                <td> {{$salary->iou}} </td>                            
-                                                <td> {{$salary->hostel}} </td>                            
-                                                <td> {{$salary->insurance}} </td>                            
-                                                <td> {{$salary->reprimand}} </td>                            
-                                                <td> {{$salary->scouter}} </td>                            
-                                                <td> {{$salary->raincoat}} </td>                            
-                                                <td> {{$salary->meal}} </td>                            
-                                                <td> {{$salary->loan}} </td>                            
-                                                <td> {{$salary->walkin}} </td>                            
-                                                <td> {{$salary->amnt_ded_cof_start_date}} </td>                            
-                                                <td> {{$salary->other_deductions}} </td>                            
-                                                <td> {{$salary->gross_salary}} </td>                            
-                                                <td> {{$salary->total_deductions}} </td>                            
-                                                <td> {{$salary->net_salary}} </td>                            
-                                                <td> {{$salary->ssnit_comp_cont_13}} </td>                            
-                                                <td> {{$salary->ssnit_tobe_paid13_5}} </td>                            
-                                                <td> {{$salary->cost_to_company }}</td>
-                                            </tr>
-                                        @endforeach
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
 
                 </div>
 
-            </form>
+                <div class="tab-pane fade" id="navs-pills-justified-tema" role="tabpanel">
+                    <div class="table-responsive text-nowrap">
+                        <table id="myTableiTema" class="display">
+                            <thead>
+                                <tr>
+                                    <!-- <th>#</th> -->
+                                    <th>Invoice No.</th>
+                                 
+                                </tr>
+                            </thead>
+                            <tbody class="table-border-bottom-0">
+                                @foreach($salariesTema as $tema)
+                                <tr>
+                                    <td> </td>
+                                </tr>
+                                @endforeach 
+                            </tbody>
+                        </table>
+                    </div>
+
+                </div>
+
+                <div class="tab-pane fade" id="navs-pills-justified-takoradi" role="tabpanel">
+                    <div class="table-responsive text-nowrap">
+                        <table id="myTableiTakoradi" class="display">
+                            <thead>
+                                <tr>
+                                    <!-- <th>#</th> -->
+                                    <th>Invoice No.</th>
+
+                                </tr>
+                            </thead>
+                            <tbody class="table-border-bottom-0">
+
+                                @foreach($salariesTakoradi as $takoradi)
+                                <tr>
+                                    <td>  </td>
+
+                                </tr>
+                                @endforeach
+
+                            </tbody>
+                        </table>
+                    </div>
+
+                </div>
+
+                <div class="tab-pane fade" id="navs-pills-justified-koforidua" role="tabpanel">
+
+                    <div class="table-responsive text-nowrap">
+                        <table id="myTableiKoforidua" class="display">
+                            <thead>
+                                <tr>
+                                    <!-- <th>#</th> -->
+                                    <th>Invoice No.</th>
+                                </tr>
+                            </thead>
+                            <tbody class="table-border-bottom-0">
+
+                                @foreach($salariesKoforidua as $koforidua)
+                                <tr>
+                                    <td> </td>
+
+                                </tr>
+                                @endforeach
+
+                            </tbody>
+                        </table>
+                    </div>
+
+                </div>
+
+                <div class="tab-pane fade" id="navs-pills-justified-kumasi" role="tabpanel">
+
+                    <div class="table-responsive text-nowrap">
+                        <table id="myTableiKumasi" class="display">
+                            <thead>
+                                <tr>
+                                    <!-- <th>#</th> -->
+                                    <th>Invoice No.</th>
+
+                                </tr>
+                            </thead>
+                            <tbody class="table-border-bottom-0">
+
+                                @foreach($salariesKumasi as $kumasi)
+                                <tr>
+                                    <td>  </td>
+
+                                </tr>
+                                @endforeach
+
+                            </tbody>
+                        </table>
+                    </div>
+
+                </div>
+
+
+            </div>
         </div>
 
 
@@ -563,62 +725,27 @@
 
 
     @section('scripts')
+
+     <script src="{{asset('vendor/js/datatables.js')}}"></script>
     <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
-    <script src="https://cdn.datatables.net/2.3.5/js/dataTables.js"></script>
-    <script src="https://cdn.datatables.net/buttons/3.2.5/js/dataTables.buttons.js"></script>
-    <script src="https://cdn.datatables.net/buttons/3.2.5/js/buttons.dataTables.js"></script>
-    <script src="https://cdn.datatables.net/buttons/3.2.5/js/buttons.html5.min.js"></script>
-    <script src="https://cdn.datatables.net/buttons/3.2.5/js/buttons.colVis.min.js"></script>
+    <script src="https://cdn.datatables.net/2.3.3/js/dataTables.js"></script>
+    <script src="https://cdn.datatables.net/buttons/3.2.4/js/dataTables.buttons.js"></script>
+    <script src="https://cdn.datatables.net/buttons/3.2.4/js/buttons.dataTables.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
-
-    <script src="https://cdn.datatables.net/columncontrol/1.1.1/js/dataTables.columnControl.min.js"></script>
-    <script>
-
-      new DataTable('#myTable', {
-        //  dom: 'Blfrtip',
-        //  stateSave: false,
-        columnControl: [ ['search'] ],
-        layout: {
-            topStart: {
-                buttons: [ 
-                {
-                     extend: 'pageLength',
-                    text: 'Show',
-                    className: 'btn btn-secondary',
-                    Options: [10, 25, 50, 100, 250, 500, 1000, 2000], 
-                },
-                    {
-                        extend: 'excelHtml5',
-                        title: 'Salaries',
-                        className: 'btn btn-secondary',
-                        exportOptions: {
-                            columns: ':visible'
-                        }
-                    },
-                    'colvis'
-                ]
-            }
-        },
-                  columnDefs: [
-              {
-                  targets: [-2,-3,-7,-8,-9,-10,-11,-12,-13,-14,-15,-16,-17,-18,-19,-20,-21,-22,-23,-24,-25,-26,-27,-28],
-                  visible: false
-              }
-          ]
-    });
-    </script>
+    <script src="https://cdn.datatables.net/buttons/3.2.4/js/buttons.html5.min.js"></script>
 
 
     <script>
-        $(document).ready(function() {
-            $('#options').change(function() {
-                $('.checkBoxes').prop('checked', function(i, val) {
-                    return !val;
-                });
-            });
-        });
+        let myTableiAccra = new DataTable('#myTableiAccra');
+        let myTableiBotwe = new DataTable('#myTableiBotwe');
+        let myTableiShyhills = new DataTable('#myTableiShyhills');
+        let myTableiTema = new DataTable('#myTableiTema');
+        let myTableiTakoradi = new DataTable('#myTableiTakoradi');
+        let myTableiKoforidua = new DataTable('#myTableiKoforidua');
+        let myTableiKumasi = new DataTable('#myTableiKumasi');
+
     </script>
 
     @endsection

@@ -477,8 +477,8 @@
                               <label for="payment_type" class="form-label"> <strong> {{ __('Payment Type') }} *</strong>  </label>
                                 <select name="payment_type" class="form-select @error('payment_type') is-invalid @enderror" id="payment_type" required>
                                     <option selected disabled>Choose... </option>
-                                    <option value="bank">Bank</option>
-                                    <option value="cash">Cash</option>
+                                    <option value="Bank">Bank</option>
+                                    <option value="Cash">Cash</option>
                                 </select>
                                 @error('payment_type')
                                   <span class="invalid-feedback" role="alert">

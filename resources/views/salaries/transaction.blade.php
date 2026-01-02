@@ -250,11 +250,26 @@
 
         <div class="row">
             <div class="col-12">
-                <h3 class="card-header"> <i class="icon-base bx bx-bxs-user-detail"></i> Active Employees </h3>
+                <h3 class="card-header"> <i class="icon-base bx bx-transfer-alt"></i> Salaries Transaction </h3>
             </div>
         </div><br>
 
          @if(Auth::user()->hasRole(['Invoice','Manager', 'Finance Manager' ]))
+
+            @if(isset($invoiceTotal) && isset($invoiceCount))
+                <div class="row mb-4">
+                <div class="col-lg-12 col-md-6 mb-4 mb-md-0">
+                    <div  class="card h-100 bg-dark text-white">
+                        <div class="card-body">
+                                <p class="mb-1"><strong> SALARIES </strong> </p>
+                                <h4 class="card-title mb-3 text-white"><strong> GH&#x20B5; {{ number_format($invoiceTotal, 2) }}  </strong> </h4>
+                                <small class="fw-medium"> TOTAL INVOICES GENERATED : {{ $invoiceCount }}  </small>
+                        </div>
+                    </div>
+                </div>
+            </div> <br>
+            @endif
+
         <div class="row">
             <div class="col-lg-2">
                 <div  class="card h-100 bg-dark text-white">
@@ -305,7 +320,7 @@
                             </div>
 
                         </div>
-                        <p class="mb-1"><strong> SHY HILLS </strong></p>
+                        <p class="mb-1"><strong> SHAIHILLS </strong></p>
                         <h4 class="card-title mb-3 text-white"><strong> {{ number_format($salariesShyhillsSum, 2) }} </strong> </h4>
                         <small class="fw-medium"> TOTAL : {{ $salariesShyhillsCount }} </small>
                     </div>
@@ -391,6 +406,22 @@
                      <div class="card-header  ml-2  d-none d-lg-block">
                   @include('flash-messages')
         </div> <br>
+
+        <div class="row">
+                <form action="/salariesMonth" method="GET">
+                    @csrf
+                    <div class="col">
+
+                        <label for="month" class="form-label"> <strong>   CHOOSE A MONTH TO SEARCH </strong> </label> <br>
+
+                        <div class="form-check form-check-inline">
+                            <input type="month" class="form-control" name="month" required/> <br>
+                            
+                            <button class="btn btn-dark" type="submit" onclick="return confirm('Kindly Confirm?')"> <i class="icon-base bx bx-arrow-from-left"> </i> {{ __('') }}</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
         @endif
 
         <!-- Table -->  

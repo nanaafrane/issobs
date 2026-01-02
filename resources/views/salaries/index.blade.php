@@ -3,6 +3,8 @@
     @section('css')
     <link rel="stylesheet" href="https://cdn.datatables.net/2.3.3/css/dataTables.dataTables.css" />
     <link rel="stylesheet" href="https://cdn.datatables.net/buttons/3.2.4/css/buttons.dataTables.css">
+
+    <link href="https://cdn.datatables.net/columncontrol/1.1.1/css/columnControl.dataTables.min.css" rel="stylesheet">
     @endsection
 
 
@@ -305,7 +307,7 @@
                             </div>
 
                         </div>
-                        <p class="mb-1"><strong> SHY HILLS </strong></p>
+                        <p class="mb-1"><strong> SHAIHILLS </strong></p>
                         <h4 class="card-title mb-3 text-white"><strong> {{ $employeeShyhills }} </strong> </h4>
                         <small class="fw-medium"> TOTAL EMPLOYEES </small>
                     </div>
@@ -390,70 +392,78 @@
         </div> <br> <br>
         @endif
         <br>
-              <div class="card-header  ml-2  d-none d-lg-block">
-                  @include('flash-messages')
-              </div> <br>
-        <div class="row">
-            <form action="/salaries" method="POST">
-                @csrf
-                <div class="col">
-                    <input class="form-check-input form-check-inline" type="checkbox" value="" id="options" />
+        <div class="card-header  ml-2  d-none d-lg-block">
+            @include('flash-messages')
+        </div> <br>
 
-                    <div class="form-check form-check-inline">
-                        <select name="employees" class="form-select">
-                            <option value=""> Select All </option>
-                        </select>
+        
+            <div class="row">
+                <form action="/salaries" method="POST">
+                    @csrf
+                    <div class="col">
+                        <input class="form-check-input form-check-inline" type="checkbox" value="" id="options" />
+
+                        <div class="form-check form-check-inline">
+                            <select name="employees" class="form-select">
+                                <option value=""> Select All </option>
+                            </select>
+                        </div>
+                    
+                        <div class="form-check form-check-inline">
+                            <input type="month" name="salary_month" required/>
+                            
+                            <button class="btn btn-dark" type="submit" onclick="return confirm('Kindly Confirm?')"> <i class="icon-base bx bx-arrow-from-left"> </i> {{ __('Add To Salaries') }}</button>
+                        </div>
+                        <div class="card"> 
+                            <div class="card-body"> 
+                                <div class="table-responsive text-normal-dark"> 
+                                    <table id="myTable" class="display">
+                                        <thead>
+                                            <tr>
+                                            <th> </th>
+                                            <th>#</th>
+                                            <th> Employee ID </th>
+                                            <th>Name</th>
+                                            <th>Gender</th>
+                                            <th>Number</th>
+                                            <th> Employment Date </th>
+                                            <th> Department </th>
+                                            <th>Role</th>
+                                            <th>Field Office</th>
+                                            <th>Client </th>
+                                            <th> Location </th>
+                                            <th>Payment Type</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+
+                                            @foreach ($employees as $key => $employee )
+                                            <tr>
+                                                <td> <input class="checkBoxes form-check-input" type="checkbox" name="employees[]" value="{{ $employee->id }}" /></td>
+                                                <td> {{ $key + 1 }} </td>
+                                                <td>  FWSS {{ $employee->id }}  </td>
+                                                <td> {{$employee->name}}  </td>
+                                                <td> {{ $employee->gender }}  </td>
+                                                <td> {{ $employee->phone_number }}  </td>
+                                                <td> {{ $employee->date_of_joining->diffForHumans() }} </td>
+                                                <td> {{ $employee->department?->name }} </td>
+                                                <td> {{ $employee->role?->name }}  </td>
+                                                <td> {{ $employee->field?->name }}   </td>
+                                                <td> {{ $employee->client?->name }} {{ $employee->client?->business_name }} </td>
+                                                <td> {{ $employee->location }} </td>
+                                                <td> {{ $employee->payment_type }}  </td>
+                                            </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                   
-                    <div class="form-check form-check-inline">
-                         <input type="month" name="salary_month" required/>
-                        
-                        <button class="btn btn-dark" type="submit" onclick="return confirm('Kindly Confirm?')"> <i class="icon-base bx bx-arrow-from-left"> </i> {{ __('Add To Salaries') }}</button>
-                    </div>
 
-                    <table id="myTable" class="display">
-                        <thead>
-                            <tr>
-                              <th> </th>
-                              <th>#</th>
-                              <th> Employee ID </th>
-                              <th>Name</th>
-                              <th>Gender</th>
-                              <th>Number</th>
-                              <th> Employment Date </th>
-                              <th> Department </th>
-                              <th>Role</th>
-                              <th>Field Office</th>
-                              <th>Client </th>
-                              <th> Location </th>
-                              <th>Payment Type</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-
-                            @foreach ($employees as $key => $employee )
-                            <tr>
-                                <td> <input class="checkBoxes form-check-input" type="checkbox" name="employees[]" value="{{ $employee->id }}" /></td>
-                                <td> {{ $key + 1 }} </td>
-                                <td>  FWSS {{ $employee->id }}  </td>
-                                <td> {{$employee->name}}  </td>
-                                <td> {{ $employee->gender }}  </td>
-                                <td> {{ $employee->phone_number }}  </td>
-                                <td> {{ $employee->date_of_joining->diffForHumans() }} </td>
-                                <td> {{ $employee->department?->name }} </td>
-                                <td> {{ $employee->role?->name }}  </td>
-                                <td> {{ $employee->field?->name }}   </td>
-                                <td> {{ $employee->client?->name }} {{ $employee->client?->business_name }} </td>
-                                <td> {{ $employee->location }} </td>
-                                <td> {{ $employee->payment_type }}  </td>
-                            </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-
-            </form>
-        </div>
+                </form>
+            </div>
+       
     </div>
   <!-- / Content -->
 
@@ -470,12 +480,15 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
     <script src="https://cdn.datatables.net/buttons/3.2.4/js/buttons.html5.min.js"></script>
 
+    <script src="https://cdn.datatables.net/columncontrol/1.1.1/js/dataTables.columnControl.min.js"></script>
+
 
     <script>
         new DataTable('#myTable', {
             responsive: true,
               dom: 'lfrtip',
               lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
+              columnControl: [ ['search'] ]
         });
     </script>
 

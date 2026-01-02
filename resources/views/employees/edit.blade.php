@@ -347,7 +347,7 @@
                             
                             <div class="mb-3 col-md-4">
                               <label for="date_of_birth" class="form-label"> <strong>Date Of Birth *</strong> </label>
-                              <input  class="form-control @error('date_of_birth') is-invalid @enderror" type="date" id="date_of_birth" name="date_of_birth" placeholder="Male or Female" value="{{$employee->date_of_birth?->format('Y-m-d')}}" autofocus required/>
+                              <input  class="form-control @error('date_of_birth') is-invalid @enderror" type="date" id="date_of_birth" name="date_of_birth"  value="{{$employee->date_of_birth?->format('Y-m-d')}}" autofocus required/>
                                 @error('date_of_birth')
                                 <span class="invalid-feedback" role="alert">
                                     <strong>{{ $message }}</strong>
@@ -486,8 +486,8 @@
                             <div class="mb-3 col-md-4">
                               <label for="payment_type" class="form-label"> <strong> {{ __('Payment Type') }} *</strong>  </label>
                                 <select name="payment_type" class="form-select @error('payment_type') is-invalid @enderror" id="payment_type" required>
-                                    <option @if ($employee->payment_type == 'bank') selected @endif value="bank">Bank</option>
-                                    <option  @if ($employee->payment_type == 'cash') selected @endif value="cash">Cash</option>
+                                    <option @if ($employee->payment_type == 'Bank') selected @endif value="bank">Bank</option>
+                                    <option  @if ($employee->payment_type == 'Cash') selected @endif value="cash">Cash</option>
                                 </select>
                                 @error('payment_type')
                                   <span class="invalid-feedback" role="alert">

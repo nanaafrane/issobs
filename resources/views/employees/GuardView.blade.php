@@ -262,7 +262,7 @@
                         <div class="col-sm-7">
                             <div class="card-body">
                                <p class="mb-1 text-white"><strong> ACCRA </strong> </p>
-                                <h1 class="text-white"> 0 </h1>
+                                <h1 class="text-white"> {{ count($guards) }} </h1>
                                 <h6 class="card-title text-white mb-3">TOTAL NUMBER OF GUARDS </h6>
                             </div>
                         </div>

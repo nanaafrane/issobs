@@ -3,6 +3,8 @@
     @section('css')
     <link rel="stylesheet" href="https://cdn.datatables.net/2.3.3/css/dataTables.dataTables.css" />
     <link rel="stylesheet" href="https://cdn.datatables.net/buttons/3.2.4/css/buttons.dataTables.css">
+
+    <link href="https://cdn.datatables.net/columncontrol/1.1.1/css/columnControl.dataTables.min.css" rel="stylesheet">
     @endsection
 
 
@@ -305,7 +307,7 @@
                             </div>
 
                         </div>
-                        <p class="mb-1"><strong> SHY HILLS </strong></p>
+                        <p class="mb-1"><strong> SHAIHILLS </strong></p>
                         <h4 class="card-title mb-3 text-white"><strong> {{ $employeeShyhills }} </strong> </h4>
                         <small class="fw-medium"> TOTAL EMPLOYEES </small>
                     </div>
@@ -396,70 +398,75 @@
 
         <div class="row">
             <div class="col">
-                <table id="myTable" class="display">
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th> Employee ID </th>
-                            <th>Name</th>
-                            <th>Gender</th>
-                            <th>Number</th>
-                            <th> Employment Date </th>
-                            <th> Department </th>
-                            <th>Role</th>
-                            <th>Field Office</th>
-                            <th>Client </th>
-                            <th> Location </th>
-                            <th>Payment Type</th>
-                            <th>Status</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
+                <div class="card"> 
+                    <div class="card-body"> 
+                    <div class="table-responsive text-normal-dark"> 
+                    <table id="myTable" class="display">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th> Employee ID </th>
+                                <th>Name</th>
+                                <th>Gender</th>
+                                <th>Number</th>
+                                <th> Employment Date </th>
+                                <th> Department </th>
+                                <th>Role</th>
+                                <th>Field Office</th>
+                                <th>Client </th>
+                                <th> Location </th>
+                                <th>Payment Type</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
 
-                          @foreach ($employees as $key => $employee )
-                        <tr>
-                            <td> {{ $key + 1 }} </td>
-                            <td> FWSS {{ $employee->id }}  </td>
-                            <td>{{$employee->name}}  </td>
-                            <td>{{ $employee->gender }}  </td>
-                            <td>{{ $employee->phone_number }}  </td>
-                            <td>{{ $employee->date_of_joining->diffForHumans() }} </td>
-                            <td> {{ $employee->department?->name }} </td>
-                            <td> {{ $employee->role?->name }}  </td>
-                            <td> {{ $employee->field?->name }}   </td>
-                            <td>{{ $employee->client?->name }} {{ $employee->client?->business_name }} </td>
-                            <td> {{ $employee->location }} </td>
-                            <td> {{ $employee->payment_type }}  </td>
-                            @if($employee->status == 'Active')
-                            <td><span class="badge bg-label-success">{{$employee->status}}</span></td>
-                            @else
-                            <td><span class="badge bg-label-danger">{{$employee->status}}</span></td>
-                            @endif
-                            
-                            <td>
-                              <div class="dropdown">
-                                  <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown">
-                                      <i class="icon-base bx bx-dots-vertical-rounded"></i>
-                                  </button>
-                                  <div class="dropdown-menu">
-                                      <a class="dropdown-item" href="{{url('employees', $employee->id)}}"><i class="icon-base bx bxs-bullseye"></i> view</a>
-                                      <a class="dropdown-item" href="employees/{{$employee->id}}/edit"><i class="icon-base bx bx-edit-alt me-1"></i> Edit</a>
-                                      <form action="employees/{{$employee->id}}" method="POST">
-                                          @csrf
-                                          @method('DELETE')
-                                          <button class="dropdown-item" type="submit"><i class="icon-base bx bx-trash me-1"></i>Delete</button>
-                                      </form>
-                                      <hr>
-                                      <a class="dropdown-item" href="{{url('employeesSalary', $employee->id)}}"><i class="icon-base bx bx-money-withdraw"></i> Salaries</a>
-                                  </div>
-                              </div>
-                          </td>
-                        </tr>
-                           @endforeach
-                    </tbody>
-                </table>
-
+                            @foreach ($employees as $key => $employee )
+                            <tr>
+                                <td> {{ $key + 1 }} </td>
+                                <td> FWSS {{ $employee->id }}  </td>
+                                <td>{{$employee->name}}  </td>
+                                <td>{{ $employee->gender }}  </td>
+                                <td>{{ $employee->phone_number }}  </td>
+                                <td>{{ $employee->date_of_joining->diffForHumans() }} </td>
+                                <td> {{ $employee->department?->name }} </td>
+                                <td> {{ $employee->role?->name }}  </td>
+                                <td> {{ $employee->field?->name }}   </td>
+                                <td>{{ $employee->client?->name }} {{ $employee->client?->business_name }} </td>
+                                <td> {{ $employee->location }} </td>
+                                <td> {{ $employee->payment_type }}  </td>
+                                @if($employee->status == 'Active')
+                                <td><span class="badge bg-label-success">{{$employee->status}}</span></td>
+                                @else
+                                <td><span class="badge bg-label-danger">{{$employee->status}}</span></td>
+                                @endif
+                                
+                                <td>
+                                <div class="dropdown">
+                                    <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown">
+                                        <i class="icon-base bx bx-dots-vertical-rounded"></i>
+                                    </button>
+                                    <div class="dropdown-menu">
+                                        <a class="dropdown-item" href="{{url('employees', $employee->id)}}"><i class="icon-base bx bxs-bullseye"></i> view</a>
+                                        <a class="dropdown-item" href="employees/{{$employee->id}}/edit"><i class="icon-base bx bx-edit-alt me-1"></i> Edit</a>
+                                        <form action="employees/{{$employee->id}}" method="POST">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button class="dropdown-item" type="submit"><i class="icon-base bx bx-trash me-1"></i>Delete</button>
+                                        </form>
+                                        <hr>
+                                        <a class="dropdown-item" href="{{url('employeesSalary', $employee->id)}}"><i class="icon-base bx bx-money-withdraw"></i> Salaries</a>
+                                    </div>
+                                </div>
+                            </td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                    </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -478,11 +485,12 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
     <script src="https://cdn.datatables.net/buttons/3.2.4/js/buttons.html5.min.js"></script>
 
+    <script src="https://cdn.datatables.net/columncontrol/1.1.1/js/dataTables.columnControl.min.js"></script>
 
     <script>
         new DataTable('#myTable', {
             responsive: true,
-
+            columnControl: [ ['search'] ],
             layout: {
                 topStart: {
                     buttons: ['excelHtml5', 'pdfHtml5']

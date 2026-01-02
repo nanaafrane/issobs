@@ -273,6 +273,7 @@
                                 <div class="mb-3 col-md-4">
                                   <label for="bank_id" class="form-label"> <strong> {{ __('Bank') }} * </strong>  </label>
                                     <select name="bank_id" class="form-select @error('bank_id') is-invalid @enderror" id="bank_id">
+                                        <option > Select Bank </option>
                                         @foreach($banks as $bank)
                                         <option  @if($bank->id == $employee_pay_info->bank_id) selected @endif  value="{{$bank->id}}">{{$bank->name}}</option>
                                         @endforeach
@@ -286,7 +287,7 @@
 
                                   <div class="mb-3 col-md-4">
                                   <label for="acc_number" class="form-label"> <strong>   Account Number * </strong> </label>
-                                  <input  class="form-control @error('acc_number') is-invalid @enderror" type="number" id="acc_number" name="acc_number" placeholder="Your Account Number" value="{{$employee_pay_info->acc_number}}" autofocus />
+                                  <input  class="form-control @error('acc_number') is-invalid @enderror" type="text" id="acc_number" name="acc_number" placeholder="Your Account Number" value="{{$employee_pay_info->acc_number}}" autofocus />
                                     @error('acc_number')
                                     <span class="invalid-feedback" role="alert">
                                         <strong>{{ $message }}</strong>
