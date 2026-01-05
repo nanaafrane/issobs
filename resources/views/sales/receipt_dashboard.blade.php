@@ -222,9 +222,23 @@
 
         <div class="row">
             <div class="col-12">
-                <h3 class="card-header text-primary"> <i class="icon-base bx bx-bxs-receipt"></i> All Payment </h3>
+                <h3 class="card-header text-primary"> <i class="icon-base bx bx-bxs-receipt"></i> All Payment @if (isset($month)) <strong> / For Month: {{  \Carbon\Carbon::parse($month)->format('F Y') }}</strong> @endif </h3>
             </div>
         </div><br>
+
+        @if(isset($reportReceiptTotal) && isset($reportReceiptCount))
+        <div class="row mb-4">
+            <div class="col-lg-12 col-md-6 mb-4 mb-md-0">
+                <div style="background:  #152356; color: white;" class="card h-100">
+                    <div class="card-body">
+                            <p class="mb-1"><strong> PAYMENTS  </strong> </p>
+                            <h4 class="card-title mb-3 text-white"><strong> GH&#x20B5; {{ number_format($reportReceiptTotal, 2) }}  </strong> </h4>
+                            <small class="fw-medium">  <strong>  TOTAL : GH&#x20B5; {{ number_format( $reportReceiptCount, 2) }}</strong> </small> <br>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @endif
 
         @if(Auth::user()->hasRole(['Invoice', 'Finance Manager']))
         <div class="row">
@@ -495,6 +509,24 @@
         </div>
         @endif
         <br><br>
+
+        <div class="row">
+            <form action="/receiptSearch" method="GET">
+                @csrf
+                <div class="col">
+
+                    <label for="" class="form-label"> <strong>   CHOOSE A MONTH TO SEARCH </strong> </label> <br>
+
+                    <div class="form-check form-check-inline">
+                        <input type="month" class="form-control" name="month" required/> <br>
+                        
+                        <button class="btn btn-dark" type="submit" onclick="return confirm('Kindly Confirm?')"> <i class="icon-base bx bx-arrow-from-left"> </i> {{ __('') }}</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+         <hr> <br>  
+
 
         <div class="row">
             <div class="col">

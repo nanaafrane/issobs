@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Receipt;
 use App\Http\Requests\StoreReceiptRequest;
 use App\Http\Requests\UpdateReceiptRequest;
+use App\Http\Requests\InvoiceToPayrollSearchRequest;
 use App\Models\Client;
 use App\Models\Collection;
 use App\Models\Field;
@@ -655,6 +656,47 @@ class ReceiptController extends Controller
         return view('sales.receipt_dashboard', compact('reportReceipt', 'accra', 'botwe', 'tema', 'shyhills','takoradi', 'koforidua', 'kumasi' ,'accraTotal', 'accraCount', 'botweTotal', 'botweCount', 'temaTotal', 'temaCount', 'shyhillsTotal', 'shyhillsCount', 'takoradiTotal', 'takoradiCount', 'koforiduaTotal', 'koforiduaCount', 'kumasiTotal', 'kumasiCount'));
     }
 
+    // Search all receipts for a given month
+    public function receiptSearch(InvoiceToPayrollSearchRequest $request)
+    {
+       $month = Carbon::parse($request->month);
+        // dd($month);
+         $reportReceipt =  Receipt::whereMonth('receipt_month', $month->month)->get();
+         $reportReceiptCount = count($reportReceipt);
+         $reportReceiptTotal = $reportReceipt->sum('total');
+        // dd($reportReceipt);
+
+        $accra = Receipt::whereRelation('client', 'field_id', 1)->whereMonth('receipt_month', $month->month)->get();
+        $accraTotal = $accra->sum('total');
+        $accraCount = count($accra);
+
+        $botwe = Receipt::whereRelation('client', 'field_id', 2)->whereMonth('receipt_month', $month->month)->get();
+        $botweTotal = $botwe->sum('total');
+        $botweCount = count($botwe);
+
+        $tema = Receipt::whereRelation('client', 'field_id', 3)->whereMonth('receipt_month', $month->month)->get();
+        $temaTotal = $tema->sum('total');
+        $temaCount = count($tema);
+
+        $takoradi = Receipt::whereRelation('client', 'field_id', 4)->whereMonth('receipt_month', $month->month)->get();
+        $takoradiTotal = $takoradi->sum('total');
+        $takoradiCount = count($takoradi);
+
+        $koforidua = Receipt::whereRelation('client', 'field_id', 5)->whereMonth('receipt_month', $month->month)->get();
+        $koforiduaTotal = $koforidua->sum('total');
+        $koforiduaCount = count($koforidua);
+
+        $kumasi = Receipt::whereRelation('client', 'field_id', 6)->whereMonth('receipt_month', $month->month)->get();
+        $kumasiTotal = $kumasi->sum('total');
+        $kumasiCount = count($kumasi);
+
+        $shyhills = Receipt::whereRelation('client', 'field_id', 7)->whereMonth('receipt_month', $month->month)->get();
+        $shyhillsTotal = $shyhills->sum('total');
+        $shyhillsCount = count($shyhills);
+
+        return view('sales.receipt_dashboard', compact('reportReceipt', 'reportReceiptCount', 'month','reportReceiptTotal','accra', 'botwe', 'tema', 'shyhills','takoradi', 'koforidua', 'kumasi' ,'accraTotal', 'accraCount', 'botweTotal', 'botweCount', 'temaTotal', 'temaCount', 'shyhillsTotal', 'shyhillsCount', 'takoradiTotal', 'takoradiCount', 'koforiduaTotal', 'koforiduaCount', 'kumasiTotal', 'kumasiCount'));
+    }
+
 
 
     public function dashboardCashPayment()
@@ -819,38 +861,84 @@ class ReceiptController extends Controller
         $whtAmountReceipt =  Receipt::where('amount_received', '>', 0.00)->get();
         // dd($cashReceipt);
         $accra = Receipt::whereRelation('client', 'field_id', 1)->where('amount_received', '>', 0.00)->get();
-        $accraTotal = $accra->sum('amount_received');
-        $accraCount = $accra->sum('wht_amount');
+        $accraAmountReceived = $accra->sum('amount_received');
+        $accraWHTAmount = $accra->sum('wht_amount');
 
 
         // dd($accraTotal, $accraCount);
-
         $botwe = Receipt::whereRelation('client', 'field_id', 2)->where('amount_received', '>', 0.00)->get();
-        $botweTotal = $botwe->sum('amount_received');
-        $botweCount = $botwe->sum('wht_amount');
+        $botweAmountReceived = $botwe->sum('amount_received');
+        $botweWHTAmount = $botwe->sum('wht_amount');
 
         $tema = Receipt::whereRelation('client', 'field_id', 3)->where('amount_received', '>', 0.00)->get();
-        $temaTotal = $tema->sum('amount_received');
-        $temaCount = $tema->sum('wht_amount');
+        $temaAmountReceived = $tema->sum('amount_received');
+        $temaWHTAmount = $tema->sum('wht_amount');
 
         $takoradi = Receipt::whereRelation('client', 'field_id', 4)->where('amount_received', '>', 0.00)->get();
-        $takoradiTotal = $takoradi->sum('amount_received');
-        $takoradiCount = $takoradi->sum('wht_amount');
+        $takoradiAmountReceived = $takoradi->sum('amount_received');
+        $takoradiWHTAmount = $takoradi->sum('wht_amount');
 
         $koforidua = Receipt::whereRelation('client', 'field_id', 5)->where('amount_received', '>', 0.00)->get();
-        $koforiduaTotal = $koforidua->sum('amount_received');
-        $koforiduaCount = $koforidua->sum('wht_amount');
+        $koforiduaAmountReceived = $koforidua->sum('amount_received');
+        $koforiduaWHTAmount = $koforidua->sum('wht_amount');
 
         $kumasi = Receipt::whereRelation('client', 'field_id', 6)->where('amount_received', '>', 0.00)->get();
-        $kumasiTotal = $kumasi->sum('amount_received');
-        $kumasiCount = $kumasi->sum('wht_amount');
+        $kumasiAmountReceived = $kumasi->sum('amount_received');
+        $kumasiWHTAmount = $kumasi->sum('wht_amount');
 
         $shyhills = Receipt::whereRelation('client', 'field_id', 7)->where('amount_received', '>', 0.00)->get();
-        $shyhillsTotal = $shyhills->sum('amount_received');
-        $shyhillsCount = $shyhills->sum('wht_amount');
+        $shyhillsAmountReceived = $shyhills->sum('amount_received');
+        $shyhillsWHTAmount = $shyhills->sum('wht_amount');
 
-        return view('sales.receipt_whtAmount', compact('whtAmountReceipt', 'accra', 'botwe', 'tema', 'shyhills', 'takoradi', 'koforidua', 'kumasi', 'accraTotal', 'accraCount', 'botweTotal', 'botweCount', 'temaTotal', 'temaCount', 'shyhillsTotal', 'shyhillsCount', 'takoradiTotal', 'takoradiCount', 'koforiduaTotal', 'koforiduaCount', 'kumasiTotal', 'kumasiCount'));
+        return view('sales.receipt_whtAmount', compact('whtAmountReceipt', 'accra', 'botwe', 'tema', 'shyhills', 'takoradi', 'koforidua', 'kumasi', 'accraAmountReceived', 'accraWHTAmount', 'botweAmountReceived', 'botweWHTAmount', 'temaAmountReceived', 'temaWHTAmount', 'shyhillsAmountReceived', 'shyhillsWHTAmount', 'takoradiAmountReceived', 'takoradiWHTAmount', 'koforiduaAmountReceived', 'koforiduaWHTAmount', 'kumasiAmountReceived', 'kumasiWHTAmount'));
     }
+
+    // Search for receipts with WHT payments deducted
+    public function searchReceiptsWHTPayment(InvoiceToPayrollSearchRequest $request)
+    {
+         $month = Carbon::parse($request->month);
+
+        // dd($month->month);
+
+         $whtAmountReceipt =  Receipt::where('amount_received', '>', 0.00)->whereMonth('receipt_month', $month->month)->get();
+        //  $whtAmountReceipt =  Receipt::where('amount_received', '>', 0.00)->where('receipt_month', $month)->get();
+        // dd($whtAmountReceipt);
+
+         $whtAmountReceiptWHTamount = $whtAmountReceipt->sum('wht_amount');
+         $whtAmountReceiptAmountReceived = $whtAmountReceipt->sum('amount_received');
+
+        $accra = Receipt::whereRelation('client', 'field_id', 1)->where('amount_received', '>', 0.00)->whereMonth('receipt_month', $month->month)->get();
+        $accraAmountReceived = $accra->sum('amount_received');
+        $accraWHTAmount = $accra->sum('wht_amount');
+
+        $botwe = Receipt::whereRelation('client', 'field_id', 2)->where('amount_received', '>', 0.00)->whereMonth('receipt_month', $month->month)->get();
+        $botweAmountReceived = $botwe->sum('amount_received');
+        $botweWHTAmount = $botwe->sum('wht_amount');
+
+        $tema = Receipt::whereRelation('client', 'field_id', 3)->where('amount_received', '>', 0.00)->whereMonth('receipt_month', $month->month)->get();
+        $temaAmountReceived = $tema->sum('amount_received');
+        $temaWHTAmount = $tema->sum('wht_amount');
+
+        $takoradi = Receipt::whereRelation('client', 'field_id', 4)->where('amount_received', '>', 0.00)->whereMonth('receipt_month', $month->month)->get();
+        $takoradiAmountReceived = $takoradi->sum('amount_received');
+        $takoradiWHTAmount = $takoradi->sum('wht_amount');
+
+        $koforidua = Receipt::whereRelation('client', 'field_id', 5)->where('amount_received', '>', 0.00)->whereMonth('receipt_month', $month->month)->get();
+        $koforiduaAmountReceived = $koforidua->sum('amount_received');
+        $koforiduaWHTAmount = $koforidua->sum('wht_amount');    
+
+        $kumasi = Receipt::whereRelation('client', 'field_id', 6)->where('amount_received', '>', 0.00)->whereMonth('receipt_month', $month->month)->get();
+        $kumasiAmountReceived = $kumasi->sum('amount_received');
+        $kumasiWHTAmount = $kumasi->sum('wht_amount');
+
+        $shyhills = Receipt::whereRelation('client', 'field_id', 7)->where('amount_received', '>', 0.00)->whereMonth('receipt_month', $month->month)->get();
+        $shyhillsAmountReceived = $shyhills->sum('amount_received');
+        $shyhillsWHTAmount = $shyhills->sum('wht_amount');
+
+
+        return view('sales.receipt_whtAmount', compact('whtAmountReceipt', 'month','whtAmountReceiptWHTamount', 'accra', 'botwe', 'tema', 'shyhills', 'takoradi', 'koforidua', 'kumasi', 'whtAmountReceiptAmountReceived', 'accraAmountReceived', 'accraWHTAmount', 'botweAmountReceived', 'botweWHTAmount', 'temaAmountReceived', 'temaWHTAmount', 'shyhillsAmountReceived', 'shyhillsWHTAmount', 'takoradiAmountReceived', 'takoradiWHTAmount', 'koforiduaAmountReceived', 'koforiduaWHTAmount', 'kumasiAmountReceived', 'kumasiWHTAmount'));
+    }
+
 
 
     // public function dashboardWHTDeducted()

@@ -222,9 +222,23 @@
 
         <div class="row">
             <div class="col-12">
-                <h3 class="card-header text-primary"> <i class="icon-base bx bx-bxs-receipt"></i> Invoices Outstanding </h3>
+                <h3 class="card-header text-primary"> <i class="icon-base bx bx-bxs-receipt"></i> Invoices Outstanding   @if (isset($month)) <strong> / For Month: {{  \Carbon\Carbon::parse($month)->format('F Y') }}</strong> @endif </h3>
             </div>
         </div><br>
+
+        @if(isset($invoiceTotal) && isset($invoiceCount))
+        <div class="row mb-4">
+            <div class="col-lg-12 col-md-6 mb-4 mb-md-0">
+                <div  class="card h-100 bg-danger text-white">
+                    <div class="card-body">
+                            <p class="mb-1"><strong> INVOICES </strong> </p>
+                            <h4 class="card-title mb-3 text-white"><strong> GH&#x20B5; {{ number_format($invoiceTotal, 2) }}  </strong> </h4>
+                            <small class="fw-medium"> TOTAL INVOICES GENERATED : {{ $invoiceCount }}  </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @endif
 
         @if(Auth::user()->hasRole(['Invoice','Finance Manager']))
         <div class="row">
@@ -514,11 +528,30 @@
         <br><br>
 
         <div class="row">
+            <form action="/searchOutstandingInvoices" method="GET">
+                @csrf
+                <div class="col">
+
+                    <label for="" class="form-label"> <strong>   CHOOSE A MONTH TO SEARCH </strong> </label> <br>
+
+                    <div class="form-check form-check-inline">
+                        <input type="month" class="form-control" name="month" required/> <br>
+                        
+                        <button class="btn btn-dark" type="submit" onclick="return confirm('Kindly Confirm?')"> <i class="icon-base bx bx-arrow-from-left"> </i> {{ __('') }}</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <hr> <br>  
+
+        <div class="row">
             <div class="col">
                 <table id="myTable" class="display">
                     <thead>
                         <tr>
+                            <th>#</th>
                             <th>Invoice No.</th>
+                            <th>Invoice Month</th>
                             <th>Client Name</th>
                             <th>Phone No.</th>
                             <th>Business Name </th>
@@ -534,22 +567,24 @@
                     <tbody>
 
                         @if(Auth::user()->hasRole(['Invoice','Finance Manager']))
-                        @foreach($reportInvoices as $invoice)
+                        @foreach($reportInvoices as $key => $invoice)
                         <tr>
-                            <td> #FWSSi{{$invoice->id}} </td>
-                            <td> {{$invoice->client->name}}</td>
-                            <td> {{$invoice->client->phone_number}} </td>
-                            <td> {{$invoice->client->business_name}} </td>
-                            <td> {{$invoice->client->field->name}} </td>
-                            <td> {{$invoice->user->name}} </td>
-                            <td> {{$invoice->created_at}} </td>
-                            <td> {{$invoice->due_date}} </td>
-                            <td> GH&#x20B5; {{number_format($invoice->total,2)}} </td>
-                            @if($invoice->status == 'completed')
-                            <td><span class="badge bg-label-success">{{$invoice->status}}</span></td>
-                            @else
-                            <td><span class="badge bg-label-danger">{{$invoice->status}}</span></td>
-                            @endif
+                             <td>{{$key +1 }}</td>
+                                <td> #FWSSi{{$invoice->id}} </td>
+                                <td> {{ $invoice->invoice_month?->format('F, Y') }}</td>
+                                <td> {{$invoice->client->name}}</td>
+                                <td> {{$invoice->client->phone_number}} </td>
+                                <td> {{$invoice->client->business_name}} </td>
+                                <td> {{$invoice->client->field->name}} </td>
+                                <td> {{$invoice->user->name}} </td>
+                                <td> {{$invoice->created_at->format('F l d, Y, H:i A')}} </td>
+                                <td> {{$invoice->due_date->diffForHumans()}} </td>
+                                <td> GH&#x20B5; {{number_format($invoice->total,2)}} </td>
+                                @if($invoice->status == 'completed')
+                                <td><span class="badge bg-label-success">{{$invoice->status}}</span></td>
+                                @else
+                                <td><span class="badge bg-label-danger">{{$invoice->status}}</span></td>
+                                @endif
                             <td>
                                 <a href="{{url('invoice', $invoice->id)}}" class="btn btn-danger">
                                     <i class="icon-base bx bxs-bullseye"></i>

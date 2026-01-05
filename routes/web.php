@@ -53,6 +53,8 @@ Route::get('invoiceDashboard', [InvoiceController::class, 'dashboardViewAllInvoi
 Route::get('invoiceOutstanding', [InvoiceController::class, 'dashboardInvoiceWithOutstanding']);
 Route::get('partPaymentOutstanding', [InvoiceController::class, 'dashboardPartPaymentOutstanding']);
 Route::get('invoiceSearch', [InvoiceController::class, 'invoiceSearch'])->name('invoice.invoiceSearch');
+Route::get('searchOutstandingInvoices', [InvoiceController::class, 'searchOutstandingInvoices'])->name('invoice.searchOutstandingInvoices');
+Route::get('searchPartPaymentOutstanding', [InvoiceController::class, 'searchPartPaymentOutstanding'])->name('invoice.searchPartPaymentOutstanding');
 
 Route::resource('receipt', ReceiptController::class);
 Route::get('receiptAllpayment', [ReceiptController::class, 'dashboardAllPayment']);
@@ -63,6 +65,8 @@ Route::get('receiptTransferPayment', [ReceiptController::class, 'dashboardTransf
 Route::get('receiptWHTPayment', [ReceiptController::class, 'dashboardWHTPayment']);
 // Route::get('receiptWHT', [ReceiptController::class, 'dashboardWHTDeducted']);
 Route::get('receiptCreate/{id}', [ReceiptController::class, 'receiptCreate']);
+Route::get('searchReceiptsWHTPayment', [ReceiptController::class, 'searchReceiptsWHTPayment'])->name('receipt.searchReceiptsWHTPayment');
+Route::get('receiptSearch', [ReceiptController::class, 'receiptSearch'])->name('receipt.receiptSearch');
 
 Route::resource('collections', CollectionController::class);
 

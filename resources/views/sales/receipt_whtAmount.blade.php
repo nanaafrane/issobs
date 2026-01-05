@@ -223,13 +223,29 @@
 
         <div class="row">
             <div class="col-12">
-                <h3 class="card-header text-primary"> <i class="icon-base bx bx-bxs-receipt"></i> Payment With Holdings </h3>
+                <h3 class="card-header text-primary"> <i class="icon-base bx bx-bxs-receipt"></i> Payment With Holdings @if (isset($month)) <strong> / For Month: {{  \Carbon\Carbon::parse($month)->format('F Y') }}</strong> @endif </h3>
             </div>
         </div><br>
 
+        @if(isset($whtAmountReceiptAmountReceived) && isset($whtAmountReceiptWHTamount))
+        <div class="row mb-4">
+            <div class="col-lg-12 col-md-6 mb-4 mb-md-0">
+                <div style="background:  #e7e7e7ff;" class="card h-100">
+                    <div class="card-body">
+                            <p class="mb-1"><strong> AMOUNT RECEIVED </strong> </p>
+                            <h4 class="card-title mb-3"><strong> GH&#x20B5; {{ number_format($whtAmountReceiptAmountReceived, 2) }}  </strong> </h4>
+                            <small class="fw-medium"> <strong> WHT 7.5% : GH&#x20B5; {{ number_format($whtAmountReceiptWHTamount, 2) }} </strong> </small> <br>
+                            <small class="fw-medium">  <strong>  TOTAL : GH&#x20B5; {{ number_format($whtAmountReceiptAmountReceived + $whtAmountReceiptWHTamount, 2) }}</strong> </small> <br>
+                            <small class="fw-medium">  <strong>  COUNT : {{ count($whtAmountReceipt) }}</strong> </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @endif
+
         <div class="row">
             <div class="col-lg-2">
-                <div style="background: #cbfcffff;" class="card h-100">
+                <div style="background:  #e7e7e7ff;" class="card h-100">
                     <div class="card-body">
                         <div class="card-title d-flex align-items-start justify-content-between mb-4">
                             <div class="avatar flex-shrink-0">
@@ -240,15 +256,16 @@
                             </div>
                         </div>
                         <p class="mb-1"><strong> ACCRA </strong> </p>
-                        <h4 class="card-title mb-3"><strong>&#x20B5;{{$accraTotal}} </strong> </h4>
-                        <small class="fw-medium"> WHT 7.5% : <strong> {{$accraCount}}</strong> </small>
-                        <small class="fw-medium"> TOTAL : <strong> {{$accraTotal + $accraCount}}</strong> </small>
+                        <h4 class="card-title mb-3"><strong> &#x20B5; {{ number_format($accraAmountReceived, 2) }} </strong> </h4>
+                        <small class="fw-medium"> <strong> WHT 7.5% : GH&#x20B5; {{ number_format($accraWHTAmount, 2) }}</strong> </small> <br>
+                        <small class="fw-medium"> <strong> TOTAL : GH&#x20B5; {{ number_format($accraAmountReceived + $accraWHTAmount, 2) }}</strong> </small> <br>
+                            <small class="fw-medium">  <strong>  COUNT : {{ count($accra) }}</strong> </small>
                     </div>
                 </div>
             </div>
 
             <div class="col-lg-2">
-                <div style="background: #cbfcffff;" class="card h-100">
+                <div style="background:  #e7e7e7ff;" class="card h-100">
                     <div class="card-body">
                         <div class="card-title d-flex align-items-start justify-content-between mb-4">
                             <div class="avatar flex-shrink-0">
@@ -259,16 +276,17 @@
                             </div>
                         </div>
                         <p class="mb-1"><strong> BOTWE </strong></p>
-                        <h4 class="card-title mb-3"><strong>&#x20B5;{{$botweTotal}}</strong> </h4>
-                        <small class="fw-medium"> WHT 7.5% : <strong> {{$botweCount}} </strong> </small>
-                        <small class="fw-medium"> TOTAL : <strong> {{$botweTotal + $botweCount}} </strong> </small>
+                        <h4 class="card-title mb-3"><strong>&#x20B5;{{ number_format($botweAmountReceived, 2) }}</strong> </h4>
+                        <small class="fw-medium"> WHT 7.5% : <strong> {{ number_format($botweWHTAmount, 2) }} </strong> </small>
+                        <small class="fw-medium"> TOTAL : <strong> {{ number_format($botweAmountReceived + $botweWHTAmount, 2) }} </strong> </small>
+                        <small class="fw-medium">  <strong>  COUNT : {{ count($botwe) }}</strong> </small>
                     </div>
                 </div>
             </div>
 
 
             <div class="col-lg-2">
-                <div style="background: #cbfcffff;" class="card h-100">
+                <div style="background:  #e7e7e7ff;" class="card h-100">
                     <div class="card-body">
                         <div class="card-title d-flex align-items-start justify-content-between mb-4">
                             <div class="avatar flex-shrink-0">
@@ -280,14 +298,15 @@
 
                         </div>
                         <p class="mb-1"><strong> SHAIHILLS </strong></p>
-                        <h4 class="card-title mb-3"><strong>&#x20B5;{{$shyhillsTotal}} </strong> </h4>
-                        <small class="fw-medium"> WHT 7.5% : <strong> {{$shyhillsCount}} </strong> </small>
-                        <small class="fw-medium"> TOTAL : <strong> {{$shyhillsTotal + $shyhillsCount}} </strong> </small>
+                        <h4 class="card-title mb-3"><strong>&#x20B5;{{ number_format($shyhillsAmountReceived, 2) }} </strong> </h4>
+                        <small class="fw-medium"> WHT 7.5% : <strong> {{ number_format($shyhillsWHTAmount, 2) }} </strong> </small>
+                        <small class="fw-medium"> TOTAL : <strong> {{ number_format($shyhillsAmountReceived + $shyhillsWHTAmount, 2) }} </strong> </small>
+                        <small class="fw-medium">  <strong>  COUNT : {{ count($shyhills) }}</strong> </small>
                     </div>
                 </div>
             </div>
             <div class="col-lg-2">
-                <div style="background: #cbfcffff;" class="card h-100">
+                <div style="background:  #e7e7e7ff;" class="card h-100">
                     <div class="card-body">
                         <div class="card-title d-flex align-items-start justify-content-between mb-4">
                             <div class="avatar flex-shrink-0">
@@ -299,9 +318,10 @@
 
                         </div>
                         <p class="mb-1"><strong> TEMA </strong></p>
-                        <h4 class="card-title mb-3"><strong>&#x20B5;{{$temaTotal}} </strong> </h4>
-                        <small class="fw-medium"> WHT 7.5% : <strong> {{$temaCount}} </strong> </small>
-                        <small class="fw-medium"> TOTAL : <strong> {{$temaTotal + $temaCount}} </strong> </small>
+                        <h4 class="card-title mb-3"><strong>&#x20B5;{{ number_format($temaAmountReceived, 2) }} </strong> </h4>
+                        <small class="fw-medium"> WHT 7.5% : <strong> {{ number_format($temaWHTAmount, 2) }} </strong> </small>
+                        <small class="fw-medium"> TOTAL : <strong> {{ number_format($temaAmountReceived + $temaWHTAmount, 2) }} </strong> </small>
+                        <small class="fw-medium">  <strong>  COUNT : {{ count($tema) }}</strong> </small>
                     </div>
                 </div>
             </div>
@@ -309,7 +329,7 @@
 
 
             <div class="col-lg-2">
-                <div style="background: #cbfcffff;" class="card h-100">
+                <div style="background:  #e7e7e7ff;" class="card h-100">
                     <div class="card-body">
                         <div class="card-title d-flex align-items-start justify-content-between mb-4">
                             <div class="avatar flex-shrink-0">
@@ -320,15 +340,16 @@
 
                         </div>
                         <p class="mb-1">TAKORADI</p>
-                        <h4 class="card-title mb-3">&#x20B5; {{$takoradiTotal}}</h4>
-                        <small class="fw-medium"> WHT 7.5% : {{$takoradiCount}} </small>
-                        <small class="fw-medium"> TOTAL : {{$takoradiTotal + $takoradiCount}} </small>
+                        <h4 class="card-title mb-3"><strong> &#x20B5; {{ number_format($takoradiAmountReceived, 2) }} </strong> </h4>
+                        <small class="fw-medium"><strong> WHT 7.5% :  {{ number_format($takoradiWHTAmount, 2) }} </strong> </small>
+                        <small class="fw-medium"> <strong> TOTAL : {{ number_format($takoradiAmountReceived + $takoradiWHTAmount, 2) }} </strong> </small>
+                        <small class="fw-medium">  <strong>  COUNT : {{ count($takoradi) }}</strong> </small>
                     </div>
                 </div>
             </div>
 
             <div class="col-lg-2">
-                <div style="background: #cbfcffff;" class="card h-100">
+                <div style="background:  #e7e7e7ff;" class="card h-100">
                     <div class="card-body">
                         <div class="card-title d-flex align-items-start justify-content-between mb-4">
                             <div class="avatar flex-shrink-0">
@@ -339,17 +360,17 @@
 
                         </div>
                         <p class="mb-1"> <strong> KOFORIDUA </strong> </p>
-                        <h4 class="card-title mb-3">&#x20B5;{{$koforiduaTotal}}</h4>
-                        <small class="fw-medium"> WHT 7.5% : <strong> {{$koforiduaCount}} </strong> </small>
-                        <small class="fw-medium"> TOTAL : <strong> {{$koforiduaTotal + $koforiduaCount}} </strong> </small>
-
+                        <h4 class="card-title mb-3"> <strong> &#x20B5;{{number_format($koforiduaAmountReceived, 2)}} </strong> </h4>
+                        <small class="fw-medium"> <strong> WHT 7.5% : {{ number_format($koforiduaWHTAmount, 2) }} </strong> </small> <br>
+                        <small class="fw-medium"><strong> TOTAL :  {{ number_format($koforiduaAmountReceived + $koforiduaWHTAmount, 2) }} </strong> </small> <br>
+                        <small class="fw-medium">  <strong>  COUNT : {{ count($koforidua) }}</strong> </small>
                     </div>
                 </div>
             </div>
 
 
             <div class="col-lg-2 m-3">
-                <div style="background: #cbfcffff;" class="card h-100">
+                <div style="background:  #e7e7e7ff;" class="card h-100">
                     <div class="card-body">
                         <div class="card-title d-flex align-items-start justify-content-between mb-4">
                             <div class="avatar flex-shrink-0">
@@ -360,15 +381,32 @@
 
                         </div>
                         <p class="mb-1"><strong> KUMASI </strong> </p>
-                        <h4 class="card-title mb-3">&#x20B5;{{$kumasiTotal}}</h4>
-                        <small class="fw-medium"> WHT 7.5% : <strong> {{$kumasiCount}} </strong> </small>
-                        <small class="fw-medium"> TOTAL : <strong> {{$kumasiTotal + $kumasiCount}} </strong> </small>
-
+                        <h4 class="card-title mb-3"> <strong> &#x20B5;{{number_format($kumasiAmountReceived, 2)}} </strong> </h4>
+                        <small class="fw-medium"> <strong>  WHT 7.5% : {{ number_format($kumasiWHTAmount, 2) }} </strong> </small> <br>
+                        <small class="fw-medium">  <strong> TOTAL : {{ number_format($kumasiAmountReceived + $kumasiWHTAmount, 2) }} </strong> </small> <br>
+                        <small class="fw-medium">  <strong>  COUNT : {{ count($kumasi) }}</strong> </small>
                     </div>
                 </div>
             </div>
 
         </div><br><br>
+
+        <div class="row">
+            <form action="/searchReceiptsWHTPayment" method="GET">
+                @csrf
+                <div class="col">
+
+                    <label for="" class="form-label"> <strong>   CHOOSE A MONTH TO SEARCH </strong> </label> <br>
+
+                    <div class="form-check form-check-inline">
+                        <input type="month" class="form-control" name="month" required/> <br>
+                        
+                        <button class="btn btn-dark" type="submit" onclick="return confirm('Kindly Confirm?')"> <i class="icon-base bx bx-arrow-from-left"> </i> {{ __('') }}</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+         <hr> <br>  
 
         <div class="row">
             <div class="col">
@@ -377,6 +415,7 @@
                         <tr>
                             <th>id</th>
                             <th>Invoice No.</th>
+                            <th>R. Month</th>
                             <th>Client Name</th>
                             <th>Phone No.</th>
                             <th>Business Name </th>
@@ -397,6 +436,7 @@
                         <tr>
                             <td>FWSSR{{$receipt->id}}</td>
                             <td>FWSSi{{$receipt->invoice_id}} </td>
+                            <td> {{$receipt->receipt_month?->format('F, Y')}} </td>
                             <td> {{$receipt->client->name}}</td>
                             <td> {{$receipt->client->phone_number}} </td>
                             <td> {{$receipt->client->business_name}} </td>
