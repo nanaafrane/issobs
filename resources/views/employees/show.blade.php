@@ -362,7 +362,7 @@
 
                             <div class="mb-3 col-md-4">
                               <label for="client_id" class="form-label"> <strong> {{ __('Client') }} </strong>  </label>
-                                <h4> <strong> {{$employee->client?->name}} </strong> </h4> 
+                                <h4> <strong> {{$employee->client?->name}}  {{$employee->client?->business_name}}</strong> </h4> 
                             </div>
 
 

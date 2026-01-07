@@ -32,20 +32,44 @@ class EmployeeController extends Controller
     {
         //
         $employees = employee::all();
+        $activeEmployees = employee::where('status', 'Active')->count();
+        $terminatedEmployees = employee::where('status', 'Terminated')->count();  
+
+
         $employeeAccra = employee::where('field_id', 1)->count();
+        $employeeAccraTerminated = employee::where('field_id', 1)->where('status', 'Terminated')->count();  
+        $employeeAccraActive = employee::where('field_id', 1)->where('status', 'Active')->count();
+
         $employeeBotwe = employee::where('field_id', 2)->count();
+        $employeeBotweTerminated = employee::where('field_id', 2)->where('status', 'Terminated')->count();  
+        $employeeBotweActive = employee::where('field_id', 2)->where('status', 'Active')->count();
+
         $employeeTema = employee::where('field_id', 3)->count();
+        $employeeTemaTerminated = employee::where('field_id', 3)->where('status', 'Terminated')->count();  
+        $employeeTemaActive = employee::where('field_id', 3)->where('status', 'Active')->count();    
+
         $employeeTakoradi = employee::where('field_id', 4)->count();
+        $employeeTakoradiTerminated = employee::where('field_id', 4)->where('status', 'Terminated')->count();  
+        $employeeTakoradiActive = employee::where('field_id', 4)->where('status', 'Active')->count();
+
         $employeeKoforidua = employee::where('field_id', 5)->count();
+        $employeeKoforiduaTerminated = employee::where('field_id', 5)->where('status', 'Terminated')->count();  
+        $employeeKoforiduaActive = employee::where('field_id', 5)->where('status', 'Active')->count();  
+
         $employeeKumasi = employee::where('field_id', 6)->count();
+        $employeeKumasiTerminated = employee::where('field_id', 6)->where('status', 'Terminated')->count();  
+        $employeeKumasiActive = employee::where('field_id', 6)->where('status', 'Active')->count();
+
         $employeeShyhills = employee::where('field_id', 7)->count();
+        $employeeShyhillsTerminated = employee::where('field_id', 7)->where('status', 'Terminated')->count();  
+        $employeeShyhillsActive = employee::where('field_id', 7)->where('status', 'Active')->count();
 
         $Departments = Department::all();
         $Roles = Role::all();
         $Fields = Field::all();
         $clients = Client::all();
         $banks = Bank::all();
-        return view('employees.index', compact('employees', 'employeeAccra', 'employeeBotwe', 'employeeTema', 'employeeTakoradi', 'employeeKoforidua', 'employeeKumasi', 'employeeShyhills','Departments', 'Roles', 'Fields', 'clients', 'banks'));
+        return view('employees.index', compact('employees', 'activeEmployees', 'terminatedEmployees', 'employeeAccra', 'employeeAccraTerminated', 'employeeAccraActive', 'employeeBotwe', 'employeeBotweTerminated', 'employeeBotweActive', 'employeeTema', 'employeeTemaTerminated', 'employeeTemaActive', 'employeeTakoradiActive', 'employeeTakoradiTerminated','employeeTakoradi', 'employeeKoforiduaActive', 'employeeKoforiduaTerminated','employeeKoforidua', 'employeeKumasiActive', 'employeeKumasiTerminated','employeeKumasi', 'employeeShyhills', 'employeeShyhillsTerminated', 'employeeShyhillsActive', 'Departments', 'Roles', 'Fields', 'clients', 'banks'));
     }
 
     /**

@@ -256,7 +256,22 @@
             </div>
         </div><br>
 
+
+
         @if(Auth::user()->hasRole(['Invoice','Manager']))
+        <div class="row mb-4">
+            <div class="col-lg-12 col-md-6 mb-4 mb-md-0">
+                <div  class="card h-100 bg-dark text-white">
+                    <div class="card-body">
+                            <p class="mb-1"><strong> ACTIVE EMPLOYEES </strong> </p>
+                            <h4 class="card-title mb-3 text-white"><strong> {{ $activeEmployees }}  </strong> </h4>
+                            <small class="fw-medium"> TERMINATED EMPLOYEES : {{ $terminatedEmployees }}  </small> <br> <hr>
+                            <small class="fw-medium"> TOTAL EMPLOYEES : {{ $employees->count() }}  </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="row">
             <div class="col-lg-2">
                 <div  class="card h-100 bg-dark text-white">
@@ -270,8 +285,10 @@
                             </div>
                         </div>
                         <p class="mb-1"><strong> ACCRA </strong> </p>
-                        <h4 class="card-title mb-3 text-white"><strong> {{ $employeeAccra }}  </strong> </h4>
-                        <small class="fw-medium"> TOTAL EMPLOYEES  </small>
+                        <h4 class="card-title mb-3 text-white"><strong> {{ $employeeAccraActive }}  </strong> </h4>
+                        <small class="fw-medium"> TERMINATED : {{ $employeeAccraTerminated }} </small>  <br> <hr>
+                        <small class="fw-medium"> TOTAL EMPLOYEES : {{ $employeeAccra }} </small> 
+
                     </div>
                 </div>
             </div>
@@ -288,8 +305,9 @@
                             </div>
                         </div>
                         <p class="mb-1"><strong> BOTWE </strong></p>
-                        <h4 class="card-title mb-3 text-white"><strong> {{ $employeeBotwe }} </strong> </h4>
-                        <small class="fw-medium"> TOTAL EMPLOYEES </small>
+                        <h4 class="card-title mb-3 text-white"><strong> {{ $employeeBotweActive }} </strong> </h4>
+                        <small class="fw-medium"> TOTAL EMPLOYEES : {{ $employeeBotwe }} </small> <br> <hr>
+                        <small class="fw-medium"> TERMINATED : {{ $employeeBotweTerminated }} </small>
                     </div>
                 </div>
             </div>
@@ -308,8 +326,9 @@
 
                         </div>
                         <p class="mb-1"><strong> SHAIHILLS </strong></p>
-                        <h4 class="card-title mb-3 text-white"><strong> {{ $employeeShyhills }} </strong> </h4>
-                        <small class="fw-medium"> TOTAL EMPLOYEES </small>
+                        <h4 class="card-title mb-3 text-white"><strong> {{ $employeeShyhillsActive }} </strong> </h4>
+                        <small class="fw-medium"> TOTAL EMPLOYEES : {{ $employeeShyhills }} </small> <br> <hr>
+                        <small class="fw-medium"> TERMINATED : {{ $employeeShyhillsTerminated }} </small>
                     </div>
                 </div>
             </div>
@@ -326,8 +345,9 @@
 
                         </div>
                         <p class="mb-1"><strong> TEMA </strong></p>
-                        <h4 class="card-title mb-3 text-white"><strong> {{ $employeeTema }} </strong> </h4>
-                        <small class="fw-medium"> TOTAL EMPLOYEES </small>
+                        <h4 class="card-title mb-3 text-white"><strong> {{ $employeeTemaActive }} </strong> </h4>
+                        <small class="fw-medium"> TOTAL EMPLOYEES : {{ $employeeTema }} </small> <br> <hr>
+                        <small class="fw-medium"> TERMINATED : {{ $employeeTemaTerminated }} </small>
                     </div>
                 </div>
             </div>
@@ -346,8 +366,9 @@
 
                         </div>
                         <p class="mb-1">TAKORADI</p>
-                        <h4 class="card-title mb-3 text-white"> {{ $employeeTakoradi }} </h4>
-                        <small class="fw-medium"> TOTAL EMPLOYEES   </small>
+                        <h4 class="card-title mb-3 text-white"> {{ $employeeTakoradiActive }} </h4>
+                        <small class="fw-medium"> TOTAL EMPLOYEES : {{ $employeeTakoradi }} </small> <br> <hr>
+                        <small class="fw-medium"> TERMINATED : {{ $employeeTakoradiTerminated }} </small>
                     </div>
                 </div>
             </div>
@@ -364,8 +385,9 @@
 
                         </div>
                         <p class="mb-1"> <strong> KOFORIDUA </strong> </p>
-                        <h4 class="card-title mb-3 text-white"> {{ $employeeKoforidua }} </h4>
-                        <small class="fw-medium"> TOTAL EMPLOYEES  </small>
+                        <h4 class="card-title mb-3 text-white"> {{ $employeeKoforiduaActive }} </h4>
+                        <small class="fw-medium"> TOTAL EMPLOYEES : {{ $employeeKoforidua }} </small> <br> <hr>
+                        <small class="fw-medium"> TERMINATED : {{ $employeeKoforiduaTerminated }} </small>
                     </div>
                 </div>
             </div>
@@ -383,8 +405,9 @@
 
                         </div>
                         <p class="mb-1"><strong> KUMASI </strong> </p>
-                        <h4 class="card-title mb-3 text-white"> {{ $employeeKumasi }} </h4>
-                        <small class="fw-medium"> TOTAL EMPLOYEES  </small>
+                        <h4 class="card-title mb-3 text-white"> {{ $employeeKumasiActive }} </h4>
+                        <small class="fw-medium"> TOTAL EMPLOYEES : {{ $employeeKumasi }} </small> <br> <hr>
+                        <small class="fw-medium"> TERMINATED : {{ $employeeKumasiTerminated }} </small>
                     </div>
                 </div>
             </div>
@@ -449,14 +472,21 @@
                                     </button>
                                     <div class="dropdown-menu">
                                         <a class="dropdown-item" href="{{url('employees', $employee->id)}}"><i class="icon-base bx bxs-bullseye"></i> view</a>
-                                        <a class="dropdown-item" href="employees/{{$employee->id}}/edit"><i class="icon-base bx bx-edit-alt me-1"></i> Edit</a>
+                                        <a class="dropdown-item" href="{{url('employees', $employee->id)}}/edit"><i class="icon-base bx bx-edit-alt me-1"></i> Edit</a>
+                                        <hr>
+                                        <a class="dropdown-item" href="{{url('employeesSalary', $employee->id)}}"><i class="icon-base bx bx-money-withdraw"></i> Salaries</a>
+                                        <hr>
+                                        @if ($employee->status == 'Active')
+                                            <a class="dropdown-item" href="{{url('terminateEmployee', $employee->id )}}"><i class="icon-base bx bx-user-x me-1" onclick="return confirm('Kindly Confirm?')"></i> Terminate</a>
+                                        @else
+                                        <a class="dropdown-item" href="{{url('employeeReinstate', $employee->id )}}" onclick="return confirm('Kindly Confirm?')"><i class="icon-base bx bx-edit-alt me-1"></i>Re-Instate </a>
+                                            @endif
+
                                         <form action="employees/{{$employee->id}}" method="POST">
                                             @csrf
                                             @method('DELETE')
                                             <button class="dropdown-item" type="submit"><i class="icon-base bx bx-trash me-1"></i>Delete</button>
                                         </form>
-                                        <hr>
-                                        <a class="dropdown-item" href="{{url('employeesSalary', $employee->id)}}"><i class="icon-base bx bx-money-withdraw"></i> Salaries</a>
                                     </div>
                                 </div>
                             </td>
