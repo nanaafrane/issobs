@@ -104,52 +104,22 @@ class SalaryController extends Controller
         //  Carbon::createFromFormat('F, Y',$request->input('salary_month'))->startOfMonth()->format('Y-m-d H:i:s');
          $date = Carbon::createFromFormat('Y-m',$request->month)->startOfMonth()->format('Y-m-d H:i:s');
 
-        //  dd($date);
-         $salaries = Salary::where('salary_month', $date)->get();
-        //  dd($salaries);
+
         $banks = Bank::all();
-        $groupedBankSalaries = Salary::select('bank_id', DB::raw('SUM(cost_to_company) as total_salary'))
-                                    ->whereIn('bank_id', $banks->pluck('id')->toArray())
-                                    ->groupBy('bank_id')
-                                    ->get();
+        $fields = Field::all(); 
 
-        // $salariesBanks = Salary::where('salary_month', $date)->get();
-        // $groupedBankSalaries = $salariesBanks->groupBy('bank_id');
-        // dd($groupedBankSalaries);
+        $groupedBankSalaries = Salary::where('salary_month', $date)->whereIn('bank_id', $banks->pluck('id')->toArray())->groupBy('bank_id')->get(['bank_id', DB::raw('SUM(gross_salary) as gross'), DB::raw('SUM(total_deductions) as deductions'),  DB::raw('SUM(cost_to_company) as paid'),  DB::raw('COUNT(*) as total_employees')]);
+        // dd($groupedBankSalaries->sum('total_employees'));
 
+        $groupedCashkSalaries = Salary::where('salary_month', $date)->where('payment_type', 'Cash')->whereIn('field_id', $fields->pluck('id')->toArray())->groupBy('field_id')->get(['field_id', DB::raw('SUM(gross_salary) as gross'), DB::raw('SUM(total_deductions) as deductions'),  DB::raw('SUM(cost_to_company) as paid'),  DB::raw('COUNT(*) as total_employees')]);
 
+        $salariesTaxes = Salary::where('salary_month', $date)->where('tax', '>', 0)->whereIn('field_id', $fields->pluck('id')->toArray())->groupBy('field_id')->get(['field_id', DB::raw('SUM(cost_to_company) as paid'), DB::raw('SUM(tax) as tax'),  DB::raw('COUNT(*) as total_employees')]);
 
-        $salariesAccra =  Salary::where('field_id', 1)->where('salary_month', $date)->get();
-        $salariesAccraSum = $salariesAccra->sum('cost_to_company');
-        $salariesAccraCount = $salariesAccra->count();
-        // dd( $salariesAccra->sum('cost_to_company'));
-
-        $salariesBotwe =  Salary::where('field_id', 2)->where('salary_month', $date)->get();
-        $salariesBotweSum = $salariesBotwe->sum('cost_to_company');
-        $salariesBotweCount = $salariesBotwe->count();
-
-        $salariesTema =  Salary::where('field_id', 3)->where('salary_month', $date)->get();
-        $salariesTemaSum = $salariesTema->sum('cost_to_company');
-        $salariesTemaCount = $salariesTema->count();
-
-        $salariesTakoradi =  Salary::where('field_id', 4)->where('salary_month', $date)->get();
-        $salariesTakoradiSum = $salariesTakoradi->sum('cost_to_company');
-        $salariesTakoradiCount = $salariesTakoradi->count();
-
-        $salariesKoforidua =  Salary::where('field_id', 5)->where('salary_month', $date)->get();
-        $salariesKoforiduaSum = $salariesKoforidua->sum('cost_to_company');
-        $salariesKoforiduaCount = $salariesKoforidua->count();  
-
-        $salariesKumasi =  Salary::where('field_id', 6)->where('salary_month', $date)->get();
-        $salariesKumasiSum = $salariesKumasi->sum('cost_to_company');
-        $salariesKumasiCount = $salariesKumasi->count();    
-
-        $salariesShyhills =  Salary::where('field_id', 7)->where('salary_month', $date)->get();
-        $salariesShyhillsSum = $salariesShyhills->sum('cost_to_company');
-        $salariesShyhillsCount = $salariesShyhills->count(); 
+        $salariesPensions = Salary::where('salary_month', $date)->where('ssnit_tobe_paid13_5', '>', 0)->whereIn('field_id', $fields->pluck('id')->toArray())->groupBy('field_id')->get(['field_id', DB::raw('SUM(ssnit_tier1_0_5) as tier1'), DB::raw('SUM(ssnit_tier2_5) as tier2'), DB::raw('SUM(ssnit_comp_cont_13) as cont13'), DB::raw('SUM(ssnit_tobe_paid13_5) as cont13_5'),   DB::raw('COUNT(*) as total_employees')]);
 
 
-        return view('salaries.salariesmonth', compact('groupedBankSalaries','salaries', 'salariesAccra','salariesAccraSum', 'salariesAccraCount',  'salariesBotwe','salariesBotweSum', 'salariesBotweCount', 'salariesTema','salariesTemaSum', 'salariesTemaCount',  'salariesTakoradi','salariesTakoradiSum', 'salariesTakoradiCount', 'salariesKoforidua','salariesKoforiduaSum', 'salariesKoforiduaCount', 'salariesKumasi','salariesKumasiSum', 'salariesKumasiCount', 'salariesShyhills','salariesShyhillsSum', 'salariesShyhillsCount'));
+
+        return view('salaries.salariesmonth', compact('groupedBankSalaries','groupedCashkSalaries', 'salariesTaxes', 'salariesPensions', 'date'));
     }
 
 

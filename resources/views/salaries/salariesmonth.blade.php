@@ -251,7 +251,7 @@
 
         <div class="row">
             <div class="col-12">
-                <h3 class="card-header"> <i class="icon-base bx bx-transfer-alt"></i> Salaries Transaction </h3>
+                <h3 class="card-header"> <i class="icon-base bx bx-transfer-alt"></i> Salaries Transaction   @if (isset($date)) <strong> / For Month: {{  \Carbon\Carbon::parse($date)->format('F Y') }}</strong> @endif </h3>
 
             </div>
         </div><br>
@@ -269,9 +269,12 @@
                                     class="rounded" />
                             </div>
                         </div>
-                        <p class="mb-1"><strong> ACCRA </strong> </p>
-                        <h4 class="card-title mb-3 text-white"><strong> {{ number_format($salariesAccraSum, 2) }} </strong> </h4>
-                        <small class="fw-medium"> TOTAL : {{ $salariesAccraCount}}  </small>
+                        <p class="mb-1"><strong> BANKS </strong> </p>
+                        <h4 class="card-title mb-3 text-white"><strong> &#x20B5;  {{ number_format($groupedBankSalaries->sum('paid'), 2) }} </strong> </h4> <br>
+                        <small class="fw-medium">TOTAL DEDUCTIONS : </small> <br>
+                        <small class="fw-medium"> GH&#x20B5;  {{ number_format($groupedBankSalaries->sum('deductions'), 2) }}  </small> <br>
+                        <small class="fw-medium"> EMPLOYEES : {{ $groupedBankSalaries->sum('total_employees') }}  </small>
+
                     </div>
                 </div>
             </div>
@@ -287,9 +290,11 @@
                                     class="rounded" />
                             </div>
                         </div>
-                        <p class="mb-1"><strong> BOTWE </strong></p>
-                        <h4 class="card-title mb-3 text-white"><strong> {{ number_format($salariesBotweSum, 2) }} </strong> </h4>
-                        <small class="fw-medium"> TOTAL : {{ $salariesBotweCount }} </small>
+                        <p class="mb-1"><strong> CASH </strong></p>
+                        <h4 class="card-title mb-3 text-white"><strong> &#x20B5; {{ number_format($groupedCashkSalaries->sum('paid'), 2) }} </strong> </h4> <br>
+                        <small class="fw-medium">TOTAL DEDUCTIONS : </small> <br>
+                        <small class="fw-medium"> GH&#x20B5;  {{ number_format($groupedCashkSalaries->sum('deductions'), 2) }}  </small> <br>
+                        <small class="fw-medium"> EMPLOYEES : {{ $groupedCashkSalaries->sum('total_employees') }}  </small>
                     </div>
                 </div>
             </div>
@@ -307,9 +312,10 @@
                             </div>
 
                         </div>
-                        <p class="mb-1"><strong> SHAIHILLS </strong></p>
-                        <h4 class="card-title mb-3 text-white"><strong> {{ number_format($salariesShyhillsSum, 2) }} </strong> </h4>
-                        <small class="fw-medium"> TOTAL : {{ $salariesShyhillsCount }} </small>
+                        <p class="mb-1"><strong> TAX </strong></p>
+                        <h4 class="card-title mb-3 text-white"><strong> &#x20B5; {{ number_format($salariesTaxes->sum('tax'), 2) }} </strong> </h4> <br>
+                        <small class="fw-medium"> TOTAL :  GH&#x20B5; {{ number_format($salariesTaxes->sum('paid'), 2) }} </small> <br>
+                        <small class="fw-medium"> TOTAL : {{ $salariesTaxes->sum('total_employees') }} </small>
                     </div>
                 </div>
             </div>
@@ -325,69 +331,13 @@
                             </div>
 
                         </div>
-                        <p class="mb-1"><strong> TEMA </strong></p>
-                        <h4 class="card-title mb-3 text-white"><strong> {{ number_format($salariesTemaSum, 2) }} </strong> </h4>
-                        <small class="fw-medium"> TOTAL : {{ $salariesTemaCount }} </small>
+                        <p class="mb-1"><strong> PENSIONS </strong></p>
+                        <h4 class="card-title mb-3 text-white"><strong> &#x20B5; {{ number_format($salariesPensions->sum('cont13_5'), 2) }} </strong> </h4> <br>
+                        <small class="fw-medium"> TOTAL : {{ $salariesPensions->sum('total_employees') }} </small>
                     </div>
                 </div>
             </div>
 
-
-
-            <div class="col-lg-2">
-                <div  class="card h-100 bg-dark text-white">
-                    <div class="card-body">
-                        <div class="card-title d-flex align-items-start justify-content-between mb-4">
-                            <div class="avatar flex-shrink-0">
-                                <img
-                                    src="{{ asset('img/icons/unicons/paypal.png') }}"
-                                    class="rounded" />
-                            </div>
-
-                        </div>
-                        <p class="mb-1">TAKORADI</p>
-                        <h4 class="card-title mb-3 text-white">  {{ number_format($salariesTakoradiSum, 2) }} </h4>
-                        <small class="fw-medium"> TOTAL : {{ $salariesTakoradiCount }}   </small>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-lg-2">
-                <div  class="card h-100 bg-dark text-white">
-                    <div class="card-body">
-                        <div class="card-title d-flex align-items-start justify-content-between mb-4">
-                            <div class="avatar flex-shrink-0">
-                                <img
-                                    src="{{ asset('img/icons/unicons/paypal.png') }}"
-                                    class="rounded" />
-                            </div>
-
-                        </div>
-                        <p class="mb-1"> <strong> KOFORIDUA </strong> </p>
-                        <h4 class="card-title mb-3 text-white"> {{ number_format($salariesKoforiduaSum, 2) }} </h4>
-                        <small class="fw-medium"> TOTAL : {{ $salariesKoforiduaCount }}  </small>
-                    </div>
-                </div>
-            </div>
-
-
-            <div class="col-lg-2 m-3">
-                <div  class="card h-100 bg-dark text-white">
-                    <div class="card-body">
-                        <div class="card-title d-flex align-items-start justify-content-between mb-4">
-                            <div class="avatar flex-shrink-0">
-                                <img
-                                    src="{{ asset('img/icons/unicons/paypal.png') }}"
-                                    class="rounded" />
-                            </div>
-
-                        </div>
-                        <p class="mb-1"><strong> KUMASI </strong> </p>
-                        <h4 class="card-title mb-3 text-white"> {{ number_format($salariesKumasiSum, 2) }} </h4>
-                        <small class="fw-medium"> TOTAL : {{ $salariesKumasiCount }}  </small>
-                    </div>
-                </div>
-            </div>
 
         </div> <br> <br>
                      <div class="card-header  ml-2  d-none d-lg-block">
@@ -400,7 +350,7 @@
         <div class="nav-align-top">
             <ul class="nav nav-pills mb-4 nav-fill" role="tablist">
 
-                @if(Auth::user()->field?->name == 'Accra' || Auth::user()->hasRole(['Finance Manager', 'Invoice']) )
+                @if(Auth::user()->hasRole(['Finance Manager', 'Invoice']) )
                 <li class="nav-item mb-1 mb-sm-0">
                     <button
                         type="button"
@@ -411,15 +361,13 @@
                         aria-controls="navs-pills-justified-accra"
                         aria-selected="true">
                         <span class="d-none d-sm-inline-flex align-items-center">
-                            <i class="icon-base bx bx-home icon-sm me-1_5"></i>Accra
-                            <span class="badge rounded-pill bg-danger ms-1_5">{{$salariesAccraCount}}</span>
+                            <i class="icon-base bx bx-home icon-sm me-1_5"></i>Banks
+                            <span class="badge rounded-pill bg-danger ms-1_5"> {{ $groupedBankSalaries->count() }} </span>
                         </span>
                         <i class="icon-base bx bx-home icon-sm d-sm-none"></i>
                     </button>
                 </li>
-                @endif
 
-                @if(Auth::user()->field?->name == 'Botwe' || Auth::user()->hasRole(['Finance Manager', 'Invoice']) )
                 <li class="nav-item">
                     <button
                         type="button"
@@ -429,15 +377,13 @@
                         data-bs-target="#navs-pills-justified-botwe"
                         aria-controls="navs-pills-justified-botwe"
                         aria-selected="false">
-                        <span class="d-none d-sm-inline-flex align-items-center"><i class="icon-base bx bx-home icon-sm me-1_5"></i>Botwe
-                            <span class="badge rounded-pill bg-danger ms-1_5">{{$salariesBotweCount}}</span>
+                        <span class="d-none d-sm-inline-flex align-items-center"><i class="icon-base bx bx-home icon-sm me-1_5"></i>Cash
+                            <span class="badge rounded-pill bg-danger ms-1_5"> {{ $groupedCashkSalaries->count() }} </span>
                         </span>
                         <i class="icon-base bx bx-home icon-sm d-sm-none"></i>
                     </button>
                 </li>
-                @endif
 
-                @if(Auth::user()->field?->name == 'Tema' || Auth::user()->hasRole(['Finance Manager', 'Invoice']) )
                 <li class="nav-item mb-1 mb-sm-0">
                     <button
                         type="button"
@@ -447,15 +393,13 @@
                         data-bs-target="#navs-pills-justified-shyhills"
                         aria-controls="navs-pills-justified-shyhills"
                         aria-selected="false">
-                        <span class="d-none d-sm-inline-flex align-items-center"><i class="icon-base bx bx-home icon-sm me-1_5"></i>ShaiHills
-                            <span class="badge rounded-pill bg-danger ms-1_5">{{$salariesShyhillsCount}}</span>
+                        <span class="d-none d-sm-inline-flex align-items-center"><i class="icon-base bx bx-home icon-sm me-1_5"></i>Tax
+                            <span class="badge rounded-pill bg-danger ms-1_5"> {{ $salariesTaxes->count() }} </span>
                         </span>
                         <i class="icon-base bx bx-home icon-sm d-sm-none"></i>
                     </button>
                 </li>
-                @endif
 
-                @if(Auth::user()->field?->name == 'Tema' || Auth::user()->hasRole(['Finance Manager', 'Invoice']) )
                 <li class="nav-item mb-1 mb-sm-0">
                     <button
                         type="button"
@@ -465,106 +409,53 @@
                         data-bs-target="#navs-pills-justified-tema"
                         aria-controls="navs-pills-justified-tema"
                         aria-selected="false">
-                        <span class="d-none d-sm-inline-flex align-items-center"><i class="icon-base bx bx-home icon-sm me-1_5"></i>Tema
-                            <span class="badge rounded-pill bg-danger ms-1_5">{{$salariesTemaCount}}</span>
+                        <span class="d-none d-sm-inline-flex align-items-center"><i class="icon-base bx bx-home icon-sm me-1_5"></i>Pensions
+                            <span class="badge rounded-pill bg-danger ms-1_5"> {{ $salariesPensions->count() }}</span>
                         </span>
                         <i class="icon-base bx bx-home icon-sm d-sm-none"></i>
                     </button>
                 </li>
-                @endif
 
-                @if(Auth::user()->field?->name == 'Takoradi' || Auth::user()->hasRole(['Finance Manager','Invoice' ]) )
-                <li class="nav-item">
-                    <button
-                        type="button"
-                        class="nav-link"
-                        role="tab"
-                        data-bs-toggle="tab"
-                        data-bs-target="#navs-pills-justified-takoradi"
-                        aria-controls="navs-pills-justified-takoradi"
-                        aria-selected="false">
-                        <span class="d-none d-sm-inline-flex align-items-center"><i class="icon-base bx bx-home icon-sm me-1_5"></i>Takoradi
-                            <span class="badge rounded-pill bg-danger ms-1_5">{{$salariesTakoradiCount}}</span>
-                        </span>
-                        <i class="icon-base bx bx-home icon-sm d-sm-none"></i>
-                    </button>
-                </li>
-                @endif
-
-                @if(Auth::user()->field?->name == 'Koforidua' || Auth::user()->hasRole(['Finance Manager','Invoice']) )
-                <li class="nav-item">
-                    <button
-                        type="button"
-                        class="nav-link"
-                        role="tab"
-                        data-bs-toggle="tab"
-                        data-bs-target="#navs-pills-justified-koforidua"
-                        aria-controls="navs-pills-justified-koforidua"
-                        aria-selected="false">
-                        <span class="d-none d-sm-inline-flex align-items-center"><i class="icon-base bx bx-home icon-sm me-1_5"></i>Koforidua
-                            <span class="badge rounded-pill bg-danger ms-1_5">{{$salariesKoforiduaCount}}</span>
-                        </span>
-                        <i class="icon-base bx bx-home icon-sm d-sm-none"></i>
-                    </button>
-                </li>
-                @endif
-
-                @if(Auth::user()->field?->name == 'Kumasi' || Auth::user()->hasRole(['Finance Manager', 'Invoice']))
-                <li class="nav-item">
-                    <button
-                        type="button"
-                        class="nav-link"
-                        role="tab"
-                        data-bs-toggle="tab"
-                        data-bs-target="#navs-pills-justified-kumasi"
-                        aria-controls="navs-pills-justified-kumasi"
-                        aria-selected="false">
-                        <span class="d-none d-sm-inline-flex align-items-center"><i class="icon-base bx bx-home icon-sm me-1_5"></i>Kumasi
-                            <span class="badge rounded-pill bg-danger ms-1_5">{{$salariesKumasiCount}}</span>
-                        </span>
-                        <i class="icon-base bx bx-home icon-sm d-sm-none"></i>
-                    </button>
-                </li>
                 @endif
 
             </ul>
 
 
             <div class="tab-content">
-                @if(Auth::user()->field?->name == 'Accra')
                 <div class="tab-pane fade show active" id="navs-pills-justified-accra" role="tabpanel">
                     <div class="table-responsive">
                         <table id="myTableiAccra" class="display">
                             <thead>
                                 <tr>
-                                    <!-- <th>#</th> -->
                                     <th>#</th>
-                                    <th>Bank ID.</th>
                                     <th>Bank Name</th>
-                                    <th>Total Amount </th>
+                                    <th>Gross Salary</th>
+                                    <th>Total Deductions</th>
+                                    <th>Cost to Company</th>
+                                    <th>Employees</th>
                                     <th> View Employees</th>
-     
                                 </tr>
                             </thead>
                             <tbody class="table-border-bottom-0">
                                 @foreach($groupedBankSalaries as $key => $banks)
-
                                 <tr>
                                     <td> {{ $key + 1 }} </td>
-                                    <td> {{ $banks->bank_id }} </td>
                                     <td> {{ $banks->bank->name }} </td>
-                                    <td> GH&#x20B5; {{ number_format($banks->total_salary, 2) }} </td>
+                                    <td> GH&#x20B5; {{ number_format($banks->gross, 2) }} </td>
+                                    <td> GH&#x20B5; {{ number_format($banks->deductions, 2) }} </td>
+                                    <td> GH&#x20B5; {{ number_format($banks->paid, 2) }} </td>
+                                    <td> {{ $banks->total_employees }} </td>
                                     <td> 
-
+                                        <a href="" class="btn btn-dark btn-sm">
+                                            <i class="bx bx-show"></i> 
+                                        </a>    
                                     </td>
                                 </tr>
-
                                 @endforeach
                             </tbody>
                         </table>
                     </div>
                 </div>
-                @endif
 
 
                 <div class="tab-pane fade" id="navs-pills-justified-botwe" role="tabpanel">
@@ -573,20 +464,32 @@
                         <table id="myTableiBotwe" class="display">
                             <thead>
                                 <tr>
-                                    <!-- <th>#</th> -->
-                                    <th>Invoice No.</th>
-                                  
+                                    <th>#</th>
+                                    <th>Field</th>
+                                    <th>Gross Salary</th>
+                                    <th>Total Deductions</th>
+                                    <th>Cost to Company</th>
+                                    <th>Employees</th>
+                                    <th> View Employees</th>
                                 </tr>
                             </thead>
                             <tbody class="table-border-bottom-0">
-
-                                @foreach($salariesBotwe as $botwe)
+                                @foreach($groupedCashkSalaries as $key => $cash)
                                 <tr>
-                                    <td>  </td>
+                                    <td> {{ $key + 1 }} </td>
+                                    <td>{{ $cash->field?->name }}</td>
+                                    <td> GH&#x20B5; {{ number_format($cash->gross, 2) }} </td>
+                                    <td> GH&#x20B5; {{ number_format($cash->deductions, 2) }} </td>
+                                    <td> GH&#x20B5; {{ number_format($cash->paid, 2) }} </td>
+                                    <td> {{ $cash->total_employees }} </td>
+                                    <td> 
+                                        <a href="" class="btn btn-dark btn-sm">
+                                            <i class="bx bx-show"></i> 
+                                        </a>    
+                                    </td>
                                    
                                 </tr>
                                 @endforeach
-
                             </tbody>
                         </table>
                     </div>
@@ -597,18 +500,31 @@
                         <table id="myTableiShyhills" class="display">
                             <thead>
                                 <tr>
-                                    <!-- <th>#</th> -->
-                                    <th>Invoice No.</th>
+                                   
+                                    <th>#</th>
+                                    <th>Field</th>
+                                    <th>Total Paid</th>
+                                    <th>Total Tax</th>
+                                    <th>Employees</th>
+                                    <th>View Employees</th>
                                    
                                 </tr>
                             </thead>
                             <tbody class="table-border-bottom-0">
-                                @foreach($salariesShyhills as $shyhills)
-                                <tr>
-                                    <td>  </td>
-                                    
+                               @foreach ($salariesTaxes as $key => $taxes)
+                                   <tr>
+                                    <td> {{ $key + 1 }} </td>
+                                    <td>{{ $taxes->field?->name }}</td>
+                                    <td> GH&#x20B5; {{ number_format($taxes->paid, 2) }} </td>
+                                    <td> GH&#x20B5; {{ number_format($taxes->tax, 2) }} </td>
+                                    <td> {{ $taxes->total_employees }} </td>
+                                    <td> 
+                                        <a href="" class="btn btn-dark btn-sm">
+                                            <i class="bx bx-show"></i> 
+                                        </a>    
+                                    </td>   
                                 </tr>
-                                @endforeach
+                                 @endforeach
                             </tbody>
                         </table>
                     </div>
@@ -620,99 +536,39 @@
                         <table id="myTableiTema" class="display">
                             <thead>
                                 <tr>
-                                    <!-- <th>#</th> -->
-                                    <th>Invoice No.</th>
-                                 
+                                   
+                                    <th>#</th>
+                                    <th>Field</th>
+                                    <th>Tier 1</th>
+                                    <th>Tier 2</th>
+                                    <th>Cont 13</th>
+                                    <th>Cont 13.5</th>
+                                    <th>Employees</th>
+                                    <th> View Employees</th>
                                 </tr>
                             </thead>
                             <tbody class="table-border-bottom-0">
-                                @foreach($salariesTema as $tema)
-                                <tr>
-                                    <td> </td>
+                              @foreach ($salariesPensions as $key => $pensions)
+                                   <tr>
+                                    <td> {{ $key + 1 }} </td>
+                                    <td>{{ $pensions->field?->name }}</td>
+                                    <td> GH&#x20B5; {{ number_format($pensions->tier1, 2) }} </td>
+                                    <td> GH&#x20B5; {{ number_format($pensions->tier2, 2) }} </td>
+                                    <td> GH&#x20B5; {{ number_format($pensions->cont13, 2) }} </td>
+                                    <td> GH&#x20B5; {{ number_format($pensions->cont13_5, 2) }} </td>
+                                    <td> {{ $pensions->total_employees }} </td>
+                                    <td> 
+                                        <a href="" class="btn btn-dark btn-sm">
+                                            <i class="bx bx-show"></i> 
+                                        </a>    
+                                    </td>   
                                 </tr>
-                                @endforeach 
+                                    @endforeach 
                             </tbody>
                         </table>
                     </div>
 
                 </div>
-
-                <div class="tab-pane fade" id="navs-pills-justified-takoradi" role="tabpanel">
-                    <div class="table-responsive text-nowrap">
-                        <table id="myTableiTakoradi" class="display">
-                            <thead>
-                                <tr>
-                                    <!-- <th>#</th> -->
-                                    <th>Invoice No.</th>
-
-                                </tr>
-                            </thead>
-                            <tbody class="table-border-bottom-0">
-
-                                @foreach($salariesTakoradi as $takoradi)
-                                <tr>
-                                    <td>  </td>
-
-                                </tr>
-                                @endforeach
-
-                            </tbody>
-                        </table>
-                    </div>
-
-                </div>
-
-                <div class="tab-pane fade" id="navs-pills-justified-koforidua" role="tabpanel">
-
-                    <div class="table-responsive text-nowrap">
-                        <table id="myTableiKoforidua" class="display">
-                            <thead>
-                                <tr>
-                                    <!-- <th>#</th> -->
-                                    <th>Invoice No.</th>
-                                </tr>
-                            </thead>
-                            <tbody class="table-border-bottom-0">
-
-                                @foreach($salariesKoforidua as $koforidua)
-                                <tr>
-                                    <td> </td>
-
-                                </tr>
-                                @endforeach
-
-                            </tbody>
-                        </table>
-                    </div>
-
-                </div>
-
-                <div class="tab-pane fade" id="navs-pills-justified-kumasi" role="tabpanel">
-
-                    <div class="table-responsive text-nowrap">
-                        <table id="myTableiKumasi" class="display">
-                            <thead>
-                                <tr>
-                                    <!-- <th>#</th> -->
-                                    <th>Invoice No.</th>
-
-                                </tr>
-                            </thead>
-                            <tbody class="table-border-bottom-0">
-
-                                @foreach($salariesKumasi as $kumasi)
-                                <tr>
-                                    <td>  </td>
-
-                                </tr>
-                                @endforeach
-
-                            </tbody>
-                        </table>
-                    </div>
-
-                </div>
-
 
             </div>
         </div>
