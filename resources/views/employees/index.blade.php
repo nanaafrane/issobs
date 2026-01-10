@@ -306,8 +306,9 @@
                         </div>
                         <p class="mb-1"><strong> BOTWE </strong></p>
                         <h4 class="card-title mb-3 text-white"><strong> {{ $employeeBotweActive }} </strong> </h4>
-                        <small class="fw-medium"> TOTAL EMPLOYEES : {{ $employeeBotwe }} </small> <br> <hr>
-                        <small class="fw-medium"> TERMINATED : {{ $employeeBotweTerminated }} </small>
+                        <small class="fw-medium"> TERMINATED : {{ $employeeBotweTerminated }} </small>  <br> <hr>
+                        <small class="fw-medium"> TOTAL EMPLOYEES : {{ $employeeBotwe }} </small>
+
                     </div>
                 </div>
             </div>
@@ -327,8 +328,8 @@
                         </div>
                         <p class="mb-1"><strong> SHAIHILLS </strong></p>
                         <h4 class="card-title mb-3 text-white"><strong> {{ $employeeShyhillsActive }} </strong> </h4>
-                        <small class="fw-medium"> TOTAL EMPLOYEES : {{ $employeeShyhills }} </small> <br> <hr>
-                        <small class="fw-medium"> TERMINATED : {{ $employeeShyhillsTerminated }} </small>
+                        <small class="fw-medium"> TERMINATED : {{ $employeeShyhillsTerminated }} </small> <br> <hr>
+                        <small class="fw-medium"> TOTAL EMPLOYEES : {{ $employeeShyhills }} </small> 
                     </div>
                 </div>
             </div>
@@ -346,8 +347,8 @@
                         </div>
                         <p class="mb-1"><strong> TEMA </strong></p>
                         <h4 class="card-title mb-3 text-white"><strong> {{ $employeeTemaActive }} </strong> </h4>
-                        <small class="fw-medium"> TOTAL EMPLOYEES : {{ $employeeTema }} </small> <br> <hr>
-                        <small class="fw-medium"> TERMINATED : {{ $employeeTemaTerminated }} </small>
+                        <small class="fw-medium"> TERMINATED : {{ $employeeTemaTerminated }} </small> <br> <hr>
+                        <small class="fw-medium"> TOTAL EMPLOYEES : {{ $employeeTema }} </small> 
                     </div>
                 </div>
             </div>
@@ -367,8 +368,8 @@
                         </div>
                         <p class="mb-1">TAKORADI</p>
                         <h4 class="card-title mb-3 text-white"> {{ $employeeTakoradiActive }} </h4>
-                        <small class="fw-medium"> TOTAL EMPLOYEES : {{ $employeeTakoradi }} </small> <br> <hr>
-                        <small class="fw-medium"> TERMINATED : {{ $employeeTakoradiTerminated }} </small>
+                        <small class="fw-medium"> TERMINATED : {{ $employeeTakoradiTerminated }} </small> <br> <hr>
+                        <small class="fw-medium"> TOTAL EMPLOYEES : {{ $employeeTakoradi }} </small> 
                     </div>
                 </div>
             </div>
@@ -386,8 +387,8 @@
                         </div>
                         <p class="mb-1"> <strong> KOFORIDUA </strong> </p>
                         <h4 class="card-title mb-3 text-white"> {{ $employeeKoforiduaActive }} </h4>
-                        <small class="fw-medium"> TOTAL EMPLOYEES : {{ $employeeKoforidua }} </small> <br> <hr>
-                        <small class="fw-medium"> TERMINATED : {{ $employeeKoforiduaTerminated }} </small>
+                        <small class="fw-medium"> TERMINATED : {{ $employeeKoforiduaTerminated }} </small> <br> <hr>
+                        <small class="fw-medium"> TOTAL EMPLOYEES : {{ $employeeKoforidua }} </small> 
                     </div>
                 </div>
             </div>
@@ -406,8 +407,8 @@
                         </div>
                         <p class="mb-1"><strong> KUMASI </strong> </p>
                         <h4 class="card-title mb-3 text-white"> {{ $employeeKumasiActive }} </h4>
-                        <small class="fw-medium"> TOTAL EMPLOYEES : {{ $employeeKumasi }} </small> <br> <hr>
-                        <small class="fw-medium"> TERMINATED : {{ $employeeKumasiTerminated }} </small>
+                        <small class="fw-medium"> TERMINATED : {{ $employeeKumasiTerminated }} </small> <br> <hr>
+                        <small class="fw-medium"> TOTAL EMPLOYEES : {{ $employeeKumasi }} </small> 
                     </div>
                 </div>
             </div>
@@ -440,6 +441,7 @@
                                 <th> Location </th>
                                 <th>Payment Type</th>
                                 <th>Status</th>
+                                <th>Created</th>
                                 <th>Action</th>
                             </tr>
                         </thead>
@@ -452,7 +454,7 @@
                                 <td>{{$employee->name}}  </td>
                                 <td>{{ $employee->gender }}  </td>
                                 <td>{{ $employee->phone_number }}  </td>
-                                <td>{{ $employee->date_of_joining->diffForHumans() }} </td>
+                                <td>{{ $employee->date_of_joining?->diffForHumans() }} </td>
                                 <td> {{ $employee->department?->name }} </td>
                                 <td> {{ $employee->role?->name }}  </td>
                                 <td> {{ $employee->field?->name }}   </td>
@@ -464,7 +466,7 @@
                                 @else
                                 <td><span class="badge bg-label-danger">{{$employee->status}}</span></td>
                                 @endif
-                                
+                                <td>{{ $employee->created_at?->format('F, Y') }} </td>
                                 <td>
                                 <div class="dropdown">
                                     <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown">

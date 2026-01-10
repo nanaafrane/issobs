@@ -115,7 +115,7 @@ class SalaryController extends Controller
 
         $salariesTaxes = Salary::where('salary_month', $date)->where('tax', '>', 0)->whereIn('field_id', $fields->pluck('id')->toArray())->groupBy('field_id')->get(['field_id', DB::raw('SUM(cost_to_company) as paid'), DB::raw('SUM(tax) as tax'),  DB::raw('COUNT(*) as total_employees')]);
 
-        $salariesPensions = Salary::where('salary_month', $date)->where('ssnit_tobe_paid13_5', '>', 0)->whereIn('field_id', $fields->pluck('id')->toArray())->groupBy('field_id')->get(['field_id', DB::raw('SUM(ssnit_tier1_0_5) as tier1'), DB::raw('SUM(ssnit_tier2_5) as tier2'), DB::raw('SUM(ssnit_comp_cont_13) as cont13'), DB::raw('SUM(ssnit_tobe_paid13_5) as cont13_5'),   DB::raw('COUNT(*) as total_employees')]);
+        $salariesPensions = Salary::where('salary_month', $date)->where('ssnit_tobe_paid13_5', '>', 0)->whereIn('field_id', $fields->pluck('id')->toArray())->groupBy('field_id')->get(['field_id', DB::raw('SUM(ssnit_tier1_0_5) as tier1'), DB::raw('SUM(ssnit_tier2_5) as tier2'), DB::raw('SUM(ssnit_comp_cont_13) as cont13'), DB::raw('SUM(ssnit_tobe_paid13_5) as cont13_5'),  DB::raw('SUM(cost_to_company) as paid'),   DB::raw('COUNT(*) as total_employees')]);
 
 
 
@@ -159,6 +159,59 @@ class SalaryController extends Controller
         return view('salaries.transaction', compact('salaries', 'salariesAccraSum', 'salariesAccraCount', 'salariesBotweSum', 'salariesBotweCount', 'salariesTemaSum', 'salariesTemaCount', 'salariesTakoradiSum', 'salariesTakoradiCount', 'salariesKoforiduaSum', 'salariesKoforiduaCount', 'salariesKumasiSum', 'salariesKumasiCount', 'salariesShyhillsSum', 'salariesShyhillsCount'));
 
     }
+
+    /**
+     * Display salaries bank month view.
+     */
+    public function bankMonth($bank_id, $month)
+    {
+        // get all from salaries where payment type is bank and is equal to incoming bank_id and month is in current month
+        $bank = Bank::findOrfail($bank_id);
+        $BankSalaries = Salary::where('salary_month', $month)->where('bank_id', $bank_id)->get();
+        // dd( $BankSalaries);
+        return view('salaries.bankmonth', compact('BankSalaries', 'bank', 'month'));
+    }
+
+
+
+    /**
+     * Display salaries Cash month view.
+     */
+    public function cashMonth($field_id, $month)
+    {
+        // get all cash salaries where field office is field_id and month is incoming month
+        $field = Field::findOrfail($field_id);
+        // dd($field->name, $month);
+        $CashSalaries = Salary::where('salary_month', $month)->where('payment_type', 'Cash')->where('field_id', $field_id)->get();
+        // dd($CashSalaries);
+        return view('salaries.cashmonth', compact('CashSalaries', 'field', 'month'));
+
+    }
+
+
+    /**
+     * Display salaries Taxes for a month.
+     */
+    public function TaxMonth($field_id, $month)
+    {
+        // dd($field_id, $month);
+        $field = Field::findOrfail($field_id);
+        $salariesTaxes = Salary::where('salary_month', $month)->where('tax', '>', 0)->where('field_id', $field_id)->get();
+        return view('salaries.taxmonth', compact('salariesTaxes', 'field', 'month'));
+    }
+
+
+        /**
+     * Display salaries Pensions for a month.
+     */
+    public function PensionMonth($field_id, $month)
+    {
+        // dd($field_id, $month);
+        $field = Field::findOrfail($field_id);
+        $salariesPensions = Salary::where('salary_month', $month)->where('ssnit_tobe_paid13_5', '>', 0)->where('field_id', $field_id)->get();
+        return view('salaries.pensionmonth', compact('salariesPensions', 'field', 'month'));
+    }
+
 
 
     /**

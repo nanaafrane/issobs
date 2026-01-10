@@ -453,7 +453,7 @@
                             <tr>
                                 <td> {{ $salary->id }} </td>
                                 <td> {{$salary->salary_month?->format('F, Y')}} </td>
-                                <td> {{ $salary->employee?->name }} </td>
+                                <td> {{ strtoupper($salary->employee?->name) }} </td>
                                 <td> {{ $salary->field?->name }} </td>
                                 <td> {{ $salary->client?->name }} {{ $salary->client?->business_name }} </td>
                                 <td> {{$salary->paymentInfo?->ssnit_number}}</td>

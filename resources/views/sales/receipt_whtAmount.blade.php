@@ -4,6 +4,7 @@
     @section('css')
     <link rel="stylesheet" href="https://cdn.datatables.net/2.3.3/css/dataTables.dataTables.css" />
     <link rel="stylesheet" href="https://cdn.datatables.net/buttons/3.2.4/css/buttons.dataTables.css">
+    <link href="https://cdn.datatables.net/columncontrol/1.1.1/css/columnControl.dataTables.min.css" rel="stylesheet">
     @endsection
 
 
@@ -418,7 +419,7 @@
                             <th>R. Month</th>
                             <th>Client Name</th>
                             <th>Phone No.</th>
-                            <th>Business Name </th>
+                            <!-- <th>Business Name </th> -->
                             <th> Field Office </th>
                             <!-- <th> Stuff </th> -->
                             <th>Date Created</th>
@@ -437,9 +438,14 @@
                             <td>FWSSR{{$receipt->id}}</td>
                             <td>FWSSi{{$receipt->invoice_id}} </td>
                             <td> {{$receipt->receipt_month?->format('F, Y')}} </td>
-                            <td> {{$receipt->client->name}}</td>
-                            <td> {{$receipt->client->phone_number}} </td>
+                            @if ($receipt->client->name === $receipt->client->business_name)
                             <td> {{$receipt->client->business_name}} </td>
+                            @else
+                            <td> {{$receipt->client->name}} {{$receipt->client->business_name}} </td>
+                            @endif
+
+                            <td> {{$receipt->client->phone_number}} </td>
+                            <!-- <td> </td> -->
                             <td> {{$receipt->client->field->name}} </td>
                             <td> {{$receipt->created_at->diffForHumans()}} </td>
 
@@ -479,6 +485,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
     <script src="https://cdn.datatables.net/buttons/3.2.4/js/buttons.html5.min.js"></script>
+    <script src="https://cdn.datatables.net/columncontrol/1.1.1/js/dataTables.columnControl.min.js"></script>
 
 
     <script>
@@ -489,11 +496,12 @@
                 topStart: {
                     buttons: ['excelHtml5', 'pdfHtml5']
                 }
-            }
+            },
+            columnControl: [
+                ['search']
+            ]
         });
     </script>
-
-
     @endsection
 
 </x-sales-dashboard>

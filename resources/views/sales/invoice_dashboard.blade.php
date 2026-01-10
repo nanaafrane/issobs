@@ -3,6 +3,8 @@
     @section('css')
     <link rel="stylesheet" href="https://cdn.datatables.net/2.3.3/css/dataTables.dataTables.css" />
     <link rel="stylesheet" href="https://cdn.datatables.net/buttons/3.2.4/css/buttons.dataTables.css">
+    <link href="https://cdn.datatables.net/columncontrol/1.1.1/css/columnControl.dataTables.min.css" rel="stylesheet">
+
     @endsection
 
 
@@ -554,19 +556,20 @@
                 <table id="myTable" class="display">
                     <thead>
                         <tr>
-                                            <th>#</th>
-                                            <th>Invoice No.</th>
-                                            <th>Invoice Month</th>
-                                            <th>Client Name</th>
-                                            <th>Phone No.</th>
-                                            <th>Business Name </th>
-                                            <th> Field Office </th>
-                                            <th> Staff </th>
-                                            <th>Date Created</th>
-                                            <th>Due Date</th>
-                                            <th>Amount</th>
-                                            <th>Status</th>
-                                            <th>Action</th>
+                            <th>#</th>
+                            <th>Invoice No.</th>
+                            <th>Invoice Month</th>
+                            <th>Client Name</th>
+                            <th>Phone No.</th>
+                            <th> Field Office </th>
+                            <th> Staff </th>
+                            <th>Date Created</th>
+                            <th>Due Date</th>
+                            <th>Inv. Amount</th>
+                            <th>Paid</th>
+                            <th>Balance</th>
+                            <th>Status</th>
+                            <th>Action</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -577,24 +580,42 @@
                              <td>{{$key +1 }}</td>
                                 <td> #FWSSi{{$invoice->id}} </td>
                                 <td> {{ $invoice->invoice_month?->format('F, Y') }}</td>
-                                <td> {{$invoice->client->name}}</td>
-                                <td> {{$invoice->client->phone_number}} </td>
+                                @if ($invoice->client->name === $invoice->client->business_name)
                                 <td> {{$invoice->client->business_name}} </td>
+                                @else
+                                <td> {{$invoice->client->name}} {{$invoice->client->business_name}} </td>
+                                @endif
+                                <td> {{$invoice->client->phone_number}} </td>
                                 <td> {{$invoice->client->field->name}} </td>
                                 <td> {{$invoice->user->name}} </td>
                                 <td> {{$invoice->created_at->format('F l d, Y, H:i A')}} </td>
                                 <td> {{$invoice->due_date->diffForHumans()}} </td>
                                 <td> GH&#x20B5; {{number_format($invoice->total,2)}} </td>
+                                @if ($invoice->status == 'completed')
+                                <td> GH&#x20B5;{{ number_format($invoice->total, 2)}} </td>
+                                @elseif($invoice->status == 'uncompleted')
+                                <td> GH&#x20B5;{{ number_format($invoice->total - $invoice->balance, 2)}} </td>
+                                @else
+                                <td> GH&#x20B5; 0.00 </td>
+                                @endif
+
+                                @if ($invoice->status == 'unpaid')
+                                <td> GH&#x20B5; {{number_format($invoice?->total,2)}} </td> 
+                                @else
+                                <td> GH&#x20B5; {{number_format($invoice?->balance,2)}} </td> 
+                                @endif
+
+
                                 @if($invoice->status == 'completed')
                                 <td><span class="badge bg-label-success">{{$invoice->status}}</span></td>
                                 @else
                                 <td><span class="badge bg-label-danger">{{$invoice->status}}</span></td>
                                 @endif
-                                            <td>
-                                                <a href="{{url('invoice', $invoice->id)}}" class="btn btn-danger">
-                                                    <i class="icon-base bx bxs-bullseye"></i>
-                                                </a>
-                                            </td>
+                                <td>
+                                    <a href="{{url('invoice', $invoice->id)}}" class="btn btn-danger">
+                                        <i class="icon-base bx bxs-bullseye"></i>
+                                    </a>
+                                </td>
                         </tr>
                         @endforeach
                         @elseif(Auth::user()->field?->name == 'Accra')
@@ -778,6 +799,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
     <script src="https://cdn.datatables.net/buttons/3.2.4/js/buttons.html5.min.js"></script>
+    <script src="https://cdn.datatables.net/columncontrol/1.1.1/js/dataTables.columnControl.min.js"></script>
 
 
     <script>
@@ -788,7 +810,10 @@
                 topStart: {
                     buttons: ['excelHtml5', 'pdfHtml5']
                 }
-            }
+            },
+            columnControl: [
+                ['search']
+            ]
         });
     </script>
 

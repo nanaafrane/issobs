@@ -1,10 +1,8 @@
 <x-hr-dashboard>
 
     @section('css')
-    <link rel="stylesheet" href="https://cdn.datatables.net/2.3.3/css/dataTables.dataTables.css" />
-    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/3.2.4/css/buttons.dataTables.css">
-
-    <link href="https://cdn.datatables.net/columncontrol/1.1.1/css/columnControl.dataTables.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.datatables.net/2.3.5/css/dataTables.dataTables.css" />
+    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/3.2.5/css/buttons.dataTables.css">    
     @endsection
 
 
@@ -209,7 +207,7 @@
                     </a>
                     <ul class="menu-sub">
                     @if(Auth::user()->hasPermission('HR') || Auth::user()->hasRole(['Invoice']))
-                    <li class="menu-item active">
+                    <li class="menu-item ">
                         <a href="{{ url('salaries') }}" class="menu-link">
                         <i class="menu-icon tf-icons bx bxs-user-account"></i>
                         <div class="text-truncate" data-i18n="Employees">Add to Salaries</div>
@@ -217,14 +215,14 @@
                     </li>
                     @endif
 
-                    <li class="menu-item">
+                    <li class="menu-item ">
                         <a href="{{ url('salaries/create') }}" class="menu-link">
                         <i class="menu-icon tf-icons bx bx-money-withdraw"></i>
                         <div class="text-truncate" data-i18n="Salaries">Salaries</div>
                         </a>
                     </li>
 
-                    <li class="menu-item">
+                    <li class="menu-item active">
                         <a href="{{ url('salariesTransaction') }}" class="menu-link">
                         <i class="menu-icon tf-icons bx bx-transfer-alt"></i>
                         <div class="text-truncate" data-i18n="Transaction">Transactions</div>
@@ -252,218 +250,69 @@
 
         <div class="row">
             <div class="col-12">
-                <h3 class="card-header"> <i class="icon-base bx bx-bxs-user-detail"></i> Active Employees </h3>
+                <h3 class="card-header"> <i class="icon-base bx bx-transfer-alt"></i> {{ $field->name }}   @if (isset($month)) <strong> / For Month: {{  \Carbon\Carbon::parse($month)->format('F Y') }}</strong> @endif </h3>
+
             </div>
         </div><br>
 
-        @if(Auth::user()->hasRole(['Invoice','Manager' ]))
+         @if(Auth::user()->hasRole(['Invoice','Manager', 'Finance Manager' ]))
         <div class="row">
-            <div class="col-lg-2">
+            <div class="col-lg-12 mb-4">
                 <div  class="card h-100 bg-dark text-white">
                     <div class="card-body">
                         <div class="card-title d-flex align-items-start justify-content-between mb-4">
                             <div class="avatar flex-shrink-0">
                                 <img
-                                    src="img/icons/unicons/paypal.png"
+                                    src="{{ asset('img/icons/unicons/paypal.png') }}"
                                     alt="chart success"
                                     class="rounded" />
                             </div>
                         </div>
-                        <p class="mb-1"><strong> ACCRA </strong> </p>
-                        <h4 class="card-title mb-3 text-white"><strong> {{ $employeeAccra }}  </strong> </h4>
-                        <small class="fw-medium"> TOTAL EMPLOYEES  </small>
+                        <p class="mb-1"><strong> FIELD OFFICE :  {{ strtoupper($field->name) }}  </strong> </p> <br>
+                        <h4 class="card-title mb-3 text-white"><strong> GH&#x20B5;  {{ number_format($salariesTaxes->sum('tax'), 2) }} </strong> </h4> <br>
+
                     </div>
                 </div>
             </div>
-
-            <div class="col-lg-2">
-                <div  class="card h-100 bg-dark text-white">
-                    <div class="card-body">
-                        <div class="card-title d-flex align-items-start justify-content-between mb-4">
-                            <div class="avatar flex-shrink-0">
-                                <img
-                                    src="img/icons/unicons/paypal.png"
-                                    alt="chart success"
-                                    class="rounded" />
-                            </div>
-                        </div>
-                        <p class="mb-1"><strong> BOTWE </strong></p>
-                        <h4 class="card-title mb-3 text-white"><strong> {{ $employeeBotwe }} </strong> </h4>
-                        <small class="fw-medium"> TOTAL EMPLOYEES </small>
-                    </div>
-                </div>
-            </div>
-
-
-            <div class="col-lg-2">
-                <div  class="card h-100 bg-dark text-white">
-                    <div class="card-body">
-                        <div class="card-title d-flex align-items-start justify-content-between mb-4">
-                            <div class="avatar flex-shrink-0">
-                                <img
-                                    src="img/icons/unicons/paypal.png"
-                                    alt="chart success"
-                                    class="rounded" />
-                            </div>
-
-                        </div>
-                        <p class="mb-1"><strong> SHAIHILLS </strong></p>
-                        <h4 class="card-title mb-3 text-white"><strong> {{ $employeeShyhills }} </strong> </h4>
-                        <small class="fw-medium"> TOTAL EMPLOYEES </small>
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-2">
-                <div  class="card h-100 bg-dark text-white">
-                    <div class="card-body">
-                        <div class="card-title d-flex align-items-start justify-content-between mb-4">
-                            <div class="avatar flex-shrink-0">
-                                <img
-                                    src="img/icons/unicons/paypal.png"
-                                    alt="chart success"
-                                    class="rounded" />
-                            </div>
-
-                        </div>
-                        <p class="mb-1"><strong> TEMA </strong></p>
-                        <h4 class="card-title mb-3 text-white"><strong> {{ $employeeTema }} </strong> </h4>
-                        <small class="fw-medium"> TOTAL EMPLOYEES </small>
-                    </div>
-                </div>
-            </div>
-
-
-
-            <div class="col-lg-2">
-                <div  class="card h-100 bg-dark text-white">
-                    <div class="card-body">
-                        <div class="card-title d-flex align-items-start justify-content-between mb-4">
-                            <div class="avatar flex-shrink-0">
-                                <img
-                                    src="img/icons/unicons/paypal.png"
-                                    class="rounded" />
-                            </div>
-
-                        </div>
-                        <p class="mb-1">TAKORADI</p>
-                        <h4 class="card-title mb-3 text-white"> {{ $employeeTakoradi }} </h4>
-                        <small class="fw-medium"> TOTAL EMPLOYEES   </small>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-lg-2">
-                <div  class="card h-100 bg-dark text-white">
-                    <div class="card-body">
-                        <div class="card-title d-flex align-items-start justify-content-between mb-4">
-                            <div class="avatar flex-shrink-0">
-                                <img
-                                    src="img/icons/unicons/paypal.png"
-                                    class="rounded" />
-                            </div>
-
-                        </div>
-                        <p class="mb-1"> <strong> KOFORIDUA </strong> </p>
-                        <h4 class="card-title mb-3 text-white">{{ $employeeKoforidua }}</h4>
-                        <small class="fw-medium"> TOTAL EMPLOYEES  </small>
-                    </div>
-                </div>
-            </div>
-
-
-            <div class="col-lg-2 m-3">
-                <div  class="card h-100 bg-dark text-white">
-                    <div class="card-body">
-                        <div class="card-title d-flex align-items-start justify-content-between mb-4">
-                            <div class="avatar flex-shrink-0">
-                                <img
-                                    src="img/icons/unicons/paypal.png"
-                                    class="rounded" />
-                            </div>
-
-                        </div>
-                        <p class="mb-1"><strong> KUMASI </strong> </p>
-                        <h4 class="card-title mb-3 text-white"> {{ $employeeKumasi }} </h4>
-                        <small class="fw-medium"> TOTAL EMPLOYEES  </small>
-                    </div>
-                </div>
-            </div>
-
-        </div> <br> <br>
-        @endif
-        <br>
-        <div class="card-header  ml-2  d-none d-lg-block">
-            @include('flash-messages')
         </div> <br>
+        @endif
 
-        
-            <div class="row">
-                <form action="/salaries" method="POST">
-                    @csrf
-                    <div class="col">
-                        <input class="form-check-input form-check-inline" type="checkbox" value="" id="options" />
-
-                        <div class="form-check form-check-inline">
-                            <select name="employees" class="form-select">
-                                <option value=""> Select All </option>
-                            </select>
-                        </div>
-                    
-                        <div class="form-check form-check-inline">
-                            <input type="month" name="salary_month" required/>
-                            
-                            <button class="btn btn-dark" type="submit" onclick="return confirm('Kindly Confirm?')"> <i class="icon-base bx bx-arrow-from-left"> </i> {{ __('Add To Salaries') }}</button>
-                        </div>
-                        <div class="card"> 
-                            <div class="card-body"> 
-                                <div class="table-responsive text-normal-dark"> 
-                                    <table id="myTable" class="display">
-                                        <thead>
-                                            <tr>
-                                            <th> </th>
-                                            <th>#</th>
-                                            <th> Employee ID </th>
-                                            <th>Name</th>
-                                            <th>Gender</th>
-                                            <th>Number</th>
-                                            <th> Employment Date </th>
-                                            <th> Department </th>
-                                            <th>Role</th>
-                                            <th>Field Office</th>
-                                            <th>Client </th>
-                                            <th> Location </th>
-                                            <th>Payment Type</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-
-                                            @foreach ($employees as $key => $employee )
-                                            <tr>
-                                                <td> <input class="checkBoxes form-check-input" type="checkbox" name="employees[]" value="{{ $employee->id }}" /></td>
-                                                <td> {{ $key + 1 }} </td>
-                                                <td>  FWSS {{ $employee->id }}  </td>
-                                                <td> {{ strtoupper($employee->name) }}  </td>
-                                                <td> {{ $employee->gender }}  </td>
-                                                <td> {{ $employee->phone_number }}  </td>
-                                                <td> {{ $employee->date_of_joining->diffForHumans() }} </td>
-                                                <td> {{ $employee->department?->name }} </td>
-                                                <td> {{ $employee->role?->name }}  </td>
-                                                <td> {{ $employee->field?->name }}   </td>
-                                                <td> {{ $employee->client?->name }} {{ $employee->client?->business_name }} </td>
-                                                <td> {{ $employee->location }} </td>
-                                                <td> {{ $employee->payment_type }}  </td>
-                                            </tr>
-                                            @endforeach
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
+        <!-- Table -->  
+        <hr> <br>
+        <div class="row">
+            <div class="col-lg-12 mb-4">
+                <div class="card">
+                    <h5 class="card-header"> Salaries TAXES </h5>
+                    <div class="card-body"> 
+                    <div class="table-responsive text-nowrap">
+                        <table class="table table-hover" id="myTable">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>#</th>
+                                    <th> EMPLOYEE NAME </th>
+                                    <th> FIELD OFFICE</th>
+                                    <th> TAX</th>
+                                </tr>
+                            </thead>
+                            <tbody class="table-border-bottom-0">
+                                @foreach($salariesTaxes as $key => $salary)
+                                <tr>
+                                    <td> {{ $key + 1 }} </td>
+                                    <td> {{ strtoupper($salary->employee->name) }} </td>
+                                    <td> {{ $salary->field->name }} </td>
+                                    <td> GH&#x20B5; {{ number_format($salary->tax, 2) }} </td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
                     </div>
-
-                </form>
+                    </div>
+                </div>
             </div>
-       
+        </div>
+
+
+
     </div>
   <!-- / Content -->
 
@@ -471,35 +320,49 @@
 
 
     @section('scripts')
+
     <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
-    <script src="https://cdn.datatables.net/2.3.3/js/dataTables.js"></script>
-    <script src="https://cdn.datatables.net/buttons/3.2.4/js/dataTables.buttons.js"></script>
-    <script src="https://cdn.datatables.net/buttons/3.2.4/js/buttons.dataTables.js"></script>
+    <script src="https://cdn.datatables.net/2.3.5/js/dataTables.js"></script>
+    <script src="https://cdn.datatables.net/buttons/3.2.5/js/dataTables.buttons.js"></script>
+    <script src="https://cdn.datatables.net/buttons/3.2.5/js/buttons.dataTables.js"></script>
+    <script src="https://cdn.datatables.net/buttons/3.2.5/js/buttons.html5.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/3.2.5/js/buttons.colVis.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
-    <script src="https://cdn.datatables.net/buttons/3.2.4/js/buttons.html5.min.js"></script>
-
-    <script src="https://cdn.datatables.net/columncontrol/1.1.1/js/dataTables.columnControl.min.js"></script>
 
 
     <script>
-        new DataTable('#myTable', {
-            responsive: true,
-              dom: 'lfrtip',
-              lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
-              columnControl: [ ['search'] ]
-        });
-    </script>
+       
+      new DataTable('#myTable', {
+        //  dom: 'Blfrtip',
+        //  stateSave: false,
+        columnControl: [ ['search'] ],
+        layout: {
+            topStart: {
+                buttons: [ 
+                {
+                     extend: 'pageLength',
+                    text: 'Show',
+                    className: 'btn btn-secondary',
+                    Options: [10, 25, 50, 100, 250, 500, 1000, 2000], 
+                },
+                    {
+                        extend: 'excelHtml5',
+                        title: 'Salaries',
+                        className: 'btn btn-secondary',
+                        exportOptions: {
+                            columns: ':visible'
+                        }
+                    },
+                ]
+            }
+        },
+                
+    });
 
-        <script>
-        $(document).ready(function() {
-            $('#options').change(function() {
-                $('.checkBoxes').prop('checked', function(i, val) {
-                    return !val;
-                });
-            });
-        });
+
+
     </script>
 
     @endsection

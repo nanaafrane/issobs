@@ -258,7 +258,7 @@
 
          @if(Auth::user()->hasRole(['Invoice','Manager', 'Finance Manager' ]))
         <div class="row">
-            <div class="col-lg-2">
+            <div class="col-lg-3">
                 <div  class="card h-100 bg-dark text-white">
                     <div class="card-body">
                         <div class="card-title d-flex align-items-start justify-content-between mb-4">
@@ -279,7 +279,7 @@
                 </div>
             </div>
 
-            <div class="col-lg-2">
+            <div class="col-lg-3">
                 <div  class="card h-100 bg-dark text-white">
                     <div class="card-body">
                         <div class="card-title d-flex align-items-start justify-content-between mb-4">
@@ -300,7 +300,7 @@
             </div>
 
 
-            <div class="col-lg-2">
+            <div class="col-lg-3">
                 <div  class="card h-100 bg-dark text-white">
                     <div class="card-body">
                         <div class="card-title d-flex align-items-start justify-content-between mb-4">
@@ -315,11 +315,11 @@
                         <p class="mb-1"><strong> TAX </strong></p>
                         <h4 class="card-title mb-3 text-white"><strong> &#x20B5; {{ number_format($salariesTaxes->sum('tax'), 2) }} </strong> </h4> <br>
                         <small class="fw-medium"> TOTAL :  GH&#x20B5; {{ number_format($salariesTaxes->sum('paid'), 2) }} </small> <br>
-                        <small class="fw-medium"> TOTAL : {{ $salariesTaxes->sum('total_employees') }} </small>
+                        <small class="fw-medium"> EMPLOYEES : {{ $salariesTaxes->sum('total_employees') }} </small>
                     </div>
                 </div>
             </div>
-            <div class="col-lg-2">
+            <div class="col-lg-3">
                 <div  class="card h-100 bg-dark text-white">
                     <div class="card-body">
                         <div class="card-title d-flex align-items-start justify-content-between mb-4">
@@ -333,7 +333,8 @@
                         </div>
                         <p class="mb-1"><strong> PENSIONS </strong></p>
                         <h4 class="card-title mb-3 text-white"><strong> &#x20B5; {{ number_format($salariesPensions->sum('cont13_5'), 2) }} </strong> </h4> <br>
-                        <small class="fw-medium"> TOTAL : {{ $salariesPensions->sum('total_employees') }} </small>
+                        <small class="fw-medium"> TOTAL :  GH&#x20B5; {{ number_format($salariesPensions->sum('paid') , 2) }} </small> <br>
+                        <small class="fw-medium"> EMPLOYEES : {{ $salariesPensions->sum('total_employees') }} </small>
                     </div>
                 </div>
             </div>
@@ -446,7 +447,7 @@
                                     <td> GH&#x20B5; {{ number_format($banks->paid, 2) }} </td>
                                     <td> {{ $banks->total_employees }} </td>
                                     <td> 
-                                        <a href="" class="btn btn-dark btn-sm">
+                                        <a href="/salariesBankMonth/{{ $banks->bank->id }}/{{ $date }}" class="btn btn-dark btn-sm">
                                             <i class="bx bx-show"></i> 
                                         </a>    
                                     </td>
@@ -483,7 +484,7 @@
                                     <td> GH&#x20B5; {{ number_format($cash->paid, 2) }} </td>
                                     <td> {{ $cash->total_employees }} </td>
                                     <td> 
-                                        <a href="" class="btn btn-dark btn-sm">
+                                        <a href="/salariesCashMonth/{{ $cash->field?->id }}/{{ $date }}" class="btn btn-dark btn-sm">
                                             <i class="bx bx-show"></i> 
                                         </a>    
                                     </td>
@@ -519,7 +520,7 @@
                                     <td> GH&#x20B5; {{ number_format($taxes->tax, 2) }} </td>
                                     <td> {{ $taxes->total_employees }} </td>
                                     <td> 
-                                        <a href="" class="btn btn-dark btn-sm">
+                                        <a href="/salariesTaxMonth/{{ $taxes->field?->id }}/{{ $date }}" class="btn btn-dark btn-sm">
                                             <i class="bx bx-show"></i> 
                                         </a>    
                                     </td>   
@@ -558,7 +559,7 @@
                                     <td> GH&#x20B5; {{ number_format($pensions->cont13_5, 2) }} </td>
                                     <td> {{ $pensions->total_employees }} </td>
                                     <td> 
-                                        <a href="" class="btn btn-dark btn-sm">
+                                        <a href="/salariesPensionMonth/{{ $pensions->field?->id }}/{{ $date }}" class="btn btn-dark btn-sm">
                                             <i class="bx bx-show"></i> 
                                         </a>    
                                     </td>   

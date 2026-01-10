@@ -498,7 +498,7 @@
                                                 <td> {{ $salary->id }} </td>
                                                 <td> {{$salary->salary_month?->format('F, Y')}} </td>
                                                 <td> {{ $salary->employee_id }} </td>
-                                                <td> {{ $salary->employee?->name }} </td>
+                                                <td> {{ strtoupper($salary->employee?->name) }} </td>
                                                 <td> {{ $salary->department?->name }} </td>
                                                 <td> {{ $salary->role?->name }} </td>
                                                 <td> {{ $salary->field?->name }} </td>
