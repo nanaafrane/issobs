@@ -233,11 +233,20 @@ class SalaryController extends Controller
         // dd($request->all()); 
 
         // get invoices for incoming month
-        $invoices = Invoice::where('invoice_month', Carbon::parse($request->month)->format('Y-m-d'))->get();
-        $invoicesTotal = $invoices->sum('total');
-        $invoicesCount = $invoices->count();
-        // dd(, $invoices->sum('total'));
+        $month = Carbon::parse($request->month)->format('F, Y');
+        // $invoices = Invoice::where('invoice_month', Carbon::parse($request->month)->format('Y-m-d'))->get();
+        $invoices = Invoice::select('client_id', DB::raw('SUM(total) as total_invoice'))
+                            ->groupBy('client_id')
+                            ->where('invoice_month', Carbon::parse($request->month)->format('Y-m-d'))->get();
 
+        $invoicesTotal = $invoices->sum('total_invoice');
+        // $invoicesCount = $invoices->count();
+        // dd( $invoices);
+
+        // foreach($invoices as $invoice)
+        //     {
+        //         echo $invoice . "<br>";
+        //     }
         $Accrainvoices = Invoice::whereRelation('client', 'field_id', '1')->where('invoice_month', Carbon::parse($request->month)->format('Y-m-d'))->get();
         $AccrainvoicesTotal = $Accrainvoices->sum('total');
         $AccrainvoicesCount = $Accrainvoices->count();
@@ -334,7 +343,7 @@ class SalaryController extends Controller
         $ShyhillssalariesCount = $Shyhillssalaries->count();  
       
         // dd($salaries);
-        return view('salaries.invpayrollview', compact('invoices', 'AccrainvoicesTotal', 'AccrainvoicesCount', 'BotweinvoicesTotal', 'BotweinvoicesCount', 'TemainvoicesTotal', 'TemainvoicesCount', 'TakoradinvocesTotal', 'TakoradinvocesCount', 'KoforiduainvoicesTotal', 'KoforiduainvoicesCount', 'KumasinvoicesTotal', 'KumasinvoicesCount', 'ShyhillsinvoicesTotal', 'ShyhillsinvoicesCount',  'salaries',  'invoicesTotal', 'invoicesCount', 'salariesTotal', 'AccrasalariesTotal', 'AccrasalariesCount', 'BotwesalariesTotal', 'BotwesalariesCount', 'TemasalariesTotal', 'TemasalariesCount', 'TakoradisalariesTotal', 'TakoradisalariesCount', 'KoforiduasalariesTotal', 'KoforiduasalariesCount', 'KumasalariesTotal', 'KumasalariesCount', 'ShyhillssalariesTotal', 'ShyhillssalariesCount'));
+        return view('salaries.invpayrollview', compact('month', 'invoices', 'AccrainvoicesTotal', 'AccrainvoicesCount', 'BotweinvoicesTotal', 'BotweinvoicesCount', 'TemainvoicesTotal', 'TemainvoicesCount', 'TakoradinvocesTotal', 'TakoradinvocesCount', 'KoforiduainvoicesTotal', 'KoforiduainvoicesCount', 'KumasinvoicesTotal', 'KumasinvoicesCount', 'ShyhillsinvoicesTotal', 'ShyhillsinvoicesCount',  'salaries',  'invoicesTotal', 'salariesTotal', 'AccrasalariesTotal', 'AccrasalariesCount', 'BotwesalariesTotal', 'BotwesalariesCount', 'TemasalariesTotal', 'TemasalariesCount', 'TakoradisalariesTotal', 'TakoradisalariesCount', 'KoforiduasalariesTotal', 'KoforiduasalariesCount', 'KumasalariesTotal', 'KumasalariesCount', 'ShyhillssalariesTotal', 'ShyhillssalariesCount'));
     }
 
 
@@ -549,6 +558,20 @@ class SalaryController extends Controller
     }
 
 
+    /**
+     * Get all guards with the client ID and Month
+     */
+    public function PayrollGuards ($client_id, $month)
+    {
+
+            // dd($client_id, $month);
+        $date = Carbon::createFromFormat('F, Y',$month)->startOfMonth()->format('Y-m-d H:i:s');
+        // dd($date);
+        $salaries = Salary::where('salary_month', $date)->where('client_id', $client_id)->get();
+        // dd($salaries);
+        return view('salaries.invpayrollGuards', compact('salaries', 'month'));
+
+    }
 
 
 

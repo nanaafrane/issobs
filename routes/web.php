@@ -99,5 +99,8 @@ Route::get('salariesMonth', [SalaryController::class, 'salariesMonth'])->name('s
 Route::get('salariesInvPayroll', [SalaryController::class, 'InvToParoll']);
 Route::get('invToPayroll', [SalaryController::class, 'InvToParollMonth'])->name('salaries.invToPayroll');
 Route::post('uploadSalaries', [SalaryController::class, 'uploadSalaries'])->name('salaries.upload');
+Route::get('invToPayrollInvoice/{client_id}/{month}', [InvoiceController::class, 'PayrollInvoice']);
+Route::get('invToPayrollGuards/{client_id}/{month}', [SalaryController::class, 'PayrollGuards']);
 
-// Route::resource('paymentinfo', PaymentInfoController::class); 
+
+// Route::resource('paymentinfo', PaymentInfoControthller::class); 

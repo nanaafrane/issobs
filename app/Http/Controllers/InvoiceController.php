@@ -533,4 +533,19 @@ class InvoiceController extends Controller
     }
 
 
+    /**
+     * Get all invoices with the client ID and Month
+     */
+    public function PayrollInvoice ($client_id, $month)
+    {
+        // dd($client_id, $month);
+        // $date = Carbon::parse($month)->format('Y-m-d');
+        $date = Carbon::createFromFormat('F, Y',$month)->startOfMonth()->format('Y-m-d');
+
+        $invoices = Invoice::where('invoice_month', $date)->where('client_id', $client_id)->get();
+        // dd($invoices);
+        return view('salaries.invpayrollInvoice', compact('invoices', 'month'));
+
+    }
+
 }

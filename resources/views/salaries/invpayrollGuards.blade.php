@@ -250,186 +250,65 @@
 
         <div class="row">
             <div class="col-12">
-                <h3 class="card-header"> <i class="icon-base bx bx-git-compare"></i> Invoices to Salary </h3>
+                <h3 class="card-header"> <i class="icon-base bx bx-git-compare"></i> Salaries For Month : {{ $month }} </h3>
             </div>
         </div><br>
-
-        @if(Auth::user()->hasRole(['Invoice','Manager', 'Finance Manager' ]))
         <div class="row mb-4">
-            <div class="col-lg-4">
-                <div  class="card h-100 bg-danger text-white">
+            <div class="col-lg-12">
+                <div  class="card h-100 bg-dark text-white">
                     <div class="card-body">
-                            <p class="mb-1"><strong> INVOICES  / For Month: {{  $month }}</strong> </p>
-                            <h4 class="card-title mb-3 text-white"><strong> GH&#x20B5; {{ number_format($invoicesTotal, 2) }}  </strong> </h4>
-                            <small class="fw-medium"> TOTAL INVOICES GENERATED </small>
-                   </div>
-                </div>
-            </div>
-            <div class="col-lg-4">
-                <div  class="card h-100 bg-success text-white">
-                    <div class="card-body">
-                            <p class="mb-1"><strong> SALARIES  / For Month: {{  $month }}</strong>  </p>
-                            <h4 class="card-title mb-3 text-white"><strong> GH&#x20B5; {{ number_format($salariesTotal, 2) }}  </strong> </h4>
-                            <small class="fw-medium"> TOTAL SALARIES PAID </small>      
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-4">
-                <div  class="card h-100 bg-secondary text-white">
-                    <div class="card-body">
-                            <p class="mb-1"><strong> DIFFERENCE : {{  $month }}</strong>  </p>
-                            <h4 class="card-title mb-3 text-white"><strong> GH&#x20B5; {{ number_format($invoicesTotal - $salariesTotal, 2) }}  </strong> </h4>
+                        <p class="mb-1"><strong>  </strong> </p>
+                        <h4 class="card-title mb-3 text-white"><strong> GH&#x20B5; {{ number_format($salaries->sum('cost_to_company'), 2) }} </strong> </h4>
+                        NUMBER OF EMPLOYEES: {{ count($salaries) }}
                     </div>
                 </div>
             </div>
         </div>
-
-        <div class="row mb-4">
-            <div class="col-lg-2">
-                <div  class="card h-100 bg-dark text-white">
-                    <div class="card-body">
-                        <p class="mb-1"><strong> ACCRA </strong> </p>
-                        <h4 class="card-title mb-3 text-white"><strong> {{ number_format($AccrainvoicesTotal, 2) }} </strong> </h4>
-                        INVOICES TOTAL: {{ $AccrainvoicesCount }}
-                        <hr>
-                        SALARIES TOTAL: {{ $AccrasalariesCount }}
-                        <h4 class="card-title mb-3 text-white"><strong> {{ number_format($AccrasalariesTotal, 2) }} </strong> </h4>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-lg-2">
-                <div  class="card h-100 bg-dark text-white">
-                    <div class="card-body">
-                        <p class="mb-1"><strong> BOTWE </strong></p>
-                        <h4 class="card-title mb-3 text-white"><strong> {{ number_format($BotweinvoicesTotal, 2) }} </strong> </h4>
-                        INVOICES TOTAL: {{ $BotweinvoicesCount }}
-                        <hr>
-                        SALARIES TOTAL: {{ $BotwesalariesCount }}
-                        <h4 class="card-title mb-3 text-white"><strong> {{ number_format($BotwesalariesTotal, 2) }} </strong> </h4>
-                    </div>
-                </div>
-            </div>
-
-
-            <div class="col-lg-2">
-                <div  class="card h-100 bg-dark text-white">
-                    <div class="card-body">
-                        <p class="mb-1"><strong> TEMA </strong></p>
-                        <h4 class="card-title mb-3 text-white"><strong> {{ number_format($TemainvoicesTotal, 2) }} </strong> </h4>
-                        INVOICES TOTAL: {{ $TemainvoicesCount }}
-                        <hr>
-                        SALARIES TOTAL: {{ $TemasalariesCount }}
-                        <h4 class="card-title mb-3 text-white"><strong> {{ number_format($TemasalariesTotal, 2) }} </strong> </h4>
-                    </div>
-                </div>
-            </div>
-
-
-
-            <div class="col-lg-2">
-                <div  class="card h-100 bg-dark text-white">
-                    <div class="card-body">
-                        <p class="mb-1">TAKORADI</p>
-                        <h4 class="card-title mb-3 text-white"><strong> {{ number_format($TakoradinvocesTotal, 2) }} </strong> </h4>
-                        INVOICES TOTAL: {{ $TakoradinvocesCount }}
-                        <hr>
-                        SALARIES TOTAL: {{ $TakoradisalariesCount }}
-                        <h4 class="card-title mb-3 text-white"><strong> {{ number_format($TakoradisalariesTotal, 2) }} </strong> </h4>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-lg-2">
-                <div  class="card h-100 bg-dark text-white">
-                    <div class="card-body">
-                        <p class="mb-1"> <strong> KOFORIDUA </strong> </p>
-                        <h4 class="card-title mb-3 text-white"><strong> {{ number_format($KoforiduainvoicesTotal, 2) }} </strong> </h4>
-                        INVOICES TOTAL: {{ $KoforiduainvoicesCount }}
-                        <hr>
-                        SALARIES TOTAL: {{ $KoforiduasalariesCount }}
-                        <h4 class="card-title mb-3 text-white"><strong> {{ number_format($KoforiduasalariesTotal, 2) }} </strong> </h4>
-                    </div>
-                </div>
-            </div>
-
-
-            <div class="col-lg-2">
-                <div  class="card h-100 bg-dark text-white">
-                    <div class="card-body">
-                        <p class="mb-1"><strong> KUMASI </strong> </p>
-                        <h4 class="card-title mb-3 text-white"><strong> {{ number_format($KumasinvoicesTotal, 2) }} </strong> </h4>
-                        INVOICES TOTAL: {{ $KumasinvoicesCount }}
-                        <hr>
-                        SALARIES TOTAL: {{ $KumasalariesCount }}
-                        <h4 class="card-title mb-3 text-white"><strong> {{ number_format($KumasalariesTotal, 2) }} </strong> </h4>  
-                    </div>
-                </div>
-            </div>
-
-        </div> <br> <br>
-        @endif
-
-        <hr />
-        <br>
-              <div class="card-header  ml-2  d-none d-lg-block">
-                  @include('flash-messages')
-              </div> <br>
-
-
         <div class="row">
-            <form action="/salaries" method="POST">
-                @csrf
                 <div class="col">
+                <div class="table-responsive text-normal-dark">
                     <table id="myTable" class="display">
                         <thead>
                             <tr>
-                                <th>#</th>
-                                <th> Month </th>
+                                <th> id</th>
+                                <th> Salary Month </th>
+                                <th> Name</th>
                                 <th> Field </th>
-                              <th> Client Invoice Amount </th>
-                              <th>Client Name </th>
-                              <th> Guards Salary </th>
-                              <th> Difference </th>
-                              <th>Status</th>  
-                              <th>View Invoices </th>   
-                              <th>View Guards</th> 
+                                <th>Client </th>
+                                <th> SSNIT No.</th>
+                                <th> TIN No.</th>
+                                <th> Payment Type</th>
+                                <th> Bank Name </th>
+                                <th> Branch </th>
+                                <th>Acc No</th>
+                                <th> Total_Salary </th>
+                                <th>status</th>
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach ( $invoices as $key => $invoice )
+
+                        @foreach ($salaries as $key => $salary )
                             <tr>
-                                <td> {{ $key + 1 }} </td>
-                                <td> {{ $month }} </td>
-                                <td> {{ $invoice->client?->field?->name }} </td>
-                                <td> GH&#x20B5;  {{number_format($invoice->total_invoice, 2) }} </td>
-                                @foreach ($salaries as $salary)
-                                    @if ($invoice->client_id == $salary->client_id)
-                                        <td> {{$invoice->client?->name }} {{$invoice->client?->business_name }} </td>
-                                        <td>GH&#x20B5; {{number_format($salary->total_salary, 2) }} </td>
-                                        <td>GH&#x20B5;{{ number_format($invoice->total_invoice - $salary->total_salary, 2)}}</td>
-                                            @if($invoice->total_invoice <= $salary->total_salary)
-                                                    <td><span class="badge bg-label-danger"> Loss </span></td>
-                                            @else
-                                                    <td><span class="badge bg-label-success"> Profit </span></td>
-                                            @endif
-                                    @endif
-                                @endforeach
-                                <td> <a href="/invToPayrollInvoice/{{ $invoice->client_id }}/{{ $month }}" class="btn btn-dark btn-sm">
-                                            <i class="bx bx-show"></i> 
-                                        </a> 
-                                </td>
-                                <td> <a href="/invToPayrollGuards/{{ $invoice->client_id }}/{{ $month }}" class="btn btn-dark btn-sm">
-                                            <i class="bx bx-show"></i> 
-                                        </a> 
-                                </td>
+                                <td> {{ $salary->id }} </td>
+                                <td> {{$salary->salary_month?->format('F, Y')}} </td>
+                                <td> {{ strtoupper($salary->employee?->name) }} </td>
+                                <td> {{ $salary->field?->name }} </td>
+                                <td> {{ $salary->client?->name }} {{ $salary->client?->business_name }} </td>
+                                <td> {{$salary->paymentInfo?->ssnit_number}}</td>
+                                <td> {{$salary->paymentInfo?->tin_number}}</td>
+                                <td> {{$salary->payment_type}}</td>
+                                <td> {{$salary->bank?->name}}</td>
+                                <td> {{$salary->branch}}</td>   
+                                 <td> {{$salary->account_number}}</td>             
+                                <td>GHGH&#x20B5; {{$salary->cost_to_company }}</td>
+                                <td><span class="badge bg-label-success">{{$salary->payment_status}}</span></td>
                             </tr>
-                            @endforeach
+                          @endforeach
                         </tbody>
                     </table>
                 </div>
+                </div>
 
-            </form>
         </div>
 
     </div>
@@ -453,7 +332,8 @@
     <script>
         new DataTable('#myTable', {
             responsive: true,
-
+              dom: 'lfrtip',
+              lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
             layout: {
               topStart: {
                 // buttons: [] // No export/download buttons
