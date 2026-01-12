@@ -439,7 +439,7 @@
                                             <tr>
                                                 <th> </th>
                                                 <th> Edit </th>
-                                                <th> id</th>
+                                                <!-- <th> id</th>
                                                 <th> Salary Month </th>
                                                 <th> employee_id </th>
                                                 <th> Name</th>
@@ -485,7 +485,7 @@
                                                 <th> net_salary </th>
                                                 <th> ssnit_comp_cont_13 </th>
                                                 <th> ssnit_tobe_paid13_5</th>
-                                                <th> cost_to_company </th>
+                                                <th> cost_to_company </th> -->
 
                                             </tr>
                                         </thead>
@@ -495,7 +495,7 @@
                                             <tr>
                                                 <td> <input class="checkBoxes form-check-input" type="checkbox" name="salary[]" value="{{ $salary->id }}" /> </td>
                                                 <td><a class="dropdown-item" href="/salaries/{{$salary->id}}/edit"><i class="icon-base bx bx-edit-alt me-1"></i></a> </td>
-                                                <td> {{ $salary->id }} </td>
+                                                <!-- <td> {{ $salary->id }} </td>
                                                 <td> {{$salary->salary_month?->format('F, Y')}} </td>
                                                 <td> {{ $salary?->employee_id }} </td>
                                                 <td> {{ strtoupper($salary->employee?->name) }} </td>
@@ -541,7 +541,7 @@
                                                 <td> {{$salary->net_salary}} </td>                            
                                                 <td> {{$salary->ssnit_comp_cont_13}} </td>                            
                                                 <td> {{$salary->ssnit_tobe_paid13_5}} </td>                            
-                                                <td> {{$salary->cost_to_company }}</td>
+                                                <td> {{$salary->cost_to_company }}</td> -->
                                             </tr>
                                         @endforeach
                                         </tbody>
