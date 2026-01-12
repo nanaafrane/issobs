@@ -190,9 +190,9 @@
                 <div class="text-truncate" data-i18n="Expense"> Expense </div>
                 </a>
             </li>
-
             @endif
 
+            @if(Auth::user()->hasRole(['Invoice', 'Finance Manager', 'Manager']))
             <li class="menu-header small text-uppercase"><span class="menu-header-text">PAYROLL</span></li>
             <li class="menu-item">
                     <a href="javascript:void(0);" class="menu-link menu-toggle">
@@ -200,15 +200,14 @@
                     <div class="text-truncate" data-i18n="Payroll">Payroll</div>
                     </a>
                     <ul class="menu-sub">
-                    @if(Auth::user()->hasPermission('HR') || Auth::user()->hasRole(['Invoice']))
                     <li class="menu-item">
                         <a href="{{ url('salaries') }}" class="menu-link">
                         <i class="menu-icon tf-icons bx bxs-user-account"></i>
                         <div class="text-truncate" data-i18n="Employees">Add to Salaries</div>
                         </a>
                     </li>
-                    @endif
-
+                    
+                    @if(Auth::user()->hasPermission('Accounts'))
                     <li class="menu-item">
                         <a href="{{ url('salaries/create') }}" class="menu-link">
                         <i class="menu-icon tf-icons bx bx-money-withdraw"></i>
@@ -229,8 +228,11 @@
                         <div class="text-truncate" data-i18n="InvtoPayroll">Invoice to Payroll</div>
                         </a>
                     </li>
+                    @endif
+
                     </ul>
                 </li>
+            @endif
         </ul>
     </aside>
     <!-- / Menu -->
