@@ -497,7 +497,7 @@
                                                 <td><a class="dropdown-item" href="/salaries/{{$salary->id}}/edit"><i class="icon-base bx bx-edit-alt me-1"></i></a> </td>
                                                 <td> {{ $salary->id }} </td>
                                                 <td> {{$salary->salary_month?->format('F, Y')}} </td>
-                                                <td> {{ $salary->employee_id }} </td>
+                                                <td> {{ $salary?->employee_id }} </td>
                                                 <td> {{ strtoupper($salary->employee?->name) }} </td>
                                                 <td> {{ $salary->department?->name }} </td>
                                                 <td> {{ $salary->role?->name }} </td>
