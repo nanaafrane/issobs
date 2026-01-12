@@ -487,7 +487,7 @@
         new DataTable('#myTable', {
             responsive: true,
               dom: 'lfrtip',
-              lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
+              lengthMenu: [[10, 25, 50, 100, 500,-1], [10, 25, 50, 100, 500,"All"]],
               columnControl: [ ['search'] ]
         });
     </script>
