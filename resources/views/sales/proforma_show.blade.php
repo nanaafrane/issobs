@@ -53,87 +53,87 @@
 
 
             <!-- Menu -->
-            <aside id="layout-menu" class="layout-menu menu-vertical menu bg-menu-theme">
-                <div class="app-brand demo">
-                    <a href="#" class="app-brand-link">
-                        <span class="app-brand-logo demo">
-                            <img width="70px" src="{{asset('img/icons/brands/issobs.png')}}" alt="">
-                            <!-- Logo -->
-                        </span>
-                        <span class="app-brand-text demo menu-text fw-bold ms-2">ISSOBS</span>
-                    </a>
+    <aside id="layout-menu" class="layout-menu menu-vertical menu bg-menu-theme">
+        <div class="app-brand demo">
+            <a href="#" class="app-brand-link">
+                <span class="app-brand-logo demo">
+                    <img width="70px" src="{{asset('img/icons/brands/issobs.png')}}" alt="">
+                    <!-- Logo -->
+                </span>
+                <span class="app-brand-text demo menu-text fw-bold ms-2">ISSOBS</span>
+            </a>
 
-                    <a href="javascript:void(0);" class="layout-menu-toggle menu-link text-large ms-auto">
-                        <i class="bx bx-chevron-left d-block d-xl-none align-middle"></i>
-                    </a>
-                </div>
+            <a href="javascript:void(0);" class="layout-menu-toggle menu-link text-large ms-auto">
+                <i class="bx bx-chevron-left d-block d-xl-none align-middle"></i>
+            </a>
+        </div>
 
-                <div class="menu-divider mt-0"></div>
+        <div class="menu-divider mt-0"></div>
 
-                <div class="menu-inner-shadow"></div>
+        <div class="menu-inner-shadow"></div>
 
-                <ul class="menu-inner py-1">
-                    <!-- Dashboards -->
+        <ul class="menu-inner py-1">
+            <!-- Dashboards -->
+            <li class="menu-item">
+                <a href="javascript:void(0);" class="menu-link menu-toggle">
+                    <i class="menu-icon tf-icons bx bx-home-smile"></i>
+                    <div class="text-truncate" data-i18n="Dashboards"><strong>Dashboard</strong></div>
+                </a>
+                <ul class="menu-sub">
                     <li class="menu-item">
-                        <a href="javascript:void(0);" class="menu-link menu-toggle">
-                            <i class="menu-icon tf-icons bx bx-home-smile"></i>
-                            <div class="text-truncate" data-i18n="Dashboards">Dashboard</div>
-                        </a>
-                        <ul class="menu-sub">
-                            <li class="menu-item">
-                                <a href="{{url('home')}}" class="menu-link">
-                                    <div class="text-truncate" data-i18n="Dashboard">Dashboard</div>
-                                </a>
-                            </li>
-                        </ul>
-                    </li>
-                    <!-- Apps & Pages -->
-                    <li class="menu-header small text-uppercase ">
-                        <span class="menu-header-text">Transactions</span>
-                    </li>
-                    <!-- Pages -->
-                    <li class="menu-item">
-                        <a href="{{url('transaction')}}" class="menu-link">
-                            <i class="menu-icon tf-icons bx bx-transfer-alt"></i>
-                            <div class="text-truncate" data-i18n="Transaction">Transactions</div>
+                        <a href="{{url('home')}}" class="menu-link">
+                            <div class="text-truncate" data-i18n="Dashboard">Dashboard</div>
                         </a>
                     </li>
+                </ul>
+            </li>
+            <!-- Apps & Pages -->
+            <li class="menu-header small text-uppercase ">
+                <span class="menu-header-text text-primary">Transactions</span>
+            </li>
+            <!-- Pages -->
+            <li class="menu-item">
+                <a href="{{url('transaction')}}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-transfer-alt bg-primary"></i>
+                    <div class="text-truncate" data-i18n="Transaction">Transactions</div>
+                </a>
+            </li>
+            @if(Auth::user()->hasRole(['Invoice', 'Finance Manager']))
 
-                    @if(Auth::user()->hasRole(['Invoice','Finance Manager']))
-                    <li class="menu-item active">
-                        <a href="{{ url('invoice') }}" class="menu-link">
-                            <i class="menu-icon tf-icons bx bx-bxs-receipt"></i>
-                            <div class="text-truncate" data-i18n="Invoices">Invoices</div>
-                        </a>
-                    </li>
-                          <li class="menu-item ">
-          <a href="javascript:void(0);" class="menu-link menu-toggle">
-          <i class="menu-icon tf-icons bx bx-bxs-receipt bg-primary"></i>
-          <div class="text-truncate" data-i18n="Staffs">Pro Forma</div>
-          </a>
-          <ul class="menu-sub">
-          <li class="menu-item ">
-              <a href="{{url('proforma/create')}}" class="menu-link">
-              <div class="text-truncate" data-i18n="SRegister">Generate</div>
-              </a>
-          </li>
-          <li class="menu-item">
-              <a href="{{url('proforma')}}" class="menu-link">
-              <div class="text-truncate" data-i18n="SList">List</div>
-              </a>
-          </li>
-          </ul>
-      </li>
-                    @endif
+            <li class="menu-item ">
+                <a href="{{ url('invoice') }}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-bxs-receipt bg-primary"></i>
+                    <div class="text-truncate" data-i18n="Invoices"><strong>Invoices</strong></div>
+                </a>
+            </li>
+            <li class="menu-item active open">
+                <a href="javascript:void(0);" class="menu-link menu-toggle">
+                <i class="menu-icon tf-icons bx bx-bxs-receipt bg-primary"></i>
+                <div class="text-truncate" data-i18n="Staffs">Pro Forma</div>
+                </a>
+                <ul class="menu-sub">
+                <li class="menu-item ">
+                    <a href="{{url('proforma/create')}}" class="menu-link">
+                    <div class="text-truncate" data-i18n="SRegister">Generate</div>
+                    </a>
+                </li>
+                <li class="menu-item active">
+                    <a href="{{url('proforma')}}" class="menu-link">
+                    <div class="text-truncate" data-i18n="SList">List</div>
+                    </a>
+                </li>
+                </ul>
+            </li>
+            @endif
 
-                    
+
       @if(Auth::user()->hasRole(['Finance Manager']))
-                          <li class="menu-item">
-                        <a href="{{url('receipt')}}" class="menu-link">
-                            <i class="menu-icon tf-icons bx bx-money-withdraw"></i>
-                            <div class="text-truncate" data-i18n="Receipts">Receipts</div>
-                        </a>
-                    </li>
+                  <li class="menu-item">
+                <a href="{{url('receipt')}}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-money-withdraw bg-primary"></i>
+                    <div class="text-truncate" data-i18n="Receipts">Receipts</div>
+                </a>
+            </li>
       <!-- Components -->
       <li class="menu-header small text-uppercase"><span class="menu-header-text text-info">Management</span></li>
       <li class="menu-item">
@@ -241,7 +241,7 @@
                 <div class="text-truncate" data-i18n="Payroll">Payroll</div>
                 </a>
                 <ul class="menu-sub">
-                @if(Auth::user()->hasRole(['Invoice']))
+            @if(Auth::user()->hasRole(['Invoice']))
                 <li class="menu-item">
                     <a href="{{ url('salaries') }}" class="menu-link">
                     <i class="menu-icon tf-icons bx bxs-user-account"></i>
@@ -274,8 +274,8 @@
             </li>
       @endif
 
-                </ul>
-            </aside>
+        </ul>
+    </aside>
             <!-- / Menu -->
 
 
@@ -290,13 +290,13 @@
                     <div class="card-header  ml-2  d-none d-lg-block">
                         @include('flash-messages')
                     </div>
-                        <!-- Invoice 1 - Bootstrap Brain Component -->
+                        <!-- proforma 1 - Bootstrap Brain Component -->
                         <section class="py-3 py-md-5">
                             <div class="row justify-content-center">
                                 <div style="margin-top: -40px;" class="col-12 col-lg-9 col-xl-8 col-xxl-7">
                                     <div class="row gy-3 mb-3">
                                         <div class="col-6">
-                                            <h2 class="text-uppercase text-endx m-0 text-danger">Invoice</h2>
+                                            <h2 class="text-uppercase text-endx m-0 text-danger">Pro Forma</h2>
                                         </div>
                                         <div class="col-6">
                                             <a class="d-block text-end">
@@ -319,23 +319,23 @@
                                         <div class="col-12 col-sm-6 col-md-8">
                                             <h4 class="text-danger">Bill To</h4>
                                             <address>
-                                                <strong>{{$invoice->client->name}}</strong><br>
-                                                <strong> Business Name : {{$invoice->client->business_name}}, </strong> <br>
-                                                Location: {{$invoice->client->address}},<br>
-                                                {{$invoice->client->field->name}},<br>
-                                                Phone: {{$invoice->client->phone_number}}, {{$invoice->client->phone_number1}}<br>
+                                                <strong>{{$proforma->client?->name}}</strong><br>
+                                                <strong> Business Name : {{$proforma->client?->business_name}}, </strong> <br>
+                                                Location: {{$proforma->client?->address}},<br>
+                                                {{$proforma->client->field?->name}},<br>
+                                                Phone: {{$proforma->client?->phone_number}}, {{$proforma->client?->phone_number1}}<br>
                                             </address>
                                         </div>
                                         <div class="col-12 col-sm-6 col-md-4">
                                             <h5 style="background: #f00d0dff;" class="row text-white">
-                                                <span class="col-12">Inv #: FWSSi{{$invoice->id}}</span>
+                                                <span class="col-12">Inv #: FWSSi{{$proforma->id}}</span>
                                             </h5>
                                             <address>
                                                 <span class="card-header"> Issued : </span>
-                                                <span class="col-6"> {{$invoice->created_at->format('d/m/Y H:i A')}} </span> <br>
+                                                <span class="col-6"> {{$proforma->created_at->format('d/m/Y H:i A')}} </span> <br>
 
                                                 <span class="card-header">Due : </span>
-                                                <span class="col-6">{{$invoice->due_date->format('d/m/Y H:i A')}} </span>
+                                                <span class="col-6">{{$proforma->due_date->format('d/m/Y H:i A')}} </span>
 
                                             </address>
                                         </div>
@@ -355,7 +355,7 @@
                                             </thead>
                                             <tbody class="table-border-bottom-0">
 
-                                                @foreach($invoice_data as $index => $data)
+                                                @foreach($proforma_data as $index => $data)
                                                 <tr>
                                                     <td> <strong>{{$index + 1}}</strong></td>
                                                     <td>
@@ -387,13 +387,13 @@
                                         </div>
                                         <div class="col-12 col-sm-6 col-md-4 text-end">
                                             <address>
-                                                <h6><strong>Sub Amount : GH&#8373; {{number_format($invoice->sub_amount, 2) }}</strong> </h6>
-                                                <h6> NHIL (2.5%) : GH&#8373; {{number_format($invoice->nhil, 2) }}</h6>
-                                                <h6>GETFUND (2.5%) : GH&#8373; {{ number_format($invoice->getfund, 2) }}</h6>
-                                                <h6> CHRL (1%) : GH&#8373; {{number_format($invoice->chrl, 2) }}</h6>
-                                                <h6><strong> SUB TOTAL : GH&#8373; {{ number_format($invoice->sub_total, 2) }} </strong> </h6>
-                                                <h6>VAT (15%) : GH&#8373; {{number_format($invoice->vat_amount, 2) }}</h6>
-                                                <h6><strong>GRAND TOTAL: GH&#8373; {{number_format($invoice->total, 2) }}</strong></h6>
+                                                <h6><strong>Sub Amount : GH&#8373; {{number_format($proforma->sub_amount, 2) }}</strong> </h6>
+                                                <h6> NHIL (2.5%) : GH&#8373; {{number_format($proforma->nhil, 2) }}</h6>
+                                                <h6>GETFUND (2.5%) : GH&#8373; {{ number_format($proforma->getfund, 2) }}</h6>
+                                                <!-- <h6> CHRL (1%) : GH&#8373; {{number_format($proforma->chrl, 2) }}</h6> -->
+                                                <!-- <h6><strong> SUB TOTAL : GH&#8373; {{ number_format($proforma->sub_total, 2) }} </strong> </h6> -->
+                                                <h6>VAT (15%) : GH&#8373; {{number_format($proforma->vat_amount, 2) }}</h6>
+                                                <h6><strong>GRAND TOTAL: GH&#8373; {{number_format($proforma->total, 2) }}</strong></h6>
                                             </address>
                                         </div>
                                     </div>
@@ -401,17 +401,17 @@
                                     <div class="row mb-3">
                                         <div class="col-12 float-end">
                                             <address>
-                                                <h6><strong>WITHHOLDING TAX 7.5 % : GH&#8373; {{number_format($invoice->wht_amount, 2) }} </strong> </h6>
-                                                <h6><strong> AMOUNT AFTER WTH : GH&#8373; {{number_format($invoice->amount_received, 2) }} </strong></h6>
-                                                <h6><strong> 7 % VAT AMOUNT : GH&#8373; {{ number_format($invoice->vat7_value, 2) }} </strong></h6>
-                                                <h6><strong> AMOUNT AFTER 7 % VAT : GH&#8373; {{number_format($invoice->vat7_amount, 2) }} </strong></h6>
-                                                <h6><strong> OTHER DEDUCTIONS : GH&#8373; {{ number_format($invoice->dAmount, 2) }} </strong> </h6>
-                                                <h6><strong> PAYMENT STATUS :  {{ $invoice->status }} </strong> </h6>
+                                                <h6><strong>WITHHOLDING TAX 7.5 % : GH&#8373; {{number_format($proforma->wht_amount, 2) }} </strong> </h6>
+                                                <h6><strong> AMOUNT AFTER WTH : GH&#8373; {{number_format($proforma->amount_received, 2) }} </strong></h6>
+                                                <h6><strong> 7 % VAT AMOUNT : GH&#8373; {{ number_format($proforma->vat7_value, 2) }} </strong></h6>
+                                                <h6><strong> AMOUNT AFTER 7 % VAT : GH&#8373; {{number_format($proforma->vat7_amount, 2) }} </strong></h6>
+                                                <h6><strong> OTHER DEDUCTIONS : GH&#8373; {{ number_format($proforma->dAmount, 2) }} </strong> </h6>
+                                                <h6><strong> PAYMENT STATUS :  {{ $proforma->status }} </strong> </h6>
                                             </address>
                                         </div>
                                     </div>
 
-                                    <h5><small> Invoice created by {{$invoice->user->name}} on {{$invoice->updated_at}} </small></h5>
+                                    <h5><small> proforma created by {{$proforma->user->name}} on {{$proforma->updated_at}} </small></h5>
                                 </div>
                         </section>
                     </div>
@@ -428,21 +428,21 @@
             <div class="layout-overlay layout-menu-toggle"></div>
         </div>
         <!-- / Layout wrapper -->
-        @if($invoice->status != 'completed' && $invoice->status != 'uncompleted')
+        @if($proforma->status != 'completed' && $proforma->status != 'uncompleted')
         <div class="buy-now">
-            <a style="margin-bottom: 75px;" href="/invoice/{{$invoice->id}}/edit" class="btn btn-danger btn-buy-now"> <i class="icon-base bx bx-edit-alt me-1"></i> Edit</a>
+            <a style="margin-bottom: 75px;" href="/proforma/{{$proforma->id}}/edit" class="btn btn-danger btn-buy-now"> <i class="icon-base bx bx-edit-alt me-1"></i> Edit</a>
         </div>
         @endif
         <div class="buy-now">
             <button id="print"
-                class="btn btn-danger btn-buy-now"> <i class="icon-base bx bxs-printer"></i> Print Invoice</button>
+                class="btn btn-danger btn-buy-now"> <i class="icon-base bx bxs-printer"></i> Print proforma</button>
         </div>
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
         <script>
             $(document).ready(function() {
                 $('#print').on('click', function() {
                     $.ajax({
-                        url: '/printInvoice/{{$invoice->id}}', // The route to your dedicated print view
+                        url: '/printProforma/{{$proforma->id}}', // The route to your dedicated print view
                         method: 'GET',
                         success: function(response) {
                             var printWindow = window.open('url', '_parent');

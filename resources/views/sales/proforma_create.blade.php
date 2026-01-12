@@ -26,7 +26,7 @@
             <li class="menu-item">
                 <a href="javascript:void(0);" class="menu-link menu-toggle">
                     <i class="menu-icon tf-icons bx bx-home-smile"></i>
-                    <div class="text-truncate" data-i18n="Dashboards">Dashboard</div>
+                    <div class="text-truncate" data-i18n="Dashboards"><strong>Dashboard</strong></div>
                 </a>
                 <ul class="menu-sub">
                     <li class="menu-item">
@@ -38,52 +38,51 @@
             </li>
             <!-- Apps & Pages -->
             <li class="menu-header small text-uppercase ">
-                <span class="menu-header-text">Transactions</span>
+                <span class="menu-header-text text-primary">Transactions</span>
             </li>
             <!-- Pages -->
             <li class="menu-item">
                 <a href="{{url('transaction')}}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-transfer-alt"></i>
+                    <i class="menu-icon tf-icons bx bx-transfer-alt bg-primary"></i>
                     <div class="text-truncate" data-i18n="Transaction">Transactions</div>
                 </a>
             </li>
-            @if(Auth::user()->hasRole(['Invoice','Finance Manager']))
-            <li class="menu-item active">
+            @if(Auth::user()->hasRole(['Invoice', 'Finance Manager']))
+
+            <li class="menu-item ">
                 <a href="{{ url('invoice') }}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-bxs-receipt"></i>
-                    <div class="text-truncate" data-i18n="Invoices">Invoices</div>
+                    <i class="menu-icon tf-icons bx bx-bxs-receipt bg-primary"></i>
+                    <div class="text-truncate" data-i18n="Invoices"><strong>Invoices</strong></div>
                 </a>
             </li>
-                  <li class="menu-item ">
-          <a href="javascript:void(0);" class="menu-link menu-toggle">
-          <i class="menu-icon tf-icons bx bx-bxs-receipt bg-primary"></i>
-          <div class="text-truncate" data-i18n="Staffs">Pro Forma</div>
-          </a>
-          <ul class="menu-sub">
-          <li class="menu-item ">
-              <a href="{{url('proforma/create')}}" class="menu-link">
-              <div class="text-truncate" data-i18n="SRegister">Generate</div>
-              </a>
-          </li>
-          <li class="menu-item">
-              <a href="{{url('proforma')}}" class="menu-link">
-              <div class="text-truncate" data-i18n="SList">List</div>
-              </a>
-          </li>
-          </ul>
-      </li>
+            <li class="menu-item active open">
+                <a href="javascript:void(0);" class="menu-link menu-toggle">
+                <i class="menu-icon tf-icons bx bx-bxs-receipt bg-primary"></i>
+                <div class="text-truncate" data-i18n="Staffs">Pro Forma</div>
+                </a>
+                <ul class="menu-sub">
+                <li class="menu-item active">
+                    <a href="{{url('proforma/create')}}" class="menu-link">
+                    <div class="text-truncate" data-i18n="SRegister">Generate</div>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="{{url('proforma')}}" class="menu-link">
+                    <div class="text-truncate" data-i18n="SList">List</div>
+                    </a>
+                </li>
+                </ul>
+            </li>
             @endif
 
 
       @if(Auth::user()->hasRole(['Finance Manager']))
-
                   <li class="menu-item">
                 <a href="{{url('receipt')}}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-money-withdraw"></i>
+                    <i class="menu-icon tf-icons bx bx-money-withdraw bg-primary"></i>
                     <div class="text-truncate" data-i18n="Receipts">Receipts</div>
                 </a>
             </li>
-            
       <!-- Components -->
       <li class="menu-header small text-uppercase"><span class="menu-header-text text-info">Management</span></li>
       <li class="menu-item">
@@ -191,7 +190,7 @@
                 <div class="text-truncate" data-i18n="Payroll">Payroll</div>
                 </a>
                 <ul class="menu-sub">
-                @if(Auth::user()->hasRole(['Invoice']))
+            @if(Auth::user()->hasRole(['Invoice']))
                 <li class="menu-item">
                     <a href="{{ url('salaries') }}" class="menu-link">
                     <i class="menu-icon tf-icons bx bxs-user-account"></i>
@@ -222,10 +221,10 @@
                 </li>
                 </ul>
             </li>
-        @endif
+      @endif
+
         </ul>
     </aside>
-    <!-- / Menu -->
     @endsection
 
 
@@ -237,22 +236,21 @@
             <div class="row">
                 <div class="col-12">
                     <!-- <div class="card"> -->
-                    <h3 class="card-header text-primary"> <i class="icon-base bx bx-bxs-receipt"></i> Invoice <i class="icon-base bx bx-bxs-right-arrow-alt"></i> Edit </h3>
+                    <h3 class="card-header text-primary"> <i class="icon-base bx bx-bxs-receipt"></i> Pro Forma <i class="icon-base bx bx-bxs-right-arrow-alt"></i> Generate </h3>
                     <!-- <div class="card-body demo-vertical-spacing demo-only-element"> Invoice / Create </div> -->
                     <!-- </div> -->
                 </div>
             </div>
-
             <div class="card-header  ml-2  d-none d-lg-block">
                 @include('flash-messages')
-            </div> 
+            </div>
             <!-- Invoice 1 - Bootstrap Brain Component -->
             <section class="py-3 py-md-5">
                 <div class="row justify-content-center">
                     <div class="col-12 col-lg-9 col-xl-8 col-xxl-7">
                         <div class="row gy-3 mb-3">
                             <div class="col-6">
-                                <h2 class="text-uppercase text-endx m-0 text-danger">Invoice</h2>
+                                <h2 class="text-uppercase text-endx m-0 text-danger">PRO FORMA</h2>
                             </div>
                             <div class="col-6">
                                 <a class="d-block text-end">
@@ -271,21 +269,16 @@
                                 </address>
                             </div>
                         </div>
-            <form method="POST" action="/invoice/{{$invoice->id}}">
-                @csrf
-                @method('PUT')
+                    <form method="POST" action="/proforma">
+                        @csrf
                         <div class="row mb-3">
                             <div class="col-12 col-sm-6 col-md-8">
                                 <h4 class="text-danger">Bill To</h4>
                                 <address>
-                                    <!-- <strong>{{$invoice->client->name}}</strong><br> -->
-
                                     <select name="client_id" class="form-select @error('client_id') is-invalid @enderror" id="client_id" required>
                                         <option selected disabled> Select </option>
                                         @foreach($clients as $client)
-                                        <!-- <option value="{{$client->id}}">{{$client->name}} {{$client->business_name}}</option> -->
-                                        <option  @if($client->id == $invoice->client?->id) selected @endif  value="{{$client->id}}">{{$client->name}} {{$client->business_name}}</option>
-
+                                        <option value="{{$client->id}}">{{$client->name}} {{$client->business_name}}</option>
                                         @endforeach
                                     </select>
                                     @error('client_id')
@@ -297,35 +290,26 @@
                                 </address>
                             </div>
                             <div class="col-12 col-sm-6 col-md-4">
-
-                                <h5 style="background: #f00d0dff;" class="row text-white">
-                                    <span class="col-12">Inv #: FWSSi{{$invoice->id}}</span>
-                                </h5>
-                                <address>
-                                    <span class="card-header"> Issued : </span>
-                                    <span class="col-6"> {{$invoice->created_at->format('d/m/Y H:i A')}} </span> <br>
-
-                                    <span class="card-header">Due : </span>
-                                    <span class="col-6">{{$invoice->due_date->format('d/m/Y H:i A')}} </span>
-
-                                </address>
+                                <h4 style="background: #f00d0dff;" class="row text-white">
+                                    <span class="col-6">Inv #</span>
+                                    <span class="col-6 text-sm-end"></span>
+                                </h4>
                             </div>
                         </div>
 
                         <hr />
-
                             <div class="row">
                                 <div class="col-6">
                                     <h6 class="card-header">Due Date</h6>
                                     <div class="input-group">
-                                        <input value="{{$invoice->due_date}}" name="due_date" type="datetime-local" class="form-control" required>
+                                        <input name="due_date" type="datetime-local" class="form-control" required>
                                     </div>
                                 </div>
                                 <div class="col-3"></div>
                                 <div class="col-3">
                                     <h6 class="card-header"> Invoice Month</h6>
                                     <div class="input-group">
-                                        <input name="invoice_month" type="month" value="{{$invoice->invoice_month}}" class="form-control" required>
+                                        <input name="invoice_month" type="month" class="form-control" required>
                                     </div>
                                 </div>
                             </div> <br>
@@ -335,28 +319,36 @@
                                     <input name="vat_standard" class="form-check-input" type="checkbox" id="vat_standard" checked>
                                     <label class="form-check-label" for="vat_standard"> VAT STANDARD RATE </label>
                                 </div>
+
                                 <div class="col-md-6" style="padding-left: 250px;">
                                     <button id="add" type="button" class="btn btn-danger">+</button>
                                 </div>
                             </div>
                             <br>
+
+
                             <div id="product_form">
-                                @foreach($invoice_data as $key => $data)
-                                <div class="row" id="roww{{$key}}">
+                                <div class="row">
                                     <div class="col-2">
                                         <h5 class="card-header" for="service" class="form-label"> Services </h5>
-                                        <select name="service[]" class="form-select" id="service">
+                                        <select name="service[]" class="form-select @error('service') is-invalid @enderror" id="service" required>
+                                            <option selected disabled> Select </option>
                                             @foreach($services as $service)
-                                            <option @if ($data->service_name == $service->name) selected @endif value="{{$service->name}}">{{$service->name}}</option>
+                                            <option value="{{$service->name}}">{{$service->name}}</option>
                                             @endforeach
                                         </select>
+                                        @error('service')
+                                        <span class="invalid-feedback" role="alert">
+                                            <strong>{{ $message }}</strong>
+                                        </span>
+                                        @enderror
                                     </div>
                                     <div class="col-3">
                                         <h5 class="card-header" for="description" class="form-label">Description</h5>
                                         <textarea name="description[]"
                                             id="description"
                                             class="form-control"
-                                            placeholder="Description" class="form-control" rows="1">{{$data->description}}</textarea>
+                                            placeholder="Description" class="form-control" rows="1" required></textarea>
                                     </div>
 
                                     <div class="col-2">
@@ -366,10 +358,8 @@
                                                 type="number"
                                                 name="quantity[]"
                                                 id="quantity"
-                                                value="{{$data->quantity}}"
                                                 class="form-control"
-                                                step="any"
-                                                placeholder="Quantity">
+                                                placeholder="Quantity" step="any" required>
                                         </div>
                                     </div>
 
@@ -380,37 +370,34 @@
                                                 type="number"
                                                 name="unit_price[]"
                                                 id="unit_price"
-                                                value="{{$data->unit_price}}"
                                                 oninput="unitPrice()"
-                                                class="form-control" step="any"
-                                                placeholder="GH&#8373;">
+                                                class="form-control"
+                                                placeholder="GH&#8373;" step="any" required>
                                         </div>
                                     </div>
 
-                                    <div class="col-2">
+                                    <div class="col-3">
                                         <h5 class="card-header">Amount</h5>
                                         <div class="input-group">
                                             <input
                                                 type="number"
                                                 name="amount[]"
                                                 id="amount"
-                                                value="{{$data->amount}}"
-                                                class="form-control" step="any"
-                                                placeholder="GH&#8373;">
+                                                class="form-control"
+                                                placeholder="GH&#8373;" step="any" required>
                                         </div>
-                                        <button type="button" id="del" class="btn btn-danger del" data-index="{{$key}}" style="margin-left: 130px;margin-top: -65px;">-</button>
                                     </div>
 
                                 </div>
-                                @endforeach
+                            </div>
 
-
-                                <div style="padding-top: 30px;" class="row">
-                                    <div class="col-12">
-                                        <button type="submit" id="submit" class="btn btn-danger btn-lg btn-block" onclick="return confirm('Kindly Confirm?')"> Update </button>
-                                    </div>
+                            <div style="padding-top: 30px;" class="row">
+                                <div class="col-12">
+                                    <center>
+                                        <button type="submit" id="submit" class="btn btn-danger btn-lg btn-block" onclick="return confirm('Kindly Confirm?')"> Generate </button>
+                                    </center>
                                 </div>
-
+                            </div>
 
                         </form>
 
@@ -423,11 +410,187 @@
     </div>
     </div>
         <div class="buy-now">
-            <button id="print"
-                class="btn btn-danger btn-buy-now"> <i class="icon-base bx bxs-printer"></i> Print Invoice</button>
-        </div> 
+                    <button
+                        style="margin-bottom: 75px;"
+                        type="button"
+                        class="btn btn-danger btn-buy-now"
+                        data-bs-toggle="modal"
+                        data-bs-target="#basicModal">
+                        <i class="icon-base bx bx-bxs-user-plus"> </i>Add Client
+                    </button>
+        </div>
+        <div class="modal fade" id="basicModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="exampleModalLabel1">Add Client</h5>
+                        <button
+                            type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal"
+                            aria-label="Close"></button>
+                    </div>
+
+                    <form method="POST" action="/client">
+                        @csrf
+                        <div class="modal-body">
+                            <div class="row">
+                                <div class="col mb-0">
+                                    <label for="name" class="form-label"> {{ __('Full Name') }}</label>
+                                    <input
+                                        type="text"
+                                        name="name"
+                                        id="name"
+                                        class="form-control @error('name') is-invalid @enderror"
+                                        value="{{ old('name')}}"
+                                        placeholder="Full Name"
+
+                                        autocomplete="name"
+                                        autofocus>
+
+                                    @error('name')
+                                    <span class="invalid-feedback" role="alert">
+                                        <strong>{{ $message }}</strong>
+                                    </span>
+                                    @enderror
+
+
+                                </div>
+                                <div class="col mb-0">
+                                    <label for="phone_number" class="form-label"> {{ __('Phone Number 1') }} </label>
+                                    <input
+                                        type="number"
+                                        id="phone_number"
+                                        name="phone_number"
+                                        class="form-control @error('phone_number') is-invalid @enderror"
+                                        value="{{ old('phone_number')}}"
+                                        placeholder="Phone Number 1"
+                                        autocomplete=" phone_number"
+                                        autofocus>
+
+                                    @error('phone_number')
+                                    <span class="invalid-feedback" role="alert">
+                                        <strong>{{ $message }}</strong>
+                                    </span>
+                                    @enderror
+                                </div>
+                                <div class="col mb-0">
+                                    <label for="phone_number1" class="form-label"> {{ __('Phone Number 2') }} </label>
+                                    <input
+                                        type="number"
+                                        id="phone_number1"
+                                        name="phone_number1"
+                                        class="form-control @error('phone_number1') is-invalid @enderror"
+                                        value="{{ old('phone_number1')}}"
+                                        placeholder="Phone Number 2"
+                                        autocomplete=" phone_number1"
+                                        autofocus>
+
+                                    @error('phone_number1')
+                                    <span class="invalid-feedback" role="alert">
+                                        <strong>{{ $message }}</strong>
+                                    </span>
+                                    @enderror
+                                </div>
+                            </div>
+                            <div class="row g-6">
+                                <div class="col mb-0">
+                                    <label for="business_name" class="form-label"> {{ __('Business Name') }} </label>
+                                    <input
+                                        type="text"
+                                        id="business_name"
+                                        name="business_name"
+                                        class="form-control @error('business_name') is-invalid @enderror"
+                                        value="{{ old('business_name')}}"
+                                        placeholder="Business Name"
+
+                                        autocomplete="business_name"
+                                        autofocus>
+
+                                    @error('business_name')
+                                    <span class="invalid-feedback" role="alert">
+                                        <strong>{{ $message }}</strong>
+                                    </span>
+                                    @enderror
+                                </div>
+
+                                <div class="col mb-0">
+                                    <label for="address" class="form-label"> {{ __('Address') }} </label>
+                                    <input
+                                        type="text"
+                                        id="address"
+                                        name="address"
+                                        class="form-control @error('address') is-invalid @enderror"
+                                        value="{{ old('address')}}"
+                                        placeholder="Address"
+
+                                        autocomplete="address"
+                                        autofocus>
+
+                                    @error('address')
+                                    <span class="invalid-feedback" role="alert">
+                                        <strong>{{ $message }}</strong>
+                                    </span>
+                                    @enderror
+
+                                </div>
+                            </div>
+
+                            <br>
+                            <div class="row g-6">
+                                <div class="col mb-0">
+                                    <div class="input-group">
+                                        <label class="input-group-text" for="inputGroupSelect01">{{ __('Location') }}</label>
+                                        <select name="field_id" class="form-select @error('inputGroupSelect01') is-invalid @enderror" id="inputGroupSelect01" value="{{ old('field_id')}}" required>
+                                            <option selected>Choose...</option>
+                                            @foreach($fields as $field)
+                                            <option value="{{$field->id}}">{{$field->name}}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+
+                                    @error('field_id')
+                                    <span class="invalid-feedback" role="alert">
+                                        <strong>{{ $message }}</strong>
+                                    </span>
+                                    @enderror
+                                </div>
+
+                                <div class="col mb-0">
+                                    <div class="input-group">
+                                        <input
+                                            type="text"
+                                            id="branch"
+                                            name="branch"
+                                            class="form-control @error('branch') is-invalid @enderror"
+                                            value="{{ old('branch')}}"
+                                            placeholder="branch"
+                                            autocomplete="branch"
+                                            autofocus>
+
+                                    </div>
+
+                                    @error('branch')
+                                    <span class="invalid-feedback" role="alert">
+                                        <strong>{{ $message }}</strong>
+                                    </span>
+                                    @enderror
+                                </div>
+
+                            </div>
+
+                        </div>
+                        <div class="modal-footer">
+                            <button type="submit" class="btn btn-info d-grid w-100">{{ __('Add') }}</button>
+                        </div>
+                    </form>
+
+                </div>
+            </div>
+        </div>
 
     @endsection
+
 
     @section('scripts')
     <script>
@@ -446,18 +609,6 @@
 
     <script>
         $(document).ready(function() {
-
-            $(".del").click(function() {
-                // var index = $(this).data('index');
-                var button_id1 = $(this).data('index');
-                $('#roww' + button_id1 + '').remove();
-                // console.log("Clicked button ID:", button_id1);
-            });
-        });
-    </script>
-
-    <script>
-        $(document).ready(function() {
             var i = 1;
             $('#add').click(function() {
                 i++;
@@ -471,28 +622,8 @@
 
         });
     </script>
-
-    <script>
-        $(document).ready(function() {
-            $('#print').on('click', function() {
-                $.ajax({
-                    url: '/printInvoice/{{$invoice->id}}', // The route to your dedicated print view
-                    method: 'GET',
-                    success: function(response) {
-                        var printWindow = window.open('url', '_parent');
-                        var originalContents = $('body').html();
-                        printWindow.document.write(response);
-                        printWindow.print();
-                        $('body').html(originalContents);
-                    },
-                    error: function(xhr, status, error) {
-                        console.error("Error fetching print content:", error);
-                    }
-                });
-            });
-        });
-    </script>
-
     @endsection
+
+
 
 </x-sales-dashboard>

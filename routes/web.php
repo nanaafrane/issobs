@@ -10,6 +10,7 @@ use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\FieldController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\ProformaController;
 use App\Http\Controllers\ReceiptController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SalaryController;
@@ -47,8 +48,10 @@ Route::resource('service', ServiceController::class);
 Route::resource('transaction', TransactionController::class);
 
 Route::resource('invoice', InvoiceController::class);
+Route::resource('proforma', ProformaController::class);
 Route::get('generate/{id}', [InvoiceController::class, 'generate']);
 Route::get('printInvoice/{id}', [InvoiceController::class, 'printInvoice']);
+Route::get('printProforma/{id}', [ProformaController::class, 'printProforma']);
 Route::get('invoiceDashboard', [InvoiceController::class, 'dashboardViewAllInvoices']);
 Route::get('invoiceOutstanding', [InvoiceController::class, 'dashboardInvoiceWithOutstanding']);
 Route::get('partPaymentOutstanding', [InvoiceController::class, 'dashboardPartPaymentOutstanding']);

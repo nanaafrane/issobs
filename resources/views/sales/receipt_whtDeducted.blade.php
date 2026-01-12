@@ -60,6 +60,24 @@
                     <div class="text-truncate" data-i18n="Invoices">Invoices</div>
                 </a>
             </li>
+                  <li class="menu-item ">
+          <a href="javascript:void(0);" class="menu-link menu-toggle">
+          <i class="menu-icon tf-icons bx bx-bxs-receipt bg-primary"></i>
+          <div class="text-truncate" data-i18n="Staffs">Pro Forma</div>
+          </a>
+          <ul class="menu-sub">
+          <li class="menu-item ">
+              <a href="{{url('proforma/create')}}" class="menu-link">
+              <div class="text-truncate" data-i18n="SRegister">Generate</div>
+              </a>
+          </li>
+          <li class="menu-item">
+              <a href="{{url('proforma')}}" class="menu-link">
+              <div class="text-truncate" data-i18n="SList">List</div>
+              </a>
+          </li>
+          </ul>
+      </li>
             @endif
 
       @if(Auth::user()->hasRole(['Finance Manager']))

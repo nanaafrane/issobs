@@ -48,30 +48,30 @@
                 </a>
             </li>
             @if(Auth::user()->hasRole(['Invoice','Finance Manager']))
-            <li class="menu-item active">
+            <li class="menu-item">
                 <a href="{{ url('invoice') }}" class="menu-link">
                     <i class="menu-icon tf-icons bx bx-bxs-receipt"></i>
                     <div class="text-truncate" data-i18n="Invoices">Invoices</div>
                 </a>
             </li>
-                  <li class="menu-item ">
-          <a href="javascript:void(0);" class="menu-link menu-toggle">
-          <i class="menu-icon tf-icons bx bx-bxs-receipt bg-primary"></i>
-          <div class="text-truncate" data-i18n="Staffs">Pro Forma</div>
-          </a>
-          <ul class="menu-sub">
-          <li class="menu-item ">
-              <a href="{{url('proforma/create')}}" class="menu-link">
-              <div class="text-truncate" data-i18n="SRegister">Generate</div>
-              </a>
-          </li>
-          <li class="menu-item">
-              <a href="{{url('proforma')}}" class="menu-link">
-              <div class="text-truncate" data-i18n="SList">List</div>
-              </a>
-          </li>
-          </ul>
-      </li>
+            <li class="menu-item active open">
+                <a href="javascript:void(0);" class="menu-link menu-toggle">
+                <i class="menu-icon tf-icons bx bx-bxs-receipt bg-primary"></i>
+                <div class="text-truncate" data-i18n="Staffs">Pro Forma</div>
+                </a>
+                <ul class="menu-sub">
+                <li class="menu-item ">
+                    <a href="{{url('proforma/create')}}" class="menu-link">
+                    <div class="text-truncate" data-i18n="SRegister">Generate</div>
+                    </a>
+                </li>
+                <li class="menu-item active">
+                    <a href="{{url('proforma')}}" class="menu-link">
+                    <div class="text-truncate" data-i18n="SList">List</div>
+                    </a>
+                </li>
+                </ul>
+            </li>
             @endif
 
 
@@ -237,7 +237,7 @@
             <div class="row">
                 <div class="col-12">
                     <!-- <div class="card"> -->
-                    <h3 class="card-header text-primary"> <i class="icon-base bx bx-bxs-receipt"></i> Invoice <i class="icon-base bx bx-bxs-right-arrow-alt"></i> Edit </h3>
+                    <h3 class="card-header text-primary"> <i class="icon-base bx bx-bxs-receipt"></i> Pro Forma <i class="icon-base bx bx-bxs-right-arrow-alt"></i> Edit </h3>
                     <!-- <div class="card-body demo-vertical-spacing demo-only-element"> Invoice / Create </div> -->
                     <!-- </div> -->
                 </div>
@@ -252,7 +252,7 @@
                     <div class="col-12 col-lg-9 col-xl-8 col-xxl-7">
                         <div class="row gy-3 mb-3">
                             <div class="col-6">
-                                <h2 class="text-uppercase text-endx m-0 text-danger">Invoice</h2>
+                                <h2 class="text-uppercase text-endx m-0 text-danger">Pro Forma</h2>
                             </div>
                             <div class="col-6">
                                 <a class="d-block text-end">
@@ -271,61 +271,50 @@
                                 </address>
                             </div>
                         </div>
-            <form method="POST" action="/invoice/{{$invoice->id}}">
-                @csrf
-                @method('PUT')
                         <div class="row mb-3">
                             <div class="col-12 col-sm-6 col-md-8">
                                 <h4 class="text-danger">Bill To</h4>
                                 <address>
-                                    <!-- <strong>{{$invoice->client->name}}</strong><br> -->
-
-                                    <select name="client_id" class="form-select @error('client_id') is-invalid @enderror" id="client_id" required>
-                                        <option selected disabled> Select </option>
-                                        @foreach($clients as $client)
-                                        <!-- <option value="{{$client->id}}">{{$client->name}} {{$client->business_name}}</option> -->
-                                        <option  @if($client->id == $invoice->client?->id) selected @endif  value="{{$client->id}}">{{$client->name}} {{$client->business_name}}</option>
-
-                                        @endforeach
-                                    </select>
-                                    @error('client_id')
-                                    <span class="invalid-feedback" role="alert">
-                                        <strong>{{ $message }}</strong>
-                                    </span>
-                                    @enderror
-
+                                    <strong>{{$proforma->client->name}}</strong><br>
+                                    Business Name: {{$proforma->client->business_name}} <br>
+                                    Location: {{$proforma->client->address}},<br>
+                                    {{$proforma->client->field->name}},<br>
+                                    Phone: {{$proforma->client->phone_number}},<br>
                                 </address>
                             </div>
                             <div class="col-12 col-sm-6 col-md-4">
 
                                 <h5 style="background: #f00d0dff;" class="row text-white">
-                                    <span class="col-12">Inv #: FWSSi{{$invoice->id}}</span>
+                                    <span class="col-12">Inv #: FWSSi{{$proforma->id}}</span>
                                 </h5>
                                 <address>
                                     <span class="card-header"> Issued : </span>
-                                    <span class="col-6"> {{$invoice->created_at->format('d/m/Y H:i A')}} </span> <br>
+                                    <span class="col-6"> {{$proforma->created_at->format('d/m/Y H:i A')}} </span> <br>
 
                                     <span class="card-header">Due : </span>
-                                    <span class="col-6">{{$invoice->due_date->format('d/m/Y H:i A')}} </span>
+                                    <span class="col-6">{{$proforma->due_date->format('d/m/Y H:i A')}} </span>
 
                                 </address>
                             </div>
                         </div>
 
                         <hr />
+                        <form method="POST" action="/proforma/{{$proforma->id}}">
+                            @csrf
+                            @method('PUT')
 
                             <div class="row">
                                 <div class="col-6">
                                     <h6 class="card-header">Due Date</h6>
                                     <div class="input-group">
-                                        <input value="{{$invoice->due_date}}" name="due_date" type="datetime-local" class="form-control" required>
+                                        <input value="{{$proforma->due_date}}" name="due_date" type="datetime-local" class="form-control" required>
                                     </div>
                                 </div>
                                 <div class="col-3"></div>
                                 <div class="col-3">
                                     <h6 class="card-header"> Invoice Month</h6>
                                     <div class="input-group">
-                                        <input name="invoice_month" type="month" value="{{$invoice->invoice_month}}" class="form-control" required>
+                                        <input name="invoice_month" type="month" value="{{$proforma->invoice_month}}" class="form-control" required>
                                     </div>
                                 </div>
                             </div> <br>
@@ -341,7 +330,7 @@
                             </div>
                             <br>
                             <div id="product_form">
-                                @foreach($invoice_data as $key => $data)
+                                @foreach($proforma_data as $key => $data)
                                 <div class="row" id="roww{{$key}}">
                                     <div class="col-2">
                                         <h5 class="card-header" for="service" class="form-label"> Services </h5>
@@ -476,7 +465,7 @@
         $(document).ready(function() {
             $('#print').on('click', function() {
                 $.ajax({
-                    url: '/printInvoice/{{$invoice->id}}', // The route to your dedicated print view
+                    url: '/printProforma/{{$proforma->id}}', // The route to your dedicated print view
                     method: 'GET',
                     success: function(response) {
                         var printWindow = window.open('url', '_parent');

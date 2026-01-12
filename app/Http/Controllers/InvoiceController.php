@@ -177,7 +177,8 @@ class InvoiceController extends Controller
     {
         $services = Service::all();
         $client = Client::findOrFail($client_id);
-        return view('sales.invoice_generate', compact('client', 'services'));
+        // $clients = Client::all();
+        return view('sales.invoice_generate', compact('client','services'));
     }
 
     /**
@@ -236,7 +237,8 @@ class InvoiceController extends Controller
         // dd($invoice);
         $services = Service::all();
         $invoice_data = DB::table('invoice_data')->where('invoice_number', $invoice->id)->get();
-        return view('sales.invoice_edit', compact('invoice', 'invoice_data' ,'services'));
+        $clients = Client::all();
+        return view('sales.invoice_edit', compact('invoice', 'invoice_data' ,'services', 'clients'));
     }
 
     /**
@@ -248,7 +250,7 @@ class InvoiceController extends Controller
         // dd($invoice, $request->all());
         $service_name = $request->input('service');
         $due_date = $request->input('due_date');
-        $invoice_month = $request->input('invoice_month');
+        $invoice_month = Carbon::parse($request->input('invoice_month'))->format('Y-m-d');
         $description   = $request->input('description');
         $quantity   = $request->input('quantity');
         $quantity_count = count($quantity);
