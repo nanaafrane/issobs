@@ -271,15 +271,26 @@
                                 </address>
                             </div>
                         </div>
+        <form method="POST" action="/proforma/{{$proforma->id}}">
+                @csrf
+                @method('PUT')
                         <div class="row mb-3">
                             <div class="col-12 col-sm-6 col-md-8">
                                 <h4 class="text-danger">Bill To</h4>
                                 <address>
-                                    <strong>{{$proforma->client->name}}</strong><br>
-                                    Business Name: {{$proforma->client->business_name}} <br>
-                                    Location: {{$proforma->client->address}},<br>
-                                    {{$proforma->client->field->name}},<br>
-                                    Phone: {{$proforma->client->phone_number}},<br>
+                                    <select name="client_id" class="form-select @error('client_id') is-invalid @enderror" id="client_id" required>
+                                        <option selected disabled> Select </option>
+                                        @foreach($clients as $client)
+                                        <!-- <option value="{{$client->id}}">{{$client->name}} {{$client->business_name}}</option> -->
+                                        <option  @if($client->id == $proforma->client?->id) selected @endif  value="{{$client->id}}">{{$client->name}} {{$client->business_name}}</option>
+
+                                        @endforeach
+                                    </select>
+                                    @error('client_id')
+                                    <span class="invalid-feedback" role="alert">
+                                        <strong>{{ $message }}</strong>
+                                    </span>
+                                    @enderror
                                 </address>
                             </div>
                             <div class="col-12 col-sm-6 col-md-4">
@@ -299,9 +310,6 @@
                         </div>
 
                         <hr />
-                        <form method="POST" action="/proforma/{{$proforma->id}}">
-                            @csrf
-                            @method('PUT')
 
                             <div class="row">
                                 <div class="col-6">

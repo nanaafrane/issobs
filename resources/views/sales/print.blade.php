@@ -157,8 +157,15 @@
                                                 <strong>Sub Amount : GH&#8373; {{number_format($invoice->sub_amount, 2) }}</strong><br> <br>
                                                 NHIL (2.5%) : GH&#8373; {{number_format($invoice->nhil, 2) }} <br>
                                                 GETFUND (2.5%) : GH&#8373; {{ number_format($invoice->getfund, 2) }} <br>
+                                               
+                                                @if ($invoice->chrl > 0.00 && isset($invoice->chrl))
                                                 CHRL (1%) : GH&#8373; {{number_format($invoice->chrl, 2) }} <br> <br>
+                                                @endif
+
+                                                @if ($invoice->sub_total > 0.00 && isset($invoice->sub_total))
                                                 <strong> SUB TOTAL : GH&#8373; {{ number_format($invoice->sub_total, 2) }} </strong> <br> <br>
+                                                @endif
+                                                
                                                 VAT (15%) : GH&#8373; {{number_format($invoice->vat_amount, 2) }} <br> <br>
                                                 <strong>GRAND TOTAL: GH&#8373; {{number_format($invoice->total, 2) }}</strong> <br>
                                             </address>

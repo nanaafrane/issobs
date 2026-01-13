@@ -153,8 +153,9 @@ class ProformaController extends Controller
     {
         //
         $services = Service::all();
+        $clients = Client::all();
         $proforma_data = DB::table('invoice_data')->where('invoice_number', $proforma->id)->get();
-        return view('sales.proforma_edit', compact('proforma', 'proforma_data' ,'services'));
+        return view('sales.proforma_edit', compact('proforma', 'proforma_data' ,'services', 'clients'));
     }
 
     /**
@@ -166,6 +167,7 @@ class ProformaController extends Controller
          // dd($invoice, $request->all());
         $service_name = $request->input('service');
         $due_date = $request->input('due_date');
+        $client_id = $request->input('client_id');
         $invoice_month = Carbon::parse($request->input('invoice_month'))->format('Y-m-d') ;
         // $month = Carbon::parse($request->month)->format('Y-m-d');
         // dd($invoice_month);
@@ -222,6 +224,7 @@ class ProformaController extends Controller
         }
 
         Proforma::where('id', $proforma->id)->update([
+           'client_id' => $client_id,
             'nhil' => $nhilAmount,
             'getfund' => $getfundAmount,
             'chrl' => $chrlAmount,

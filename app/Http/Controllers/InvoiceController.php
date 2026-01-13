@@ -93,7 +93,7 @@ class InvoiceController extends Controller
 
             $nhilAmount = null;
             $getfundAmount = null;
-            $chrlAmount = null;
+            // $chrlAmount = null;
             $sub_total_without_vat = null;
             $vatAmount = null;
             $total = $sum_amount_from_invoice;
@@ -119,24 +119,24 @@ class InvoiceController extends Controller
             $vat =  new Vat();
             $nhilAmount = $vat->getNhilAmount($sum_amount_from_invoice);
             $getfundAmount = $vat->getGetFundAmount($sum_amount_from_invoice);
-            $chrlAmount = $vat->getChrlAmount($sum_amount_from_invoice);
+            $vatAmount = $vat->getVatAmount($sum_amount_from_invoice);
 
             // for standard vat calculations, first sum the amounts of invoice, then add the percentage values for nhil,getfund
             // and chrl respectively.
 
-            $sub_total_without_vat = $sum_amount_from_invoice + $nhilAmount + $getfundAmount + $chrlAmount;
+            $total = $sum_amount_from_invoice + $nhilAmount + $getfundAmount + $vatAmount;
 
             //   after summing get 15%vat of that value to get the 15% amount of that value.
-            $vatAmount = $vat->getVatAmount($sub_total_without_vat);
+            // $vatAmount = $vat->getVatAmount($sub_total_without_vat);
 
             // now add the value + the 15%vat amount to give the total of the invoice.
-            $total = $sub_total_without_vat + $vatAmount;
+            // $total = $sub_total_without_vat + $vatAmount;
             }
 
             $update_invoice = Invoice::findOrFail($invoice_number);
             $update_invoice->nhil = $nhilAmount;
             $update_invoice->getfund = $getfundAmount;
-            $update_invoice->chrl = $chrlAmount;
+            // $update_invoice->chrl = $chrlAmount;
             $update_invoice->sub_total = $sub_total_without_vat;
             $update_invoice->vat_amount = $vatAmount;
             $update_invoice->total = $total;
@@ -249,6 +249,7 @@ class InvoiceController extends Controller
         //
         // dd($invoice, $request->all());
         $service_name = $request->input('service');
+        $client_id = $request->input('client_id');
         $due_date = $request->input('due_date');
         $invoice_month = Carbon::parse($request->input('invoice_month'))->format('Y-m-d');
         $description   = $request->input('description');
@@ -261,7 +262,7 @@ class InvoiceController extends Controller
 
         $nhilAmount = null;
         $getfundAmount = null;
-        $chrlAmount = null;
+        // $chrlAmount = null;
         $sub_total_without_vat = null;
         $vatAmount = null;
         $total = $sum_amount_from_invoice;
@@ -271,13 +272,9 @@ class InvoiceController extends Controller
         $vat =  new Vat();
         $nhilAmount = $vat->getNhilAmount($sum_amount_from_invoice);
         $getfundAmount = $vat->getGetFundAmount($sum_amount_from_invoice);
-        $chrlAmount = $vat->getChrlAmount($sum_amount_from_invoice);
+        $vatAmount = $vat->getVatAmount($sum_amount_from_invoice);
 
-        $sub_total_without_vat = $sum_amount_from_invoice + $nhilAmount + $getfundAmount + $chrlAmount;
-
-        $vatAmount = $vat->getVatAmount($sub_total_without_vat);
-
-        $total = $sub_total_without_vat + $vatAmount;
+        $total = $sum_amount_from_invoice + $nhilAmount + $getfundAmount + $vatAmount;
         }
 
         // dd($description, $service_name, $quantity, $quantity_count, $unit_price, $amount, $sum_amount_from_invoice, $nhilAmount, $getfundAmount, $chrlAmount, $sub_total_without_vat, $vatAmount, $total);
@@ -303,9 +300,10 @@ class InvoiceController extends Controller
         }
 
         Invoice::where('id', $invoice->id)->update([
+            'client_id' => $client_id,
             'nhil' => $nhilAmount,
             'getfund' => $getfundAmount,
-            'chrl' => $chrlAmount,
+            'chrl' => null,
             'sub_amount' => $sum_amount_from_invoice,
             'vat_amount' => $vatAmount,
             'sub_total' => $sub_total_without_vat,
