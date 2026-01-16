@@ -1,4 +1,4 @@
-<x-hr-dashboard>
+<x-sales-dashboard>
 
     @section('css')
     <link rel="stylesheet" href="https://cdn.datatables.net/2.3.3/css/dataTables.dataTables.css" />
@@ -62,6 +62,29 @@
                         <div class="text-truncate" data-i18n="Invoices">Invoices</div>
                     </a>
                 </li>
+                <li class="menu-item active open">
+                    <a href="javascript:void(0);" class="menu-link menu-toggle">
+                    <i class="menu-icon tf-icons bx bx-bxs-receipt bg-primary"></i>
+                    <div class="text-truncate" data-i18n="Staffs">Pro Forma</div>
+                    </a>
+                    <ul class="menu-sub">
+                    <li class="menu-item ">
+                        <a href="{{url('proforma/create')}}" class="menu-link">
+                        <div class="text-truncate" data-i18n="SRegister">Generate</div>
+                        </a>
+                    </li>
+                    <li class="menu-item">
+                        <a href="{{url('proforma')}}" class="menu-link">
+                        <div class="text-truncate" data-i18n="SList">List</div>
+                        </a>
+                    </li>
+                    <li class="menu-item active">
+                        <a href="{{url('proformaClient')}}" class="menu-link">
+                        <div class="text-truncate" data-i18n="SList">ProForma Clients</div>
+                        </a>
+                    </li>
+                    </ul>
+                </li>
                 @endif
 
                 @if(Auth::user()->hasRole(['Finance Manager']))
@@ -104,7 +127,7 @@
                     </ul>
             </li>
             @endif
-            <li class="menu-item">
+            <li class="menu-item ">
                 <a href="javascript:void(0);" class="menu-link menu-toggle">
                 <i class="menu-icon tf-icons bx bxs-user-account"></i>
                 <div class="text-truncate" data-i18n="Staffs">Employees</div>
@@ -124,7 +147,7 @@
                 </ul>
             </li>
         
-            <li class="menu-item ">
+            <li class="menu-item">
                 <a class="menu-link menu-toggle">
                     <i class="menu-icon tf-icons bx bx-bxs-user-detail"></i>
                     <div class="text-truncate" data-i18n="Clients"><strong>Clients</strong></div>
@@ -143,14 +166,14 @@
                 </ul>
             </li>
 
-            <li class="menu-item ">
+            <li class="menu-item">
                 <a href="{{url('departments')}}" class="menu-link">
                 <i class="menu-icon tf-icons bx bxs-buildings"></i>
                 <div class="text-truncate" data-i18n="depnroles">Department & Roles </div>
                 </a>
             </li>
 
-            <li class="menu-item active">
+            <li class="menu-item">
                 <a href="{{url('field')}}" class="menu-link">
                 <i class="menu-icon tf-icons bx bx-bxs-location-plus"></i>
                 <div class="text-truncate" data-i18n="fOffices">Field Offices</div>
@@ -195,6 +218,7 @@
                 <div class="text-truncate" data-i18n="Expense"> Expense </div>
                 </a>
             </li>
+
             @endif
 
             @if(Auth::user()->hasRole(['Invoice', 'Finance Manager', 'Manager']))
@@ -211,6 +235,7 @@
                         <div class="text-truncate" data-i18n="Employees">Add to Salaries</div>
                         </a>
                     </li>
+
                     @if(Auth::user()->hasPermission('Accounts'))
                     <li class="menu-item">
                         <a href="{{ url('salaries/create') }}" class="menu-link">
@@ -244,115 +269,122 @@
     @endsection
 
 
-
     @section('content')
 
     <div class="container-xxl flex-grow-1 container-p-y">
 
         <div class="row">
             <div class="col-12">
-                <h3 class="card-header text-info"> <i class="icon-base bx bx-bxs-receipt"></i> Field Offices </h3>
+                <h3 class="card-header text-danger"> <i class="icon-base bx bx-bxs-receipt"></i> ProForma Clients </h3>
             </div>
         </div><br>
 
         <div class="row">
             <div class="col-xxl-12 mb-6 order-0">
-                <div style="background: #cbfcffff;" class="card">
+                <div style="background: crimson;" class="card">
                     <div class="d-flex align-items-start row">
                         <div class="col-sm-7">
                             <div class="card-body">
-                                <h1>{{$LocationsCount}}</h1>
-                                <h6 class="card-title  mb-3">TOTAL NUMBER OF LOCATIONS </h6>
+                                <h1 class="text-white">
+                                    @if(Auth::user()->hasRole(['Invoice', 'Finance Manager', 'Manager']) )
+                                    {{$clientsCount}}
+                                    @endif
+
+                                </h1>
+                                <h6 class="card-title text-white mb-3">TOTAL NUMBER OF CLIENTS </h6>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div> <br> <br>
+        </div>
 
         <div class="card-header  ml-2  d-none d-lg-block">
             @include('flash-messages')
         </div>
 
-
-
         <div class="row">
-            <div class="col-8">
+            <div class="col">
                 <table id="myTable" class="display">
                     <thead>
                         <tr>
                             <th> # ID.</th>
                             <th> Name</th>
-                            <th> Bank</th>
-                            <th>Account Number</th>
-                            <th>Created By</th>
+                            <th>Phone No.</th>
+                            <th>Business Name </th>
+                            <th> Field Office </th>
+                            <th> Address </th>
+                            <th> Branch </th>
                             <th>Action</th>
                         </tr>
                     </thead>
                     <tbody>
 
-                        @foreach($Locations as $field)
+                        @foreach($clients as $client)
                         <tr>
-                            <td> {{$field?->id}} </td>
-                            <td> {{$field?->name}}</td>
-                            <td> {{$field->bank?->name}}</td>
-                            <td> {{$field->bank?->acc_number}}</td>
-                            <td> {{$field->user?->name}}</td>
+                            <td> {{$client->id}} </td>
+                            <td> {{$client->name}}</td>
+                            <td> {{$client->phone_number}}, {{$client->phone_number1}} </td>
+                            <td> {{$client->business_name}} </td>
+                            <td>
+                                @if($client->field->name == 'Accra')
+                                <span class="badge bg-label-danger">{{$client->field->name}} </span>
+                                @endif
+
+                                @if($client->field->name == 'Botwe')
+                                <span class="badge bg-label-secondary">{{$client->field->name}} </span>
+                                @endif
+
+                                @if($client->field->name == 'Tema')
+                                <span class="badge bg-label-info">{{$client->field->name}} </span>
+                                @endif
+
+                                @if($client->field->name == 'ShaiHills')
+                                <span class="badge bg-label-info">{{$client->field->name}} </span>
+                                @endif
+
+                                @if($client->field->name == 'Takoradi')
+                                <span class="badge bg-label-warning ">{{$client->field->name}} </span>
+                                @endif
+
+                                @if($client->field->name == 'Koforidua')
+                                <span class="badge bg-label-success">{{$client->field->name}} </span>
+                                @endif
+
+                                @if($client->field->name == 'Kumasi')
+                                <span class="badge bg-label-primary">{{$client->field->name}} </span>
+                                @endif
+
+                            </td>
+
+                            <td> {{$client->address}} </td>
+                            <td> {{$client->branch}} </td>
+
                             <td>
                                 <div class="dropdown">
                                     <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown">
                                         <i class="icon-base bx bx-dots-vertical-rounded"></i>
                                     </button>
                                     <div class="dropdown-menu">
-                                        <a class="dropdown-item" href="field/{{$field?->id}}/edit"><i class="icon-base bx bx-edit-alt me-1"></i> Edit</a>
+                                        <a class="dropdown-item" href="proformaClient/{{$client->id}}/edit"><i class="icon-base bx bx-edit-alt me-1"></i> Edit</a>
+                                        @if(Auth::user()->hasPermission('HR') || Auth::user()->hasRole(['Invoice'])  )
+                                        <form action="proformaClient/{{$client->id}}" method="POST">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button class="dropdown-item" type="submit"><i class="icon-base bx bx-trash me-1"></i>Delete</button>
+                                        </form>
+                                        @endif
 
                                     </div>
                                 </div>
                             </td>
+
+
                         </tr>
                         @endforeach
                     </tbody>
                 </table>
 
-            </div>
-
-            <div class="col-4">
-                <br>
-                <h3 class="card-header text-info"> <i class="icon-base bx bx-bxs-receipt"></i> Add Field Office </h3>
-                <br>
-
-                <form method="POST" action="field">
-                    @csrf
-                    <div class="row">
-                        <div class="col mb-0">
-                            <label for="name" class="form-label"> {{ __('Name') }}</label>
-                            <input
-                                type="text"
-                                name="name"
-                                id="name"
-                                class="form-control @error('name') is-invalid @enderror"
-                                value="{{ old('name')}}"
-                                placeholder="Field Office Name"
-                                required
-                                autocomplete="name"
-                                autofocus>
-
-                            @error('name')
-                            <span class="invalid-feedback" role="alert">
-                                <strong>{{ $message }}</strong>
-                            </span>
-                            @enderror
-
-
-                        </div>
-
-                    </div>
-
-                    <br>
-                    <div class="modal-footer">
-                        <button type="submit" class="btn btn-info d-grid w-100">{{ __('Add') }}</button>
-                    </div>
-                </form>
             </div>
         </div>
     </div>
@@ -386,4 +418,4 @@
 
     @endsection
 
-</x-hr-dashboard>
+</x-sales-dashboard>

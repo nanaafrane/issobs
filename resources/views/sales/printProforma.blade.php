@@ -142,15 +142,7 @@
                                     <div class="row mb-3">
                                         <div class="col-12 col-sm-6 col-md-8">
                                             <address style="font-size: 0.7em" class="mt-5">
-                                                <div> <strong> BANK DETAILS </strong> </div><br>
-                                                <strong> Bank : ECOBANK</strong><br>
-                                                <strong> A/C Name. : FIRST WATCH SECURITY SERVICES LIMITED </strong> <br>
-                                                <strong> A/C No. : 1441003309093 </strong> <br>
-                                                <strong> Branch : RE INSURANCE-H3 </strong> <br><br>
-                                                <!-- <hr class="text-dark"> -->
-                                                <div> <strong> MOMO DETAILS </strong> </div><br>
-                                                <strong> MoMo No. : 0555062422 </strong> <br>
-                                                <strong> MoMo Name : FIRST WATCH SECURITY SERVICES LIMITED </strong> <br>
+                                                
                                             </address>
                                         </div>
                                         <div class="col-12 col-sm-6 col-md-4 text-end">

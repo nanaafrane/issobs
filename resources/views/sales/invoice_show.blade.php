@@ -375,10 +375,10 @@
                                         <div class="col-12 col-sm-6 col-md-8">
                                             <address class="mt-5">
                                                 <span><strong><small> Bank Details</small> </strong> </span><br>
-                                                <span><small> <strong> Bank : ECOBANK</strong> </small> </span><br>
+                                                <span><small> <strong> Bank : {{  strtoupper($invoice->client?->field?->bank?->name) }} </strong> </small> </span><br>
                                                 <span><small> <strong> A/C Name. : FIRST WATCH SECURITY SERVICES LIMITED </strong> </small> </span><br>
-                                                <span> <small> <strong> A/C No. : 1441003309093 </strong> </small> </span><br>
-                                                <span> <small> <strong> Branch : RE INSURANCE-H3 </strong> </small> </span><br><br>
+                                                <span> <small> <strong> A/C No. : {{ $invoice->client?->field?->bank?->acc_number }} </strong> </small> </span><br>
+                                                <span> <small> <strong> Branch : {{  $invoice->client?->field?->bank?->branch }} </strong> </small> </span><br><br>
                                                 <!-- <hr class="text-dark"> -->
                                                 <span><strong> <small> MoMo Details </small> </strong> </span><br>
                                                 <span> <small> <strong> MoMo No. : 0555062422 </strong> </small> </span><br>

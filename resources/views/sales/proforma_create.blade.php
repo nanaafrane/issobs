@@ -71,6 +71,11 @@
                     <div class="text-truncate" data-i18n="SList">List</div>
                     </a>
                 </li>
+            <li class="menu-item">
+              <a href="{{url('proformaClient')}}" class="menu-link">
+              <div class="text-truncate" data-i18n="SList">ProForma Clients</div>
+              </a>
+          </li>
                 </ul>
             </li>
             @endif
@@ -299,13 +304,7 @@
 
                         <hr />
                             <div class="row">
-                                <div class="col-6">
-                                    <h6 class="card-header">Due Date</h6>
-                                    <div class="input-group">
-                                        <input name="due_date" type="datetime-local" class="form-control" required>
-                                    </div>
-                                </div>
-                                <div class="col-3"></div>
+
                                 <div class="col-3">
                                     <h6 class="card-header"> Invoice Month</h6>
                                     <div class="input-group">
@@ -348,7 +347,7 @@
                                         <textarea name="description[]"
                                             id="description"
                                             class="form-control"
-                                            placeholder="Description" class="form-control" rows="1" required></textarea>
+                                            placeholder="Description" class="form-control" rows="1" ></textarea>
                                     </div>
 
                                     <div class="col-2">
@@ -416,14 +415,14 @@
                         class="btn btn-danger btn-buy-now"
                         data-bs-toggle="modal"
                         data-bs-target="#basicModal">
-                        <i class="icon-base bx bx-bxs-user-plus"> </i>Add Client
+                        <i class="icon-base bx bx-bxs-user-plus"> </i>Add ProForma Client
                     </button>
         </div>
         <div class="modal fade" id="basicModal" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog" role="document">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title" id="exampleModalLabel1">Add Client</h5>
+                        <h5 class="modal-title" id="exampleModalLabel1">Add ProForma Client</h5>
                         <button
                             type="button"
                             class="btn-close"
@@ -431,7 +430,7 @@
                             aria-label="Close"></button>
                     </div>
 
-                    <form method="POST" action="/client">
+                    <form method="POST" action="/proformaClient">
                         @csrf
                         <div class="modal-body">
                             <div class="row">
@@ -612,7 +611,7 @@
             var i = 1;
             $('#add').click(function() {
                 i++;
-                $('#product_form').prepend('<div class="row" id="row' + i + '"><div class="col-2"><h5 class="card-header" for="service" class="form-label"> Services </h5><select name="service[]" class="form-select" id="service" required><option selected disabled> Select </option>@foreach($services as $service)<option value="{{$service->name}}">{{$service->name}}</option>@endforeach</select></div><div class="col-3"><h5 class="card-header" for="description" class="form-label">Description</h5><textarea name="description[] "id="description" class="form-control" placeholder="Description" class="form-control" rows="1" required></textarea></div> <div class="col-2"><h5 class="card-header">Quantity</h5><div class="input-group"><input type="number" name="quantity[]" id="quantity" class="form-control" placeholder="Quantity" step="any" required></div></div> <div class="col-2"><h5 class="card-header">Unit Price</h5><div class="input-group"><input type="number" name="unit_price[] "id="unit_price" oninput="unitPrice()" class="form-control" placeholder="GH&#8373;" step="any" required></div></div> <div class="col-2"><h5 class="card-header">Amount</h5><div class="input-group"><input type="number" name="amount[]" id="amount" step="any" class="form-control" placeholder="GH&#8373;" required></div><button type="button" name="remove" id="' + i + '" class="btn btn-danger btn_remove" style="margin-left: 130px;margin-top: -65px;">-</button></div></div>');
+                $('#product_form').prepend('<div class="row" id="row' + i + '"><div class="col-2"><h5 class="card-header" for="service" class="form-label"> Services </h5><select name="service[]" class="form-select" id="service" required><option selected disabled> Select </option>@foreach($services as $service)<option value="{{$service->name}}">{{$service->name}}</option>@endforeach</select></div><div class="col-3"><h5 class="card-header" for="description" class="form-label">Description</h5><textarea name="description[] "id="description" class="form-control" placeholder="Description" class="form-control" rows="1"></textarea></div> <div class="col-2"><h5 class="card-header">Quantity</h5><div class="input-group"><input type="number" name="quantity[]" id="quantity" class="form-control" placeholder="Quantity" step="any" required></div></div> <div class="col-2"><h5 class="card-header">Unit Price</h5><div class="input-group"><input type="number" name="unit_price[] "id="unit_price" oninput="unitPrice()" class="form-control" placeholder="GH&#8373;" step="any" required></div></div> <div class="col-2"><h5 class="card-header">Amount</h5><div class="input-group"><input type="number" name="amount[]" id="amount" step="any" class="form-control" placeholder="GH&#8373;" required></div><button type="button" name="remove" id="' + i + '" class="btn btn-danger btn_remove" style="margin-left: 130px;margin-top: -65px;">-</button></div></div>');
             });
             $(document).on('click', '.btn_remove', function() {
                 var button_id = $(this).attr("id");

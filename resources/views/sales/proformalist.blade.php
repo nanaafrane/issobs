@@ -79,6 +79,11 @@
                     <div class="text-truncate" data-i18n="SList">List</div>
                     </a>
                 </li>
+                <li class="menu-item">
+              <a href="{{url('proformaClient')}}" class="menu-link">
+              <div class="text-truncate" data-i18n="SList">ProForma Clients</div>
+              </a>
+          </li>
                 </ul>
             </li>
             @endif
@@ -286,14 +291,14 @@
                                             <td>{{$key +1 }}</td>
                                             <td> #FWSSi{{$invoice->id}} </td>
                                             <td> {{ $invoice->invoice_month?->format('F, Y') }}</td>
-                                            <td> {{$invoice->client->name}}</td>
-                                            <td> {{$invoice->client->phone_number}} </td>
-                                            <td> {{$invoice->client->business_name}} </td>
-                                            <td> {{$invoice->client->field->name}} </td>
-                                            <td> {{$invoice->user->name}} </td>
-                                            <td> {{$invoice->created_at->format('F l d, Y, H:i A')}} </td>
-                                            <td> {{$invoice->due_date->diffForHumans()}} </td>
-                                            <td> GH&#x20B5; {{number_format($invoice->total,2)}} </td>
+                                            <td> {{$invoice->client?->name}}</td>
+                                            <td> {{$invoice->client?->phone_number}} </td>
+                                            <td> {{$invoice->client?->business_name}} </td>
+                                            <td> {{$invoice->client?->field?->name}} </td>
+                                            <td> {{$invoice->user?->name}} </td>
+                                            <td> {{$invoice->created_at?->format('F l d, Y, H:i A')}} </td>
+                                            <td> {{$invoice->due_date?->diffForHumans()}} </td>
+                                            <td> GH&#x20B5; {{number_format($invoice?->total,2)}} </td>
 
                                             <td>
                                                 <div class="dropdown">

@@ -237,7 +237,9 @@
                 <h3 class="card-header text-primary"> <i class="icon-base bx bx-bxs-receipt"></i> Receipt </h3>
             </div>
         </div>
-
+        <div class="card-header  ml-2  d-none d-lg-block">
+            @include('flash-messages')
+        </div>
         <div class="row ms-10">
             <div class="col-md-2 col-xl-2">
                 <div class="card-body">
@@ -336,13 +338,26 @@
                     </div>
                 </div>
 
-                                @if($receipt->cash_amount > 0.00 )
+                @if($receipt->cash_amount > 0.00 )
                 <br>
                 <div class="card text-bg-success">
                     <div class="card-body">
                         <h5 class="card-title text-white"> CASH </h5>
                         <hr>
                         <p class="card-text"><strong>Amount : GH&#8373; {{ number_format($receipt->cash_amount, 2) }} </strong> </p>
+                    </div>
+                </div>
+                @endif
+                <br>
+
+                @if($receipt->other_payment_amnt > 0.00 )
+                <br>
+                <div class="card text-bg-dark">
+                    <div class="card-body">
+                        <h5 class="card-title text-white"> OTHER PAYMENT  </h5>
+                        <hr>
+                        <p class="card-text"><strong>Amount : GH&#8373; {{ number_format($receipt->other_payment_amnt, 2) }} </strong> </p>
+                        <p class="card-text"><strong>Description :  {{ $receipt->other_payment_descri }} </strong> </p>
                     </div>
                 </div>
                 @endif

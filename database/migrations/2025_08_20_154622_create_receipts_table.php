@@ -28,6 +28,8 @@ return new class extends Migration
             $table->decimal('transfer_amount')->nullable();
             $table->string('momo_transactin_id')->nullable();
             $table->decimal('momo_amount')->nullable();
+            $table->string('other_payment_descri')->nullable();
+            $table->decimal('other_payment_amnt')->nullable();
             $table->decimal('cash_amount')->nullable();
             $table->integer('user_id')->nullable();
             $table->string('status')->nullable();

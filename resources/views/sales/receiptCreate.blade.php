@@ -354,10 +354,10 @@
                                             <label class="input-group-text" for="inputGroupSelect01">{{ __('MODE') }}</label>
                                             <select name="mode" class="form-select @error('mode') is-invalid @enderror" id="mode" required>
                                                 <option disabled selected>Choose...</option>
-                                                <option value="cheque">Cheque </option>
-                                                <option value="transfer">Bank Transfer </option>
-                                                <option value="momo">MoMo</option>
-                                                <option value="cash">Cash</option>
+                                                @foreach ($mode as $modes )      
+                                                <option value="{{ $modes->name }}"> {{ $modes->name }}</option>                                                  
+                                               @endforeach   
+
                                             </select>
                                             @error('mode')
                                             <span class="invalid-feedback" role="alert">
@@ -527,6 +527,37 @@
                                 <!-- end of MoMo field -->
                                 <br>
 
+                                <!-- show if otherpayment value is selected -->
+                                <div id="otherpayrow" style="display: none;" class="row g-6">
+                                    <div class="col mb-0">
+                                        <label for="other_payment_descri" class="form-label"> {{ __('OTHER PAYMENT DESCRIPTION') }} </label>
+                                        <input
+                                            type="text"
+                                            id="other_payment_descri"
+                                            name="other_payment_descri"
+                                            class="form-control"
+                                            placeholder="Other Payment Description"
+                                            autocomplete="other_payment_descri"
+                                            autofocus>
+                                    </div>
+
+                                    <div class="col mb-0">
+                                        <label for="other_payment_amnt" class="form-label"> {{ __('AMOUNT') }} </label>
+                                        <input
+                                            type="number"
+                                            id="other_payment_amnt"
+                                            name="other_payment_amnt"
+                                            class="form-control"
+                                            placeholder="GH&#8373;"
+                                            autocomplete="other_payment_amnt"
+                                            step="any"
+                                            autofocus>
+                                    </div>
+
+                                </div>
+                                <!-- end of otherpay field -->
+                                <br>
+
 
                                 <div class="row">
                                     <!-- show if cash value is selected -->
@@ -549,8 +580,9 @@
                                             <label class="input-group-text" for="status">{{ __('STATUS') }}</label>
                                             <select name="status" class="form-select @error('status') is-invalid @enderror" id="status" required>
                                                 <option selected disabled>Choose...</option>
-                                                <option value="completed">Full Payment </option>
-                                                <option value="uncompleted">Part Payment</option>
+                                               @foreach ( $status as $stat )      
+                                                <option value="{{ $stat->name }}"> {{ $stat->name }}</option>
+                                                @endforeach
                                             </select>
                                             @error('status')
                                             <span class="invalid-feedback" role="alert">
@@ -620,6 +652,9 @@
             }
             if (selectedValue == 'momo') {
                 $("#momorow").toggle();
+            }
+            if (selectedValue == 'other payments') {
+                $("#otherpayrow").toggle();
             }
             if (selectedValue == 'cash') {
                 $("#cashrow").toggle();

@@ -303,7 +303,7 @@
                           <div class="row">
                             <div class="mb-3 col-md-4">
                               <label for="name" class="form-label"> <strong>Full Name * </strong> </label>
-                              <input  class="form-control @error('name') is-invalid @enderror" type="text" id="name" placeholder="Full Name" name="name" value="{{$employee->name}}" autofocus required/>
+                              <input  class="form-control @error('name') is-invalid @enderror" type="text" id="name" placeholder="Full Name" name="name" value="{{$employee->name}}" autofocus />
                                 @error('name')
                                 <span class="invalid-feedback" role="alert">
                                     <strong>{{ $message }}</strong>
@@ -314,7 +314,7 @@
                            
                             <div class="mb-3 col-md-4">
                               <label for="gender" class="form-label"> <strong>Gender * </strong> </label>
-                             <select name="gender" class="form-select @error('gender') is-invalid @enderror" id="gender"  required>
+                             <select name="gender" class="form-select @error('gender') is-invalid @enderror" id="gender"  >
                                    
                                     <option @if ($employee->gender == 'male') selected @endif  value="male">Male</option>
 
@@ -339,7 +339,7 @@
                                 placeholder="Phone Number "
                                 autocomplete=" phone_number"
                                 autofocus
-                                required>
+                                >
 
                             @error('phone_number')
                             <span class="invalid-feedback" role="alert">
@@ -350,7 +350,7 @@
                             
                             <div class="mb-3 col-md-4">
                               <label for="date_of_birth" class="form-label"> <strong>Date Of Birth *</strong> </label>
-                              <input  class="form-control @error('date_of_birth') is-invalid @enderror" type="date" id="date_of_birth" name="date_of_birth"  value="{{$employee->date_of_birth?->format('Y-m-d')}}" autofocus required/>
+                              <input  class="form-control @error('date_of_birth') is-invalid @enderror" type="date" id="date_of_birth" name="date_of_birth"  value="{{$employee->date_of_birth?->format('Y-m-d')}}" autofocus />
                                 @error('date_of_birth')
                                 <span class="invalid-feedback" role="alert">
                                     <strong>{{ $message }}</strong>
@@ -360,7 +360,7 @@
 
                             <div class="mb-3 col-md-4">
                               <label for="nia_number" class="form-label"> <strong>NIA Number * </strong> </label>
-                              <input  class="form-control @error('nia_number') is-invalid @enderror" type="text" id="nia_number" name="nia_number" placeholder="GHAXXXXXXXXX-X" value="{{$employee->nia_number}}" autofocus required/>
+                              <input  class="form-control @error('nia_number') is-invalid @enderror" type="text" id="nia_number" name="nia_number" placeholder="GHAXXXXXXXXX-X" value="{{$employee->nia_number}}" autofocus />
                                 @error('nia_number')
                                 <span class="invalid-feedback" role="alert">
                                     <strong>{{ $message }}</strong>
@@ -370,7 +370,7 @@
 
                             <div class="mb-3 col-md-4">
                               <label for="address" class="form-label"> <strong> Digital Address * </strong> </label>
-                              <input  class="form-control @error('address') is-invalid @enderror" type="text" id="address" name="address" placeholder="GC-XXX-X" value="{{$employee->address}}" autofocus required/>
+                              <input  class="form-control @error('address') is-invalid @enderror" type="text" id="address" name="address" placeholder="GC-XXX-X" value="{{$employee->address}}" autofocus />
                                 @error('address')
                                 <span class="invalid-feedback" role="alert">
                                     <strong>{{ $message }}</strong>
@@ -380,7 +380,7 @@
 
                             <div class="mb-3 col-md-4">
                               <label for="marital_status" class="form-label"><strong>Marital Status *</strong> </label>
-                                <select name="marital_status" class="form-select @error('marital_status') is-invalid @enderror" id="marital_status" value="{{ old('marital_status')}}" required>
+                                <select name="marital_status" class="form-select @error('marital_status') is-invalid @enderror" id="marital_status" value="{{ old('marital_status')}}" >
                                     <option @if ($employee->gender == 'single') selected @endif value="single">Single</option>
                                     <option @if ($employee->gender == 'married') selected @endif value="married">Married</option>
                                     <option @if ($employee->gender == 'divorced') selected @endif value="divorced">Divorced</option>  
@@ -396,7 +396,7 @@
 
                             <div class="mb-3 col-md-4">
                               <label for="worker_type" class="form-label"><strong>Worker Type *</strong> </label>
-                                <select name="worker_type" class="form-select @error('worker_type') is-invalid @enderror" id="worker_type" value="{{ old('worker_type')}}" required>
+                                <select name="worker_type" class="form-select @error('worker_type') is-invalid @enderror" id="worker_type" value="{{ old('worker_type')}}" >
                                     <option @if ($employee->worker_type == 'employee') selected @endif  value="employee">Employee</option>
                                     <option @if ($employee->worker_type == 'contractor') selected @endif value="contractor">Contractor</option>
 
@@ -410,7 +410,7 @@
 
                             <div class="mb-3 col-md-4">
                               <label for="date_of_joining" class="form-label"> <strong>  Date Of Joining * </strong> </label>
-                              <input  class="form-control @error('date_of_joining') is-invalid @enderror" type="date" id="date_of_joining" name="date_of_joining"  value="{{$employee->date_of_joining?->format('Y-m-d') }}" autofocus required/>
+                              <input  class="form-control @error('date_of_joining') is-invalid @enderror" type="date" id="date_of_joining" name="date_of_joining"  value="{{$employee->date_of_joining?->format('Y-m-d') }}" autofocus />
                                 @error('date_of_joining')
                                 <span class="invalid-feedback" role="alert">
                                     <strong>{{ $message }}</strong>
@@ -420,7 +420,7 @@
 
                             <div class="mb-3 col-md-4">
                               <label for="department_id" class="form-label"> <strong> {{ __('Department') }} * </strong>  </label>
-                                <select name="department_id" class="form-select @error('department_id') is-invalid @enderror" id="department_id" required>
+                                <select name="department_id" class="form-select @error('department_id') is-invalid @enderror" id="department_id" >
                                     @foreach($Departments as $department)
                                     <option @if($department->name == $employee->department?->name) selected @endif value="{{$department->id}}">{{$department->name}}</option>
                                     @endforeach
@@ -434,7 +434,7 @@
 
                             <div class="mb-3 col-md-4">
                               <label for="role_id" class="form-label"> <strong> {{ __('Role') }} * </strong>  </label>
-                                <select name="role_id" class="form-select @error('role_id') is-invalid @enderror" id="role_id" required>
+                                <select name="role_id" class="form-select @error('role_id') is-invalid @enderror" id="role_id" >
                                   @foreach($Roles as $role)
                                   <option @if($role->name == $employee->role?->name) selected @endif value="{{$role->id}}">{{$role->name}}</option>
                                   @endforeach
@@ -449,7 +449,7 @@
 
                             <div class="mb-3 col-md-4">
                               <label for="field_id" class="form-label"> <strong> {{ __('Field Office') }} * </strong>  </label>
-                                <select name="field_id" class="form-select @error('field_id') is-invalid @enderror" id="field_id" required>
+                                <select name="field_id" class="form-select @error('field_id') is-invalid @enderror" id="field_id" >
                                   @foreach($Fields as $field)
                                   <option @if($field?->name == $employee->field?->name) selected @endif value="{{$field?->id}}">{{$field?->name}}</option>
                                   @endforeach
@@ -479,7 +479,7 @@
 
                             <div class="mb-3 col-md-4">
                               <label for="location" class="form-label"> <strong>  {{ __('Location') }} * </strong> </label>
-                              <input  class="form-control @error('location') is-invalid @enderror" type="text" id="location" name="location"  placeholder="Address Name or Location Name" value="{{$employee->location}}" autofocus required/>
+                              <input  class="form-control @error('location') is-invalid @enderror" type="text" id="location" name="location"  placeholder="Address Name or Location Name" value="{{$employee->location}}" autofocus />
                                 @error('location')
                                 <span class="invalid-feedback" role="alert">
                                     <strong>{{ $message }}</strong>
@@ -488,7 +488,7 @@
                             </div>
                             <div class="mb-3 col-md-4">
                               <label for="payment_type" class="form-label"> <strong> {{ __('Payment Type') }} *</strong>  </label>
-                                <select name="payment_type" class="form-select @error('payment_type') is-invalid @enderror" id="payment_type" required>
+                                <select name="payment_type" class="form-select @error('payment_type') is-invalid @enderror" id="payment_type" >
                                     <option @if ($employee->payment_type == 'Bank') selected @endif value="bank">Bank</option>
                                     <option  @if ($employee->payment_type == 'Cash') selected @endif value="cash">Cash</option>
                                 </select>
@@ -503,7 +503,7 @@
                                 <div class="col-md-2"></div>
                               <div class="mb-3 col-md-4">
                                 <label for="basic_salary" class="form-label"> <strong>  Basic Salary * </strong> </label>
-                                <input  class="form-control @error('basic_salary') is-invalid @enderror" type="number" id="basic_salary" name="basic_salary" placeholder="GH&#x20B5;" value="{{$employee->basic_salary}}" autofocus required step="any"/>
+                                <input  class="form-control @error('basic_salary') is-invalid @enderror" type="number" id="basic_salary" name="basic_salary" placeholder="GH&#x20B5;" value="{{$employee->basic_salary}}" autofocus  step="any"/>
                                   @error('basic_salary')
                                   <span class="invalid-feedback" role="alert">
                                       <strong>{{ $message }}</strong>
@@ -513,7 +513,7 @@
 
                               <div class="mb-3 col-md-4">
                                 <label for="allowances" class="form-label"> <strong>  Allowances * </strong> </label>
-                                <input  class="form-control @error('allowances') is-invalid @enderror" type="number" id="allowances" name="allowances" placeholder="GH&#x20B5;" value="{{$employee->allowances}}" autofocus required step="any"/>
+                                <input  class="form-control @error('allowances') is-invalid @enderror" type="number" id="allowances" name="allowances" placeholder="GH&#x20B5;" value="{{$employee->allowances}}" autofocus  step="any"/>
                                   @error('allowances')
                                   <span class="invalid-feedback" role="alert">
                                       <strong>{{ $message }}</strong>
@@ -529,7 +529,7 @@
 
                             <div class="mb-3 col-md-4">
                               <label for="gurantor_name" class="form-label"> <strong>   Gurantor Name * </strong> </label>
-                              <input  class="form-control @error('gurantor_name') is-invalid @enderror" type="text" id="gurantor_name" name="gurantor_name" placeholder="Gurantor Full Name" value="{{$employee->gurantor_name}}" autofocus required/>
+                              <input  class="form-control @error('gurantor_name') is-invalid @enderror" type="text" id="gurantor_name" name="gurantor_name" placeholder="Gurantor Full Name" value="{{$employee->gurantor_name}}" autofocus />
                                 @error('gurantor_name')
                                 <span class="invalid-feedback" role="alert">
                                     <strong>{{ $message }}</strong>
@@ -539,7 +539,7 @@
 
                               <div class="mb-3 col-md-4">
                               <label for="gurantor_number" class="form-label"> <strong>   Gurantor Number * </strong> </label>
-                              <input  class="form-control @error('gurantor_number') is-invalid @enderror" type="number" id="gurantor_number" name="gurantor_number" placeholder="Gurantor Number" value="{{$employee->gurantor_number}}" autofocus required/>
+                              <input  class="form-control @error('gurantor_number') is-invalid @enderror" type="number" id="gurantor_number" name="gurantor_number" placeholder="Gurantor Number" value="{{$employee->gurantor_number}}" autofocus />
                                 @error('gurantor_number')
                                 <span class="invalid-feedback" role="alert">
                                     <strong>{{ $message }}</strong>
@@ -550,7 +550,7 @@
 
                               <div class="mb-3 col-md-4">
                               <label for="gurantor_address" class="form-label"> <strong>   Gurantor Address * </strong> </label>
-                              <input  class="form-control @error('gurantor_address') is-invalid @enderror" type="text" id="gurantor_address" name="gurantor_address" placeholder="Gurantor Address" value="{{$employee->gurantor_address}}" autofocus required/>
+                              <input  class="form-control @error('gurantor_address') is-invalid @enderror" type="text" id="gurantor_address" name="gurantor_address" placeholder="Gurantor Address" value="{{$employee->gurantor_address}}" autofocus />
                                 @error('gurantor_address')
                                 <span class="invalid-feedback" role="alert">
                                     <strong>{{ $message }}</strong>
@@ -560,7 +560,7 @@
 
                               <div class="mb-3 col-md-4">
                               <label for="gurantor_nia_number" class="form-label"> <strong>   Gurantor NIA Number * </strong> </label>
-                              <input  class="form-control @error('gurantor_nia_number') is-invalid @enderror" type="text" id="gurantor_nia_number" name="gurantor_nia_number" placeholder="Gurantor NIA Number" value="{{$employee->gurantor_nia_number}}" autofocus required/>
+                              <input  class="form-control @error('gurantor_nia_number') is-invalid @enderror" type="text" id="gurantor_nia_number" name="gurantor_nia_number" placeholder="Gurantor NIA Number" value="{{$employee->gurantor_nia_number}}" autofocus />
                                 @error('gurantor_nia_number')
                                 <span class="invalid-feedback" role="alert">
                                     <strong>{{ $message }}</strong>
@@ -570,7 +570,7 @@
 
                             <div class="mb-3 col-md-4">
                               <label for="relationship" class="form-label"> <strong>  Relationship with Gurantor * </strong> </label>
-                              <input  class="form-control @error('relationship') is-invalid @enderror" type="text" id="relationship" name="relationship" placeholder="Mother or Father..." value="{{$employee->relationship}}" autofocus required/>
+                              <input  class="form-control @error('relationship') is-invalid @enderror" type="text" id="relationship" name="relationship" placeholder="Mother or Father..." value="{{$employee->relationship}}" autofocus />
                                 @error('relationship')
                                 <span class="invalid-feedback" role="alert">
                                     <strong>{{ $message }}</strong>

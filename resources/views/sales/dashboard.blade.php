@@ -71,6 +71,11 @@
               <div class="text-truncate" data-i18n="SList">List</div>
               </a>
           </li>
+          <li class="menu-item">
+              <a href="{{url('proformaClient')}}" class="menu-link">
+              <div class="text-truncate" data-i18n="SList">ProForma Clients</div>
+              </a>
+          </li>
           </ul>
       </li>
       @endif

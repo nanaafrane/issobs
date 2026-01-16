@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Field;
 use App\Http\Requests\StoreFieldRequest;
 use App\Http\Requests\UpdateFieldRequest;
+use App\Models\Bank;
 use Illuminate\Support\Facades\Auth;
 
 class FieldController extends Controller
@@ -65,12 +66,13 @@ class FieldController extends Controller
     public function store(StoreFieldRequest $request)
     {
         //
-        $field = new Field();
-        // $field->create($request->all());
-        $field->name = $request->input('name');
-        $field->user_id = Auth::user()->id;
-        $field->save();
-        return back()->with('success', 'Field Office Added Sucessfully');
+        dd($request->all());
+        // $field = new Field();
+        // // $field->create($request->all());
+        // $field->name = $request->input('name');
+        // $field->user_id = Auth::user()->id;
+        // $field->save();
+        // return back()->with('success', 'Field Office Added Sucessfully');
       }
 
     /**
@@ -88,7 +90,8 @@ class FieldController extends Controller
     {
         //
         // dd($field);
-        return view('locations.edit', compact('field'));
+        $banks = Bank::all();
+        return view('locations.edit', compact('field', 'banks'));
     }
 
     /**
@@ -98,17 +101,18 @@ class FieldController extends Controller
     {
         //
         // dd($request->all(), $field);
-         $field->name = $request->input('name');
+            // $field->name = $request->input('name');
 
-        if($field->isDirty()) {
+        // if($field->isDirty()) {
             $field->name = $request->input('name');
+            $field->bank_id = $request->input('bank_id');
             $field->user_id = Auth::user()->id;
             $field->save();
             return redirect()->route('field.index')->with('success', 'Field Office has been successfully updated!');
-        }
-        else{
-            return back()->with('error', 'No changes detected. Please edit Field Office Name to Update.');
-        }
+        // }
+        // else{
+            // return back()->with('error', 'No changes detected. Please edit Field Office Name to Update.');
+        // }
 
     }
 

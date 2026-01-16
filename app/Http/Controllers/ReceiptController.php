@@ -133,6 +133,7 @@ class ReceiptController extends Controller
     public function store(StoreReceiptRequest $request)
     {
 
+        // dd($request->all());
         // Get all values from receipt form
         $status = $request->input('status');
         $wth_from_form = $request->input('wth');
@@ -160,6 +161,10 @@ class ReceiptController extends Controller
 
         $momo_transactin_id = $request->input('momo_transactin_id');
         $momo_amount = $request->float('momo_amount');
+
+        $other_payment_descri = $request->input('other_payment_descri');
+        $other_payment_amnt = $request->float('other_payment_amnt');
+
         $cash_amount = $request->float('cash_amount');
         $user_id = Auth::user()->id;
 
@@ -171,11 +176,10 @@ class ReceiptController extends Controller
         }
 
         // sum all input payments
-        $total = $cheque_amount + $momo_amount + $cash_amount + $transfer_amount;
+        $total = $cheque_amount + $momo_amount + $cash_amount + $transfer_amount + $other_payment_amnt;
         $sum_of_amountPaid_minus_wht = null;
         $wht_amount = null;
         $vat7_amount = null;
-
 
         // if the payment has with holding turned on;
         if($wth_from_form == "on")
@@ -213,7 +217,7 @@ class ReceiptController extends Controller
             // return "you're here! full payment one time payment";
 
             // // create Receipt
-               $receipt_id = $this->createReceipt($invoice_id, $dAmount, $description, $receipt_date, $vat7_value, $vat7_amount, $client_id, $from, $mode, $cheque_reference, $cheque_amount, $cheque_bank, $transfer_reference, $transfer_amount, $transfer_bank, $momo_transactin_id, $momo_amount, $cash_amount, $user_id, $status, $total, $this->wht_amount, $sum_of_amountPaid_minus_wht, $image);
+               $receipt_id = $this->createReceipt($invoice_id, $dAmount, $description, $receipt_date, $vat7_value, $vat7_amount, $client_id, $from, $mode, $cheque_reference, $cheque_amount, $cheque_bank, $transfer_reference, $transfer_amount, $transfer_bank, $momo_transactin_id, $momo_amount, $cash_amount, $other_payment_descri, $other_payment_amnt, $user_id, $status, $total, $this->wht_amount, $sum_of_amountPaid_minus_wht, $image);
 
                 // update the invoice status to completed and update the balance to 0
                 $invoice_data->status = $status;
@@ -240,13 +244,15 @@ class ReceiptController extends Controller
             //     // select all transactions with this current invoice iD and assign value d to the checks culumn
             Transaction::where('invoice_id', $invoice_id)->update(['checks' => 'd']);
 
-                return redirect('receipt')->with('primary', 'Receipt created Successfully');
+                // return redirect('receipt')->with('primary', 'Receipt created Successfully');
+            return redirect()->route('receipt.show',['receipt' => $receipt_id])->with('primary', 'Receipt  Craeated Successfully');
+
         }
         elseif($status == 'completed' && $check2 == 0 )
         {
 
             // return "you're here! full payment after part payment";
-            $receipt_id = $this->createReceipt($invoice_id, $dAmount, $description, $receipt_date, $vat7_value, $vat7_amount, $client_id, $from, $mode, $cheque_reference, $cheque_amount, $cheque_bank, $transfer_reference, $transfer_amount, $transfer_bank, $momo_transactin_id, $momo_amount, $cash_amount, $user_id, $status, $total, $this->wht_amount, $sum_of_amountPaid_minus_wht, $image);
+            $receipt_id = $this->createReceipt($invoice_id, $dAmount, $description, $receipt_date, $vat7_value, $vat7_amount, $client_id, $from, $mode, $cheque_reference, $cheque_amount, $cheque_bank, $transfer_reference, $transfer_amount, $transfer_bank, $momo_transactin_id, $momo_amount, $cash_amount, $other_payment_descri, $other_payment_amnt, $user_id, $status, $total, $this->wht_amount, $sum_of_amountPaid_minus_wht, $image);
 
             // get balance
             $balance = $invoice_data->balance - $total;
@@ -277,7 +283,9 @@ class ReceiptController extends Controller
             // // select all transactions with this current invoice iD and assign value D to the checks culumn
             Transaction::where('invoice_id', $invoice_id)->update(['checks' => 'd']);
 
-            return redirect('receipt')->with('success', 'Receipt created Successfully');
+            // return redirect('receipt')->with('success', 'Receipt created Successfully');
+            return redirect()->route('receipt.show',['receipt' => $receipt_id])->with('primary', 'Receipt  Craeated Successfully');
+
         }
         else {
             // return "you're here! part payment ";
@@ -297,7 +305,7 @@ class ReceiptController extends Controller
 
             // create a receipt
             // $sum_of_amountPaid_minus_wht = null;
-            $receipt_id = $this->createReceipt($invoice_id, $dAmount, $description, $receipt_date, $vat7_value, $vat7_amount, $client_id, $from, $mode, $cheque_reference, $cheque_amount, $cheque_bank, $transfer_reference, $transfer_amount, $transfer_bank, $momo_transactin_id, $momo_amount, $cash_amount, $user_id, $status, $total, $this->wht_amount, $sum_of_amountPaid_minus_wht, $image);
+            $receipt_id = $this->createReceipt($invoice_id, $dAmount, $description, $receipt_date, $vat7_value, $vat7_amount, $client_id, $from, $mode, $cheque_reference, $cheque_amount, $cheque_bank, $transfer_reference, $transfer_amount, $transfer_bank, $momo_transactin_id, $momo_amount, $cash_amount,$other_payment_descri, $other_payment_amnt, $user_id, $status, $total, $this->wht_amount, $sum_of_amountPaid_minus_wht, $image);
 
             // update the invoice status to partpayment(uncomplete) and update the balance to current balance
             $invoice_data->balance = $balance;
@@ -325,6 +333,8 @@ class ReceiptController extends Controller
 
 
             return redirect('receipt')->with('success', 'Receipt created Successfully');
+            return redirect()->route('receipt.show',['receipt' => $receipt_id])->with('primary', 'Receipt  Craeated Successfully');
+    
         }
 
     }
@@ -440,9 +450,11 @@ class ReceiptController extends Controller
         $momo_amount = $request->float('momo_amount');
         $cash_amount = $request->float('cash_amount');
         $transfer_amount = $request->float('transfer_amount');
+        $other_payment_amnt = $request->float('other_payment_amnt');
+        
 
         // sum all input payments
-        $total = $cheque_amount + $momo_amount + $cash_amount + $transfer_amount;
+        $total = $cheque_amount + $momo_amount + $cash_amount + $transfer_amount + $other_payment_amnt;
         $sum_of_amountPaid_minus_wht = null;
         $wht_amount = null;
         $vat7_amount = null;
@@ -489,6 +501,7 @@ class ReceiptController extends Controller
         $receipt->momo_transactin_id = $request->input('momo_transactin_id');
         $receipt->momo_amount = $request->float('momo_amount');
         $receipt->cash_amount = $request->float('cash_amount');
+        $receipt->other_payment_descri = $request->input('other_payment_descri');
         $receipt->user_id = Auth::user()->id;
         $receipt->status = $request->input('status');
         $receipt->total = $total;
@@ -576,15 +589,21 @@ class ReceiptController extends Controller
 
         $wht_rate = new Wht();
         // dd($wht_rate->wht_rate);
+        $mode = DB::table('receipt_mode')->get();
+        $status = DB::table('receipt_status')->get();
 
-        return view('sales.receiptCreate', compact('invoice', 'wht_rate'));
+
+        return view('sales.receiptCreate', compact('invoice', 'wht_rate', 'mode', 'status'));
     }
 
 
 
 
-    public function createReceipt($invoice_id, $dAmount, $description, $receipt_date, $vat7_value, $vat7_amount, $client_id, $from, $mode, $cheque_reference, $cheque_amount, $cheque_bank, $transfer_reference, $transfer_amount, $transfer_bank, $momo_transactin_id, $momo_amount, $cash_amount, $user_id, $status, $total, $wht_amount, $sum_of_amountPaid_minus_wht, $image)
+// , $other_payment_amnt, $other_payment_descri,
+    public function createReceipt($invoice_id, $dAmount, $description, $receipt_date, $vat7_value, $vat7_amount, $client_id, $from, $mode, $cheque_reference, $cheque_amount, $cheque_bank, $transfer_reference, $transfer_amount, $transfer_bank, $momo_transactin_id, $momo_amount, $cash_amount,$other_payment_descri, $other_payment_amnt ,$user_id, $status, $total, $wht_amount, $sum_of_amountPaid_minus_wht, $image)
     {
+
+        // dd($other_payment_amnt, $other_payment_descri);
         $newReceipt = new Receipt();
 
         $newReceipt->invoice_id = $invoice_id;
@@ -608,6 +627,10 @@ class ReceiptController extends Controller
         $newReceipt->momo_transactin_id = $momo_transactin_id;
         $newReceipt->momo_amount = $momo_amount;
         $newReceipt->cash_amount = $cash_amount;
+
+        $newReceipt->other_payment_descri = $other_payment_descri;
+        $newReceipt->other_payment_amnt = $other_payment_amnt;
+
         $newReceipt->user_id = $user_id;
         $newReceipt->status = $status;
         $newReceipt->total = $total;

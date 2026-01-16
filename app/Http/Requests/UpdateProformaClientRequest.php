@@ -4,7 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class StoreProformaRequest extends FormRequest
+class UpdateProformaClientRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -23,13 +23,15 @@ class StoreProformaRequest extends FormRequest
     {
         return [
             //
-            'service' => 'nullable',
-            'due_date'  => 'nullable',
-            'invoice_month' => 'nullable',
-            'quantity' => 'nullable',
-            'client_id' => 'nullable',
-            'unit_price' => 'nullable',
-            'amount'  => 'nullable',
+        'name' => 'nullable',
+        'phone_number' => 'nullable',
+        'phone_number1'=> 'nullable',
+        'business_name'=> 'nullable',
+        'branch'=> 'nullable',
+        'address'=> 'nullable',
+        'gps'=> 'nullable',
+        'map'=> 'nullable',
+        'field_id'=> 'nullable',
         ];
     }
 }

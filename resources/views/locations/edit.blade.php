@@ -268,6 +268,20 @@
                                 <input type="text" class="form-control" id="name" name="name" value="{{$field?->name}}" required/>
                 
                             </div>
+                            <div class="mb-3 ">
+                              <label for="bank_id" class="form-label"> <strong> {{ __('Bank') }} * </strong>  </label>
+                                <select name="bank_id" class="form-select @error('bank_id') is-invalid @enderror" id="bank_id" >
+                                    <option default>Choose Bank...</option>
+                                    @foreach($banks as $bank)
+                                    <option value="{{$bank->id}}">{{$bank->name}}</option>
+                                    @endforeach
+                                </select>
+                                @error('bank_id')
+                                  <span class="invalid-feedback" role="alert">
+                                      <strong>{{ $message }}</strong>
+                                  </span>
+                                @enderror
+                            </div>
                             <button type="submit" class="btn btn-info d-grid w-100">Update</button>
                         </form>
                     </div>

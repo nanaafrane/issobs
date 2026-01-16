@@ -7,6 +7,7 @@ use App\Http\Requests\StoreProformaRequest;
 use App\Http\Requests\UpdateProformaRequest;
 use App\Models\Client;
 use App\Models\Field;
+use App\Models\ProformaClient;
 use App\Models\Service;
 use App\Models\Transaction;
 use App\Models\Vat;
@@ -40,8 +41,9 @@ class ProformaController extends Controller
     {
         //
         $services = Service::all(); 
-        $clients = Client::all();
+        $clients = ProformaClient::all();
         $fields = Field::all();
+
         return view('sales.proforma_create', compact('clients', 'services', 'fields'));
     }
 
@@ -153,7 +155,7 @@ class ProformaController extends Controller
     {
         //
         $services = Service::all();
-        $clients = Client::all();
+        $clients = ProformaClient::all();
         $proforma_data = DB::table('invoice_data')->where('invoice_number', $proforma->id)->get();
         return view('sales.proforma_edit', compact('proforma', 'proforma_data' ,'services', 'clients'));
     }

@@ -353,9 +353,7 @@
                                             <select name="mode" class="form-select @error('mode') is-invalid @enderror" id="mode" required>
                                                @foreach ($mode as $modes )      
                                                 <option @if ($receipt->mode == $modes->name ) selected @endif  value="{{ $modes->name }}"> {{ $modes->name }}</option>                                                  
-                                               @endforeach
-                                                <option value="cheque">Cheque </option>
-                                               
+                                               @endforeach                                               
                                             </select>
                                             @error('mode')
                                             <span class="invalid-feedback" role="alert">
@@ -531,6 +529,41 @@
                                 </div>
                                 <!-- end of MoMo field -->
                                 <br>
+
+                                <!-- show if Momo value is selected -->
+                                <div id="otherpayrow" @if ($receipt->other_payment > 0.00) style="display: flex;" @endif class="row g-6">
+                                    <div class="col mb-0">
+                                        <label for="other_payment_descri" class="form-label"> {{ __('OTHER PAYMENT DESCRIPTION') }} </label>
+                                        <input
+                                            type="text"
+                                            id="other_payment_descri"
+                                            name="other_payment_descri"
+                                            value="{{$receipt->other_payment_descri}}"
+                                            class="form-control"
+                                            placeholder="Other Payment Description"
+                                            autocomplete="other_payment_descri"
+                                            autofocus>
+                                    </div>
+
+                                    <div class="col mb-0">
+                                        <label for="other_payment_amnt" class="form-label"> {{ __('AMOUNT') }} </label>
+                                        <input
+                                            type="number"
+                                            id="other_payment_amnt"
+                                            name="other_payment_amnt"
+                                            value="{{$receipt->other_payment_amnt}}"
+                                            class="form-control"
+                                            placeholder="GH&#8373;"
+                                            autocomplete="other_payment_amnt"
+                                            step="any"
+                                            autofocus>
+                                    </div>
+                                </div>
+                                <!-- end of MoMo field -->
+                                <br>
+
+
+
                                 <div class="row">
                                     <!-- show if cash value is selected -->
                                     <div id="cashrow" @if ($receipt->mode == 'cash') style="display: flex;" @else style="display: none;" @endif  class="col mb-0">
@@ -623,6 +656,9 @@
             }
             if (selectedValue == 'momo') {
                 $("#momorow").toggle();
+            }
+            if (selectedValue == 'other payment') {
+                $("#otherpayrow").toggle();
             }
             if (selectedValue == 'cash') {
                 $("#cashrow").toggle();

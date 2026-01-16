@@ -122,6 +122,11 @@
                     <div class="text-truncate" data-i18n="SList">List</div>
                     </a>
                 </li>
+                <li class="menu-item">
+              <a href="{{url('proformaClient')}}" class="menu-link">
+              <div class="text-truncate" data-i18n="SList">ProForma Clients</div>
+              </a>
+          </li>
                 </ul>
             </li>
             @endif
@@ -322,7 +327,7 @@
                                                 <strong>{{$proforma->client?->name}}</strong><br>
                                                 <strong> Business Name : {{$proforma->client?->business_name}}, </strong> <br>
                                                 Location: {{$proforma->client?->address}},<br>
-                                                {{$proforma->client->field?->name}},<br>
+                                                {{$proforma->client?->field?->name}},<br>
                                                 Phone: {{$proforma->client?->phone_number}}, {{$proforma->client?->phone_number1}}<br>
                                             </address>
                                         </div>
@@ -374,15 +379,7 @@
                                     <div class="row mb-3">
                                         <div class="col-12 col-sm-6 col-md-8">
                                             <address class="mt-5">
-                                                <span><strong><small> Bank Details</small> </strong> </span><br>
-                                                <span><small> <strong> Bank : ECOBANK</strong> </small> </span><br>
-                                                <span><small> <strong> A/C Name. : FIRST WATCH SECURITY SERVICES LIMITED </strong> </small> </span><br>
-                                                <span> <small> <strong> A/C No. : 1441003309093 </strong> </small> </span><br>
-                                                <span> <small> <strong> Branch : RE INSURANCE-H3 </strong> </small> </span><br><br>
-                                                <!-- <hr class="text-dark"> -->
-                                                <span><strong> <small> MoMo Details </small> </strong> </span><br>
-                                                <span> <small> <strong> MoMo No. : 0555062422 </strong> </small> </span><br>
-                                                <span> <small> <strong> MoMo Name : FIRST WATCH SECURITY SERVICES LIMITED </strong> </small> </span><br>
+                                               
                                             </address>
                                         </div>
                                         <div class="col-12 col-sm-6 col-md-4 text-end">

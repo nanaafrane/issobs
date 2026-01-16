@@ -1,10 +1,5 @@
 <x-hr-dashboard>
 
-    @section('css')
-    <link rel="stylesheet" href="https://cdn.datatables.net/2.3.3/css/dataTables.dataTables.css" />
-    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/3.2.4/css/buttons.dataTables.css">
-    @endsection
-
     @section('side_nav')
     <!-- Menu -->
     <aside id="layout-menu" class="layout-menu menu-vertical menu bg-menu-theme">
@@ -62,6 +57,29 @@
                         <div class="text-truncate" data-i18n="Invoices">Invoices</div>
                     </a>
                 </li>
+                <li class="menu-item active open">
+                    <a href="javascript:void(0);" class="menu-link menu-toggle">
+                    <i class="menu-icon tf-icons bx bx-bxs-receipt bg-primary"></i>
+                    <div class="text-truncate" data-i18n="Staffs">Pro Forma</div>
+                    </a>
+                    <ul class="menu-sub">
+                    <li class="menu-item ">
+                        <a href="{{url('proforma/create')}}" class="menu-link">
+                        <div class="text-truncate" data-i18n="SRegister">Generate</div>
+                        </a>
+                    </li>
+                    <li class="menu-item">
+                        <a href="{{url('proforma')}}" class="menu-link">
+                        <div class="text-truncate" data-i18n="SList">List</div>
+                        </a>
+                    </li>
+                    <li class="menu-item active">
+                        <a href="{{url('proformaClient')}}" class="menu-link">
+                        <div class="text-truncate" data-i18n="SList">ProForma Clients</div>
+                        </a>
+                    </li>
+                    </ul>
+                </li>
                 @endif
 
                 @if(Auth::user()->hasRole(['Finance Manager']))
@@ -104,7 +122,7 @@
                     </ul>
             </li>
             @endif
-            <li class="menu-item">
+            <li class="menu-item ">
                 <a href="javascript:void(0);" class="menu-link menu-toggle">
                 <i class="menu-icon tf-icons bx bxs-user-account"></i>
                 <div class="text-truncate" data-i18n="Staffs">Employees</div>
@@ -124,7 +142,7 @@
                 </ul>
             </li>
         
-            <li class="menu-item ">
+            <li class="menu-item">
                 <a class="menu-link menu-toggle">
                     <i class="menu-icon tf-icons bx bx-bxs-user-detail"></i>
                     <div class="text-truncate" data-i18n="Clients"><strong>Clients</strong></div>
@@ -143,14 +161,14 @@
                 </ul>
             </li>
 
-            <li class="menu-item ">
+            <li class="menu-item">
                 <a href="{{url('departments')}}" class="menu-link">
                 <i class="menu-icon tf-icons bx bxs-buildings"></i>
                 <div class="text-truncate" data-i18n="depnroles">Department & Roles </div>
                 </a>
             </li>
 
-            <li class="menu-item active">
+            <li class="menu-item">
                 <a href="{{url('field')}}" class="menu-link">
                 <i class="menu-icon tf-icons bx bx-bxs-location-plus"></i>
                 <div class="text-truncate" data-i18n="fOffices">Field Offices</div>
@@ -195,6 +213,7 @@
                 <div class="text-truncate" data-i18n="Expense"> Expense </div>
                 </a>
             </li>
+
             @endif
 
             @if(Auth::user()->hasRole(['Invoice', 'Finance Manager', 'Manager']))
@@ -211,6 +230,7 @@
                         <div class="text-truncate" data-i18n="Employees">Add to Salaries</div>
                         </a>
                     </li>
+
                     @if(Auth::user()->hasPermission('Accounts'))
                     <li class="menu-item">
                         <a href="{{ url('salaries/create') }}" class="menu-link">
@@ -249,91 +269,34 @@
 
     <div class="container-xxl flex-grow-1 container-p-y">
 
-        <div class="row">
+        <div class="row ">
             <div class="col-12">
-                <h3 class="card-header text-info"> <i class="icon-base bx bx-bxs-receipt"></i> Field Offices </h3>
+                <h3 class="card-header text-info"> <i class="icon-base bx bx-bxs-receipt"></i> Profoma Client <i class="icon-base bx bx-bxs-right-arrow-alt"></i> Edit </h3>
             </div>
         </div><br>
-
-        <div class="row">
-            <div class="col-xxl-12 mb-6 order-0">
-                <div style="background: #cbfcffff;" class="card">
-                    <div class="d-flex align-items-start row">
-                        <div class="col-sm-7">
-                            <div class="card-body">
-                                <h1>{{$LocationsCount}}</h1>
-                                <h6 class="card-title  mb-3">TOTAL NUMBER OF LOCATIONS </h6>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div> <br> <br>
 
         <div class="card-header  ml-2  d-none d-lg-block">
             @include('flash-messages')
         </div>
 
+        <div class="row gy-3 mt-3">
 
-
-        <div class="row">
+            <div class="col-2"></div>
             <div class="col-8">
-                <table id="myTable" class="display">
-                    <thead>
-                        <tr>
-                            <th> # ID.</th>
-                            <th> Name</th>
-                            <th> Bank</th>
-                            <th>Account Number</th>
-                            <th>Created By</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-
-                        @foreach($Locations as $field)
-                        <tr>
-                            <td> {{$field?->id}} </td>
-                            <td> {{$field?->name}}</td>
-                            <td> {{$field->bank?->name}}</td>
-                            <td> {{$field->bank?->acc_number}}</td>
-                            <td> {{$field->user?->name}}</td>
-                            <td>
-                                <div class="dropdown">
-                                    <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown">
-                                        <i class="icon-base bx bx-dots-vertical-rounded"></i>
-                                    </button>
-                                    <div class="dropdown-menu">
-                                        <a class="dropdown-item" href="field/{{$field?->id}}/edit"><i class="icon-base bx bx-edit-alt me-1"></i> Edit</a>
-
-                                    </div>
-                                </div>
-                            </td>
-                        </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-
-            </div>
-
-            <div class="col-4">
-                <br>
-                <h3 class="card-header text-info"> <i class="icon-base bx bx-bxs-receipt"></i> Add Field Office </h3>
-                <br>
-
-                <form method="POST" action="field">
+                <form method="POST" action="/proformaClient/{{$proformaClient->id}}">
                     @csrf
+                    @method('PUT')
                     <div class="row">
                         <div class="col mb-0">
-                            <label for="name" class="form-label"> {{ __('Name') }}</label>
+                            <label for="name" class="form-label"> {{ __('Full Name') }}</label>
                             <input
                                 type="text"
                                 name="name"
                                 id="name"
                                 class="form-control @error('name') is-invalid @enderror"
-                                value="{{ old('name')}}"
-                                placeholder="Field Office Name"
-                                required
+                                value="{{$proformaClient->name}}"
+                                placeholder="Full Name"
+
                                 autocomplete="name"
                                 autofocus>
 
@@ -345,45 +308,142 @@
 
 
                         </div>
+                        <div class="col mb-0">
+                            <label for="phone_number" class="form-label"> {{ __('Phone Number 1') }} </label>
+                            <input
+                                type="number"
+                                id="phone_number"
+                                name="phone_number"
+                                class="form-control @error('phone_number') is-invalid @enderror"
+                                value="{{$proformaClient->phone_number}}"
+                                placeholder="Phone Number 1"
+                                autocomplete="phone_number"
+                                autofocus>
+
+                            @error('phone_number')
+                            <span class="invalid-feedback" role="alert">
+                                <strong>{{ $message }}</strong>
+                            </span>
+                            @enderror
+                        </div>
+
+                        <div class="col mb-0">
+                            <label for="phone_number1" class="form-label"> {{ __('Phone Number 2') }} </label>
+                            <input
+                                type="number"
+                                id="phone_number1"
+                                name="phone_number1"
+                                class="form-control @error('phone_number') is-invalid @enderror"
+                                value="{{$proformaClient->phone_number1}}"
+                                placeholder="Phone Number 2"
+                                autocomplete="phone_number1"
+                                autofocus>
+
+                            @error('phone_number1')
+                            <span class="invalid-feedback" role="alert">
+                                <strong>{{ $message }}</strong>
+                            </span>
+                            @enderror
+                        </div>
+                    </div>
+                    <div class="row g-6">
+                        <div class="col mb-0">
+                            <label for="business_name" class="form-label"> {{ __('Business Name') }} </label>
+                            <input
+                                type="text"
+                                id="business_name"
+                                name="business_name"
+                                class="form-control @error('business_name') is-invalid @enderror"
+                                value="{{$proformaClient->business_name}}"
+                                placeholder="Business Name"
+
+                                autocomplete="business_name"
+                                autofocus>
+
+                            @error('business_name')
+                            <span class="invalid-feedback" role="alert">
+                                <strong>{{ $message }}</strong>
+                            </span>
+                            @enderror
+                        </div>
+
+                        <div class="col mb-0">
+                            <label for="address" class="form-label"> {{ __('Address') }} </label>
+                            <input
+                                type="text"
+                                id="address"
+                                name="address"
+                                class="form-control @error('address') is-invalid @enderror"
+                                value="{{$proformaClient->address}}"
+                                placeholder="Address"
+
+                                autocomplete="address"
+                                autofocus>
+
+                            @error('address')
+                            <span class="invalid-feedback" role="alert">
+                                <strong>{{ $message }}</strong>
+                            </span>
+                            @enderror
+
+                        </div>
+                    </div>
+
+                    <br>
+                    <div class="row g-6">
+                        <div class="col mb-0">
+                            <div class="input-group">
+                                <label class="input-group-text" for="inputGroupSelect01">{{ __('Location') }}</label>
+                                <select name="field_id" class="form-select @error('inputGroupSelect01') is-invalid @enderror" id="inputGroupSelect01" value="{{ old('field_id')}}" required>
+                                    @foreach($fields as $field)
+                                    <option @if($field->name == $proformaClient->field->name) selected @endif value="{{$field->id}}">{{$field->name}}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            @error('field_id')
+                            <span class="invalid-feedback" role="alert">
+                                <strong>{{ $message }}</strong>
+                            </span>
+                            @enderror
+                        </div>
+
+                        <div class="col mb-0">
+                            <div class="input-group">
+                                <input
+                                    type="text"
+                                    id="branch"
+                                    name="branch"
+                                    class="form-control @error('branch') is-invalid @enderror"
+                                    value="{{$proformaClient->branch}}"
+                                    placeholder="branch"
+                                    autocomplete="branch"
+                                    autofocus>
+
+                            </div>
+
+                            @error('branch')
+                            <span class="invalid-feedback" role="alert">
+                                <strong>{{ $message }}</strong>
+                            </span>
+                            @enderror
+                        </div>
 
                     </div>
 
                     <br>
                     <div class="modal-footer">
-                        <button type="submit" class="btn btn-info d-grid w-100">{{ __('Add') }}</button>
+                        <button type="submit" class="btn btn-info d-grid w-100">{{ __('Update') }}</button>
                     </div>
                 </form>
+
             </div>
+            <div class="col-2"></div>
+
         </div>
-    </div>
-    @endsection
+        <br><br><br><br><br><br><br><br>
+        @endsection
 
 
-    @section('scripts')
 
-    <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
-    <script src="https://cdn.datatables.net/2.3.3/js/dataTables.js"></script>
-    <script src="https://cdn.datatables.net/buttons/3.2.4/js/dataTables.buttons.js"></script>
-    <script src="https://cdn.datatables.net/buttons/3.2.4/js/buttons.dataTables.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
-    <script src="https://cdn.datatables.net/buttons/3.2.4/js/buttons.html5.min.js"></script>
-
-
-    <script>
-        new DataTable('#myTable', {
-            responsive: true,
-
-            layout: {
-                topStart: {
-                    buttons: ['excelHtml5', 'pdfHtml5']
-                }
-            }
-        });
-    </script>
-
-
-    @endsection
-
-</x-hr-dashboard>
+        </x-sales-dashboard>
