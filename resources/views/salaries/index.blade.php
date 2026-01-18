@@ -433,6 +433,8 @@
                                             <th>Client </th>
                                             <th> Location </th>
                                             <th>Payment Type</th>
+                                            <th>Basic</th>
+                                            <th>Allowa</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -445,13 +447,15 @@
                                                 <td> {{ strtoupper($employee->name) }}  </td>
                                                 <td> {{ $employee->gender }}  </td>
                                                 <td> {{ $employee->phone_number }}  </td>
-                                                <td> {{ $employee->date_of_joining->diffForHumans() }} </td>
+                                                <td> {{ $employee->date_of_joining?->diffForHumans() }} </td>
                                                 <td> {{ $employee->department?->name }} </td>
                                                 <td> {{ $employee->role?->name }}  </td>
                                                 <td> {{ $employee->field?->name }}   </td>
                                                 <td> {{ $employee->client?->name }} {{ $employee->client?->business_name }} </td>
                                                 <td> {{ $employee->location }} </td>
                                                 <td> {{ $employee->payment_type }}  </td>
+                                                <td>{{ $employee->basic_salary }} </td>
+                                                <td> {{ $employee->allowances }} </td>
                                             </tr>
                                             @endforeach
                                         </tbody>

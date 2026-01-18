@@ -671,10 +671,10 @@
               // console.log(" Value: " + value);
 
                 if ($(this).val() == 'bank') {
-                    $('#payment_field').show();
+                    $('#payment_field').toggle();
                     // console.log(" Value: " + value);
                 } else {
-                    $('#payment_field').hide();
+                    $('#payment_field').toggle();
                 }
             });
         });

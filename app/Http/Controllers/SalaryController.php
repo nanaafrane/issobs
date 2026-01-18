@@ -19,7 +19,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Imports\SalaryImport;
-
+use App\Models\PaymentInfo;
 
 class SalaryController extends Controller
 {
@@ -393,6 +393,46 @@ class SalaryController extends Controller
                 }
 
                 // return "Processing salary for Employee payment ID: " . $employee->paymentInfo->id . "\n";
+
+                // Deduct Tax
+                // $ssnitNumber = PaymentInfo::where('employee_id', $employee->id)->whereNotNull('ssnit_number')->get();
+                $ssnit_tier2_5 = 0;
+                $ssnit_tier1_0_5 = 0;
+                $ssnit_13 = 0;
+                $ssnit_13_5 = 0;
+
+                $tax = 0;
+                $employee_basic_taxAmount_minus_ssnt = 0;
+
+                if($employee->paymentInfo?->ssnit_number !== '' && $employee->paymentInfo?->ssnit_number !== null)
+                    {
+                        // echo "Processing salary for Employee SSNIT ID: " . $employee->paymentInfo->ssnit_number . "<br><br>";
+
+                        //  SSNIT transactions HERE
+                        $ssnit_tier2_5 = $employee->basic_salary * 0.05;
+                        $ssnit_tier1_0_5 = $employee->basic_salary * 0.005;
+                        $ssnit_13 = $employee->basic_salary * 0.13;
+                        $ssnit_13_5 = $employee->basic_salary * 0.135;
+
+                        $employee_basic_taxAmount_minus_ssnt = $employee->basic_salary - $ssnit_tier2_5;
+                        // echo "Processing salary Tier 2 (5%) = " . $ssnit_tier2_5 .  " Tier 1 (0.5%) = ". $ssnit_tier1_0_5 . "  SSNIT (13%) = ".$ssnit_13. " SSNIT (13.5%) = ".  $ssnit_13_5   ."<br><br>";
+                    }
+
+                if($employee->basic_salary > 490.00 )
+                {
+                    // TAX CALCULATIONS
+                        // echo "Employee Basic salary = "  .$employee->basic_salary ." TAX = ".  $this->taxEmployee($employee->basic_salary)  ."<br>";
+                      if($employee->paymentInfo?->ssnit_number !== '' && $employee->paymentInfo?->ssnit_number !== null && $employee_basic_taxAmount_minus_ssnt >= 0)
+                        {
+                        $tax = $this->taxEmployee($employee_basic_taxAmount_minus_ssnt) ;
+                        // echo "Employee Basic salary = "  .$employee->basic_salary ." TAX = ".  $tax  ."<br>";
+
+                        }else{
+                        $tax = $this->taxEmployee($employee->basic_salary) ;
+                        // echo "Employee Basic salary = "  .$employee->basic_salary ." TAX = ".  $tax  ."<br>";
+                        }                    
+                }
+
                 $salary = new Salary();
                 $salary->employee_id = $employee->id;
                 $salary->salary_month = $request->input('salary_month');
@@ -405,7 +445,13 @@ class SalaryController extends Controller
                 $salary->account_number = $employee->paymentInfo?->acc_number;
                 $salary->bank_id = $employee->paymentInfo?->bank_id;
                 $salary->branch = $employee->paymentInfo?->branch;
-                $salary->payment_type = $employee->payment_type;
+                
+                $salary->ssnit_tier2_5d = $ssnit_tier2_5;
+                $salary->ssnit_tier2_5 = $ssnit_tier2_5;
+                $salary->ssnit_tier1_0_5 = $ssnit_tier1_0_5;
+                $salary->ssnit_comp_cont_13 = $ssnit_13;
+                $salary->ssnit_tobe_paid13_5 = $ssnit_13_5;
+                $salary->tax = $tax;
                
                 $salary->basic_salary = $employee->basic_salary;
                 $salary->allowances = $employee->allowances;
@@ -424,10 +470,112 @@ class SalaryController extends Controller
         }
         return back()->with('success', 'Employees added for this month salary to be processed.'); 
 
-        // dd($request->all(), $date->format('F Y'));
+    }
 
+
+    /**
+     * Calculating TAX on Basic Salary
+     */
+    public function taxEmployee($basic_salary)
+    {
+            $first = 490;
+            $next1 = 110;
+            $next2 = 130;
+            $next3 = 3166.67;
+            $tax = 0.00;
+
+        $next1Tax = $this->next1Tax($basic_salary);
+        $tax = $next1Tax[0];
+        // dd($next1) ;
+        if($next1Tax[1] > $next1)
+        {
+            // run NEXT2
+            // return $next1Tax[0] ." / " .$next1Tax[1];
+           
+            $next2Tax = $this->next2Tax($next1Tax[1]);
+            $tax = $tax + $next2Tax[0];
+            // return $next2Tax[0] . " / ". $next2Tax[1];
+        }
+        $next2Tax = $this->next2Tax($next1Tax[1]);
+        if( isset($next2Tax[1]) <= $next3 && $basic_salary > 500)
+        {
+            $next3Tax = $this->next3Tax($next2Tax[1]);
+            $tax = $tax + $next2Tax[0] + $next3Tax[0];
+        }
+
+        return $tax;
 
     }
+
+
+    public function next1Tax($basic_salary)
+    {
+            $first = 490;
+            $next1 = 110;
+            $next1_rate = 0.05;
+            $next1_amnt = 0;
+            $next1_tax = 0;
+
+            // subtract 110 of the next1 and find 10% of that
+            $next1_amnt = $basic_salary - $first;
+            if ($next1_amnt <= $next1)
+                {
+                  $next1_tax =  $next1_amnt * $next1_rate;
+                }
+            else{
+                $next1_tax =  $next1 * $next1_rate ;
+            }
+      
+            return [$next1_tax ,  $next1_amnt]  ;
+
+    }
+
+    public function next2Tax($balance)
+    {
+            $next1 = 110;
+            $next2 = 130;
+            $next2_rate = 0.10;
+            $next2_amnt = 0;
+            $next2_tax = 0;
+
+        $next2_amnt = $balance - $next1;
+
+        if ($next2_amnt <= $next2)
+                {
+                  $next2_tax =  $next2_amnt * $next2_rate;
+                }
+            else{
+                $next2_tax =  $next2 * $next2_rate ;
+            }
+      
+            return [$next2_tax ,  $next2_amnt]  ;
+        
+    }
+
+    public function next3Tax($balance)
+    {
+            $next1 = 110;
+            $next2 = 130;
+            $next3 = 3166.67;
+            $next3_rate = 0.175;
+            $next3_amnt = 0;
+            $next3_tax = 0;
+
+        $next3_amnt = $balance - $next1;
+
+        if ($next3_amnt <= $next3)
+                {
+                  $next3_tax =  $next3_amnt * $next3_rate;
+                }
+            else{
+                $next3_tax =  $next2 * $next3_rate ;
+            }
+      
+            return [$next3_tax ,  $next3_amnt]  ;
+    }
+
+
+
 
     /**
      * Display the specified resource.
