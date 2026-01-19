@@ -334,8 +334,8 @@
                             </div>
                             
                             <div class="mb-3 col-md-4">
-                              <label for="date_of_birth" class="form-label"> <strong>Date Of Birth *</strong> </label>
-                              <input  class="form-control @error('date_of_birth') is-invalid @enderror" type="date" id="date_of_birth" name="date_of_birth" placeholder="Male or Female" value="{{old('date_of_birth')}}" autofocus required/>
+                              <label for="date_of_birth" class="form-label"> <strong>Date Of Birth </strong> </label>
+                              <input  class="form-control @error('date_of_birth') is-invalid @enderror" type="date" id="date_of_birth" name="date_of_birth" placeholder="Male or Female" value="{{old('date_of_birth')}}" autofocus />
                                 @error('date_of_birth')
                                 <span class="invalid-feedback" role="alert">
                                     <strong>{{ $message }}</strong>
@@ -344,8 +344,8 @@
                             </div>
 
                             <div class="mb-3 col-md-4">
-                              <label for="nia_number" class="form-label"> <strong>NIA Number * </strong> </label>
-                              <input  class="form-control @error('nia_number') is-invalid @enderror" type="text" id="nia_number" name="nia_number" placeholder="GHAXXXXXXXXX-X" value="{{old('nia_number')}}" autofocus required/>
+                              <label for="nia_number" class="form-label"> <strong>NIA Number  </strong> </label>
+                              <input  class="form-control @error('nia_number') is-invalid @enderror" type="text" id="nia_number" name="nia_number" placeholder="GHAXXXXXXXXX-X" value="{{old('nia_number')}}" autofocus />
                                 @error('nia_number')
                                 <span class="invalid-feedback" role="alert">
                                     <strong>{{ $message }}</strong>
@@ -354,8 +354,8 @@
                             </div>
 
                             <div class="mb-3 col-md-4">
-                              <label for="address" class="form-label"> <strong> Digital Address * </strong> </label>
-                              <input  class="form-control @error('address') is-invalid @enderror" type="text" id="address" name="address" placeholder="GC-XXX-X" value="{{old('address')}}" autofocus required/>
+                              <label for="address" class="form-label"> <strong> Digital Address  </strong> </label>
+                              <input  class="form-control @error('address') is-invalid @enderror" type="text" id="address" name="address" placeholder="GC-XXX-X" value="{{old('address')}}" autofocus />
                                 @error('address')
                                 <span class="invalid-feedback" role="alert">
                                     <strong>{{ $message }}</strong>
@@ -365,7 +365,7 @@
 
                             <div class="mb-3 col-md-4">
                               <label for="marital_status" class="form-label"><strong>Marital Status *</strong> </label>
-                                <select name="marital_status" class="form-select @error('marital_status') is-invalid @enderror" id="marital_status" value="{{ old('marital_status')}}" required>
+                                <select name="marital_status" class="form-select @error('marital_status') is-invalid @enderror" id="marital_status" value="{{ old('marital_status')}}" >
                                     <option disabled selected>Choose...</option>
                                     <option value="single">Single</option>
                                     <option value="married">Married</option>
@@ -468,7 +468,7 @@
 
 
                             <div class="mb-3 col-md-4">
-                              <label for="location" class="form-label"> <strong>  {{ __('Location') }} * </strong> </label>
+                              <label for="location" class="form-label"> <strong>  {{ __('Location') }}  </strong> </label>
                               <input  class="form-control @error('location') is-invalid @enderror" type="text" id="location" name="location"  placeholder="Address Name or Location Name" value="{{old('location')}}" autofocus required/>
                                 @error('location')
                                 <span class="invalid-feedback" role="alert">
@@ -589,8 +589,8 @@
                             <hr class="mb-3" />
 
                             <div class="mb-3 col-md-4">
-                              <label for="gurantor_name" class="form-label"> <strong>   Gurantor Name * </strong> </label>
-                              <input  class="form-control @error('gurantor_name') is-invalid @enderror" type="text" id="gurantor_name" name="gurantor_name" placeholder="Gurantor Full Name" value="{{old('gurantor_name')}}" autofocus required/>
+                              <label for="gurantor_name" class="form-label"> <strong>   Gurantor Name  </strong> </label>
+                              <input  class="form-control @error('gurantor_name') is-invalid @enderror" type="text" id="gurantor_name" name="gurantor_name" placeholder="Gurantor Full Name" value="{{old('gurantor_name')}}" autofocus />
                                 @error('gurantor_name')
                                 <span class="invalid-feedback" role="alert">
                                     <strong>{{ $message }}</strong>
@@ -599,8 +599,8 @@
                             </div>
 
                               <div class="mb-3 col-md-4">
-                              <label for="gurantor_number" class="form-label"> <strong>   Gurantor Number * </strong> </label>
-                              <input  class="form-control @error('gurantor_number') is-invalid @enderror" type="number" id="gurantor_number" name="gurantor_number" placeholder="Gurantor Number" value="{{old('gurantor_number')}}" autofocus required/>
+                              <label for="gurantor_number" class="form-label"> <strong>   Gurantor Number  </strong> </label>
+                              <input  class="form-control @error('gurantor_number') is-invalid @enderror" type="number" id="gurantor_number" name="gurantor_number" placeholder="Gurantor Number" value="{{old('gurantor_number')}}" autofocus />
                                 @error('gurantor_number')
                                 <span class="invalid-feedback" role="alert">
                                     <strong>{{ $message }}</strong>
@@ -610,8 +610,8 @@
 
 
                               <div class="mb-3 col-md-4">
-                              <label for="gurantor_address" class="form-label"> <strong>   Gurantor Address * </strong> </label>
-                              <input  class="form-control @error('gurantor_address') is-invalid @enderror" type="text" id="gurantor_address" name="gurantor_address" placeholder="Gurantor Address" value="{{old('gurantor_address')}}" autofocus required/>
+                              <label for="gurantor_address" class="form-label"> <strong>   Gurantor Address  </strong> </label>
+                              <input  class="form-control @error('gurantor_address') is-invalid @enderror" type="text" id="gurantor_address" name="gurantor_address" placeholder="Gurantor Address" value="{{old('gurantor_address')}}" autofocus />
                                 @error('gurantor_address')
                                 <span class="invalid-feedback" role="alert">
                                     <strong>{{ $message }}</strong>
@@ -620,8 +620,8 @@
                             </div>
 
                               <div class="mb-3 col-md-4">
-                              <label for="gurantor_nia_number" class="form-label"> <strong>   Gurantor NIA Number * </strong> </label>
-                              <input  class="form-control @error('gurantor_nia_number') is-invalid @enderror" type="text" id="gurantor_nia_number" name="gurantor_nia_number" placeholder="Gurantor NIA Number" value="{{old('gurantor_nia_number')}}" autofocus required/>
+                              <label for="gurantor_nia_number" class="form-label"> <strong>   Gurantor NIA Number  </strong> </label>
+                              <input  class="form-control @error('gurantor_nia_number') is-invalid @enderror" type="text" id="gurantor_nia_number" name="gurantor_nia_number" placeholder="Gurantor NIA Number" value="{{old('gurantor_nia_number')}}" autofocus />
                                 @error('gurantor_nia_number')
                                 <span class="invalid-feedback" role="alert">
                                     <strong>{{ $message }}</strong>
@@ -630,8 +630,8 @@
                               </div>
 
                             <div class="mb-3 col-md-4">
-                              <label for="relationship" class="form-label"> <strong>  Relationship with Gurantor * </strong> </label>
-                              <input  class="form-control @error('relationship') is-invalid @enderror" type="text" id="relationship" name="relationship" placeholder="Mother or Father..." value="{{old('relationship')}}" autofocus required/>
+                              <label for="relationship" class="form-label"> <strong>  Relationship with Gurantor  </strong> </label>
+                              <input  class="form-control @error('relationship') is-invalid @enderror" type="text" id="relationship" name="relationship" placeholder="Mother or Father..." value="{{old('relationship')}}" autofocus />
                                 @error('relationship')
                                 <span class="invalid-feedback" role="alert">
                                     <strong>{{ $message }}</strong>
@@ -670,7 +670,7 @@
               // var value = $(this).val();     
               // console.log(" Value: " + value);
 
-                if ($(this).val() == 'bank') {
+                if ($(this).val() == 'Bank') {
                     $('#payment_field').toggle();
                     // console.log(" Value: " + value);
                 } else {

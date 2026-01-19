@@ -565,18 +565,36 @@ class ReceiptController extends Controller
     public function destroy(Receipt $receipt)
     {
         //
-        // dd($receipt->id);
+        // dd($receipt);
         // REMOVE FROM COLLECTIONS
-        // $deleteCollections = Collection::where()->deleteOrFail();
+
+        // if receipt has been deposited, do not allow update   
+        $collection = Collection::where('receipt_id', $receipt->id)->first();
+
+        if($collection?->status == 'deposited')
+        {
+            return redirect()->back()->with('error', 'Receipt has been Deposited and cannot be Deleted');
+        }
+
+        Collection::where('id', $collection->id)->deleteOrFail();
+
         //   dd($deleteCollections);
-        // if(isset($deleteCollections))
+        // if(isset($deleteCollections) && !empty($deleteCollections))
         // {
+
+        // SET ALL TRANSACTIONS TO EMPTY STRING
+        //  $invoice =  Invoice::where('receipt_id',  $receipt->id)->get();
+        //  dd($invoice);
+         Transaction::where('invoice_id', $receipt->invoice->id)->update(['checks', '']);
         // DELETE FROM TRANSACTION
-        // Transaction::where('receipt_id', $receipt->id)->deleteOrFail();
+        Transaction::where('receipt_id', $receipt->id)->deleteOrFail();
 
         // UPDATE THE INVOICE TO DEFAULT
-        //  $receipt->deleteOrFail();
+         Invoice::where()->update(['status', 'unpaid' ]); $receipt->deleteOrFail();
         // }
+
+        // DELETE THE RECEIPT
+         $receipt->deleteOrFail();
 
         
         
