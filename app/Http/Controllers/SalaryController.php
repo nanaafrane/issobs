@@ -414,7 +414,7 @@ class SalaryController extends Controller
                         $ssnit_13 = $employee->basic_salary * 0.13;
                         $ssnit_13_5 = $employee->basic_salary * 0.135;
 
-                        $employee_basic_taxAmount_minus_ssnt = $employee->basic_salary - $ssnit_tier2_5;
+                        $employee_basic_taxAmount_minus_ssnt = $employee->basic_salary - ($ssnit_tier2_5 + $ssnit_tier1_0_5);
                         // echo "Processing salary Tier 2 (5%) = " . $ssnit_tier2_5 .  " Tier 1 (0.5%) = ". $ssnit_tier1_0_5 . "  SSNIT (13%) = ".$ssnit_13. " SSNIT (13.5%) = ".  $ssnit_13_5   ."<br><br>";
                     }
 

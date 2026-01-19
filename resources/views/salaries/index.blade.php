@@ -433,6 +433,7 @@
                                             <th>Client </th>
                                             <th> Location </th>
                                             <th>Payment Type</th>
+                                            <th>Bank Name </th>
                                             <th>Basic</th>
                                             <th>Allowa</th>
                                             </tr>
@@ -454,6 +455,7 @@
                                                 <td> {{ $employee->client?->name }} {{ $employee->client?->business_name }} </td>
                                                 <td> {{ $employee->location }} </td>
                                                 <td> {{ $employee->payment_type }}  </td>
+                                                <td> {{ $employee->paymentInfo?->bank?->name }} </td>
                                                 <td>{{ $employee->basic_salary }} </td>
                                                 <td> {{ $employee->allowances }} </td>
                                             </tr>
@@ -491,7 +493,7 @@
         new DataTable('#myTable', {
             responsive: true,
               dom: 'lfrtip',
-              lengthMenu: [[10, 25, 50, 100, 500,-1], [10, 25, 50, 100, 500,"All"]],
+              lengthMenu: [[10, 25, 50, 100, 500], [10, 25, 50, 100, 500]],
               columnControl: [ ['search'] ]
         });
     </script>
