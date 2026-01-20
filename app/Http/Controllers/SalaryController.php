@@ -411,10 +411,11 @@ class SalaryController extends Controller
                         //  SSNIT transactions HERE
                         $ssnit_tier2_5 = $employee->basic_salary * 0.05;
                         $ssnit_tier1_0_5 = $employee->basic_salary * 0.005;
+                        $ssnit5_5 = $employee->basic_salary * 0.055;
                         $ssnit_13 = $employee->basic_salary * 0.13;
                         $ssnit_13_5 = $employee->basic_salary * 0.135;
 
-                        $employee_basic_taxAmount_minus_ssnt = $employee->basic_salary - ($ssnit_tier2_5 + $ssnit_tier1_0_5);
+                        $employee_basic_taxAmount_minus_ssnt = $employee->basic_salary - $ssnit5_5  ;
                         // echo "Processing salary Tier 2 (5%) = " . $ssnit_tier2_5 .  " Tier 1 (0.5%) = ". $ssnit_tier1_0_5 . "  SSNIT (13%) = ".$ssnit_13. " SSNIT (13.5%) = ".  $ssnit_13_5   ."<br><br>";
                     }
 
@@ -425,38 +426,38 @@ class SalaryController extends Controller
                       if($employee->paymentInfo?->ssnit_number !== '' && $employee->paymentInfo?->ssnit_number !== null && $employee_basic_taxAmount_minus_ssnt >= 0)
                         {
                         $tax = $this->taxEmployee($employee_basic_taxAmount_minus_ssnt) ;
-                        // echo "Employee Basic salary = "  .$employee->basic_salary ." TAX = ".  $tax  ."<br>";
+                        echo "Employee Basic salary = "  .$employee->basic_salary ." TAX = ".  $tax  ."<br>";
 
                         }else{
                         $tax = $this->taxEmployee($employee->basic_salary) ;
-                        // echo "Employee Basic salary = "  .$employee->basic_salary ." TAX = ".  $tax  ."<br>";
+                        echo "Employee Basic salary = "  .$employee->basic_salary ." TAX = ".  $tax  ."<br>";
                         }                    
                 }
 
-                $salary = new Salary();
-                $salary->employee_id = $employee->id;
-                $salary->salary_month = $request->input('salary_month');
-                $salary->field_id = $employee->field_id;
-                $salary->department_id = $employee->department_id;
-                $salary->role_id = $employee->role_id;
-                $salary->client_id = $employee->client_id;
-                $salary->location = $employee->location;
-                $salary->payment_type = $employee->payment_type;
-                $salary->account_number = $employee->paymentInfo?->acc_number;
-                $salary->bank_id = $employee->paymentInfo?->bank_id;
-                $salary->branch = $employee->paymentInfo?->branch;
+                // $salary = new Salary();
+                // $salary->employee_id = $employee->id;
+                // $salary->salary_month = $request->input('salary_month');
+                // $salary->field_id = $employee->field_id;
+                // $salary->department_id = $employee->department_id;
+                // $salary->role_id = $employee->role_id;
+                // $salary->client_id = $employee->client_id;
+                // $salary->location = $employee->location;
+                // $salary->payment_type = $employee->payment_type;
+                // $salary->account_number = $employee->paymentInfo?->acc_number;
+                // $salary->bank_id = $employee->paymentInfo?->bank_id;
+                // $salary->branch = $employee->paymentInfo?->branch;
                 
-                $salary->ssnit_tier2_5d = $ssnit_tier2_5;
-                $salary->ssnit_tier2_5 = $ssnit_tier2_5;
-                $salary->ssnit_tier1_0_5 = $ssnit_tier1_0_5;
-                $salary->ssnit_comp_cont_13 = $ssnit_13;
-                $salary->ssnit_tobe_paid13_5 = $ssnit_13_5;
-                $salary->tax = $tax;
+                // $salary->ssnit_tier2_5d = $ssnit_tier2_5;
+                // $salary->ssnit_tier2_5 = $ssnit_tier2_5;
+                // $salary->ssnit_tier1_0_5 = $ssnit_tier1_0_5;
+                // $salary->ssnit_comp_cont_13 = $ssnit_13;
+                // $salary->ssnit_tobe_paid13_5 = $ssnit_13_5;
+                // $salary->tax = $tax;
                
-                $salary->basic_salary = $employee->basic_salary;
-                $salary->allowances = $employee->allowances;
-                $salary->user_id = Auth::id();
-                $salary->save();
+                // $salary->basic_salary = $employee->basic_salary;
+                // $salary->allowances = $employee->allowances;
+                // $salary->user_id = Auth::id();
+                // $salary->save();
 
 
 
@@ -465,10 +466,10 @@ class SalaryController extends Controller
 
         // dd($alreadyProcessed);
 
-        if (!empty($alreadyProcessed)) {
-            return back()->with('error', 'The employees with the IDs have already been add to salary to be processed for this month: '. implode(', ', $alreadyProcessed)) ;
-        }
-        return back()->with('success', 'Employees added for this month salary to be processed.'); 
+        // if (!empty($alreadyProcessed)) {
+        //     return back()->with('error', 'The employees with the IDs have already been add to salary to be processed for this month: '. implode(', ', $alreadyProcessed)) ;
+        // }
+        // return back()->with('success', 'Employees added for this month salary to be processed.'); 
 
     }
 
@@ -497,10 +498,11 @@ class SalaryController extends Controller
             // return $next2Tax[0] . " / ". $next2Tax[1];
         }
         $next2Tax = $this->next2Tax($next1Tax[1]);
+        // // return $next2Tax[0]. " / " . $next2Tax[1];
         if( isset($next2Tax[1]) <= $next3 && $basic_salary > 500)
         {
             $next3Tax = $this->next3Tax($next2Tax[1]);
-            $tax = $tax + $next2Tax[0] + $next3Tax[0];
+            $tax = $next1Tax[0] + $next2Tax[0] + $next3Tax[0];
         }
 
         return $tax;
@@ -561,7 +563,7 @@ class SalaryController extends Controller
             $next3_amnt = 0;
             $next3_tax = 0;
 
-        $next3_amnt = $balance - $next1;
+        $next3_amnt = $balance - $next2;
 
         if ($next3_amnt <= $next3)
                 {
