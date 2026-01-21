@@ -404,7 +404,8 @@
                       id="excelFile"
                       name="excelFile"
                       class="account-file-input  @error('excelFile') is-invalid @enderror"
-                      accept=".xls, .xlsx"/>
+                      accept=".xls, .xlsx"
+                      required/>
 
                 <button class="btn btn-dark" onclick="return confirm('Kindly Confirm?')" type="submit"> <i class="icon-base bx bx-recycle"> </i> {{ __('Upload') }}</button>
             </div>

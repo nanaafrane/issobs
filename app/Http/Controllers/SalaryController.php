@@ -426,38 +426,38 @@ class SalaryController extends Controller
                       if($employee->paymentInfo?->ssnit_number !== '' && $employee->paymentInfo?->ssnit_number !== null && $employee_basic_taxAmount_minus_ssnt >= 0)
                         {
                         $tax = $this->taxEmployee($employee_basic_taxAmount_minus_ssnt) ;
-                        echo "Employee Basic salary = "  .$employee->basic_salary ." TAX = ".  $tax  ."<br>";
+                        // echo "Employee Basic salary = "  .$employee->basic_salary ." TAX = ".  $tax  ."<br>";
 
                         }else{
                         $tax = $this->taxEmployee($employee->basic_salary) ;
-                        echo "Employee Basic salary = "  .$employee->basic_salary ." TAX = ".  $tax  ."<br>";
+                        // echo "Employee Basic salary = "  .$employee->basic_salary ." TAX = ".  $tax  ."<br>";
                         }                    
                 }
 
-                // $salary = new Salary();
-                // $salary->employee_id = $employee->id;
-                // $salary->salary_month = $request->input('salary_month');
-                // $salary->field_id = $employee->field_id;
-                // $salary->department_id = $employee->department_id;
-                // $salary->role_id = $employee->role_id;
-                // $salary->client_id = $employee->client_id;
-                // $salary->location = $employee->location;
-                // $salary->payment_type = $employee->payment_type;
-                // $salary->account_number = $employee->paymentInfo?->acc_number;
-                // $salary->bank_id = $employee->paymentInfo?->bank_id;
-                // $salary->branch = $employee->paymentInfo?->branch;
+                $salary = new Salary();
+                $salary->employee_id = $employee->id;
+                $salary->salary_month = $request->input('salary_month');
+                $salary->field_id = $employee->field_id;
+                $salary->department_id = $employee->department_id;
+                $salary->role_id = $employee->role_id;
+                $salary->client_id = $employee->client_id;
+                $salary->location = $employee->location;
+                $salary->payment_type = $employee->payment_type;
+                $salary->account_number = $employee->paymentInfo?->acc_number;
+                $salary->bank_id = $employee->paymentInfo?->bank_id;
+                $salary->branch = $employee->paymentInfo?->branch;
                 
-                // $salary->ssnit_tier2_5d = $ssnit_tier2_5;
-                // $salary->ssnit_tier2_5 = $ssnit_tier2_5;
-                // $salary->ssnit_tier1_0_5 = $ssnit_tier1_0_5;
-                // $salary->ssnit_comp_cont_13 = $ssnit_13;
-                // $salary->ssnit_tobe_paid13_5 = $ssnit_13_5;
-                // $salary->tax = $tax;
+                $salary->ssnit_tier2_5d = $ssnit_tier2_5;
+                $salary->ssnit_tier2_5 = $ssnit_tier2_5;
+                $salary->ssnit_tier1_0_5 = $ssnit_tier1_0_5;
+                $salary->ssnit_comp_cont_13 = $ssnit_13;
+                $salary->ssnit_tobe_paid13_5 = $ssnit_13_5;
+                $salary->tax = $tax;
                
-                // $salary->basic_salary = $employee->basic_salary;
-                // $salary->allowances = $employee->allowances;
-                // $salary->user_id = Auth::id();
-                // $salary->save();
+                $salary->basic_salary = $employee->basic_salary;
+                $salary->allowances = $employee->allowances;
+                $salary->user_id = Auth::id();
+                $salary->save();
 
 
 
@@ -466,10 +466,10 @@ class SalaryController extends Controller
 
         // dd($alreadyProcessed);
 
-        // if (!empty($alreadyProcessed)) {
-        //     return back()->with('error', 'The employees with the IDs have already been add to salary to be processed for this month: '. implode(', ', $alreadyProcessed)) ;
-        // }
-        // return back()->with('success', 'Employees added for this month salary to be processed.'); 
+        if (!empty($alreadyProcessed)) {
+            return back()->with('error', 'The employees with the IDs have already been add to salary to be processed for this month: '. implode(', ', $alreadyProcessed)) ;
+        }
+        return back()->with('success', 'Employees added for this month salary to be processed.'); 
 
     }
 
@@ -477,35 +477,70 @@ class SalaryController extends Controller
     /**
      * Calculating TAX on Basic Salary
      */
+    public $next2Tax;
+
     public function taxEmployee($basic_salary)
     {
             $first = 490;
             $next1 = 110;
             $next2 = 130;
             $next3 = 3166.67;
-            $tax = 0.00;
+            // $tax = 0.00;
+             $next1Tax = 0.00;
+               $next3Tax = 0.00;
 
-        $next1Tax = $this->next1Tax($basic_salary);
-        $tax = $next1Tax[0];
-        // dd($next1) ;
-        if($next1Tax[1] > $next1)
-        {
-            // run NEXT2
-            // return $next1Tax[0] ." / " .$next1Tax[1];
+
+                $next1Tax = $this->next1Tax($basic_salary);
+                if($next1Tax[1]  < $next1)
+                {
+                    return $next1Tax[0];
+                }elseif($next1Tax[1] > $next1)
+                {
+                    //  return  "run NEXT2";
+                    $this->next2Tax = $this->next2Tax($next1Tax[1]);
+                    // return $next2Tax[0] + $next1Tax[0];
+                }
+                if($this->next2Tax[1]  < $next2){
+                    
+                    //  $next3Tax = $this->next3Tax($this->next2Tax[1]);
+                    return $this->next2Tax[0] +  $next1Tax[0]  ;
+                    
+                }elseif($this->next2Tax[1]  > $next2)
+                {
+                        $next3Tax = $this->next3Tax($this->next2Tax[1]);
+                        //  return  "run NEXT3 / " . $this->next2Tax[1]; 
+                        return $this->next2Tax[0] +  $next1Tax[0] + $next3Tax[0] ;
+
+                }
+
+        // $next1Tax = $this->next1Tax($basic_salary);
+
+        // if($next1Tax[1]  < $next1)
+        // {
+        //     return $next1Tax[0];
+        // }elseif($next1Tax[1] > $next1)
+        // {
+        //     //  return  "run NEXT2";
+        //     $next2Tax = $this->next2Tax($next1Tax[1]);
            
-            $next2Tax = $this->next2Tax($next1Tax[1]);
-            $tax = $tax + $next2Tax[0];
-            // return $next2Tax[0] . " / ". $next2Tax[1];
-        }
-        $next2Tax = $this->next2Tax($next1Tax[1]);
-        // // return $next2Tax[0]. " / " . $next2Tax[1];
-        if( isset($next2Tax[1]) <= $next3 && $basic_salary > 500)
-        {
-            $next3Tax = $this->next3Tax($next2Tax[1]);
-            $tax = $next1Tax[0] + $next2Tax[0] + $next3Tax[0];
-        }
+        //     return $next2Tax[0] + $next1Tax[0];
+        // }
 
-        return $tax;
+        // $next2Tax = $this->next2Tax($next1Tax[1]);
+        // if($next2Tax[1] > $next2)
+        // {
+        //      return  "run NEXT3";
+
+        // }       
+        // $next2Tax = $this->next2Tax($next1Tax[1]);
+        // // // return $next2Tax[0]. " / " . $next2Tax[1];
+        // if( isset($next2Tax[1]) <= $next3 && $basic_salary > 500)
+        // {
+        //     $next3Tax = $this->next3Tax($next2Tax[1]);
+        //     $tax = $next1Tax[0] + $next2Tax[0] + $next3Tax[0];
+        // }
+
+        // return $tax;
 
     }
 

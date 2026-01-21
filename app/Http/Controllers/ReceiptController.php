@@ -570,13 +570,18 @@ class ReceiptController extends Controller
 
         // if receipt has been deposited, do not allow update   
         $collection = Collection::where('receipt_id', $receipt->id)->first();
-
+        // dd($collection);
         if($collection?->status == 'deposited')
         {
             return redirect()->back()->with('error', 'Receipt has been Deposited and cannot be Deleted');
         }
+        // elseif(empty($collection))
+        // {
+        //     // return redirect()->back()->with('error', 'Receipt has No Collection');
+        //     // continue ;
+        // }
 
-        Collection::where('id', $collection->id)->deleteOrFail();
+       $collection?->delete();
 
         //   dd($deleteCollections);
         // if(isset($deleteCollections) && !empty($deleteCollections))
@@ -585,18 +590,18 @@ class ReceiptController extends Controller
         // SET ALL TRANSACTIONS TO EMPTY STRING
         //  $invoice =  Invoice::where('receipt_id',  $receipt->id)->get();
         //  dd($invoice);
-         Transaction::where('invoice_id', $receipt->invoice->id)->update(['checks', '']);
+         Transaction::where('invoice_id', $receipt->invoice->id)->update(['checks' => '']);
         // DELETE FROM TRANSACTION
-        Transaction::where('receipt_id', $receipt->id)->deleteOrFail();
+        Transaction::where('receipt_id', $receipt->id)->delete();
 
         // UPDATE THE INVOICE TO DEFAULT
-         Invoice::where()->update(['status', 'unpaid' ]); $receipt->deleteOrFail();
+         Invoice::where('id', $receipt->invoice->id)->update(['status' => 'unpaid', 'balance' => 0.00 ]); 
         // }
 
         // DELETE THE RECEIPT
-         $receipt->deleteOrFail();
+         $receipt->delete();
 
-        
+        return redirect('receipt')->with('error', 'Receipt Deleted Successfully');
         
     }
 

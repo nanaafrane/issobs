@@ -61,7 +61,7 @@
                     <div class="text-truncate" data-i18n="Invoices">Invoices</div>
                 </a>
             </li>
-                  <li class="menu-item ">
+      <li class="menu-item ">
           <a href="javascript:void(0);" class="menu-link menu-toggle">
           <i class="menu-icon tf-icons bx bx-bxs-receipt bg-primary"></i>
           <div class="text-truncate" data-i18n="Staffs">Pro Forma</div>
@@ -75,6 +75,11 @@
           <li class="menu-item">
               <a href="{{url('proforma')}}" class="menu-link">
               <div class="text-truncate" data-i18n="SList">List</div>
+              </a>
+          </li>
+          <li class="menu-item">
+              <a href="{{url('proformaClient')}}" class="menu-link">
+              <div class="text-truncate" data-i18n="SList">ProForma Clients</div>
               </a>
           </li>
           </ul>
