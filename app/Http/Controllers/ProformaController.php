@@ -58,7 +58,7 @@ class ProformaController extends Controller
         //    $user = Auth::user();
            $invoice = new Proforma();
            $invoice->client_id = $request->input('client_id');
-           $invoice->due_date = $request->input('due_date');
+        //    $invoice->due_date = $request->input('due_date');
            $invoice->invoice_month = $request->input('invoice_month');
            $vat_standard = $request->input('vat_standard');
            $invoice->status = 'unpaid';
@@ -168,7 +168,7 @@ class ProformaController extends Controller
         //
          // dd($invoice, $request->all());
         $service_name = $request->input('service');
-        $due_date = $request->input('due_date');
+        // $due_date = $request->input('due_date');
         $client_id = $request->input('client_id');
         $invoice_month = Carbon::parse($request->input('invoice_month'))->format('Y-m-d') ;
         // $month = Carbon::parse($request->month)->format('Y-m-d');
@@ -234,7 +234,6 @@ class ProformaController extends Controller
             'vat_amount' => $vatAmount,
             'sub_total' => $sub_total_without_vat,
             'total' => $total,
-            'due_date' => $due_date,
             'invoice_month' => $invoice_month,
             'user_id' => Auth::user()->id,
         ]);

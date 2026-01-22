@@ -24,7 +24,7 @@ class StoreProformaRequest extends FormRequest
         return [
             //
             'service' => 'nullable',
-            'due_date'  => 'nullable',
+            // 'due_date'  => 'nullable',
             'invoice_month' => 'nullable',
             'quantity' => 'nullable',
             'client_id' => 'nullable',

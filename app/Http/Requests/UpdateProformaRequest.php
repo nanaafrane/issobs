@@ -24,7 +24,7 @@ class UpdateProformaRequest extends FormRequest
         return [
             //
             'service' => 'required',
-            'due_date'  => 'required',
+            // 'due_date'  => 'required',
             'invoice_month' => 'required',
             'quantity' => 'required',
             'unit_price' => 'required',
