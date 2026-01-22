@@ -287,7 +287,7 @@
                             <div class="row">
                                 <div class="col-md-6 form-check form-switch">
                                     <input name="wth" class="form-check-input" type="checkbox" @if ($receipt->wht_amount > 0) checked @endif id="wth">
-                                    <label class="form-check-label" for="wth">  % WITHHOLDING TAX </label>
+                                    <label class="form-check-label" for="wth"> 7.5 % WITHHOLDING TAX </label>
                                 </div>
 
                                 <div id="wht_value" @if ($receipt->wht_amount > 0) style="display: flex;" @else style="display: none;" @endif  class="col-md-6">

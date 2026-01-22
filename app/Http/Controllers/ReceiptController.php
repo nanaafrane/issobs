@@ -20,6 +20,7 @@ use Illuminate\Validation\Rule;
 class ReceiptController extends Controller
 {
     public $wht_amount;
+    public $vat7_amount;
 
     /**
      * Create a new controller instance.
@@ -429,7 +430,6 @@ class ReceiptController extends Controller
     {
         //
         // dd($request->all());
-
         // if receipt has been deposited, do not allow update   
         $collection = Collection::where('receipt_id', $receipt->id)->first();
 
@@ -455,13 +455,11 @@ class ReceiptController extends Controller
 
         // sum all input payments
         $total = $cheque_amount + $momo_amount + $cash_amount + $transfer_amount + $other_payment_amnt;
-        $sum_of_amountPaid_minus_wht = null;
-        $wht_amount = null;
-        $vat7_amount = null;
-        $sum_of_amountPaid_minus_wht = null;
+        // $wht_amount = 0.00;
+        $vat7_value = 0.00;
+        $sum_of_amountPaid_minus_wht = 0.00;
         $wth_from_form = $request->input('wth');
         $vat_from_form = $request->input('vat');
-        $vat7_value = $request->float('vat7_value');
         $dAmount = $request->float('dAmount');
 
 
@@ -469,15 +467,17 @@ class ReceiptController extends Controller
         // if the payment has with holding turned on;
         if($wth_from_form == "on")
         {
-            $wht_amount = $request->float('wht_amount');
+               $this->wht_amount = $request->float('wht_amount');
 
-               $this->wht_amount = $wht_amount;
+               //  $this->wht_amount = $wht_amount;
                $sum_of_amountPaid_minus_wht = $total;
-               $total = $total + $wht_amount;
+               $total = $total +  $this->wht_amount;
         }
         if($vat_from_form == "on")
         {
-            $vat7_amount = $sum_of_amountPaid_minus_wht - $vat7_value ;
+            //  $request->input('vat7_value');
+            $vat7_value = $request->float('vat7_value');
+            $this->vat7_amount = $sum_of_amountPaid_minus_wht - $vat7_value ;
         }
 
         $receipt->invoice_id = $request->input('invoice_id');
@@ -487,8 +487,8 @@ class ReceiptController extends Controller
         $receipt->dAmount = $dAmount;
         $receipt->description = $request->input('description');
         $receipt->receipt_month = $request->input('receipt_month');
-        $receipt->vat7_value = $request->input('vat7_value');
-        $receipt->vat7_amount = $vat7_amount;
+        $receipt->vat7_value = $vat7_value;
+        $receipt->vat7_amount = $this->vat7_amount;
 
         $receipt->transfer_reference = $request->input('transfer_reference');
         $receipt->transfer_amount = $request->float('transfer_amount');
@@ -518,7 +518,7 @@ class ReceiptController extends Controller
         $invoice->wht_amount = $this->wht_amount;
         $invoice->amount_received = $sum_of_amountPaid_minus_wht;
         $invoice->vat7_value = $vat7_value;
-        $invoice->vat7_amount = $vat7_amount;
+        $invoice->vat7_amount = $this->vat7_amount;
         $invoice->save();
 
         if($receipt->status == "completed")
