@@ -102,9 +102,6 @@
                                                 <span class="card-header"> Issued : </span>
                                                 <span class="col-6"> {{$invoice->created_at->format('d/m/Y H:i A')}} </span> <br>
 
-                                                <span class="card-header">Due : </span>
-                                                <span class="col-6">{{$invoice->due_date->format('d/m/Y H:i A')}} </span>
-
                                             </address>
                                         </div>
 

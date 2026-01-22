@@ -339,9 +339,6 @@
                                                 <span class="card-header"> Issued : </span>
                                                 <span class="col-6"> {{$proforma->created_at->format('d/m/Y H:i A')}} </span> <br>
 
-                                                <span class="card-header">Due : </span>
-                                                <span class="col-6">{{$proforma->due_date->format('d/m/Y H:i A')}} </span>
-
                                             </address>
                                         </div>
 
