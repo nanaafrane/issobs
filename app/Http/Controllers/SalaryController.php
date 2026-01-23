@@ -396,43 +396,43 @@ class SalaryController extends Controller
 
                 // Deduct Tax
                 // $ssnitNumber = PaymentInfo::where('employee_id', $employee->id)->whereNotNull('ssnit_number')->get();
-                $ssnit_tier2_5 = 0;
-                $ssnit_tier1_0_5 = 0;
-                $ssnit_13 = 0;
-                $ssnit_13_5 = 0;
+                // $ssnit_tier2_5 = 0;
+                // $ssnit_tier1_0_5 = 0;
+                // $ssnit_13 = 0;
+                // $ssnit_13_5 = 0;
 
-                $tax = 0;
-                $employee_basic_taxAmount_minus_ssnt = 0;
+                // $tax = 0;
+                // $employee_basic_taxAmount_minus_ssnt = 0;
 
-                if($employee->paymentInfo?->ssnit_number !== '' && $employee->paymentInfo?->ssnit_number !== null)
-                    {
-                        // echo "Processing salary for Employee SSNIT ID: " . $employee->paymentInfo->ssnit_number . "<br><br>";
+                // if($employee->paymentInfo?->ssnit_number !== '' && $employee->paymentInfo?->ssnit_number !== null)
+                //     {
+                //         // echo "Processing salary for Employee SSNIT ID: " . $employee->paymentInfo->ssnit_number . "<br><br>";
 
-                        //  SSNIT transactions HERE
-                        $ssnit_tier2_5 = $employee->basic_salary * 0.05;
-                        $ssnit_tier1_0_5 = $employee->basic_salary * 0.005;
-                        $ssnit5_5 = $employee->basic_salary * 0.055;
-                        $ssnit_13 = $employee->basic_salary * 0.13;
-                        $ssnit_13_5 = $employee->basic_salary * 0.135;
+                //         //  SSNIT transactions HERE
+                //         $ssnit_tier2_5 = $employee->basic_salary * 0.05;
+                //         $ssnit_tier1_0_5 = $employee->basic_salary * 0.005;
+                //         $ssnit5_5 = $employee->basic_salary * 0.055;
+                //         $ssnit_13 = $employee->basic_salary * 0.13;
+                //         $ssnit_13_5 = $employee->basic_salary * 0.135;
 
-                        $employee_basic_taxAmount_minus_ssnt = $employee->basic_salary - $ssnit5_5  ;
-                        // echo "Processing salary Tier 2 (5%) = " . $ssnit_tier2_5 .  " Tier 1 (0.5%) = ". $ssnit_tier1_0_5 . "  SSNIT (13%) = ".$ssnit_13. " SSNIT (13.5%) = ".  $ssnit_13_5   ."<br><br>";
-                    }
+                //         $employee_basic_taxAmount_minus_ssnt = $employee->basic_salary - $ssnit5_5  ;
+                //         // echo "Processing salary Tier 2 (5%) = " . $ssnit_tier2_5 .  " Tier 1 (0.5%) = ". $ssnit_tier1_0_5 . "  SSNIT (13%) = ".$ssnit_13. " SSNIT (13.5%) = ".  $ssnit_13_5   ."<br><br>";
+                //     }
 
-                if($employee->basic_salary > 490.00 )
-                {
-                    // TAX CALCULATIONS
-                        // echo "Employee Basic salary = "  .$employee->basic_salary ." TAX = ".  $this->taxEmployee($employee->basic_salary)  ."<br>";
-                      if($employee->paymentInfo?->ssnit_number !== '' && $employee->paymentInfo?->ssnit_number !== null && $employee_basic_taxAmount_minus_ssnt >= 0)
-                        {
-                        $tax = $this->taxEmployee($employee_basic_taxAmount_minus_ssnt) ;
-                        // echo "Employee Basic salary = "  .$employee->basic_salary ." TAX = ".  $tax  ."<br>";
+                // if($employee->basic_salary > 490.00 )
+                // {
+                //     // TAX CALCULATIONS
+                //         // echo "Employee Basic salary = "  .$employee->basic_salary ." TAX = ".  $this->taxEmployee($employee->basic_salary)  ."<br>";
+                //       if($employee->paymentInfo?->ssnit_number !== '' && $employee->paymentInfo?->ssnit_number !== null && $employee_basic_taxAmount_minus_ssnt >= 0)
+                //         {
+                //         $tax = $this->taxEmployee($employee_basic_taxAmount_minus_ssnt) ;
+                //         // echo "Employee Basic salary = "  .$employee->basic_salary ." TAX = ".  $tax  ."<br>";
 
-                        }else{
-                        $tax = $this->taxEmployee($employee->basic_salary) ;
-                        // echo "Employee Basic salary = "  .$employee->basic_salary ." TAX = ".  $tax  ."<br>";
-                        }                    
-                }
+                //         }else{
+                //         $tax = $this->taxEmployee($employee->basic_salary) ;
+                //         // echo "Employee Basic salary = "  .$employee->basic_salary ." TAX = ".  $tax  ."<br>";
+                //         }                    
+                // }
 
                 $salary = new Salary();
                 $salary->employee_id = $employee->id;
@@ -447,12 +447,12 @@ class SalaryController extends Controller
                 $salary->bank_id = $employee->paymentInfo?->bank_id;
                 $salary->branch = $employee->paymentInfo?->branch;
                 
-                $salary->ssnit_tier2_5d = $ssnit_tier2_5;
-                $salary->ssnit_tier2_5 = $ssnit_tier2_5;
-                $salary->ssnit_tier1_0_5 = $ssnit_tier1_0_5;
-                $salary->ssnit_comp_cont_13 = $ssnit_13;
-                $salary->ssnit_tobe_paid13_5 = $ssnit_13_5;
-                $salary->tax = $tax;
+                // $salary->ssnit_tier2_5d = $ssnit_tier2_5;
+                // $salary->ssnit_tier2_5 = $ssnit_tier2_5;
+                // $salary->ssnit_tier1_0_5 = $ssnit_tier1_0_5;
+                // $salary->ssnit_comp_cont_13 = $ssnit_13;
+                // $salary->ssnit_tobe_paid13_5 = $ssnit_13_5;
+                // $salary->tax = $tax;
                
                 $salary->basic_salary = $employee->basic_salary;
                 $salary->allowances = $employee->allowances;
