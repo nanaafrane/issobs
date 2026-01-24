@@ -417,6 +417,22 @@
                     </button>
                 </li>
 
+                <li class="nav-item mb-1 mb-sm-0">
+                    <button
+                        type="button"
+                        class="nav-link"
+                        role="tab"
+                        data-bs-toggle="tab"
+                        data-bs-target="#navs-pills-justified-master"
+                        aria-controls="navs-pills-justified-master"
+                        aria-selected="false">
+                        <span class="d-none d-sm-inline-flex align-items-center"><i class="icon-base bx bx-home icon-sm me-1_5"></i> Master
+                            <span class="badge rounded-pill bg-danger ms-1_5"> {{ $salariesMaster->count() }} </span>
+                        </span>
+                        <i class="icon-base bx bx-home icon-sm d-sm-none"></i>
+                    </button>
+                </li>
+
                 @endif
 
             </ul>
@@ -571,6 +587,124 @@
 
                 </div>
 
+
+                 <div class="tab-pane fade" id="navs-pills-justified-master" role="tabpanel">
+                    <div class="table-responsive text-nowrap">
+                        <table id="myTableimaster" class="display">
+                            <thead>
+                                <tr>
+                                                <!-- <th> </th> -->
+                                                <!-- <th> Edit </th> -->
+                                                <th> id</th>
+                                                <th> Salary Month </th>
+                                                <th> employee_id </th>
+                                                <th> Name</th>
+                                                <th> Department </th>
+                                                <th> Role</th>
+                                                <th> Field </th>
+                                                <th> Emp. Type </th>
+                                                <th> Client </th>
+                                                <th> Location </th>
+                                                <th> SSNIT No.</th>
+                                                <th> TIN No.</th>
+                                                <th> Payment Type</th>
+                                                <th> Bank Name </th>
+                                                <th> Branch </th>
+                                                <th> Account No.</th>
+                                                <th> Basic Salary</th>
+                                                <th> Allowances</th>
+                                                <th> airtime_allowance</th>
+                                                <th> overtime</th>
+                                                <th> reimbursements </th>
+                                                <th> transport_allowance</th>
+                                                <th> ssnit_tier2_5</th>
+                                                <th> ssnit_tier2_5d</th>
+                                                <th> tax</th>
+                                                <th> ssnit_tier1_0_5</th>
+                                                <th> welfare </th>
+                                                <th> maintenance</th>
+                                                <th> absent</th>
+                                                <th> boot</th>
+                                                <th> iou</th>
+                                                <th> hostel</th>
+                                                <th> insurance</th>
+                                                <th> reprimand</th>
+                                                <th> scouter </th>
+                                                <th> raincoat </th>
+                                                <th> meal</th>
+                                                <th> loan</th>
+                                                <th> walkin</th>
+                                                <th> amnt_ded_cof_start_date</th>
+                                                <th> other_deductions</th>
+                                                <th> gross_salary </th>
+                                                <th> total_deductions</th>
+                                                <th> net_salary </th>
+                                                <th> ssnit_comp_cont_13 </th>
+                                                <th> ssnit_tobe_paid13_5</th>
+                                                <th> cost_to_company </th>
+                                </tr>
+                            </thead>
+                            <tbody class="table-border-bottom-0">
+                              @foreach ($salariesMaster as $key => $salary)
+
+                                   <tr>
+                                                <!-- <td> <input class="checkBoxes form-check-input" type="checkbox" name="salary[]" value="{{ $salary->id }}" /> </td> -->
+                                                <!-- <td><a class="dropdown-item" href="/salaries/{{$salary->id}}/edit"><i class="icon-base bx bx-edit-alt me-1"></i></a> </td> -->
+                                                <td> {{ $salary->id }} </td>
+                                                <td> {{$salary->salary_month?->format('F, Y')}} </td>
+                                                <td> {{ $salary?->employee_id }} </td>
+                                                <td> {{ strtoupper($salary->employee?->name) }} </td>
+                                                <td> {{ $salary->department?->name }} </td>
+                                                <td> {{ $salary->role?->name }} </td>
+                                                <td> {{ $salary->field?->name }} </td>
+                                                <td> {{ $salary->employee?->worker_type }} </td>
+                                                <td> {{ $salary->client?->name }} {{ $salary->client?->business_name }}</td>
+                                                <td> {{ $salary->location }} </td>
+                                                <td> {{$salary->paymentInfo?->ssnit_number}}</td>
+                                                <td> {{$salary->paymentInfo?->tin_number}}</td>
+                                                <td> {{$salary->payment_type}}</td>
+                                                <td> {{$salary->bank?->name}}</td>
+                                                <td> {{$salary->branch}}</td>
+                                                <td> {{$salary->account_number}}</td>
+                                                <td> {{$salary->basic_salary}}</td>
+                                                <td> {{$salary->allowances}}</td>
+                                                <td> {{$salary->airtime_allowance}}</td>
+                                                <td> {{$salary->overtime}}</td>
+                                                <td> {{$salary->reimbursements}}</td>
+                                                <td> {{$salary->transport_allowance}}</td>
+                                                <td> {{$salary->ssnit_tier2_5}}</td>
+                                                <td> {{$salary->ssnit_tier2_5d}}</td>   
+                                                <td> {{$salary->tax}} </td>                            
+                                                <td> {{$salary->ssnit_tier1_0_5}} </td>                            
+                                                <td> {{$salary->welfare}} </td>                            
+                                                <td> {{$salary->maintenance}} </td>                            
+                                                <td> {{$salary->absent}} </td>                            
+                                                <td> {{$salary->boot}} </td>                            
+                                                <td> {{$salary->iou}} </td>                            
+                                                <td> {{$salary->hostel}} </td>                            
+                                                <td> {{$salary->insurance}} </td>                            
+                                                <td> {{$salary->reprimand}} </td>                            
+                                                <td> {{$salary->scouter}} </td>                            
+                                                <td> {{$salary->raincoat}} </td>                            
+                                                <td> {{$salary->meal}} </td>                            
+                                                <td> {{$salary->loan}} </td>                            
+                                                <td> {{$salary->walkin}} </td>                            
+                                                <td> {{$salary->amnt_ded_cof_start_date}} </td>                            
+                                                <td> {{$salary->other_deductions}} </td>                            
+                                                <td> {{$salary->gross_salary}} </td>                            
+                                                <td> {{$salary->total_deductions}} </td>                            
+                                                <td> {{$salary->net_salary}} </td>                            
+                                                <td> {{$salary->ssnit_comp_cont_13}} </td>                            
+                                                <td> {{$salary->ssnit_tobe_paid13_5}} </td>                            
+                                                <td> {{$salary->cost_to_company }}</td>
+                                </tr>
+                            @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+
+                </div>
+
             </div>
         </div>
 
@@ -599,9 +733,32 @@
         let myTableiBotwe = new DataTable('#myTableiBotwe');
         let myTableiShyhills = new DataTable('#myTableiShyhills');
         let myTableiTema = new DataTable('#myTableiTema');
-        let myTableiTakoradi = new DataTable('#myTableiTakoradi');
-        let myTableiKoforidua = new DataTable('#myTableiKoforidua');
-        let myTableiKumasi = new DataTable('#myTableiKumasi');
+      new DataTable('#myTableimaster', {
+        //  dom: 'Blfrtip',
+        //  stateSave: false,
+        columnControl: [ ['search'] ],
+        layout: {
+            topStart: {
+                buttons: [ 
+                {
+                     extend: 'pageLength',
+                    text: 'Show',
+                    className: 'btn btn-secondary',
+                    Options: [10, 25, 50, 100, 250, 500, 1000, 2000], 
+                },
+                    {
+                        extend: 'excelHtml5',
+                        title: 'Salaries',
+                        className: 'btn btn-secondary',
+                        exportOptions: {
+                            columns: ':visible'
+                        }
+                    },
+                ]
+            }
+        },
+                
+    });
 
     </script>
 

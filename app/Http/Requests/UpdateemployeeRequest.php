@@ -40,6 +40,9 @@ class UpdateemployeeRequest extends FormRequest
             'location'=> 'nullable|string|max:255',
             'basic_salary'=> 'nullable|numeric|min:0',
             'allowances'=> 'nullable|numeric|min:0',
+            'tax_button'=> 'nullable',
+            'ssnit_button'=> 'nullable',
+
             'payment_type'=> 'nullable|string|in:cash,bank',
             'gurantor_name'=> 'nullable|string|max:255',
             'gurantor_number'=> 'nullable|string|max:20',

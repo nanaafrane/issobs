@@ -282,6 +282,7 @@
 
                     <div class="card mb-4">
                       <h5 class="card-header"><strong> Basic Infomation</strong> </h5>
+
                        <hr class="my-0" />
                       <!-- Account -->
                       <div class="card-body">
@@ -295,6 +296,17 @@
                       </div>
                       <hr class="my-0" />
                       <div class="card-body">
+                            <div class="col-md-6 form-check form-switch ">
+                                <input name="tax_button" class="form-check-input" type="checkbox"  @if ($employee->tax_button == "on") checked @endif  id="tax_button">
+                                <label class="form-check-label" for="tax_button"> TAX EMPLOYEE </label>
+                            </div> 
+                            
+                            <div class="col-md-6 form-check form-switch ">
+                                <input name="ssnit_button" class="form-check-input" type="checkbox"  @if ($employee->ssnit_button == "on") checked @endif  id="ssnit_button">
+                                <label class="form-check-label" for="ssnit_button"> DEDUCT SSNIT FOR EMPLOYEE </label>
+                            </div> 
+                        <br>
+
                           <div class="row">
                             <div class="mb-3 col-md-4">
                               <label for="name" class="form-label"> <strong>Full Name  </strong> </label>

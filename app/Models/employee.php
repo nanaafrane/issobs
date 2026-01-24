@@ -29,6 +29,8 @@ class employee extends Model
         'basic_salary',
         'allowances',
         'user_id',
+        'tax_button',
+        'ssnit_button',
 
         'status',
         'payment_type',

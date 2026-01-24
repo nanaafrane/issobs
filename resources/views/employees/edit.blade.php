@@ -268,8 +268,21 @@
                     @method('PUT')
                     <div class="card mb-4">
                       <h5 class="card-header"><strong> Basic Infomation</strong> </h5>
+
                       <!-- Account -->
                       <div class="card-body">
+                    
+                            <div class="col-md-6 form-check form-switch ">
+                                <input name="tax_button" class="form-check-input" type="checkbox"  @if ($employee->tax_button == "on") checked @endif id="tax_button">
+                                <label class="form-check-label" for="tax_button"> TAX EMPLOYEE </label>
+                            </div> 
+                            
+                            <div class="col-md-6 form-check form-switch ">
+                                <input name="ssnit_button" class="form-check-input" type="checkbox"  @if ($employee->ssnit_button == "on") checked @endif id="ssnit_button">
+                                <label class="form-check-label" for="ssnit_button"> DEDUCT SSNIT FOR EMPLOYEE </label>
+                            </div> 
+                        <br>
+
                         <div class="d-flex align-items-start align-items-sm-center gap-4">
                            <img
                                         src="@if($employee->image) {{asset($employee->image)}} @else {{asset('img/user.png')}} @endif"

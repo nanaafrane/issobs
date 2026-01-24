@@ -7,9 +7,9 @@ use Maatwebsite\Excel\Concerns\ToModel;
 use Maatwebsite\Excel\Concerns\WithUpserts;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Maatwebsite\Excel\Concerns\Importable;
+use Maatwebsite\Excel\Concerns\WithUpsertColumns;
 
-
-class SalaryImport implements ToModel, WithHeadingRow
+class SalaryImport implements ToModel, WithHeadingRow, WithUpserts, WithUpsertColumns
 {
       use Importable;
 
@@ -28,7 +28,6 @@ class SalaryImport implements ToModel, WithHeadingRow
             'payment_type' => $row['payment_type'],
             'basic_salary' => $row['basic_salary'],
             'allowances' => $row['allowance'],
-            'user_id' => $row['user_id'],
             'salary_month' => $row['salary_month'],
             'gross_salary' => $row['gross_salary'],
             'total_deductions' => $row['total_deductions'],
@@ -67,5 +66,44 @@ class SalaryImport implements ToModel, WithHeadingRow
     public function uniqueBy()
     {
         return ['employee_id', 'salary_month'];
+    }
+
+    public function upsertColumns()
+    {
+        return [
+             'basic_salary' ,
+            'allowances',
+            'salary_month',
+            'gross_salary' ,
+            'total_deductions' ,
+            'net_salary',
+            'ssnit_comp_cont_13' ,
+            'ssnit_tobe_paid13_5',
+            'cost_to_company',  
+            'airtime_allowance',
+            'overtime' ,
+            'reimbursements' ,
+            'transport_allowance',
+            'ssnit_tier2_5d',
+            'ssnit_tier2_5',
+            'tax',
+            'ssnit_tier1_0_5',
+            'welfare' ,
+            'maintenance' ,
+            'absent',
+            'boot',
+            'iou' ,
+            'hostel',
+            'insurance',
+            'reprimand',
+            'scouter' ,
+            'raincoat' ,
+            'meal',
+            'loan',
+            'walkin',
+            'amnt_ded_cof_start_date',
+            'other_deductions',    
+            'payment_status' ,
+        ];
     }
 }

@@ -20,6 +20,7 @@ use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Imports\SalaryImport;
 use App\Models\PaymentInfo;
+use PhpOffice\PhpSpreadsheet\Calculation\MathTrig\Sum;
 
 class SalaryController extends Controller
 {
@@ -117,9 +118,9 @@ class SalaryController extends Controller
 
         $salariesPensions = Salary::where('salary_month', $date)->where('ssnit_tobe_paid13_5', '>', 0)->whereIn('field_id', $fields->pluck('id')->toArray())->groupBy('field_id')->get(['field_id', DB::raw('SUM(ssnit_tier1_0_5) as tier1'), DB::raw('SUM(ssnit_tier2_5) as tier2'), DB::raw('SUM(ssnit_comp_cont_13) as cont13'), DB::raw('SUM(ssnit_tobe_paid13_5) as cont13_5'),  DB::raw('SUM(cost_to_company) as paid'),   DB::raw('COUNT(*) as total_employees')]);
 
+        $salariesMaster = Salary::where('salary_month', $date)->get();
 
-
-        return view('salaries.salariesmonth', compact('groupedBankSalaries','groupedCashkSalaries', 'salariesTaxes', 'salariesPensions', 'date'));
+        return view('salaries.salariesmonth', compact('groupedBankSalaries','groupedCashkSalaries', 'salariesTaxes', 'salariesPensions', 'date', 'salariesMaster'));
     }
 
 
@@ -477,71 +478,45 @@ class SalaryController extends Controller
     /**
      * Calculating TAX on Basic Salary
      */
-    public $next2Tax;
+    public $next1Tax = 0;
+    public $next2Tax = 0;
+    public $next3Tax = 0;
+    public $CummulativeTaxHold = [] ;
 
     public function taxEmployee($basic_salary)
     {
-            $first = 490;
             $next1 = 110;
             $next2 = 130;
-            $next3 = 3166.67;
-            // $tax = 0.00;
-             $next1Tax = 0.00;
-               $next3Tax = 0.00;
+            // $next3 = 3166.67;
+            $next1Tax = 0.00;
+            $next3Tax = 0.00;
 
 
-                $next1Tax = $this->next1Tax($basic_salary);
-                if($next1Tax[1]  < $next1)
+            $next1Tax = $this->next1Tax($basic_salary);
+            // return $next1Tax[0]. " -- ". $next1Tax[1];
+            if($next1Tax[0] <= 0 ){
+                // $this->next1Tax = 0;
+                // $this->CummulativeTaxHold[0] = 0;
+                return 0;
+            }else{
+                //  $this->next1Tax = $next1Tax[0];
+                  $this->next1Tax = $next1Tax[0];
+
+                if($next1Tax[1] > $next1 &&  $next1Tax[0] !== 0)
                 {
-                    return $next1Tax[0];
-                }elseif($next1Tax[1] > $next1)
-                {
-                    //  return  "run NEXT2";
+                    //  return  "run NEXT2 with this balances  " . $next1Tax[1];
                     $this->next2Tax = $this->next2Tax($next1Tax[1]);
-                    // return $next2Tax[0] + $next1Tax[0];
+                    //  $this->CummulativeTaxHold[1] =  $this->next2Tax[0];
+                    // return $this->next2Tax[0]. " / " .$this->next2Tax[1]; //. " / ".$this->CummulativeTaxHold[0] + $this->CummulativeTaxHold[1];
                 }
-                if($this->next2Tax[1]  < $next2){
+                if($this->next2Tax[1]  < 3166.67){
                     
-                    //  $next3Tax = $this->next3Tax($this->next2Tax[1]);
-                    return $this->next2Tax[0] +  $next1Tax[0]  ;
-                    
-                }elseif($this->next2Tax[1]  > $next2)
-                {
-                        $next3Tax = $this->next3Tax($this->next2Tax[1]);
-                        //  return  "run NEXT3 / " . $this->next2Tax[1]; 
-                        return $this->next2Tax[0] +  $next1Tax[0] + $next3Tax[0] ;
-
+                //    return  "run NEXT with this balances  " . $this->next2Tax[1];
+                    $this->next3Tax = $this->next2Tax[1] * 0.175 ;
+                    return $this->next3Tax + $this->next2Tax[0] + $this->next1Tax ; //. " / ".$this->CummulativeTaxHold[0] + $this->CummulativeTaxHold[1];
                 }
-
-        // $next1Tax = $this->next1Tax($basic_salary);
-
-        // if($next1Tax[1]  < $next1)
-        // {
-        //     return $next1Tax[0];
-        // }elseif($next1Tax[1] > $next1)
-        // {
-        //     //  return  "run NEXT2";
-        //     $next2Tax = $this->next2Tax($next1Tax[1]);
-           
-        //     return $next2Tax[0] + $next1Tax[0];
-        // }
-
-        // $next2Tax = $this->next2Tax($next1Tax[1]);
-        // if($next2Tax[1] > $next2)
-        // {
-        //      return  "run NEXT3";
-
-        // }       
-        // $next2Tax = $this->next2Tax($next1Tax[1]);
-        // // // return $next2Tax[0]. " / " . $next2Tax[1];
-        // if( isset($next2Tax[1]) <= $next3 && $basic_salary > 500)
-        // {
-        //     $next3Tax = $this->next3Tax($next2Tax[1]);
-        //     $tax = $next1Tax[0] + $next2Tax[0] + $next3Tax[0];
-        // }
-
-        // return $tax;
-
+            }
+          
     }
 
 
@@ -552,18 +527,22 @@ class SalaryController extends Controller
             $next1_rate = 0.05;
             $next1_amnt = 0;
             $next1_tax = 0;
+            $balance = 0;
 
             // subtract 110 of the next1 and find 10% of that
             $next1_amnt = $basic_salary - $first;
-            if ($next1_amnt <= $next1)
+            if($next1_amnt < $next1)
+            {
+                 $next1_tax =  $next1_amnt * $next1_rate;
+
+                //  return $next1_tax;
+            }else
                 {
-                  $next1_tax =  $next1_amnt * $next1_rate;
+                  $balance =  $next1_amnt -  $next1;
+                  $next1_tax =  $next1 * $next1_rate;
                 }
-            else{
-                $next1_tax =  $next1 * $next1_rate ;
-            }
-      
-            return [$next1_tax ,  $next1_amnt]  ;
+
+            return [$next1_tax,  $balance ] ;
 
     }
 
@@ -575,43 +554,20 @@ class SalaryController extends Controller
             $next2_amnt = 0;
             $next2_tax = 0;
 
-        $next2_amnt = $balance - $next1;
+        $next2_amnt = $balance - $next2;
 
-        if ($next2_amnt <= $next2)
-                {
-                  $next2_tax =  $next2_amnt * $next2_rate;
-                }
-            else{
-                $next2_tax =  $next2 * $next2_rate ;
+        if ($next2_amnt < $next2)
+            {
+                $next2_tax =  $next2_amnt * $next2_rate;
+            }
+        else{
+                $next2_tax  =  $next2 * $next2_rate ;
             }
       
-            return [$next2_tax ,  $next2_amnt]  ;
+            // $this->CummulativeTaxHold[] =  $next2_tax;
+            return  [$next2_tax ,$next2_amnt] ;
         
     }
-
-    public function next3Tax($balance)
-    {
-            $next1 = 110;
-            $next2 = 130;
-            $next3 = 3166.67;
-            $next3_rate = 0.175;
-            $next3_amnt = 0;
-            $next3_tax = 0;
-
-        $next3_amnt = $balance - $next2;
-
-        if ($next3_amnt <= $next3)
-                {
-                  $next3_tax =  $next3_amnt * $next3_rate;
-                }
-            else{
-                $next3_tax =  $next2 * $next3_rate ;
-            }
-      
-            return [$next3_tax ,  $next3_amnt]  ;
-    }
-
-
 
 
     /**
@@ -652,22 +608,68 @@ class SalaryController extends Controller
                             ->where('salary_month', Carbon::createFromFormat('F, Y', $row['salary_month'])->startOfMonth()->format('Y-m-d H:i:s'))
                             ->first();
           
-        //   echo 'Updating salary for Employees: ' . $salary . '<br>';   
+        //   echo 'Updating salary for Employees: '. $salary->employee->tax_button. " ---".$row['employee_id'] . " " .$row['basic_salary']. " / ". $row['allowances'] . " / ". $row['airtime_allowance'] . " / ". $row['reimbursements'] . " / ". $row['transport_allowance'] ." / ". $row['welfare'] ." / ". $row['maintenance'] ." / ". $row['absent'] ." / ". $row['boot'] ." / ". $row['iou'] ." / ". $row['hostel'] ." / ". $row['insurance'] ." / ". $row['reprimand'] ." / ". $row['scouter'] ." / ". $row['raincoat'] ." / ". $row['meal'] ." / ". $row['loan'] ." / ". $row['meal']  ." / ". $row['walkin'] ." / ". $row['amnt_ded_cof_start_date'] ." / ". $row['other_deductions'] .'<br>';   
             
-            $salary->gross_salary = $row['gross_salary'] ?? $salary->gross_salary ;
-            $salary->total_deductions = $row['total_deductions'] ?? $salary->total_deductions ;
-            $salary->net_salary = $row['net_salary'] ?? $salary->net_salary ;
-            $salary->ssnit_comp_cont_13 = $row['ssnit_comp_cont_13'] ?? $salary->ssnit_comp_cont_13 ;
-            $salary->ssnit_tobe_paid13_5 = $row['ssnit_tobe_paid13_5'] ?? $salary->ssnit_tobe_paid13_5 ;
-            $salary->cost_to_company = $row['cost_to_company'] ?? $salary->cost_to_company ;  
+
+                // Deduct Tax
+                // $ssnitNumber = PaymentInfo::where('employee_id', $employee->id)->whereNotNull('ssnit_number')->get();
+                $ssnit_tier2_5 = 0;
+                $ssnit_tier1_0_5 = 0;
+                $ssnit_13 = 0;
+                $ssnit_13_5 = 0;
+
+                $tax = 0;
+                $employee_basic_taxAmount_minus_ssnt = 0;
+
+                // CHECK IF THE PERSON HAS SSNIT BUTTON TURNED ON
+                if(isset($salary->employee->ssnit_button) == "on")
+                {
+                    if($salary->paymentInfo?->ssnit_number !== '' && $salary->paymentInfo?->ssnit_number !== null)
+                        {
+                            // echo "Processing salary for Employee SSNIT ID: " . $employee->paymentInfo->ssnit_number . "<br><br>";
+
+                            //  SSNIT transactions HERE
+                            $ssnit_tier2_5 = $row['basic_salary'] * 0.05;
+                            $ssnit_tier1_0_5 = $row['basic_salary'] * 0.005;
+                            $ssnit5_5 = $row['basic_salary'] * 0.055;
+                            $ssnit_13 = $row['basic_salary'] * 0.13;
+                            $ssnit_13_5 = $row['basic_salary'] * 0.135;
+
+                            $employee_basic_taxAmount_minus_ssnt = $row['basic_salary'] - $ssnit5_5  ;
+                            // echo "Processing salary Tier 2 (5%) = " . $ssnit_tier2_5 .  " Tier 1 (0.5%) = ". $ssnit_tier1_0_5 . "  SSNIT (13%) = ".$ssnit_13. " SSNIT (13.5%) = ".  $ssnit_13_5   ."<br><br>";
+                        }
+                }
+
+                 // CHECK IF THE PERSON HAS TAX BUTTON TURNED ON
+                if(isset($salary->employee->tax_button) == "on")
+                {
+                    
+                    if($row['basic_salary'] > 490.00 )
+                    {
+                        // TAX CALCULATIONS
+                            // echo "Employee Basic salary = "  .$row['basic_salary'] ." ----/ TAX === ".  $this->taxEmployee($employee_basic_taxAmount_minus_ssnt)  ."<br>";
+                        if($salary->paymentInfo?->ssnit_number !== '' && $salary->paymentInfo?->ssnit_number !== null && $employee_basic_taxAmount_minus_ssnt >= 0)
+                            {
+                            $tax = $this->taxEmployee($employee_basic_taxAmount_minus_ssnt) ;
+                            // echo "Employee Basic salary = ".$row['employee_id'] . " / "  .$row['basic_salary'] ." TAX = ".  $tax  ."<br>";
+
+                            }else{
+                            $tax = $this->taxEmployee($row['basic_salary']) ;
+                            // echo "Employee Basic salary = ".$row['employee_id'] . " / "  .$row['basic_salary'] ." TAX = ".  $tax  ."<br>";
+                            }                    
+                    } 
+                }
+
+
+
+
+            $salary->basic_salary = $row['basic_salary'] ?? $salary->basic_salary ;
+            $salary->allowances = $row['allowances'] ?? $salary->allowances ;
             $salary->airtime_allowance = $row['airtime_allowance'] ?? $salary->airtime_allowance ;
             $salary->overtime = $row['overtime'] ?? $salary->overtime ;
             $salary->reimbursements = $row['reimbursements'] ?? $salary->reimbursements ;
             $salary->transport_allowance = $row['transport_allowance'] ?? $salary->transport_allowance ;
-            $salary->ssnit_tier2_5d = $row['ssnit_tier2_5d'] ?? $salary->ssnit_tier2_5d ;
-            $salary->ssnit_tier2_5 = $row['ssnit_tier2_5'] ?? $salary->ssnit_tier2_5 ;
-            $salary->tax = $row['tax'] ?? $salary->tax ;
-            $salary->ssnit_tier1_0_5 = $row['ssnit_tier1_0_5'] ?? $salary->ssnit_tier1_0_5 ;
+           
             $salary->welfare = $row['welfare'] ?? $salary->welfare ;
             $salary->maintenance = $row['maintenance'] ?? $salary->maintenance ;
             $salary->absent = $row['absent'] ?? $salary->absent ;
@@ -683,6 +685,29 @@ class SalaryController extends Controller
             $salary->walkin = $row['walkin'] ?? $salary->walkin ;
             $salary->amnt_ded_cof_start_date = $row['amnt_ded_cof_start_date'] ?? $salary->amnt_ded_cof_start_date ;
             $salary->other_deductions = $row['other_deductions'] ?? $salary->other_deductions ;
+
+            // // WORK SSNIT
+            $salary->ssnit_tier2_5d = $ssnit_tier2_5  ?? $salary->ssnit_tier2_5d ;
+            $salary->ssnit_tier2_5 = $ssnit_tier2_5 ?? $salary->ssnit_tier2_5 ;
+            $salary->ssnit_tier1_0_5 =  $ssnit_tier1_0_5 ?? $salary->ssnit_tier1_0_5 ;
+
+            // // WORK TAX
+            $salary->tax = $tax ??  $salary->tax;
+
+            // // SUM GROSS, TOTAL DEDUCTTIONS AND NET SALARY
+            $grossSalary = $row['basic_salary'] + $row['allowances'] + $row['airtime_allowance'] + $row['overtime'] + $row['reimbursements'] + $row['transport_allowance'];
+            $totalDeduction = $tax + $ssnit_tier2_5 + $ssnit_tier1_0_5 +  $row['welfare'] + $row['maintenance'] + $row['absent']  +  $row['boot'] +  $row['iou'] +  $row['hostel'] + $row['insurance'] + $row['reprimand'] + $row['scouter'] +  $row['raincoat'] +  $row['meal'] + $row['loan'] + $row['walkin'] + $row['amnt_ded_cof_start_date'] + $row['other_deductions'];
+            $netSalay = $grossSalary - $totalDeduction ;
+           
+            $salary->gross_salary = $grossSalary ?? $salary->gross_salary ;
+            $salary->total_deductions = $totalDeduction ?? $salary->total_deductions ;
+            $salary->net_salary = $netSalay ?? $salary->net_salary ;
+
+            // // WORK 
+            $salary->ssnit_comp_cont_13 =  $ssnit_13 ?? $salary->ssnit_comp_cont_13 ;
+            $salary->ssnit_tobe_paid13_5 = $ssnit_13_5 ?? $salary->ssnit_tobe_paid13_5 ;
+            $salary->cost_to_company = $netSalay + $ssnit_13_5 ?? $salary->cost_to_company ;  
+
             $salary->save();    
             
             }

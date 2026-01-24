@@ -41,6 +41,8 @@ return new class extends Migration
             $table->string('relationship')->nullable();
             $table->decimal('basic_salary', 15, 2)->nullable();
             $table->decimal('allowances', 15, 2)->nullable();
+            $table->string('tax_button')->nullable();
+            $table->string('ssnit_button')->nullable();
             $table->timestamps();
         });
     }

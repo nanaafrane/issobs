@@ -242,6 +242,7 @@ class EmployeeController extends Controller
     public function update(UpdateemployeeRequest $request, employee $employee)
     {
         //
+        // dd($request->all());
         if ($request->hasFile('image')) {
 
             // get current image path to delete old file
@@ -260,6 +261,9 @@ class EmployeeController extends Controller
             // dd($path);
         }
 
+        $tax_button = null ;
+        $ssnit_button = null ;
+
         $employee->image = $path ?? $employee->image;
         $employee->name = $request->input('name');
         $employee->gender = $request->input('gender');
@@ -277,6 +281,9 @@ class EmployeeController extends Controller
         $employee->location = $request->input('location');
         $employee->payment_type = $request->input('payment_type');
         $employee->basic_salary = $request->input('basic_salary');
+        $employee->tax_button = $request->input('tax_button');
+        $employee->ssnit_button = $request->input('ssnit_button');
+
         $employee->allowances = $request->input('allowances');
         $employee->gurantor_name = $request->input('gurantor_name');
         $employee->gurantor_number = $request->input('gurantor_number');

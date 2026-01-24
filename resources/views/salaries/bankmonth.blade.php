@@ -291,22 +291,28 @@
                             <thead class="table-dark">
                                 <tr>
                                     <th>#</th>
-                                    <th> EMPLOYEE NAME </th>
+                                    <th>STAFF ID</th>
+                                    <th> NAME </th>
+                                    <th> ROLE</th>
+                                    <th>LOCATION</th>
                                     <th>ACCOUNT NUMBER</th>
-                                    <th> DEDUCTIONS</th>
-                                    <th>GROSS SALARY</th>
-                                    <th> AMOUNT PAID </th>
+                                    <th>BRANCH CODE</th>
+                                    <th>BRANCH</th>
+                                    <th> NET SALARY </th>
                                 </tr>
                             </thead>
                             <tbody class="table-border-bottom-0">
                                 @foreach($BankSalaries as $key => $salary)
                                 <tr>
                                     <td> {{ $key + 1 }} </td>
-                                    <td> {{ strtoupper($salary->employee->name) }} </td>
+                                    <td> FWSS{{ $salary->employee?->id }} </td>
+                                    <td> {{ strtoupper($salary->employee?->name) }} </td>
+                                    <td> {{ $salary->employee?->role?->name }} </td>
+                                    <td> {{ $salary->client?->name || $salary->client?->business_name ? $salary->client?->name . $salary->client?->business_name :  $salary->location }} </td>
                                     <td> {{ $salary->account_number }} </td>
-                                    <td> GH&#x20B5; {{ number_format($salary->total_deductions, 2) }} </td>
-                                    <td> GH&#x20B5; {{ number_format($salary->gross_salary, 2) }} </td>
-                                    <td> GH&#x20B5; {{ number_format($salary->cost_to_company, 2) }} </td>
+                                    <td> {{ $salary->paymentInfo?->branch_code }} </td>
+                                    <td> {{$salary->branch}} </td>
+                                    <td> GH&#x20B5; {{ number_format($salary->net_salary, 2) }} </td>
                                 </tr>
                                 @endforeach
                             </tbody>

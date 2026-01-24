@@ -405,7 +405,7 @@
 
                         <div class="form-check form-check-inline">
                             <select name="employees" class="form-select">
-                                <option value=""> Select All </option>
+                                <option value=""> Check All </option>
                             </select>
                         </div>
                     
@@ -434,6 +434,8 @@
                                             <th> Location </th>
                                             <th>Payment Type</th>
                                             <th>Bank Name </th>
+                                            <th>TAX</th>
+                                            <th>SSNIT</th>
                                             <th>Basic</th>
                                             <th>Allowa</th>
                                             </tr>
@@ -456,6 +458,17 @@
                                                 <td> {{ $employee->location }} </td>
                                                 <td> {{ $employee->payment_type }}  </td>
                                                 <td> {{ $employee->paymentInfo?->bank?->name }} </td>
+                                                @if($employee->tax_button == 'on')
+                                                <td> <span class="badge bg-label-dark"> {{  $employee->tax_button }} </span> </td>
+                                                @else
+                                                <td> <span class="badge bg-label-danger"> OFF </span> </td>
+                                                @endif
+
+                                                @if($employee->ssnit_button == 'on')
+                                                <td> <span class="badge bg-label-dark"> {{  $employee->ssnit_button }} </span> </td>
+                                                @else
+                                                <td> <span class="badge bg-label-danger"> OFF </span> </td>
+                                                @endif
                                                 <td>{{ $employee->basic_salary }} </td>
                                                 <td> {{ $employee->allowances }} </td>
                                             </tr>
@@ -492,7 +505,7 @@
     <script>
         new DataTable('#myTable', {
             responsive: true,
-              dom: 'lfrtip',
+              dom: 'lpftrip',
               lengthMenu: [[10, 25, 50, 100, 500], [10, 25, 50, 100, 500]],
               columnControl: [ ['search'] ]
         });

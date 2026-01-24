@@ -442,6 +442,10 @@
                                 <th> Location </th>
                                 <th>Payment Type</th>
                                 <th>Status</th>
+                                <th>TAX</th>
+                                <th>SSNIT</th>
+                                <th>Basic</th>
+                                <th>Allowance</th>
                                 <th>Created</th>
                                 <th>Action</th>
                             </tr>
@@ -467,8 +471,23 @@
                                 @else
                                 <td><span class="badge bg-label-danger">{{$employee->status}}</span></td>
                                 @endif
+                               
+                                 @if($employee->tax_button == 'on')
+                                <td> <span class="badge bg-label-dark"> {{  $employee->tax_button }} </span> </td>
+                                @else
+                                <td> <span class="badge bg-label-danger"> OFF </span> </td>
+                                @endif
+
+                                @if($employee->ssnit_button == 'on')
+                                <td> <span class="badge bg-label-dark"> {{  $employee->ssnit_button }} </span> </td>
+                                @else
+                                <td> <span class="badge bg-label-danger"> OFF </span> </td>
+                                @endif
+                                <td> {{$employee->basic_salary}} </td>
+                                <td> {{$employee->allowances}} </td>
+
                                 <td>{{ $employee->created_at?->format('F, Y') }} </td>
-                                <td>
+                               <td>
                                 <div class="dropdown">
                                     <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown">
                                         <i class="icon-base bx bx-dots-vertical-rounded"></i>
