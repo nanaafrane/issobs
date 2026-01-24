@@ -441,6 +441,8 @@
                                 <th>Client </th>
                                 <th> Location </th>
                                 <th>Payment Type</th>
+                                <th> Bank </th>
+                                <th>Account No.</th>
                                 <th>Status</th>
                                 <th>TAX</th>
                                 <th>SSNIT</th>
@@ -466,6 +468,8 @@
                                 <td>{{ $employee->client?->name }} {{ $employee->client?->business_name }} </td>
                                 <td> {{ $employee->location }} </td>
                                 <td> {{ $employee->payment_type }}  </td>
+                                <td> {{  $employee->paymentInfo?->bank?->name  }} </td>
+                                <td> {{  $employee->paymentInfo?->acc_number  }} </td>
                                 @if($employee->status == 'Active')
                                 <td><span class="badge bg-label-success">{{$employee->status}}</span></td>
                                 @else
@@ -545,9 +549,24 @@
             columnControl: [ ['search'] ],
             layout: {
                 topStart: {
-                    buttons: ['excelHtml5', 'pdfHtml5']
+                    buttons: [ 
+                    {
+                        extend: 'pageLength',
+                        text: 'Show',
+                        className: 'btn btn-secondary',
+                        Options: [10, 25, 50, 100, 250, 500, 1000, 2000], 
+                    },
+                        {
+                            extend: 'excelHtml5',
+                            title: 'Employees',
+                            className: 'btn btn-secondary',
+                            exportOptions: {
+                                columns: ':visible'
+                            }
+                        },
+                    ]
                 }
-            }
+            },
         });
     </script>
     @endsection
