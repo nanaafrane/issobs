@@ -1,5 +1,12 @@
 <x-hr-dashboard>
 
+    @section('css')
+    <link rel="stylesheet" href="https://cdn.datatables.net/2.3.3/css/dataTables.dataTables.css" />
+    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/3.2.4/css/buttons.dataTables.css">
+
+    <link href="https://cdn.datatables.net/columncontrol/1.1.1/css/columnControl.dataTables.min.css" rel="stylesheet">
+    @endsection
+
 
   @section('side_nav')
   <!-- Menu -->
@@ -75,7 +82,7 @@
                 <div class="text-truncate" data-i18n="Clients">Clients</div>
                 </a>
             </li>
-                    <li class="menu-item active open">
+        <li class="menu-item active open">
           <a href="javascript:void(0);" class="menu-link menu-toggle">
           <i class="menu-icon tf-icons bx bxs-user-account"></i>
           <div class="text-truncate" data-i18n="Staffs">Employees</div>
@@ -86,12 +93,12 @@
               <div class="text-truncate" data-i18n="SRegister">Register</div>
               </a>
           </li>
-          <li class="menu-item active">
+          <li class="menu-item">
               <a href="{{url('employees')}}" class="menu-link">
               <div class="text-truncate" data-i18n="SList">List</div>
               </a>
           </li>
-          <li class="menu-item">
+          <li class="menu-item active">
               <a href="{{url('employeesBank')}}" class="menu-link">
               <div class="text-truncate" data-i18n="SList">Employee Banks</div>
               </a>
@@ -214,10 +221,9 @@
                 <div class="text-truncate" data-i18n="Expense"> Expense </div>
                 </a>
             </li>
-
             @endif
 
-            @if(Auth::user()->hasPermission('HR') || Auth::user()->hasRole(['Invoice', 'Finance Manager']))
+            @if(Auth::user()->hasRole(['Invoice', 'Finance Manager', 'Manager']))
             <li class="menu-header small text-uppercase"><span class="menu-header-text">PAYROLL</span></li>
             <li class="menu-item">
                     <a href="javascript:void(0);" class="menu-link menu-toggle">
@@ -231,8 +237,7 @@
                         <div class="text-truncate" data-i18n="Employees">Add to Salaries</div>
                         </a>
                     </li>
-                   
-                    @if(Auth::user()->hasPermission('Accounts') )
+                    @if(Auth::user()->hasPermission('Accounts'))
                     <li class="menu-item">
                         <a href="{{ url('salaries/create') }}" class="menu-link">
                         <i class="menu-icon tf-icons bx bx-money-withdraw"></i>
@@ -258,7 +263,6 @@
                     </ul>
                 </li>
             @endif
-
         </ul>
     </aside>
   <!-- / Menu -->
@@ -268,89 +272,167 @@
   @section('content')
 
   <!-- Content -->
-            <!-- Content -->
+    <div class="container-xxl flex-grow-1 container-p-y">
 
-            <div class="container-xxl flex-grow-1 container-p-y">
-              <div class="card-header  ml-2  d-none d-lg-block">
-                  @include('flash-messages')
-              </div>
-              <div class="row"> 
-                <div class="col-md-6">
-                <h5 class="fw-bold mb-4"><span class="text-muted fw-light"><i class="bx bxs-user-account"></i> Employee /</span> Show</h5>
-                </div>
-                @if ($employee_pay_info->employee?->status == 'Active')
-                  <div class="col-md-6 text-end">
-                    <a href="{{url('employeesPayInfo/'.$employee_pay_info->employee_id)}}" class="btn btn-dark mb-3"><i class="bx bx-edit-alt"></i> Edit Payment Info</a>  
-                </div>
-                @endif
-              </div>
-
-              <div class="row">
-                <div class="col-md-12">
-                  <ul class="nav nav-pills flex-column flex-md-row mb-3">
-                    <li class="nav-item">
-                      <a class="nav-link" href="{{url('employees', $employee_pay_info->employee_id)}}"><i class="bx bx-user me-1"></i> Employee Details</a>
-                    </li>
-                    <li class="nav-item ">
-                      <a class="nav-link active" href=" javascript:void(0);" ><i class="bx bxs-comment-detail"></i> Payment Info </a>
-                    </li>
-                    <li class="nav-item">
-                      <a class="nav-link" href="{{url('employeesSalary', $employee_pay_info->employee_id)}}" ><i class="bx bx-money-withdraw"></i> Salaries </a>
-                    </li>
-                  </ul>
-                  <div class="card mb-4">
-                    <div class="card-body">
-
-                            <div class="row" id="payment_field"> 
-                                <h5 class="card-header"> <strong> Payment Infomation</strong> </h5> 
-                                <hr class="mb-3" />
-                            
-                                <div class="mb-3 col-md-4">
-                                  <label for="bank_id" class="form-label"> <strong> {{ __('Bank') }} * </strong>  </label>
-                                    <h4> <strong> {{$employee_pay_info->bank?->name}} </strong> </h4> 
-                                </div>
-
-                                  <div class="mb-3 col-md-4">
-                                  <label for="acc_number" class="form-label"> <strong>   Account Number * </strong> </label>
-                                    <h4> <strong> {{$employee_pay_info->acc_number}} </strong> </h4> 
-                                </div>
-
-
-                                  <div class="mb-3 col-md-4">
-                                  <label for="branch" class="form-label"> <strong>    Branch * </strong> </label>
-                                    <h4> <strong> {{$employee_pay_info->branch}} </strong> </h4> 
-                                </div>
-
-
-                                  <div class="mb-3 col-md-4">
-                                  <label for="branch" class="form-label"> <strong>    Branch Code * </strong> </label>
-                                    <h4> <strong> {{$employee_pay_info->branch_code}} </strong> </h4> 
-                                </div>
-
-                                  <div class="mb-3 col-md-4">
-                                  <label for="tin_number" class="form-label"> <strong>    TIN Number  </strong> </label>
-                                    <h4> <strong> {{$employee_pay_info->tin_number}} </strong> </h4> 
-                                  </div>
-
-                                <div class="mb-3 col-md-4">
-                                  <label for="ssnit_number" class="form-label"> <strong>  SSNIT Number </strong> </label>
-                                    <h4> <strong> {{$employee_pay_info->ssnit_number}} </strong> </h4> 
-                                </div>
-                            </div>
-                    </div>
-                    <!-- /Account -->
-                  </div>
-
-                </div>
-              </div>
+        <div class="row">
+            <div class="col-12">
+                <h3 class="card-header"> <i class="icon-base bx bxs-user-account"></i> Employees For {{ $groupedBankEmployees[0]->employee->paymentInfo?->bank?->name  }}  </h3>
             </div>
-            <!-- / Content -->
+        </div><br>
 
 
+        <div class="card-header  ml-2  d-none d-lg-block">
+            @include('flash-messages')
+        </div>
 
+        <div class="row">
+            <div class="col">
+                <div class="card"> 
+                    <div class="card-body"> 
+                    <div class="table-responsive text-normal-dark"> 
+                    <table id="myTable" class="display">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th> Employee ID </th>
+                                <th>Name</th>
+                                <th>Gender</th>
+                                <th>Number</th>
+                                <th> Employment Date </th>
+                                <th> Department </th>
+                                <th>Role</th>
+                                <th>Field Office</th>
+                                <th>Client </th>
+                                <th> Location </th>
+                                <th>Payment Type</th>
+                                <th> Bank </th>
+                                <th>Account No.</th>
+                                <th>Status</th>
+                                <th>TAX</th>
+                                <th>SSNIT</th>
+                                <th>Basic</th>
+                                <th>Allowance</th>
+                                <th>Created</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+
+                            @foreach ($groupedBankEmployees as $key => $data )
+                            <tr>
+                                <td> {{ $key + 1 }} </td>
+                                <td> FWSS {{ $data->employee->id }}  </td>
+                                <td>{{$data->employee->name}}  </td>
+                                <td>{{ $data->employee->gender }}  </td>
+                                <td>{{ $data->employee->phone_number }}  </td>
+                                <td>{{ $data->employee->date_of_joining?->diffForHumans() }} </td>
+                                <td> {{ $data->employee->department?->name }} </td>
+                                <td> {{ $data->employee->role?->name }}  </td>
+                                <td> {{ $data->employee->field?->name }}   </td>
+                                <td>{{ $data->employee->client?->name }} {{ $data->employee->client?->business_name }} </td>
+                                <td> {{ $data->employee->location }} </td>
+                                <td> {{ $data->employee->payment_type }}  </td>
+                                <td> {{  $data->employee->paymentInfo?->bank?->name  }} </td>
+                                <td> {{  $data->employee->paymentInfo?->acc_number  }} </td>
+                                @if($data->employee->status == 'Active')
+                                <td><span class="badge bg-label-success">{{$data->employee->status}}</span></td>
+                                @else
+                                <td><span class="badge bg-label-danger">{{$data->employee->status}}</span></td>
+                                @endif
+                               
+                                 @if($data->employee->tax_button == 'on')
+                                <td> <span class="badge bg-label-dark"> {{  $data->employee->tax_button }} </span> </td>
+                                @else
+                                <td> <span class="badge bg-label-danger"> OFF </span> </td>
+                                @endif
+
+                                @if($data->employee->ssnit_button == 'on')
+                                <td> <span class="badge bg-label-dark"> {{  $data->employee->ssnit_button }} </span> </td>
+                                @else
+                                <td> <span class="badge bg-label-danger"> OFF </span> </td>
+                                @endif
+                                <td> {{$data->employee->basic_salary}} </td>
+                                <td> {{$data->employee->allowances}} </td>
+
+                                <td>{{ $data->employee->created_at?->format('F, Y') }} </td>
+                               <td>
+                                <div class="dropdown">
+                                    <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown">
+                                        <i class="icon-base bx bx-dots-vertical-rounded"></i>
+                                    </button>
+                                    <div class="dropdown-menu">
+                                        <a class="dropdown-item" href="{{url('employees', $data->employee->id)}}"><i class="icon-base bx bxs-bullseye"></i> view</a>
+                                        <a class="dropdown-item" href="{{url('employees', $data->employee->id)}}/edit"><i class="icon-base bx bx-edit-alt me-1"></i> Edit</a>
+                                        <hr>
+                                        <a class="dropdown-item" href="{{url('employeesSalary', $data->employee->id)}}"><i class="icon-base bx bx-money-withdraw"></i> Salaries</a>
+                                        <hr>
+                                        @if ($data->employee->status == 'Active')
+                                            <a class="dropdown-item" href="{{url('terminateEmployee', $data->employee->id )}}"><i class="icon-base bx bx-user-x me-1" onclick="return confirm('Kindly Confirm?')"></i> Terminate</a>
+                                        @else
+                                        <a class="dropdown-item" href="{{url('employeeReinstate', $data->employee->id )}}" onclick="return confirm('Kindly Confirm?')"><i class="icon-base bx bx-edit-alt me-1"></i>Re-Instate </a>
+                                            @endif
+
+                                        <form action="employees/{{$data->employee->id}}" method="POST">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button class="dropdown-item" type="submit"><i class="icon-base bx bx-trash me-1"></i>Delete</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </td>
+
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                    </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
   <!-- / Content -->
 
   @endsection
 
 
+    @section('scripts')
+    <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
+    <script src="https://cdn.datatables.net/2.3.3/js/dataTables.js"></script>
+    <script src="https://cdn.datatables.net/buttons/3.2.4/js/dataTables.buttons.js"></script>
+    <script src="https://cdn.datatables.net/buttons/3.2.4/js/buttons.dataTables.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+    <script src="https://cdn.datatables.net/buttons/3.2.4/js/buttons.html5.min.js"></script>
+
+    <script src="https://cdn.datatables.net/columncontrol/1.1.1/js/dataTables.columnControl.min.js"></script>
+
+    <script>
+        new DataTable('#myTable', {
+            responsive: true,
+            columnControl: [ ['search'] ],
+            layout: {
+                topStart: {
+                    buttons: [ 
+                    {
+                        extend: 'pageLength',
+                        text: 'Show',
+                        className: 'btn btn-secondary',
+                        Options: [10, 25, 50, 100, 250, 500, 1000, 2000], 
+                    },
+                        {
+                            extend: 'excelHtml5',
+                            title: 'Employees',
+                            className: 'btn btn-secondary',
+                            exportOptions: {
+                                columns: ':visible'
+                            }
+                        },
+                    ]
+                }
+            },
+        });
+    </script>
+    @endsection
 </x-hr-dashboard>

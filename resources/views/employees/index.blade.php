@@ -82,6 +82,29 @@
                 <div class="text-truncate" data-i18n="Clients">Clients</div>
                 </a>
             </li>
+        <li class="menu-item active open">
+          <a href="javascript:void(0);" class="menu-link menu-toggle">
+          <i class="menu-icon tf-icons bx bxs-user-account"></i>
+          <div class="text-truncate" data-i18n="Staffs">Employees</div>
+          </a>
+          <ul class="menu-sub">
+          <li class="menu-item ">
+              <a href="{{url('employees/create')}}" class="menu-link">
+              <div class="text-truncate" data-i18n="SRegister">Register</div>
+              </a>
+          </li>
+          <li class="menu-item active">
+              <a href="{{url('employees')}}" class="menu-link">
+              <div class="text-truncate" data-i18n="SList">List</div>
+              </a>
+          </li>
+          <li class="menu-item">
+              <a href="{{url('employeesBank')}}" class="menu-link">
+              <div class="text-truncate" data-i18n="SList">Employee Banks</div>
+              </a>
+          </li>
+          </ul>
+      </li>
                 @endif
         @endif
 
@@ -259,7 +282,7 @@
 
 
 
-        @if(Auth::user()->hasRole(['Invoice','Manager']))
+        @if(Auth::user()->hasRole(['Invoice','Manager', 'Finance Manager']))
         <div class="row mb-4">
             <div class="col-lg-12 col-md-6 mb-4 mb-md-0">
                 <div  class="card h-100 bg-dark text-white">

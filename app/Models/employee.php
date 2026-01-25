@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 
 class employee extends Model
 {
@@ -95,9 +96,5 @@ class employee extends Model
     {
         return $this->hasMany(Salary::class);
     }
-    
-
-
-
 
 }

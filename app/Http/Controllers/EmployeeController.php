@@ -15,6 +15,7 @@ use App\Models\Field;
 use App\Models\PaymentInfo;
 use App\Models\Role;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 class EmployeeController extends Controller
@@ -375,6 +376,42 @@ class EmployeeController extends Controller
         $employee = employee::findOrFail($id);
         $employee->update(['status' => 'Active']);
         return redirect()->route('employees.index')->with('success', 'Employee successfully Re-instated! ID No: and Name'. implode(', ', [$employee->id, $employee->name]));
+    }
+
+    public function employeesBank()
+    {
+        // LIST ALL BANKS , EACH WITH ALL EMPLOYEES ASSIGNED TO THAT BANK
+        $bankIds = Bank::pluck('id');
+        $banks = Bank::all();
+
+        // $groupedBankEmployees = PaymentInfo::with('employee') ->whereIn('bank_id', $bankIds)->get()->groupBy('bank_id');
+
+        $groupedBankEmployees = PaymentInfo::whereIn('bank_id', $bankIds)
+                                    ->select('bank_id', DB::raw('count(employee_id) as total_employees'))
+                                    ->groupBy('bank_id')
+                                    ->get();
+
+        // dd($groupedBankEmployees);
+        return view('employees.banks', compact('groupedBankEmployees', 'banks'));
+
+    }
+
+    public function employeesBankView($bank_id)
+    {
+        // dd($bank_id);
+        // $bank = Bank::findOrfail($bank_id);
+        // $groupedBankEmployees = employee::where('bank_id', $bank_id)->get();
+        $groupedBankEmployees = PaymentInfo::with('employee')->where('bank_id', $bank_id)->get();
+
+        // dd($groupedBankEmployees);
+
+        // foreach($groupedBankEmployees as $employee)
+        //     {
+        //         echo $employee->employee->name . " / " . $employee . "<br/>";
+        //     } 
+
+        return view('employees.bank_view', compact('groupedBankEmployees'));
+
     }
 
 }
