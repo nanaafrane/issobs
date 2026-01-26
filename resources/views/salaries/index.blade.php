@@ -82,6 +82,29 @@
                 <div class="text-truncate" data-i18n="Clients">Clients</div>
                 </a>
             </li>
+        <li class="menu-item">
+          <a href="javascript:void(0);" class="menu-link menu-toggle">
+          <i class="menu-icon tf-icons bx bxs-user-account"></i>
+          <div class="text-truncate" data-i18n="Staffs">Employees</div>
+          </a>
+          <ul class="menu-sub">
+          <li class="menu-item ">
+              <a href="{{url('employees/create')}}" class="menu-link">
+              <div class="text-truncate" data-i18n="SRegister">Register</div>
+              </a>
+          </li>
+          <li class="menu-item">
+              <a href="{{url('employees')}}" class="menu-link">
+              <div class="text-truncate" data-i18n="SList">List</div>
+              </a>
+          </li>
+          <li class="menu-item">
+              <a href="{{url('employeesBank')}}" class="menu-link">
+              <div class="text-truncate" data-i18n="SList">Employee Banks</div>
+              </a>
+          </li>
+          </ul>
+      </li>
                 @endif
         @endif
 
@@ -208,7 +231,7 @@
                     <div class="text-truncate" data-i18n="Payroll">Payroll</div>
                     </a>
                     <ul class="menu-sub">
-                    @if(Auth::user()->hasPermission('HR') || Auth::user()->hasRole(['Invoice']))
+                    @if(Auth::user()->hasPermission('HR') || Auth::user()->hasRole(['Invoice' , 'Finance Manager']))
                     <li class="menu-item active">
                         <a href="{{ url('salaries') }}" class="menu-link">
                         <i class="menu-icon tf-icons bx bxs-user-account"></i>
@@ -256,7 +279,7 @@
             </div>
         </div><br>
 
-        @if(Auth::user()->hasRole(['Invoice','Manager' ]))
+        @if(Auth::user()->hasRole(['Invoice','Manager' , 'Finance Manager' ]))
         <div class="row">
             <div class="col-lg-2">
                 <div  class="card h-100 bg-dark text-white">
