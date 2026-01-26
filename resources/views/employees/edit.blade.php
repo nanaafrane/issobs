@@ -525,8 +525,8 @@
                             <div class="mb-3 col-md-4">
                               <label for="payment_type" class="form-label"> <strong> {{ __('Payment Type') }} *</strong>  </label>
                                 <select name="payment_type" class="form-select @error('payment_type') is-invalid @enderror" id="payment_type" >
-                                    <option @if ($employee->payment_type == 'Bank') selected @endif value="bank">Bank</option>
-                                    <option  @if ($employee->payment_type == 'Cash') selected @endif value="cash">Cash</option>
+                                    <option @if ($employee->payment_type == 'Bank') selected @endif value="Bank">Bank</option>
+                                    <option  @if ($employee->payment_type == 'Cash') selected @endif value="Cash">Cash</option>
                                 </select>
                                 @error('payment_type')
                                   <span class="invalid-feedback" role="alert">
