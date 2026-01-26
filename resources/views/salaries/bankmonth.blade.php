@@ -318,10 +318,10 @@
                                     <th> NAME </th>
                                     <th> ROLE</th>
                                     <th>LOCATION</th>
-                                    <th>ACCOUNT NUMBER</th>
                                     <th>BRANCH CODE</th>
                                     <th>BRANCH</th>
-                                    <th> NET SALARY </th>
+                                    <th>ACCOUNT NUMBER</th>
+                                    <th>  GH&#x20B5;NET SALARY</th>
                                 </tr>
                             </thead>
                             <tbody class="table-border-bottom-0">
@@ -332,10 +332,10 @@
                                     <td> {{ strtoupper($salary->employee?->name) }} </td>
                                     <td> {{ $salary->employee?->role?->name }} </td>
                                     <td> {{ $salary->client?->name || $salary->client?->business_name ? $salary->client?->name . $salary->client?->business_name :  $salary->location }} </td>
-                                    <td> {{ $salary->account_number }} </td>
                                     <td> {{ $salary->paymentInfo?->branch_code }} </td>
                                     <td> {{$salary->branch}} </td>
-                                    <td> GH&#x20B5; {{ number_format($salary->net_salary, 2) }} </td>
+                                    <td> {{ $salary->account_number }} </td>
+                                    <td> {{ number_format($salary->net_salary, 2) }} </td>
                                 </tr>
                                 @endforeach
                             </tbody>
