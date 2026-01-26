@@ -467,28 +467,15 @@
                                                 <th> Salary Month </th>
                                                 <th> employee_id </th>
                                                 <th> Name</th>
-                                                <!-- <th> Department </th> -->
-                                                <!-- <th> Role</th> -->
                                                 <th> Field </th>
-                                                <!-- <th> Emp. Type </th> -->
                                                 <th> Client </th>
                                                 <th> Location </th>
-                                                <!-- <th> SSNIT No.</th> -->
-                                                <!-- <th> TIN No.</th> -->
-                                                <!-- <th> Payment Type</th> -->
-                                                <!-- <th> Bank Name </th> -->
-                                                <!-- <th> Branch </th> -->
-                                                <!-- <th> Account No.</th> -->
                                                 <th> Basic Salary</th>
                                                 <th> Allowances</th>
                                                 <th> airtime_allowance</th>
                                                 <th> overtime</th>
                                                 <th> reimbursements </th>
                                                 <th> transport_allowance</th>
-                                                <!-- <th> ssnit_tier2_5</th> -->
-                                                <!-- <th> ssnit_tier2_5d</th> -->
-                                                <!-- <th> tax</th> -->
-                                                <!-- <th> ssnit_tier1_0_5</th> -->
                                                 <th> welfare </th>
                                                 <th> maintenance</th>
                                                 <th> absent</th>
@@ -504,13 +491,6 @@
                                                 <th> walkin</th>
                                                 <th> amnt_ded_cof_start_date</th>
                                                 <th> other_deductions</th>
-                                                <!-- <th> gross_salary </th> -->
-                                                <!-- <th> total_deductions</th> -->
-                                                <!-- <th> net_salary </th> -->
-                                                <!-- <th> ssnit_comp_cont_13 </th> -->
-                                                <!-- <th> ssnit_tobe_paid13_5</th> -->
-                                                <!-- <th> cost_to_company </th> -->
-
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -523,29 +503,16 @@
                                                 <td> {{$salary->salary_month?->format('F, Y')}} </td>
                                                 <td> {{ $salary?->employee_id }} </td>
                                                 <td> {{ strtoupper($salary->employee?->name) }} </td>
-                                                <!-- <td> {{ $salary->department?->name }} </td> -->
-                                                <!-- <td> {{ $salary->role?->name }} </td> -->
                                                 <td> {{ $salary->field?->name }} </td>
-                                                <!-- <td> {{ $salary->employee?->worker_type }} </td> -->
                                                 <td> {{ $salary->client?->name }} {{ $salary->client?->business_name }}</td>
                                                 <td> {{ $salary->location }} </td>
-                                                <!-- <td> {{$salary->paymentInfo?->ssnit_number}}</td> -->
-                                                <!-- <td> {{$salary->paymentInfo?->tin_number}}</td> -->
-                                                <!-- <td> {{$salary->payment_type}}</td> -->
-                                                <!-- <td> {{$salary->bank?->name}}</td> -->
-                                                <!-- <td> {{$salary->branch}}</td> -->
-                                                <!-- <td> {{$salary->account_number}}</td> -->
                                                 <td> {{$salary->basic_salary}}</td>
                                                 <td> {{$salary->allowances}}</td>
                                                 <td> {{$salary->airtime_allowance}}</td>
                                                 <td> {{$salary->overtime}}</td>
                                                 <td> {{$salary->reimbursements}}</td>
                                                 <td> {{$salary->transport_allowance}}</td>
-                                                <!-- <td> {{$salary->ssnit_tier2_5}}</td> -->
-                                                <!-- <td> {{$salary->ssnit_tier2_5d}}</td>    -->
-                                                <!-- <td> {{$salary->tax}} </td>                             -->
-                                                <!-- <td> {{$salary->ssnit_tier1_0_5}} </td>                             -->
-                                                <td> {{$salary->welfare}} </td>                            
+                                               <td> {{$salary->welfare}} </td>                            
                                                 <td> {{$salary->maintenance}} </td>                            
                                                 <td> {{$salary->absent}} </td>                            
                                                 <td> {{$salary->boot}} </td>                            
@@ -560,12 +527,7 @@
                                                 <td> {{$salary->walkin}} </td>                            
                                                 <td> {{$salary->amnt_ded_cof_start_date}} </td>                            
                                                 <td> {{$salary->other_deductions}} </td>                            
-                                                <!-- <td> {{$salary->gross_salary}} </td>                            
-                                                <td> {{$salary->total_deductions}} </td>                            
-                                                <td> {{$salary->net_salary}} </td>                            
-                                                <td> {{$salary->ssnit_comp_cont_13}} </td>                            
-                                                <td> {{$salary->ssnit_tobe_paid13_5}} </td>                            
-                                                <td> {{$salary->cost_to_company }}</td> -->
+
                                             </tr>
                                         @endforeach
                                         </tbody>

@@ -586,7 +586,7 @@ class SalaryController extends Controller
         //
         // dd($salary);
         $banks = Bank::all();
-        $clients = Client::where('field_id', $salary->field_id)->get();
+        $clients = Client::all();
         
         return view('salaries.edit', compact('salary', 'clients', 'banks'));
     }
