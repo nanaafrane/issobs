@@ -342,6 +342,7 @@ class EmployeeController extends Controller
         // dd($employees);
         foreach ($employees as $key => $employee)
         {
+
             // echo $employee .' ' . $clients[$key]. ' ' .$locations[$key] .'<br>';
             $employee = employee::findOrFail($employee);
             $employee->client_id = $clients[$key];
@@ -349,17 +350,17 @@ class EmployeeController extends Controller
             $employee->location = $locations[$key];
             $employee->save();
 
-            // $employee->update([
-            //     'client_id' => $clients[$key],
-            //     'location' => $locations[$key],
-            // ]);
+            $employee->update([
+                'client_id' => $clients[$key],
+                'location' => $locations[$key],
+            ]);
         }
 
         if(!empty( $alreadyProcessed))
         {
             return redirect()->route('client.index')->with('success', 'Guard successfully ReAssigned! Client: '. implode(', ', $alreadyProcessed));
         }
-        // return back()->with('success', 'Guard successfully ReAssigned!');
+        // // return back()->with('success', 'Guard successfully ReAssigned!');
     }
 
     public function terminateEmployee($id)
