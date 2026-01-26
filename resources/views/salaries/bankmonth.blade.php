@@ -321,7 +321,7 @@
                                     <th>BRANCH CODE</th>
                                     <th>BRANCH</th>
                                     <th>ACCOUNT NUMBER</th>
-                                    <th>  GH&#x20B5;NET SALARY</th>
+                                    <th>  GH&#x20B5; NET SALARY</th>
                                 </tr>
                             </thead>
                             <tbody class="table-border-bottom-0">
