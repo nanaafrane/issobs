@@ -3,6 +3,9 @@
     @section('css')
     <link rel="stylesheet" href="https://cdn.datatables.net/2.3.3/css/dataTables.dataTables.css" />
     <link rel="stylesheet" href="https://cdn.datatables.net/buttons/3.2.4/css/buttons.dataTables.css">
+
+    <link href="https://cdn.datatables.net/columncontrol/1.1.1/css/columnControl.dataTables.min.css" rel="stylesheet">
+
     @endsection
 
 
@@ -287,7 +290,7 @@
                     <div class="d-flex align-items-start row">
                         <div class="col-sm-7">
                             <div class="card-body">
-                               <p class="mb-1 text-white"><strong> ACCRA </strong> </p>
+                               <p class="mb-1 text-white"><strong> {{ strtoupper($guards[0]->field?->name) }} </strong> </p>
                                 <h1 class="text-white"> {{ count($guards) }} </h1>
                                 <h6 class="card-title text-white mb-3">TOTAL NUMBER OF GUARDS </h6>
                             </div>
@@ -387,6 +390,33 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
     <script src="https://cdn.datatables.net/buttons/3.2.4/js/buttons.html5.min.js"></script>
 
+    <script src="https://cdn.datatables.net/columncontrol/1.1.1/js/dataTables.columnControl.min.js"></script>
+    <script>
+        new DataTable('#myTable', {
+            responsive: true,
+            columnControl: [ ['search'] ],
+            layout: {
+                topStart: {
+                    buttons: [ 
+                    {
+                        extend: 'pageLength',
+                        text: 'Show',
+                        className: 'btn btn-secondary',
+                        Options: [10, 25, 50, 100, 250, 500, 1000, 2000], 
+                    },
+                        {
+                            extend: 'excelHtml5',
+                            title: 'Employees',
+                            className: 'btn btn-secondary',
+                            exportOptions: {
+                                columns: ':visible'
+                            }
+                        },
+                    ]
+                }
+            },
+        });
+    </script>
 
     <script>
         new DataTable('#myTable', { responsive: true, });
