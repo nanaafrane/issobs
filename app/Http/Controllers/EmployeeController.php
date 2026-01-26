@@ -314,7 +314,7 @@ class EmployeeController extends Controller
     {
 
 
-       $guards =  employee::where('client_id',$id)->where('role_id', 7)->get();
+       $guards =  employee::where('client_id',$id)->where('department_id', 6)->get();
 
        if($guards->isEmpty())
        {
