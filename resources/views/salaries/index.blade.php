@@ -427,9 +427,7 @@
                         <input class="form-check-input form-check-inline" type="checkbox" value="" id="options" />
 
                         <div class="form-check form-check-inline">
-                            <select name="employees" class="form-select">
-                                <option value=""> Check All </option>
-                            </select>
+                        <label for="salary_month"> Tick Checkbox and Select a Month >> </label>
                         </div>
                     
                         <div class="form-check form-check-inline">
