@@ -17,6 +17,7 @@ use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SalaryController;
 use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\TransactionController;
+use App\Models\employee;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -110,4 +111,20 @@ Route::get('invToPayrollInvoice/{client_id}/{month}', [InvoiceController::class,
 Route::get('invToPayrollGuards/{client_id}/{month}', [SalaryController::class, 'PayrollGuards']);
 
 
-// Route::resource('paymentinfo', PaymentInfoControthller::class); 
+Route::get('manytomany', function(){
+//    ATTACHING CLIENTS
+    // $clientId = 111;
+    // $employee = employee::findOrFail(2238);
+    // $response = $employee->clients()->attach($clientId);
+    // dd($response);
+    // return "You are Testing MANY TO MANY / " . $response;
+
+// RETRIEVING CLIENTS 
+    $employee = employee::findOrFail(2238);
+    $response = $employee->clients;
+    dd($response);
+    // foreach ($response as $key => $value) {
+    //     # code...
+    //     echo $value->name. " / ". $value->business_name ;
+    // }
+}); 

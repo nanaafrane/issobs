@@ -30,10 +30,10 @@ class Client extends Model
         return $this->belongsTo(Field::class);
     }
 
-    // public function employees() : BelongsToMany
-    // {
-    //     return $this->belongsToMany(employee::class);
-    // }
+    public function employees() : BelongsToMany
+    {
+        return $this->belongsToMany(employee::class);
+    }
 
 
 

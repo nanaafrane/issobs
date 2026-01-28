@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Client;
 use App\Http\Requests\StoreClientRequest;
 use App\Http\Requests\UpdateClientRequest;
+use App\Models\employee;
 use App\Models\Field;
 use App\Models\Invoice;
 use App\Models\Receipt;
@@ -36,32 +37,47 @@ class ClientController extends Controller
         $clients = Client::all();
         $clientsCount = count($clients);
         $fields = Field::all();
+        $totalGuards = employee::where('department_id', '6')->count();
 
         $accra = Client::where('field_id', 1)->get();
         $accraCount = count($accra);
+        $totalaccraGuards = employee::where('department_id', '6')->where('field_id', 1)->count();
+
 
         $botwe = Client::where('field_id', 2)->get();
         $botweCount = count($botwe);
+        $totalbotweGuards = employee::where('department_id', '6')->where('field_id', 2)->count();
+
 
         $tema = Client::where('field_id', 3)->get();
         $temaCount = count($tema);
+        $totaltemaGuards = employee::where('department_id', '6')->where('field_id', 3)->count();
+
 
         $takoradi = Client::where('field_id', 4)->get();
         $takoradiCount = count($takoradi);
+        $totaltakoradiGuards = employee::where('department_id', '6')->where('field_id', 4)->count();
+
 
         $koforidua = Client::where('field_id', 5)->get();
         $koforiduaCount = count($koforidua);
+        $totalkoforiduaGuards = employee::where('department_id', '6')->where('field_id', 5)->count();
+
 
         $kumasi = Client::where('field_id', 6)->get();
         $kumasiCount = count($kumasi);
+        $totalkumasiGuards = employee::where('department_id', '6')->where('field_id', 6)->count();
+
 
         $shyhills = Client::where('field_id', 7)->get();
         $shyhillsCount = count($shyhills);
+        $totalshyhillsGuards = employee::where('department_id', '6')->where('field_id', 7)->count();
+
         // dd($accraCount, $botweCount, $temaCount, $takoradiCount, $koforiduaCount, $kumasiCount);
 
         if($user->role->name == 'Invoice' || $user->role->name == 'Finance Manager' || $user->role->name == 'Manager' )
         {
-            return view('clients.index', compact('clients', 'clientsCount', 'fields', 'accraCount', 'botweCount', 'temaCount', 'takoradiCount', 'koforiduaCount', 'kumasiCount', 'shyhills', 'shyhillsCount'));
+            return view('clients.index', compact('totalaccraGuards', 'totalbotweGuards', 'totaltemaGuards', 'totaltakoradiGuards', 'totalkoforiduaGuards', 'totalkumasiGuards', 'totalshyhillsGuards', 'clients', 'clientsCount', 'fields', 'accraCount', 'botweCount', 'temaCount', 'takoradiCount', 'koforiduaCount', 'kumasiCount', 'shyhills', 'shyhillsCount', 'totalGuards'));
 
         }elseif($user->field?->name == 'Accra')
         {

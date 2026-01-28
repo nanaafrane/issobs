@@ -266,33 +266,35 @@
                             <div class="card-body">
                                 <h1 class="text-white">
                                     @if(Auth::user()->hasRole(['Invoice', 'Finance Manager', 'Manager']) )
-                                    {{$clientsCount}}
+                                    {{$clientsCount}} / {{ $totalGuards }}
                                     @elseif(Auth::user()->field?->name == 'Accra')
-                                    {{$accraCount}}
+                                    {{$accraCount}} / {{ $totalaccraGuards }}
                                     @endif
 
 
                                     @if(Auth::user()->field?->name == 'Botwe')
-                                    {{$botweCount}} 
+                                    {{$botweCount}}  / {{ $totalbotweGuards }}
                                     @endif
 
                                     @if(Auth::user()->field?->name == 'Tema')
-                                    {{$temaCount}} + {{ $shyhillsCount }}
+                                    {{$temaCount}} + {{ $shyhillsCount }} / {{ $totaltemaGuards }} + {{ $totalshyhillsGuards }}
                                     @endif
 
                                     @if(Auth::user()->field?->name == 'Takoradi')
-                                    {{$takoradiCount}}
+                                    {{$takoradiCount}} / {{ $totaltakoradiGuards }}
                                     @endif
 
                                     @if(Auth::user()->field?->name == 'Koforidua')
-                                    {{$koforiduaCount}}
+                                    {{$koforiduaCount}} / {{ $totalkoforiduaGuards }}
                                     @endif
 
                                     @if(Auth::user()->field?->name == 'Kumasi')
-                                    {{$kumasiCount}}
+                                    {{$kumasiCount}} / {{ $totalkumasiGuards }}
                                     @endif
                                 </h1>
-                                <h6 class="card-title text-white mb-3">TOTAL NUMBER OF CLIENTS </h6>
+                                <h6 class="card-title text-white mb-3">TOTAL NUMBER OF CLIENTS / OPERATIONS </h6>
+
+
                             </div>
                         </div>
                     </div>
@@ -315,8 +317,8 @@
                             </div>
                         </div>
                         <p class="mb-1"><strong> ACCRA </strong> </p>
-                        <h4 class="card-title mb-3"><strong> {{$accraCount}} </strong> </h4>
-                        <small class="fw-medium"> TOTAL CLIENTS </small>
+                        <h4 class="card-title mb-3"><strong> {{$accraCount}} /  {{ $totalaccraGuards }} </strong> </h4>
+                        <small class="fw-medium">  CLIENTS / OPERATIONS </small>
                     </div>
                 </div>
             </div>
@@ -333,8 +335,8 @@
                             </div>
                         </div>
                         <p class="mb-1"><strong> BOTWE </strong></p>
-                        <h4 class="card-title mb-3"><strong> {{$botweCount}}</strong> </h4>
-                        <small class="fw-medium"> TOTAL CLIENTS </small>
+                        <h4 class="card-title mb-3"><strong> {{$botweCount}} / {{ $totalbotweGuards }} </strong> </h4>
+                        <small class="fw-medium"> CLIENTS / OPERATIONS </small>
                     </div>
                 </div>
             </div>
@@ -351,8 +353,8 @@
                             </div>
                         </div>
                         <p class="mb-1"><strong> SHAIHILLS </strong></p>
-                        <h4 class="card-title mb-3"><strong> {{$shyhillsCount}}</strong> </h4>
-                        <small class="fw-medium"> TOTAL CLIENTS </small>
+                        <h4 class="card-title mb-3"><strong> {{$shyhillsCount}} / {{ $totalshyhillsGuards }}</strong> </h4>
+                        <small class="fw-medium"> CLIENTS / OPERATIONS </small>
                     </div>
                 </div>
             </div>
@@ -371,8 +373,8 @@
 
                         </div>
                         <p class="mb-1"><strong> TEMA </strong></p>
-                        <h4 class="card-title mb-3"><strong> {{$temaCount}} </strong> </h4>
-                        <small class="fw-medium"> TOTAL CLIENTS </small>
+                        <h4 class="card-title mb-3"><strong> {{$temaCount}} / {{ $totaltemaGuards }}</strong> </h4>
+                        <small class="fw-medium"> CLIENTS / OPERATIONS </small>
                     </div>
                 </div>
             </div>
@@ -391,8 +393,8 @@
 
                         </div>
                         <p class="mb-1">TAKORADI</p>
-                        <h4 class="card-title mb-3"> {{$takoradiCount}} </h4>
-                        <small class="fw-medium"> TOTAL CLIENTS </small>
+                        <h4 class="card-title mb-3"> {{$takoradiCount}} / {{ $totaltakoradiGuards }} </h4>
+                        <small class="fw-medium"> CLIENTS / OPERATIONS </small>
                     </div>
                 </div>
             </div>
@@ -409,8 +411,8 @@
 
                         </div>
                         <p class="mb-1"> <strong> KOFORIDUA </strong> </p>
-                        <h4 class="card-title mb-3"> {{$koforiduaCount}} </h4>
-                        <small class="fw-medium"> TOTAL CLIENTS </small>
+                        <h4 class="card-title mb-3"> {{$koforiduaCount}} / {{ $totalkoforiduaGuards }} </h4>
+                        <small class="fw-medium"> CLIENTS / OPERATIONS </small>
                     </div>
                 </div>
             </div>
@@ -428,8 +430,8 @@
 
                         </div>
                         <p class="mb-1"><strong> KUMASI </strong> </p>
-                        <h4 class="card-title mb-3"> {{$kumasiCount}} </h4>
-                        <small class="fw-medium"> TOTAL CLIENTS </small>
+                        <h4 class="card-title mb-3"> {{$kumasiCount}} /  {{ $totalkumasiGuards }}</h4>
+                        <small class="fw-medium"> CLIENTS / OPERATIONS </small>
                     </div>
                 </div>
             </div>

@@ -100,7 +100,7 @@ class EmployeeController extends Controller
     {
         //
         $employee_pay_info = PaymentInfo::findOrFail($id);
-        // dd($employee_pay_info);
+        // dd($request->all(), $employee_pay_info->employee->id);
         $employee_pay_info->bank_id = $request->input('bank_id');
         $employee_pay_info->acc_number = $request->input('acc_number');
         $employee_pay_info->branch = $request->input('branch');
@@ -109,6 +109,12 @@ class EmployeeController extends Controller
         $employee_pay_info->ssnit_number = $request->input('ssnit_number');
         $employee_pay_info->user_id = Auth::id();
         $employee_pay_info->save();
+
+        // Update Employee Model payment_type
+        $employee = employee::findOrFail( $employee_pay_info->employee->id);
+        // dd($employee);
+        $employee->update(['payment_type' => $request->payment_type]);
+
 
         return redirect()->route('employees.ViewPayInfo',['id' => $employee_pay_info->employee_id])->with('success', 'Employee Payment Information updated successfully.');
         

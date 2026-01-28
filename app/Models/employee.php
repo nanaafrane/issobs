@@ -71,7 +71,8 @@ class employee extends Model
     public function client()
     {
         return $this->belongsTo(Client::class);
-    }   
+    } 
+    
 
     public function paymentInfo()
     {
@@ -88,10 +89,11 @@ class employee extends Model
         return $this->belongsTo(User::class);
     }
 
-    // public function clients() : BelongsToMany
-    // {
-    //     return $this->belongsToMany(Client::class);
-    // }
+    public function clients() : BelongsToMany
+    {
+        return $this->belongsToMany(Client::class);
+    }
+
     public function salaries()
     {
         return $this->hasMany(Salary::class);

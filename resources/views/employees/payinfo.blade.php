@@ -296,12 +296,24 @@
                             @method('PUT')
                             <div class="row" id="payment_field"> 
                                 <h5 class="card-header"> <strong> Payment Infomation</strong> </h5> 
-                                <hr class="mb-3" />
+                            <div class="mb-3 col-md-4">
+                              <label for="payment_type" class="form-label"> <strong> {{ __('Payment Type') }} *</strong>  </label>
+                                <select name="payment_type" class="form-select @error('payment_type') is-invalid @enderror" id="payment_type" >
+                                    <option @if ($employee_pay_info->employee->payment_type == 'Bank') selected @endif value="Bank">Bank</option>
+                                    <option  @if ($employee_pay_info->employee->payment_type == 'Cash') selected @endif value="Cash">Cash</option>
+                                </select>
+                                @error('payment_type')
+                                  <span class="invalid-feedback" role="alert">
+                                      <strong>{{ $message }}</strong>
+                                  </span>
+                                @enderror
+                            </div> 
+                                <hr class="mb-3" /> 
                             
                                 <div class="mb-3 col-md-4">
                                   <label for="bank_id" class="form-label"> <strong> {{ __('Bank') }} * </strong>  </label>
                                     <select name="bank_id" class="form-select @error('bank_id') is-invalid @enderror" id="bank_id">
-                                        <option > Select Bank </option>
+                                        <option value="0"> Select Bank </option>
                                         @foreach($banks as $bank)
                                         <option  @if($bank->id == $employee_pay_info->bank_id) selected @endif  value="{{$bank->id}}">{{$bank->name}}</option>
                                         @endforeach
