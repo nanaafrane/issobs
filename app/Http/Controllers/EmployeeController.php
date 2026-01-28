@@ -320,7 +320,7 @@ class EmployeeController extends Controller
     {
 
 
-       $guards =  employee::where('client_id',$id)->where('department_id', 6)->get();
+       $guards =  employee::where('client_id',$id)->where('department_id', 6)->where('status', 'Active')->get();
 
        if($guards->isEmpty())
        {
