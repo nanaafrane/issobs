@@ -337,6 +337,7 @@
                               <th>Client </th>
                               <th> Location </th>
                               <th>Status</th>
+                              <th>Action</th>
                           </tr>
                       </thead>
                       <tbody>
@@ -365,7 +366,31 @@
                               @else
                               <td><span class="badge bg-label-danger">{{$employee->status}}</span></td>
                               @endif
-                              
+                              <td>
+                                <div class="dropdown">
+                                    <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown">
+                                        <i class="icon-base bx bx-dots-vertical-rounded"></i>
+                                    </button>
+                                    <div class="dropdown-menu">
+                                        <a class="dropdown-item" href="{{url('employees', $employee->id)}}"><i class="icon-base bx bxs-bullseye"></i> view</a>
+                                        <a class="dropdown-item" href="{{url('employees', $employee->id)}}/edit"><i class="icon-base bx bx-edit-alt me-1"></i> Edit</a>
+                                        <hr>
+                                        <a class="dropdown-item" href="{{url('employeesSalary', $employee->id)}}"><i class="icon-base bx bx-money-withdraw"></i> Salaries</a>
+                                        <hr>
+                                        @if ($employee->status == 'Active')
+                                            <a class="dropdown-item" href="{{url('terminateEmployee', $employee->id )}}"><i class="icon-base bx bx-user-x me-1" onclick="return confirm('Kindly Confirm?')"></i> Terminate</a>
+                                        @else
+                                        <a class="dropdown-item" href="{{url('employeeReinstate', $employee->id )}}" onclick="return confirm('Kindly Confirm?')"><i class="icon-base bx bx-edit-alt me-1"></i>Re-Instate </a>
+                                            @endif
+
+                                        <form action="employees/{{$employee->id}}" method="POST">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button class="dropdown-item" type="submit"><i class="icon-base bx bx-trash me-1"></i>Delete</button>
+                                        </form>
+                                    </div>
+                                </div>
+                              </td>
                           </tr>
                             @endforeach
                       </tbody>
