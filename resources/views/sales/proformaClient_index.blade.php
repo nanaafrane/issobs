@@ -166,7 +166,11 @@
                     <div class="text-truncate" data-i18n="SList">List</div>
                     </a>
                 </li>
-
+          <li class="menu-item">
+              <a href="{{url('employeesBank')}}" class="menu-link">
+              <div class="text-truncate" data-i18n="SList">Employee Banks</div>
+              </a>
+          </li>
                 </ul>
             </li>
         

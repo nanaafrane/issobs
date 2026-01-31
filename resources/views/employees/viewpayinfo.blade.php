@@ -139,7 +139,11 @@
                     <div class="text-truncate" data-i18n="SList">List</div>
                     </a>
                 </li>
-
+          <li class="menu-item">
+              <a href="{{url('employeesBank')}}" class="menu-link">
+              <div class="text-truncate" data-i18n="SList">Employee Banks</div>
+              </a>
+          </li>
                 </ul>
             </li>
         
@@ -302,7 +306,7 @@
                     <div class="card-body">
 
                             <div class="row" id="payment_field"> 
-                                <h5 class="card-header"> <strong> Payment Infomation</strong> </h5> 
+                                <h5 class="card-header"> <strong> Payment Infomation For {{  $employee_pay_info->employee?->name }} </strong> </h5> 
                                 <hr class="mb-3" />
                             
                                 <div class="mb-3 col-md-4">

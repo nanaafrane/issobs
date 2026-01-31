@@ -12,6 +12,7 @@ use App\Models\Receipt;
 use App\Models\Service;
 use App\Models\Transaction;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class ClientController extends Controller
 {
@@ -35,9 +36,39 @@ class ClientController extends Controller
         $user = Auth::user();
 
         $clients = Client::all();
+        $clientIds = Client::pluck('id');
         $clientsCount = count($clients);
         $fields = Field::all();
         $totalGuards = employee::where('department_id', '6')->count();
+       
+        // $clientGuards = DB::table('employees')
+        //                         ->where('department_id', '6')
+        //                         // ->select('client_id')
+        //                         ->whereIn('client_id', $clientIds)
+        //                         ->groupBy('client_id')
+        //                         ->get([DB::select('select * from clients'), DB::raw('count(*) as total_employees')]);
+       
+    //    $salariesTaxes = Salary::where('salary_month', $date)->where('tax', '>', 0)->whereIn('field_id', $fields->pluck('id')->toArray())->groupBy('field_id')->get(['field_id', DB::raw('SUM(cost_to_company) as paid'), DB::raw('SUM(tax) as tax'),  DB::raw('COUNT(*) as total_employees')]);
+
+        // $clientGuards = Employee::whereIn('client_id', $clientIds)
+        //                                 ->get()
+        //                                 ->groupBy('client_id');
+
+        // $clientGuards = Client::whereIn('id', $clientIds)
+        //                 ->with('employees') // Assuming Client hasMany Employee
+        //                 ->get()
+        //                 ->groupBy('id');
+
+        // dd($clientGuards);
+        // foreach ($clientGuards as $data)
+        //     {
+        //         // dd($client);
+        //         // echo $client->id ."<br>". "<br>"; ->name . " / ". $client->employees->count
+        //         foreach($data as $client)
+        //             {
+        //                 echo $client->id . " / ". $client->employees?->count() ."<br>". "<br>";
+        //             }
+        //     }
 
         $accra = Client::where('field_id', 1)->get();
         $accraCount = count($accra);
@@ -204,7 +235,25 @@ class ClientController extends Controller
 
         }
 
-
-
     }
+
+
+    /**
+     * Attach Guards to Cleint.
+     */
+    public function clientAttachGuards($client_id)
+    {
+    //    $guards =  employee::where('client_id',$id)->where('department_id', 6)->where('status', 'Active')->get();
+
+    //    if($guards->isEmpty())
+    //    {
+    //         return back()->with('error', 'Client has no current Guards');
+    //    }
+
+    //    $clients = $guards->isNotEmpty() ? Client::all() : null ;
+
+        return view('clients.GuardView');
+    
+    }
+
 }

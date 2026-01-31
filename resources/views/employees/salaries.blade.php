@@ -145,7 +145,11 @@
                     <div class="text-truncate" data-i18n="SList">List</div>
                     </a>
                 </li>
-
+          <li class="menu-item">
+              <a href="{{url('employeesBank')}}" class="menu-link">
+              <div class="text-truncate" data-i18n="SList">Employee Banks</div>
+              </a>
+          </li>
                 </ul>
             </li>
         
@@ -296,7 +300,7 @@
 
                   <div class="card mb-4">
 
-                    <h5 class="card-header">Employee Salaries</h5>
+                    <h5 class="card-header">Employee Salaries For {{ $employee->name}}</h5>
                     <!-- Account -->
                     <div class="card-body">
 
@@ -310,6 +314,7 @@
                             <th>Gross Salary</th>
                             <th>Deductions </th>
                             <th>Total</th>
+                            <th>Print</th>
                             <th>Edit</th>
                           
                         </tr>
@@ -325,8 +330,13 @@
                             <td>GH&#x20B5; {{ $salary->gross_salary }} </td>
                             <td>GH&#x20B5; {{ $salary->total_deductions }} </td>
                             <td>GH&#x20B5; {{ $salary->cost_to_company }}  </td>
+                            <td> 
+                                 <button id="printPayslip" class="btn btn-danger"> <i class="icon-base bx bxs-printer"></i> Print Payslip</button>
+                            </td>
                              @if ($employee->status == 'Active')
-                            <td> <a class="dropdown-item" href="/salaries/{{$salary->id}}/edit"><i class="icon-base bx bx-edit-alt me-1"></i></a> </td>
+                            <td>
+                                 <a class="dropdown-item" href="/salaries/{{$salary->id}}/edit"><i class="icon-base bx bx-edit-alt me-1"></i></a> 
+                            </td>
                             @else
                                 <td></td>
                             @endif
@@ -364,6 +374,26 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
     <script src="https://cdn.datatables.net/buttons/3.2.4/js/buttons.html5.min.js"></script>
 
+            <script>
+            $(document).ready(function() {
+                $('#printPayslip').on('click', function() {
+                    $.ajax({
+                        url: '/printPayslip/{{$salary->id}}', // The route to your dedicated print view
+                        method: 'GET',
+                        success: function(response) {
+                            var printWindow = window.open('url', '_parent');
+                            var originalContents = $('body').html();
+                            printWindow.document.write(response);
+                            printWindow.print();
+                            $('body').html(originalContents);
+                        },
+                        error: function(xhr, status, error) {
+                            console.error("Error fetching print content:", error);
+                        }
+                    });
+                });
+            });
+        </script>
 
     <script>
         new DataTable('#myTable', {

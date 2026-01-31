@@ -139,7 +139,11 @@
                     <div class="text-truncate" data-i18n="SList">List</div>
                     </a>
                 </li>
-
+          <li class="menu-item">
+              <a href="{{url('employeesBank')}}" class="menu-link">
+              <div class="text-truncate" data-i18n="SList">Employee Banks</div>
+              </a>
+          </li>
                 </ul>
             </li>
         
@@ -285,7 +289,7 @@
                       <a class="nav-link" href="/employees/{{$employee_pay_info?->employee_id}}/edit"><i class="bx bx-user me-1"></i> Employee Details</a>
                     </li>
                     <li class="nav-item ">
-                      <a class="nav-link active" href=" javascript:void(0);" ><i class="bx bxs-comment-detail"></i> Payment Info </a>
+                      <a class="nav-link active" href=" javascript:void(0);" ><i class="bx bxs-comment-detail"></i> Payment Info  </a>
                     </li>
 
                   </ul>
@@ -295,7 +299,7 @@
                             @csrf
                             @method('PUT')
                             <div class="row" id="payment_field"> 
-                                <h5 class="card-header"> <strong> Payment Infomation</strong> </h5> 
+                                <h5 class="card-header"> <strong> Payment Infomation</strong> For : {{ $employee_pay_info->employee->name }} </h5> 
                             <div class="mb-3 col-md-4">
                               <label for="payment_type" class="form-label"> <strong> {{ __('Payment Type') }} *</strong>  </label>
                                 <select name="payment_type" class="form-select @error('payment_type') is-invalid @enderror" id="payment_type" >

@@ -122,7 +122,11 @@
                     <div class="text-truncate" data-i18n="SList">List</div>
                     </a>
                 </li>
-
+          <li class="menu-item">
+              <a href="{{url('employeesBank')}}" class="menu-link">
+              <div class="text-truncate" data-i18n="SList">Employee Banks</div>
+              </a>
+          </li>
                 </ul>
             </li>
         
@@ -593,8 +597,7 @@
                         <table id="myTableimaster" class="display">
                             <thead>
                                 <tr>
-                                                <!-- <th> </th> -->
-                                                <!-- <th> Edit </th> -->
+                                                <th> View </th>
                                                 <th> id</th>
                                                 <th> Salary Month </th>
                                                 <th> employee_id </th>
@@ -648,8 +651,7 @@
                               @foreach ($salariesMaster as $key => $salary)
 
                                    <tr>
-                                                <!-- <td> <input class="checkBoxes form-check-input" type="checkbox" name="salary[]" value="{{ $salary->id }}" /> </td> -->
-                                                <!-- <td><a class="dropdown-item" href="/salaries/{{$salary->id}}/edit"><i class="icon-base bx bx-edit-alt me-1"></i></a> </td> -->
+                                                <td><a class="dropdown-item" href="/salaries/{{$salary->id}}"><i class="icon-base bx bxs-bullseye"></i></a> </td>
                                                 <td> {{ $salary->id }} </td>
                                                 <td> {{$salary->salary_month?->format('F, Y')}} </td>
                                                 <td> {{ $salary?->employee_id }} </td>

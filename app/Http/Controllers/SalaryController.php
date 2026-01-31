@@ -593,7 +593,22 @@ class SalaryController extends Controller
     public function show(Salary $salary)
     {
         //
+        // dd($salary);
+        return view('salaries.view', compact('salary'));
     }
+
+
+        /**
+     * Display the specified resource.
+     */
+    public function printPayslip( $id)
+    {
+        //
+        $salary = Salary::findOrFail($id);
+        return view('salaries.print', compact('salary'));
+    }
+
+
 
     /**
      * Show the form for editing the specified resource.

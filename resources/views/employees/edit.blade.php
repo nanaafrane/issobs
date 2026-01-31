@@ -139,7 +139,11 @@
                     <div class="text-truncate" data-i18n="SList">List</div>
                     </a>
                 </li>
-
+          <li class="menu-item">
+              <a href="{{url('employeesBank')}}" class="menu-link">
+              <div class="text-truncate" data-i18n="SList">Employee Banks</div>
+              </a>
+          </li>
                 </ul>
             </li>
         
@@ -290,7 +294,7 @@
                     @csrf
                     @method('PUT')
                     <div class="card mb-4">
-                      <h5 class="card-header"><strong> Basic Infomation</strong> </h5>
+                      <h5 class="card-header"><strong> Basic Infomation</strong> For : {{ $employee->name }}</h5>
 
                       <!-- Account -->
                       <div class="card-body">

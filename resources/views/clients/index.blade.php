@@ -517,6 +517,7 @@
                                         @endif
                                         <hr>
                                         <a class="dropdown-item" href="{{url('employeesGuardClient', $client->id)}}"><i class="icon-base bx bxs-user-account"></i> View Guards </a>
+                                        <a class="dropdown-item" href="{{url('clientAttachGuards', $client->id)}}"><i class="icon-base bx bxs-user-account"></i> Attach Guards </a>
 
                                     </div>
                                 </div>

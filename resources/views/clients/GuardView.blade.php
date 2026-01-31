@@ -5,6 +5,7 @@
     <link rel="stylesheet" href="https://cdn.datatables.net/buttons/3.2.4/css/buttons.dataTables.css">
 
     <link href="https://cdn.datatables.net/columncontrol/1.1.1/css/columnControl.dataTables.min.css" rel="stylesheet">
+
     @endsection
 
 
@@ -82,7 +83,7 @@
                 <div class="text-truncate" data-i18n="Clients">Clients</div>
                 </a>
             </li>
-        <li class="menu-item active open">
+            <li class="menu-item">
           <a href="javascript:void(0);" class="menu-link menu-toggle">
           <i class="menu-icon tf-icons bx bxs-user-account"></i>
           <div class="text-truncate" data-i18n="Staffs">Employees</div>
@@ -98,7 +99,7 @@
               <div class="text-truncate" data-i18n="SList">List</div>
               </a>
           </li>
-          <li class="menu-item active">
+          <li class="menu-item">
               <a href="{{url('employeesBank')}}" class="menu-link">
               <div class="text-truncate" data-i18n="SList">Employee Banks</div>
               </a>
@@ -130,7 +131,7 @@
                     </ul>
             </li>
             @endif
-            <li class="menu-item active open ">
+            <li class="menu-item  ">
                 <a href="javascript:void(0);" class="menu-link menu-toggle">
                 <i class="menu-icon tf-icons bx bxs-user-account"></i>
                 <div class="text-truncate" data-i18n="Staffs">Employees</div>
@@ -141,7 +142,7 @@
                     <div class="text-truncate" data-i18n="SRegister">Register</div>
                     </a>
                 </li>
-                <li class="menu-item active">
+                <li class="menu-item">
                     <a href="{{url('employees')}}" class="menu-link">
                     <div class="text-truncate" data-i18n="SList">List</div>
                     </a>
@@ -154,7 +155,7 @@
                 </ul>
             </li>
         
-            <li class="menu-item ">
+            <li class="menu-item active open ">
                 <a class="menu-link menu-toggle">
                     <i class="menu-icon tf-icons bx bx-bxs-user-detail"></i>
                     <div class="text-truncate" data-i18n="Clients"><strong>Clients</strong></div>
@@ -165,7 +166,7 @@
                             <div class="text-truncate" data-i18n="CRegister">Register</div>
                         </a>
                     </li>
-                    <li class="menu-item">
+                    <li class="menu-item active">
                         <a href="{{url('client')}}" class="menu-link">
                             <div class="text-truncate" data-i18n="CList">List</div>
                         </a>
@@ -225,6 +226,7 @@
                 <div class="text-truncate" data-i18n="Expense"> Expense </div>
                 </a>
             </li>
+
             @endif
 
             @if(Auth::user()->hasRole(['Invoice', 'Finance Manager', 'Manager']))
@@ -235,13 +237,15 @@
                     <div class="text-truncate" data-i18n="Payroll">Payroll</div>
                     </a>
                     <ul class="menu-sub">
+
                     <li class="menu-item">
                         <a href="{{ url('salaries') }}" class="menu-link">
                         <i class="menu-icon tf-icons bx bxs-user-account"></i>
                         <div class="text-truncate" data-i18n="Employees">Add to Salaries</div>
                         </a>
                     </li>
-                    @if(Auth::user()->hasPermission('Accounts'))
+                    
+                    @if(Auth::user()->hasPermission('Accounts') )
                     <li class="menu-item">
                         <a href="{{ url('salaries/create') }}" class="menu-link">
                         <i class="menu-icon tf-icons bx bx-money-withdraw"></i>
@@ -263,7 +267,6 @@
                         </a>
                     </li>
                     @endif
-
                     </ul>
                 </li>
             @endif
@@ -280,120 +283,69 @@
 
         <div class="row">
             <div class="col-12">
-                <h3 class="card-header"> <i class="icon-base bx bxs-user-account"></i> Employees For {{ $groupedBankEmployees[0]->employee->paymentInfo?->bank?->name  }}  </h3>
+                <h3 class="card-header"> <i class="icon-base bx bxs-user-account"></i>  Attach Guard </h3>
             </div>
         </div><br>
 
+
+        <div class="row">
+            <div class="col-xxl-12 mb-6 order-0">
+                <div class="card bg-dark">
+                    <div class="d-flex align-items-start row">
+                        <div class="col-sm-7">
+                            <div class="card-body">
+                               <p class="mb-1 text-white"><strong>  </strong> </p>
+                                <h1 class="text-white">  </h1>
+                                <h6 class="card-title text-white mb-3">TOTAL NUMBER OF GUARDS </h6>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div> <br><br>
 
         <div class="card-header  ml-2  d-none d-lg-block">
             @include('flash-messages')
         </div>
 
-        <div class="row">
-            <div class="col">
-                <div class="card"> 
-                    <div class="card-body"> 
-                    <div class="table-responsive text-normal-dark"> 
-                    <table id="myTable" class="display">
-                        <thead>
-                            <tr>
-                                <th>#</th>
-                                <th> Employee ID </th>
-                                <th>Name</th>
-                                <th>Gender</th>
-                                <th>Number</th>
-                                <th> Employment Date </th>
-                                <th> Department </th>
-                                <th>Role</th>
-                                <th>Field Office</th>
-                                <th>Client </th>
-                                <th> Location </th>
-                                <th>Payment Type</th>
-                                <th> Bank </th>
-                                <th>Account No.</th>
-                                <th>Status</th>
-                                <th>TAX</th>
-                                <th>SSNIT</th>
-                                <th>Basic</th>
-                                <th>Allowance</th>
-                                <th>Created</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
 
-                            @foreach ($groupedBankEmployees as $key => $data )
-                            <tr>
-                                <td> {{ $key + 1 }} </td>
-                                <td> FWSS {{ $data->employee->id }}  </td>
-                                <td>{{$data->employee->name}}  </td>
-                                <td>{{ $data->employee->gender }}  </td>
-                                <td>{{ $data->employee->phone_number }}  </td>
-                                <td>{{ $data->employee->date_of_joining?->diffForHumans() }} </td>
-                                <td> {{ $data->employee->department?->name }} </td>
-                                <td> {{ $data->employee->role?->name }}  </td>
-                                <td> {{ $data->employee->field?->name }}   </td>
-                                <td>{{ $data->employee->client?->name }} {{ $data->employee->client?->business_name }} </td>
-                                <td> {{ $data->employee->location }} </td>
-                                <td> {{ $data->employee->payment_type }}  </td>
-                                <td> {{  $data->employee->paymentInfo?->bank?->name  }} </td>
-                                <td> {{  $data->employee->paymentInfo?->acc_number  }} </td>
-                                @if($data->employee->status == 'Active')
-                                <td><span class="badge bg-label-success">{{$data->employee->status}}</span></td>
-                                @else
-                                <td><span class="badge bg-label-danger">{{$data->employee->status}}</span></td>
-                                @endif
-                               
-                                 @if($data->employee->tax_button == 'on')
-                                <td> <span class="badge bg-label-dark"> {{  $data->employee->tax_button }} </span> </td>
-                                @else
-                                <td> <span class="badge bg-label-danger"> OFF </span> </td>
-                                @endif
+          <div class="row">
 
-                                @if($data->employee->ssnit_button == 'on')
-                                <td> <span class="badge bg-label-dark"> {{  $data->employee->ssnit_button }} </span> </td>
-                                @else
-                                <td> <span class="badge bg-label-danger"> OFF </span> </td>
-                                @endif
-                                <td> {{$data->employee->basic_salary}} </td>
-                                <td> {{$data->employee->allowances}} </td>
+            <form action="/employeesGuardReAassign"  method="POST">
+              @csrf
 
-                                <td>{{ $data->employee->created_at?->format('F, Y') }} </td>
-                               <td>
-                                <div class="dropdown">
-                                    <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown">
-                                        <i class="icon-base bx bx-dots-vertical-rounded"></i>
-                                    </button>
-                                    <div class="dropdown-menu">
-                                        <a class="dropdown-item" href="{{url('employees', $data->employee->id)}}"><i class="icon-base bx bxs-bullseye"></i> view</a>
-                                        <a class="dropdown-item" href="{{url('employees', $data->employee->id)}}/edit"><i class="icon-base bx bx-edit-alt me-1"></i> Edit</a>
-                                        <hr>
-                                        <a class="dropdown-item" href="{{url('employeesSalary', $data->employee->id)}}"><i class="icon-base bx bx-money-withdraw"></i> Salaries</a>
-                                        <hr>
-                                        @if ($data->employee->status == 'Active')
-                                            <a class="dropdown-item" href="{{url('terminateEmployee', $data->employee->id )}}"><i class="icon-base bx bx-user-x me-1" onclick="return confirm('Kindly Confirm?')"></i> Terminate</a>
-                                        @else
-                                        <a class="dropdown-item" href="{{url('employeeReinstate', $data->employee->id )}}" onclick="return confirm('Kindly Confirm?')"><i class="icon-base bx bx-edit-alt me-1"></i>Re-Instate </a>
-                                            @endif
+              <input class="form-check-input form-check-inline" type="checkbox" value="" id="options" />
 
-                                        <form action="employees/{{$data->employee->id}}" method="POST">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button class="dropdown-item" type="submit"><i class="icon-base bx bx-trash me-1"></i>Delete</button>
-                                        </form>
-                                    </div>
-                                </div>
-                            </td>
+              <div class="form-check form-check-inline">
+                  <select name="employees" class="form-select">
+                      <option value=""> Select All </option>
+                  </select>
+              </div>
 
-                            </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                    </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+              <div class="form-check form-check-inline">
+                <button class="btn btn-dark" type="submit" onclick="return confirm('Kindly Confirm?')"> <i class="icon-base bx bx-arrow-from-left"> </i> {{ __('Re-Assign') }}</button>
+              </div>
+
+              <div class="col">
+                  <table id="myTable" class="display">
+                      <thead>
+                          <tr>
+                              <th> </th>
+
+                          </tr>
+                      </thead>
+                      <tbody>
+
+                          <tr>
+                              <td> </td>
+                              
+                          </tr>
+                      </tbody>
+                  </table>
+              </form>
+
+              </div>
+          </div>
     </div>
   <!-- / Content -->
 
@@ -411,7 +363,6 @@
     <script src="https://cdn.datatables.net/buttons/3.2.4/js/buttons.html5.min.js"></script>
 
     <script src="https://cdn.datatables.net/columncontrol/1.1.1/js/dataTables.columnControl.min.js"></script>
-
     <script>
         new DataTable('#myTable', {
             responsive: true,
@@ -436,6 +387,20 @@
                     ]
                 }
             },
+        });
+    </script>
+
+    <script>
+        new DataTable('#myTable', { responsive: true, });
+    </script>
+
+      <script>
+        $(document).ready(function() {
+            $('#options').change(function() {
+                $('.checkBoxes').prop('checked', function(i, val) {
+                    return !val;
+                });
+            });
         });
     </script>
     @endsection

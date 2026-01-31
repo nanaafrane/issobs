@@ -51,7 +51,7 @@
     <div class="layout-wrapper layout-content-navbar">
 
         <div style="background: #fbfbfbff;" class="layout-container">
-
+            <div class="watermarked"> 
             <!-- Content wrapper -->
             <div class="content-wrapper">
                 <div class="content-wrapper">
@@ -164,7 +164,7 @@
                 <div class="content-backdrop fade"></div>
 
             </div>
-
+            </div>
             <div class="layout-overlay layout-menu-toggle"></div>
         </div>
 
