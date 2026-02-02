@@ -222,7 +222,7 @@
                 <div class="text-truncate" data-i18n="Payroll">Payroll</div>
                 </a>
                 <ul class="menu-sub">
-                @if(Auth::user()->hasRole(['Invoice']))
+                @if(Auth::user()->hasRole(['Invoice', 'Finance Manager']))
                 <li class="menu-item">
                     <a href="{{ url('salaries') }}" class="menu-link">
                     <i class="menu-icon tf-icons bx bxs-user-account"></i>

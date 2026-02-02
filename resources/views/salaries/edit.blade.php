@@ -382,7 +382,7 @@
                                     </div>
 
 
-                                    <div class="mb-3 col-md-2">
+                                    <!-- <div class="mb-3 col-md-2">
                                     <label for="payment_type" class="form-label"> <strong>  {{ __('Payment Type') }}* </strong> </label>
                                     <input  class="form-control @error('payment_type') is-invalid @enderror" type="text" id="payment_type" name="payment_type"  value="{{$salary->payment_type}}" autofocus />
                                         @error('payment_type')
@@ -390,19 +390,19 @@
                                             <strong>{{ $message }}</strong>
                                         </span>
                                         @enderror
-                                    </div>
-                                    <!-- <div class="mb-3 col-md-2">
+                                    </div> -->
+                                    <div class="mb-3 col-md-2">
                                     <label for="payment_type" class="form-label"> <strong> {{ __('Payment Type') }} *</strong>  </label>
                                         <select name="payment_type" class="form-select @error('payment_type') is-invalid @enderror" id="payment_type" >
-                                            <option @if ($salary->payment_type == 'bank') selected @endif value="bank">Bank</option>
-                                            <option  @if ($salary->payment_type == 'cash') selected @endif value="cash">Cash</option>
+                                            <option @if ($salary->payment_type == 'Bank') selected @endif value="Bank">Bank</option>
+                                            <option  @if ($salary->payment_type == 'Cash') selected @endif value="Cash">Cash</option>
                                         </select>
                                         @error('payment_type')
                                         <span class="invalid-feedback" role="alert">
                                             <strong>{{ $message }}</strong>
                                         </span>
                                         @enderror
-                                    </div>   -->
+                                    </div>  
                                
                                     <div class="mb-3 col-md-2">
                                     <label for="bank_id" class="form-label"> <strong> {{ __('Bank') }}  </strong>  </label>
