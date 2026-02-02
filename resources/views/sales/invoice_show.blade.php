@@ -318,8 +318,8 @@
             <!-- Content wrapper -->
             <div class="content-wrapper">
                 <div id="printContent" class="content-wrapper">
+                <div class="watermarked"> 
                     <div class="container-xxl flex-grow-1 container-p-y">
-
                     <div class="card-header  ml-2  d-none d-lg-block">
                         @include('flash-messages')
                     </div>
@@ -454,6 +454,7 @@
                                 </div>
                         </section>
                     </div>
+                </div>
                 </div>
 
                 <div class="content-backdrop fade"></div>

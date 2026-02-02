@@ -314,7 +314,7 @@
                             <th>Gross Salary</th>
                             <th>Deductions </th>
                             <th>Total</th>
-                            <th>Print</th>
+                            <th>Show</th>
                             <th>Edit</th>
                           
                         </tr>
@@ -331,11 +331,11 @@
                             <td>GH&#x20B5; {{ $salary->total_deductions }} </td>
                             <td>GH&#x20B5; {{ $salary->cost_to_company }}  </td>
                             <td> 
-                                 <button id="printPayslip" class="btn btn-danger"> <i class="icon-base bx bxs-printer"></i> Print Payslip</button>
+                                 <a class="btn btn-dark" href="/salaries/{{$salary->id}}"><i class="icon-base bx bxs-bullseye"></i></a>
                             </td>
                              @if ($employee->status == 'Active')
                             <td>
-                                 <a class="dropdown-item" href="/salaries/{{$salary->id}}/edit"><i class="icon-base bx bx-edit-alt me-1"></i></a> 
+                                 <a class="btn btn-dark" href="/salaries/{{$salary->id}}/edit"><i class="icon-base bx bx-edit-alt me-1"></i></a> 
                             </td>
                             @else
                                 <td></td>
@@ -376,7 +376,7 @@
 
             <script>
             $(document).ready(function() {
-                $('#printPayslip').on('click', function() {
+                $('#print').on('click', function() {
                     $.ajax({
                         url: '/printPayslip/{{$salary->id}}', // The route to your dedicated print view
                         method: 'GET',

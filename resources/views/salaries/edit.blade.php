@@ -738,13 +738,12 @@
             </div>
             <!-- / Content -->
 
-
-
-  <!-- / Content -->
+     <!-- <div class="buy-now">
+            <button id="print"
+                class="btn btn-danger btn-buy-now"> <i class="icon-base bx bxs-printer"></i> Print Payslip</button>
+    </div> -->
 
   @endsection
-
-
 
 
 </x-hr-dashboard>

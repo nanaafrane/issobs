@@ -297,7 +297,7 @@
                 <!-- Content wrapper -->
                 <div class="content-wrapper">
                     <div id="printContent" class="content-wrapper">
-                        <!-- <div class="watermarked">  -->
+                        <div class="watermarked"> 
                             <div class="container-xxl flex-grow-1 container-p-y">
                                 <!-- Invoice 1 - Bootstrap Brain Component -->
                                 <section class="py-3 py-md-5">
@@ -532,7 +532,7 @@
                                         </div>
                                 </section>
                             </div>
-                        <!-- </div> -->
+                        </div>
                     </div>
 
                     <div class="content-backdrop fade"></div>
@@ -546,12 +546,24 @@
         </div>
         <!-- / Layout wrapper -->
         <div class="buy-now">
-            <button id="printPayslip"
+            <button id="print"
                 class="btn btn-danger btn-buy-now"> <i class="icon-base bx bxs-printer"></i> Print Payslip</button>
         </div>
+
+        <script src="{{asset('vendor/libs/jquery/jquery.js')}}"></script>
+
+        <script src="{{asset('vendor/libs/popper/popper.js')}}"></script>
+        <script src="{{asset('vendor/js/bootstrap.js')}}"></script>
+
+        <script src="{{asset('vendor/libs/perfect-scrollbar/perfect-scrollbar.js')}}"></script>
+
+        <script src="{{asset('vendor/js/menu.js')}}"></script>
+        <!-- Main JS -->
+        <script src="{{asset('js/main.js')}}"></script>
+
         <script>
             $(document).ready(function() {
-                $('#printPayslip').on('click', function() {
+                $('#print').on('click', function() {
                     $.ajax({
                         url: '/printPayslip/{{$salary->id}}', // The route to your dedicated print view
                         method: 'GET',
@@ -569,29 +581,6 @@
                 });
             });
         </script>
-
-        <script src="{{asset('vendor/libs/jquery/jquery.js')}}"></script>
-
-        <script src="{{asset('vendor/libs/popper/popper.js')}}"></script>
-        <script src="{{asset('vendor/js/bootstrap.js')}}"></script>
-
-        <script src="{{asset('vendor/libs/perfect-scrollbar/perfect-scrollbar.js')}}"></script>
-
-        <script src="{{asset('vendor/js/menu.js')}}"></script>
-
-        <!-- endbuild -->
-
-        <!-- Vendors JS -->
-        <script src="{{asset('vendor/libs/apex-charts/apexcharts.js')}}"></script>
-
-        <!-- Main JS -->
-
-        <script src="{{asset('js/main.js')}}"></script>
-
-        <!-- Page JS -->
-        <script src="{{asset('js/dashboards-analytics.js')}}"></script>
-
-
 
 </body>
 

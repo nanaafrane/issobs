@@ -594,7 +594,7 @@ class SalaryController extends Controller
     {
         //
         // dd($salary);
-        return view('salaries.view', compact('salary'));
+        return view('salaries.show', compact('salary'));
     }
 
 
