@@ -852,6 +852,12 @@ class SalaryController extends Controller
             $salary->ssnit_tobe_paid13_5 = $ssnit_13_5 ?? $salary->ssnit_tobe_paid13_5 ;
             $salary->cost_to_company = $netSalay + $ssnit_13_5 ?? $salary->cost_to_company ;
 
+            // UPDATE PAYMENT DETAILS FOR A MONTH SALARY
+            $salary->payment_type = $request['payment_type'] ?? $salary->payment_type ;
+            $salary->bank_id = $request['bank_id'] ?? $salary->bank_id ;
+            $salary->account_number = $request['account_number'] ?? $salary->account_number ;
+            $salary->branch = $request['branch'] ?? $salary->branch ;
+
             $salary->save(); 
 
 
