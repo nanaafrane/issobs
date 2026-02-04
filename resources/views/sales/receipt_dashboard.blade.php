@@ -274,7 +274,7 @@
 
         <div class="row">
             <div class="col-12">
-                <h3 class="card-header text-primary"> <i class="icon-base bx bx-bxs-receipt"></i> All Payment @if (isset($month)) <strong> / For Month: {{  \Carbon\Carbon::parse($month)->format('F Y') }}</strong> @endif </h3>
+                <h3 class="card-header text-primary"> <i class="icon-base bx bx-bxs-receipt"></i> All Payment @if (isset($month)) <strong> / In The Month: {{  \Carbon\Carbon::parse($month)->format('F Y') }}</strong> @endif </h3>
             </div>
         </div><br>
 
@@ -586,7 +586,9 @@
                     <thead>
                         <tr>
                             <th>id</th>
+                            <th>R.Month</th>
                             <th>Invoice No.</th>
+                            <th>Inv. Month</th>
                             <th>Client Name</th>
                             <th>Phone No.</th>
                             <th> Field Office </th>
@@ -607,7 +609,9 @@
                         @foreach($reportReceipt as $receipt)
                         <tr>
                             <td>FWSSR{{$receipt->id}}</td>
+                            <td> {{ $receipt->receipt_month?->format('F, Y') }} </td>
                             <td>FWSSi{{$receipt->invoice_id}} </td>
+                            <td> {{ $receipt->invoice?->invoice_month?->format('F, Y') }} </td>
                             @if ($receipt->client->name === $receipt->client->business_name)
                             <td> {{$receipt->client->business_name}} </td>
                             @else
@@ -857,9 +861,28 @@
             responsive: true,
 
             layout: {
-                topStart: {
-                    buttons: ['excelHtml5', 'pdfHtml5']
-                }
+            
+              topStart: {
+                buttons: [ 
+                {
+                     extend: 'pageLength',
+                    text: 'Show',
+                    className: 'btn btn-secondary',
+                    Options: [10, 25, 50, 100, 500], 
+                },
+                    {
+                        extend: 'excelHtml5',
+                        title: 'Receipts',
+                        className: 'btn btn-secondary',
+                        exportOptions: {
+                            columns: ':visible'
+                        }
+                    },
+                    'colvis'
+                ]
+            }
+
+
             },
             columnControl: [
                 ['search']

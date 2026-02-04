@@ -511,25 +511,18 @@ class SalaryController extends Controller
                 }
                 if($this->next2Tax[1]  < 3166.67){
                     
-                //    return  "run NEXT with this balances  " . $this->next2Tax[1];
+                    //    return  "run NEXT with this balances  " . $this->next2Tax[1];
                     $this->next3Tax = $this->next2Tax[1] * 0.175 ;
                     return $this->next3Tax + $this->next2Tax[0] + $this->next1Tax ; //. " / ".$this->CummulativeTaxHold[0] + $this->CummulativeTaxHold[1];
                 }
                 else{
-                    // if($this->next2Tax[1]  )
-                    //     {
-
-                    //     }
-                    // else{
-
-                    // }
                     // Take from 3166.67; TO WORK 17.5%  
                       $balance = $this->next2Tax[1] - 3166.67;
                       $this->next3Tax  = 3166.67 * 0.175 ;
 
                       $balanceTax = $balance * 0.25;
 
-                           return $this->next3Tax + $this->next2Tax[0] + $this->next1Tax +  $balanceTax ;
+                        return $this->next3Tax + $this->next2Tax[0] + $this->next1Tax +  $balanceTax ;
                 }
 
             }
