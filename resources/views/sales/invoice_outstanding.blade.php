@@ -3,6 +3,7 @@
     @section('css')
     <link rel="stylesheet" href="https://cdn.datatables.net/2.3.3/css/dataTables.dataTables.css" />
     <link rel="stylesheet" href="https://cdn.datatables.net/buttons/3.2.4/css/buttons.dataTables.css">
+    <link href="https://cdn.datatables.net/columncontrol/1.1.1/css/columnControl.dataTables.min.css" rel="stylesheet">
     @endsection
 
 
@@ -825,16 +826,38 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
     <script src="https://cdn.datatables.net/buttons/3.2.4/js/buttons.html5.min.js"></script>
 
+    <script src="https://cdn.datatables.net/columncontrol/1.1.1/js/dataTables.columnControl.min.js"></script>
+
 
     <script>
         new DataTable('#myTable', {
             responsive: true,
 
             layout: {
-                topStart: {
-                    buttons: ['excelHtml5', 'pdfHtml5']
-                }
+              topStart: {
+                buttons: [ 
+                {
+                     extend: 'pageLength',
+                    text: 'Show',
+                    className: 'btn btn-secondary',
+                    Options: [10, 25, 50, 100, 500], 
+                },
+                    {
+                        extend: 'excelHtml5',
+                        title: 'Receipts',
+                        className: 'btn btn-secondary',
+                        exportOptions: {
+                            columns: ':visible'
+                        }
+                    },
+                    'colvis'
+                ]
             }
+
+            },
+            columnControl: [
+                ['search']
+            ]
         });
     </script>
 
