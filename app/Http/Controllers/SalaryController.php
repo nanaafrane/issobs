@@ -612,8 +612,9 @@ class SalaryController extends Controller
         // dd($salary);
         $banks = Bank::all();
         $clients = Client::all();
+        $Fields = Field::all();
         
-        return view('salaries.edit', compact('salary', 'clients', 'banks'));
+        return view('salaries.edit', compact('salary', 'clients', 'banks', 'Fields'));
     }
 
 
@@ -850,6 +851,9 @@ class SalaryController extends Controller
             $salary->bank_id = $request['bank_id'] ?? $salary->bank_id ;
             $salary->account_number = $request['account_number'] ?? $salary->account_number ;
             $salary->branch = $request['branch'] ?? $salary->branch ;
+
+            // UPDATE FIELD ID
+            $salary->field_id = $request['field_id'] ?? $salary->field_id ;
 
             $salary->save(); 
 

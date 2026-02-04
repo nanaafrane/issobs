@@ -346,7 +346,7 @@
                                         @enderror
                                     </div>
 
-                                    <div class="mb-3 col-md-4">
+                                    <div class="mb-3 col-md-2">
                                     <label for="salary_month" class="form-label"> <strong>Salary Month  </strong> </label>
                                     <input  class="form-control @error('salary_month') is-invalid @enderror" type="date" id="salary_month" name="salary_month" value="{{$salary->salary_month?->format('Y-m-d')}}" autofocus />
                                         @error('salary_month')
@@ -354,6 +354,19 @@
                                             <strong>{{ $message }}</strong>
                                         </span>
                                         @enderror
+                                    </div>
+                                    <div class="mb-3 col-md-2">
+                                        <label for="field_id" class="form-label"> <strong> {{ __('Field Office') }} * </strong>  </label>
+                                            <select name="field_id" class="form-select @error('field_id') is-invalid @enderror" id="field_id" >
+                                            @foreach($Fields as $field)
+                                            <option @if($field?->id == $salary->field_id) selected @endif value="{{$field?->id}}">{{$field?->name}}</option>
+                                            @endforeach
+                                            </select>
+                                            @error('field_id')
+                                            <span class="invalid-feedback" role="alert">
+                                                <strong>{{ $message }}</strong>
+                                            </span>
+                                            @enderror
                                     </div>
                                 
 
@@ -439,6 +452,7 @@
                                         </span>
                                         @enderror
                                     </div>
+
                                 </div>
                                 <div class="mt-2">
                                     <button type="submit" class="btn btn-primary me-2">Update </button>
