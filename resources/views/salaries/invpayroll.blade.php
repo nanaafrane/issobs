@@ -271,7 +271,7 @@
 
         <div class="row">
             <div class="col-12">
-                <h3 class="card-header"> <i class="icon-base bx bx-git-compare"></i> Invoices to Salary </h3>
+                <h3 class="card-header"> <i class="icon-base bx bx-git-compare"></i> Invoices to Payroll </h3>
             </div>
         </div><br>
         <hr />

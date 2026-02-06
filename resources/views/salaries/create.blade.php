@@ -278,7 +278,7 @@
 
         <div class="row">
             <div class="col-12">
-                <h3 class="card-header"> <i class="icon-base bx bx-bxs-user-detail"></i> Active Employees </h3>
+                <h3 class="card-header"> <i class="icon-base bx bx-bxs-user-detail"></i> Payroll / Salaries </h3>
             </div>
         </div><br>
 
