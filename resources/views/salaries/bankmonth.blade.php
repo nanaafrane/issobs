@@ -296,7 +296,7 @@
                             </div>
                         </div>
                         <p class="mb-1"><strong> BANK NAME :  {{ strtoupper($bank->name) }}  </strong> </p> <br>
-                        <h4 class="card-title mb-3 text-white"><strong> GH&#x20B5;  {{ number_format($BankSalaries->sum('cost_to_company'), 2) }} </strong> </h4> <br>
+                        <h4 class="card-title mb-3 text-white"><strong> GH&#x20B5;  {{ number_format($BankSalaries->sum('net_salary'), 2) }} </strong> </h4> <br>
                         <small class="fw-medium">TOTAL DEDUCTIONS : GH&#x20B5;  {{ number_format($BankSalaries->sum('total_deductions'), 2) }}  </small> <br>
                         <small class="fw-medium"> TOTAL GROSS SALARY : GH&#x20B5; {{ number_format($BankSalaries->sum('gross_salary'), 2) }}  </small>
 
@@ -334,10 +334,10 @@
                                     <td> {{ $key + 1 }} </td>
                                     <td> FWSS{{ $salary->employee?->id }} </td>
                                     <td> {{ strtoupper($salary->employee?->name) }} </td>
-                                    <td> {{ $salary->employee?->role?->name }} </td>
-                                    <td> {{ $salary->client?->name || $salary->client?->business_name ? $salary->client?->name . $salary->client?->business_name :  $salary->location }} </td>
+                                    <td> {{ strtoupper( $salary->employee?->role?->name) }} </td>
+                                    <td> {{ $salary->client?->name || $salary->client?->business_name ? strtoupper($salary->client?->name) . strtoupper($salary->client?->business_name) :  strtoupper($salary->location) }} </td>
                                     <td> {{ $salary->paymentInfo?->branch_code }} </td>
-                                    <td> {{$salary->branch}} </td>
+                                    <td> {{ strtoupper($salary->branch)}} </td>
                                     <td> {{ $salary->account_number }} </td>
                                     <td> {{ number_format($salary->net_salary, 2) }} </td>
                                 </tr>

@@ -109,14 +109,14 @@ class SalaryController extends Controller
         $banks = Bank::all();
         $fields = Field::all(); 
 
-        $groupedBankSalaries = Salary::where('salary_month', $date)->whereIn('bank_id', $banks->pluck('id')->toArray())->groupBy('bank_id')->get(['bank_id', DB::raw('SUM(gross_salary) as gross'), DB::raw('SUM(total_deductions) as deductions'),  DB::raw('SUM(cost_to_company) as paid'),  DB::raw('COUNT(*) as total_employees')]);
+        $groupedBankSalaries = Salary::where('salary_month', $date)->whereIn('bank_id', $banks->pluck('id')->toArray())->groupBy('bank_id')->get(['bank_id', DB::raw('SUM(gross_salary) as gross'), DB::raw('SUM(total_deductions) as deductions'),  DB::raw('SUM(net_salary) as paid'),  DB::raw('COUNT(*) as total_employees')]);
         // dd($groupedBankSalaries->sum('total_employees'));
 
-        $groupedCashkSalaries = Salary::where('salary_month', $date)->where('payment_type', 'Cash')->whereIn('field_id', $fields->pluck('id')->toArray())->groupBy('field_id')->get(['field_id', DB::raw('SUM(gross_salary) as gross'), DB::raw('SUM(total_deductions) as deductions'),  DB::raw('SUM(cost_to_company) as paid'),  DB::raw('COUNT(*) as total_employees')]);
+        $groupedCashkSalaries = Salary::where('salary_month', $date)->where('payment_type', 'Cash')->whereIn('field_id', $fields->pluck('id')->toArray())->groupBy('field_id')->get(['field_id', DB::raw('SUM(gross_salary) as gross'), DB::raw('SUM(total_deductions) as deductions'),  DB::raw('SUM(net_salary) as paid'),  DB::raw('COUNT(*) as total_employees')]);
 
-        $salariesTaxes = Salary::where('salary_month', $date)->where('tax', '>', 0)->whereIn('field_id', $fields->pluck('id')->toArray())->groupBy('field_id')->get(['field_id', DB::raw('SUM(cost_to_company) as paid'), DB::raw('SUM(tax) as tax'),  DB::raw('COUNT(*) as total_employees')]);
+        $salariesTaxes = Salary::where('salary_month', $date)->where('tax', '>', 0)->whereIn('field_id', $fields->pluck('id')->toArray())->groupBy('field_id')->get(['field_id', DB::raw('SUM(net_salary) as paid'), DB::raw('SUM(tax) as tax'),  DB::raw('COUNT(*) as total_employees')]);
 
-        $salariesPensions = Salary::where('salary_month', $date)->where('ssnit_tobe_paid13_5', '>', 0)->whereIn('field_id', $fields->pluck('id')->toArray())->groupBy('field_id')->get(['field_id', DB::raw('SUM(ssnit_tier1_0_5) as tier1'), DB::raw('SUM(ssnit_tier2_5) as tier2'), DB::raw('SUM(ssnit_comp_cont_13) as cont13'), DB::raw('SUM(ssnit_tobe_paid13_5) as cont13_5'),  DB::raw('SUM(cost_to_company) as paid'),   DB::raw('COUNT(*) as total_employees')]);
+        $salariesPensions = Salary::where('salary_month', $date)->where('ssnit_tobe_paid13_5', '>', 0)->whereIn('field_id', $fields->pluck('id')->toArray())->groupBy('field_id')->get(['field_id', DB::raw('SUM(ssnit_tier1_0_5) as tier1'), DB::raw('SUM(ssnit_tier2_5) as tier2'), DB::raw('SUM(ssnit_comp_cont_13) as cont13'), DB::raw('SUM(ssnit_tobe_paid13_5) as cont13_5'),  DB::raw('SUM(net_salary) as paid'),   DB::raw('COUNT(*) as total_employees')]);
 
         $salariesMaster = Salary::where('salary_month', $date)->get();
 

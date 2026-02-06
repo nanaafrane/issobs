@@ -452,7 +452,7 @@
                                     <th>Bank Name</th>
                                     <th>Gross Salary</th>
                                     <th>Total Deductions</th>
-                                    <th>Cost to Company</th>
+                                    <th>Net Salary</th>
                                     <th>Employees</th>
                                     <th> View Employees</th>
                                 </tr>
@@ -489,7 +489,7 @@
                                     <th>Field</th>
                                     <th>Gross Salary</th>
                                     <th>Total Deductions</th>
-                                    <th>Cost to Company</th>
+                                    <th>Net Salary </th>
                                     <th>Employees</th>
                                     <th> View Employees</th>
                                 </tr>
@@ -524,7 +524,7 @@
                                    
                                     <th>#</th>
                                     <th>Field</th>
-                                    <th>Total Paid</th>
+                                    <th>Net Salary</th>
                                     <th>Total Tax</th>
                                     <th>Employees</th>
                                     <th>View Employees</th>
@@ -562,6 +562,7 @@
                                     <th>Field</th>
                                     <th>Tier 1</th>
                                     <th>Tier 2</th>
+                                    <th>Net Salary</th>
                                     <th>Cont 13</th>
                                     <th>Cont 13.5</th>
                                     <th>Employees</th>
@@ -575,6 +576,7 @@
                                     <td>{{ $pensions->field?->name }}</td>
                                     <td> GH&#x20B5; {{ number_format($pensions->tier1, 2) }} </td>
                                     <td> GH&#x20B5; {{ number_format($pensions->tier2, 2) }} </td>
+                                    <td> GH&#x20B5; {{ number_format($pensions->paid, 2) }}</td>
                                     <td> GH&#x20B5; {{ number_format($pensions->cont13, 2) }} </td>
                                     <td> GH&#x20B5; {{ number_format($pensions->cont13_5, 2) }} </td>
                                     <td> {{ $pensions->total_employees }} </td>

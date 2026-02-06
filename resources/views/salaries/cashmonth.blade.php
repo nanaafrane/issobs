@@ -296,7 +296,7 @@
                             </div>
                         </div>
                         <p class="mb-1"><strong> FIELD OFFICE :  {{ strtoupper($field->name) }}  </strong> </p> <br>
-                        <h4 class="card-title mb-3 text-white"><strong> GH&#x20B5;  {{ number_format($CashSalaries->sum('cost_to_company'), 2) }} </strong> </h4> <br>
+                        <h4 class="card-title mb-3 text-white"><strong> GH&#x20B5;  {{ number_format($CashSalaries->sum('net_salary'), 2) }} </strong> </h4> <br>
                         <small class="fw-medium">TOTAL DEDUCTIONS : GH&#x20B5;  {{ number_format($CashSalaries->sum('total_deductions'), 2) }}  </small> <br>
                         <small class="fw-medium"> TOTAL GROSS SALARY : GH&#x20B5; {{ number_format($CashSalaries->sum('gross_salary'), 2) }}  </small>
 
