@@ -80,29 +80,6 @@
                 <div class="text-truncate" data-i18n="Clients">Clients</div>
                 </a>
             </li>
-            <li class="menu-item">
-          <a href="javascript:void(0);" class="menu-link menu-toggle">
-          <i class="menu-icon tf-icons bx bxs-user-account"></i>
-          <div class="text-truncate" data-i18n="Staffs">Employees</div>
-          </a>
-          <ul class="menu-sub">
-          <li class="menu-item ">
-              <a href="{{url('employees/create')}}" class="menu-link">
-              <div class="text-truncate" data-i18n="SRegister">Register</div>
-              </a>
-          </li>
-          <li class="menu-item">
-              <a href="{{url('employees')}}" class="menu-link">
-              <div class="text-truncate" data-i18n="SList">List</div>
-              </a>
-          </li>
-          <li class="menu-item">
-              <a href="{{url('employeesBank')}}" class="menu-link">
-              <div class="text-truncate" data-i18n="SList">Employee Banks</div>
-              </a>
-          </li>
-          </ul>
-      </li>
                 @endif
         @endif
 
@@ -144,7 +121,7 @@
                     <div class="text-truncate" data-i18n="SList">List</div>
                     </a>
                 </li>
-                          <li class="menu-item">
+          <li class="menu-item">
               <a href="{{url('employeesBank')}}" class="menu-link">
               <div class="text-truncate" data-i18n="SList">Employee Banks</div>
               </a>
@@ -233,7 +210,7 @@
                     <div class="text-truncate" data-i18n="Payroll">Payroll</div>
                     </a>
                     <ul class="menu-sub">
-                    @if(Auth::user()->hasPermission('HR') || Auth::user()->hasRole(['Invoice' , 'Finance Manager']))
+                    @if(Auth::user()->hasPermission('HR') || Auth::user()->hasRole(['Invoice']))
                     <li class="menu-item ">
                         <a href="{{ url('salaries') }}" class="menu-link">
                         <i class="menu-icon tf-icons bx bxs-user-account"></i>
@@ -277,79 +254,74 @@
 
         <div class="row">
             <div class="col-12">
-                <h3 class="card-header"> <i class="icon-base bx bx-transfer-alt"></i> {{ $bank->name }}   @if (isset($month)) <strong> / For Month: {{  \Carbon\Carbon::parse($month)->format('F Y') }}</strong> @endif </h3>
-
+                <h3 class="card-header"> <i class="icon-base bx bx-transfer-alt"></i> Payroll / Send Money </h3>
             </div>
         </div><br>
+        <hr />
 
-         @if(Auth::user()->hasRole(['Invoice','Manager', 'Finance Manager' ]))
         <div class="row">
-            <div class="col-lg-12 mb-4">
-                <div  class="card h-100 bg-dark text-white">
-                    <div class="card-body">
-                        <div class="card-title d-flex align-items-start justify-content-between mb-4">
-                            <div class="avatar flex-shrink-0">
-                                <img
-                                    src="{{ asset('img/icons/unicons/paypal.png') }}"
-                                    alt="chart success"
-                                    class="rounded" />
-                            </div>
+                <form action="/sendMoney" method="POST">
+                    @csrf
+                    <div class="row">
+
+                        <div class="mb-3 col-md-4">
+                        <label for="recipient_name" class="form-label"> <strong>  Recipient Name * </strong> </label>
+                        <input  class="form-control @error('recipient_name') is-invalid @enderror" type="text" id="recipient_name" name="recipient_name" />
+                            @error('recipient_name')
+                            <span class="invalid-feedback" role="alert">
+                                <strong>{{ $message }}</strong>
+                            </span>
+                            @enderror
                         </div>
-                        <p class="mb-1"><strong> BANK NAME :  {{ strtoupper($bank->name) }}  </strong> </p> <br>
-                        <h4 class="card-title mb-3 text-white"><strong> GH&#x20B5;  {{ number_format($BankSalaries->sum('net_salary'), 2) }} </strong> </h4> <br>
-                        <small class="fw-medium">TOTAL DEDUCTIONS : GH&#x20B5;  {{ number_format($BankSalaries->sum('total_deductions'), 2) }}  </small> <br>
-                        <small class="fw-medium"> TOTAL GROSS SALARY : GH&#x20B5; {{ number_format($BankSalaries->sum('gross_salary'), 2) }}  </small>
 
-                    </div>
-                </div>
-            </div>
-        </div> <br>
-        @endif
+                        <div class="mb-3 col-md-4">
+                        <label for="recipient_number" class="form-label"> <strong>  Recipient Number * </strong> </label>
+                        <input  class="form-control @error('recipient_number') is-invalid @enderror" type="number" id="recipient_number" name="recipient_number"  autofocus  step="any"/>
+                            @error('recipient_number')
+                            <span class="invalid-feedback" role="alert">
+                                <strong>{{ $message }}</strong>
+                            </span>
+                            @enderror
+                        </div>
 
-        <!-- Table -->  
-        <hr> <br>
-        <div class="row">
-            <div class="col-lg-12 mb-4">
-                <div class="card">
-                    <h5 class="card-header"> Salaries Paid via Banks  </h5>
-                    <div class="card-body"> 
-                    <div class="table-responsive text-nowrap">
-                        <table class="table table-hover" id="myTable">
-                            <thead class="table-dark">
-                                <tr>
-                                    <th>#</th>
-                                    <th>STAFF ID</th>
-                                    <th> NAME </th>
-                                    <th>FIELD</th>
-                                    <th> ROLE</th>
-                                    <th>LOCATION</th>
-                                    <th>BRANCH CODE</th>
-                                    <th>BRANCH</th>
-                                    <th>ACCOUNT NUMBER</th>
-                                    <th>  GH&#x20B5; NET SALARY</th>
-                                </tr>
-                            </thead>
-                            <tbody class="table-border-bottom-0">
-                                @foreach($BankSalaries as $key => $salary)
-                                <tr>
-                                    <td> {{ $key + 1 }} </td>
-                                    <td> FWSS{{ $salary->employee?->id }} </td>
-                                    <td> {{ strtoupper($salary->employee?->name) }} </td>
-                                    <td> {{ strtoupper($salary->field?->name) }} </td>
-                                    <td> {{ strtoupper( $salary->employee?->role?->name) }} </td>
-                                    <td> {{ $salary->client?->name || $salary->client?->business_name ? strtoupper($salary->client?->name) . strtoupper($salary->client?->business_name) :  strtoupper($salary->location) }} </td>
-                                    <td> {{ $salary->paymentInfo?->branch_code }} </td>
-                                    <td> {{ strtoupper($salary->branch)}} </td>
-                                    <td> {{ $salary->account_number }} </td>
-                                    <td> {{ number_format($salary->net_salary, 2) }} </td>
-                                </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-                    </div>
-                </div>
-            </div>
+                        <div class="mb-3 col-md-4">
+                        <label for="amount" class="form-label"> <strong>  Amount * </strong> </label>
+                        <input  class="form-control @error('amount') is-invalid @enderror" type="number" id="amount" name="amount"  autofocus  step="any"/>
+                            @error('amount')
+                            <span class="invalid-feedback" role="alert">
+                                <strong>{{ $message }}</strong>
+                            </span>
+                            @enderror
+                        </div>
+
+                        <div class="mb-3 col-md-4">
+                            <label for="channel" class="form-label"> <strong> {{ __('Channel') }} * </strong>  </label>
+                            <select name="channel" class="form-select @error('channel') is-invalid @enderror" id="channel" >
+                            <option value="mtn-gh">MTN</option>
+                            <option value="vodafone-gh">TELECEL</option>
+                            <option value="tigo-gh">AIRTEL TIGO</option>
+                            </select>
+                            @error('channel')
+                            <span class="invalid-feedback" role="alert">
+                                <strong>{{ $message }}</strong>
+                            </span>
+                            @enderror
+                        </div>
+
+                        <div class="mb-3 col-md-4">
+                        <label for="description" class="form-label"> <strong>  Description </strong> </label>
+                        <input  class="form-control @error('description') is-invalid @enderror" type="text" id="description" name="description" autofocus />
+                            @error('description')
+                            <span class="invalid-feedback" role="alert">
+                                <strong>{{ $message }}</strong>
+                            </span>
+                            @enderror
+                        </div>
+
+                        <button class="btn btn-dark" type="submit" onclick="return confirm('Kindly Confirm?')"> <i class="icon-base bx bx-arrow-from-left"> </i> {{ __('') }}</button>
+
+                    </div>      
+                </form>
         </div>
 
 
@@ -358,53 +330,4 @@
   <!-- / Content -->
 
   @endsection
-
-
-    @section('scripts')
-
-    <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
-    <script src="https://cdn.datatables.net/2.3.5/js/dataTables.js"></script>
-    <script src="https://cdn.datatables.net/buttons/3.2.5/js/dataTables.buttons.js"></script>
-    <script src="https://cdn.datatables.net/buttons/3.2.5/js/buttons.dataTables.js"></script>
-    <script src="https://cdn.datatables.net/buttons/3.2.5/js/buttons.html5.min.js"></script>
-    <script src="https://cdn.datatables.net/buttons/3.2.5/js/buttons.colVis.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
-
-
-    <script>
-       
-      new DataTable('#myTable', {
-        //  dom: 'Blfrtip',
-        //  stateSave: false,
-        columnControl: [ ['search'] ],
-        layout: {
-            topStart: {
-                buttons: [ 
-                {
-                     extend: 'pageLength',
-                    text: 'Show',
-                    className: 'btn btn-secondary',
-                    Options: [10, 25, 50, 100, 250, 500, 1000, 2000], 
-                },
-                    {
-                        extend: 'excelHtml5',
-                        title: 'Salaries',
-                        className: 'btn btn-secondary',
-                        exportOptions: {
-                            columns: ':visible'
-                        }
-                    },
-                ]
-            }
-        },
-                
-    });
-
-
-
-    </script>
-
-    @endsection
 </x-hr-dashboard>

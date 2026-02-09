@@ -15,6 +15,7 @@ use App\Http\Controllers\ProformaController;
 use App\Http\Controllers\ReceiptController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SalaryController;
+use App\Http\Controllers\SendMoneyController;
 use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\TransactionController;
 use App\Models\employee;
@@ -113,6 +114,10 @@ Route::post('uploadSalaries', [SalaryController::class, 'uploadSalaries'])->name
 Route::get('invToPayrollInvoice/{client_id}/{month}', [InvoiceController::class, 'PayrollInvoice']);
 Route::get('invToPayrollGuards/{client_id}/{month}', [SalaryController::class, 'PayrollGuards']);
 
+
+Route::get('sendMoney', [SendMoneyController::class, 'index']);
+Route::post('sendMoney', [SendMoneyController::class, 'sendMoney']);
+Route::post('sendMoneyCallback', [SendMoneyController::class, 'sendMoneyCallback'])->name('sendMoneyCallback');
 
 // Route::get('clientAttachGuards', function(){
 // //    ATTACHING CLIENTS

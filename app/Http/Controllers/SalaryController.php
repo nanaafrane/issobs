@@ -721,7 +721,7 @@ class SalaryController extends Controller
             $salary->tax = $tax ??  $salary->tax;
 
             // // SUM GROSS, TOTAL DEDUCTTIONS AND NET SALARY
-            $grossSalary = $row['basic_salary'] + $row['allowances'] + $row['airtime_allowance'] + $row['overtime'] + $row['reimbursements'] + $row['transport_allowance'];
+            $grossSalary = $row['basic_salary'] + $row['allowances'] + $row['airtime_allowance'] + $row['overtime'] + $row['reimbursements'] + $row['transport_allowance'] +  $ssnit_tier2_5;
             $totalDeduction = $tax + $ssnit_tier2_5 + $ssnit_tier1_0_5 +  $row['welfare'] + $row['maintenance'] + $row['absent']  +  $row['boot'] +  $row['iou'] +  $row['hostel'] + $row['insurance'] + $row['reprimand'] + $row['scouter'] +  $row['raincoat'] +  $row['meal'] + $row['loan'] + $row['walkin'] + $row['amnt_ded_cof_start_date'] + $row['other_deductions'];
             $netSalay = $grossSalary - $totalDeduction ;
            
@@ -801,61 +801,67 @@ class SalaryController extends Controller
                     } 
                 }
 
-            $salary->basic_salary = $request['basic_salary'] ?? $salary->basic_salary ;
-            $salary->allowances = $request['allowances'] ?? $salary->allowances ;
-            $salary->airtime_allowance = $request['airtime_allowance'] ?? $salary->airtime_allowance ;
-            $salary->overtime = $request['overtime'] ?? $salary->overtime ;
-            $salary->reimbursements = $request['reimbursements'] ?? $salary->reimbursements ;
-            $salary->transport_allowance = $request['transport_allowance'] ?? $salary->transport_allowance ;
+            $salary->basic_salary = $request['basic_salary']  ;
+            $salary->allowances = $request['allowances'] ;
+            $salary->airtime_allowance = $request['airtime_allowance']  ;
+            $salary->overtime = $request['overtime'];
+            $salary->reimbursements = $request['reimbursements'] ;
+            $salary->transport_allowance = $request['transport_allowance'] ;
            
-            $salary->welfare = $request['welfare'] ?? $salary->welfare ;
-            $salary->maintenance = $request['maintenance'] ?? $salary->maintenance ;
-            $salary->absent = $request['absent'] ?? $salary->absent ;
-            $salary->boot = $request['boot'] ?? $salary->boot ;                            
-            $salary->iou = $request['iou'] ?? $salary->iou ;
-            $salary->hostel = $request['hostel'] ?? $salary->hostel ;
-            $salary->insurance = $request['insurance'] ?? $salary->insurance ;
-            $salary->reprimand = $request['reprimand'] ?? $salary->reprimand ;          
-            $salary->scouter = $request['scouter'] ?? $salary->scouter ;
-            $salary->raincoat = $request['raincoat'] ?? $salary->raincoat ;
-            $salary->meal = $request['meal'] ?? $salary->meal ;
-            $salary->loan = $request['loan'] ?? $salary->loan ;
-            $salary->walkin = $request['walkin'] ?? $salary->walkin ;
-            $salary->amnt_ded_cof_start_date = $request['amnt_ded_cof_start_date'] ?? $salary->amnt_ded_cof_start_date ;
-            $salary->other_deductions = $request['other_deductions'] ?? $salary->other_deductions ;
+            $salary->welfare = $request['welfare'] ;
+            $salary->maintenance = $request['maintenance'] ;
+            $salary->absent = $request['absent'] ;
+            $salary->boot = $request['boot'] ;                            
+            $salary->iou = $request['iou'] ;
+            $salary->hostel = $request['hostel'] ;
+            $salary->insurance = $request['insurance'] ;
+            $salary->reprimand = $request['reprimand'] ;          
+            $salary->scouter = $request['scouter'] ;
+            $salary->raincoat = $request['raincoat'] ;
+            $salary->meal = $request['meal'] ;
+            $salary->loan = $request['loan'] ;
+            $salary->walkin = $request['walkin'] ;
+            $salary->amnt_ded_cof_start_date = $request['amnt_ded_cof_start_date'] ;
+            $salary->other_deductions = $request['other_deductions'] ;
 
             // // WORK SSNIT
-            $salary->ssnit_tier2_5d = $ssnit_tier2_5  ?? $salary->ssnit_tier2_5d ;
-            $salary->ssnit_tier2_5 = $ssnit_tier2_5 ?? $salary->ssnit_tier2_5 ;
-            $salary->ssnit_tier1_0_5 =  $ssnit_tier1_0_5 ?? $salary->ssnit_tier1_0_5 ;
+            $salary->ssnit_tier2_5d = $ssnit_tier2_5   ;
+            $salary->ssnit_tier2_5 = $ssnit_tier2_5  ;
+            $salary->ssnit_tier1_0_5 =  $ssnit_tier1_0_5 ;
 
             // // WORK TAX
             $salary->tax = $tax ??  $salary->tax;
 
             // // SUM GROSS, TOTAL DEDUCTTIONS AND NET SALARY
-            $grossSalary = $request['basic_salary'] + $request['allowances'] + $request['airtime_allowance'] + $request['overtime'] + $request['reimbursements'] + $request['transport_allowance'];
+            $grossSalary = $request['basic_salary'] + $request['allowances'] + $request['airtime_allowance'] + $request['overtime'] + $request['reimbursements'] + $request['transport_allowance'] + $ssnit_tier2_5;
             $totalDeduction = $tax + $ssnit_tier2_5 + $ssnit_tier1_0_5 +  $request['welfare'] + $request['maintenance'] + $request['absent']  +  $request['boot'] +  $request['iou'] +  $request['hostel'] + $request['insurance'] + $request['reprimand'] + $request['scouter'] +  $request['raincoat'] +  $request['meal'] + $request['loan'] + $request['walkin'] + $request['amnt_ded_cof_start_date'] + $request['other_deductions'];
             $netSalay = $grossSalary - $totalDeduction ;
            
-            $salary->gross_salary = $grossSalary ?? $salary->gross_salary ;
-            $salary->total_deductions = $totalDeduction ?? $salary->total_deductions ;
-            $salary->net_salary = $netSalay ?? $salary->net_salary ;
+            $salary->gross_salary = $grossSalary  ;
+            $salary->total_deductions = $totalDeduction  ;
+            $salary->net_salary = $netSalay ;
 
             // // WORK 
-            $salary->ssnit_comp_cont_13 =  $ssnit_13 ?? $salary->ssnit_comp_cont_13 ;
-            $salary->ssnit_tobe_paid13_5 = $ssnit_13_5 ?? $salary->ssnit_tobe_paid13_5 ;
-            $salary->cost_to_company = $netSalay + $ssnit_13_5 ?? $salary->cost_to_company ;
+            $salary->ssnit_comp_cont_13 =  $ssnit_13  ;
+            $salary->ssnit_tobe_paid13_5 = $ssnit_13_5 ;
+            $salary->cost_to_company = $netSalay + $ssnit_13_5  ;
 
             // UPDATE PAYMENT DETAILS FOR A MONTH SALARY
-            $salary->payment_type = $request['payment_type'] ?? $salary->payment_type ;
-            $salary->bank_id = $request['bank_id'] ?? $salary->bank_id ;
-            $salary->account_number = $request['account_number'] ?? $salary->account_number ;
-            $salary->branch = $request['branch'] ?? $salary->branch ;
+            $salary->payment_type = $request['payment_type']  ;
+            $salary->bank_id = $request['bank_id']  ;
+            $salary->account_number = $request['account_number']  ;
+            $salary->branch = $request['branch']  ;
 
             // UPDATE FIELD ID
-            $salary->field_id = $request['field_id'] ?? $salary->field_id ;
+            $salary->field_id = $request['field_id'] ;
 
             $salary->save(); 
+
+            // // UPDATE EMPLOYEE BASICS AND ALLOWA
+            // $salary->employee->update([
+            //     'basic_salary' => $request['basic_salary'],
+            //     'allowances' => $request['allowances']
+            // ]);
 
 
             return back()->with('success', 'Salary Updated Successfully');
