@@ -50,9 +50,9 @@ class SendMoneyController extends Controller
                 'RecipientMsisdn' => $request->input('recipient_number'),
                 'Amount' => $request->input('amount'),
                 'Channel' => $request->input('channel'), // e.g., 'mtn-gh'
-                'PrimaryCallbackURL' => route('sendMoneyCallback'), // Replace with your actual callback URL
+                'PrimaryCallbackURL' => url('sendMoneyCallback'), // Replace with your actual callback URL
                 'Description' => $request->input('description'),
-                'ClientReference' => 'FWSS'. Str::random(11)
+                'ClientReference' => 'FWSS1234567890',
             );
 
             $myJason = json_encode($this->post_data);
