@@ -50,7 +50,7 @@ class SendMoneyController extends Controller
                 'RecipientMsisdn' => $request->input('recipient_number'),
                 'Amount' => $request->input('amount'),
                 'Channel' => $request->input('channel'), // e.g., 'mtn-gh'
-                'PrimaryCallbackURL' => url('sendMoneyCallback'), // Replace with your actual callback URL
+                'PrimaryCallbackURL' => 'https://issobs.com/sendMoneyCallback', // Replace with your actual callback URL
                 'Description' => $request->input('description'),
                 'ClientReference' => 'FWSS1234567890',
             );
@@ -59,7 +59,7 @@ class SendMoneyController extends Controller
             $curl = curl_init();
             curl_setopt_array($curl, [
 
-                CURLOPT_URL => "https://smp.hubtel.com/api/merchants/2024483/send/mobilemoney",
+                CURLOPT_URL => "https://webhook.site/b4ff4762-0d57-473c-98b3-d620eebd0012",
 
                 CURLOPT_CUSTOMREQUEST => "POST",
 
@@ -81,8 +81,9 @@ class SendMoneyController extends Controller
             if ($error) {
                 return "cURL Error #:" . $error;
             }else{
-            //  return $result;
-            var_dump($result);
+             return $result;
+            // var_dump($result);
+            
             }
 
     }
