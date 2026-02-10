@@ -37,7 +37,8 @@ class SendMoneyController extends Controller
 
         // return $response->json();
         // return redirect()->route('sendMoneyCallback');
-        return url('sendMoneyCallback');
+        // return url('sendMoneyCallback');
+        return  $this->sendMoneyCallback($response->json());
         // dd($response->json());
     }
 
