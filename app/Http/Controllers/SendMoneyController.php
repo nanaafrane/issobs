@@ -38,7 +38,7 @@ class SendMoneyController extends Controller
             ]);
 
         // return $response->json();
-        dd($response);
+        dd($response->json());
     }
 
     
