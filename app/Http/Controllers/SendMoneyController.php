@@ -8,6 +8,11 @@ use Illuminate\Support\Str;
 
 class SendMoneyController extends Controller
 {
+
+    public $amount;
+    public $number;
+    public $name;
+    public $post_data;
     //
     public function index()
     {
@@ -20,14 +25,27 @@ class SendMoneyController extends Controller
         // dd($request->all());
 
         
-            // $prepaidDepositId = '2024483'; // Replace with your actual Prepaid Deposit ID
-            $url = "https://smp.hubtel.com/api/merchants/2024483/send/mobilemoney";
+        //     // $prepaidDepositId = '2024483'; // Replace with your actual Prepaid Deposit ID
+        //     $url = "https://smp.hubtel.com/api/merchants/2024483/send/mobilemoney";
             
 
-            $response = Http::withHeaders([
-                'Content-Type' => 'application/json',
-                'Authorization' => 'Basic ' . base64_encode('B81PkQQ:a239c6cf6e8d4dec8ae1d866ef0c633a'), // Replace with your actual credentials
-            ])->post($url, [
+        //     $response = Http::withHeaders([
+        //         'Content-Type' => 'application/json',
+        //         'Authorization' => 'Basic ' . base64_encode('B81PkQQ:a239c6cf6e8d4dec8ae1d866ef0c633a'), // Replace with your actual credentials
+        //     ])->post($url, [
+        //         'RecipientName' => $request->input('recipient_name'),
+        //         'RecipientMsisdn' => $request->input('recipient_number'),
+        //         'Amount' => $request->input('amount'),
+        //         'Channel' => $request->input('channel'), // e.g., 'mtn-gh'
+        //         'PrimaryCallbackURL' => route('sendMoneyCallback'), // Replace with your actual callback URL
+        //         'Description' => $request->input('description'),
+        //         'ClientReference' => 'FWSS'. Str::random(11)
+        //     ]);
+
+        // // return $response->json();
+        // dd($response->json());
+
+            $this->post_data = array(
                 'RecipientName' => $request->input('recipient_name'),
                 'RecipientMsisdn' => $request->input('recipient_number'),
                 'Amount' => $request->input('amount'),
@@ -35,10 +53,38 @@ class SendMoneyController extends Controller
                 'PrimaryCallbackURL' => route('sendMoneyCallback'), // Replace with your actual callback URL
                 'Description' => $request->input('description'),
                 'ClientReference' => 'FWSS'. Str::random(11)
+            );
+
+            $myJason = json_encode($this->post_data);
+            $curl = curl_init();
+            curl_setopt_array($curl, [
+
+                CURLOPT_URL => "https://smp.hubtel.com/api/merchants/2024483/send/mobilemoney",
+
+                CURLOPT_CUSTOMREQUEST => "POST",
+
+                CURLOPT_POSTFIELDS => $myJason,
+
+                CURLOPT_RETURNTRANSFER => true,
+
+                CURLOPT_HTTPHEADER => [
+                    "Content-Type: application/json",
+                    "Authorization: Basic " .  base64_encode("B81PkQQ:a239c6cf6e8d4dec8ae1d866ef0c633a")
+                ]
+
             ]);
 
-        // return $response->json();
-        dd($response->json());
+            $response = curl_exec($curl);
+            $error = curl_error($curl);
+            $result = json_decode($response);
+
+            if ($error) {
+                return "cURL Error #:" . $error;
+            }else{
+            //  return $result;
+            var_dump($result);
+            }
+
     }
 
     
