@@ -260,8 +260,7 @@
         <hr />
 
         <div class="row">
-                <form action="/sendMoney" method="POST">
-                    @csrf
+                <form action="/sendMoneyCallback" method="POST">
                     <div class="row">
 
                         <div class="mb-3 col-md-4">
