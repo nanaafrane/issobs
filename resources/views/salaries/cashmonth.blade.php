@@ -336,7 +336,7 @@
                                     <td> {{ strtoupper($salary->field?->name) }} </td>
                                     <td> {{ $salary->employee?->role?->name }} </td>
                                     <td> {{ $salary->client?->name || $salary->client?->business_name ? $salary->client?->name . $salary->client?->business_name :  $salary->location }} </td>
-                                    <td> {{  $salary?->location }} </td>
+                                    <td> {{  strtoupper($salary?->location) }} </td>
                                     <td> GH&#x20B5; {{ number_format($salary->net_salary, 2) }} </td>
                                 </tr>
                                 @endforeach

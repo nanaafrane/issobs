@@ -339,7 +339,7 @@
                                     <td> {{ strtoupper($salary->field?->name) }} </td>
                                     <td> {{ strtoupper( $salary->employee?->role?->name) }} </td>
                                     <td> {{ $salary->client?->name || $salary->client?->business_name ? strtoupper($salary->client?->name) . strtoupper($salary->client?->business_name) :  strtoupper($salary->location) }} </td>
-                                    <td> {{ $salary?->location }} </td>
+                                    <td> {{ strtoupper($salary?->location) }} </td>
                                     <td> {{ $salary->paymentInfo?->branch_code }} </td>
                                     <td> {{ strtoupper($salary->branch)}} </td>
                                     <td> {{ $salary->account_number }} </td>
