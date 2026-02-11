@@ -19,6 +19,7 @@ use App\Http\Controllers\SendMoneyController;
 use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\TransactionController;
 use App\Models\employee;
+use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -117,7 +118,10 @@ Route::get('invToPayrollGuards/{client_id}/{month}', [SalaryController::class, '
 
 Route::get('sendMoney', [SendMoneyController::class, 'index']);
 Route::post('sendMoney', [SendMoneyController::class, 'sendMoney']);
-Route::post('sendMoneyCallback', [SendMoneyController::class, 'sendMoneyCallback'])->name('sendMoneyCallback');
+// Route::post('sendMoneyCallback', function(){});
+// Route::post('/webhook-endpoint', function () { })->withoutMiddleware([VerifyCsrfToken::class]); 
+
+Route::post('sendMoneyCallback', [SendMoneyController::class, 'sendMoneyCallback'])->withoutMiddleware([VerifyCsrfToken::class]);
 
 // Route::get('clientAttachGuards', function(){
 // //    ATTACHING CLIENTS
