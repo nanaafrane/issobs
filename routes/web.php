@@ -117,7 +117,7 @@ Route::get('invToPayrollGuards/{client_id}/{month}', [SalaryController::class, '
 
 Route::get('sendMoney', [SendMoneyController::class, 'index']);
 Route::post('sendMoney', [SendMoneyController::class, 'sendMoney']);
-Route::get('sendMoneyCallback', [SendMoneyController::class, 'sendMoneyCallback'])->name('sendMoneyCallback');
+Route::post('sendMoneyCallback', [SendMoneyController::class, 'sendMoneyCallback'])->name('sendMoneyCallback');
 
 // Route::get('clientAttachGuards', function(){
 // //    ATTACHING CLIENTS
