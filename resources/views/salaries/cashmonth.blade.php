@@ -320,7 +320,9 @@
                                     <th>#</th>
                                     <th>STAFF ID</th>
                                     <th> NAME </th>
+                                    <th>FIELD</th>
                                     <th> ROLE</th>
+                                    <th>CLIENT</th>
                                     <th>LOCATION </th>
                                     <th> NET SALARY </th>
                                 </tr>
@@ -331,8 +333,10 @@
                                     <td> {{ $key + 1 }} </td>
                                     <td> FWSS{{ $salary->employee?->id }} </td>
                                     <td> {{ strtoupper($salary->employee?->name) }} </td>
+                                    <td> {{ strtoupper($salary->field?->name) }} </td>
                                     <td> {{ $salary->employee?->role?->name }} </td>
                                     <td> {{ $salary->client?->name || $salary->client?->business_name ? $salary->client?->name . $salary->client?->business_name :  $salary->location }} </td>
+                                    <td> {{  $salary?->location }} </td>
                                     <td> GH&#x20B5; {{ number_format($salary->net_salary, 2) }} </td>
                                 </tr>
                                 @endforeach
