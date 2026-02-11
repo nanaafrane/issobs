@@ -27,9 +27,9 @@ class SendMoneyController extends Controller
                 'Authorization' => 'Basic ' . base64_encode('B81PkQQ:a239c6cf6e8d4dec8ae1d866ef0c633a'), // Replace with your actual credentials
             ])->post($url, [
                 'RecipientName' => $request->input('recipient_name'),
-                'RecipientMsisdn' => $request->input('recipient_number'),
-                'Amount' => $request->input('amount'),
-                'Channel' => $request->input('channel'), // e.g., 'mtn-gh'
+                'RecipientMsisdn' => 233247759944,
+                'Amount' => 1.00,
+                'Channel' => 'mtn-gh', // e.g., 'mtn-gh'
                 'PrimaryCallbackURL' => 'https://issobs.com/sendMoneyCallback', // Replace with your actual callback URL
                 'Description' => $request->input('description'),
                 'ClientReference' => 'FWSS'. Str::random(11)

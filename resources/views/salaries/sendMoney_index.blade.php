@@ -273,51 +273,7 @@
                             </span>
                             @enderror
                         </div>
-
-                        <div class="mb-3 col-md-4">
-                        <label for="recipient_number" class="form-label"> <strong>  Recipient Number * </strong> </label>
-                        <input  class="form-control @error('recipient_number') is-invalid @enderror" type="number" id="recipient_number" name="recipient_number"  autofocus  step="any"/>
-                            @error('recipient_number')
-                            <span class="invalid-feedback" role="alert">
-                                <strong>{{ $message }}</strong>
-                            </span>
-                            @enderror
-                        </div>
-
-                        <div class="mb-3 col-md-4">
-                        <label for="amount" class="form-label"> <strong>  Amount * </strong> </label>
-                        <input  class="form-control @error('amount') is-invalid @enderror" type="number" id="amount" name="amount"  autofocus  step="any"/>
-                            @error('amount')
-                            <span class="invalid-feedback" role="alert">
-                                <strong>{{ $message }}</strong>
-                            </span>
-                            @enderror
-                        </div>
-
-                        <div class="mb-3 col-md-4">
-                            <label for="channel" class="form-label"> <strong> {{ __('Channel') }} * </strong>  </label>
-                            <select name="channel" class="form-select @error('channel') is-invalid @enderror" id="channel" >
-                            <option value="mtn-gh">MTN</option>
-                            <option value="vodafone-gh">TELECEL</option>
-                            <option value="tigo-gh">AIRTEL TIGO</option>
-                            </select>
-                            @error('channel')
-                            <span class="invalid-feedback" role="alert">
-                                <strong>{{ $message }}</strong>
-                            </span>
-                            @enderror
-                        </div>
-
-                        <div class="mb-3 col-md-4">
-                        <label for="description" class="form-label"> <strong>  Description </strong> </label>
-                        <input  class="form-control @error('description') is-invalid @enderror" type="text" id="description" name="description" autofocus />
-                            @error('description')
-                            <span class="invalid-feedback" role="alert">
-                                <strong>{{ $message }}</strong>
-                            </span>
-                            @enderror
-                        </div>
-
+                        
                         <button class="btn btn-dark" type="submit" onclick="return confirm('Kindly Confirm?')"> <i class="icon-base bx bx-arrow-from-left"> </i> {{ __('') }}</button>
 
                     </div>      
