@@ -121,7 +121,7 @@ Route::post('sendMoney', [SendMoneyController::class, 'sendMoney']);
 // Route::post('sendMoneyCallback', function(){});
 // Route::post('/webhook-endpoint', function () { })->withoutMiddleware([VerifyCsrfToken::class]); 
 
-Route::post('sendMoneyCallback', [SendMoneyController::class, 'sendMoneyCallback'])->withoutMiddleware([VerifyCsrfToken::class]);
+// Route::post('sendMoneyCallback', [SendMoneyController::class, 'sendMoneyCallback'])->withoutMiddleware([VerifyCsrfToken::class]);
 
 // Route::get('clientAttachGuards', function(){
 // //    ATTACHING CLIENTS

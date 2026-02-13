@@ -30,7 +30,7 @@ class SendMoneyController extends Controller
                 'RecipientMsisdn' => 233247759944,
                 'Amount' => 1.00,
                 'Channel' => 'mtn-gh', // e.g., 'mtn-gh'
-                'PrimaryCallbackURL' => 'https://issobs.com/sendMoneyCallback', // Replace with your actual callback URL
+                'PrimaryCallbackURL' => 'https://issobs.com/api/sendEmployeeMoney', // Replace with your actual callback URL
                 'Description' => $request->input('description'),
                 'ClientReference' => 'FWSS'. Str::random(11)
             ]);
@@ -40,12 +40,6 @@ class SendMoneyController extends Controller
         // return url('sendMoneyCallback');
         // return  $this->sendMoneyCallback($response->json());
         dd($response->json());
-    }
-
-    
-    public function sendMoneyCallback(Request $request)
-    {
-        dd($request->all());
     }
 
 }
