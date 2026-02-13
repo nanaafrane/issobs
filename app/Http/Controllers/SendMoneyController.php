@@ -31,7 +31,7 @@ class SendMoneyController extends Controller
                 'Amount' => 1.00,
                 'Channel' => 'mtn-gh', // e.g., 'mtn-gh'
                 'PrimaryCallbackURL' => 'https://issobs.com/api/sendEmployeeMoney', // Replace with your actual callback URL
-                'Description' => $request->input('description'),
+                'Description' => 'FIRST WATCH TEST SALARIES FOR THE MONTH',
                 'ClientReference' => 'FWSS'. Str::random(11)
             ]);
 
