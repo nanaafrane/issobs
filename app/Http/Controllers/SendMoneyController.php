@@ -39,7 +39,20 @@ class SendMoneyController extends Controller
         // return redirect()->route('sendMoneyCallback', ['request' => $response->json()]);
         // return url('sendMoneyCallback');
         // return  $this->sendMoneyCallback($response->json());
-        dd($response->json());
+        $result =  $response->json();
+        $this->checkResponse($result);
+
+    }
+
+    public function checkResponse($result)
+    {
+            if($result->ResponseCode == "0001"){
+                // INSERT PAYLOAD INTO HUBTEL PAYMENT DB
+
+                // UPDATE HUBTEL PAYMENT ID ON SALARY MODEL
+            }
+
+            
     }
 
 }
