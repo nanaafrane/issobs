@@ -348,9 +348,16 @@
                             </div>
                            
                            
-                            <div class="mb-3 col-md-4">
+                            <div class="mb-3 col-md-2">
                                 <label for="phone_number" class="form-label"> <strong>{{ __('Phone Number') }} </strong> </label>
                                 <h4> <strong> {{$employee->phone_number}} </strong> </h4> 
+                            </div>                           
+                             <div class="mb-3 col-md-2">
+                                <label for="channel" class="form-label"> <strong>{{ __('Channel') }} </strong> </label>
+                                    @foreach ($channels as $channel)
+                                <h4> <strong>@if ($channel->channel == $employee->channel) {{ $channel->name }}  @endif </strong> </h4> 
+                                    @endforeach
+                          
                             </div>
                             
                             <div class="mb-3 col-md-4">

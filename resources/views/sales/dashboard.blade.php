@@ -249,6 +249,13 @@
                 </li>
 
                 <li class="menu-item">
+                    <a href="{{ url('salariesBulkCash') }}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bxs-group"></i>
+                    <div class="text-truncate" data-i18n="Transaction">Bulk Cash Salaries</div>
+                    </a>
+                </li>
+
+                <li class="menu-item">
                     <a href="{{ url('salariesInvPayroll') }}" class="menu-link">
                     <i class="menu-icon tf-icons bx bx-git-compare"></i>
                     <div class="text-truncate" data-i18n="InvtoPayroll">Invoice to Payroll</div>

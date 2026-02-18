@@ -368,7 +368,7 @@
                             </div>
                            
                            
-                            <div class="mb-3 col-md-4">
+                            <div class="mb-3 col-md-2">
                             <label for="phone_number" class="form-label"> <strong>{{ __('Phone Number *') }} </strong> </label>
                             <input
                                 type="number"
@@ -386,6 +386,25 @@
                                 <strong>{{ $message }}</strong>
                             </span>
                             @enderror
+                            </div>
+
+                            <div class="mb-3 col-md-2">
+                              <label for="channel" class="form-label"><strong>Channel</strong> </label>
+                                <select name="channel" class="form-select @error('channel') is-invalid @enderror" id="channel" value="{{ old('channel')}}" >
+                                    <option disabled selected value="">Choose...</option>
+                                    @foreach($channels as $channel)
+                                    <option @if($employee?->channel == $channel->channel) selected @endif value="{{$channel->channel}}">{{$channel->name}}</option>
+                                    @endforeach
+                                    <!-- <option value="mtn-gh">MTN</option>
+                                    <option value="vodafone-gh">TELECEL</option>
+                                    <option value="tigo-gh">AIRTELTIGO</option>   -->
+
+                                </select>
+                                @error('channel')
+                                <span class="invalid-feedback" role="alert">
+                                    <strong>{{ $message }}</strong>
+                                </span>
+                                @enderror
                             </div>
                             
                             <div class="mb-3 col-md-4">

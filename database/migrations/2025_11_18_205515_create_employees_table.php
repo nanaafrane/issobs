@@ -16,6 +16,7 @@ return new class extends Migration
             $table->string('name')->nullable();
             $table->string('gender')->nullable();
             $table->string('phone_number')->nullable();
+            $table->string('channel')->nullable();
             $table->date('date_of_birth')->nullable();
             $table->string('nia_number')->nullable();
             $table->string('address')->nullable();

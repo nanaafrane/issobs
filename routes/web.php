@@ -103,6 +103,11 @@ Route::resource('salaries', SalaryController::class);
 Route::get('printPayslip/{id}', [SalaryController::class, 'printPayslip']);
 Route::post('salariesDeleteMultiple', [SalaryController::class, 'deleteMultiple'])->name('salaries.deletMultiple');
 Route::get('salariesTransaction', [SalaryController::class, 'transactionSalary']);
+
+Route::post('salariesBulkCash', [SalaryController::class, 'BulkCashStore']);
+Route::get('salariesBulkCash', [SalaryController::class, 'BulkCash'] );
+Route::get('salariesBulkCashm', [SalaryController::class, 'BulkCashMonth']);
+
 Route::get('salariesBankMonth/{bank_id}/{month}', [SalaryController::class, 'bankMonth'])->name('salaries.bankMonth');
 Route::get('salariesCashMonth/{field_id}/{month}', [SalaryController::class, 'cashMonth'])->name('salaries.cashMonth');
 Route::get('salariesTaxMonth/{field_id}/{month}', [SalaryController::class, 'TaxMonth'] );

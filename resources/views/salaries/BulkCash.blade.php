@@ -226,10 +226,17 @@
                         </a>
                     </li>
 
-                    <li class="menu-item active">
+                    <li class="menu-item">
                         <a href="{{ url('salariesTransaction') }}" class="menu-link">
                         <i class="menu-icon tf-icons bx bx-transfer-alt"></i>
                         <div class="text-truncate" data-i18n="Transaction">Transactions</div>
+                        </a>
+                    </li>
+
+                    <li class="menu-item active">
+                        <a href="{{ url('salariesBulkCash') }}" class="menu-link">
+                        <i class="menu-icon tf-icons bx bxs-group"></i>
+                        <div class="text-truncate" data-i18n="Transaction">Bulk Cash Salaries</div>
                         </a>
                     </li>
 
@@ -254,13 +261,13 @@
 
         <div class="row">
             <div class="col-12">
-                <h3 class="card-header"> <i class="icon-base bx bx-transfer-alt"></i> Payroll / Transaction </h3>
+                <h3 class="card-header"> <i class="icon-base bx bx-transfer-alt"></i> Payroll / Bulk Cash Salaries </h3>
             </div>
         </div><br>
         <hr />
 
         <div class="row">
-                <form action="/salariesMonth" method="GET">
+                <form action="/salariesBulkCashm" method="GET">
                     @csrf
                     <div class="col">
 

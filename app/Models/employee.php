@@ -15,6 +15,7 @@ class employee extends Model
         'name',
         'gender',
         'phone_number',
+        'channel',
         'date_of_birth',
         'nia_number',
         'address',

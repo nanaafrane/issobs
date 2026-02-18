@@ -170,6 +170,7 @@ class EmployeeController extends Controller
         $employee->status = 'Active';
         $employee->gender = $request->input('gender');
         $employee->phone_number = $request->input('phone_number');
+        $employee->channel = $request->input('channel');
         $employee->date_of_birth = $request->input('date_of_birth');
         $employee->nia_number = $request->input('nia_number');
         $employee->address = $request->input('address');
@@ -220,12 +221,13 @@ class EmployeeController extends Controller
     public function show(employee $employee)
     {
         //
+        $channels = DB::table('hubtel_channel')->get();
         $Departments = Department::all();
         $Roles = Role::all();
         $Fields = Field::all();
         $clients = Client::all();
         $banks = Bank::all();
-        return view('employees.show', compact('employee', 'Departments', 'Roles', 'Fields', 'clients', 'banks')); 
+        return view('employees.show', compact('employee', 'Departments', 'Roles', 'Fields', 'clients', 'banks', 'channels')); 
     }
 
     /**
@@ -235,12 +237,13 @@ class EmployeeController extends Controller
     {
         //
         // dd($employee);
+        $channels = DB::table('hubtel_channel')->get();
         $Departments = Department::all();
         $Roles = Role::all();
         $Fields = Field::all();
         $clients = Client::all();
         $banks = Bank::all();
-        return view('employees.edit', compact('employee', 'Departments', 'Roles', 'Fields', 'clients', 'banks'));
+        return view('employees.edit', compact('employee', 'Departments', 'Roles', 'Fields', 'clients', 'banks', 'channels'));
     }
 
     /**
@@ -275,6 +278,7 @@ class EmployeeController extends Controller
         $employee->name = $request->input('name');
         $employee->gender = $request->input('gender');
         $employee->phone_number = $request->input('phone_number');
+        $employee->channel = $request->input('channel');
         $employee->date_of_birth = $request->input('date_of_birth');
         $employee->nia_number = $request->input('nia_number');
         $employee->address = $request->input('address');

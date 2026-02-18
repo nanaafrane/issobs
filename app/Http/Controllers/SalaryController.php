@@ -7,6 +7,7 @@ use App\Http\Requests\SalariesUploadRequest;
 use App\Models\Salary;
 use App\Http\Requests\StoreSalaryRequest;
 use App\Http\Requests\UpdateSalaryRequest;
+use Illuminate\Http\Request;
 use App\Models\Bank;
 use App\Models\Client;
 use App\Models\Department;
@@ -127,39 +128,84 @@ class SalaryController extends Controller
     public function transactionSalary()
     {
         //
-        $salaries =  Salary::where('payment_status', 'approved')->get();
-        $salariesAccra =  Salary::where('field_id', 1)->where('payment_status', 'approved')->get();
-        $salariesAccraSum = $salariesAccra->sum('cost_to_company');
-        $salariesAccraCount = $salariesAccra->count();
-        // dd( $salariesAccra->sum('cost_to_company'));
+        // $salaries =  Salary::where('payment_status', 'approved')->get();
+        // $salariesAccra =  Salary::where('field_id', 1)->where('payment_status', 'approved')->get();
+        // $salariesAccraSum = $salariesAccra->sum('cost_to_company');
+        // $salariesAccraCount = $salariesAccra->count();
+        // // dd( $salariesAccra->sum('cost_to_company'));
 
-        $salariesBotwe =  Salary::where('field_id', 2)->where('payment_status', 'approved')->get();
-        $salariesBotweSum = $salariesBotwe->sum('cost_to_company');
-        $salariesBotweCount = $salariesBotwe->count();
+        // $salariesBotwe =  Salary::where('field_id', 2)->where('payment_status', 'approved')->get();
+        // $salariesBotweSum = $salariesBotwe->sum('cost_to_company');
+        // $salariesBotweCount = $salariesBotwe->count();
 
-        $salariesTema =  Salary::where('field_id', 3)->where('payment_status', 'approved')->get();
-        $salariesTemaSum = $salariesTema->sum('cost_to_company');
-        $salariesTemaCount = $salariesTema->count();
+        // $salariesTema =  Salary::where('field_id', 3)->where('payment_status', 'approved')->get();
+        // $salariesTemaSum = $salariesTema->sum('cost_to_company');
+        // $salariesTemaCount = $salariesTema->count();
 
-        $salariesTakoradi =  Salary::where('field_id', 4)->where('payment_status', 'approved')->get();
-        $salariesTakoradiSum = $salariesTakoradi->sum('cost_to_company');
-        $salariesTakoradiCount = $salariesTakoradi->count();
+        // $salariesTakoradi =  Salary::where('field_id', 4)->where('payment_status', 'approved')->get();
+        // $salariesTakoradiSum = $salariesTakoradi->sum('cost_to_company');
+        // $salariesTakoradiCount = $salariesTakoradi->count();
 
-        $salariesKoforidua =  Salary::where('field_id', 5)->where('payment_status', 'approved')->get();
-        $salariesKoforiduaSum = $salariesKoforidua->sum('cost_to_company');
-        $salariesKoforiduaCount = $salariesKoforidua->count();  
+        // $salariesKoforidua =  Salary::where('field_id', 5)->where('payment_status', 'approved')->get();
+        // $salariesKoforiduaSum = $salariesKoforidua->sum('cost_to_company');
+        // $salariesKoforiduaCount = $salariesKoforidua->count();  
 
-        $salariesKumasi =  Salary::where('field_id', 6)->where('payment_status', 'approved')->get();
-        $salariesKumasiSum = $salariesKumasi->sum('cost_to_company');
-        $salariesKumasiCount = $salariesKumasi->count();    
+        // $salariesKumasi =  Salary::where('field_id', 6)->where('payment_status', 'approved')->get();
+        // $salariesKumasiSum = $salariesKumasi->sum('cost_to_company');
+        // $salariesKumasiCount = $salariesKumasi->count();    
 
-        $salariesShyhills =  Salary::where('field_id', 7)->where('payment_status', 'approved')->get();
-        $salariesShyhillsSum = $salariesShyhills->sum('cost_to_company');
-        $salariesShyhillsCount = $salariesShyhills->count(); 
+        // $salariesShyhills =  Salary::where('field_id', 7)->where('payment_status', 'approved')->get();
+        // $salariesShyhillsSum = $salariesShyhills->sum('cost_to_company');
+        // $salariesShyhillsCount = $salariesShyhills->count(); 
         // return view('salaries.transaction');
-        return view('salaries.transaction', compact('salaries', 'salariesAccraSum', 'salariesAccraCount', 'salariesBotweSum', 'salariesBotweCount', 'salariesTemaSum', 'salariesTemaCount', 'salariesTakoradiSum', 'salariesTakoradiCount', 'salariesKoforiduaSum', 'salariesKoforiduaCount', 'salariesKumasiSum', 'salariesKumasiCount', 'salariesShyhillsSum', 'salariesShyhillsCount'));
+        // return view('salaries.transaction', compact('salaries', 'salariesAccraSum', 'salariesAccraCount', 'salariesBotweSum', 'salariesBotweCount', 'salariesTemaSum', 'salariesTemaCount', 'salariesTakoradiSum', 'salariesTakoradiCount', 'salariesKoforiduaSum', 'salariesKoforiduaCount', 'salariesKumasiSum', 'salariesKumasiCount', 'salariesShyhillsSum', 'salariesShyhillsCount'));
+        return view('salaries.transaction');
 
     }
+
+
+    /**
+     * Pick a month to display 
+     */
+    public function BulkCashStore (Request $request)
+    {
+        // dd($request->all());
+                
+        $salaryIds = $request->input('salary', []);
+        // dd($salaryIds);
+        if (empty($salaryIds)) {
+            return back()->with('error', 'No salaries selected for BULK CASH PAYMENT.');
+        }
+       elseif(isset($request->submit) && $request->submit == 'bulk')
+        {
+            // echo 'Approving';
+            
+            Salary::whereIn('id', $salaryIds)->update(['status1' => 'Bulk Cash']);
+            return back()->with('success', 'Approved salaries for BULK CASH PAYMENT: ' . implode(', ', $salaryIds));
+        }
+    }
+
+    /**
+     * Pick a month to display 
+     */
+    public function BulkCash()
+    {
+        return view('salaries.BulkCash');
+    }
+
+
+    /**
+     * Display bulk cash payment for a month.
+     */
+    public function BulkCashMonth(Request $request)
+    {
+    //    dd($request->all());
+
+       $salary = Salary::where('status1', 'Bulk Cash')->where('salary_month', Carbon::parse($request->month)->startOfMonth()->format('Y-m-d H:i:s'))->get();
+       dd($salary);
+       
+    }
+
 
     /**
      * Display salaries bank month view.

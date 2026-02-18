@@ -40,8 +40,10 @@ class SendMoneyController extends Controller
         // return url('sendMoneyCallback');
         // return  $this->sendMoneyCallback($response->json());
         $result =  $response->json();
-        $this->checkResponse($result);
+        // $this->checkResponse($result);
 
+        $checkedData =  $this->statusCheck($result->data->clientReference);
+        dd($checkedData);
     }
 
     public function checkResponse($result)
@@ -53,6 +55,20 @@ class SendMoneyController extends Controller
             }
 
             
+    }
+
+
+    public function statusCheck($clientReference)
+    {
+            $url = "https://smrsc.hubtel.com/api/merchants/2024483/transactions/status?clientReference=".$clientReference ;
+            
+
+            $response = Http::withHeaders([
+                'Content-Type' => 'application/json',
+                'Authorization' => 'Basic ' . base64_encode('B81PkQQ:a239c6cf6e8d4dec8ae1d866ef0c633a'), // Replace with your actual credentials
+            ])->get($url);
+
+            return $response->json();
     }
 
 }

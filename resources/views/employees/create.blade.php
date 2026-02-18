@@ -340,7 +340,7 @@
                             </div>
                            
                            
-                            <div class="mb-3 col-md-4">
+                            <div class="mb-3 col-md-2">
                             <label for="phone_number" class="form-label"> <strong>{{ __('Phone Number *') }} </strong> </label>
                             <input
                                 type="number"
@@ -348,7 +348,7 @@
                                 name="phone_number"
                                 class="form-control @error('phone_number') is-invalid @enderror"
                                 value="{{ old('phone_number')}}"
-                                placeholder="Phone Number "
+                                placeholder="2332000000000"
                                 autocomplete=" phone_number"
                                 autofocus
                                 required>
@@ -358,6 +358,22 @@
                                 <strong>{{ $message }}</strong>
                             </span>
                             @enderror
+                            </div>
+
+                            <div class="mb-3 col-md-2">
+                              <label for="channel" class="form-label"><strong>Channel</strong> </label>
+                                <select name="channel" class="form-select @error('channel') is-invalid @enderror" id="channel" value="{{ old('channel')}}" >
+                                    <option disabled selected>Choose...</option>
+                                    <option value="mtn-gh">MTN</option>
+                                    <option value="vodafone-gh">TELECEL</option>
+                                    <option value="tigo-gh">AIRTELTIGO</option>  
+
+                                </select>
+                                @error('channel')
+                                <span class="invalid-feedback" role="alert">
+                                    <strong>{{ $message }}</strong>
+                                </span>
+                                @enderror
                             </div>
                             
                             <div class="mb-3 col-md-4">
@@ -506,9 +522,8 @@
                             <div class="mb-3 col-md-4">
                               <label for="payment_type" class="form-label"> <strong> {{ __('Payment Type') }} *</strong>  </label>
                                 <select name="payment_type" class="form-select @error('payment_type') is-invalid @enderror" id="payment_type" required>
-                                    <option selected disabled>Choose... </option>
+                                    <option default value="Cash">Cash</option>
                                     <option value="Bank">Bank</option>
-                                    <option value="Cash">Cash</option>
                                 </select>
                                 @error('payment_type')
                                   <span class="invalid-feedback" role="alert">
