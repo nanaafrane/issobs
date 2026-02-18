@@ -10,3 +10,4 @@ Route::get('/user', function (Request $request) {
 })->middleware('auth:sanctum');
 
 Route::resource('/sendEmployeeMoney', SendEmployeeMoneyController::class)->withoutMiddleware([VerifyCsrfToken::class]);
+Route::post('/webhook-endpoint', [SendEmployeeMoneyController::class, 'webHook']);

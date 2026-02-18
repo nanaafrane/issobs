@@ -46,4 +46,9 @@ class SendEmployeeMoneyController extends Controller
     {
         //
     }
+
+    public function webHook(Request $request)
+    {
+        dd($request->all());
+    }
 }
