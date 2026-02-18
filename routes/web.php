@@ -123,6 +123,7 @@ Route::get('invToPayrollGuards/{client_id}/{month}', [SalaryController::class, '
 
 Route::get('sendMoney', [SendMoneyController::class, 'index']);
 Route::post('sendMoney', [SendMoneyController::class, 'sendMoney']);
+Route::get('sendMoneyCheck/{ref}', [SendMoneyController::class, 'statusCheck']);
 // Route::post('sendMoneyCallback', function(){});
 // Route::post('/webhook-endpoint', function () { })->withoutMiddleware([VerifyCsrfToken::class]); 
 
