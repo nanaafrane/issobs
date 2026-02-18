@@ -42,8 +42,8 @@ class SendMoneyController extends Controller
         $result =  $response->json();
         // $this->checkResponse($result);
 
-        // $checkedData =  $this->statusCheck($result->Data->ClientReference);
-        dd($result);
+        $checkedData =  $this->statusCheck($result['Data']['ClientReference']);
+        dd($checkedData);
     }
 
     public function checkResponse($result)
