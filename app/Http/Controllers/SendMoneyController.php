@@ -133,10 +133,10 @@ class SendMoneyController extends Controller
                 foreach ($salaries as $salary )
                     {
                         // RUN A STATUS CHECK WITH CLIENT REFERENCE
-                    $hubtel = DB::table('hubtel')->where('id', $salary->hubtel_id)->first();
+                    $hubtel = DB::table('hubtel')->where('id', $salary->hubtel_id)->get();
                     // $result = $this->statusCheck( $ClientReference ); 
 
-                    dd( $hubtel) ;// . "<br>" . "<br>";
+                    return $hubtel . "<br>" . "<br>";
                         // UPDATE RESPONSE
                     // DB::table('hubtel')->where('ClientReference', $ClientReference)
                     //             ->update([
