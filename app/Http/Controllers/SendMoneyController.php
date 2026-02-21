@@ -88,7 +88,7 @@ class SendMoneyController extends Controller
         }
 
         $salaries =  Salary::findOrFail($request->salary);
-        dd($salaries);
+        // dd($salaries);
         foreach ($salaries as $salary )
             {
                 // SEND MONEY
