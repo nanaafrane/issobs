@@ -36,7 +36,7 @@ class SendMoneyController extends Controller
                 'RecipientMsisdn' => $number,
                 'Amount' => 1,
                 'Channel' => $channel, 
-                'PrimaryCallbackURL' => '', 
+                'PrimaryCallbackURL' => 'https://issobs.com/sendMoneyCallback', 
                 'Description' => 'FIRST WATCH SECURITY'. $month . 'SALARIES',
                 'ClientReference' => 'FWSS'. Str::random(11)
             ]);
@@ -50,6 +50,11 @@ class SendMoneyController extends Controller
         return $result;
         // $checkedData =  $this->statusCheck($result['Data']['ClientReference']);
         // dd($checkedData);
+    }
+
+    public function sendMoneyCallback(Request $request)
+    {
+        dd($request->all());
     }
 
     public function checkResponse($result)
