@@ -94,23 +94,24 @@ class SendMoneyController extends Controller
                 // SEND MONEY
                $result = $this->sendMoney($salary->employee->name, $salary->employee->phone_number, $salary->employee->channel,  Carbon::parse($salary->salary_month)->format('F')); 
 
+               echo $result . "<br>";
                 // LOG RESPONSE
-               $id =  DB::table('hubtel')->insertGetId([
-                        'responseCode' => $result['ResponseCode'],
-                        'TransactionId' => $result['Data']['TransactionId'],
-                        'ClientReference' => $result['Data']['ClientReference'],
-                        'Description' => $result['Data']['Description'],
-                        'Amount' => $result['Data']['Amount'],
-                        'Salary_id' => $salary->id,
-                        'staff_id' => Auth::id(),
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ]);
+            //    $id =  DB::table('hubtel')->insertGetId([
+            //             'responseCode' => $result['ResponseCode'],
+            //             'TransactionId' => $result['Data']['TransactionId'],
+            //             'ClientReference' => $result['Data']['ClientReference'],
+            //             'Description' => $result['Data']['Description'],
+            //             'Amount' => $result['Data']['Amount'],
+            //             'Salary_id' => $salary->id,
+            //             'staff_id' => Auth::id(),
+            //             'created_at' => now(),
+            //             'updated_at' => now(),
+            //         ]);
 
                 // UPDATE SALARY MODEL
-                $salary->hubtel_id = $id;
-                $salary->status2 = $result['ResponseCode'];
-                $salary->save();
+                // $salary->hubtel_id = $id;
+                // $salary->status2 = $result['ResponseCode'];
+                // $salary->save();
 
             }
     }
