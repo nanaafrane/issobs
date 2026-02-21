@@ -670,7 +670,15 @@
                                                     <td> <input class="checkBoxes form-check-input" type="checkbox" name="salary[]" value="{{ $salary->id }}" /> </td>
                                                     <td><a class="dropdown-item" href="/salaries/{{$salary->id}}/edit"><i class="icon-base bx bx-edit-alt me-1"></i></a> </td>
                                                     <td><a class="dropdown-item" href="/salaries/{{$salary->id}}"><i class="icon-base bx bxs-bullseye"></i></a> </td>
-                                                    <td> <span class="badge bg-label-dark">  {{ $salary?->status1 }} </span> </td>
+                                                   
+                                                    @if($salary->status1 == 'Bulk Cash')
+                                                        <td> <span class="badge bg-label-dark"> {{ $salary->status1 }} </span> </td>
+                                                    @elseif($salary->status1 == 'success')
+                                                        <td> <span class="badge bg-label-success">  {{ $salary->status1 }} </span> </td>
+                                                    @else 
+                                                        <td> <span class="badge bg-label-danger">  {{ $salary->status1 }} </span> </td>
+                                                    @endif
+                                                   
                                                     <td> {{ $salary->id }} </td>
                                                     <td> {{$salary->salary_month?->format('F, Y')}} </td>
                                                     <td> {{ $salary?->employee_id }} </td>
