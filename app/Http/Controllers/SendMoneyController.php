@@ -94,7 +94,7 @@ class SendMoneyController extends Controller
                 // SEND MONEY
                $result = $this->sendMoney($salary->employee->name, $salary->employee->phone_number, $salary->employee->channel,  Carbon::parse($salary->salary_month)->format('F')); 
 
-               echo $result . "<br>";
+               print_r( $result) . "<br>";
                 // LOG RESPONSE
             //    $id =  DB::table('hubtel')->insertGetId([
             //             'responseCode' => $result['ResponseCode'],
