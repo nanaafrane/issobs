@@ -136,7 +136,7 @@ class SendMoneyController extends Controller
                     $hubtel = DB::table('hubtel')->where('id', $salary->hubtel_id)->get();
                     // $result = $this->statusCheck( $ClientReference ); 
 
-                    return $hubtel . "<br>" . "<br>";
+                    echo $hubtel[0]['ClientReference'] . "<br>" . "<br>";
                         // UPDATE RESPONSE
                     // DB::table('hubtel')->where('ClientReference', $ClientReference)
                     //             ->update([
