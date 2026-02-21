@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('hubtel', function (Blueprint $table) {
             $table->id();
-            $table->integer('responseCode')->nullable();
+            $table->string('responseCode')->nullable();
             $table->string('ClientReference')->nullable();
             $table->string('TransactionId')->nullable();
             $table->decimal('Amount')->nullable();

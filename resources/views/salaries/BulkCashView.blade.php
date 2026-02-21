@@ -266,6 +266,9 @@
                 <h3 class="card-header"> <i class="icon-base bx bx-transfer-alt"></i> Payroll / Bulk Cash Salaries </h3>
             </div>
         </div><br>
+          <div class="card-header  ml-2  d-none d-lg-block">
+                  @include('flash-messages')
+        </div> <br>
         <hr />
 
             <div class="row">
@@ -275,8 +278,13 @@
                         <input class="form-check-input form-check-inline" type="checkbox" value="" id="options" />
                     
                         <div class="form-check form-check-inline">                            
-                            <button class="btn btn-success" type="submit" onclick="return confirm('Kindly Confirm?')"> <i class="icon-base bx bx-arrow-from-left"> </i> {{ __('PAY SALARIES') }}</button>
+                            <button class="btn btn-success" type="submit" name="submit" value="pay" onclick="return confirm('Kindly Confirm?')"> <i class="icon-base bx bx-arrow-from-left"> </i> {{ __('PAY SALARIES') }}</button>
                         </div>
+
+                        <div class="form-check form-check-inline">                            
+                            <button class="btn btn-dark" type="submit" name="submit" value="confirm" onclick="return confirm('Kindly Confirm?')"> <i class="icon-base bx bx-arrow-from-left"> </i> {{ __('CONFIRM') }}</button>
+                        </div>
+                        <hr>
                         <div class="card"> 
                             <div class="card-body"> 
                                 <div class="table-responsive text-normal-dark"> 
