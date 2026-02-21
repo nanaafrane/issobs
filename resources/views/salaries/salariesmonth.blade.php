@@ -613,8 +613,8 @@
                                                     <th> </th>
                                                     <th> Edit </th>
                                                     <th> View </th>
-                                                    <th> id</th>
                                                     <th>Bulk Cash</th>
+                                                    <th> id</th>
                                                     <th> Salary Month </th>
                                                     <th> employee_id </th>
                                                     <th> Name</th>
@@ -670,8 +670,8 @@
                                                     <td> <input class="checkBoxes form-check-input" type="checkbox" name="salary[]" value="{{ $salary->id }}" /> </td>
                                                     <td><a class="dropdown-item" href="/salaries/{{$salary->id}}/edit"><i class="icon-base bx bx-edit-alt me-1"></i></a> </td>
                                                     <td><a class="dropdown-item" href="/salaries/{{$salary->id}}"><i class="icon-base bx bxs-bullseye"></i></a> </td>
-                                                    <td> {{ $salary->id }} </td>
                                                     <td> <span class="badge bg-label-dark">  {{ $salary?->status1 }} </span> </td>
+                                                    <td> {{ $salary->id }} </td>
                                                     <td> {{$salary->salary_month?->format('F, Y')}} </td>
                                                     <td> {{ $salary?->employee_id }} </td>
                                                     <td> {{ strtoupper($salary->employee?->name) }} </td>
@@ -767,16 +767,16 @@
                         extend: 'pageLength',
                         text: 'Show',
                         className: 'btn btn-secondary',
-                        Options: [10, 25, 50, 100, 250, 500, 1000, 2000], 
+                        Options: [10, 25, 50, 100], 
                     },
-                        {
-                            extend: 'excelHtml5',
-                            title: 'Salaries',
-                            className: 'btn btn-secondary',
-                            exportOptions: {
-                                columns: ':visible'
-                            }
-                        },
+                        // {
+                        //     extend: 'excelHtml5',
+                        //     title: 'Salaries',
+                        //     className: 'btn btn-secondary',
+                        //     exportOptions: {
+                        //         columns: ':visible'
+                        //     }
+                        // },
                     ]
                 }
             },

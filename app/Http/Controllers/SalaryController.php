@@ -181,7 +181,7 @@ class SalaryController extends Controller
             // echo 'Approving';
             
             Salary::whereIn('id', $salaryIds)->update(['status1' => 'Bulk Cash']);
-            return back()->with('success', 'Approved salaries for BULK CASH PAYMENT: ' . implode(', ', $salaryIds));
+            return back()->with('success', 'Salaries added for BULK CASH PAYMENT: ' . implode(', ', $salaryIds));
         }
     }
 
@@ -201,8 +201,9 @@ class SalaryController extends Controller
     {
     //    dd($request->all());
 
-       $salary = Salary::where('status1', 'Bulk Cash')->where('salary_month', Carbon::parse($request->month)->startOfMonth()->format('Y-m-d H:i:s'))->get();
-       dd($salary);
+       $salaries = Salary::where('status1', 'Bulk Cash')->where('salary_month', Carbon::parse($request->month)->startOfMonth()->format('Y-m-d H:i:s'))->get();
+    //    dd($salaries);
+       return view('salaries.BulkCashView', compact('salaries'));
        
     }
 
@@ -408,20 +409,7 @@ class SalaryController extends Controller
 
 
         // get current month and year
-        $date = Carbon::parse($request->input('salary_month'));
-
-        // dd($date->format('Y-m-d H:i:s'));
-        // get date of the last salary entry
-        // $lastSalary = Salary::where('payment_status', 'pending')->orderBy('created_at', 'desc')->first();
-
-        // $lastSalaryMonth = $lastSalary ? Carbon::parse($lastSalary->salary_month) : null;   
-       
-        // // Check if a salary entry for the current month already exists
-        // if ($lastSalaryMonth && $lastSalaryMonth->format('F Y') === $date->format('F Y')) {
-           
-           
-        //     return back()->with('error', 'Salary for this month has already been added.');
-        // }   
+        $date = Carbon::parse($request->input('salary_month')); 
       
         // Process salary entries for selected employees
         $alreadyProcessed = [];

@@ -22,6 +22,7 @@ return new class extends Migration
             $table->string('location')->nullable();
             $table->string('status1')->nullable();
             $table->string('status2')->nullable();
+            $table->integer('hubtel_id')->nullable();
             $table->string('account_number')->nullable();
             $table->integer('bank_id')->nullable();
             $table->string('branch')->nullable();

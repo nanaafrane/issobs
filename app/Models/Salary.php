@@ -22,6 +22,7 @@ class Salary extends Model
         'payment_type',
         'status1',
         'status2',
+        'hubtel_id',
         'payment_status',
         'basic_salary',
         'allowances',

@@ -121,9 +121,9 @@ Route::get('invToPayrollInvoice/{client_id}/{month}', [InvoiceController::class,
 Route::get('invToPayrollGuards/{client_id}/{month}', [SalaryController::class, 'PayrollGuards']);
 
 
-Route::get('sendMoney', [SendMoneyController::class, 'index']);
-Route::post('sendMoney', [SendMoneyController::class, 'sendMoney']);
+Route::get('sendMoney', [SendMoneyController::class, 'sendMoney']);
 Route::get('sendMoneyCheck/{ref}', [SendMoneyController::class, 'statusCheck']);
+Route::post('payCashSalary', [SendMoneyController::class, 'payCashSalary']);
 // Route::post('sendMoneyCallback', function(){});
 // Route::post('/webhook-endpoint', function () { })->withoutMiddleware([VerifyCsrfToken::class]); 
 
