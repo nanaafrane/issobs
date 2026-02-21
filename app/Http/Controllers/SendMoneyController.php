@@ -112,6 +112,7 @@ class SendMoneyController extends Controller
                                 'ClientReference' => $result['Data']['ClientReference'],
                                 'Description' => $result['Data']['Description'],
                                 'Amount' => $result['Data']['Amount'],
+                                 'transactionStatus' => 'Pending',
                                 'Salary_id' => $salary->id,
                                 'staff_id' => Auth::id(),
                                 'created_at' => now(),
@@ -120,6 +121,7 @@ class SendMoneyController extends Controller
 
                         // UPDATE SALARY MODEL
                         $salary->hubtel_id = $id;
+                        $salary->status1 = 'Pending';
                         $salary->save();
 
                         return back()->with('success', ' Payments has been made, Wait for up to 5 mins to check confirmation');
