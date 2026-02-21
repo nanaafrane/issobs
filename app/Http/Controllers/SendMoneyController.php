@@ -21,7 +21,7 @@ class SendMoneyController extends Controller
     }
 
 
-    public function sendMoney($name, $number, $amount, $channel, $month)
+    public function sendMoney($name, $number, $channel, $month)
     {
         // dd($request->all());
             // $prepaidDepositId = '2024483'; // Replace with your actual Prepaid Deposit ID
@@ -92,15 +92,15 @@ class SendMoneyController extends Controller
         foreach ($salaries as $salary )
             {
                 // SEND MONEY
-               $result = $this->sendMoney($salary->employee->name, $salary->employee->phone_number, $salary->net_salary, $salary->employee->channel,  Carbon::parse($salary->salary_month)->format('F')); 
+               $result = $this->sendMoney($salary->employee->name, $salary->employee->phone_number, $salary->employee->channel,  Carbon::parse($salary->salary_month)->format('F')); 
 
                 // LOG RESPONSE
                $id =  DB::table('hubtel')->insertGetId([
                         'responseCode' => $result['ResponseCode'],
-                        'TransactionId' => $result[0]['TransactionId'],
-                        'ClientReference' => $result[0]['ClientReference'],
-                        'Description' => $result[0]['Description'],
-                        'Amount' => $result[0]['Amount'],
+                        'TransactionId' => $result['Data']['TransactionId'],
+                        'ClientReference' => $result['Data']['ClientReference'],
+                        'Description' => $result['Data']['Description'],
+                        'Amount' => $result['Data']['Amount'],
                         'Salary_id' => $salary->id,
                         'staff_id' => Auth::id(),
                         'created_at' => now(),
