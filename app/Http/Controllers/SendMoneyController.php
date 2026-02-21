@@ -136,30 +136,30 @@ class SendMoneyController extends Controller
                     $ClientReference = DB::table('hubtel')->where('id', $salary->hubtel_id)->pluck('ClientReference');
                     $result = $this->statusCheck( $ClientReference ); 
 
-                        //    print_r( $result) . "<br>";
+                    print_r( $result) . "<br>";
                         // UPDATE RESPONSE
-                    DB::table('hubtel')->where('ClientReference', $ClientReference)
-                                ->update([
-                                'responseCode' => $result['ResponseCode'],
-                                'Description' => $result['Data']['Description'],
-                                'Amount' => $result['Data']['Amount'],
-                                'fees' => $result['Data']['fees'],
-                                'Channel' => $result['Data']['Channel'],
-                                'customerNumber' => $result['Data']['customerNumber'],
-                                'transactionStatus' => $result['Data']['transactionStatus'],
-                                'CreatedAt' => $result['Data']['CreatedAt'],
-                                'Salary_id' => $salary->id,
-                                'staff_id' => Auth::id(),
-                                'updated_at' => now(),
-                            ]);
+                    // DB::table('hubtel')->where('ClientReference', $ClientReference)
+                    //             ->update([
+                    //             'responseCode' => $result['ResponseCode'],
+                    //             'Description' => $result['Data']['Description'],
+                    //             'Amount' => $result['Data']['Amount'],
+                    //             'fees' => $result['Data']['fees'],
+                    //             'Channel' => $result['Data']['Channel'],
+                    //             'customerNumber' => $result['Data']['customerNumber'],
+                    //             'transactionStatus' => $result['Data']['transactionStatus'],
+                    //             'CreatedAt' => $result['Data']['CreatedAt'],
+                    //             'Salary_id' => $salary->id,
+                    //             'staff_id' => Auth::id(),
+                    //             'updated_at' => now(),
+                    //         ]);
 
-                        // UPDATE SALARY MODEL IF RESPONSE IS SUCCESSFUL
-                        $salary->status1 = $result['Data']['transactionStatus'];
-                        $salary->save();
+                    //     // UPDATE SALARY MODEL IF RESPONSE IS SUCCESSFUL
+                    //     $salary->status1 = $result['Data']['transactionStatus'];
+                    //     $salary->save();
 
  
 
-                        return back()->with('success', ' Payments has been made, Wait for up to 5 mins to check confirmation');
+                    //     return back()->with('success', 'Confirmation Process completed');
                         
                     }
 
