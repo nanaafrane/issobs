@@ -201,7 +201,7 @@ class SalaryController extends Controller
     {
     //    dd($request->all());
 
-       $salaries = Salary::where('status1', 'Bulk Cash')->where('salary_month', Carbon::parse($request->month)->startOfMonth()->format('Y-m-d H:i:s'))->get();
+       $salaries = Salary::where('status1', 'Bulk Cash')->orwhere('status1', 'failed')->where('salary_month', Carbon::parse($request->month)->startOfMonth()->format('Y-m-d H:i:s'))->get();
     //    dd($salaries);
        return view('salaries.BulkCashView', compact('salaries'));
        

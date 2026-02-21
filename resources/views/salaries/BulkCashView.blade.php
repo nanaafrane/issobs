@@ -301,6 +301,7 @@
                                         <th>CLIENT</th>
                                         <th>LOCATION </th>
                                         <th> NET SALARY </th>
+                                        <th> STATUS </th>
                                     </tr>
                                 </thead>
                                 <tbody class="table-border-bottom-0">
@@ -317,6 +318,13 @@
                                         <td> {{ $salary->client?->name || $salary->client?->business_name ? $salary->client?->name . $salary->client?->business_name :  $salary->location }} </td>
                                         <td> {{  strtoupper($salary?->location) }} </td>
                                         <td> GH&#x20B5; {{ number_format($salary->net_salary, 2) }} </td>
+                                       
+                                        @if($salary->status1 == 'Bulk Cash')
+                                            <td> <span class="badge bg-label-dark"> {{ $salary->status1 }} </span> </td>
+                                        @else
+                                            <td> <span class="badge bg-label-danger">  {{ $salary->status1 }} </span> </td>
+                                        @endif
+
                                     </tr>
                                 @endforeach
                                 </tbody>
