@@ -85,7 +85,6 @@ class BankController extends Controller
     public function destroy(Bank $bank)
     {
         //
-        $bank->delete();
-        return back()->with('error', 'Delete Feature not functional yet');
+        return back()->with('danger', 'Delete Feature not functional yet');
     }
 }

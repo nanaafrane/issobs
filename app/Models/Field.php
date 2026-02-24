@@ -12,18 +12,11 @@ class Field extends Model
         'name',
         'user_id',
         'status',
-        'bank_id',
     ];
 
     public function user()
     {
-        return $this->belongsTo(User::class);
+        return $this->hasOne(User::class);
     }
-
-    public function bank()
-    {
-        return $this->belongsTo(Bank::class);
-    }
-
 
 }

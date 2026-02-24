@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\Receipt;
 use App\Http\Requests\StoreReceiptRequest;
 use App\Http\Requests\UpdateReceiptRequest;
-use App\Http\Requests\InvoiceToPayrollSearchRequest;
 use App\Models\Client;
 use App\Models\Collection;
 use App\Models\Field;
@@ -14,13 +13,11 @@ use App\Models\Transaction;
 use App\Models\Wht;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 class ReceiptController extends Controller
 {
     public $wht_amount;
-    public $vat7_amount;
 
     /**
      * Create a new controller instance.
@@ -134,7 +131,6 @@ class ReceiptController extends Controller
     public function store(StoreReceiptRequest $request)
     {
 
-        // dd($request->all());
         // Get all values from receipt form
         $status = $request->input('status');
         $wth_from_form = $request->input('wth');
@@ -162,10 +158,6 @@ class ReceiptController extends Controller
 
         $momo_transactin_id = $request->input('momo_transactin_id');
         $momo_amount = $request->float('momo_amount');
-
-        $other_payment_descri = $request->input('other_payment_descri');
-        $other_payment_amnt = $request->float('other_payment_amnt');
-
         $cash_amount = $request->float('cash_amount');
         $user_id = Auth::user()->id;
 
@@ -173,14 +165,15 @@ class ReceiptController extends Controller
         $image = null;
         if($request->file('image'))
         {
-           $image = ($request->file('image'))->store('images', 'public_html_disk');
+           $image = ($request->file('image'))->store('images', 'public');
         }
 
         // sum all input payments
-        $total = $cheque_amount + $momo_amount + $cash_amount + $transfer_amount + $other_payment_amnt;
+        $total = $cheque_amount + $momo_amount + $cash_amount + $transfer_amount;
         $sum_of_amountPaid_minus_wht = null;
         $wht_amount = null;
         $vat7_amount = null;
+
 
         // if the payment has with holding turned on;
         if($wth_from_form == "on")
@@ -218,7 +211,7 @@ class ReceiptController extends Controller
             // return "you're here! full payment one time payment";
 
             // // create Receipt
-               $receipt_id = $this->createReceipt($invoice_id, $dAmount, $description, $receipt_date, $vat7_value, $vat7_amount, $client_id, $from, $mode, $cheque_reference, $cheque_amount, $cheque_bank, $transfer_reference, $transfer_amount, $transfer_bank, $momo_transactin_id, $momo_amount, $cash_amount, $other_payment_descri, $other_payment_amnt, $user_id, $status, $total, $this->wht_amount, $sum_of_amountPaid_minus_wht, $image);
+               $receipt_id = $this->createReceipt($invoice_id, $dAmount, $description, $receipt_date, $vat7_value, $vat7_amount, $client_id, $from, $mode, $cheque_reference, $cheque_amount, $cheque_bank, $transfer_reference, $transfer_amount, $transfer_bank, $momo_transactin_id, $momo_amount, $cash_amount, $user_id, $status, $total, $this->wht_amount, $sum_of_amountPaid_minus_wht, $image);
 
                 // update the invoice status to completed and update the balance to 0
                 $invoice_data->status = $status;
@@ -239,21 +232,19 @@ class ReceiptController extends Controller
                 $transaction->save();
 
             // // CREATE A COLLECTION HERE.................
-            $this->create_collection($current_collection, $receipt_id, $cash_amount, $momo_amount, $cheque_amount, $transfer_amount, $total, $client->field->id);
+            $this->create_collection($current_collection, $cash_amount, $momo_amount, $cheque_amount, $transfer_amount, $total, $client->field->id);
             // END OF CREATE COLLECTIONS //
 
             //     // select all transactions with this current invoice iD and assign value d to the checks culumn
             Transaction::where('invoice_id', $invoice_id)->update(['checks' => 'd']);
 
-                // return redirect('receipt')->with('primary', 'Receipt created Successfully');
-            return redirect()->route('receipt.show',['receipt' => $receipt_id])->with('primary', 'Receipt  Craeated Successfully');
-
+                return redirect('receipt')->with('primary', 'Receipt created Successfully');
         }
         elseif($status == 'completed' && $check2 == 0 )
         {
 
             // return "you're here! full payment after part payment";
-            $receipt_id = $this->createReceipt($invoice_id, $dAmount, $description, $receipt_date, $vat7_value, $vat7_amount, $client_id, $from, $mode, $cheque_reference, $cheque_amount, $cheque_bank, $transfer_reference, $transfer_amount, $transfer_bank, $momo_transactin_id, $momo_amount, $cash_amount, $other_payment_descri, $other_payment_amnt, $user_id, $status, $total, $this->wht_amount, $sum_of_amountPaid_minus_wht, $image);
+            $receipt_id = $this->createReceipt($invoice_id, $dAmount, $description, $receipt_date, $vat7_value, $vat7_amount, $client_id, $from, $mode, $cheque_reference, $cheque_amount, $cheque_bank, $transfer_reference, $transfer_amount, $transfer_bank, $momo_transactin_id, $momo_amount, $cash_amount, $user_id, $status, $total, $this->wht_amount, $sum_of_amountPaid_minus_wht, $image);
 
             // get balance
             $balance = $invoice_data->balance - $total;
@@ -279,14 +270,12 @@ class ReceiptController extends Controller
             $transaction->save();
 
             // CREATE A COLLECTION HERE.................
-            $this->create_collection($current_collection, $receipt_id, $cash_amount, $momo_amount, $cheque_amount, $transfer_amount, $total, $client->field->id);
+            $this->create_collection($current_collection, $cash_amount, $momo_amount, $cheque_amount, $transfer_amount, $total, $client->field->id);
 
             // // select all transactions with this current invoice iD and assign value D to the checks culumn
             Transaction::where('invoice_id', $invoice_id)->update(['checks' => 'd']);
 
-            // return redirect('receipt')->with('success', 'Receipt created Successfully');
-            return redirect()->route('receipt.show',['receipt' => $receipt_id])->with('primary', 'Receipt  Craeated Successfully');
-
+            return redirect('receipt')->with('success', 'Receipt created Successfully');
         }
         else {
             // return "you're here! part payment ";
@@ -306,7 +295,7 @@ class ReceiptController extends Controller
 
             // create a receipt
             // $sum_of_amountPaid_minus_wht = null;
-            $receipt_id = $this->createReceipt($invoice_id, $dAmount, $description, $receipt_date, $vat7_value, $vat7_amount, $client_id, $from, $mode, $cheque_reference, $cheque_amount, $cheque_bank, $transfer_reference, $transfer_amount, $transfer_bank, $momo_transactin_id, $momo_amount, $cash_amount,$other_payment_descri, $other_payment_amnt, $user_id, $status, $total, $this->wht_amount, $sum_of_amountPaid_minus_wht, $image);
+            $receipt_id = $this->createReceipt($invoice_id, $dAmount, $description, $receipt_date, $vat7_value, $vat7_amount, $client_id, $from, $mode, $cheque_reference, $cheque_amount, $cheque_bank, $transfer_reference, $transfer_amount, $transfer_bank, $momo_transactin_id, $momo_amount, $cash_amount, $user_id, $status, $total, $this->wht_amount, $sum_of_amountPaid_minus_wht, $image);
 
             // update the invoice status to partpayment(uncomplete) and update the balance to current balance
             $invoice_data->balance = $balance;
@@ -330,12 +319,10 @@ class ReceiptController extends Controller
             // // echo "uncompleted " . " " . $invoice_data->total - $total ." ". "Balance is ";
 
             // CREATE A COLLECTION HERE.................
-            $this->create_collection($current_collection, $receipt_id, $cash_amount, $momo_amount, $cheque_amount, $transfer_amount, $total, $client->field->id );
+            $this->create_collection($current_collection, $cash_amount, $momo_amount, $cheque_amount, $transfer_amount, $total, $client->field->id );
 
 
             return redirect('receipt')->with('success', 'Receipt created Successfully');
-            return redirect()->route('receipt.show',['receipt' => $receipt_id])->with('primary', 'Receipt  Craeated Successfully');
-    
         }
 
     }
@@ -356,12 +343,11 @@ class ReceiptController extends Controller
     // }
 
 
-    public function create_collection ($current_collection, $receipt_id, $cash_amount, $momo_amount, $cheque_amount, $transfer_amount, $total, $field_id)
+    public function create_collection ($current_collection, $cash_amount, $momo_amount, $cheque_amount, $transfer_amount, $total, $field_id)
     {
                 // create a collection
         $collection = new Collection();
         $collection->user_id = Auth::user()->id;
-        $collection->receipt_id = $receipt_id;
         $collection->cash_amount = $cash_amount;
         $collection->momo_amount = $momo_amount;
         $collection->cheque_amount = $cheque_amount;
@@ -415,12 +401,7 @@ class ReceiptController extends Controller
     public function edit(Receipt $receipt)
     {
         //
-        // dd($receipt);
-        $mode = DB::table('receipt_mode')->get();
-        $status = DB::table('receipt_status')->get();
-         $wht = new Wht();
-         $invoice = Invoice::findorFail($receipt->invoice_id);
-        return view('sales.receipt_edit', compact('receipt','wht','invoice','mode','status'));
+        dd($receipt);
     }
 
     /**
@@ -429,134 +410,6 @@ class ReceiptController extends Controller
     public function update(UpdateReceiptRequest $request, Receipt $receipt)
     {
         //
-        // dd($request->all());
-        // if receipt has been deposited, do not allow update   
-        $collection = Collection::where('receipt_id', $receipt->id)->first();
-
-        if($collection?->status == 'deposited')
-        {
-            return redirect()->back()->with('error', 'Receipt has been Deposited and cannot be edited');
-        }
-
-        // update receipt 
-        // $receipt->update($request->all()); 
-        $image = null;
-        if($request->file('image'))
-        {
-           $image = ($request->file('image'))->store('images', 'public_html_disk');
-        }
-
-        $cheque_amount = $request->float('cheque_amount');
-        $momo_amount = $request->float('momo_amount');
-        $cash_amount = $request->float('cash_amount');
-        $transfer_amount = $request->float('transfer_amount');
-        $other_payment_amnt = $request->float('other_payment_amnt');
-        
-
-        // sum all input payments
-        $total = $cheque_amount + $momo_amount + $cash_amount + $transfer_amount + $other_payment_amnt;
-        // $wht_amount = 0.00;
-        $vat7_value = 0.00;
-        $sum_of_amountPaid_minus_wht = 0.00;
-        $wth_from_form = $request->input('wth');
-        $vat_from_form = $request->input('vat');
-        $dAmount = $request->float('dAmount');
-
-
-
-        // if the payment has with holding turned on;
-        if($wth_from_form == "on")
-        {
-               $this->wht_amount = $request->float('wht_amount');
-
-               //  $this->wht_amount = $wht_amount;
-               $sum_of_amountPaid_minus_wht = $total;
-               $total = $total +  $this->wht_amount;
-        }
-        if($vat_from_form == "on")
-        {
-            //  $request->input('vat7_value');
-            $vat7_value = $request->float('vat7_value');
-            $this->vat7_amount = $sum_of_amountPaid_minus_wht - $vat7_value ;
-        }
-
-        $receipt->invoice_id = $request->input('invoice_id');
-        $receipt->client_id = $request->input('client_id');
-        $receipt->from = $request->input('from');
-        $receipt->mode = $request->input('mode');
-        $receipt->dAmount = $dAmount;
-        $receipt->description = $request->input('description');
-        $receipt->receipt_month = $request->input('receipt_month');
-        $receipt->vat7_value = $vat7_value;
-        $receipt->vat7_amount = $this->vat7_amount;
-
-        $receipt->transfer_reference = $request->input('transfer_reference');
-        $receipt->transfer_amount = $request->float('transfer_amount');
-        $receipt->transfer_bank = $request->input('transfer_bank');
-
-        $receipt->cheque_reference = $request->input('cheque_reference');
-        $receipt->cheque_amount = $request->float('cheque_amount');
-        $receipt->cheque_bank = $request->input('cheque_bank');
-
-        $receipt->momo_transactin_id = $request->input('momo_transactin_id');
-        $receipt->momo_amount = $request->float('momo_amount');
-        $receipt->cash_amount = $request->float('cash_amount');
-        $receipt->other_payment_descri = $request->input('other_payment_descri');
-        $receipt->user_id = Auth::user()->id;
-        $receipt->status = $request->input('status');
-        $receipt->total = $total;
-        $receipt->wht_amount = $this->wht_amount;
-        $receipt->amount_received = $sum_of_amountPaid_minus_wht;
-        $receipt->image = $image;
-        $receipt->save();
-
-
-        // update the invoice 
-        $invoice = Invoice::findorFail($receipt->invoice_id);
-        $invoice->balance = $invoice->total - $total - $dAmount;
-        $invoice->status = $request->input('status');
-        $invoice->wht_amount = $this->wht_amount;
-        $invoice->amount_received = $sum_of_amountPaid_minus_wht;
-        $invoice->vat7_value = $vat7_value;
-        $invoice->vat7_amount = $this->vat7_amount;
-        $invoice->save();
-
-        if($receipt->status == "completed")
-        {
-            // update transaction
-            Transaction::where('receipt_id', $receipt->id)->update([ 
-                'receipt_amount' => $total,
-                'status' => $request->input('status'),
-                'balance' => 0,
-                'checks' => 'd',
-            ]);
-        }
-        elseif($receipt->status == "uncompleted")
-        {
-            // update transaction
-            $transaction = Transaction::where('receipt_id', $receipt->id)->first();
-            $transaction->receipt_amount = $total;
-            $transaction->status = $request->input('status');
-            $transaction->balance = $transaction->invoice->balance;
-            $transaction->checks = null;
-            $transaction->save();
-        }
-
-
-        // update collection
-        $collection = Collection::where('receipt_id', $receipt->id);
-        $collection->update([
-            'receipt_id' => $receipt->id,
-            'cash_amount' => $cash_amount,
-            'momo_amount' => $momo_amount,
-            'cheque_amount' => $cheque_amount,
-            'transfer_amount' => $transfer_amount,
-            'total_amount' => $total,
-        ]); 
-
-        return redirect()->route('receipt.show',['receipt' => $receipt->id])->with('primary', 'Receipt  Updated Successfully');
-
-
     }
 
     /**
@@ -565,43 +418,20 @@ class ReceiptController extends Controller
     public function destroy(Receipt $receipt)
     {
         //
-        // dd($receipt);
+        // dd($receipt->id);
         // REMOVE FROM COLLECTIONS
-
-        // if receipt has been deposited, do not allow update   
-        $collection = Collection::where('receipt_id', $receipt->id)->first();
-        // dd($collection);
-        if($collection?->status == 'deposited')
-        {
-            return redirect()->back()->with('error', 'Receipt has been Deposited and cannot be Deleted');
-        }
-        // elseif(empty($collection))
-        // {
-        //     // return redirect()->back()->with('error', 'Receipt has No Collection');
-        //     // continue ;
-        // }
-
-       $collection?->delete();
-
+        // $deleteCollections = Collection::where()->deleteOrFail();
         //   dd($deleteCollections);
-        // if(isset($deleteCollections) && !empty($deleteCollections))
+        // if(isset($deleteCollections))
         // {
-
-        // SET ALL TRANSACTIONS TO EMPTY STRING
-        //  $invoice =  Invoice::where('receipt_id',  $receipt->id)->get();
-        //  dd($invoice);
-         Transaction::where('invoice_id', $receipt->invoice->id)->update(['checks' => '']);
         // DELETE FROM TRANSACTION
-        Transaction::where('receipt_id', $receipt->id)->delete();
+        // Transaction::where('receipt_id', $receipt->id)->deleteOrFail();
 
         // UPDATE THE INVOICE TO DEFAULT
-         Invoice::where('id', $receipt->invoice->id)->update(['status' => 'unpaid', 'balance' => 0.00 ]); 
+        //  $receipt->deleteOrFail();
         // }
 
-        // DELETE THE RECEIPT
-         $receipt->delete();
-
-        return redirect('receipt')->with('error', 'Receipt Deleted Successfully');
+        
         
     }
 
@@ -612,21 +442,15 @@ class ReceiptController extends Controller
 
         $wht_rate = new Wht();
         // dd($wht_rate->wht_rate);
-        $mode = DB::table('receipt_mode')->get();
-        $status = DB::table('receipt_status')->get();
 
-
-        return view('sales.receiptCreate', compact('invoice', 'wht_rate', 'mode', 'status'));
+        return view('sales.receiptCreate', compact('invoice', 'wht_rate'));
     }
 
 
 
 
-// , $other_payment_amnt, $other_payment_descri,
-    public function createReceipt($invoice_id, $dAmount, $description, $receipt_date, $vat7_value, $vat7_amount, $client_id, $from, $mode, $cheque_reference, $cheque_amount, $cheque_bank, $transfer_reference, $transfer_amount, $transfer_bank, $momo_transactin_id, $momo_amount, $cash_amount,$other_payment_descri, $other_payment_amnt ,$user_id, $status, $total, $wht_amount, $sum_of_amountPaid_minus_wht, $image)
+    public function createReceipt($invoice_id, $dAmount, $description, $receipt_date, $vat7_value, $vat7_amount, $client_id, $from, $mode, $cheque_reference, $cheque_amount, $cheque_bank, $transfer_reference, $transfer_amount, $transfer_bank, $momo_transactin_id, $momo_amount, $cash_amount, $user_id, $status, $total, $wht_amount, $sum_of_amountPaid_minus_wht, $image)
     {
-
-        // dd($other_payment_amnt, $other_payment_descri);
         $newReceipt = new Receipt();
 
         $newReceipt->invoice_id = $invoice_id;
@@ -650,10 +474,6 @@ class ReceiptController extends Controller
         $newReceipt->momo_transactin_id = $momo_transactin_id;
         $newReceipt->momo_amount = $momo_amount;
         $newReceipt->cash_amount = $cash_amount;
-
-        $newReceipt->other_payment_descri = $other_payment_descri;
-        $newReceipt->other_payment_amnt = $other_payment_amnt;
-
         $newReceipt->user_id = $user_id;
         $newReceipt->status = $status;
         $newReceipt->total = $total;
@@ -695,52 +515,7 @@ class ReceiptController extends Controller
         $kumasiTotal = $kumasi->sum('total');
         $kumasiCount = count($kumasi);
 
-        $shyhills = Receipt::whereRelation('client', 'field_id', 7)->get();
-        $shyhillsTotal = $shyhills->sum('total');
-        $shyhillsCount = count($shyhills);
-
-        return view('sales.receipt_dashboard', compact('reportReceipt', 'accra', 'botwe', 'tema', 'shyhills','takoradi', 'koforidua', 'kumasi' ,'accraTotal', 'accraCount', 'botweTotal', 'botweCount', 'temaTotal', 'temaCount', 'shyhillsTotal', 'shyhillsCount', 'takoradiTotal', 'takoradiCount', 'koforiduaTotal', 'koforiduaCount', 'kumasiTotal', 'kumasiCount'));
-    }
-
-    // Search all receipts for a given month
-    public function receiptSearch(InvoiceToPayrollSearchRequest $request)
-    {
-       $month = Carbon::parse($request->month);
-        // dd($month);
-         $reportReceipt =  Receipt::whereMonth('receipt_month', $month->month)->get();
-         $reportReceiptCount = count($reportReceipt);
-         $reportReceiptTotal = $reportReceipt->sum('total');
-        // dd($reportReceipt);
-
-        $accra = Receipt::whereRelation('client', 'field_id', 1)->whereMonth('receipt_month', $month->month)->get();
-        $accraTotal = $accra->sum('total');
-        $accraCount = count($accra);
-
-        $botwe = Receipt::whereRelation('client', 'field_id', 2)->whereMonth('receipt_month', $month->month)->get();
-        $botweTotal = $botwe->sum('total');
-        $botweCount = count($botwe);
-
-        $tema = Receipt::whereRelation('client', 'field_id', 3)->whereMonth('receipt_month', $month->month)->get();
-        $temaTotal = $tema->sum('total');
-        $temaCount = count($tema);
-
-        $takoradi = Receipt::whereRelation('client', 'field_id', 4)->whereMonth('receipt_month', $month->month)->get();
-        $takoradiTotal = $takoradi->sum('total');
-        $takoradiCount = count($takoradi);
-
-        $koforidua = Receipt::whereRelation('client', 'field_id', 5)->whereMonth('receipt_month', $month->month)->get();
-        $koforiduaTotal = $koforidua->sum('total');
-        $koforiduaCount = count($koforidua);
-
-        $kumasi = Receipt::whereRelation('client', 'field_id', 6)->whereMonth('receipt_month', $month->month)->get();
-        $kumasiTotal = $kumasi->sum('total');
-        $kumasiCount = count($kumasi);
-
-        $shyhills = Receipt::whereRelation('client', 'field_id', 7)->whereMonth('receipt_month', $month->month)->get();
-        $shyhillsTotal = $shyhills->sum('total');
-        $shyhillsCount = count($shyhills);
-
-        return view('sales.receipt_dashboard', compact('reportReceipt', 'reportReceiptCount', 'month','reportReceiptTotal','accra', 'botwe', 'tema', 'shyhills','takoradi', 'koforidua', 'kumasi' ,'accraTotal', 'accraCount', 'botweTotal', 'botweCount', 'temaTotal', 'temaCount', 'shyhillsTotal', 'shyhillsCount', 'takoradiTotal', 'takoradiCount', 'koforiduaTotal', 'koforiduaCount', 'kumasiTotal', 'kumasiCount'));
+        return view('sales.receipt_dashboard', compact('reportReceipt', 'accra', 'botwe', 'tema', 'takoradi', 'koforidua', 'kumasi' ,'accraTotal', 'accraCount', 'botweTotal', 'botweCount', 'temaTotal', 'temaCount', 'takoradiTotal', 'takoradiCount', 'koforiduaTotal', 'koforiduaCount', 'kumasiTotal', 'kumasiCount'));
     }
 
 
@@ -775,11 +550,7 @@ class ReceiptController extends Controller
         $kumasiTotal = $kumasi->sum('total');
         $kumasiCount = count($kumasi);
 
-        $shyhills = Receipt::whereRelation('client', 'field_id', 7)->where('cash_amount', '>', 0.00)->get();
-        $shyhillsTotal = $shyhills->sum('total');
-        $shyhillsCount = count($shyhills);
-
-        return view('sales.receipt_Cash', compact('cashReceipt', 'accra', 'botwe', 'tema', 'shyhills', 'takoradi', 'koforidua', 'kumasi' ,'accraTotal', 'accraCount', 'botweTotal', 'botweCount', 'temaTotal', 'temaCount', 'shyhillsTotal', 'shyhillsCount', 'takoradiTotal', 'takoradiCount', 'koforiduaTotal', 'koforiduaCount', 'kumasiTotal', 'kumasiCount'));
+        return view('sales.receipt_Cash', compact('cashReceipt', 'accra', 'botwe', 'tema', 'takoradi', 'koforidua', 'kumasi' ,'accraTotal', 'accraCount', 'botweTotal', 'botweCount', 'temaTotal', 'temaCount', 'takoradiTotal', 'takoradiCount', 'koforiduaTotal', 'koforiduaCount', 'kumasiTotal', 'kumasiCount'));
     }
 
 
@@ -814,11 +585,7 @@ class ReceiptController extends Controller
         $kumasiTotal = $kumasi->sum('transfer_amount');
         $kumasiCount = count($kumasi);
 
-        $shyhills = Receipt::whereRelation('client', 'field_id', 7)->where('transfer_amount', '>', 0.00)->get();
-        $shyhillsTotal = $shyhills->sum('transfer_amount');
-        $shyhillsCount = count($shyhills);
-
-        return view('sales.receipt_Transfer', compact('transferReceipt', 'accra', 'botwe', 'tema', 'shyhills', 'takoradi', 'koforidua', 'kumasi', 'accraTotal', 'accraCount', 'botweTotal', 'botweCount', 'temaTotal', 'temaCount', 'shyhillsTotal', 'shyhillsCount', 'takoradiTotal', 'takoradiCount', 'koforiduaTotal', 'koforiduaCount', 'kumasiTotal', 'kumasiCount'));
+        return view('sales.receipt_Transfer', compact('transferReceipt', 'accra', 'botwe', 'tema', 'takoradi', 'koforidua', 'kumasi', 'accraTotal', 'accraCount', 'botweTotal', 'botweCount', 'temaTotal', 'temaCount', 'takoradiTotal', 'takoradiCount', 'koforiduaTotal', 'koforiduaCount', 'kumasiTotal', 'kumasiCount'));
 
     }
 
@@ -853,11 +620,7 @@ class ReceiptController extends Controller
         $kumasiTotal = $kumasi->sum('cheque_amount');
         $kumasiCount = count($kumasi);
 
-        $shyhills = Receipt::whereRelation('client', 'field_id', 7)->where('cheque_amount', '>', 0.00)->get();
-        $shyhillsTotal = $shyhills->sum('cheque_amount');
-        $shyhillsCount = count($shyhills);
-
-        return view('sales.receipt_Cheque', compact('chequeReceipt', 'accra', 'botwe', 'tema', 'shyhills', 'takoradi', 'koforidua', 'kumasi', 'accraTotal', 'accraCount', 'botweTotal', 'botweCount', 'temaTotal', 'temaCount', 'shyhillsTotal', 'shyhillsCount', 'takoradiTotal', 'takoradiCount', 'koforiduaTotal', 'koforiduaCount', 'kumasiTotal', 'kumasiCount'));
+        return view('sales.receipt_Cheque', compact('chequeReceipt', 'accra', 'botwe', 'tema', 'takoradi', 'koforidua', 'kumasi', 'accraTotal', 'accraCount', 'botweTotal', 'botweCount', 'temaTotal', 'temaCount', 'takoradiTotal', 'takoradiCount', 'koforiduaTotal', 'koforiduaCount', 'kumasiTotal', 'kumasiCount'));
     }
 
 
@@ -891,13 +654,7 @@ class ReceiptController extends Controller
         $kumasiTotal = $kumasi->sum('momo_amount');
         $kumasiCount = count($kumasi);
 
-        $shyhills = Receipt::whereRelation('client', 'field_id', 7)->where('momo_amount', '>', 0.00)->get();
-        $shyhillsTotal = $shyhills->sum('momo_amount');
-        $shyhillsCount = count($shyhills);
-
-        
-
-        return view('sales.receipt_MoMo', compact('momoReceipt', 'accra', 'botwe', 'tema', 'shyhills', 'takoradi', 'koforidua', 'kumasi', 'accraTotal', 'accraCount', 'botweTotal', 'botweCount', 'temaTotal', 'temaCount', 'shyhillsTotal', 'shyhillsCount', 'takoradiTotal', 'takoradiCount', 'koforiduaTotal', 'koforiduaCount', 'kumasiTotal', 'kumasiCount'));
+        return view('sales.receipt_MoMo', compact('momoReceipt', 'accra', 'botwe', 'tema', 'takoradi', 'koforidua', 'kumasi', 'accraTotal', 'accraCount', 'botweTotal', 'botweCount', 'temaTotal', 'temaCount', 'takoradiTotal', 'takoradiCount', 'koforiduaTotal', 'koforiduaCount', 'kumasiTotal', 'kumasiCount'));
     }
 
 
@@ -907,84 +664,34 @@ class ReceiptController extends Controller
         $whtAmountReceipt =  Receipt::where('amount_received', '>', 0.00)->get();
         // dd($cashReceipt);
         $accra = Receipt::whereRelation('client', 'field_id', 1)->where('amount_received', '>', 0.00)->get();
-        $accraAmountReceived = $accra->sum('amount_received');
-        $accraWHTAmount = $accra->sum('wht_amount');
+        $accraTotal = $accra->sum('amount_received');
+        $accraCount = $accra->sum('wht_amount');
 
 
         // dd($accraTotal, $accraCount);
+
         $botwe = Receipt::whereRelation('client', 'field_id', 2)->where('amount_received', '>', 0.00)->get();
-        $botweAmountReceived = $botwe->sum('amount_received');
-        $botweWHTAmount = $botwe->sum('wht_amount');
+        $botweTotal = $botwe->sum('amount_received');
+        $botweCount = $botwe->sum('wht_amount');
 
         $tema = Receipt::whereRelation('client', 'field_id', 3)->where('amount_received', '>', 0.00)->get();
-        $temaAmountReceived = $tema->sum('amount_received');
-        $temaWHTAmount = $tema->sum('wht_amount');
+        $temaTotal = $tema->sum('amount_received');
+        $temaCount = $tema->sum('wht_amount');
 
         $takoradi = Receipt::whereRelation('client', 'field_id', 4)->where('amount_received', '>', 0.00)->get();
-        $takoradiAmountReceived = $takoradi->sum('amount_received');
-        $takoradiWHTAmount = $takoradi->sum('wht_amount');
+        $takoradiTotal = $takoradi->sum('amount_received');
+        $takoradiCount = $takoradi->sum('wht_amount');
 
         $koforidua = Receipt::whereRelation('client', 'field_id', 5)->where('amount_received', '>', 0.00)->get();
-        $koforiduaAmountReceived = $koforidua->sum('amount_received');
-        $koforiduaWHTAmount = $koforidua->sum('wht_amount');
+        $koforiduaTotal = $koforidua->sum('amount_received');
+        $koforiduaCount = $koforidua->sum('wht_amount');
 
         $kumasi = Receipt::whereRelation('client', 'field_id', 6)->where('amount_received', '>', 0.00)->get();
-        $kumasiAmountReceived = $kumasi->sum('amount_received');
-        $kumasiWHTAmount = $kumasi->sum('wht_amount');
+        $kumasiTotal = $kumasi->sum('amount_received');
+        $kumasiCount = $kumasi->sum('wht_amount');
 
-        $shyhills = Receipt::whereRelation('client', 'field_id', 7)->where('amount_received', '>', 0.00)->get();
-        $shyhillsAmountReceived = $shyhills->sum('amount_received');
-        $shyhillsWHTAmount = $shyhills->sum('wht_amount');
-
-        return view('sales.receipt_whtAmount', compact('whtAmountReceipt', 'accra', 'botwe', 'tema', 'shyhills', 'takoradi', 'koforidua', 'kumasi', 'accraAmountReceived', 'accraWHTAmount', 'botweAmountReceived', 'botweWHTAmount', 'temaAmountReceived', 'temaWHTAmount', 'shyhillsAmountReceived', 'shyhillsWHTAmount', 'takoradiAmountReceived', 'takoradiWHTAmount', 'koforiduaAmountReceived', 'koforiduaWHTAmount', 'kumasiAmountReceived', 'kumasiWHTAmount'));
+        return view('sales.receipt_whtAmount', compact('whtAmountReceipt', 'accra', 'botwe', 'tema', 'takoradi', 'koforidua', 'kumasi', 'accraTotal', 'accraCount', 'botweTotal', 'botweCount', 'temaTotal', 'temaCount', 'takoradiTotal', 'takoradiCount', 'koforiduaTotal', 'koforiduaCount', 'kumasiTotal', 'kumasiCount'));
     }
-
-    // Search for receipts with WHT payments deducted
-    public function searchReceiptsWHTPayment(InvoiceToPayrollSearchRequest $request)
-    {
-         $month = Carbon::parse($request->month);
-
-        // dd($month->month);
-
-         $whtAmountReceipt =  Receipt::where('amount_received', '>', 0.00)->whereMonth('receipt_month', $month->month)->get();
-        //  $whtAmountReceipt =  Receipt::where('amount_received', '>', 0.00)->where('receipt_month', $month)->get();
-        // dd($whtAmountReceipt);
-
-         $whtAmountReceiptWHTamount = $whtAmountReceipt->sum('wht_amount');
-         $whtAmountReceiptAmountReceived = $whtAmountReceipt->sum('amount_received');
-
-        $accra = Receipt::whereRelation('client', 'field_id', 1)->where('amount_received', '>', 0.00)->whereMonth('receipt_month', $month->month)->get();
-        $accraAmountReceived = $accra->sum('amount_received');
-        $accraWHTAmount = $accra->sum('wht_amount');
-
-        $botwe = Receipt::whereRelation('client', 'field_id', 2)->where('amount_received', '>', 0.00)->whereMonth('receipt_month', $month->month)->get();
-        $botweAmountReceived = $botwe->sum('amount_received');
-        $botweWHTAmount = $botwe->sum('wht_amount');
-
-        $tema = Receipt::whereRelation('client', 'field_id', 3)->where('amount_received', '>', 0.00)->whereMonth('receipt_month', $month->month)->get();
-        $temaAmountReceived = $tema->sum('amount_received');
-        $temaWHTAmount = $tema->sum('wht_amount');
-
-        $takoradi = Receipt::whereRelation('client', 'field_id', 4)->where('amount_received', '>', 0.00)->whereMonth('receipt_month', $month->month)->get();
-        $takoradiAmountReceived = $takoradi->sum('amount_received');
-        $takoradiWHTAmount = $takoradi->sum('wht_amount');
-
-        $koforidua = Receipt::whereRelation('client', 'field_id', 5)->where('amount_received', '>', 0.00)->whereMonth('receipt_month', $month->month)->get();
-        $koforiduaAmountReceived = $koforidua->sum('amount_received');
-        $koforiduaWHTAmount = $koforidua->sum('wht_amount');    
-
-        $kumasi = Receipt::whereRelation('client', 'field_id', 6)->where('amount_received', '>', 0.00)->whereMonth('receipt_month', $month->month)->get();
-        $kumasiAmountReceived = $kumasi->sum('amount_received');
-        $kumasiWHTAmount = $kumasi->sum('wht_amount');
-
-        $shyhills = Receipt::whereRelation('client', 'field_id', 7)->where('amount_received', '>', 0.00)->whereMonth('receipt_month', $month->month)->get();
-        $shyhillsAmountReceived = $shyhills->sum('amount_received');
-        $shyhillsWHTAmount = $shyhills->sum('wht_amount');
-
-
-        return view('sales.receipt_whtAmount', compact('whtAmountReceipt', 'month','whtAmountReceiptWHTamount', 'accra', 'botwe', 'tema', 'shyhills', 'takoradi', 'koforidua', 'kumasi', 'whtAmountReceiptAmountReceived', 'accraAmountReceived', 'accraWHTAmount', 'botweAmountReceived', 'botweWHTAmount', 'temaAmountReceived', 'temaWHTAmount', 'shyhillsAmountReceived', 'shyhillsWHTAmount', 'takoradiAmountReceived', 'takoradiWHTAmount', 'koforiduaAmountReceived', 'koforiduaWHTAmount', 'kumasiAmountReceived', 'kumasiWHTAmount'));
-    }
-
 
 
     // public function dashboardWHTDeducted()

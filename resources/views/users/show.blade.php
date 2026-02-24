@@ -29,55 +29,58 @@
                     <div class="text-truncate" data-i18n="Dashboards">Dashboard</div>
                 </a>
                 <ul class="menu-sub">
-                    <li class="menu-item">
+                    <li class="menu-item ">
                         <a href="{{url('home')}}" class="menu-link">
                             <div class="text-truncate" data-i18n="Dashboard">Dashboard</div>
                         </a>
                     </li>
                 </ul>
             </li>
+            <!-- Apps & Pages -->
+            <li class="menu-header small text-uppercase ">
+                <span class="menu-header-text">Transactions</span>
+            </li>
+            <!-- Pages -->
+            <li class="menu-item">
+                <a href="{{url('transaction')}}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-transfer-alt"></i>
+                    <div class="text-truncate" data-i18n="Transaction">Transactions</div>
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="{{ url('invoice') }}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-bxs-receipt"></i>
+                    <div class="text-truncate" data-i18n="Invoices">Invoices</div>
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="{{url('receipt')}}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-money-withdraw"></i>
+                    <div class="text-truncate" data-i18n="Receipts">Receipts</div>
+                </a>
+            </li>
             <!-- Components -->
             <li class="menu-header small text-uppercase"><span class="menu-header-text">Management</span></li>
-            <li class="menu-item active open">
+            <li class="menu-item active">
                 <a href="javascript:void(0);" class="menu-link menu-toggle">
                     <i class="menu-icon tf-icons bx bx-bxs-group"></i>
-                    <div class="text-truncate" data-i18n="Staffs">System Users</div>
+                    <div class="text-truncate" data-i18n="Staffs">Staffs</div>
                 </a>
                 <ul class="menu-sub">
                     <li class="menu-item">
-                        <a href="{{url('staffAdd')}}" class="menu-link">
+                        <a href="" class="menu-link" target="_blank">
                             <div class="text-truncate" data-i18n="SRegister">Register</div>
                         </a>
                     </li>
-                    <li class="menu-item active">
-                        <a href="{{url('staff')}}" class="menu-link">
+                    <li class="menu-item">
+                        <a href="" class="menu-link" target="_blank">
                             <div class="text-truncate" data-i18n="SList">List</div>
                         </a>
                     </li>
                 </ul>
             </li>
- 
-        <li class="menu-item ">
-        <a href="javascript:void(0);" class="menu-link menu-toggle">
-          <i class="menu-icon tf-icons bx bxs-user-account"></i>
-          <div class="text-truncate" data-i18n="Staffs">Employees</div>
-        </a>
-        <ul class="menu-sub">
-          <li class="menu-item ">
-            <a href="{{url('employees/create')}}" class="menu-link">
-              <div class="text-truncate" data-i18n="SRegister">Register</div>
-            </a>
-          </li>
-          <li class="menu-item">
-            <a href="{{url('employees')}}" class="menu-link">
-              <div class="text-truncate" data-i18n="SList">List</div>
-            </a>
-          </li>
-        </ul>
-      </li>
-
             <li class="menu-item">
-                <a href="javascript:void(0);" class="menu-link menu-toggle">
+                <a class="menu-link menu-toggle">
                     <i class="menu-icon tf-icons bx bx-bxs-user-detail"></i>
                     <div class="text-truncate" data-i18n="Clients">Clients</div>
                 </a>
@@ -95,61 +98,12 @@
                 </ul>
             </li>
 
-        <li class="menu-item">
-            <a href="{{url('departments')}}" class="menu-link">
-            <i class="menu-icon tf-icons bx bxs-buildings"></i>
-            <div class="text-truncate" data-i18n="depnroles">Department & Roles </div>
-            </a>
-        </li>
-
-        <li class="menu-item">
-            <a href="{{url('field')}}" class="menu-link">
-            <i class="menu-icon tf-icons bx bx-bxs-location-plus"></i>
-            <div class="text-truncate" data-i18n="fOffices">Field Offices</div>
-            </a>
-        </li>
-
-      <li class="menu-header small text-uppercase"><span class="menu-header-text">PAYROLL</span></li>
-      <li class="menu-item">
-        <a href="javascript:void(0);" class="menu-link menu-toggle">
-          <i class="menu-icon tf-icons bx bx-money-withdraw"></i>
-          <div class="text-truncate" data-i18n="Payroll">Payroll</div>
-        </a>
-        <ul class="menu-sub">
-          
-          <li class="menu-item">
-            <a href="{{ url('salaries') }}" class="menu-link">
-              <i class="menu-icon tf-icons bx bxs-user-account"></i>
-              <div class="text-truncate" data-i18n="Employees">Add to Salaries</div>
-            </a>
-          </li>
-           @if(Auth::user()->hasPermission('Accounts'))
-          <li class="menu-item">
-            <a href="{{ url('salaries/create') }}" class="menu-link">
-              <i class="menu-icon tf-icons bx bx-money-withdraw"></i>
-              <div class="text-truncate" data-i18n="Salaries">Salaries</div>
-            </a>
-          </li>
-
-          <li class="menu-item">
-            <a href="{{ url('salariesTransaction') }}" class="menu-link">
-              <i class="menu-icon tf-icons bx bx-transfer-alt"></i>
-              <div class="text-truncate" data-i18n="Transaction">Transactions</div>
-            </a>
-          </li>
-
-          <li class="menu-item">
-            <a href="{{ url('salariesInvPayroll') }}" class="menu-link">
-              <i class="menu-icon tf-icons bx bx-git-compare"></i>
-              <div class="text-truncate" data-i18n="InvtoPayroll">Invoice to Payroll</div>
-            </a>
-          </li>
-        @endif
-        </ul>
-      </li>
-
-
-
+            <li class="menu-item">
+                <a href="{{url('field')}}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-bxs-location-plus"></i>
+                    <div class="text-truncate" data-i18n="Locations">Locations</div>
+                </a>
+            </li>
         </ul>
     </aside>
     <!-- / Menu -->
@@ -179,7 +133,7 @@
                             <div class="card-body">
                                 <div class="d-flex align-items-start align-items-sm-center gap-6 pb-4 border-bottom">
                                     <img
-                                        src="@if($user->path) {{asset($user->path)}} @else {{asset('img/user.png')}} @endif"
+                                        src="@if($user->path) {{asset('storage/'.$user->path)}} @else {{asset('img/user.png')}} @endif"
                                         alt="user-avatar"
                                         class="d-block w-px-100 h-px-100 rounded"
                                         id="uploadedAvatar" />

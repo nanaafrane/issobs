@@ -4,6 +4,7 @@
     <link rel="stylesheet" href="https://cdn.datatables.net/2.3.3/css/dataTables.dataTables.css" />
     <link rel="stylesheet" href="https://cdn.datatables.net/buttons/3.2.4/css/buttons.dataTables.css">
     @endsection
+    
 
 
   @section('side_nav')
@@ -63,18 +64,18 @@
         </ul>
       </li>
 
-    <li class="menu-item">
+    <li class="menu-item active open">
         <a href="javascript:void(0);" class="menu-link menu-toggle">
           <i class="menu-icon tf-icons bx bxs-user-account"></i>
           <div class="text-truncate" data-i18n="Staffs">Employees</div>
         </a>
         <ul class="menu-sub">
-          <li class="menu-item ">
+          <li class="menu-item active">
             <a href="{{url('employees/create')}}" class="menu-link">
               <div class="text-truncate" data-i18n="SRegister">Register</div>
             </a>
           </li>
-          <li class="menu-item">
+          <li class="menu-item ">
             <a href="{{url('employees')}}" class="menu-link">
               <div class="text-truncate" data-i18n="SList">List</div>
             </a>
@@ -112,35 +113,13 @@
       <li class="menu-item">
         <a href="javascript:void(0);" class="menu-link menu-toggle">
           <i class="menu-icon tf-icons bx bx-money-withdraw"></i>
-          <div class="text-truncate" data-i18n="Payroll">Payroll</div>
+          <div class="text-truncate" data-i18n="Payroll">PAYROLL</div>
         </a>
         <ul class="menu-sub">
           <li class="menu-item">
-            <a href="{{ url('salaries') }}" class="menu-link">
+            <a href="" class="menu-link">
               <i class="menu-icon tf-icons bx bxs-user-account"></i>
               <div class="text-truncate" data-i18n="Locations">Employees</div>
-            </a>
-          </li>
-
-          <li class="menu-item">
-            <a href="{{ url('salaries/create') }}" class="menu-link">
-              <i class="menu-icon tf-icons bx bx-money-withdraw"></i>
-              <div class="text-truncate" data-i18n="Locations">Salaries</div>
-            </a>
-          </li>
-
-          <li class="menu-item">
-            <a href="{{ url('salaries/transaction') }}" class="menu-link">
-              <i class="menu-icon tf-icons bx bx-transfer-alt"></i>
-              <div class="text-truncate" data-i18n="Locations">Transactions</div>
-            </a>
-          </li>
-
-
-          <li class="menu-item">
-            <a href="{{ url('salaries/invpayroll') }}" class="menu-link">
-              <i class="menu-icon tf-icons bx bx-git-compare"></i>
-              <div class="text-truncate" data-i18n="Locations">Invoice to Payroll</div>
             </a>
           </li>
 
@@ -157,137 +136,53 @@
   @section('content')
 
   <!-- Content -->
-    <div class="container-xxl flex-grow-1 container-p-y">
+            <!-- Content -->
 
-        <div class="row">
-            <div class="col-12">
-                <h3 class="card-header"> <i class="icon-base bx bx-bxs-user-detail"></i> Active Employees </h3>
-            </div>
-        </div><br>
+            <div class="container-xxl flex-grow-1 container-p-y">
+              <h4 class="fw-bold py-3 mb-4"><span class="text-muted fw-light"> <i class="bx bxs-user-account"></i> Employee /</span> Account</h4>
 
-        @if(Auth::user()->hasRole('Invoice') || Auth::user()->hasRole('Manager'))
-        <div class="row">
-            <div class="col-lg-2">
-                <div style="background: crimson; color: white;" class="card h-100">
-                    <div class="card-body">
-                        <div class="card-title d-flex align-items-start justify-content-between mb-4">
-                            <div class="avatar flex-shrink-0">
-                                <img
-                                    src="img/icons/unicons/paypal.png"
-                                    alt="chart success"
-                                    class="rounded" />
+
+
+                <div class="row">
+
+                <div class="col-md-12">
+                  <ul class="nav nav-pills flex-column flex-md-row mb-3">
+                    <li class="nav-item">
+                      <a class="nav-link" href="{{ url('/employees/create') }}"><i class="bx bx-user me-1"></i> Employee Details</a>
+                    </li>
+                    <li class="nav-item ">
+                      <a class="nav-link " href="{{url('/employeesPayInfo')}}" ><i class="bx bxs-comment-detail"></i> Payment Info </a
+                      >
+                    </li>
+                    <li class="nav-item">
+                      <a class="nav-link active" href="{{ }}" ><i class="bx bx-money-withdraw"></i> Salaries </a>
+                    </li>
+                  </ul>
+
+                  <div class="card mb-4">
+
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <div class="card-title d-flex align-items-start justify-content-between mb-4">
+                                <div class="avatar flex-shrink-0">
+                                    <img
+                                        src="{{asset('img/icons/unicons/paypal.png')  }}"
+                                        alt="chart success"
+                                        class="rounded" />
+                                </div>
                             </div>
+                            <p class="mb-1"><strong> ACCRA </strong> </p>
+                            <h4 class="card-title mb-3 text-white"><strong>GH&#x20B5;  </strong> </h4>
+                            <small class="fw-medium"> TOTAL COLLECTIONS : <strong>  </strong> </small>
                         </div>
-                        <p class="mb-1"><strong> ACCRA </strong> </p>
-                        <h4 class="card-title mb-3 text-white"><strong> 0  </strong> </h4>
-                        <small class="fw-medium"> TOTAL EMPLOYEES  </small>
                     </div>
-                </div>
-            </div>
+                    <hr class="my-0" />
 
-            <div class="col-lg-2">
-                <div style="background: crimson; color: white;" class="card h-100">
+                    <h5 class="card-header">Profile Details</h5>
+                    <!-- Account -->
                     <div class="card-body">
-                        <div class="card-title d-flex align-items-start justify-content-between mb-4">
-                            <div class="avatar flex-shrink-0">
-                                <img
-                                    src="img/icons/unicons/paypal.png"
-                                    alt="chart success"
-                                    class="rounded" />
-                            </div>
-                        </div>
-                        <p class="mb-1"><strong> BOTWE </strong></p>
-                        <h4 class="card-title mb-3 text-white"><strong>0 </strong> </h4>
-                        <small class="fw-medium"> TOTAL EMPLOYEES </small>
-                    </div>
-                </div>
-            </div>
 
-
-            <div class="col-lg-2">
-                <div style="background: crimson; color: white;" class="card h-100">
-                    <div class="card-body">
-                        <div class="card-title d-flex align-items-start justify-content-between mb-4">
-                            <div class="avatar flex-shrink-0">
-                                <img
-                                    src="img/icons/unicons/paypal.png"
-                                    alt="chart success"
-                                    class="rounded" />
-                            </div>
-
-                        </div>
-                        <p class="mb-1"><strong> TEMA </strong></p>
-                        <h4 class="card-title mb-3 text-white"><strong>0 </strong> </h4>
-                        <small class="fw-medium"> TOTAL EMPLOYEES </small>
-                    </div>
-                </div>
-            </div>
-
-
-
-            <div class="col-lg-2">
-                <div style="background: crimson; color: white;" class="card h-100">
-                    <div class="card-body">
-                        <div class="card-title d-flex align-items-start justify-content-between mb-4">
-                            <div class="avatar flex-shrink-0">
-                                <img
-                                    src="img/icons/unicons/paypal.png"
-                                    class="rounded" />
-                            </div>
-
-                        </div>
-                        <p class="mb-1">TAKORADI</p>
-                        <h4 class="card-title mb-3 text-white">0 </h4>
-                        <small class="fw-medium"> TOTAL EMPLOYEES   </small>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-lg-2">
-                <div style="background: crimson; color: white;" class="card h-100">
-                    <div class="card-body">
-                        <div class="card-title d-flex align-items-start justify-content-between mb-4">
-                            <div class="avatar flex-shrink-0">
-                                <img
-                                    src="img/icons/unicons/paypal.png"
-                                    class="rounded" />
-                            </div>
-
-                        </div>
-                        <p class="mb-1"> <strong> KOFORIDUA </strong> </p>
-                        <h4 class="card-title mb-3 text-white">0</h4>
-                        <small class="fw-medium"> TOTAL EMPLOYEES  </small>
-                    </div>
-                </div>
-            </div>
-
-
-            <div class="col-lg-2">
-                <div style="background: crimson; color: white;" class="card h-100">
-                    <div class="card-body">
-                        <div class="card-title d-flex align-items-start justify-content-between mb-4">
-                            <div class="avatar flex-shrink-0">
-                                <img
-                                    src="img/icons/unicons/paypal.png"
-                                    class="rounded" />
-                            </div>
-
-                        </div>
-                        <p class="mb-1"><strong> KUMASI </strong> </p>
-                        <h4 class="card-title mb-3 text-white">0 </h4>
-                        <small class="fw-medium"> TOTAL EMPLOYEES  </small>
-                    </div>
-                </div>
-            </div>
-
-        </div> <br>
-       
-       
-        @endif
-
-        <div class="row">
-            <div class="col">
-                <table id="myTable" class="display">
+                                    <table id="myTable" class="display">
                     <thead>
                         <tr>
                             <th>#</th>
@@ -336,12 +231,23 @@
                     </tbody>
                 </table>
 
+
+                    </div>
+                   <!-- /Account -->
+                  </div>
+                </div>
+             
+                </div>
+            
             </div>
-        </div>
-    </div>
+            <!-- / Content -->
+
+
+
   <!-- / Content -->
 
   @endsection
+
 
 
     @section('scripts')
@@ -367,4 +273,6 @@
         });
     </script>
     @endsection
+
+
 </x-hr-dashboard>

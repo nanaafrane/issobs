@@ -16,7 +16,6 @@ return new class extends Migration
             $table->string('name')->unique();
             $table->integer('user_id')->nullable();
             $table->string('status')->nullable();
-            $table->string('bank_id')->nullable();
             $table->timestamps();
         });
     }

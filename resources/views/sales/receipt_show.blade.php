@@ -48,212 +48,61 @@
                 </a>
             </li>
 
-            @if(Auth::user()->hasRole(['Invoice', 'Finance Manager' ]))
+            @if(Auth::user()->hasRole('Invoice') || Auth::user()->hasRole('Finance Manager'))
             <li class="menu-item">
                 <a href="{{ url('invoice') }}" class="menu-link">
                     <i class="menu-icon tf-icons bx bx-bxs-receipt bg-primary"></i>
                     <div class="text-truncate" data-i18n="Invoices">Invoices</div>
                 </a>
             </li>
-      <li class="menu-item ">
-          <a href="javascript:void(0);" class="menu-link menu-toggle">
-          <i class="menu-icon tf-icons bx bx-bxs-receipt bg-primary"></i>
-          <div class="text-truncate" data-i18n="Staffs">Pro Forma</div>
-          </a>
-          <ul class="menu-sub">
-          <li class="menu-item ">
-              <a href="{{url('proforma/create')}}" class="menu-link">
-              <div class="text-truncate" data-i18n="SRegister">Generate</div>
-              </a>
-          </li>
-          <li class="menu-item">
-              <a href="{{url('proforma')}}" class="menu-link">
-              <div class="text-truncate" data-i18n="SList">List</div>
-              </a>
-          </li>
-          <li class="menu-item">
-              <a href="{{url('proformaClient')}}" class="menu-link">
-              <div class="text-truncate" data-i18n="SList">ProForma Clients</div>
-              </a>
-          </li>
-          </ul>
-      </li>
             @endif
-
-      @if(Auth::user()->hasRole(['Finance Manager']))
-                  <li class="menu-item active">
+            <li class="menu-item active">
                 <a href="{{url('receipt')}}" class="menu-link">
                     <i class="menu-icon tf-icons bx bx-money-withdraw"></i>
                     <div class="text-truncate" data-i18n="Receipts"><strong>Receipts</strong> </div>
                 </a>
             </li>
-      <!-- Components -->
-      <li class="menu-header small text-uppercase"><span class="menu-header-text text-info">Management</span></li>
-      <li class="menu-item">
-        <a href="{{url('client')}}" class="menu-link">
-          <i class="menu-icon tf-icons bx bx-bxs-user-detail bg-info"></i>
-          <div class="text-truncate" data-i18n="Clients">Clients</div>
-        </a>
-      </li>
-              <li class="menu-item ">
-          <a href="javascript:void(0);" class="menu-link menu-toggle">
-          <i class="menu-icon tf-icons bx bxs-user-account"></i>
-          <div class="text-truncate" data-i18n="Staffs">Employees</div>
-          </a>
-          <ul class="menu-sub">
-          <li class="menu-item ">
-              <a href="{{url('employees/create')}}" class="menu-link">
-              <div class="text-truncate" data-i18n="SRegister">Register</div>
-              </a>
-          </li>
-          <li class="menu-item">
-              <a href="{{url('employees')}}" class="menu-link">
-              <div class="text-truncate" data-i18n="SList">List</div>
-              </a>
-          </li>
-          <li class="menu-item">
-              <a href="{{url('employeesBank')}}" class="menu-link">
-              <div class="text-truncate" data-i18n="SList">Employee Banks</div>
-              </a>
-          </li>
-          </ul>
-      </li>
-      @elseif(Auth::user()->hasRole(['Invoice']))
+            <!-- Components -->
+            <li class="menu-header small text-uppercase"><span class="menu-header-text text-info">Management</span></li>
+            <li class="menu-item">
+                <a href="{{url('client')}}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-bxs-user-detail bg-info"></i>
+                    <div class="text-truncate" data-i18n="Clients">Clients</div>
+                </a>
+            </li>
 
-      <li class="menu-header small text-uppercase"><span class="menu-header-text text-info">Management</span></li>
-        <li class="menu-item ">
-            <a class="menu-link menu-toggle">
-                <i class="menu-icon tf-icons bx bx-bxs-user-detail bg-info"></i>
-                <div class="text-truncate" data-i18n="Clients"><strong>Clients</strong></div>
-            </a>
-            <ul class="menu-sub">
-                <li class="menu-item ">
-                    <a href="{{url('client/create')}}" class="menu-link">
-                        <div class="text-truncate" data-i18n="CRegister">Register</div>
-                    </a>
-                </li>
-                <li class="menu-item ">
-                    <a href="{{url('client')}}" class="menu-link">
-                        <div class="text-truncate" data-i18n="CList">List</div>
-                    </a>
-                </li>
-            </ul>
-        </li>
-        <li class="menu-item ">
-          <a href="javascript:void(0);" class="menu-link menu-toggle">
-          <i class="menu-icon tf-icons bx bxs-user-account"></i>
-          <div class="text-truncate" data-i18n="Staffs">Employees</div>
-          </a>
-          <ul class="menu-sub">
-          <li class="menu-item ">
-              <a href="{{url('employees/create')}}" class="menu-link">
-              <div class="text-truncate" data-i18n="SRegister">Register</div>
-              </a>
-          </li>
-          <li class="menu-item">
-              <a href="{{url('employees')}}" class="menu-link">
-              <div class="text-truncate" data-i18n="SList">List</div>
-              </a>
-          </li>
-                    <li class="menu-item">
-              <a href="{{url('employeesBank')}}" class="menu-link">
-              <div class="text-truncate" data-i18n="SList">Employee Banks</div>
-              </a>
-          </li>
-          </ul>
-      </li>
-      <li class="menu-item">
-          <a href="{{url('departments')}}" class="menu-link">
-          <i class="menu-icon tf-icons bx bxs-buildings"></i>
-          <div class="text-truncate" data-i18n="depnroles">Department & Roles </div>
-          </a>
-      </li>
-      <li class="menu-item">
-          <a href="{{url('field')}}" class="menu-link">
-          <i class="menu-icon tf-icons bx bx-bxs-location-plus"></i>
-          <div class="text-truncate" data-i18n="fOffices">Field Offices</div>
-          </a>
-      </li>
-      @endif
+            @if(Auth::user()->hasRole('Manager') || Auth::user()->hasRole('Officer') || Auth::user()->hasRole('Finance Manager') )
 
-      @if(Auth::user()->hasRole(['Manager','Officer','Finance Manager']) )
+            <li class="menu-header small text-uppercase"> <span class="menu-header-text text-danger">Accounts</span></li>
 
-      <li class="menu-header small text-uppercase"> <span class="menu-header-text text-danger">Accounts</span></li>
-
-      <li class="menu-item">
-        <a href="javascript:void(0);" class="menu-link menu-toggle">
-          <i class="menu-icon tf-icons bx bxs-analyse bg-danger"></i>
-          <div class="text-truncate" data-i18n="Accounts"> Accounts </div>
-        </a>
-        <ul class="menu-sub">
-          <li class="menu-item">
-            <a href="{{url('collections')}}" class="menu-link">
-              <i class="menu-icon tf-icons bx bx-add-to-queue bg-danger"></i>
-              <div class="text-truncate" data-i18n="ARegister">Collections</div>
-            </a>
-          </li>
-          <li class="menu-item">
-            <a href="{{url('deposit')}}" class="menu-link">
-              <i class="menu-icon tf-icons bx bx-arrow-from-left bg-danger"></i>
-              <div class="text-truncate" data-i18n="AList">Bank Deposit</div>
-            </a>
-          </li>
-          <li class="menu-item">
-            <a href="{{url('banks')}}" class="menu-link">
-              <i class="menu-icon tf-icons bx bxs-bank bg-danger"></i>
-              <div class="text-truncate" data-i18n="AList">Banks</div>
-            </a>
-          </li>
-        </ul>
-      </li>
-      <li class="menu-item">
-        <a href="{{url('expense')}}" class="menu-link">
-          <i class="menu-icon tf-icons bx bx-bxs-credit-card bg-secondary"></i>
-          <div class="text-truncate" data-i18n="Expense"> Expense </div>
-        </a>
-       </li>
-      @endif
-
-      @if(Auth::user()->hasPermission('Accounts') )
-      <li class="menu-header small text-uppercase"><span class="menu-header-text">PAYROLL</span></li>
-        <li class="menu-item">
+            <li class="menu-item">
                 <a href="javascript:void(0);" class="menu-link menu-toggle">
-                <i class="menu-icon tf-icons bx bx-money-withdraw"></i>
-                <div class="text-truncate" data-i18n="Payroll">Payroll</div>
+                    <i class="menu-icon tf-icons bx bxs-analyse bg-danger"></i>
+                    <div class="text-truncate" data-i18n="Accounts"> Accounts </div>
                 </a>
                 <ul class="menu-sub">
-                @if(Auth::user()->hasRole(['Invoice', 'Finance Manager']))
-                <li class="menu-item">
-                    <a href="{{ url('salaries') }}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bxs-user-account"></i>
-                    <div class="text-truncate" data-i18n="Employees">Add to Salaries</div>
-                    </a>
-                </li>
-                @endif
-
-                <li class="menu-item">
-                    <a href="{{ url('salaries/create') }}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-money-withdraw"></i>
-                    <div class="text-truncate" data-i18n="Salaries">Salaries</div>
-                    </a>
-                </li>
-
-                <li class="menu-item">
-                    <a href="{{ url('salariesTransaction') }}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-transfer-alt"></i>
-                    <div class="text-truncate" data-i18n="Transaction">Transactions</div>
-                    </a>
-                </li>
-
-                <li class="menu-item">
-                    <a href="{{ url('salariesInvPayroll') }}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-git-compare"></i>
-                    <div class="text-truncate" data-i18n="InvtoPayroll">Invoice to Payroll</div>
-                    </a>
-                </li>
+                    <li class="menu-item">
+                        <a href="{{url('collections')}}" class="menu-link">
+                            <i class="menu-icon tf-icons bx bx-add-to-queue bg-danger"></i>
+                            <div class="text-truncate" data-i18n="ARegister">Collections</div>
+                        </a>
+                    </li>
+                    <li class="menu-item">
+                        <a href="{{url('deposit')}}" class="menu-link">
+                            <i class="menu-icon tf-icons bx bx-arrow-from-left bg-danger"></i>
+                            <div class="text-truncate" data-i18n="AList">Bank Deposit</div>
+                        </a>
+                    </li>
+                    <li class="menu-item">
+                        <a href="{{url('banks')}}" class="menu-link">
+                            <i class="menu-icon tf-icons bx bxs-bank bg-danger"></i>
+                            <div class="text-truncate" data-i18n="AList">Banks</div>
+                        </a>
+                    </li>
                 </ul>
             </li>
-      @endif
+
+            @endif
 
 
         </ul>
@@ -270,9 +119,7 @@
                 <h3 class="card-header text-primary"> <i class="icon-base bx bx-bxs-receipt"></i> Receipt </h3>
             </div>
         </div>
-        <div class="card-header  ml-2  d-none d-lg-block">
-            @include('flash-messages')
-        </div>
+
         <div class="row ms-10">
             <div class="col-md-2 col-xl-2">
                 <div class="card-body">
@@ -331,10 +178,8 @@
                         <p class="card-text text-dark"> <strong>From : {{$receipt->from}} </strong> </p>
                         <p class="card-text text-dark"> <strong>Receipt Date : {{$receipt->receipt_month?->format('l F d, Y')}} </strong> <i class="icon-base bx bx-bxs-time"></i>  {{$receipt->receipt_month?->diffForHumans()}}</p>
                        
-                        <p class="card-text text-dark"> <strong>Date Generated : {{$receipt->created_at->format('l F d, Y, H:i A')}} </strong> </p>
+                        <p class="card-text text-dark"> <strong>Date System Generated : {{$receipt->created_at->format('l F d, Y, H:i A')}} </strong> </p>
                         <p class="card-text text-dark"> <strong><i class="icon-base bx bx-bxs-time"></i> {{$receipt->created_at?->diffForHumans()}} </strong> </p>
-                        <p class="card-text text-dark"> <strong>Date Updated : {{$receipt->updated_at->format('l F d, Y, H:i A')}} </strong> </p>
-                        <p class="card-text text-dark"> <strong><i class="icon-base bx bx-bxs-time"></i> {{$receipt->updated_at?->diffForHumans()}} </strong> </p>
                         <hr>
                         <p class="card-text text-dark"> <strong>WITHHOLDING TAX {{$wht->wht_rate * 100}}% : GH&#8373; {{number_format($receipt->wht_amount, 2)}} </strong> </p>
                         <p class="card-text text-dark"> <strong>AMOUNT AFTER WTH : GH&#8373; {{number_format($receipt->amount_received, 2)}} </strong> </p>
@@ -371,26 +216,13 @@
                     </div>
                 </div>
 
-                @if($receipt->cash_amount > 0.00 )
+                                @if($receipt->cash_amount > 0.00 )
                 <br>
                 <div class="card text-bg-success">
                     <div class="card-body">
                         <h5 class="card-title text-white"> CASH </h5>
                         <hr>
                         <p class="card-text"><strong>Amount : GH&#8373; {{ number_format($receipt->cash_amount, 2) }} </strong> </p>
-                    </div>
-                </div>
-                @endif
-                <br>
-
-                @if($receipt->other_payment_amnt > 0.00 )
-                <br>
-                <div class="card text-bg-dark">
-                    <div class="card-body">
-                        <h5 class="card-title text-white"> OTHER PAYMENT  </h5>
-                        <hr>
-                        <p class="card-text"><strong>Amount : GH&#8373; {{ number_format($receipt->other_payment_amnt, 2) }} </strong> </p>
-                        <p class="card-text"><strong>Description :  {{ $receipt->other_payment_descri }} </strong> </p>
                     </div>
                 </div>
                 @endif
@@ -438,11 +270,6 @@
                 @endif
             </div>
         </div>
-    </div>
-
-
-    <div class="buy-now">
-        <a style="margin-bottom: 75px;" href="/receipt/{{$receipt->id}}/edit" class="btn btn-danger btn-buy-now"> <i class="icon-base bx bx-edit-alt me-1"></i> Edit</a>
     </div>
 
     @endsection

@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Bank;
 use App\Models\Department;
-use App\Models\employee;
 use App\Models\Field;
 use App\Models\User;
 use App\Models\Invoice;
@@ -139,48 +138,14 @@ class HomeController extends Controller
             return view('auth.login');
         }
 
-        if($user->department?->name == 'Accounts' || $user->department?->name == 'Administration')
+        if($user->department?->name == 'Accounts' )
         {
             return view('sales.dashboard', compact('banks','total_after_wht', 'total_wth' ,'sum_invoices' ,'invoices_outstanding','balance_outstanding', 'receiept_CashAmount', 'receiept_MoMoAmount', 'receiept_BankAmount', 'receiept_TransferAmount', 'receipt_AllPayment'));
         }
 
         if($user->department?->name == 'HR')
         {
-
-           $Guards =  employee::where('role_id', 7)->get();
-           $GuardsCount = count($Guards);
-
-           $Accounts =  employee::where('department_id', 1)->get();
-           $AccountsCount = count($Accounts);
-
-           $HR =  employee::where('department_id', 4)->get();
-           $HRCount = count($HR);
-
-            $Operation =  employee::where('department_id', 6)->get();
-           $OperationCount = count($Operation);
-
-           $accraGuards =  employee::where('field_id', 1)->where('role_id', 7)->get();
-           $accraGuardsCount = count($accraGuards);
-
-           $botweGuards =  employee::where('field_id', 2)->where('role_id', 7)->get();
-           $botweGuardsCount = count($botweGuards);
-
-            $temaGuards =  employee::where('field_id', 3)->where('role_id', 7)->get();
-           $temaGuardsCount = count($temaGuards);
-
-            $takoradiGuards =  employee::where('field_id', 4)->where('role_id', 7)->get();
-           $takoradiGuardsCount = count($takoradiGuards);
-
-            $koforiduaGuards =  employee::where('field_id', 5)->where('role_id', 7)->get();
-           $koforiduaGuardsCount = count($koforiduaGuards);
-
-            $kumasiGuards =  employee::where('field_id', 6)->where('role_id', 7)->get();
-           $kumasiGuardsCount = count($kumasiGuards);
-
-            $shyhillsGuards =  employee::where('field_id', 7)->where('role_id', 7)->get();
-           $shyhillsGuardsCount = count($shyhillsGuards);
-
-            return view('hr.dashboard', compact( 'OperationCount','HRCount','AccountsCount','GuardsCount','accraGuardsCount', 'botweGuardsCount', 'temaGuardsCount', 'takoradiGuardsCount', 'koforiduaGuardsCount', 'shyhillsGuardsCount'));
+            return view('hr.dashboard');
         }
 
         if($user->department?->name == 'System')
@@ -229,7 +194,7 @@ class HomeController extends Controller
         if ($user->path) {
             Storage::disk('public')->delete($user->path);
         }
-        $user->path   = $request->file('image')->store('images', 'public_html_disk');
+        $user->path   = $request->file('image')->store('images', 'public');
         $user->save();
 
         return back()->with('success', 'Staff Image Updated Successfully');

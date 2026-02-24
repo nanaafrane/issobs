@@ -84,13 +84,10 @@ class User extends Authenticatable
         }
     }
 
-    public function hasRole(array $roles)
-    {   
-        foreach ($roles as $role)
-        {
+    public function hasRole($role)
+    {
         if ($this->role->name == $role) {
             return true;
-        }
         }
     }
 
