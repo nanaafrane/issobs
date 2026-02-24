@@ -607,6 +607,10 @@
                                 <button class="btn btn-dark" name="submit" value="bulk" onclick="return confirm('Kindly Confirm?')" type="submit"> <i class="icon-base bx bx-bxs-file-plus"> </i> {{ __(' Add To Bulk Cash Salaries') }}</button>                   
                             </div>
 
+                            <!-- <div class="">
+                                <a href="{{ url('/exportMaster')}} " class="btn btn-success" > <i class="icon-base bx bx-bxs-file-plus"> </i> {{ __(' Excel Download') }}</a>                   
+                            </div> -->
+
                             <table id="myTableimaster" class="display">
                                 <thead>
                                     <tr>
@@ -777,14 +781,14 @@
                         className: 'btn btn-secondary',
                         Options: [10, 25, 50, 100], 
                     },
-                        // {
-                        //     extend: 'excelHtml5',
-                        //     title: 'Salaries',
-                        //     className: 'btn btn-secondary',
-                        //     exportOptions: {
-                        //         columns: ':visible'
-                        //     }
-                        // },
+                        {
+                            extend: 'excelHtml5',
+                            title: 'Salaries',
+                            className: 'btn btn-secondary',
+                            exportOptions: {
+                                columns: ':visible'
+                            }
+                        },
                     ]
                 }
             },

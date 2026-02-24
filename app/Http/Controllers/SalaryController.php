@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\SalaryExport;
 use App\Http\Requests\InvoiceToPayrollSearchRequest;
 use App\Http\Requests\SalariesUploadRequest;
 use App\Models\Salary;
@@ -204,6 +205,25 @@ class SalaryController extends Controller
        $salaries = Salary::where('status1', 'Bulk Cash')->orwhere('status1', 'failed')->where('salary_month', Carbon::parse($request->month)->startOfMonth()->format('Y-m-d H:i:s'))->get();
     //    dd($salaries);
        return view('salaries.BulkCashView', compact('salaries'));
+       
+    }
+
+    public function BulkCashMonthHistory(Request $request)
+    {
+    //    dd($request->all());
+    
+       $salaries = Salary::where('status1', 'success')->where('salary_month', Carbon::parse($request->month)->startOfMonth()->format('Y-m-d H:i:s'))->get();
+    //    dd($salaries);
+       foreach($salaries as $salary)
+        {
+            $hubtelIDs[] = $salary->hubtel_id;
+        }
+
+        $hubtel = DB::table('hubtel')->whereIn('id', $hubtelIDs)->get();
+        $data = json_decode($hubtel, true);
+        // dd($salaries, $data);
+
+       return view('salaries.BulkCashView', compact('salaries', 'data'));
        
     }
 
@@ -955,6 +975,11 @@ class SalaryController extends Controller
 
     }
 
+
+    public function exportMaster() 
+    {
+        return Excel::download(new SalaryExport, 'salaries.xlsx'); 
+    }
 
 
 }

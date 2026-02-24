@@ -267,6 +267,9 @@
         <hr />
 
         <div class="row">
+            <div class="col">
+                <h4> Run </h4>
+ 
                 <form action="/salariesBulkCashm" method="GET">
                     @csrf
                     <div class="col">
@@ -280,6 +283,29 @@
                         </div>
                     </div>
                 </form>
+
+            </div>
+
+            <div class="col">
+                <h4> Check History </h4>
+
+                <form action="/salariesBulkHisory" method="GET">
+                    @csrf
+                    <div class="col">
+
+                        <label for="month" class="form-label"> <strong>   CHOOSE A MONTH TO SEARCH </strong> </label> <br>
+
+                        <div class="form-check form-check-inline">
+                            <input type="month" class="form-control" name="month" required/> <br>
+                            
+                            <button class="btn btn-dark" type="submit"> <i class="icon-base bx bx-arrow-from-left"> </i> {{ __('') }}</button>
+                        </div>
+                    </div>
+                </form>
+
+
+            </div>
+
         </div>
 
 

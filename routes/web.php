@@ -107,6 +107,7 @@ Route::get('salariesTransaction', [SalaryController::class, 'transactionSalary']
 Route::post('salariesBulkCash', [SalaryController::class, 'BulkCashStore']);
 Route::get('salariesBulkCash', [SalaryController::class, 'BulkCash'] );
 Route::get('salariesBulkCashm', [SalaryController::class, 'BulkCashMonth']);
+Route::get('salariesBulkHisory', [SalaryController::class, 'BulkCashMonthHistory']);
 
 Route::get('salariesBankMonth/{bank_id}/{month}', [SalaryController::class, 'bankMonth'])->name('salaries.bankMonth');
 Route::get('salariesCashMonth/{field_id}/{month}', [SalaryController::class, 'cashMonth'])->name('salaries.cashMonth');
@@ -129,6 +130,7 @@ Route::post('payCashSalary', [SendMoneyController::class, 'payCashSalary']);
 
 Route::get('sendMoneyCallback', [SendMoneyController::class, 'sendMoneyCallback'])->withoutMiddleware([VerifyCsrfToken::class]);
 
+Route::get('exportMaster', [SalaryController::class, 'exportMaster']);
 // Route::get('clientAttachGuards', function(){
 // //    ATTACHING CLIENTS
 //     // $clientId = 111;
