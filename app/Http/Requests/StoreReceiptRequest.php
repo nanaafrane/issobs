@@ -24,7 +24,7 @@ class StoreReceiptRequest extends FormRequest
     {
         return [
             'status' => ['required', Rule::in(['completed', 'uncompleted'])],
-            'mode' => ['required', Rule::in(['cheque', 'transfer', 'momo', 'cash'])],
+            'mode' => ['required', Rule::in(['cheque', 'transfer', 'momo', 'cash', 'other payments'])],
             'image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
             'invoice_id' => ['required',
                               Rule::unique('invoices', 'id')->where(function ($query) {

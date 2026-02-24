@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+// use App\Models\employee;
 
 class Salary extends Model
 {
@@ -16,17 +17,23 @@ class Salary extends Model
         'client_id',
         'location',
         'account_number',
-        'bank_name',
+        'bank_id',
         'branch',
         'payment_type',
         'status1',
         'status2',
+        'hubtel_id',
         'payment_status',
         'basic_salary',
         'allowances',
+        'airtime_allowance',
         'overtime',
         'reimbursements',
         'transport_allowance',
+<<<<<<< HEAD
+=======
+        'ssnit_tier2_5d',
+>>>>>>> master
         'ssnit_tier2_5',
         'tax',
         'ssnit_tier1_0_5',
@@ -61,7 +68,11 @@ class Salary extends Model
 
     public function employee()
     {
+<<<<<<< HEAD
         return $this->belongsTo(Employee::class);
+=======
+        return $this->belongsTo(employee::class); 
+>>>>>>> master
     }
 
     public function user()
@@ -87,7 +98,16 @@ class Salary extends Model
     public function client()
     {
         return $this->belongsTo(Client::class);
+<<<<<<< HEAD
     }   
+=======
+    } 
+    
+    public function bank()
+    {
+        return $this->belongsTo(Bank::class);
+    }
+>>>>>>> master
 
     public function paymentInfo()
     {

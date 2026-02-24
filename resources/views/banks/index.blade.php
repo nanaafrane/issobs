@@ -57,7 +57,7 @@
                 </a>
             </li>
 
-            @if(Auth::user()->hasRole('Invoice') || Auth::user()->hasRole('Finance Manager'))
+            @if(Auth::user()->hasRole(['Invoice','Finance Manager']))
             <li class="menu-item">
                 <a href="{{ url('invoice') }}" class="menu-link">
                     <i class="menu-icon tf-icons bx bx-bxs-receipt bg-primary"></i>
@@ -80,7 +80,7 @@
                 </a>
             </li>
 
-            @if(Auth::user()->hasRole('Manager') || Auth::user()->hasRole('Officer') || Auth::user()->hasRole('Finance Manager') )
+            @if(Auth::user()->hasRole(['Manager','Officer', 'Finance Manager']) )
 
             <li class="menu-header small text-uppercase"> <span class="menu-header-text text-dark">Accounts</span></li>
 
@@ -129,7 +129,7 @@
             </div>
         </div><br>
 
-        @if(Auth::user()->hasRole('Invoice') || Auth::user()->hasRole('Finance Manager'))
+        @if(Auth::user()->hasRole(['Invoice', 'Finance Manager']))
         <div class="row">
             <div class="col-lg-2">
                 <div class="card h-100 bg-dark">
@@ -414,6 +414,7 @@
 
                             <form method="POST" action="/banks">
                                 @csrf
+                                <input type="text" name="user_id" value="{{auth()->user()->id}}" hidden>
                                 <div class="modal-body">
                                     <div class="row">
                                         <div class="col mb-0">
@@ -521,7 +522,7 @@
                     </thead>
                     <tbody>
 
-                        @if(Auth::user()->hasRole('Invoice') || Auth::user()->hasRole('Finance Manager'))
+                        @if(Auth::user()->hasRole(['Invoice', 'Finance Manager']))
                         @foreach($bankTransactions as $transaction)
                         <tr>
 
@@ -616,7 +617,7 @@
                     </thead>
                     <tbody>
 
-                        @if(Auth::user()->hasRole('Invoice') || Auth::user()->hasRole('Finance Manager'))
+                        @if(Auth::user()->hasRole(['Invoice', 'Finance Manager']))
                         @foreach($banks as $bank)
                         <tr>
                             <td>{{$bank->id}}</td>

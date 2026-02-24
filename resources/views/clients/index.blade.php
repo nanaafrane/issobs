@@ -3,6 +3,8 @@
     @section('css')
     <link rel="stylesheet" href="https://cdn.datatables.net/2.3.3/css/dataTables.dataTables.css" />
     <link rel="stylesheet" href="https://cdn.datatables.net/buttons/3.2.4/css/buttons.dataTables.css">
+
+    <link href="https://cdn.datatables.net/columncontrol/1.1.1/css/columnControl.dataTables.min.css" rel="stylesheet">
     @endsection
 
     @section('side_nav')
@@ -42,7 +44,7 @@
                 </ul>
             </li>
 
-            @if(Auth::user()->hasPermission('Accounts'))
+        @if(Auth::user()->hasPermission('Accounts'))
             <!-- Apps & Pages -->
             <li class="menu-header small text-uppercase ">
                 <span class="menu-header-text text-primary">Transactions</span>
@@ -54,53 +56,83 @@
                     <div class="text-truncate" data-i18n="Transaction">Transactions</div>
                 </a>
             </li>
-            @if(Auth::user()->hasRole('Invoice') || Auth::user()->hasRole('Finance Manager'))
-            <li class="menu-item">
-                <a href="{{ url('invoice') }}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-bxs-receipt bg-primary"></i>
-                    <div class="text-truncate" data-i18n="Invoices">Invoices</div>
-                </a>
-            </li>
-            @endif
-            <li class="menu-item">
-                <a href="{{url('receipt')}}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-money-withdraw bg-primary"></i>
-                    <div class="text-truncate" data-i18n="Receipts">Receipts</div>
-                </a>
-            </li>
-            @endif
-            <!-- Components -->
-            <li class="menu-header small text-uppercase"><span class="menu-header-text text-info">Management</span></li>
 
+                @if(Auth::user()->hasRole(['Invoice', 'Finance Manager']))
+                <li class="menu-item">
+                    <a href="{{ url('invoice') }}" class="menu-link">
+                        <i class="menu-icon tf-icons bx bx-bxs-receipt bg-primary"></i>
+                        <div class="text-truncate" data-i18n="Invoices">Invoices</div>
+                    </a>
+                </li>
+                @endif
+
+                @if(Auth::user()->hasRole(['Finance Manager']))
+                    <li class="menu-item">
+                        <a href="{{url('receipt')}}" class="menu-link">
+                            <i class="menu-icon tf-icons bx bx-money-withdraw bg-primary"></i>
+                            <div class="text-truncate" data-i18n="Receipts">Receipts</div>
+                        </a>
+                    </li>
+
+            <li class="menu-header small text-uppercase"><span class="menu-header-text text-info">Management</span></li>
+            <li class="menu-item">
+                <a href="{{url('client')}}" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-bxs-user-detail bg-info"></i>
+                <div class="text-truncate" data-i18n="Clients">Clients</div>
+                </a>
+            </li>
+                @endif
+        @endif
+
+        @if(Auth::user()->hasPermission('HR') || Auth::user()->hasRole(['Invoice']))
+            <li class="menu-header small text-uppercase"><span class="menu-header-text text-info">Management</span></li>
             @if(Auth::user()->hasPermission('HR'))
             <li class="menu-item">
+                    <a href="javascript:void(0);" class="menu-link menu-toggle">
+                        <i class="menu-icon tf-icons bx bx-bxs-group"></i>
+                        <div class="text-truncate" data-i18n="Staffs">System Users</div>
+                    </a>
+                    <ul class="menu-sub">
+                        <li class="menu-item">
+                            <a href="{{url('staffAdd')}}" class="menu-link">
+                                <div class="text-truncate" data-i18n="SRegister">Register</div>
+                            </a>
+                        </li>
+                        <li class="menu-item">
+                            <a href="{{url('staff')}}" class="menu-link">
+                                <div class="text-truncate" data-i18n="SList">List</div>
+                            </a>
+                        </li>
+                    </ul>
+            </li>
+            @endif
+            <li class="menu-item ">
                 <a href="javascript:void(0);" class="menu-link menu-toggle">
-                    <i class="menu-icon tf-icons bx bx-bxs-group"></i>
-                    <div class="text-truncate" data-i18n="Staffs">Staffs</div>
+                <i class="menu-icon tf-icons bx bxs-user-account"></i>
+                <div class="text-truncate" data-i18n="Staffs">Employees</div>
                 </a>
                 <ul class="menu-sub">
-                    <li class="menu-item">
-                        <a href="{{url('staffAdd')}}" class="menu-link">
-                            <div class="text-truncate" data-i18n="SRegister">Register</div>
-                        </a>
-                    </li>
-                    <li class="menu-item">
-                        <a href="{{url('staff')}}" class="menu-link">
-                            <div class="text-truncate" data-i18n="SList">List</div>
-                        </a>
-                    </li>
+                <li class="menu-item ">
+                    <a href="{{url('employees/create')}}" class="menu-link">
+                    <div class="text-truncate" data-i18n="SRegister">Register</div>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="{{url('employees')}}" class="menu-link">
+                    <div class="text-truncate" data-i18n="SList">List</div>
+                    </a>
+                </li>
+
                 </ul>
             </li>
-            @endif
-
-            @if(Auth::user()->hasPermission('HR'))
+        
             <li class="menu-item active open">
                 <a class="menu-link menu-toggle">
                     <i class="menu-icon tf-icons bx bx-bxs-user-detail"></i>
                     <div class="text-truncate" data-i18n="Clients"><strong>Clients</strong></div>
                 </a>
                 <ul class="menu-sub">
-                    <li class="menu-item">
+                    <li class="menu-item ">
                         <a href="{{url('client/create')}}" class="menu-link">
                             <div class="text-truncate" data-i18n="CRegister">Register</div>
                         </a>
@@ -112,34 +144,23 @@
                     </li>
                 </ul>
             </li>
-            @else
-            <li class="menu-item active">
-                <a href="{{url('client')}}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-bxs-user-detail"></i>
-                    <div class="text-truncate" data-i18n="Clients"><strong>Clients</strong></div>
+
+            <li class="menu-item">
+                <a href="{{url('departments')}}" class="menu-link">
+                <i class="menu-icon tf-icons bx bxs-buildings"></i>
+                <div class="text-truncate" data-i18n="depnroles">Department & Roles </div>
                 </a>
             </li>
 
-            @endif
-
-            @if(Auth::user()->hasPermission('HR'))
             <li class="menu-item">
                 <a href="{{url('field')}}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-bxs-location-plus"></i>
-                    <div class="text-truncate" data-i18n="Locations">Locations</div>
-                </a>
-            </li>
-
-            <li class="menu-header small text-uppercase"><span class="menu-header-text">PAYROLL</span></li>
-            <li class="menu-item">
-                <a href="" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-money-withdraw"></i>
-                    <div class="text-truncate" data-i18n="Locations">Payroll</div>
+                <i class="menu-icon tf-icons bx bx-bxs-location-plus"></i>
+                <div class="text-truncate" data-i18n="fOffices">Field Offices</div>
                 </a>
             </li>
             @endif
 
-            @if((Auth::user()->hasRole('Manager') && Auth::user()->hasPermission('Accounts')) || Auth::user()->hasRole('Officer') || Auth::user()->hasRole('Finance Manager') )
+            @if((Auth::user()->hasRole(['Manager', 'Officer', 'Finance Manager']) && Auth::user()->hasPermission('Accounts')) )
 
             <li class="menu-header small text-uppercase"> <span class="menu-header-text text-danger">Accounts</span></li>
 
@@ -170,8 +191,56 @@
                 </ul>
             </li>
 
+            <li class="menu-item">
+                <a href="{{url('expense')}}" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-bxs-credit-card bg-secondary"></i>
+                <div class="text-truncate" data-i18n="Expense"> Expense </div>
+                </a>
+            </li>
+
             @endif
 
+            @if(Auth::user()->hasRole(['Invoice', 'Finance Manager', 'Manager']))
+            <li class="menu-header small text-uppercase"><span class="menu-header-text">PAYROLL</span></li>
+            <li class="menu-item">
+                    <a href="javascript:void(0);" class="menu-link menu-toggle">
+                    <i class="menu-icon tf-icons bx bx-money-withdraw"></i>
+                    <div class="text-truncate" data-i18n="Payroll">Payroll</div>
+                    </a>
+                    <ul class="menu-sub">
+                    <li class="menu-item">
+                        <a href="{{ url('salaries') }}" class="menu-link">
+                        <i class="menu-icon tf-icons bx bxs-user-account"></i>
+                        <div class="text-truncate" data-i18n="Employees">Add to Salaries</div>
+                        </a>
+                    </li>
+
+                    @if(Auth::user()->hasPermission('Accounts'))
+                    <li class="menu-item">
+                        <a href="{{ url('salaries/create') }}" class="menu-link">
+                        <i class="menu-icon tf-icons bx bx-money-withdraw"></i>
+                        <div class="text-truncate" data-i18n="Salaries">Salaries</div>
+                        </a>
+                    </li>
+
+                    <li class="menu-item">
+                        <a href="{{ url('salariesTransaction') }}" class="menu-link">
+                        <i class="menu-icon tf-icons bx bx-transfer-alt"></i>
+                        <div class="text-truncate" data-i18n="Transaction">Transactions</div>
+                        </a>
+                    </li>
+
+                    <li class="menu-item">
+                        <a href="{{ url('salariesInvPayroll') }}" class="menu-link">
+                        <i class="menu-icon tf-icons bx bx-git-compare"></i>
+                        <div class="text-truncate" data-i18n="InvtoPayroll">Invoice to Payroll</div>
+                        </a>
+                    </li>
+                    @endif
+
+                    </ul>
+                </li>
+            @endif
 
         </ul>
     </aside>
@@ -196,34 +265,36 @@
                         <div class="col-sm-7">
                             <div class="card-body">
                                 <h1 class="text-white">
-                                    @if(Auth::user()->hasRole('Invoice') || Auth::user()->hasRole('Finance Manager'))
-                                    {{$clientsCount}}
+                                    @if(Auth::user()->hasRole(['Invoice', 'Finance Manager', 'Manager']) )
+                                    {{$clientsCount}} / {{ $totalGuards }}
                                     @elseif(Auth::user()->field?->name == 'Accra')
-                                    {{$accraCount}}
+                                    {{$accraCount}} / {{ $totalaccraGuards }}
                                     @endif
 
 
                                     @if(Auth::user()->field?->name == 'Botwe')
-                                    {{$botweCount}}
+                                    {{$botweCount}}  / {{ $totalbotweGuards }}
                                     @endif
 
                                     @if(Auth::user()->field?->name == 'Tema')
-                                    {{$temaCount}}
+                                    {{$temaCount}} + {{ $shyhillsCount }} / {{ $totaltemaGuards }} + {{ $totalshyhillsGuards }}
                                     @endif
 
                                     @if(Auth::user()->field?->name == 'Takoradi')
-                                    {{$takoradiCount}}
+                                    {{$takoradiCount}} / {{ $totaltakoradiGuards }}
                                     @endif
 
                                     @if(Auth::user()->field?->name == 'Koforidua')
-                                    {{$koforiduaCount}}
+                                    {{$koforiduaCount}} / {{ $totalkoforiduaGuards }}
                                     @endif
 
                                     @if(Auth::user()->field?->name == 'Kumasi')
-                                    {{$kumasiCount}}
+                                    {{$kumasiCount}} / {{ $totalkumasiGuards }}
                                     @endif
                                 </h1>
-                                <h6 class="card-title text-white mb-3">TOTAL NUMBER OF CLIENTS </h6>
+                                <h6 class="card-title text-white mb-3">TOTAL NUMBER OF CLIENTS / OPERATIONS </h6>
+
+
                             </div>
                         </div>
                     </div>
@@ -232,7 +303,7 @@
         </div>
 
 
-        @if(Auth::user()->hasRole('Invoice') || Auth::user()->hasRole('Finance Manager'))
+        @if(Auth::user()->hasRole(['Invoice', 'Finance Manager', 'Manager']))
         <div class="row">
             <div class="col-lg-2">
                 <div class="card shadow-none bg-transparent border border-danger">
@@ -246,8 +317,8 @@
                             </div>
                         </div>
                         <p class="mb-1"><strong> ACCRA </strong> </p>
-                        <h4 class="card-title mb-3"><strong> {{$accraCount}} </strong> </h4>
-                        <small class="fw-medium"> TOTAL CLIENTS </small>
+                        <h4 class="card-title mb-3"><strong> {{$accraCount}} /  {{ $totalaccraGuards }} </strong> </h4>
+                        <small class="fw-medium">  CLIENTS / OPERATIONS </small>
                     </div>
                 </div>
             </div>
@@ -264,8 +335,26 @@
                             </div>
                         </div>
                         <p class="mb-1"><strong> BOTWE </strong></p>
-                        <h4 class="card-title mb-3"><strong> {{$botweCount}}</strong> </h4>
-                        <small class="fw-medium"> TOTAL CLIENTS </small>
+                        <h4 class="card-title mb-3"><strong> {{$botweCount}} / {{ $totalbotweGuards }} </strong> </h4>
+                        <small class="fw-medium"> CLIENTS / OPERATIONS </small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-2">
+                <div class="card shadow-none bg-transparent border border-info">
+                    <div class="card-body">
+                        <div class="card-title d-flex align-items-start justify-content-between mb-4">
+                            <div class="avatar flex-shrink-0">
+                                <img
+                                    src="img/icons/unicons/paypal.png"
+                                    alt="chart success"
+                                    class="rounded" />
+                            </div>
+                        </div>
+                        <p class="mb-1"><strong> SHAIHILLS </strong></p>
+                        <h4 class="card-title mb-3"><strong> {{$shyhillsCount}} / {{ $totalshyhillsGuards }}</strong> </h4>
+                        <small class="fw-medium"> CLIENTS / OPERATIONS </small>
                     </div>
                 </div>
             </div>
@@ -284,8 +373,8 @@
 
                         </div>
                         <p class="mb-1"><strong> TEMA </strong></p>
-                        <h4 class="card-title mb-3"><strong> {{$temaCount}} </strong> </h4>
-                        <small class="fw-medium"> TOTAL CLIENTS </small>
+                        <h4 class="card-title mb-3"><strong> {{$temaCount}} / {{ $totaltemaGuards }}</strong> </h4>
+                        <small class="fw-medium"> CLIENTS / OPERATIONS </small>
                     </div>
                 </div>
             </div>
@@ -304,8 +393,8 @@
 
                         </div>
                         <p class="mb-1">TAKORADI</p>
-                        <h4 class="card-title mb-3"> {{$takoradiCount}} </h4>
-                        <small class="fw-medium"> TOTAL CLIENTS </small>
+                        <h4 class="card-title mb-3"> {{$takoradiCount}} / {{ $totaltakoradiGuards }} </h4>
+                        <small class="fw-medium"> CLIENTS / OPERATIONS </small>
                     </div>
                 </div>
             </div>
@@ -322,14 +411,14 @@
 
                         </div>
                         <p class="mb-1"> <strong> KOFORIDUA </strong> </p>
-                        <h4 class="card-title mb-3"> {{$koforiduaCount}} </h4>
-                        <small class="fw-medium"> TOTAL CLIENTS </small>
+                        <h4 class="card-title mb-3"> {{$koforiduaCount}} / {{ $totalkoforiduaGuards }} </h4>
+                        <small class="fw-medium"> CLIENTS / OPERATIONS </small>
                     </div>
                 </div>
             </div>
 
 
-            <div class="col-lg-2">
+            <div class="col-lg-2 m-3">
                 <div class="card shadow-none bg-transparent border border-primary">
                     <div class="card-body">
                         <div class="card-title d-flex align-items-start justify-content-between mb-4">
@@ -341,8 +430,8 @@
 
                         </div>
                         <p class="mb-1"><strong> KUMASI </strong> </p>
-                        <h4 class="card-title mb-3"> {{$kumasiCount}} </h4>
-                        <small class="fw-medium"> TOTAL CLIENTS </small>
+                        <h4 class="card-title mb-3"> {{$kumasiCount}} /  {{ $totalkumasiGuards }}</h4>
+                        <small class="fw-medium"> CLIENTS / OPERATIONS </small>
                     </div>
                 </div>
             </div>
@@ -390,6 +479,10 @@
                                 <span class="badge bg-label-info">{{$client->field->name}} </span>
                                 @endif
 
+                                @if($client->field->name == 'ShaiHills')
+                                <span class="badge bg-label-info">{{$client->field->name}} </span>
+                                @endif
+
                                 @if($client->field->name == 'Takoradi')
                                 <span class="badge bg-label-warning ">{{$client->field->name}} </span>
                                 @endif
@@ -415,13 +508,17 @@
                                     <div class="dropdown-menu">
                                         <a class="dropdown-item" href="{{url('client', $client->id)}}"><i class="icon-base bx bxs-bullseye"></i> view</a>
                                         <a class="dropdown-item" href="client/{{$client->id}}/edit"><i class="icon-base bx bx-edit-alt me-1"></i> Edit</a>
-                                        @if(Auth::user()->hasPermission('HR'))
+                                        @if(Auth::user()->hasPermission('HR') || Auth::user()->hasRole(['Invoice'])  )
                                         <form action="client/{{$client->id}}" method="POST">
                                             @csrf
                                             @method('DELETE')
                                             <button class="dropdown-item" type="submit"><i class="icon-base bx bx-trash me-1"></i>Delete</button>
                                         </form>
                                         @endif
+                                        <hr>
+                                        <a class="dropdown-item" href="{{url('employeesGuardClient', $client->id)}}"><i class="icon-base bx bxs-user-account"></i> View Guards </a>
+                                        <a class="dropdown-item" href="{{url('clientAttachGuards', $client->id)}}"><i class="icon-base bx bxs-user-account"></i> Attach Guards </a>
+
                                     </div>
                                 </div>
                             </td>
@@ -448,6 +545,34 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
     <script src="https://cdn.datatables.net/buttons/3.2.4/js/buttons.html5.min.js"></script>
+
+    <script src="https://cdn.datatables.net/columncontrol/1.1.1/js/dataTables.columnControl.min.js"></script>
+    <script>
+        new DataTable('#myTable', {
+            responsive: true,
+            columnControl: [ ['search'] ],
+            layout: {
+                topStart: {
+                    buttons: [ 
+                    {
+                        extend: 'pageLength',
+                        text: 'Show',
+                        className: 'btn btn-secondary',
+                        Options: [10, 25, 50, 100, 250, 500, 1000, 2000], 
+                    },
+                        {
+                            extend: 'excelHtml5',
+                            title: 'Employees',
+                            className: 'btn btn-secondary',
+                            exportOptions: {
+                                columns: ':visible'
+                            }
+                        },
+                    ]
+                }
+            },
+        });
+    </script>
 
 
     <script>

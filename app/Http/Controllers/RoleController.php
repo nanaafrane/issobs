@@ -34,14 +34,14 @@ class RoleController extends Controller
     public function create()
     {
         //
-        Role::create([
-            // 'name' => 'Invoice'
-            // 'name' => 'Finance Manager'
-            // 'name' => 'Manager',
-            // 'name' => 'Director',
-            // 'name' => 'Recovery',
-            // 'name' => 'Officer',
-        ]);
+        // Role::create([
+        //     // 'name' => 'Invoice'
+        //     // 'name' => 'Finance Manager'
+        //     // 'name' => 'Manager',
+        //     // 'name' => 'Director',
+        //     // 'name' => 'Recovery',
+        //     // 'name' => 'Officer',
+        // ]);
     }
 
     /**
@@ -50,6 +50,10 @@ class RoleController extends Controller
     public function store(StoreRoleRequest $request)
     {
         //
+        $Role = new Role();
+        $Role->name = $request->input('name');
+        $Role->save();
+        return back()->with('success', 'Role Created Sucessfully');
     }
 
     /**
@@ -66,6 +70,8 @@ class RoleController extends Controller
     public function edit(Role $role)
     {
         //
+        return view('department.roleedit', compact('role'));
+
     }
 
     /**
@@ -74,6 +80,16 @@ class RoleController extends Controller
     public function update(UpdateRoleRequest $request, Role $role)
     {
         //
+        $role->name = $request->input('name');
+
+        if($role->isDirty()) {
+            $role->name = $request->input('name');
+            $role->save();
+            return redirect()->route('departments.index')->with('success', 'Role has been successfully updated!');
+        }
+        else{
+            return back()->with('error', 'No changes detected. Please edit Role Name to Update.');
+        }
     }
 
     /**
@@ -82,5 +98,7 @@ class RoleController extends Controller
     public function destroy(Role $role)
     {
         //
+        $role->delete();
+        return back()->with('error', 'Role has been successfully deleted!');
     }
 }

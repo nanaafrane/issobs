@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 
 class employee extends Model
 {
@@ -13,6 +15,7 @@ class employee extends Model
         'name',
         'gender',
         'phone_number',
+        'channel',
         'date_of_birth',
         'nia_number',
         'address',
@@ -26,7 +29,10 @@ class employee extends Model
         'client_id',
         'location', 
         'basic_salary',
+        'allowances',
         'user_id',
+        'tax_button',
+        'ssnit_button',
 
         'status',
         'payment_type',
@@ -66,7 +72,8 @@ class employee extends Model
     public function client()
     {
         return $this->belongsTo(Client::class);
-    }   
+    } 
+    
 
     public function paymentInfo()
     {
@@ -83,9 +90,14 @@ class employee extends Model
         return $this->belongsTo(User::class);
     }
 
-    
+    public function clients() : BelongsToMany
+    {
+        return $this->belongsToMany(Client::class);
+    }
 
-
-
+    public function salaries()
+    {
+        return $this->hasMany(Salary::class);
+    }
 
 }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\EmployeeClientRequest;
 use App\Models\employee;
 use App\Http\Requests\StoreemployeeRequest;
 use App\Http\Requests\UpdateemployeeRequest;
@@ -14,6 +15,7 @@ use App\Models\Field;
 use App\Models\PaymentInfo;
 use App\Models\Role;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 class EmployeeController extends Controller
@@ -31,12 +33,44 @@ class EmployeeController extends Controller
     {
         //
         $employees = employee::all();
+        $activeEmployees = employee::where('status', 'Active')->count();
+        $terminatedEmployees = employee::where('status', 'Terminated')->count();  
+
+
+        $employeeAccra = employee::where('field_id', 1)->count();
+        $employeeAccraTerminated = employee::where('field_id', 1)->where('status', 'Terminated')->count();  
+        $employeeAccraActive = employee::where('field_id', 1)->where('status', 'Active')->count();
+
+        $employeeBotwe = employee::where('field_id', 2)->count();
+        $employeeBotweTerminated = employee::where('field_id', 2)->where('status', 'Terminated')->count();  
+        $employeeBotweActive = employee::where('field_id', 2)->where('status', 'Active')->count();
+
+        $employeeTema = employee::where('field_id', 3)->count();
+        $employeeTemaTerminated = employee::where('field_id', 3)->where('status', 'Terminated')->count();  
+        $employeeTemaActive = employee::where('field_id', 3)->where('status', 'Active')->count();    
+
+        $employeeTakoradi = employee::where('field_id', 4)->count();
+        $employeeTakoradiTerminated = employee::where('field_id', 4)->where('status', 'Terminated')->count();  
+        $employeeTakoradiActive = employee::where('field_id', 4)->where('status', 'Active')->count();
+
+        $employeeKoforidua = employee::where('field_id', 5)->count();
+        $employeeKoforiduaTerminated = employee::where('field_id', 5)->where('status', 'Terminated')->count();  
+        $employeeKoforiduaActive = employee::where('field_id', 5)->where('status', 'Active')->count();  
+
+        $employeeKumasi = employee::where('field_id', 6)->count();
+        $employeeKumasiTerminated = employee::where('field_id', 6)->where('status', 'Terminated')->count();  
+        $employeeKumasiActive = employee::where('field_id', 6)->where('status', 'Active')->count();
+
+        $employeeShyhills = employee::where('field_id', 7)->count();
+        $employeeShyhillsTerminated = employee::where('field_id', 7)->where('status', 'Terminated')->count();  
+        $employeeShyhillsActive = employee::where('field_id', 7)->where('status', 'Active')->count();
+
         $Departments = Department::all();
         $Roles = Role::all();
         $Fields = Field::all();
         $clients = Client::all();
         $banks = Bank::all();
-        return view('employees.index', compact('employees','Departments', 'Roles', 'Fields', 'clients', 'banks'));
+        return view('employees.index', compact('employees', 'activeEmployees', 'terminatedEmployees', 'employeeAccra', 'employeeAccraTerminated', 'employeeAccraActive', 'employeeBotwe', 'employeeBotweTerminated', 'employeeBotweActive', 'employeeTema', 'employeeTemaTerminated', 'employeeTemaActive', 'employeeTakoradiActive', 'employeeTakoradiTerminated','employeeTakoradi', 'employeeKoforiduaActive', 'employeeKoforiduaTerminated','employeeKoforidua', 'employeeKumasiActive', 'employeeKumasiTerminated','employeeKumasi', 'employeeShyhills', 'employeeShyhillsTerminated', 'employeeShyhillsActive', 'Departments', 'Roles', 'Fields', 'clients', 'banks'));
     }
 
     /**
@@ -66,16 +100,36 @@ class EmployeeController extends Controller
     {
         //
         $employee_pay_info = PaymentInfo::findOrFail($id);
+<<<<<<< HEAD
         // dd($employee_pay_info);
         $employee_pay_info->bank_id = $request->input('bank_id');
         $employee_pay_info->acc_number = $request->input('acc_number');
         $employee_pay_info->branch = $request->input('branch');
+=======
+        // dd($request->all(), $employee_pay_info->employee->id);
+        $employee_pay_info->bank_id = $request->input('bank_id');
+        $employee_pay_info->acc_number = $request->input('acc_number');
+        $employee_pay_info->branch = $request->input('branch');
+        $employee_pay_info->branch_code = $request->input('branch_code');
+>>>>>>> master
         $employee_pay_info->tin_number = $request->input('tin_number');
         $employee_pay_info->ssnit_number = $request->input('ssnit_number');
         $employee_pay_info->user_id = Auth::id();
         $employee_pay_info->save();
 
+<<<<<<< HEAD
         return back()->with('success', 'Employee Payment Information updated successfully.');
+=======
+        // Update Employee Model payment_type
+        $employee = employee::findOrFail( $employee_pay_info->employee->id);
+        // dd($employee);
+        $employee->update(['payment_type' => $request->payment_type]);
+
+
+        return redirect()->route('employees.ViewPayInfo',['id' => $employee_pay_info->employee_id])->with('success', 'Employee Payment Information updated successfully.');
+        
+        // return back()->with('success', 'Employee Payment Information updated successfully.');
+>>>>>>> master
     }
 
     
@@ -90,10 +144,13 @@ class EmployeeController extends Controller
 
 
 
-    public function EmpSalaryInfo()
+    public function EmpSalary($id)
     {
-        //
-        return view('employees.salaryinfo');
+        // employee Id to get employee salaries
+        $employee = employee::findOrFail($id);
+        // dd($employee->salaries);
+
+        return view('employees.salaries', compact('employee'));
     }
 
 
@@ -115,7 +172,7 @@ class EmployeeController extends Controller
         $image = null;
         if($request->file('image'))
         {
-           $image = ($request->file('image'))->store('images', 'public');
+           $image = ($request->file('image'))->store('images', 'public_html_disk');
         }
 
         $employee = new employee();
@@ -124,6 +181,7 @@ class EmployeeController extends Controller
         $employee->status = 'Active';
         $employee->gender = $request->input('gender');
         $employee->phone_number = $request->input('phone_number');
+        $employee->channel = $request->input('channel');
         $employee->date_of_birth = $request->input('date_of_birth');
         $employee->nia_number = $request->input('nia_number');
         $employee->address = $request->input('address');
@@ -136,6 +194,7 @@ class EmployeeController extends Controller
         $employee->client_id = $request->input('client_id');
         $employee->location = $request->input('location');
         $employee->basic_salary = $request->input('basic_salary');
+        $employee->allowances = $request->input('allowances');
         $employee->payment_type = $request->input('payment_type');
         $employee->gurantor_name = $request->input('gurantor_name');
         $employee->gurantor_number = $request->input('gurantor_number');
@@ -151,6 +210,7 @@ class EmployeeController extends Controller
         $employee_pay_info->bank_id = $payRequest->input('bank_id');
         $employee_pay_info->acc_number = $payRequest->input('acc_number');
         $employee_pay_info->branch = $payRequest->input('branch');
+        $employee_pay_info->branch_code = $payRequest->input('branch_code');
         $employee_pay_info->tin_number = $payRequest->input('tin_number');
         $employee_pay_info->ssnit_number = $payRequest->input('ssnit_number');
         $employee_pay_info->user_id = Auth::id();
@@ -161,7 +221,8 @@ class EmployeeController extends Controller
         $employee->payment_infos_id = $employee_pay_info->id;
         $employee->save();
 
-        return redirect()->route('employees.index')->with('success', 'Employee created successfully.');
+        return redirect()->route('employees.show',['employee' => $employee->id])->with('success', 'Employee created successfully.');
+        //return redirect()->route('employees.index')->with('success', 'Employee created successfully.');
 
     }
 
@@ -171,12 +232,13 @@ class EmployeeController extends Controller
     public function show(employee $employee)
     {
         //
+        $channels = DB::table('hubtel_channel')->get();
         $Departments = Department::all();
         $Roles = Role::all();
         $Fields = Field::all();
         $clients = Client::all();
         $banks = Bank::all();
-        return view('employees.show', compact('employee', 'Departments', 'Roles', 'Fields', 'clients', 'banks')); 
+        return view('employees.show', compact('employee', 'Departments', 'Roles', 'Fields', 'clients', 'banks', 'channels')); 
     }
 
     /**
@@ -186,12 +248,13 @@ class EmployeeController extends Controller
     {
         //
         // dd($employee);
+        $channels = DB::table('hubtel_channel')->get();
         $Departments = Department::all();
         $Roles = Role::all();
         $Fields = Field::all();
         $clients = Client::all();
         $banks = Bank::all();
-        return view('employees.edit', compact('employee', 'Departments', 'Roles', 'Fields', 'clients', 'banks'));
+        return view('employees.edit', compact('employee', 'Departments', 'Roles', 'Fields', 'clients', 'banks', 'channels'));
     }
 
     /**
@@ -200,11 +263,25 @@ class EmployeeController extends Controller
     public function update(UpdateemployeeRequest $request, employee $employee)
     {
         //
+<<<<<<< HEAD
         if ($request->hasFile('image')) {
             // remove old file — ensure the stored value matches what you saved earlier
             Storage::disk('public')->delete($employee->image);
             // store returns a string path (or false on failure)
             $path = $request->file('image')->store('images', 'public');
+=======
+        // dd($request->all());
+        if ($request->hasFile('image')) {
+
+            // get current image path to delete old file
+            $employee = employee::findOrFail($employee->id);
+            $employeeImagePath = $employee?->image; 
+            // remove old file — ensure the stored value matches what you saved earlier
+            $employeeImagePath = $employeeImagePath ? Storage::disk('public')->path($employeeImagePath) : null;
+            // Storage::disk('public')->delete($employee?->image);
+            // store returns a string path (or false on failure)
+            $path = $request->file('image')->store('images', 'public_html_disk');
+>>>>>>> master
 
             if ($path === false) {
                 return back()->withErrors(['image' => 'Failed to store image.']);
@@ -213,10 +290,20 @@ class EmployeeController extends Controller
             // dd($path);
         }
 
+<<<<<<< HEAD
+=======
+        $tax_button = null ;
+        $ssnit_button = null ;
+
+>>>>>>> master
         $employee->image = $path ?? $employee->image;
         $employee->name = $request->input('name');
         $employee->gender = $request->input('gender');
         $employee->phone_number = $request->input('phone_number');
+<<<<<<< HEAD
+=======
+        $employee->channel = $request->input('channel');
+>>>>>>> master
         $employee->date_of_birth = $request->input('date_of_birth');
         $employee->nia_number = $request->input('nia_number');
         $employee->address = $request->input('address');
@@ -230,6 +317,13 @@ class EmployeeController extends Controller
         $employee->location = $request->input('location');
         $employee->payment_type = $request->input('payment_type');
         $employee->basic_salary = $request->input('basic_salary');
+<<<<<<< HEAD
+=======
+        $employee->tax_button = $request->input('tax_button');
+        $employee->ssnit_button = $request->input('ssnit_button');
+
+        $employee->allowances = $request->input('allowances');
+>>>>>>> master
         $employee->gurantor_name = $request->input('gurantor_name');
         $employee->gurantor_number = $request->input('gurantor_number');
         $employee->gurantor_address = $request->input('gurantor_address');
@@ -238,8 +332,12 @@ class EmployeeController extends Controller
         $employee->user_id = Auth::id();
         $employee->save();
 
+<<<<<<< HEAD
 
         return back()->with('success', 'Employee updated successfully.');
+=======
+        return redirect()->route('employees.show',['employee' => $employee])->with('success', 'Employee updated successfully.');
+>>>>>>> master
     }
 
     /**
@@ -248,5 +346,116 @@ class EmployeeController extends Controller
     public function destroy(employee $employee)
     {
         //
+        dd($employee);
     }
+
+    
+    /**
+     * Get All Employees with role of security guard for incoming client.
+     */
+    public function GuardClient($id)
+    {
+
+
+       $guards =  employee::where('client_id',$id)->where('department_id', 6)->where('status', 'Active')->get();
+
+       if($guards->isEmpty())
+       {
+            return back()->with('error', 'Client has no current Guards');
+       }
+
+       $clients = $guards->isNotEmpty() ? Client::all() : null ;
+
+        return view('employees.GuardView', compact('guards', 'clients'));
+    }
+
+    public function GuardReAassign(EmployeeClientRequest $request) 
+    {
+        // dd($request->all());
+
+        $employees = $request->input('employees', []);
+        $clients = $request->input('client_id', []);
+        $locations = $request->input('location', []);
+
+        // dd($employees, $clients, $locations);
+        if (empty($employees)) {
+            return back()->with('error', 'No Guard Selected to ReAssign.');
+        }
+
+        // dd($employees);
+        foreach ($employees as $key => $employee)
+        {
+
+            // echo $employee .' ' . $clients[$key]. ' ' .$locations[$key] .'<br>';
+            $employee = employee::findOrFail($employee);
+            $employee->client_id = $clients[$key];
+            $alreadyProcessed[] =  $clients[$key];
+            $employee->location = $locations[$key];
+            $employee->save();
+
+            $employee->update([
+                'client_id' => $clients[$key],
+                'location' => $locations[$key],
+            ]);
+        }
+
+        if(!empty( $alreadyProcessed))
+        {
+            return redirect()->route('client.index')->with('success', 'Guard successfully ReAssigned! Client: '. implode(', ', $alreadyProcessed));
+        }
+        // // return back()->with('success', 'Guard successfully ReAssigned!');
+    }
+
+    public function terminateEmployee($id)
+    {
+        // dd($id);
+        $employee = employee::findOrFail($id);
+        $employee->update(['status' => 'Terminated']);
+        return redirect()->route('employees.index')->with('error', 'Employee successfully Terminated!, ID No: and Name'. implode(', ', [$employee->id, $employee->name]));
+
+    }
+
+    public function employeeReinstate($id)
+    {
+        $employee = employee::findOrFail($id);
+        $employee->update(['status' => 'Active']);
+        return redirect()->route('employees.index')->with('success', 'Employee successfully Re-instated! ID No: and Name'. implode(', ', [$employee->id, $employee->name]));
+    }
+
+    public function employeesBank()
+    {
+        // LIST ALL BANKS , EACH WITH ALL EMPLOYEES ASSIGNED TO THAT BANK
+        $bankIds = Bank::pluck('id');
+        $banks = Bank::all();
+
+        // $groupedBankEmployees = PaymentInfo::with('employee') ->whereIn('bank_id', $bankIds)->get()->groupBy('bank_id');
+
+        $groupedBankEmployees = PaymentInfo::whereIn('bank_id', $bankIds)
+                                    ->select('bank_id', DB::raw('count(employee_id) as total_employees'))
+                                    ->groupBy('bank_id')
+                                    ->get();
+
+        // dd($groupedBankEmployees);
+        return view('employees.banks', compact('groupedBankEmployees', 'banks'));
+
+    }
+
+    public function employeesBankView($bank_id)
+    {
+        // dd($bank_id);
+        // $bank = Bank::findOrfail($bank_id);
+        // $groupedBankEmployees = employee::where('bank_id', $bank_id)->get();
+        $groupedBankEmployees = PaymentInfo::with('employee')->where('bank_id', $bank_id)->get();
+
+        // dd($groupedBankEmployees);
+
+        // foreach($groupedBankEmployees as $employee)
+        //     {
+        //         echo $employee->employee->name . " / " . $employee . "<br/>";
+        //     } 
+
+        return view('employees.bank_view', compact('groupedBankEmployees'));
+
+    }
+
 }

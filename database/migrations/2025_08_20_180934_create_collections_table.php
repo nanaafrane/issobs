@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('collections', function (Blueprint $table) {
             $table->id();
             $table->integer('user_id')->nullable();
+            $table->integer('receipt_id')->nullable();
             $table->decimal('cash_amount')->nullable();
             $table->decimal('momo_amount')->nullable();
             $table->decimal('cheque_amount')->nullable();

@@ -13,25 +13,35 @@ return new class extends Migration
     {
         Schema::create('salaries', function (Blueprint $table) {
             $table->id();
+<<<<<<< HEAD
             $table->date('salary_month')->nullable();
             $table->integer('employee_id')->nullable();
             $table->integer('field_id')->nullable();
             $table->integer('department_id')->nullable();
+=======
+            $table->string('salary_month')->nullable();
+            $table->integer('employee_id')->nullable();
+            $table->integer('department_id')->nullable();
+            $table->integer('field_id')->nullable();
+>>>>>>> master
             $table->integer('role_id')->nullable();
             $table->integer('client_id')->nullable();
             $table->string('location')->nullable();
             $table->string('status1')->nullable();
             $table->string('status2')->nullable();
+            $table->integer('hubtel_id')->nullable();
             $table->string('account_number')->nullable();
-            $table->string('bank_name')->nullable();
+            $table->integer('bank_id')->nullable();
             $table->string('branch')->nullable();
             $table->string('payment_type')->nullable();
             $table->string('payment_status')->default('pending');
             $table->decimal('basic_salary', 15, 2)->default(0);
             $table->decimal('allowances', 15, 2)->default(0);
+            $table->decimal('airtime_allowance')->default(0);
             $table->decimal('overtime', 15, 2)->default(0);
             $table->decimal('reimbursements', 15, 2)->default(0 );
             $table->decimal('transport_allowance', 15, 2)->default(0);
+            $table->decimal('ssnit_tier2_5d', 15, 2)->default(0);
             $table->decimal('ssnit_tier2_5', 15, 2)->default(0);
             $table->decimal('tax', 15, 2)->default(0);
             $table->decimal('ssnit_tier1_0_5', 15, 2)->default(0);
@@ -56,7 +66,11 @@ return new class extends Migration
             $table->decimal('ssnit_comp_cont_13', 15, 2)->default(0);
             $table->decimal('ssnit_tobe_paid13_5', 15, 2)->default(0);
             $table->decimal('cost_to_company', 15, 2)->default(0);
+<<<<<<< HEAD
             $table->integer('user_id')->nullable();
+=======
+            $table->integer('user_id');
+>>>>>>> master
             $table->timestamps();
         });
     }

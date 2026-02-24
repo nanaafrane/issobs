@@ -23,7 +23,11 @@ class UpdatePaymentInfoRequest extends FormRequest
     {
         return [
             //
+<<<<<<< HEAD
             'bank_id' => 'nullable|exists:banks,id',
+=======
+            'bank_id' => 'nullable',
+>>>>>>> master
             'acc_number' => 'nullable|string|max:50',
             'branch' => 'nullable|string|max:255',
             'tin_number' => 'nullable|string|max:50',

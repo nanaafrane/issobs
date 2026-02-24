@@ -44,8 +44,11 @@ class TransactionController extends Controller
 
         $kumasiTransactions = Transaction::whereRelation('client', 'field_id', '6')->where('checks', null)->get();
         $count_kumasiTransactions = count($kumasiTransactions);
+
+        $shyhillsTransactions = Transaction::whereRelation('client', 'field_id', '7')->where('checks', null)->get();
+        $count_shyhillsTransactions = count($shyhillsTransactions);
         // dd($kumasiTransactions);
-        return view('transactions.index', compact('accraTransactions', 'count_accraTransactions', 'botweTransactions', 'count_botweTransactions', 'temaTransactions', 'count_temaTransactions', 'takoradiTransactions', 'count_takoradiTransactions', 'koforiduaTransactions', 'count_koforiduaTransactions', 'kumasiTransactions', 'count_kumasiTransactions'));
+        return view('transactions.index', compact('accraTransactions', 'count_accraTransactions', 'botweTransactions', 'count_botweTransactions', 'temaTransactions', 'count_temaTransactions', 'takoradiTransactions', 'count_takoradiTransactions', 'koforiduaTransactions', 'count_koforiduaTransactions', 'kumasiTransactions', 'count_kumasiTransactions', 'shyhillsTransactions', 'count_shyhillsTransactions'));
     }
 
     /**

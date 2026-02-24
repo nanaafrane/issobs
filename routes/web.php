@@ -10,12 +10,20 @@ use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\FieldController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InvoiceController;
+<<<<<<< HEAD
 use App\Http\Controllers\PaymentInfoController;
+=======
+use App\Http\Controllers\ProformaClientController;
+use App\Http\Controllers\ProformaController;
+>>>>>>> master
 use App\Http\Controllers\ReceiptController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SalaryController;
+use App\Http\Controllers\SendMoneyController;
 use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\TransactionController;
+use App\Models\employee;
+use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -38,21 +46,29 @@ Route::patch('staffPassword/{id}', [HomeController::class, 'staffPasswordReset']
 
 
 
-Route::resource('department', DepartmentController::class);
+Route::resource('departments', DepartmentController::class);
 Route::resource('role', RoleController::class);
 Route::resource('field', FieldController::class);
 Route::resource('client', ClientController::class);
+Route::get('clientAttachGuards/{id}', [ClientController::class, 'clientAttachGuards']);
+
 Route::resource('service', ServiceController::class);
 
 // Route::get('invoice/list', [InvoiceController::class, 'list']);
 Route::resource('transaction', TransactionController::class);
 
 Route::resource('invoice', InvoiceController::class);
+Route::resource('proforma', ProformaController::class);
+Route::resource('proformaClient', ProformaClientController::class);
 Route::get('generate/{id}', [InvoiceController::class, 'generate']);
 Route::get('printInvoice/{id}', [InvoiceController::class, 'printInvoice']);
+Route::get('printProforma/{id}', [ProformaController::class, 'printProforma']);
 Route::get('invoiceDashboard', [InvoiceController::class, 'dashboardViewAllInvoices']);
 Route::get('invoiceOutstanding', [InvoiceController::class, 'dashboardInvoiceWithOutstanding']);
 Route::get('partPaymentOutstanding', [InvoiceController::class, 'dashboardPartPaymentOutstanding']);
+Route::get('invoiceSearch', [InvoiceController::class, 'invoiceSearch'])->name('invoice.invoiceSearch');
+Route::get('searchOutstandingInvoices', [InvoiceController::class, 'searchOutstandingInvoices'])->name('invoice.searchOutstandingInvoices');
+Route::get('searchPartPaymentOutstanding', [InvoiceController::class, 'searchPartPaymentOutstanding'])->name('invoice.searchPartPaymentOutstanding');
 
 Route::resource('receipt', ReceiptController::class);
 Route::get('receiptAllpayment', [ReceiptController::class, 'dashboardAllPayment']);
@@ -63,6 +79,8 @@ Route::get('receiptTransferPayment', [ReceiptController::class, 'dashboardTransf
 Route::get('receiptWHTPayment', [ReceiptController::class, 'dashboardWHTPayment']);
 // Route::get('receiptWHT', [ReceiptController::class, 'dashboardWHTDeducted']);
 Route::get('receiptCreate/{id}', [ReceiptController::class, 'receiptCreate']);
+Route::get('searchReceiptsWHTPayment', [ReceiptController::class, 'searchReceiptsWHTPayment'])->name('receipt.searchReceiptsWHTPayment');
+Route::get('receiptSearch', [ReceiptController::class, 'receiptSearch'])->name('receipt.receiptSearch');
 
 Route::resource('collections', CollectionController::class);
 
@@ -73,6 +91,7 @@ Route::resource('banks', BankController::class);
 Route::resource('expense', ExpenseController::class);
 
 Route::resource('employees', EmployeeController::class); 
+<<<<<<< HEAD
 Route::get('employeesPayInfo/{id}', [EmployeeController::class, 'EmpPayInfo']);
 
 Route::put('employeesPayInfoUpdate/{id}', [EmployeeController::class, 'EmpPayInfoUpdate']);
@@ -81,9 +100,69 @@ Route::put('employeesPayInfoUpdate/{id}', [EmployeeController::class, 'EmpPayInf
 
 Route::get('employeesViewPayInfo/{id}', [EmployeeController::class, 'EmpViewPayInfo']);
 Route::get('employeesSalaryInfo', [EmployeeController::class, 'EmpSalaryInfo']);
+=======
+Route::get('employeesBank', [EmployeeController::class, 'employeesBank'])->name('employees.Bank');
+Route::get('employeesBankView/{id}', [EmployeeController::class, 'employeesBankView' ]);
+Route::get('employeesPayInfo/{id}', [EmployeeController::class, 'EmpPayInfo'])->name('employees.PayInfo');
+Route::get('employeesViewPayInfo/{id}', [EmployeeController::class, 'EmpViewPayInfo'])->name('employees.ViewPayInfo');
+Route::put('employeesPayInfoUpdate/{id}', [EmployeeController::class, 'EmpPayInfoUpdate']);
+Route::get('employeesSalary/{id}', [EmployeeController::class, 'EmpSalary']);
+>>>>>>> master
 Route::get('employeesViewSalaryInfo', [EmployeeController::class, 'EmpViewSalaryInfo']);
+Route::get('employeesGuardClient/{id}', [EmployeeController::class, 'GuardClient']);
+Route::get('terminateEmployee/{id}', [EmployeeController::class, 'terminateEmployee'])->name('employees.terminateEmployee');
+Route::get('employeeReinstate/{id}', [EmployeeController::class, 'employeeReinstate']);
+Route::post('employeesGuardReAassign', [EmployeeController::class, 'GuardReAassign'])->name('employees.GuardReAassign');
 
 Route::resource('salaries', SalaryController::class);
+<<<<<<< HEAD
+=======
+Route::get('printPayslip/{id}', [SalaryController::class, 'printPayslip']);
+>>>>>>> master
 Route::post('salariesDeleteMultiple', [SalaryController::class, 'deleteMultiple'])->name('salaries.deletMultiple');
 Route::get('salariesTransaction', [SalaryController::class, 'transactionSalary']);
+
+Route::post('salariesBulkCash', [SalaryController::class, 'BulkCashStore']);
+Route::get('salariesBulkCash', [SalaryController::class, 'BulkCash'] );
+Route::get('salariesBulkCashm', [SalaryController::class, 'BulkCashMonth']);
+Route::get('salariesBulkHisory', [SalaryController::class, 'BulkCashMonthHistory']);
+
+Route::get('salariesBankMonth/{bank_id}/{month}', [SalaryController::class, 'bankMonth'])->name('salaries.bankMonth');
+Route::get('salariesCashMonth/{field_id}/{month}', [SalaryController::class, 'cashMonth'])->name('salaries.cashMonth');
+Route::get('salariesTaxMonth/{field_id}/{month}', [SalaryController::class, 'TaxMonth'] );
+Route::get('salariesPensionMonth/{field_id}/{month}',  [SalaryController::class, 'PensionMonth']);
+
+Route::get('salariesMonth', [SalaryController::class, 'salariesMonth'])->name('salaries.salariesMonth');
 Route::get('salariesInvPayroll', [SalaryController::class, 'InvToParoll']);
+Route::get('invToPayroll', [SalaryController::class, 'InvToParollMonth'])->name('salaries.invToPayroll');
+Route::post('uploadSalaries', [SalaryController::class, 'uploadSalaries'])->name('salaries.upload');
+Route::get('invToPayrollInvoice/{client_id}/{month}', [InvoiceController::class, 'PayrollInvoice']);
+Route::get('invToPayrollGuards/{client_id}/{month}', [SalaryController::class, 'PayrollGuards']);
+
+
+Route::get('sendMoney', [SendMoneyController::class, 'sendMoney']);
+Route::get('sendMoneyCheck/{ref}', [SendMoneyController::class, 'statusCheck']);
+Route::post('payCashSalary', [SendMoneyController::class, 'payCashSalary']);
+// Route::post('sendMoneyCallback', function(){});
+// Route::post('/webhook-endpoint', function () { })->withoutMiddleware([VerifyCsrfToken::class]); 
+
+Route::get('sendMoneyCallback', [SendMoneyController::class, 'sendMoneyCallback'])->withoutMiddleware([VerifyCsrfToken::class]);
+
+Route::get('exportMaster', [SalaryController::class, 'exportMaster']);
+// Route::get('clientAttachGuards', function(){
+// //    ATTACHING CLIENTS
+//     // $clientId = 111;
+//     // $employee = employee::findOrFail(2238);
+//     // $response = $employee->clients()->attach($clientId);
+//     // dd($response);
+//     // return "You are Testing MANY TO MANY / " . $response;
+
+// // RETRIEVING CLIENTS 
+//     $employee = employee::findOrFail(2238);
+//     $response = $employee->clients;
+//     dd($response);
+//     // foreach ($response as $key => $value) {
+//     //     # code...
+//     //     echo $value->name. " / ". $value->business_name ;
+//     // }
+// }); 

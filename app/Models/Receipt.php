@@ -22,6 +22,8 @@ class Receipt extends Model
         'transfer_bank',
         'transfer_amount',
         'momo_transactin_id',
+        'other_payment_descri',
+        'other_payment_amnt',
         'momo_amount',
         'cash_amount',
         'user_id',

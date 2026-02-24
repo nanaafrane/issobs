@@ -46,6 +46,14 @@ return [
             'throw' => false,
             'report' => false,
         ],
+        
+        'public_html_disk' => [
+        'driver' => 'local',
+        // Define the absolute path to your public_html folder
+        // You may need to adjust the relative path based on your server structure
+        'root' => base_path() . '/../public_html', 
+        'visibility' => 'public',
+        ],
 
         's3' => [
             'driver' => 's3',
@@ -74,7 +82,7 @@ return [
     */
 
     'links' => [
-        public_path('storage') => storage_path('app/public'),
+        base_path('public_html/storage') => storage_path('app/public'),
     ],
 
 ];
