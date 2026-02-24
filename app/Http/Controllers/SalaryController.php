@@ -65,11 +65,7 @@ class SalaryController extends Controller
         $Fields = Field::all();
         $clients = Client::all();
         $banks = Bank::all();
-<<<<<<< HEAD
-        return view('salaries.index', compact('employees','Departments', 'Roles', 'Fields', 'clients', 'banks'));
-=======
         return view('salaries.index', compact('employees', 'employeeAccra', 'employeeBotwe', 'employeeTema', 'employeeTakoradi', 'employeeKoforidua', 'employeeKumasi', 'employeeShyhills','Departments', 'Roles', 'Fields', 'clients', 'banks'));
->>>>>>> master
     }
 
     /**
