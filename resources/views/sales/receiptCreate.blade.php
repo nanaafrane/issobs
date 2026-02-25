@@ -325,6 +325,7 @@
                             </div>
                             <br>
                             <div class="row">
+                                @if ($invoice->sub_total > 0.00)
                                 <div class="col-md-6 form-check form-switch">
                                     <input name="vat" class="form-check-input" type="checkbox" id="vat" >
                                     <label class="form-check-label" for="vat"> 7 % VAT </label>
@@ -333,6 +334,17 @@
                                 <div id="vat7_value" style="display: none;" class="col-md-6">
                                     <input name="vat7_value" type="number" class="form-control" value="{{$invoice->sub_total * 0.07 }}" step="any">
                                 </div>
+                               @else
+                                    <div class="col-md-6 form-check form-switch">
+                                        <input name="vat" class="form-check-input" type="checkbox" id="vat" >
+                                        <label class="form-check-label" for="vat"> 7 % VAT </label>
+                                    </div>
+
+                                    <div id="vat7_value" style="display: none;" class="col-md-6">
+                                        <input name="vat7_value" type="number" class="form-control" value="{{$invoice->sub_amount * 0.07 }}" step="any">
+                                    </div>
+                               
+                                @endif
                             </div>
 
                             <br>

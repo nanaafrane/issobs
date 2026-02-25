@@ -22,6 +22,7 @@ use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Imports\SalaryImport;
 use App\Models\PaymentInfo;
+use Maatwebsite\Excel\Excel as MaatwebsiteExcel;
 use PhpOffice\PhpSpreadsheet\Calculation\MathTrig\Sum;
 
 class SalaryController extends Controller
@@ -976,9 +977,14 @@ class SalaryController extends Controller
     }
 
 
-    public function exportMaster() 
+    public function exportMaster($date) 
     {
-        return Excel::download(new SalaryExport, 'salaries.xlsx'); 
+        $month = Carbon::createFromFormat('F, Y',$date)->startOfMonth()->format('Y-m-d H:i:s');
+        // dd($month);
+        // return (new SalaryExport)->download('Master Salaries.xlsx'); 
+        return (new SalaryExport($month))->download('Master Salaries For '.$date.'.xlsx');
+        // return Excel::download(new SalaryExport, 'Master Salaries For '.$month.'.xlsx');  
+        // return Excel::download(new SalaryExport('admin'), 'users.xlsx');
     }
 
 

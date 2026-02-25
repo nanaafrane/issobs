@@ -130,7 +130,7 @@ Route::post('payCashSalary', [SendMoneyController::class, 'payCashSalary']);
 
 Route::get('sendMoneyCallback', [SendMoneyController::class, 'sendMoneyCallback'])->withoutMiddleware([VerifyCsrfToken::class]);
 
-Route::get('exportMaster', [SalaryController::class, 'exportMaster']);
+Route::get('exportMaster/{month}', [SalaryController::class, 'exportMaster']);
 // Route::get('clientAttachGuards', function(){
 // //    ATTACHING CLIENTS
 //     // $clientId = 111;

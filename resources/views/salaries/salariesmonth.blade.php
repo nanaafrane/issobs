@@ -605,11 +605,10 @@
 
                             <div class="form-check form-check-inline">
                                 <button class="btn btn-dark" name="submit" value="bulk" onclick="return confirm('Kindly Confirm?')" type="submit"> <i class="icon-base bx bx-bxs-file-plus"> </i> {{ __(' Add To Bulk Cash Salaries') }}</button>                   
+                                <a href="{{ url('/exportMaster', $salariesMaster[0]->salary_month?->format('F, Y'))}} " class="btn btn-success m-4" > <i class="icon-base bx bx-bxs-file-plus"> </i> {{ __(' Excel Download Master') }}</a>                   
+                          
+                          
                             </div>
-
-                            <!-- <div class="">
-                                <a href="{{ url('/exportMaster')}} " class="btn btn-success" > <i class="icon-base bx bx-bxs-file-plus"> </i> {{ __(' Excel Download') }}</a>                   
-                            </div> -->
 
                             <table id="myTableimaster" class="display">
                                 <thead>
