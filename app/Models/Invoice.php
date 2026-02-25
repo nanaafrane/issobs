@@ -23,6 +23,7 @@ class Invoice extends Model
         'invoice_month',
         'status',
         'user_id',
+        'user_id1',
         'balance',
         'wht_amount',
         'amount_received',
@@ -39,6 +40,11 @@ class Invoice extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function user1()
+    {
+        return $this->belongsTo(User::class, 'user_id1');
     }
 
     public function client()

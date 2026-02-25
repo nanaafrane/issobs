@@ -259,22 +259,39 @@ class InvoiceController extends Controller
         $amount = $request->input('amount');
         $sum_amount_from_invoice = array_sum($amount);
         $vat_standard = $request->input('vat_standard');
+        $vat_standard_21 = $request->input('vat_standard_21');
 
         $nhilAmount = null;
         $getfundAmount = null;
-        // $chrlAmount = null;
+        $chrlAmount = null;
         $sub_total_without_vat = null;
         $vatAmount = null;
         $total = $sum_amount_from_invoice;
 
         if($vat_standard == 'on'){
-        // dd($description, $quantity, $quantity_count, $unit_price, $amount, $sum_amount_from_invoice);
+            // echo "You are working with 20%";
+        // // dd($description, $quantity, $quantity_count, $unit_price, $amount, $sum_amount_from_invoice);
         $vat =  new Vat();
         $nhilAmount = $vat->getNhilAmount($sum_amount_from_invoice);
         $getfundAmount = $vat->getGetFundAmount($sum_amount_from_invoice);
         $vatAmount = $vat->getVatAmount($sum_amount_from_invoice);
 
         $total = $sum_amount_from_invoice + $nhilAmount + $getfundAmount + $vatAmount;
+       
+        }elseif($vat_standard_21 == 'on')
+        {
+            // echo "You are working with 21%";
+            $vat =  new Vat();
+            $nhilAmount = $vat->getNhilAmount($sum_amount_from_invoice);
+            $getfundAmount = $vat->getGetFundAmount($sum_amount_from_invoice);
+            $chrlAmount = $vat->getChrlAmount($sum_amount_from_invoice);
+
+            $sub_total_without_vat = $sum_amount_from_invoice + $nhilAmount + $getfundAmount + $chrlAmount ;
+
+            $vatAmount = $vat->getVatAmount($sub_total_without_vat);
+
+            $total = $sub_total_without_vat + $vatAmount;
+
         }
 
         // dd($description, $service_name, $quantity, $quantity_count, $unit_price, $amount, $sum_amount_from_invoice, $nhilAmount, $getfundAmount, $chrlAmount, $sub_total_without_vat, $vatAmount, $total);
@@ -303,22 +320,20 @@ class InvoiceController extends Controller
             'client_id' => $client_id,
             'nhil' => $nhilAmount,
             'getfund' => $getfundAmount,
-            'chrl' => null,
+            'chrl' => $chrlAmount,
             'sub_amount' => $sum_amount_from_invoice,
             'vat_amount' => $vatAmount,
             'sub_total' => $sub_total_without_vat,
             'total' => $total,
             'due_date' => $due_date,
             'invoice_month' => $invoice_month,
-            'user_id' => Auth::user()->id,
+            'user_id1' => Auth::user()->id,
         ]);
 
         Transaction::where('invoice_id', $invoice->id)->update([
             'invoice_amount' => $total,
         ]);
 
-
-        // return back()->with('primary', 'Invoice Updated Successfully');
         return redirect()->route('invoice.show',['invoice' => $invoice])->with('primary', 'Invoice  Updated Successfully');
 
     }

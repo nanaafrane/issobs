@@ -26,6 +26,7 @@ return new class extends Migration
             $table->date('invoice_month')->nullable();
             $table->string('status')->nullable();
             $table->integer('user_id')->nullable();
+            $table->integer('user_id1')->nullable();
             $table->decimal('balance')->default(0.00)->nullable();
             $table->decimal('wht_amount')->nullable();
             $table->decimal('amount_received')->nullable();

@@ -364,11 +364,16 @@
                             </div> <br>
                             <hr />
                             <div class="row">
-                                <div class="col-md-6 form-check form-switch">
+                                <div class="col-md-4 form-check form-switch">
                                     <input name="vat_standard" class="form-check-input" type="checkbox" id="vat_standard" checked>
-                                    <label class="form-check-label" for="vat_standard"> VAT STANDARD RATE </label>
+                                    <label class="form-check-label" for="vat_standard"> VAT 20% STANDARD RATE </label>
                                 </div>
-                                <div class="col-md-6" style="padding-left: 250px;">
+                                <div class="col-md-4 form-check form-switch">
+                                    <input name="vat_standard_21" class="form-check-input" type="checkbox" id="vat_standard_21" >
+                                    <label class="form-check-label" for="vat_standard_21"> VAT 21% STANDARD RATE </label>
+                                </div>
+
+                                <div class="col-md-4" style="padding-left: 250px;">
                                     <button id="add" type="button" class="btn btn-danger">+</button>
                                 </div>
                             </div>
@@ -475,6 +480,20 @@
             document.getElementById("amount").value = amount;
             // // console.log(amount);
         }
+    </script>
+
+    <script>
+        $(document).ready(function() {
+
+            $('#vat_standard_21').change(function() {
+                if ($(this).is(':checked')) {
+                     $('#vat_standard').not(this).prop('checked', false);
+                } else {
+                     $('#vat_standard').prop('checked', true);
+
+                }
+            });
+        });
     </script>
 
     <script>
