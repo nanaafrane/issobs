@@ -123,10 +123,10 @@ class SendMoneyController extends Controller
                         $salary->hubtel_id = $id;
                         $salary->status1 = 'Pending';
                         $salary->save();
-
-                        return back()->with('success', ' Payments has been made, Wait for up to 5 mins to check confirmation');
-                        
                     }
+
+                    return back()->with('success', ' Payments has been made, Wait for up to 5 mins to check confirmation');
+
             }
         elseif(isset($request->submit) && $request->submit == 'confirm')
             {
