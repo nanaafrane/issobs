@@ -475,7 +475,10 @@
                                 <th>SSNIT</th>
                                 <th>Basic</th>
                                 <th>Allowance</th>
-                                <th>Updated</th>
+                                <th> Created </th>
+                                <th> Period </th>
+                                <th> Updated</th>
+                                <th> Period </th>
                                 <th>Action</th>
                             </tr>
                         </thead>
@@ -516,8 +519,10 @@
                                 @endif
                                 <td> {{$employee->basic_salary}} </td>
                                 <td> {{$employee->allowances}} </td>
-
+                                <td> {{ $employee->created_at?->format('F, Y') }} </td>
+                                <td> {{ $employee->created_at?->diffForHumans() }} </td>
                                 <td>{{ $employee->updated_at?->format('F, Y') }} </td>
+                                <td>{{ $employee->updated_at?->diffForHumans() }} </td>
                                <td>
                                 <div class="dropdown">
                                     <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown">

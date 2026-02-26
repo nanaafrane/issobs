@@ -450,7 +450,7 @@
                                         </div>
                                     </div>
 
-                                    <h5><small> Invoice created by {{$invoice->user->name}} on {{$invoice->created_at}} and updated at {{$invoice->updated_at}} </small></h5>
+                                    <h5><small> Invoice created by {{$invoice->user->name}} on {{$invoice->created_at}} and updated by {{$invoice->user1?->name}} at {{$invoice->updated_at}} </small></h5>
                                 </div>
                         </section>
                     </div>
