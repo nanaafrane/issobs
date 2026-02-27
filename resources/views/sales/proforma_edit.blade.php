@@ -335,9 +335,6 @@
                                     <span class="card-header"> Issued : </span>
                                     <span class="col-6"> {{$proforma->created_at->format('d/m/Y H:i A')}} </span> <br>
 
-                                    <!-- <span class="card-header">Due : </span>
-                                    <span class="col-6">{{$proforma->due_date->format('d/m/Y H:i A')}} </span> -->
-
                                 </address>
                             </div>
                         </div>
@@ -345,12 +342,7 @@
                         <hr />
 
                             <div class="row">
-                                <!-- <div class="col-6">
-                                    <h6 class="card-header">Due Date</h6>
-                                    <div class="input-group">
-                                        <input value="{{$proforma->due_date}}" name="due_date" type="datetime-local" class="form-control" required>
-                                    </div>
-                                </div> -->
+
                                 <div class="col-3"></div>
                                 <div class="col-3">
                                     <h6 class="card-header"> Invoice Month</h6>
