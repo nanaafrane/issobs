@@ -472,7 +472,9 @@
                                 <th>Account No.</th>
                                 <th>Status</th>
                                 <th>TAX</th>
+                                <th>TIN</th>
                                 <th>SSNIT</th>
+                                <th>SSNIT #</th>
                                 <th>Basic</th>
                                 <th>Allowance</th>
                                 <th> Created </th>
@@ -511,12 +513,14 @@
                                 @else
                                 <td> <span class="badge bg-label-danger"> OFF </span> </td>
                                 @endif
+                                <td> {{  $employee->paymentInfo?->tin_number  }} </td>
 
                                 @if($employee->ssnit_button == 'on')
                                 <td> <span class="badge bg-label-dark"> {{  $employee->ssnit_button }} </span> </td>
                                 @else
                                 <td> <span class="badge bg-label-danger"> OFF </span> </td>
                                 @endif
+                                 <td> {{  $employee->paymentInfo?->ssnit_number  }} </td>
                                 <td> {{$employee->basic_salary}} </td>
                                 <td> {{$employee->allowances}} </td>
                                 <td> {{ $employee->created_at?->format('F, Y') }} </td>
