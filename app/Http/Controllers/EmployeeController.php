@@ -469,9 +469,11 @@ class EmployeeController extends Controller
               $result =   $this->verify_momo_name_number($employee->phone_number, $employee->channel);
 
                 //   UPDATE DATABASE OF USER 
+                 dd($result);
+                
             }
 
-        dd($result);
+        // dd($result);
 
 
     }
@@ -479,8 +481,6 @@ class EmployeeController extends Controller
     public function verify_momo_name_number($number , $channel)
     {
         
-        // $url = "https://rnv.hubtel.com/v2/merchantaccount/merchants/2037745/mobilemoney/verify?channel={channel}&customerMsisdn={CustomerNumber}";
-
         $url = "https://rnv.hubtel.com/v2/merchantaccount/merchants/2037745/mobilemoney/verify?channel=".$channel."&customerMsisdn=".$number ;
             
 
@@ -489,8 +489,9 @@ class EmployeeController extends Controller
                 'Authorization' => 'Basic ' . base64_encode('B81PkQQ:a239c6cf6e8d4dec8ae1d866ef0c633a')
             ])->get($url);
 
-            return $url;
-            // return $response->json();
+            // return $url;
+            $result =  $response->json();
+            return $result;
     }
 
 
