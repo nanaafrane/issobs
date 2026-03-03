@@ -480,7 +480,7 @@ class EmployeeController extends Controller
 
     public function verifyMoMoName($number , $channel)
     {
-        
+        dd($number, $channel);
         // $url = "https://rnv.hubtel.com/v2/merchantaccount/merchants/2037745/mobilemoney/verify?channel=".$channel."&customerMsisdn=".$number ;
             
 	       $url = "https://rnv.hubtel.com/v2/merchantaccount/merchants/2037745/mobilemoney/verify?channel=mtn-gh&customerMsisdn=233247759944"; 
