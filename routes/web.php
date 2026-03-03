@@ -92,6 +92,7 @@ Route::get('employeesBankView/{id}', [EmployeeController::class, 'employeesBankV
 Route::get('employeesCash', [EmployeeController::class, 'employeesCash'])->name('employees.Cash');
 Route::get('employeesCashView/{id}', [EmployeeController::class, 'employeesCashView' ]);
 Route::post('employeesCashVerify', [EmployeeController::class, 'employeesCashVerify' ]);
+Route::get('employeesCashVerify', [EmployeeController::class, 'verifyMoMoName' ]);
 
 
 Route::get('employeesPayInfo/{id}', [EmployeeController::class, 'EmpPayInfo'])->name('employees.PayInfo');
