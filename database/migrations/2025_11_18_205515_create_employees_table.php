@@ -16,6 +16,7 @@ return new class extends Migration
             $table->string('name')->nullable();
             $table->string('gender')->nullable();
             $table->string('phone_number')->nullable();
+            $table->string('reg_number')->nullable();
             $table->string('channel')->nullable();
             $table->date('date_of_birth')->nullable();
             $table->string('nia_number')->nullable();
@@ -30,6 +31,7 @@ return new class extends Migration
             $table->string('location')->nullable();
             $table->string('image')->nullable();
             $table->string('status')->nullable();
+            $table->string('status_momo')->nullable();
             $table->string('payment_type')->nullable();
             $table->integer('user_id');
             $table->integer('payment_infos_id')->nullable();

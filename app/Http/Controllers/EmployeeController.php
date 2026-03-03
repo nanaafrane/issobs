@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\EmployeeClientRequest;
 use App\Models\employee;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 use App\Http\Requests\StoreemployeeRequest;
 use App\Http\Requests\UpdateemployeeRequest;
 use App\Http\Requests\StorePaymentInfoRequest;
@@ -424,5 +426,72 @@ class EmployeeController extends Controller
         return view('employees.bank_view', compact('groupedBankEmployees'));
 
     }
+
+
+    public function employeesCash()
+    {
+
+        $fields = Field::all(); 
+
+        $groupedCashkEmployees = employee::where('status', 'Active')->where('payment_type', 'Cash')->whereIn('field_id', $fields->pluck('id')->toArray())->groupBy('field_id')->get(['field_id',  DB::raw('COUNT(*) as total_employees')]);
+
+        // dd($groupedCashkEmployees);
+        return view('employees.cash', compact('groupedCashkEmployees', 'fields'));
+
+    }
+
+    public function employeesCashView($field_id)
+    {
+
+        $groupedCashEmployees = employee::where('status', 'Active')->where('payment_type', 'Cash')->where('field_id', $field_id)->get();
+
+        // dd($groupedCashEmployees);
+        return view('employees.cash_view', compact('groupedCashEmployees'));
+
+    }
+
+
+    public function employeesCashVerify(Request $request)
+    {
+
+        // dd($request->all());
+         $employeeIds = $request->input('employees', []);
+        //  dd($salaryIds);
+        if (empty($employeeIds)) {
+            return back()->with('error', 'No employee selected MoMo Name and Number Processing.');
+        }
+
+        $employees =  employee::findOrFail($request->employees);
+        // dd($employees);
+
+        foreach($employees as $employee)
+            {
+              $result =   $this->verify_momo_name_number($employee->phone_number, $employee->channel);
+
+                //   UPDATE DATABASE OF USER 
+            }
+
+        dd($result);
+
+
+    }
+
+    public function verify_momo_name_number($number , $channel)
+    {
+        
+        // $url = "https://rnv.hubtel.com/v2/merchantaccount/merchants/2037745/mobilemoney/verify?channel={channel}&customerMsisdn={CustomerNumber}";
+
+        $url = "https://rnv.hubtel.com/v2/merchantaccount/merchants/2037745/mobilemoney/verify?channel=".$channel."&customerMsisdn=".$number ;
+            
+
+            $response = Http::withHeaders([
+                'Content-Type' => 'application/json',
+                'Authorization' => 'Basic ' . base64_encode('B81PkQQ:a239c6cf6e8d4dec8ae1d866ef0c633a')
+            ])->get($url);
+
+            return $response->json();
+    }
+
+
 
 }

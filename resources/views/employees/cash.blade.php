@@ -4,7 +4,7 @@
     <link rel="stylesheet" href="https://cdn.datatables.net/2.3.3/css/dataTables.dataTables.css" />
     <link rel="stylesheet" href="https://cdn.datatables.net/buttons/3.2.4/css/buttons.dataTables.css">
 
-    <link href="https://cdn.datatables.net/columncontrol/1.1.1/css/columnControl.dataTables.min.css" rel="stylesheet">
+    <!-- <link href="https://cdn.datatables.net/columncontrol/1.1.1/css/columnControl.dataTables.min.css" rel="stylesheet"> -->
     @endsection
 
 
@@ -82,7 +82,7 @@
                 <div class="text-truncate" data-i18n="Clients">Clients</div>
                 </a>
             </li>
-        <li class="menu-item active open">
+                    <li class="menu-item active open">
           <a href="javascript:void(0);" class="menu-link menu-toggle">
           <i class="menu-icon tf-icons bx bxs-user-account"></i>
           <div class="text-truncate" data-i18n="Staffs">Employees</div>
@@ -93,7 +93,7 @@
               <div class="text-truncate" data-i18n="SRegister">Register</div>
               </a>
           </li>
-          <li class="menu-item active">
+          <li class="menu-item">
               <a href="{{url('employees')}}" class="menu-link">
               <div class="text-truncate" data-i18n="SList">List</div>
               </a>
@@ -101,6 +101,11 @@
           <li class="menu-item">
               <a href="{{url('employeesBank')}}" class="menu-link">
               <div class="text-truncate" data-i18n="SList">Employee Banks</div>
+              </a>
+          </li>
+          <li class="menu-item active">
+              <a href="{{url('employeesCash')}}" class="menu-link">
+              <div class="text-truncate" data-i18n="SList">Employee Cash</div>
               </a>
           </li>
           </ul>
@@ -146,11 +151,16 @@
                     <div class="text-truncate" data-i18n="SList">List</div>
                     </a>
                 </li>
-          <li class="menu-item">
-              <a href="{{url('employeesBank')}}" class="menu-link">
-              <div class="text-truncate" data-i18n="SList">Employee Banks</div>
-              </a>
-          </li>
+                <li class="menu-item">
+                    <a href="{{url('employeesBank')}}" class="menu-link">
+                    <div class="text-truncate" data-i18n="SList">Employee Banks</div>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="{{url('employeesCash')}}" class="menu-link">
+                    <div class="text-truncate" data-i18n="SList">Employee Cash</div>
+                    </a>
+                </li>
                 </ul>
             </li>
         
@@ -280,169 +290,10 @@
 
         <div class="row">
             <div class="col-12">
-                <h3 class="card-header"> <i class="icon-base bx bxs-user-account"></i> All Employees </h3>
+                <h3 class="card-header"> <i class="icon-base bx bxs-user-account"></i> Active Employee Cash </h3>
             </div>
         </div><br>
 
-
-
-        @if(Auth::user()->hasRole(['Invoice','Manager', 'Finance Manager']))
-        <div class="row mb-4">
-            <div class="col-lg-12 col-md-6 mb-4 mb-md-0">
-                <div  class="card h-100 bg-dark text-white">
-                    <div class="card-body">
-                            <p class="mb-1"><strong> ACTIVE EMPLOYEES </strong> </p>
-                            <h4 class="card-title mb-3 text-white"><strong> {{ $activeEmployees }}  </strong> </h4>
-                            <small class="fw-medium"> TERMINATED EMPLOYEES : {{ $terminatedEmployees }}  </small> <br> <hr>
-                            <small class="fw-medium"> TOTAL EMPLOYEES : {{ $employees->count() }}  </small>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="col-lg-2">
-                <div  class="card h-100 bg-dark text-white">
-                    <div class="card-body">
-                        <div class="card-title d-flex align-items-start justify-content-between mb-4">
-                            <div class="avatar flex-shrink-0">
-                                <img
-                                    src="{{ asset('img/icons/unicons/paypal.png') }}"
-                                    alt="chart success"
-                                    class="rounded" />
-                            </div>
-                        </div>
-                        <p class="mb-1"><strong> ACCRA </strong> </p>
-                        <h4 class="card-title mb-3 text-white"><strong> {{ $employeeAccraActive }}  </strong> </h4>
-                        <small class="fw-medium"> TERMINATED : {{ $employeeAccraTerminated }} </small>  <br> <hr>
-                        <small class="fw-medium"> TOTAL EMPLOYEES : {{ $employeeAccra }} </small> 
-
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-lg-2">
-                <div  class="card h-100 bg-dark text-white">
-                    <div class="card-body">
-                        <div class="card-title d-flex align-items-start justify-content-between mb-4">
-                            <div class="avatar flex-shrink-0">
-                                <img
-                                    src="{{ asset('img/icons/unicons/paypal.png') }}"
-                                    alt="chart success"
-                                    class="rounded" />
-                            </div>
-                        </div>
-                        <p class="mb-1"><strong> BOTWE </strong></p>
-                        <h4 class="card-title mb-3 text-white"><strong> {{ $employeeBotweActive }} </strong> </h4>
-                        <small class="fw-medium"> TERMINATED : {{ $employeeBotweTerminated }} </small>  <br> <hr>
-                        <small class="fw-medium"> TOTAL EMPLOYEES : {{ $employeeBotwe }} </small>
-
-                    </div>
-                </div>
-            </div>
-
-
-            <div class="col-lg-2">
-                <div  class="card h-100 bg-dark text-white">
-                    <div class="card-body">
-                        <div class="card-title d-flex align-items-start justify-content-between mb-4">
-                            <div class="avatar flex-shrink-0">
-                                <img
-                                    src="{{ asset('img/icons/unicons/paypal.png') }}"
-                                    alt="chart success"
-                                    class="rounded" />
-                            </div>
-
-                        </div>
-                        <p class="mb-1"><strong> SHAIHILLS </strong></p>
-                        <h4 class="card-title mb-3 text-white"><strong> {{ $employeeShyhillsActive }} </strong> </h4>
-                        <small class="fw-medium"> TERMINATED : {{ $employeeShyhillsTerminated }} </small> <br> <hr>
-                        <small class="fw-medium"> TOTAL EMPLOYEES : {{ $employeeShyhills }} </small> 
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-2">
-                <div  class="card h-100 bg-dark text-white">
-                    <div class="card-body">
-                        <div class="card-title d-flex align-items-start justify-content-between mb-4">
-                            <div class="avatar flex-shrink-0">
-                                <img
-                                    src="{{ asset('img/icons/unicons/paypal.png') }}"
-                                    alt="chart success"
-                                    class="rounded" />
-                            </div>
-
-                        </div>
-                        <p class="mb-1"><strong> TEMA </strong></p>
-                        <h4 class="card-title mb-3 text-white"><strong> {{ $employeeTemaActive }} </strong> </h4>
-                        <small class="fw-medium"> TERMINATED : {{ $employeeTemaTerminated }} </small> <br> <hr>
-                        <small class="fw-medium"> TOTAL EMPLOYEES : {{ $employeeTema }} </small> 
-                    </div>
-                </div>
-            </div>
-
-
-
-            <div class="col-lg-2">
-                <div  class="card h-100 bg-dark text-white">
-                    <div class="card-body">
-                        <div class="card-title d-flex align-items-start justify-content-between mb-4">
-                            <div class="avatar flex-shrink-0">
-                                <img
-                                    src="{{ asset('img/icons/unicons/paypal.png') }}"
-                                    class="rounded" />
-                            </div>
-
-                        </div>
-                        <p class="mb-1">TAKORADI</p>
-                        <h4 class="card-title mb-3 text-white"> {{ $employeeTakoradiActive }} </h4>
-                        <small class="fw-medium"> TERMINATED : {{ $employeeTakoradiTerminated }} </small> <br> <hr>
-                        <small class="fw-medium"> TOTAL EMPLOYEES : {{ $employeeTakoradi }} </small> 
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-lg-2">
-                <div  class="card h-100 bg-dark text-white">
-                    <div class="card-body">
-                        <div class="card-title d-flex align-items-start justify-content-between mb-4">
-                            <div class="avatar flex-shrink-0">
-                                <img
-                                    src="{{ asset('img/icons/unicons/paypal.png') }}"
-                                    class="rounded" />
-                            </div>
-
-                        </div>
-                        <p class="mb-1"> <strong> KOFORIDUA </strong> </p>
-                        <h4 class="card-title mb-3 text-white"> {{ $employeeKoforiduaActive }} </h4>
-                        <small class="fw-medium"> TERMINATED : {{ $employeeKoforiduaTerminated }} </small> <br> <hr>
-                        <small class="fw-medium"> TOTAL EMPLOYEES : {{ $employeeKoforidua }} </small> 
-                    </div>
-                </div>
-            </div>
-
-
-            <div class="col-lg-2 m-3">
-                <div  class="card h-100 bg-dark text-white">
-                    <div class="card-body">
-                        <div class="card-title d-flex align-items-start justify-content-between mb-4">
-                            <div class="avatar flex-shrink-0">
-                                <img
-                                    src="{{ asset('img/icons/unicons/paypal.png') }}"
-                                    class="rounded" />
-                            </div>
-
-                        </div>
-                        <p class="mb-1"><strong> KUMASI </strong> </p>
-                        <h4 class="card-title mb-3 text-white"> {{ $employeeKumasiActive }} </h4>
-                        <small class="fw-medium"> TERMINATED : {{ $employeeKumasiTerminated }} </small> <br> <hr>
-                        <small class="fw-medium"> TOTAL EMPLOYEES : {{ $employeeKumasi }} </small> 
-                    </div>
-                </div>
-            </div>
-
-        </div> <br>
-        @endif
 
         <div class="card-header  ml-2  d-none d-lg-block">
             @include('flash-messages')
@@ -457,101 +308,25 @@
                         <thead>
                             <tr>
                                 <th>#</th>
-                                <th> Employee ID </th>
-                                <th>Name</th>
-                                <th>Gender</th>
-                                <th>Number</th>
-                                <th> Employment Date </th>
-                                <th> Department </th>
-                                <th>Role</th>
-                                <th>Field Office</th>
-                                <th>Client </th>
-                                <th> Location </th>
-                                <th>Payment Type</th>
-                                <th> Bank </th>
-                                <th>Account No.</th>
-                                <th>Status</th>
-                                <th>TAX</th>
-                                <th>TIN</th>
-                                <th>SSNIT</th>
-                                <th>SSNIT #</th>
-                                <th>Basic</th>
-                                <th>Allowance</th>
-                                <th> Created </th>
-                                <th> Period </th>
-                                <th> Updated</th>
-                                <th> Period </th>
-                                <th>Action</th>
+                                <th> Field </th>
+                                <th>Total Employees</th>
+                                <th>View Employees</th>
+
                             </tr>
                         </thead>
                         <tbody>
 
-                            @foreach ($employees as $key => $employee )
+                            @foreach ($groupedCashkEmployees as $key => $cash )
                             <tr>
                                 <td> {{ $key + 1 }} </td>
-                                <td> FWSS {{ $employee->id }}  </td>
-                                <td>{{$employee->name}}  </td>
-                                <td>{{ $employee->gender }}  </td>
-                                <td>{{ $employee->phone_number }}  </td>
-                                <td>{{ $employee->date_of_joining?->format('F, Y') }} </td>
-                                <td> {{ $employee->department?->name }} </td>
-                                <td> {{ $employee->role?->name }}  </td>
-                                <td> {{ $employee->field?->name }}   </td>
-                                <td>{{ $employee->client?->name }} {{ $employee->client?->business_name }} </td>
-                                <td> {{ $employee->location }} </td>
-                                <td> {{ $employee->payment_type }}  </td>
-                                <td> {{  $employee->paymentInfo?->bank?->name  }} </td>
-                                <td> {{  $employee->paymentInfo?->acc_number  }} </td>
-                                @if($employee->status == 'Active')
-                                <td><span class="badge bg-label-success">{{$employee->status}}</span></td>
-                                @else
-                                <td><span class="badge bg-label-danger">{{$employee->status}}</span></td>
-                                @endif
-                               
-                                 @if($employee->tax_button == 'on')
-                                <td> <span class="badge bg-label-dark"> {{  $employee->tax_button }} </span> </td>
-                                @else
-                                <td> <span class="badge bg-label-danger"> OFF </span> </td>
-                                @endif
-                                <td> {{  $employee->paymentInfo?->tin_number  }} </td>
+                                <td> {{ strtoupper($cash->field?->name) }} </td>
+                                <td> {{ $cash->total_employees }} </td>
+                                <td> 
+                                    <a href="employeesCashView/{{ $cash->field_id }}" class="btn btn-dark btn-sm">
+                                        <i class="bx bx-show"></i> 
+                                    </a>    
+                                </td>  
 
-                                @if($employee->ssnit_button == 'on')
-                                <td> <span class="badge bg-label-dark"> {{  $employee->ssnit_button }} </span> </td>
-                                @else
-                                <td> <span class="badge bg-label-danger"> OFF </span> </td>
-                                @endif
-                                 <td> {{  $employee->paymentInfo?->ssnit_number  }} </td>
-                                <td> {{$employee->basic_salary}} </td>
-                                <td> {{$employee->allowances}} </td>
-                                <td> {{ $employee->created_at?->format('F, Y') }} </td>
-                                <td> {{ $employee->created_at?->diffForHumans() }} </td>
-                                <td>{{ $employee->updated_at?->format('F, Y') }} </td>
-                                <td>{{ $employee->updated_at?->diffForHumans() }} </td>
-                               <td>
-                                <div class="dropdown">
-                                    <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown">
-                                        <i class="icon-base bx bx-dots-vertical-rounded"></i>
-                                    </button>
-                                    <div class="dropdown-menu">
-                                        <a class="dropdown-item" href="{{url('employees', $employee->id)}}"><i class="icon-base bx bxs-bullseye"></i> view</a>
-                                        <a class="dropdown-item" href="{{url('employees', $employee->id)}}/edit"><i class="icon-base bx bx-edit-alt me-1"></i> Edit</a>
-                                        <hr>
-                                        <a class="dropdown-item" href="{{url('employeesSalary', $employee->id)}}"><i class="icon-base bx bx-money-withdraw"></i> Salaries</a>
-                                        <hr>
-                                        @if ($employee->status == 'Active')
-                                            <a class="dropdown-item" href="{{url('terminateEmployee', $employee->id )}}"><i class="icon-base bx bx-user-x me-1" onclick="return confirm('Kindly Confirm?')"></i> Terminate</a>
-                                        @else
-                                        <a class="dropdown-item" href="{{url('employeeReinstate', $employee->id )}}" onclick="return confirm('Kindly Confirm?')"><i class="icon-base bx bx-edit-alt me-1"></i>Re-Instate </a>
-                                            @endif
-
-                                        <form action="employees/{{$employee->id}}" method="POST">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button class="dropdown-item" type="submit"><i class="icon-base bx bx-trash me-1"></i>Delete</button>
-                                        </form>
-                                    </div>
-                                </div>
-                            </td>
                             </tr>
                             @endforeach
                         </tbody>
@@ -577,7 +352,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
     <script src="https://cdn.datatables.net/buttons/3.2.4/js/buttons.html5.min.js"></script>
 
-    <script src="https://cdn.datatables.net/columncontrol/1.1.1/js/dataTables.columnControl.min.js"></script>
+    <!-- <script src="https://cdn.datatables.net/columncontrol/1.1.1/js/dataTables.columnControl.min.js"></script> -->
 
     <script>
         new DataTable('#myTable', {
