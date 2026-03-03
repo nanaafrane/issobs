@@ -485,15 +485,25 @@ class EmployeeController extends Controller
             
 	    //    $url = "https://rnv.hubtel.com/v2/merchantaccount/merchants/2037745/mobilemoney/verify?channel=mtn-gh&customerMsisdn=233247759944"; 
         echo $url  . "<br>";
-           $data = Http::withHeaders([
-                'Content-Type' => 'application/json',
-                'Authorization' => 'Basic ' . base64_encode('B81PkQQ:a239c6cf6e8d4dec8ae1d866ef0c633a')
-            ])->get($url);
+        //    $data = Http::withHeaders([
+        //         'Content-Type' => 'application/json',
+        //         'Authorization' => 'Basic ' . base64_encode('B81PkQQ:a239c6cf6e8d4dec8ae1d866ef0c633a')
+        //     ])->get($url);
+
+         $data = Http::get('https://rnv.hubtel.com/v2/merchantaccount/merchants/2037745/mobilemoney/verify?channel=mtn-gh&customerMsisdn=233247759944');
 
             // return $url;
             // dd($data);
-            $result =  $data->json();
+            $result =  $data->body();
         dd( $result);
+
+
+        // $ch = curl_init();
+        // curl_setopt($ch, CURLOPT_URL, 'https://example.net/profile/');
+        // curl_setopt($ch, CURLOPT_RETURNTRANSFER, true); // Return the response as a string
+        // $content = curl_exec($ch);
+        // curl_close($ch);
+        // return $content;
     }
 
 
