@@ -489,9 +489,9 @@ class EmployeeController extends Controller
                 'Authorization' => 'Basic ' . base64_encode('B81PkQQ:a239c6cf6e8d4dec8ae1d866ef0c633a')
             ])->get($url);
 
-            // return $url;
-            $result =  $response->json();
-            return $result;
+            return $url;
+            // $result =  $response->json();
+            // return $result;
     }
 
 
