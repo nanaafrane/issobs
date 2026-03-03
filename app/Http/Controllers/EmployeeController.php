@@ -484,7 +484,7 @@ class EmployeeController extends Controller
         $url = "https://rnv.hubtel.com/v2/merchantaccount/merchants/2037745/mobilemoney/verify?channel=".$channel."&customerMsisdn=".$number ;
             
 	    //    $url = "https://rnv.hubtel.com/v2/merchantaccount/merchants/2037745/mobilemoney/verify?channel=mtn-gh&customerMsisdn=233247759944"; 
-           echo $url;
+        echo $url  . "<br>";
            $data = Http::withHeaders([
                 'Content-Type' => 'application/json',
                 'Authorization' => 'Basic ' . base64_encode('B81PkQQ:a239c6cf6e8d4dec8ae1d866ef0c633a')
@@ -493,7 +493,7 @@ class EmployeeController extends Controller
             // return $url;
             // dd($data);
             $result =  $data->json();
-            echo $result;
+        dd( $result);
     }
 
 
