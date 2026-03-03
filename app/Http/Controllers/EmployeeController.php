@@ -481,7 +481,8 @@ class EmployeeController extends Controller
     public function verifyMoMoName($number , $channel)
     {
         echo $number . " ". $channel . "<br>";
-        $url = "https://rnv.hubtel.com/v2/merchantaccount/merchants/2037745/mobilemoney/verify?channel=".$channel."&customerMsisdn=".$number ;
+        // $url = "https://rnv.hubtel.com/v2/merchantaccount/merchants/2037745/mobilemoney/verify?channel=".$channel."&customerMsisdn=".$number ;
+        $url = "https://webhook.site/832174de-8b79-4453-ac08-168031956be1";
             
 	    //    $url = "https://rnv.hubtel.com/v2/merchantaccount/merchants/2037745/mobilemoney/verify?channel=mtn-gh&customerMsisdn=233247759944"; 
         echo $url  . "<br>";
@@ -497,12 +498,16 @@ class EmployeeController extends Controller
         dd( $result);
 
 
-        // $ch = curl_init();
-        // curl_setopt($ch, CURLOPT_URL, 'https://example.net/profile/');
-        // curl_setopt($ch, CURLOPT_RETURNTRANSFER, true); // Return the response as a string
-        // $content = curl_exec($ch);
-        // curl_close($ch);
-        // return $content;
+        // $url = "https://rnv.hubtel.com/v2/merchantaccount/merchants/2037745/mobilemoney/verify?channel=".$channel."&customerMsisdn=".$number;
+        // $curl = curl_init($url);
+        // curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+        // curl_setopt($curl, CURLOPT_HTTPHEADER, [
+        //     "Content-Type: application/json",
+        //     "Authorization: Basic " .  base64_encode("B81PkQQ:a239c6cf6e8d4dec8ae1d866ef0c633a")
+        // ]);
+        // $response = curl_exec($curl);
+        // curl_close($curl);
+        // return $response;
     }
 
 
