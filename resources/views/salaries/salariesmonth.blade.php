@@ -768,30 +768,10 @@
         let myTableiTema = new DataTable('#myTableiTema');
 
         new DataTable('#myTableimaster', {
-            //  dom: 'Blfrtip',
-            //  stateSave: false,
-            columnControl: [ ['search'] ],
-            layout: {
-                topStart: {
-                    buttons: [ 
-                    {
-                        extend: 'pageLength',
-                        text: 'Show',
-                        className: 'btn btn-secondary',
-                        Options: [10, 25, 50, 100], 
-                    },
-                        {
-                            extend: 'excelHtml5',
-                            title: 'Salaries',
-                            className: 'btn btn-secondary',
-                            exportOptions: {
-                                columns: ':visible'
-                            }
-                        },
-                    ]
-                }
-            },
-                    
+            responsive: true,
+              dom: 'ltrip',
+              lengthMenu: [[10, 25, 50, 100, 500], [10, 25, 50, 100, 500]],
+              columnControl: [ ['search'] ]
         });
 
     </script>

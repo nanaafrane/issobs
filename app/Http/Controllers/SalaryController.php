@@ -981,10 +981,8 @@ class SalaryController extends Controller
     {
         $month = Carbon::createFromFormat('F, Y',$date)->startOfMonth()->format('Y-m-d H:i:s');
         // dd($month);
-        // return (new SalaryExport)->download('Master Salaries.xlsx'); 
         return (new SalaryExport($month))->download('Master Salaries For '.$date.'.xlsx');
-        // return Excel::download(new SalaryExport, 'Master Salaries For '.$month.'.xlsx');  
-        // return Excel::download(new SalaryExport('admin'), 'users.xlsx');
+      
     }
 
 

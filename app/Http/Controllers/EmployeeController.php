@@ -481,8 +481,8 @@ class EmployeeController extends Controller
     public function verifyMoMoName($number , $channel)
     {
         // echo $number . " ". $channel . "<br>";
-        // $url = "https://rnv.hubtel.com/v2/merchantaccount/merchants/2037745/mobilemoney/verify?channel=".$channel."&customerMsisdn=".$number ;
-        $url = "https://webhook.site/832174de-8b79-4453-ac08-168031956be1";
+        $url = "https://rnv.hubtel.com/v2/merchantaccount/merchants/2037745/mobilemoney/verify?channel=".$channel."&customerMsisdn=".$number ;
+        // $url = "https://webhook.site/832174de-8b79-4453-ac08-168031956be1";
             
 	    //    $url = "https://rnv.hubtel.com/v2/merchantaccount/merchants/2037745/mobilemoney/verify?channel=mtn-gh&customerMsisdn=233247759944"; 
         // echo $url  . "<br>";
