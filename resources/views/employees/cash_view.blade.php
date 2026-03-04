@@ -349,7 +349,10 @@
                                     <td>{{$data->name}}  </td>
                                     <td>{{ $data->phone_number }}  </td>
                                     <td> {{$data->channel }}</td>
-                                    <td>  </td>
+                                    <td> 
+                                         <i class="icon-base bx bxs-badge-check bg-success"></i>  
+                                
+                                    </td>
                                     <td>  </td>
                                     <td>{{ $data->date_of_joining?->format('F, Y') }} </td>
                                     <td> {{ $data->department?->name }} </td>
