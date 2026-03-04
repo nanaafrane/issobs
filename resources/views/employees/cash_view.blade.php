@@ -322,8 +322,10 @@
                                     <th>Name</th>
                                     <th>Number</th>
                                     <th>Channel</th>
-                                    <th> Verify </th>
+                                    <th> MoMo Status </th>
                                     <th> Reg. Name </th>
+                                    <th> Description </th>
+                                    <th> Code </th>
                                     <th> Employment Date </th>
                                     <th> Department </th>
                                     <th>Role</th>
@@ -350,10 +352,13 @@
                                     <td>{{ $data->phone_number }}  </td>
                                     <td> {{$data->channel }}</td>
                                     <td> 
-                                         <i class="icon-base bx bxs-badge-check bg-success"></i>  
-                                
+                                        @if( $data->status_momo == 1)
+                                         <i class="icon-base bx bxs-badge-check bg-success"></i>   Verified
+                                        @endif
                                     </td>
-                                    <td>  </td>
+                                    <td> {{ $data->reg_name }}  </td>
+                                    <td> {{ $data->message }}  </td>
+                                    <td> {{ $data->responseCode }}  </td>
                                     <td>{{ $data->date_of_joining?->format('F, Y') }} </td>
                                     <td> {{ $data->department?->name }} </td>
                                     <td> {{ $data->role?->name }}  </td>

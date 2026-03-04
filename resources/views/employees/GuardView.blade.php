@@ -104,6 +104,11 @@
               <div class="text-truncate" data-i18n="SList">Employee Banks</div>
               </a>
           </li>
+                      <li class="menu-item">
+              <a href="{{url('employeesCash')}}" class="menu-link">
+              <div class="text-truncate" data-i18n="SList">Employee Cash</div>
+              </a>
+          </li>
           </ul>
       </li>
                 @endif
@@ -150,6 +155,11 @@
           <li class="menu-item">
               <a href="{{url('employeesBank')}}" class="menu-link">
               <div class="text-truncate" data-i18n="SList">Employee Banks</div>
+              </a>
+          </li>
+                      <li class="menu-item">
+              <a href="{{url('employeesCash')}}" class="menu-link">
+              <div class="text-truncate" data-i18n="SList">Employee Cash</div>
               </a>
           </li>
                 </ul>
@@ -259,6 +269,13 @@
                         <div class="text-truncate" data-i18n="Transaction">Transactions</div>
                         </a>
                     </li>
+
+                                    <li class="menu-item">
+                    <a href="{{ url('salariesBulkCash') }}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bxs-group"></i>
+                    <div class="text-truncate" data-i18n="Transaction">Bulk Cash Salaries</div>
+                    </a>
+                </li>
 
                     <li class="menu-item">
                         <a href="{{ url('salariesInvPayroll') }}" class="menu-link">
