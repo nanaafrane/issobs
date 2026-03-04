@@ -33,8 +33,12 @@ class employee extends Model
         'user_id',
         'tax_button',
         'ssnit_button',
+       
+        'message',
+        'responseCode',
         'reg_name',
         'status_momo',
+        
         'status',
         'payment_type',
         'payment_infos_id',

@@ -468,11 +468,16 @@ class EmployeeController extends Controller
             {
               $result =   $this->verifyMoMoName($employee->phone_number, $employee->channel);
 
-                //   UPDATE DATABASE OF USER 
+                //   UPDATE DATABASE OF EMPLOYEE
+                $employee->message =  $result['message'];
+                $employee->responseCode =  $result['responseCode'];
+                $employee->reg_name =  $result['data']['name'] ?? null;
+                $employee->status_momo =  $result['data']['isRegistered'] ?? null;
+                $employee->save();
                 
             }
 
-        dd($result);
+        return back()->with('success', 'Selected Employees MoMo Name and Number has completed Processing.');
 
 
     }
