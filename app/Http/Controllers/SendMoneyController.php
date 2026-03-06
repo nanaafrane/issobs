@@ -26,7 +26,7 @@ class SendMoneyController extends Controller
     }
 
 
-    public function sendMoney($name, $number, $channel, $month)
+    public function sendMoney($name, $amount, $number, $channel, $month)
     {
         // dd($request->all());
             // $prepaidDepositId = '2024483'; // Replace with your actual Prepaid Deposit ID
@@ -39,7 +39,7 @@ class SendMoneyController extends Controller
             ])->post($url, [
                 'RecipientName' => $name,
                 'RecipientMsisdn' => $number,
-                'Amount' => 1,
+                'Amount' => $amount,
                 'Channel' => $channel, 
                 'PrimaryCallbackURL' => 'https://issobs.com/sendMoneyCallback', 
                 'Description' => 'FIRST WATCH SECURITY'." " .strtoupper($month) ." " . 'SALARY',
@@ -107,7 +107,7 @@ class SendMoneyController extends Controller
                 foreach ($salaries as $salary )
                     {
                         // SEND MONEY
-                    $result = $this->sendMoney($salary->employee->name, $salary->employee->phone_number, $salary->employee->channel,  Carbon::parse($salary->salary_month)->format('F')); 
+                    $result = $this->sendMoney($salary->employee->name, $salary->net_salary, $salary->employee->phone_number, $salary->employee->channel,  Carbon::parse($salary->salary_month)->format('F')); 
 
                         //    print_r( $result) . "<br>";
                         // LOG RESPONSE

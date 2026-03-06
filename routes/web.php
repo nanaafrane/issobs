@@ -92,8 +92,8 @@ Route::get('employeesBankView/{id}', [EmployeeController::class, 'employeesBankV
 Route::get('employeesCash', [EmployeeController::class, 'employeesCash'])->name('employees.Cash');
 Route::get('employeesCashView/{id}', [EmployeeController::class, 'employeesCashView' ]);
 Route::post('employeesCashVerify', [EmployeeController::class, 'employeesCashVerify' ]);
-
-// Route::get('employeesCashVerify/{number}/{channel}', [EmployeeController::class, 'verifyMoMoName' ]);
+Route::get('employeesnrrit', [EmployeeController::class, 'newRecruitTerminate' ]);
+Route::get('employeesnrritView', [EmployeeController::class, 'newRecruitTerminateView' ]);
 
 
 Route::get('employeesPayInfo/{id}', [EmployeeController::class, 'EmpPayInfo'])->name('employees.PayInfo');

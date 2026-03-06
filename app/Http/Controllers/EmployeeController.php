@@ -533,6 +533,22 @@ class EmployeeController extends Controller
 
     }
 
+    public function newRecruitTerminate()
+    {
+        return view('employees.nrrit');
+    }
+
+    public function newRecruitTerminateView (Request $request)
+    {
+        // dd($request->month);
+         $month = Carbon::parse($request->month);
+        // dd($month->month);
+
+        // New Recruit
+        $newRecruit = employee::whereMonth('date_of_joining', $month->month)->get();
+        dd($newRecruit);
+    }
+
 
 
 }
