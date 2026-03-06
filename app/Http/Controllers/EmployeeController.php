@@ -16,6 +16,7 @@ use App\Models\Department;
 use App\Models\Field;
 use App\Models\PaymentInfo;
 use App\Models\Role;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -196,6 +197,14 @@ class EmployeeController extends Controller
         $employee->save();
 
 
+        DB::table('nrrit')->insert([
+                            'employee_id' =>  $employee->id,
+                            'name' => $request->input('name'),
+                            'status_month' =>  $request->input('date_of_joining'),
+                            'status' => 'Active',
+                            'status1' => 'New Recruit',
+                        ]);
+
         $employee_pay_info = new PaymentInfo();
         $employee_pay_info->employee_id = $employee->id;
         $employee_pay_info->bank_id = $payRequest->input('bank_id');
@@ -375,20 +384,44 @@ class EmployeeController extends Controller
         // // return back()->with('success', 'Guard successfully ReAssigned!');
     }
 
-    public function terminateEmployee($id)
+    public function terminateEmployee(Request $request, $id)
     {
-        // dd($id);
+        // dd($id, $request->status_date);
         $employee = employee::findOrFail($id);
-        $employee->update(['status' => 'Terminated']);
-        return redirect()->route('employees.index')->with('error', 'Employee successfully Terminated!, ID No: and Name'. implode(', ', [$employee->id, $employee->name]));
+        $employee->update(['status' => 'Terminated', 'status_date' =>  $request->status_date]);
+
+        $parsedDate = Carbon::createFromFormat('Y-m', $request->status_date)->format('Y-m-d'); 
+
+        DB::table('nrrit')->insert([
+                    'employee_id' =>  $employee->id,
+                    'name' =>  $employee->name,
+                    'status_month' =>    $parsedDate,
+                    'status' => 'Terminated',
+                ]);
+
+        return redirect()->route('employees.index')->with('error', 'Employee successfully Terminated!, ID No: and Name '. implode(', ', [$employee->id, $employee->name]));
 
     }
 
-    public function employeeReinstate($id)
+    public function employeeReinstate(Request $request, $id)
     {
         $employee = employee::findOrFail($id);
-        $employee->update(['status' => 'Active']);
-        return redirect()->route('employees.index')->with('success', 'Employee successfully Re-instated! ID No: and Name'. implode(', ', [$employee->id, $employee->name]));
+        $employee->update(['status' => 'Active', 'status_date' =>  $request->status_date]);
+       
+        // dd($request->status_date) ;
+      
+        $parsedDate = Carbon::createFromFormat('Y-m', $request->status_date)->format('Y-m-d'); 
+        // dd($parsedDate) ;
+      
+        DB::table('nrrit')->insert([
+                    'employee_id' =>  $employee->id,
+                    'name' =>  $employee->name,
+                    'status_month' =>   $parsedDate,
+                    'status' => 'Active',
+                    'status1' => 'Re-Instate',
+                ]);
+
+        return redirect()->route('employees.index')->with('success', 'Employee successfully Re-instated! ID No: and Name '. implode(', ', [$employee->id, $employee->name]));
     }
 
     public function employeesBank()

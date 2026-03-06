@@ -488,6 +488,7 @@
                                 <th> Bank </th>
                                 <th>Account No.</th>
                                 <th>Status</th>
+                                <th>Status Date</th>
                                 <th>TAX</th>
                                 <th>TIN</th>
                                 <th>SSNIT</th>
@@ -524,7 +525,7 @@
                                 @else
                                 <td><span class="badge bg-label-danger">{{$employee->status}}</span></td>
                                 @endif
-                               
+                                <td> {{ $employee->status_date?->format('F, Y') }} </td>
                                  @if($employee->tax_button == 'on')
                                 <td> <span class="badge bg-label-dark"> {{  $employee->tax_button }} </span> </td>
                                 @else
@@ -554,18 +555,20 @@
                                         <a class="dropdown-item" href="{{url('employees', $employee->id)}}/edit"><i class="icon-base bx bx-edit-alt me-1"></i> Edit</a>
                                         <hr>
                                         <a class="dropdown-item" href="{{url('employeesSalary', $employee->id)}}"><i class="icon-base bx bx-money-withdraw"></i> Salaries</a>
-                                        <hr>
+                                        <!-- <hr>
                                         @if ($employee->status == 'Active')
                                             <a class="dropdown-item" href="{{url('terminateEmployee', $employee->id )}}"><i class="icon-base bx bx-user-x me-1" onclick="return confirm('Kindly Confirm?')"></i> Terminate</a>
-                                        @else
-                                        <a class="dropdown-item" href="{{url('employeeReinstate', $employee->id )}}" onclick="return confirm('Kindly Confirm?')"><i class="icon-base bx bx-edit-alt me-1"></i>Re-Instate </a>
-                                            @endif
 
-                                        <form action="employees/{{$employee->id}}" method="POST">
+                                       
+                                            @else
+                                        <a class="dropdown-item" href="{{url('employeeReinstate', $employee->id )}}" onclick="return confirm('Kindly Confirm?')"><i class="icon-base bx bx-edit-alt me-1"></i>Re-Instate </a>
+                                            @endif -->
+
+                                        <!-- <form action="employees/{{$employee->id}}" method="POST">
                                             @csrf
                                             @method('DELETE')
                                             <button class="dropdown-item" type="submit"><i class="icon-base bx bx-trash me-1"></i>Delete</button>
-                                        </form>
+                                        </form> -->
                                     </div>
                                 </div>
                             </td>

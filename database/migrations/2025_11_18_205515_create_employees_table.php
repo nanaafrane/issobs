@@ -31,6 +31,7 @@ return new class extends Migration
             $table->string('location')->nullable();
             $table->string('image')->nullable();
             $table->string('status')->nullable();
+            $table->date('status_date')->nullable();
             $table->string('status_momo')->nullable();
             $table->string('payment_type')->nullable();
             $table->integer('user_id');

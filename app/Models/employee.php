@@ -40,6 +40,7 @@ class employee extends Model
         'status_momo',
         
         'status',
+        'status_date', //terminiate and reinstate
         'payment_type',
         'payment_infos_id',
         'salary_id',
@@ -56,7 +57,8 @@ class employee extends Model
 
     protected $casts = [
         'date_of_birth' => 'date',
-        'date_of_joining' => 'date',    
+        'date_of_joining' => 'date',  
+        'status_date' => 'date',  
     ];
 
     public function department()

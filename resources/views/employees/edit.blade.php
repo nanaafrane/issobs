@@ -674,11 +674,118 @@
 
           <div class="buy-now">
             @if ($employee->status !== 'Active')
-            <a style="margin-bottom: 70px;" href="{{url('employeeReinstate', $employee->id )}}" class="btn btn-danger btn-buy-now"> <i class="icon-base bx bx-edit-alt me-1"></i> Re-Instate </a>
-              
+            <!-- <a style="margin-bottom: 70px;" href="{{url('employeeReinstate', $employee->id )}}" class="btn btn-danger btn-buy-now"> <i class="icon-base bx bx-edit-alt me-1"></i> Re-Instate </a> -->
+                                  <button
+                        type="button"
+                        class="btn btn-danger btn-buy-now"
+                        data-bs-toggle="modal"
+                        data-bs-target="#basicModal">
+                        <i class="icon-base bx bx-bxs-user-plus"> </i>Re-Instate
+                    </button>
+
+                    <div class="modal fade" id="basicModal" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog" role="document">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="exampleModalLabel1">Choose Month To Re-Instate</h5>
+                                    <button
+                                        type="button"
+                                        class="btn-close"
+                                        data-bs-dismiss="modal"
+                                        aria-label="Close"></button>
+                                </div>
+
+                                <form method="GET" action="/employeeReinstate/{{ $employee->id }}">
+                                    @csrf
+                                    <div class="modal-body">
+                                        <div class="row">
+                                            <div class="col mb-0">
+                                                <label for="name" class="form-label"> {{ __(' MONTH ') }}</label>
+                                                <input
+                                                    type="month"
+                                                    name="status_date"
+                                                    id="status_date"
+                                                    class="form-control @error('status_date') is-invalid @enderror"
+                                                    value="{{ old('status_date')}}"
+                                                    autocomplete="status_date"
+                                                    autofocus
+                                                    required>
+
+                                                @error('status_date')
+                                                <span class="invalid-feedback" role="alert">
+                                                    <strong>{{ $message }}</strong>
+                                                </span>
+                                                @enderror
+                                            </div>
+                                        </div>
+                                        <br>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="submit" class="btn btn-info d-grid w-100">{{ __('Re-Instate') }}</button>
+                                    </div>
+                                </form>
+
+                            </div>
+                        </div>
+                    </div>
+
             @else
-            <a  href="{{url('terminateEmployee', $employee->id )}}" class="btn btn-danger btn-buy-now"> <i class="icon-base bx bx-trash me-1"></i> Terminate </a>  
+            <!-- <a  href="{{url('terminateEmployee', $employee->id )}}" class="btn btn-danger btn-buy-now"> <i class="icon-base bx bx-trash me-1"></i> Terminate </a>   -->
               
+                    <button
+                        type="button"
+                        class="btn btn-danger btn-buy-now"
+                        data-bs-toggle="modal"
+                        data-bs-target="#basicModal">
+                        <i class="icon-base bx bx-bxs-user-plus"> </i>Terminate
+                    </button>
+
+                    <div class="modal fade" id="basicModal" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog" role="document">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="exampleModalLabel1">Choose Month To Terminate</h5>
+                                    <button
+                                        type="button"
+                                        class="btn-close"
+                                        data-bs-dismiss="modal"
+                                        aria-label="Close"></button>
+                                </div>
+
+                                <form method="GET" action="/terminateEmployee/{{ $employee->id }}">
+                                    @csrf
+                                    <div class="modal-body">
+                                        <div class="row">
+                                            <div class="col mb-0">
+                                                <label for="name" class="form-label"> {{ __(' MONTH ') }}</label>
+                                                <input
+                                                    type="month"
+                                                    name="status_date"
+                                                    id="status_date"
+                                                    class="form-control @error('status_date') is-invalid @enderror"
+                                                    value="{{ old('status_date')}}"
+                                                    autocomplete="status_date"
+                                                    autofocus
+                                                    required>
+
+                                                @error('status_date')
+                                                <span class="invalid-feedback" role="alert">
+                                                    <strong>{{ $message }}</strong>
+                                                </span>
+                                                @enderror
+                                            </div>
+                                        </div>
+                                        <br>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="submit" class="btn btn-info d-grid w-100">{{ __('Terminate') }}</button>
+                                    </div>
+                                </form>
+
+                            </div>
+                        </div>
+                    </div>
+
             @endif
           </div>
   @endsection
