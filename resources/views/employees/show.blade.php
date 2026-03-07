@@ -497,7 +497,7 @@
                   
                 </div>
               </div>
-              created by : {{ $employee->user?->name }} at {{ $employee->created_at?->format('l F d, Y h:i A')  }}
+              created by : {{ $employee->user?->name }} at {{ $employee->created_at?->format('l F d, Y h:i A')  }} ,  updated by : {{ $employee->user1?->name }} at {{ $employee->updated_at?->format('l F d, Y h:i A')  }}
 
             </div>
   <!-- / Content -->

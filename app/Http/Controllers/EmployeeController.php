@@ -312,7 +312,7 @@ class EmployeeController extends Controller
         $employee->gurantor_address = $request->input('gurantor_address');
         $employee->gurantor_nia_number = $request->input('gurantor_nia_number');
         $employee->relationship = $request->input('relationship');
-        $employee->user_id = Auth::id();
+        $employee->user_id1 = Auth::id();
         $employee->save();
 
         return redirect()->route('employees.show',['employee' => $employee])->with('success', 'Employee updated successfully.');
@@ -388,7 +388,7 @@ class EmployeeController extends Controller
     {
         // dd($id, $request->status_date);
         $employee = employee::findOrFail($id);
-        $employee->update(['status' => 'Terminated', 'status_date' =>  $request->status_date]);
+        $employee->update(['status' => 'Terminated', 'status_date' =>  $request->status_date, 'user_id1' => Auth::id()]);
 
         $parsedDate = Carbon::createFromFormat('Y-m', $request->status_date)->format('Y-m-d'); 
 
@@ -406,7 +406,7 @@ class EmployeeController extends Controller
     public function employeeReinstate(Request $request, $id)
     {
         $employee = employee::findOrFail($id);
-        $employee->update(['status' => 'Active', 'status_date' =>  $request->status_date]);
+        $employee->update(['status' => 'Active', 'status_date' =>  $request->status_date , 'user_id1' => Auth::id()]);
        
         // dd($request->status_date) ;
       
@@ -540,13 +540,40 @@ class EmployeeController extends Controller
 
     public function newRecruitTerminateView (Request $request)
     {
+        $ids = [];
         // dd($request->month);
          $month = Carbon::parse($request->month);
         // dd($month->month);
 
         // New Recruit
         $newRecruit = employee::whereMonth('date_of_joining', $month->month)->get();
-        dd($newRecruit);
+        // $newRecruitCount = count($newRecruit);
+        // dd($newRecruit);
+
+        $reinstate_id = DB::table('nrrit')->whereMonth('status_month', $month->month)->where('status1', 'Re-Instate')->pluck('employee_id')->toArray();
+        // $ids = $reinstate_id->implode(', ');
+        // $arrayIds = explode(',', $ids);
+        // dd($reinstate_id);
+        foreach($reinstate_id as $id)
+            {
+                $reinstate[] =  employee::findOrFail($id);
+            }
+
+        // $reinstateCount = count($reinstate);
+
+        //  $reinstate =  employee::whereIn('id', $reinstate_id)->get();
+        // dd($reinstate);
+        $terminate_id = DB::table('nrrit')->whereMonth('status_month', $month->month)->where('status', 'Terminated')->pluck('employee_id')->toArray();
+        foreach($terminate_id as $id)
+            {
+                $terminate[] =  employee::findOrFail($id);
+            }
+
+        // $terminateCount = count($terminate);
+        // dd($terminate);
+        // $netEmployees = $
+
+        return view('employees.nrritview', compact('newRecruit', 'reinstate', 'terminate', 'month'));
     }
 
 

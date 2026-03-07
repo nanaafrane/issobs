@@ -31,6 +31,7 @@ class employee extends Model
         'basic_salary',
         'allowances',
         'user_id',
+        'user_id1',
         'tax_button',
         'ssnit_button',
        
@@ -95,6 +96,11 @@ class employee extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function user1()
+    {
+        return $this->belongsTo(User::class, 'user_id1');
     }
 
     public function clients() : BelongsToMany
