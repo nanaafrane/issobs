@@ -202,8 +202,9 @@ class SalaryController extends Controller
     public function BulkCashMonth(Request $request)
     {
     //    dd($request->all());
-
-       $salaries = Salary::where('payment_type', 'Cash')->where('status1', 'Bulk Cash')->where('salary_month', Carbon::parse($request->month)->startOfMonth()->format('Y-m-d H:i:s'))->orwhere('status1', 'failed')->orwhere('status1', 'Pending')->get();
+        $month = Carbon::parse($request->month);
+        // dd($month->month);
+       $salaries = Salary::where('payment_type', 'Cash')->where('status1', 'Bulk Cash')->whereMonth('salary_month',  $month->month)->orwhere('status1', 'failed')->orwhere('status1', 'Pending')->get();
     //    dd($salaries);
        return view('salaries.BulkCashView', compact('salaries'));
        
@@ -212,8 +213,9 @@ class SalaryController extends Controller
     public function BulkCashMonthHistory(Request $request)
     {
     //    dd($request->all());
+        $month = Carbon::parse($request->month);
     
-       $salaries = Salary::where('status1', 'success')->where('salary_month', Carbon::parse($request->month)->startOfMonth()->format('Y-m-d H:i:s'))->get();
+       $salaries = Salary::where('status1', 'success')->whereMonth('salary_month', $month->month)->get();
     //    dd($salaries);
        foreach($salaries as $salary)
         {
