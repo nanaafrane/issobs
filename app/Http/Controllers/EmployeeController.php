@@ -540,11 +540,9 @@ class EmployeeController extends Controller
 
     public function newRecruitTerminateView (Request $request)
     {
-        $ids = [];
-        // dd($request->month);
+        $reinstate = [];
+        $terminate = [];
          $month = Carbon::parse($request->month);
-        // dd($month->month);
-
         // New Recruit
         $newRecruit = employee::whereMonth('date_of_joining', $month->month)->get();
         // $newRecruitCount = count($newRecruit);
@@ -570,7 +568,7 @@ class EmployeeController extends Controller
             }
 
         // $terminateCount = count($terminate);
-        // dd($terminate);
+        // dd($newRecruit, $reinstate, $terminate);
         // $netEmployees = $
 
         return view('employees.nrritview', compact('newRecruit', 'reinstate', 'terminate', 'month'));

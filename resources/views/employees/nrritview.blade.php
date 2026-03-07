@@ -309,7 +309,7 @@
 
             <div class="row">
             <div class="col-12">
-                <h3 class="card-header"> <i class="icon-base bx bxs-user-account"></i> Employee Net For {{ $month?->format('F, Y') }} Is : {{ $newRecruit->count() - count($terminate) }} </h3>
+                <h3 class="card-header"> <i class="icon-base bx bxs-user-account"></i> Employee Net For {{ $month?->format('F, Y') }} Is : {{ $newRecruit?->count() + count($reinstate)  - count($terminate) }} </h3>
             </div>
         </div><br>
         <hr />
@@ -317,7 +317,7 @@
 
         <div class="row">
             <div class="col-12">
-                <h3 class="card-header"> <i class="icon-base bx bxs-user-account"></i> New Recruit  Total : {{ $newRecruit->count() }} </h3>
+                <h3 class="card-header"> <i class="icon-base bx bxs-user-account"></i> New Recruit  Total : {{ $newRecruit?->count() }} </h3>
             </div>
         </div><br>
         <hr />
