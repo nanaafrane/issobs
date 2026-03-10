@@ -31,6 +31,10 @@ class SendMoneyController extends Controller
 
     public function sendMoney($name, $amount, $number, $channel, $month)
     {
+        $this->deductCharge($amount);
+
+        // return $this->amount . " " . $amount;
+
         // dd($request->all());
             // $prepaidDepositId = '2024483'; // Replace with your actual Prepaid Deposit ID
             $url = "https://smp.hubtel.com/api/merchants/2024483/send/mobilemoney";
@@ -42,7 +46,7 @@ class SendMoneyController extends Controller
             ])->post($url, [
                 'RecipientName' => $name,
                 'RecipientMsisdn' => $number,
-                'Amount' => $amount - 5.00,
+                'Amount' => $this->amount,
                 'Channel' => $channel, 
                 'PrimaryCallbackURL' => 'https://issobs.com/sendMoneyCallback', 
                 'Description' => 'FIRST WATCH SECURITY'." " .strtoupper($month) ." " . 'SALARY',
@@ -111,7 +115,7 @@ class SendMoneyController extends Controller
                     {
                         // SEND MONEY
                     $result = $this->sendMoney($salary->employee->name, $salary->net_salary, $salary->employee->phone_number, $salary->employee->channel,  Carbon::parse($salary->salary_month)->format('F')); 
-
+                    // echo  $result . "<br>" ;
                         //    print_r( $result) . "<br>";
                         // LOG RESPONSE
                     $id =  DB::table('hubtel')->insertGetId([
@@ -182,7 +186,7 @@ class SendMoneyController extends Controller
     {
        if($netSalary <= 500 )
         {
-            $this->amount = $netSalary - (0.005 *  $netSalary);
+            $this->amount = $netSalary - 0.5;
         }
         else{
 
