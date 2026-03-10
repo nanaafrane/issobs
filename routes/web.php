@@ -94,6 +94,7 @@ Route::get('employeesCashView/{id}', [EmployeeController::class, 'employeesCashV
 Route::post('employeesCashVerify', [EmployeeController::class, 'employeesCashVerify' ]);
 Route::get('employeesnrrit', [EmployeeController::class, 'newRecruitTerminate' ]);
 Route::get('employeesnrritView', [EmployeeController::class, 'newRecruitTerminateView' ]);
+Route::get('employeesPending', [EmployeeController::class, 'employeesPending']);
 
 
 Route::get('employeesPayInfo/{id}', [EmployeeController::class, 'EmpPayInfo'])->name('employees.PayInfo');

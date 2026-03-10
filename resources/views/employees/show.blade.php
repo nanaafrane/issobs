@@ -91,6 +91,11 @@
               <div class="text-truncate" data-i18n="SList">List</div>
               </a>
           </li>
+            <li class="menu-item">
+              <a href="{{url('employeesnrrit')}}" class="menu-link">
+              <div class="text-truncate" data-i18n="SList">Terminate / Recruit</div>
+              </a>
+          </li>
           <li class="menu-item">
               <a href="{{url('employeesBank')}}" class="menu-link">
               <div class="text-truncate" data-i18n="SList">Employee Banks</div>
@@ -108,7 +113,7 @@
 
         @if(Auth::user()->hasPermission('HR') || Auth::user()->hasRole(['Invoice']))
             <li class="menu-header small text-uppercase"><span class="menu-header-text text-info">Management</span></li>
-            @if(Auth::user()->hasPermission('HR'))
+            @if(Auth::user()->hasRole(['Invoice']))
             <li class="menu-item">
                     <a href="javascript:void(0);" class="menu-link menu-toggle">
                         <i class="menu-icon tf-icons bx bx-bxs-group"></i>
@@ -144,6 +149,18 @@
                     <div class="text-truncate" data-i18n="SList">List</div>
                     </a>
                 </li>
+                <li class="menu-item">
+                    <a href="{{url('employeesPending')}}" class="menu-link">
+                    <div class="text-truncate" data-i18n="SList">Pending</div>
+                    </a>
+                </li>
+
+            @if(Auth::user()->hasRole(['Manager']))
+                <li class="menu-item ">
+              <a href="{{url('employeesnrrit')}}" class="menu-link">
+              <div class="text-truncate" data-i18n="SList">Terminate / Recruit</div>
+              </a>
+          </li>
           <li class="menu-item">
               <a href="{{url('employeesBank')}}" class="menu-link">
               <div class="text-truncate" data-i18n="SList">Employee Banks</div>
@@ -154,9 +171,11 @@
               <div class="text-truncate" data-i18n="SList">Employee Cash</div>
               </a>
           </li>
+            @endif
                 </ul>
             </li>
         
+            @if(Auth::user()->hasRole(['Manager']))
             <li class="menu-item ">
                 <a class="menu-link menu-toggle">
                     <i class="menu-icon tf-icons bx bx-bxs-user-detail"></i>
@@ -189,6 +208,7 @@
                 <div class="text-truncate" data-i18n="fOffices">Field Offices</div>
                 </a>
             </li>
+            @endif
             @endif
 
             @if((Auth::user()->hasRole(['Manager', 'Officer', 'Finance Manager']) && Auth::user()->hasPermission('Accounts')) )
@@ -501,7 +521,7 @@
 
             </div>
   <!-- / Content -->
-
+         @if(Auth::user()->hasNotRole(['Manager']))
           <div class="buy-now">
             @if ($employee->status !== 'Active')
 
@@ -619,6 +639,8 @@
                     </div>
             @endif
           </div>
+        @endif
+
   @endsection
 
 

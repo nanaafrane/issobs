@@ -94,5 +94,15 @@ class User extends Authenticatable
         }
     }
 
+    public function hasNotRole(array $roles)
+    {   
+        foreach ($roles as $role)
+        {
+        if ($this->role->name == $role) {
+            return false;
+        }
+        }
+    }
+
 
 }

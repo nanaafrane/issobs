@@ -14,6 +14,9 @@ use function Symfony\Component\Clock\now;
 
 class SendMoneyController extends Controller
 {
+
+    public $amount;
+
     public function __construct()
     {
         $this->middleware('auth');
@@ -39,7 +42,7 @@ class SendMoneyController extends Controller
             ])->post($url, [
                 'RecipientName' => $name,
                 'RecipientMsisdn' => $number,
-                'Amount' => $amount,
+                'Amount' => $amount - 5.00,
                 'Channel' => $channel, 
                 'PrimaryCallbackURL' => 'https://issobs.com/sendMoneyCallback', 
                 'Description' => 'FIRST WATCH SECURITY'." " .strtoupper($month) ." " . 'SALARY',
@@ -173,6 +176,20 @@ class SendMoneyController extends Controller
   
   
   
+    }
+
+    public function deductCharge($netSalary)
+    {
+       if($netSalary <= 500 )
+        {
+            $this->amount = $netSalary - (0.005 *  $netSalary);
+        }
+        else{
+
+            $this->amount = $netSalary - 5.00;
+
+        }
+    
     }
 
 }

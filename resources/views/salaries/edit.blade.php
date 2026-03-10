@@ -394,7 +394,8 @@
                                     <div class="mb-3 col-md-4">
                                     <label for="client_id" class="form-label"> <strong> {{ __('Client') }} </strong>  </label>
                                         <select name="client_id" class="form-select @error('client_id') is-invalid @enderror" id="client_id" >
-                                            @foreach($clients as $client)
+                                        <option  value=""> Choose... </option>   
+                                        @foreach($clients as $client)
                                             <option  @if($client->id == $salary->client?->id) selected @endif  value="{{$client->id}}">{{$client->name}} {{$client->business_name}}</option>
                                             @endforeach
                                         </select>

@@ -911,6 +911,10 @@ class SalaryController extends Controller
 
             // UPDATE FIELD ID
             $salary->field_id = $request['field_id'] ;
+            // UPDATE CLIENT ID
+            $salary->client_id = $request['client_id'] ;
+            // UPDATE LOCATION
+            $salary->location = $request['location'] ;
 
             $salary->save(); 
 

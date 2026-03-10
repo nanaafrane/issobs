@@ -189,6 +189,9 @@ class InvoiceController extends Controller
     {
         $month = Carbon::parse($request->month)->format('Y-m-d');
 
+        // $reportInvoices = Invoice::with('invoice_data')->where('invoice_month', $month)->get();
+        // dd($reportInvoices);
+
         // dd($month);
         $reportInvoices = Invoice::where('invoice_month', $month)->get();
         $invoiceTotal = $reportInvoices->sum('total');
@@ -225,7 +228,7 @@ class InvoiceController extends Controller
 
         // dd($invoicemonth);
         return view('sales.invoice_dashboard', compact('invoiceTotal', 'month','invoiceCount', 'reportInvoices', 'accraTotal', 'accraCount', 'botweTotal', 'botweCount', 'temaTotal', 'temaCount', 'takoradiTotal', 'takoradiCount', 'koforiduaTotal', 'koforiduaCount', 'kumasiTotal', 'kumasiCount', 'shyhillsTotal', 'shyhillsCount'));
-        // return 
+         
     }   
 
     /**

@@ -38,6 +38,7 @@
       </li>
       <!-- Components -->
       <li class="menu-header small text-uppercase"><span class="menu-header-text">Management</span></li>
+       @if(Auth::user()->hasRole(['Manager']))
       <li class="menu-item">
         <a href="javascript:void(0);" class="menu-link menu-toggle">
           <i class="menu-icon tf-icons bx bx-bxs-group"></i>
@@ -56,8 +57,8 @@
           </li>
         </ul>
       </li>
-
-        <li class="menu-item ">
+      @endif
+      <li class="menu-item ">
         <a href="javascript:void(0);" class="menu-link menu-toggle">
           <i class="menu-icon tf-icons bx bxs-user-account"></i>
           <div class="text-truncate" data-i18n="Staffs">Employees</div>
@@ -68,14 +69,21 @@
               <div class="text-truncate" data-i18n="SRegister">Register</div>
             </a>
           </li>
+
           <li class="menu-item">
             <a href="{{url('employees')}}" class="menu-link">
               <div class="text-truncate" data-i18n="SList">List</div>
             </a>
           </li>
+
+          <li class="menu-item">
+            <a href="{{url('employeesPending')}}" class="menu-link">
+              <div class="text-truncate" data-i18n="SList">Pending</div>
+            </a>
+          </li>
         </ul>
       </li>
-
+      @if(Auth::user()->hasRole(['Manager']))
       <li class="menu-item">
         <a href="javascript:void(0);" class="menu-link menu-toggle">
           <i class="menu-icon tf-icons bx bx-bxs-user-detail"></i>
@@ -108,7 +116,9 @@
           <div class="text-truncate" data-i18n="fOffices">Field Offices</div>
         </a>
       </li>
+      @endif
 
+      @if(Auth::user()->hasRole(['Manager']))      
       <li class="menu-header small text-uppercase"><span class="menu-header-text">PAYROLL</span></li>
       <li class="menu-item">
         <a href="javascript:void(0);" class="menu-link menu-toggle">
@@ -123,8 +133,8 @@
               <div class="text-truncate" data-i18n="Employees">Add to Salaries</div>
             </a>
           </li>
-           @if(Auth::user()->hasPermission('Accounts'))
-          <li class="menu-item">
+
+          <!-- <li class="menu-item">
             <a href="{{ url('salaries/create') }}" class="menu-link">
               <i class="menu-icon tf-icons bx bx-money-withdraw"></i>
               <div class="text-truncate" data-i18n="Salaries">Salaries</div>
@@ -143,11 +153,11 @@
               <i class="menu-icon tf-icons bx bx-git-compare"></i>
               <div class="text-truncate" data-i18n="InvtoPayroll">Invoice to Payroll</div>
             </a>
-          </li>
-        @endif
+          </li> -->
+
         </ul>
       </li>
-
+      @endif
 
     </ul>
   </aside>

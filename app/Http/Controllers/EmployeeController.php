@@ -35,7 +35,7 @@ class EmployeeController extends Controller
     public function index()
     {
         //
-        $employees = employee::all();
+        $employees = employee::where('status', 'Active')->orwhere('status', 'Terminated')->get();
         $activeEmployees = employee::where('status', 'Active')->count();
         $terminatedEmployees = employee::where('status', 'Terminated')->count();  
 
@@ -74,7 +74,8 @@ class EmployeeController extends Controller
         $clients = Client::all();
         $banks = Bank::all();
         return view('employees.index', compact('employees', 'activeEmployees', 'terminatedEmployees', 'employeeAccra', 'employeeAccraTerminated', 'employeeAccraActive', 'employeeBotwe', 'employeeBotweTerminated', 'employeeBotweActive', 'employeeTema', 'employeeTemaTerminated', 'employeeTemaActive', 'employeeTakoradiActive', 'employeeTakoradiTerminated','employeeTakoradi', 'employeeKoforiduaActive', 'employeeKoforiduaTerminated','employeeKoforidua', 'employeeKumasiActive', 'employeeKumasiTerminated','employeeKumasi', 'employeeShyhills', 'employeeShyhillsTerminated', 'employeeShyhillsActive', 'Departments', 'Roles', 'Fields', 'clients', 'banks'));
-    }
+   
+        }
 
     /**
      * Show the form for creating a new resource.
@@ -170,7 +171,7 @@ class EmployeeController extends Controller
         $employee = new employee();
         $employee->name = $request->input('name');
         $employee->user_id = Auth::id();
-        $employee->status = 'Active';
+        $employee->status = 'Pending';
         $employee->gender = $request->input('gender');
         $employee->phone_number = $request->input('phone_number');
         $employee->channel = $request->input('channel');
@@ -197,13 +198,13 @@ class EmployeeController extends Controller
         $employee->save();
 
 
-        DB::table('nrrit')->insert([
-                            'employee_id' =>  $employee->id,
-                            'name' => $request->input('name'),
-                            'status_month' =>  $request->input('date_of_joining'),
-                            'status' => 'Active',
-                            'status1' => 'New Recruit',
-                        ]);
+        // DB::table('nrrit')->insert([
+        //                     'employee_id' =>  $employee->id,
+        //                     'name' => $request->input('name'),
+        //                     'status_month' =>  $request->input('date_of_joining'),
+        //                     'status' => 'Active',
+        //                     'status1' => 'New Recruit',
+        //                 ]);
 
         $employee_pay_info = new PaymentInfo();
         $employee_pay_info->employee_id = $employee->id;
@@ -572,6 +573,17 @@ class EmployeeController extends Controller
         // $netEmployees = $
 
         return view('employees.nrritview', compact('newRecruit', 'reinstate', 'terminate', 'month'));
+    }
+
+    public function employeesPending()
+    {
+
+            //
+        $pendingEmployees = employee::where('status', 'Pending')->get();
+
+        return view('employees.pending', compact('pendingEmployees'));
+   
+
     }
 
 
