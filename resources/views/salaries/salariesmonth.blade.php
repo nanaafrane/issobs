@@ -782,7 +782,7 @@
 
         new DataTable('#myTableimaster', {
             responsive: true,
-              dom: 'ltrip',
+              dom: 'lftrip',
               lengthMenu: [[10, 25, 50, 100, 500], [10, 25, 50, 100, 500]],
               columnControl: [ ['search'] ]
         });

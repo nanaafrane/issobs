@@ -154,7 +154,7 @@
                     <div class="text-truncate" data-i18n="SList">Pending</div>
                     </a>
                 </li>
-            @if(Auth::user()->hasRole(['Manager']))
+            @if(Auth::user()->hasRole(['Manager', 'Invoice']))
             <li class="menu-item ">
                 <a href="{{url('employeesnrrit')}}" class="menu-link">
                 <div class="text-truncate" data-i18n="SList">Terminate / Recruit</div>
@@ -174,7 +174,7 @@
 
                 </ul>
             </li>
-            @if(Auth::user()->hasRole(['Manager']))
+            @if(Auth::user()->hasRole(['Manager','Invoice']))
                 <li class="menu-item ">
                     <a class="menu-link menu-toggle">
                         <i class="menu-icon tf-icons bx bx-bxs-user-detail"></i>

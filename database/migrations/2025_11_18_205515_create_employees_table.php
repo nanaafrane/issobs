@@ -36,6 +36,7 @@ return new class extends Migration
             $table->string('payment_type')->nullable();
             $table->integer('user_id');
             $table->integer('user_id1');
+            $table->integer('user_id2');
             $table->integer('payment_infos_id')->nullable();
             $table->integer('salary_id')->nullable();
             $table->string('gurantor_name')->nullable();

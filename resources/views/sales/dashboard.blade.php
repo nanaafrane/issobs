@@ -170,6 +170,11 @@
               </a>
           </li>
           <li class="menu-item">
+                <a href="{{url('employeesPending')}}" class="menu-link">
+                <div class="text-truncate" data-i18n="SList">Pending</div>
+                </a>
+            </li>
+          <li class="menu-item">
               <a href="{{url('employeesnrrit')}}" class="menu-link">
               <div class="text-truncate" data-i18n="SList">Terminate / Recruit </div>
               </a>

@@ -40,27 +40,29 @@ class EmployeeController extends Controller
         $terminatedEmployees = employee::where('status', 'Terminated')->count();  
 
 
-        $employeeAccra = employee::where('field_id', 1)->count();
+        $employeeAccra = employee::where('field_id', 1)->get();
         $employeeAccraTerminated = employee::where('field_id', 1)->where('status', 'Terminated')->count();  
         $employeeAccraActive = employee::where('field_id', 1)->where('status', 'Active')->count();
 
-        $employeeBotwe = employee::where('field_id', 2)->count();
+        $employeeBotwe = employee::where('field_id', 2)->get();
         $employeeBotweTerminated = employee::where('field_id', 2)->where('status', 'Terminated')->count();  
         $employeeBotweActive = employee::where('field_id', 2)->where('status', 'Active')->count();
 
         $employeeTema = employee::where('field_id', 3)->count();
         $employeeTemaTerminated = employee::where('field_id', 3)->where('status', 'Terminated')->count();  
-        $employeeTemaActive = employee::where('field_id', 3)->where('status', 'Active')->count();    
+        $employeeTemaActive = employee::where('field_id', 3)->where('status', 'Active')->count();  
+        $Tema = employee::whereIn('field_id', [3,7])->get();
 
-        $employeeTakoradi = employee::where('field_id', 4)->count();
+
+        $employeeTakoradi = employee::where('field_id', 4)->get();
         $employeeTakoradiTerminated = employee::where('field_id', 4)->where('status', 'Terminated')->count();  
         $employeeTakoradiActive = employee::where('field_id', 4)->where('status', 'Active')->count();
 
-        $employeeKoforidua = employee::where('field_id', 5)->count();
+        $employeeKoforidua = employee::where('field_id', 5)->get();
         $employeeKoforiduaTerminated = employee::where('field_id', 5)->where('status', 'Terminated')->count();  
         $employeeKoforiduaActive = employee::where('field_id', 5)->where('status', 'Active')->count();  
 
-        $employeeKumasi = employee::where('field_id', 6)->count();
+        $employeeKumasi = employee::where('field_id', 6)->get();
         $employeeKumasiTerminated = employee::where('field_id', 6)->where('status', 'Terminated')->count();  
         $employeeKumasiActive = employee::where('field_id', 6)->where('status', 'Active')->count();
 
@@ -68,12 +70,12 @@ class EmployeeController extends Controller
         $employeeShyhillsTerminated = employee::where('field_id', 7)->where('status', 'Terminated')->count();  
         $employeeShyhillsActive = employee::where('field_id', 7)->where('status', 'Active')->count();
 
-        $Departments = Department::all();
-        $Roles = Role::all();
-        $Fields = Field::all();
-        $clients = Client::all();
-        $banks = Bank::all();
-        return view('employees.index', compact('employees', 'activeEmployees', 'terminatedEmployees', 'employeeAccra', 'employeeAccraTerminated', 'employeeAccraActive', 'employeeBotwe', 'employeeBotweTerminated', 'employeeBotweActive', 'employeeTema', 'employeeTemaTerminated', 'employeeTemaActive', 'employeeTakoradiActive', 'employeeTakoradiTerminated','employeeTakoradi', 'employeeKoforiduaActive', 'employeeKoforiduaTerminated','employeeKoforidua', 'employeeKumasiActive', 'employeeKumasiTerminated','employeeKumasi', 'employeeShyhills', 'employeeShyhillsTerminated', 'employeeShyhillsActive', 'Departments', 'Roles', 'Fields', 'clients', 'banks'));
+        // $Departments = Department::all();
+        // $Roles = Role::all();
+        // $Fields = Field::all();
+        // $clients = Client::all();
+        // $banks = Bank::all();
+        return view('employees.index', compact( 'Tema', 'employees', 'activeEmployees', 'terminatedEmployees', 'employeeAccra', 'employeeAccraTerminated', 'employeeAccraActive', 'employeeBotwe', 'employeeBotweTerminated', 'employeeBotweActive', 'employeeTema', 'employeeTemaTerminated', 'employeeTemaActive', 'employeeTakoradiActive', 'employeeTakoradiTerminated','employeeTakoradi', 'employeeKoforiduaActive', 'employeeKoforiduaTerminated','employeeKoforidua', 'employeeKumasiActive', 'employeeKumasiTerminated','employeeKumasi', 'employeeShyhills', 'employeeShyhillsTerminated', 'employeeShyhillsActive'));
    
         }
 
@@ -545,7 +547,7 @@ class EmployeeController extends Controller
         $terminate = [];
          $month = Carbon::parse($request->month);
         // New Recruit
-        $newRecruit = employee::whereMonth('date_of_joining', $month->month)->get();
+        $newRecruit = employee::whereMonth('date_of_joining', $month->month)->where('status', 'Active')->get();
         // $newRecruitCount = count($newRecruit);
         // dd($newRecruit);
 
@@ -581,8 +583,57 @@ class EmployeeController extends Controller
             //
         $pendingEmployees = employee::where('status', 'Pending')->get();
 
-        return view('employees.pending', compact('pendingEmployees'));
-   
+        $employeeAccra = employee::where('field_id', 1)->where('status', 'Pending')->get();
+
+        $employeeBotwe = employee::where('field_id', 2)->where('status', 'Pending')->get();
+
+        $employeeTema = employee::where('field_id', 3)->where('status', 'Pending')->count();
+        $Tema = employee::whereIn('field_id', [3,7])->where('status', 'Pending')->get();
+        $employeeShyhills = employee::where('field_id', 7)->where('status', 'Pending')->count();
+
+
+        $employeeTakoradi = employee::where('field_id', 4)->where('status', 'Pending')->get();
+
+        $employeeKoforidua = employee::where('field_id', 5)->where('status', 'Pending')->get();
+
+        $employeeKumasi = employee::where('field_id', 6)->where('status', 'Pending')->get();
+
+
+        return view('employees.pending', compact( 'Tema', 'pendingEmployees',  'employeeAccra', 'employeeBotwe', 'employeeTema', 'employeeTakoradi',  'employeeKoforidua', 'employeeKumasi', 'employeeShyhills'));
+
+    }
+
+
+    public function employeesAproval(Request $request)
+    {
+                // dd($request->all());
+         $employeeIds = $request->input('employees', []);
+        //  dd($employeeIds);
+        if (empty($employeeIds)) {
+            return back()->with('error', 'No employee selected !');
+        }
+        
+         $employees =  employee::findOrFail($request->employees);
+        //  dd($employees);
+
+         foreach ($employees as $employee )
+            {
+                $employee->status = 'Active';
+                $employee->user_id2 = Auth::id();
+                $employee->save();
+
+
+                DB::table('nrrit')->insert([
+                    'employee_id' =>  $employee->id,
+                    'name' => $employee->name,
+                    'status_month' =>  $employee->date_of_joining,
+                    'status' => 'Active',
+                    'status1' => 'New Recruit',
+                ]);
+            }
+
+               return back()->with('success', 'Selected Employees Has Been Approved !.');
+
 
     }
 

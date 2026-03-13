@@ -47,12 +47,12 @@ class SalaryController extends Controller
         $employeeShyhills =  employee::where('field_id', 7)->where('status', 'Active')->count();
 
 
-        $Departments = Department::all(); 
-        $Roles = Role::all();
-        $Fields = Field::all();
-        $clients = Client::all();
-        $banks = Bank::all();
-        return view('salaries.index', compact('employees', 'employeeAccra', 'employeeBotwe', 'employeeTema', 'employeeTakoradi', 'employeeKoforidua', 'employeeKumasi', 'employeeShyhills','Departments', 'Roles', 'Fields', 'clients', 'banks'));
+        // $Departments = Department::all(); 
+        // $Roles = Role::all();
+        // $Fields = Field::all();
+        // $clients = Client::all();
+        // $banks = Bank::all();
+        return view('salaries.index', compact('employees', 'employeeAccra', 'employeeBotwe', 'employeeTema', 'employeeTakoradi', 'employeeKoforidua', 'employeeKumasi', 'employeeShyhills'));
     }
 
     /**
