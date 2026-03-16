@@ -523,7 +523,7 @@
 
             </div>
   <!-- / Content -->
-         @if(Auth::user()->hasNotRole(['Manager']))
+         @if(Auth::user()->hasRole(['Manager', 'Invoice']))
           <div class="buy-now">
             @if ($employee->status !== 'Active')
 

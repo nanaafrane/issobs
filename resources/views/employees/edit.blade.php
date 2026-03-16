@@ -690,7 +690,7 @@
               </div>
             </div>
   <!-- / Content -->
-        @if(Auth::user()->hasNotRole(['Manager']))
+        @if(Auth::user()->hasRole(['Manager', 'Invoice']))
           <div class="buy-now">
             @if ($employee->status !== 'Active')
             <!-- <a style="margin-bottom: 70px;" href="{{url('employeeReinstate', $employee->id )}}" class="btn btn-danger btn-buy-now"> <i class="icon-base bx bx-edit-alt me-1"></i> Re-Instate </a> -->

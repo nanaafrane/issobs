@@ -622,7 +622,7 @@
         <form action="/employeesAproval" method="POST">
             @csrf
             <div class="col">
-                         @if(Auth::user()->hasNotRole(['Admin Assistant']))
+                         @if(Auth::user()->hasRole(['Manager', 'Invoice']))
                         <input class="form-check-input form-check-inline" type="checkbox" value="" id="options" />
 
                         <div class="form-check form-check-inline">                            
