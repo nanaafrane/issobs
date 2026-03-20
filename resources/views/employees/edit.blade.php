@@ -332,6 +332,7 @@
                     <div class="card mb-4">
                       <h5 class="card-header"><strong> Basic Infomation</strong> For : {{ $employee->name }}</h5>
 
+                    @if(Auth::user()->hasRole(['Manager', 'Invoice', 'Finance Manager']))
                       <!-- Account -->
                       <div class="card-body">
                     
@@ -375,6 +376,8 @@
                         </div>
                       </div>
                       <hr class="my-0" />
+                    @endif
+
                       <div class="card-body">
                           <div class="row">
                             <div class="mb-3 col-md-4">
@@ -464,7 +467,7 @@
                             </div>
 
                             <div class="mb-3 col-md-4">
-                              <label for="address" class="form-label"> <strong> Digital Address * </strong> </label>
+                              <label for="address" class="form-label"> <strong> Digital Address / Residence </strong> </label>
                               <input  class="form-control @error('address') is-invalid @enderror" type="text" id="address" name="address" placeholder="GC-XXX-X" value="{{$employee->address}}" autofocus />
                                 @error('address')
                                 <span class="invalid-feedback" role="alert">
@@ -597,7 +600,7 @@
                             <div class="row"> 
                                 <div class="col-md-2"></div>
                               <div class="mb-3 col-md-4">
-                                <label for="basic_salary" class="form-label"> <strong>  Basic Salary * </strong> </label>
+                                <label for="basic_salary" class="form-label"> <strong>  Basic Salary  </strong> </label>
                                 <input  class="form-control @error('basic_salary') is-invalid @enderror" type="number" id="basic_salary" name="basic_salary" placeholder="GH&#x20B5;" value="{{$employee->basic_salary}}" autofocus  step="any"/>
                                   @error('basic_salary')
                                   <span class="invalid-feedback" role="alert">
@@ -607,7 +610,7 @@
                               </div>
 
                               <div class="mb-3 col-md-4">
-                                <label for="allowances" class="form-label"> <strong>  Allowances * </strong> </label>
+                                <label for="allowances" class="form-label"> <strong>  Allowances  </strong> </label>
                                 <input  class="form-control @error('allowances') is-invalid @enderror" type="number" id="allowances" name="allowances" placeholder="GH&#x20B5;" value="{{$employee->allowances}}" autofocus  step="any"/>
                                   @error('allowances')
                                   <span class="invalid-feedback" role="alert">
@@ -623,7 +626,7 @@
                             <hr class="mb-3" />
 
                             <div class="mb-3 col-md-4">
-                              <label for="gurantor_name" class="form-label"> <strong>   Gurantor Name * </strong> </label>
+                              <label for="gurantor_name" class="form-label"> <strong>   Gurantor Name  </strong> </label>
                               <input  class="form-control @error('gurantor_name') is-invalid @enderror" type="text" id="gurantor_name" name="gurantor_name" placeholder="Gurantor Full Name" value="{{$employee->gurantor_name}}" autofocus />
                                 @error('gurantor_name')
                                 <span class="invalid-feedback" role="alert">
@@ -633,7 +636,7 @@
                             </div>
 
                               <div class="mb-3 col-md-4">
-                              <label for="gurantor_number" class="form-label"> <strong>   Gurantor Number * </strong> </label>
+                              <label for="gurantor_number" class="form-label"> <strong>   Gurantor Number  </strong> </label>
                               <input  class="form-control @error('gurantor_number') is-invalid @enderror" type="number" id="gurantor_number" name="gurantor_number" placeholder="Gurantor Number" value="{{$employee->gurantor_number}}" autofocus />
                                 @error('gurantor_number')
                                 <span class="invalid-feedback" role="alert">
@@ -644,7 +647,7 @@
 
 
                               <div class="mb-3 col-md-4">
-                              <label for="gurantor_address" class="form-label"> <strong>   Gurantor Address * </strong> </label>
+                              <label for="gurantor_address" class="form-label"> <strong>   Gurantor Address </strong> </label>
                               <input  class="form-control @error('gurantor_address') is-invalid @enderror" type="text" id="gurantor_address" name="gurantor_address" placeholder="Gurantor Address" value="{{$employee->gurantor_address}}" autofocus />
                                 @error('gurantor_address')
                                 <span class="invalid-feedback" role="alert">
@@ -654,7 +657,7 @@
                             </div>
 
                               <div class="mb-3 col-md-4">
-                              <label for="gurantor_nia_number" class="form-label"> <strong>   Gurantor NIA Number * </strong> </label>
+                              <label for="gurantor_nia_number" class="form-label"> <strong>   Gurantor NIA Number  </strong> </label>
                               <input  class="form-control @error('gurantor_nia_number') is-invalid @enderror" type="text" id="gurantor_nia_number" name="gurantor_nia_number" placeholder="Gurantor NIA Number" value="{{$employee->gurantor_nia_number}}" autofocus />
                                 @error('gurantor_nia_number')
                                 <span class="invalid-feedback" role="alert">
@@ -664,7 +667,7 @@
                               </div>
 
                             <div class="mb-3 col-md-4">
-                              <label for="relationship" class="form-label"> <strong>  Relationship with Gurantor * </strong> </label>
+                              <label for="relationship" class="form-label"> <strong>  Relationship with Gurantor  </strong> </label>
                               <input  class="form-control @error('relationship') is-invalid @enderror" type="text" id="relationship" name="relationship" placeholder="Mother or Father..." value="{{$employee->relationship}}" autofocus />
                                 @error('relationship')
                                 <span class="invalid-feedback" role="alert">

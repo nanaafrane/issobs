@@ -696,7 +696,7 @@
                                 <td>{{$employee->name}}  </td>
                                 <td>{{ $employee->gender }}  </td>
                                 <td>{{ $employee->phone_number }}  </td>
-                                <td>{{ $employee->date_of_joining?->format('F, Y') }} </td>
+                                <td>{{ $employee->date_of_joining?->format('l F d, Y') }} </td>
                                 <td> {{ $employee->department?->name }} </td>
                                 <td> {{ $employee->role?->name }}  </td>
                                 <td> {{ $employee->field?->name }}   </td>
@@ -770,7 +770,7 @@
                                 <td>{{$employee->name}}  </td>
                                 <td>{{ $employee->gender }}  </td>
                                 <td>{{ $employee->phone_number }}  </td>
-                                <td>{{ $employee->date_of_joining?->format('F, Y') }} </td>
+                                <td>{{ $employee->date_of_joining?->format('l F d, Y') }} </td>
                                 <td> {{ $employee->department?->name }} </td>
                                 <td> {{ $employee->role?->name }}  </td>
                                 <td> {{ $employee->field?->name }}   </td>
@@ -833,7 +833,7 @@
                                 <td>{{$employee->name}}  </td>
                                 <td>{{ $employee->gender }}  </td>
                                 <td>{{ $employee->phone_number }}  </td>
-                                <td>{{ $employee->date_of_joining?->format('F, Y') }} </td>
+                                <td>{{ $employee->date_of_joining?->format('l F d, Y') }} </td>
                                 <td> {{ $employee->department?->name }} </td>
                                 <td> {{ $employee->role?->name }}  </td>
                                 <td> {{ $employee->field?->name }}   </td>
@@ -896,7 +896,7 @@
                                 <td>{{$employee->name}}  </td>
                                 <td>{{ $employee->gender }}  </td>
                                 <td>{{ $employee->phone_number }}  </td>
-                                <td>{{ $employee->date_of_joining?->format('F, Y') }} </td>
+                                <td>{{ $employee->date_of_joining?->format('l F d, Y') }} </td>
                                 <td> {{ $employee->department?->name }} </td>
                                 <td> {{ $employee->role?->name }}  </td>
                                 <td> {{ $employee->field?->name }}   </td>
@@ -959,7 +959,7 @@
                                 <td>{{$employee->name}}  </td>
                                 <td>{{ $employee->gender }}  </td>
                                 <td>{{ $employee->phone_number }}  </td>
-                                <td>{{ $employee->date_of_joining?->format('F, Y') }} </td>
+                                <td>{{ $employee->date_of_joining?->format('l F d, Y') }} </td>
                                 <td> {{ $employee->department?->name }} </td>
                                 <td> {{ $employee->role?->name }}  </td>
                                 <td> {{ $employee->field?->name }}   </td>
@@ -1023,7 +1023,7 @@
                                 <td>{{$employee->name}}  </td>
                                 <td>{{ $employee->gender }}  </td>
                                 <td>{{ $employee->phone_number }}  </td>
-                                <td>{{ $employee->date_of_joining?->format('F, Y') }} </td>
+                                <td>{{ $employee->date_of_joining?->format('l F d, Y') }} </td>
                                 <td> {{ $employee->department?->name }} </td>
                                 <td> {{ $employee->role?->name }}  </td>
                                 <td> {{ $employee->field?->name }}   </td>
@@ -1086,7 +1086,7 @@
                                 <td>{{$employee->name}}  </td>
                                 <td>{{ $employee->gender }}  </td>
                                 <td>{{ $employee->phone_number }}  </td>
-                                <td>{{ $employee->date_of_joining?->format('F, Y') }} </td>
+                                <td>{{ $employee->date_of_joining?->format('l F d, Y') }} </td>
                                 <td> {{ $employee->department?->name }} </td>
                                 <td> {{ $employee->role?->name }}  </td>
                                 <td> {{ $employee->field?->name }}   </td>

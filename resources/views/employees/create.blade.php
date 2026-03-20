@@ -434,7 +434,7 @@
                             </div>
 
                             <div class="mb-3 col-md-4">
-                              <label for="address" class="form-label"> <strong> Digital Address  </strong> </label>
+                              <label for="address" class="form-label"> <strong> Digital Address / Residence </strong> </label>
                               <input  class="form-control @error('address') is-invalid @enderror" type="text" id="address" name="address" placeholder="GC-XXX-X" value="{{old('address')}}" autofocus />
                                 @error('address')
                                 <span class="invalid-feedback" role="alert">
@@ -572,8 +572,8 @@
                               <div class="row"> 
                                 <div class="col-md-2"></div>
                                 <div class="mb-3 col-md-4">
-                                  <label for="basic_salary" class="form-label"> <strong>  Basic Salary * </strong> </label>
-                                  <input  class="form-control @error('basic_salary') is-invalid @enderror" type="number" id="basic_salary" name="basic_salary" placeholder="GH&#x20B5;" value="{{old('basic_salary')}}" autofocus required step="any"/>
+                                  <label for="basic_salary" class="form-label"> <strong>  Basic Salary  </strong> </label>
+                                  <input  class="form-control @error('basic_salary') is-invalid @enderror" type="number" id="basic_salary" name="basic_salary" placeholder="GH&#x20B5;" value="{{old('basic_salary')}}" autofocus  step="any"/>
                                     @error('basic_salary')
                                     <span class="invalid-feedback" role="alert">
                                         <strong>{{ $message }}</strong>
@@ -582,8 +582,8 @@
                                 </div>
 
                                 <div class="mb-3 col-md-4">
-                                  <label for="allowances" class="form-label"> <strong>  Allawonce * </strong> </label>
-                                  <input  class="form-control @error('allowances') is-invalid @enderror" type="number" id="allowances" name="allowances" placeholder="GH&#x20B5;" value="{{old('allowances')}}" autofocus required step="any"/>
+                                  <label for="allowances" class="form-label"> <strong>  Allawonce  </strong> </label>
+                                  <input  class="form-control @error('allowances') is-invalid @enderror" type="number" id="allowances" name="allowances" placeholder="GH&#x20B5;" value="{{old('allowances')}}" autofocus  step="any"/>
                                     @error('allowances')
                                     <span class="invalid-feedback" role="alert">
                                         <strong>{{ $message }}</strong>
