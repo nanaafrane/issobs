@@ -2,7 +2,9 @@
 
     @section('css')
     <link rel="stylesheet" href="https://cdn.datatables.net/2.3.5/css/dataTables.dataTables.css" />
-    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/3.2.5/css/buttons.dataTables.css">    
+    <!-- <link rel="stylesheet" href="https://cdn.datatables.net/buttons/3.2.5/css/buttons.dataTables.css">     -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/fixedheader/4.0.5/css/fixedHeader.dataTables.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/fixedcolumns/5.0.5/css/fixedColumns.dataTables.css">
     @endsection
 
 
@@ -305,53 +307,80 @@
             </div>
         </div> <br>
         @endif
-
+       
+        <div class="card-header  ml-2  d-none d-lg-block">
+                  @include('flash-messages')
+        </div> <br>
+      
         <!-- Table -->  
         <hr> <br>
         <div class="row">
-            <div class="col-lg-12 mb-4">
-                <div class="card">
-                    <h5 class="card-header"> Salaries Paid via Banks  </h5>
-                    <div class="card-body"> 
-                    <div class="table-responsive text-nowrap">
-                        <table class="table table-hover" id="myTable">
-                            <thead class="table-dark">
-                                <tr>
-                                    <th>#</th>
-                                    <th>STAFF ID</th>
-                                    <th> NAME </th>
-                                    <th>FIELD</th>
-                                    <th> ROLE</th>
-                                    <th>CLIENT</th>
-                                    <th>LOCATION</th>
-                                    <th>BRANCH CODE</th>
-                                    <th>BRANCH</th>
-                                    <th>ACCOUNT NUMBER</th>
-                                    <th>  GH&#x20B5; NET SALARY</th>
-                                </tr>
-                            </thead>
-                            <tbody class="table-border-bottom-0">
-                                @foreach($BankSalaries as $key => $salary)
-                                <tr>
-                                    <td> {{ $key + 1 }} </td>
-                                    <td> FWSS{{ $salary->employee?->id }} </td>
-                                    <td> {{ strtoupper($salary->employee?->name) }} </td>
-                                    <td> {{ strtoupper($salary->field?->name) }} </td>
-                                    <td> {{ strtoupper( $salary->employee?->role?->name) }} </td>
-                                    <td> {{ $salary->client?->name || $salary->client?->business_name ? strtoupper($salary->client?->name) . strtoupper($salary->client?->business_name) :  strtoupper($salary->location) }} </td>
-                                    <td> {{ strtoupper($salary?->location) }} </td>
-                                    <td> {{ $salary->paymentInfo?->branch_code }} </td>
-                                    <td> {{ strtoupper($salary->branch)}} </td>
-                                    <td> {{ $salary->account_number }} </td>
-                                    <td> {{ number_format($salary->net_salary, 2) }} </td>
-                                </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
+            <form action="/salariesDeleteMultiple" method="POST">
+                @csrf
+                    <div class="col-lg-12 mb-4">
+                            <input class="form-check-input form-check-inline" type="checkbox" value="" id="options" />
+
+                            <div class="form-check form-check-inline">
+                                
+                                <button class="btn btn-success" name="submit" value="approve" onclick="return confirm('Kindly Confirm?')" type="submit"> <i class="icon-base bx bx-recycle"> </i> {{ __('Approve') }}</button>                   
+                        
+                                <a href="/exportBank/{{ \Carbon\Carbon::parse($month)->format('F, Y') }}/{{ $bank->id }}" class="btn btn-dark m-4" > <i class="icon-base bx bx-bxs-file-plus"> </i> {{ __(' Excel Bank Download') }}</a>                   
+                            </div>
+
+                            
+                        <div class="card">
+                            <h5 class="card-header"> Salaries Paid via Banks  </h5>
+                            <div class="card-body"> 
+                            <div class="table-responsive text-nowrap">
+                                <table class="table table-hover" id="myTable">
+                                    <thead class="table-dark">
+                                        <tr>
+                                            <th></th>
+                                            <th>#</th>
+                                            <th>STAFF ID</th>
+                                            <th>STATUS</th>
+                                            <th> NAME </th>
+                                            <th>FIELD</th>
+                                            <th> ROLE</th>
+                                            <th>CLIENT</th>
+                                            <th>LOCATION</th>
+                                            <th>BRANCH CODE</th>
+                                            <th>BRANCH</th>
+                                            <th>ACCOUNT NUMBER</th>
+                                            <th>  GH&#x20B5; NET SALARY</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="table-border-bottom-0">
+                                        @foreach($BankSalaries as $key => $salary)
+                                        <tr>
+                                            <td> <input class="checkBoxes form-check-input" type="checkbox" name="salary[]" value="{{ $salary->id }}" /> </td>
+                                            <td> {{ $key + 1 }} </td>
+                                            <td> FWSS{{ $salary->employee?->id }} </td>
+                                                                                                                                        
+                                                    @if($salary->payment_status == 'pending')
+                                                        <td> <span class="badge bg-label-danger"> {{ $salary->payment_status }} </span> </td>
+                                                    @else 
+                                                        <td> <span class="badge bg-label-success">  {{ $salary->payment_status }} </span> </td>
+                                                    @endif
+
+                                            <td> {{ strtoupper($salary->employee?->name) }} </td>
+                                            <td> {{ strtoupper($salary->field?->name) }} </td>
+                                            <td> {{ strtoupper( $salary->employee?->role?->name) }} </td>
+                                            <td> {{ $salary->client?->name || $salary->client?->business_name ? strtoupper($salary->client?->name) . strtoupper($salary->client?->business_name) :  strtoupper($salary->location) }} </td>
+                                            <td> {{ strtoupper($salary?->location) }} </td>
+                                            <td> {{ $salary->paymentInfo?->branch_code }} </td>
+                                            <td> {{ strtoupper($salary->branch)}} </td>
+                                            <td> {{ $salary->account_number }} </td>
+                                            <td> {{ number_format($salary->net_salary, 2) }} </td>
+                                        </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                            </div>
+                        </div>
                     </div>
-                    </div>
-                </div>
-            </div>
+            </form>
         </div>
 
 
@@ -366,46 +395,86 @@
 
     <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
     <script src="https://cdn.datatables.net/2.3.5/js/dataTables.js"></script>
-    <script src="https://cdn.datatables.net/buttons/3.2.5/js/dataTables.buttons.js"></script>
+    <script src="https://cdn.datatables.net/fixedcolumns/5.0.5/js/dataTables.fixedColumns.js"> </script>           
+    <script src="https://cdn.datatables.net/fixedcolumns/5.0.5/js/fixedColumns.dataTables.js"></script>     
+    <script src="https://cdn.datatables.net/fixedheader/4.0.5/js/dataTables.fixedHeader.js"></script>      
+    <script src="https://cdn.datatables.net/fixedheader/4.0.5/js/fixedHeader.dataTables.js"></script>  
+
+    <!-- <script src="https://cdn.datatables.net/buttons/3.2.5/js/dataTables.buttons.js"></script>
     <script src="https://cdn.datatables.net/buttons/3.2.5/js/buttons.dataTables.js"></script>
     <script src="https://cdn.datatables.net/buttons/3.2.5/js/buttons.html5.min.js"></script>
     <script src="https://cdn.datatables.net/buttons/3.2.5/js/buttons.colVis.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script> -->
 
 
     <script>
        
-      new DataTable('#myTable', {
-        //  dom: 'Blfrtip',
-        //  stateSave: false,
-        columnControl: [ ['search'] ],
-        layout: {
-            topStart: {
-                buttons: [ 
-                {
-                     extend: 'pageLength',
-                    text: 'Show',
-                    className: 'btn btn-secondary',
-                    Options: [10, 25, 50, 100, 250, 500, 1000, 2000], 
-                },
-                    {
-                        extend: 'excelHtml5',
-                        title: 'Salaries',
-                        className: 'btn btn-secondary',
-                        exportOptions: {
-                            columns: ':visible'
-                        }
-                    },
-                ]
-            }
-        },
+    //   new DataTable('#myTable', {
+    //     //  dom: 'Blfrtip',
+    //     //  stateSave: false,
+    //     columnControl: [ ['search'] ],
+    //     layout: {
+    //         topStart: {
+    //             buttons: [ 
+    //             {
+    //                  extend: 'pageLength',
+    //                 text: 'Show',
+    //                 className: 'btn btn-secondary',
+    //                 Options: [10, 25, 50, 100, 250, 500, 1000, 2000], 
+    //             },
+    //                 {
+    //                     extend: 'excelHtml5',
+    //                     title: 'Salaries',
+    //                     className: 'btn btn-secondary',
+    //                     exportOptions: {
+    //                         columns: ':visible'
+    //                     }
+    //                 },
+    //             ]
+    //         }
+    //     },
                 
-    });
+    // });
+
+
+        //     new DataTable('#myTable', {
+        //     responsive: true,
+        //       dom: 'flip',
+        //       lengthMenu: [[10, 25, 50, 100, 500], [10, 25, 50, 100, 500]],
+        //       columnControl: [ ['search'] ]
+
+              
+        // });
+
+        new DataTable('#myTable', {
+            fixedColumns: {
+            start: 0,
+            end: 0
+        },
+        fixedHeader: {
+            header: true,
+            footer: true
+        },
+        paging: false,
+        scrollCollapse: true,
+        scrollX: true,
+        scrollY: 300
+});
 
 
 
+    </script>
+
+        <script>
+        $(document).ready(function() {
+            $('#options').change(function() {
+                $('.checkBoxes').prop('checked', function(i, val) {
+                    return !val;
+                });
+            });
+        });
     </script>
 
     @endsection

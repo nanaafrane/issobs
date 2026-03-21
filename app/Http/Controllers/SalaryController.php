@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\SalaryBankExport;
 use App\Exports\SalaryExport;
 use App\Http\Requests\InvoiceToPayrollSearchRequest;
 use App\Http\Requests\SalariesUploadRequest;
@@ -960,8 +961,24 @@ class SalaryController extends Controller
        elseif(isset($request->submit) && $request->submit == 'approve')
         {
             // echo 'Approving';
-            
-            Salary::whereIn('id', $salaryIds)->update(['payment_status' => 'approved']);
+                $salaries = Salary::findOrFail($salaryIds);
+                foreach ($salaries as $salary) 
+                {
+                    $exists = Salary::where('id', $salary->id)
+                                    ->where('payment_status', 'approved')
+                                    ->exists();
+                    if ($exists) {
+                        $alreadyProcessed[] = $salary->id;
+                        continue;
+                    }
+
+                    Salary::where('id', $salary->id)->update(['payment_status' => 'approved']);
+                }
+            //  dd(count($alreadyProcessed));
+            if (!empty($alreadyProcessed))
+                 {
+                    return back()->with('error', 'Salaries with the IDs have already been Approved: '. implode(', ', $alreadyProcessed). ' The remaining have been Appoved ')  ;
+                }
             return back()->with('success', 'Approved salaries with IDs: ' . implode(', ', $salaryIds));
         }
     }
@@ -989,6 +1006,19 @@ class SalaryController extends Controller
         // dd($month);
         return (new SalaryExport($month))->download('Master Salaries For '.$date.'.xlsx');
       
+    }
+
+    public function exportBank($date, $bank_id)
+    {
+        // dd($date, $bank_id);
+        // GET SALARY MONTH
+        $month = Carbon::createFromFormat('F, Y',$date)->startOfMonth()->format('Y-m-d H:i:s');
+
+        //GET SALARY BANK
+        $bank = Bank::findOrFail($bank_id);
+        // dd($bank->name);
+
+        return (new SalaryBankExport($month, $bank_id, ['BANK NAME : '=> $bank->name, 'MONTH : ' => $date]))->download( $bank->name.' Salaries For '.$date.'.xlsx'); 
     }
 
 

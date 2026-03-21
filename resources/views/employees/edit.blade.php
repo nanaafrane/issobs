@@ -332,7 +332,6 @@
                     <div class="card mb-4">
                       <h5 class="card-header"><strong> Basic Infomation</strong> For : {{ $employee->name }}</h5>
 
-                    @if(Auth::user()->hasRole(['Manager', 'Invoice', 'Finance Manager']))
                       <!-- Account -->
                       <div class="card-body">
                     
@@ -376,7 +375,6 @@
                         </div>
                       </div>
                       <hr class="my-0" />
-                    @endif
 
                       <div class="card-body">
                           <div class="row">

@@ -170,8 +170,16 @@ class SendMoneyController extends Controller
                             ]);
 
                         // UPDATE SALARY MODEL IF RESPONSE IS SUCCESSFUL
-                        $salary->status1 = $result['Data']['transactionStatus'];
-                        $salary->save();                        
+
+                        if( $result['Data']['transactionStatus'] == 'success')
+                        {
+                            $salary->status1 = $result['Data']['transactionStatus'];
+                            $salary->payment_status = 'approved';
+                            $salary->save(); 
+                        }else{
+                            $salary->status1 = $result['Data']['transactionStatus'];
+                            $salary->save(); 
+                        }                       
                     }
 
                     return back()->with('success', 'Confirmation Process completed');
