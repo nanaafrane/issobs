@@ -110,7 +110,7 @@ class SalaryBankExport implements FromQuery, WithMapping , WithHeadings, WithDra
         $drawing = new Drawing();
         $drawing->setName('Logo');
         $drawing->setDescription('Company Logo');
-        $drawing->setPath(public_path('/img/icons/brands/issobs.png'));
+        $drawing->setPath('https://issobs.com/img/icons/brands/issobs.png');
         $drawing->setHeight(90);
         $drawing->setCoordinates('K1'); // Top-left corner
 
