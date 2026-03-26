@@ -331,7 +331,7 @@
                     <li class="nav-item ">
                       <a class="nav-link active" href=" javascript:void(0);" ><i class="bx bxs-comment-detail"></i> Payment Info </a>
                     </li>
-                     @if(Auth::user()->hasNotRole(['Admin Assistant']))
+                     @if(Auth::user()->hasRole(['Finance Manager', 'Manager']))
                     <li class="nav-item">
                       <a class="nav-link" href="{{url('employeesSalary', $employee_pay_info->employee_id)}}" ><i class="bx bx-money-withdraw"></i> Salaries </a>
                     </li>
