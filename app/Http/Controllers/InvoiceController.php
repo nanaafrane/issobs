@@ -43,7 +43,7 @@ class InvoiceController extends Controller
     public function printInvoice($invoice_id)
     {
         $invoice = Invoice::findOrFail($invoice_id);
-        $invoice_data = DB::table('invoice_data')->where('invoice_number', $invoice_id)->orderBy('invoice_number', 'desc')->get();
+        $invoice_data = DB::table('invoice_data')->where('invoice_id', $invoice_id)->orderBy('id', 'desc')->get();
         return view('sales.print', compact('invoice', 'invoice_data'));
     }
 
@@ -83,7 +83,7 @@ class InvoiceController extends Controller
            $invoice->user_id = Auth::user()->id;
            $invoice->save();
 
-           $invoice_number =  $invoice->id;
+           $invoice_id =  $invoice->id;
 
             $service = $request->input('service');
             $description   = $request->input('description');
@@ -99,13 +99,13 @@ class InvoiceController extends Controller
             $total = $sum_amount_from_invoice;
             // dd($vat_standard);
 
-        // dd($invoice_number, $description, $quantity, $unit_price, $amount, $quantity_count);
+        // dd($invoice_id, $description, $quantity, $unit_price, $amount, $quantity_count);
         if($quantity_count > 0)
         {
             for($i=0; $i<$quantity_count; $i++)
             {
                 DB::table('invoice_data')->insert([
-                'invoice_number' => $invoice_number,
+                'invoice_id' => $invoice_id,
                 'service_name' => $service[$i],
                 'description' => $description[$i],
                 'quantity' => $quantity[$i],
@@ -133,7 +133,7 @@ class InvoiceController extends Controller
             // $total = $sub_total_without_vat + $vatAmount;
             }
 
-            $update_invoice = Invoice::findOrFail($invoice_number);
+            $update_invoice = Invoice::findOrFail($invoice_id);
             $update_invoice->nhil = $nhilAmount;
             $update_invoice->getfund = $getfundAmount;
             // $update_invoice->chrl = $chrlAmount;
@@ -145,19 +145,19 @@ class InvoiceController extends Controller
 
             $transaction = new Transaction();
             $transaction->client_id = $request->input('client_id');
-            $transaction->invoice_id = $invoice_number;
+            $transaction->invoice_id = $invoice_id;
             $transaction->invoice_amount = $total;
             $transaction->status = 'unpaid';
             $transaction->save();
 
 
             // // select all transactions with this current invoice iD and assign value D to the checks culumn
-            // Transaction::where('invoice_id', $invoice_number)->update(['checks' => 'd']);
+            // Transaction::where('invoice_id', $invoice_id)->update(['checks' => 'd']);
 
-            return redirect()->route('invoice.show',['invoice' => $invoice_number])->with('primary', 'Invoice Generated Successfully');
+            return redirect()->route('invoice.show',['invoice' => $invoice_id])->with('primary', 'Invoice Generated Successfully');
 
         }
-        //    dd($invoice_number);
+        //    dd($invoice_id);
     }
 
     /**
@@ -167,7 +167,7 @@ class InvoiceController extends Controller
     {
         //
         // dd($invoice);
-        $invoice_data = DB::table('invoice_data')->where('invoice_number', $invoice->id)->orderBy('invoice_number', 'desc')->get();
+        $invoice_data = DB::table('invoice_data')->where('invoice_id', $invoice->id)->orderBy('id', 'DESC')->get();
         return view('sales.invoice_show', compact('invoice', 'invoice_data'));
 
     }
@@ -227,7 +227,7 @@ class InvoiceController extends Controller
 
 
         // dd($invoicemonth);
-        return view('sales.invoice_dashboard', compact('invoiceTotal', 'month','invoiceCount', 'reportInvoices', 'accraTotal', 'accraCount', 'botweTotal', 'botweCount', 'temaTotal', 'temaCount', 'takoradiTotal', 'takoradiCount', 'koforiduaTotal', 'koforiduaCount', 'kumasiTotal', 'kumasiCount', 'shyhillsTotal', 'shyhillsCount'));
+        return view('sales.invoice_dashboard_month', compact('invoiceTotal', 'month','invoiceCount', 'reportInvoices', 'accraTotal', 'accraCount', 'botweTotal', 'botweCount', 'temaTotal', 'temaCount', 'takoradiTotal', 'takoradiCount', 'koforiduaTotal', 'koforiduaCount', 'kumasiTotal', 'kumasiCount', 'shyhillsTotal', 'shyhillsCount'));
          
     }   
 
@@ -239,7 +239,7 @@ class InvoiceController extends Controller
         //
         // dd($invoice);
         $services = Service::all();
-        $invoice_data = DB::table('invoice_data')->where('invoice_number', $invoice->id)->get();
+        $invoice_data = DB::table('invoice_data')->where('invoice_id', $invoice->id)->get();
         $clients = Client::all();
         return view('sales.invoice_edit', compact('invoice', 'invoice_data' ,'services', 'clients'));
     }
@@ -300,15 +300,15 @@ class InvoiceController extends Controller
         // dd($description, $service_name, $quantity, $quantity_count, $unit_price, $amount, $sum_amount_from_invoice, $nhilAmount, $getfundAmount, $chrlAmount, $sub_total_without_vat, $vatAmount, $total);
         if ($quantity_count > 0)
         {
-            DB::table('invoice_data')->where('invoice_number', $invoice->id)->delete();
+            DB::table('invoice_data')->where('invoice_id', $invoice->id)->delete();
             for($i = 0; $i<$quantity_count; $i++) {
 
                 DB::table('invoice_data')->upsert(
                     [
-                        'invoice_number'=> $invoice->id, 'service_name'=> $service_name[$i], 'description' => $description[$i], 'quantity' => $quantity[$i], 'unit_price' => $unit_price[$i], 'amount' => $amount[$i],
+                        'invoice_id'=> $invoice->id, 'service_name'=> $service_name[$i], 'description' => $description[$i], 'quantity' => $quantity[$i], 'unit_price' => $unit_price[$i], 'amount' => $amount[$i],
                     ],
 
-                    ['invoice_number'],
+                    ['invoice_id'],
 
                     ['description','quantity', 'unit_price', 'amount']
 
@@ -351,44 +351,45 @@ class InvoiceController extends Controller
 
           Invoice::destroy($invoice->id);
           Transaction::where('invoice_id', $invoice->id)->delete();
-          DB::table('invoice_data')->where('invoice_number', $invoice->id)->delete();
+          DB::table('invoice_data')->where('invoice_id', $invoice->id)->delete();
 
         return redirect('invoice')->with('error', 'Invoices Deleted Successfully');
     }
 
     public function dashboardViewAllInvoices()
     {
-        $reportInvoices =  Invoice::all();
-        $accra = Invoice::whereRelation('client', 'field_id', 1)->get();
-        $accraTotal = $accra->sum('total');
-        $accraCount = count($accra);
+        // $reportInvoices =  Invoice::with('invoice_data')->get();
+        
+        // $accra = Invoice::whereRelation('client', 'field_id', 1)->get();
+        // $accraTotal = $accra->sum('total');
+        // $accraCount = count($accra);
 
-        $botwe = Invoice::whereRelation('client', 'field_id', 2)->get();
-        $botweTotal = $botwe->sum('total');
-        $botweCount = count($botwe);
+        // $botwe = Invoice::whereRelation('client', 'field_id', 2)->get();
+        // $botweTotal = $botwe->sum('total');
+        // $botweCount = count($botwe);
 
-        $tema = Invoice::whereRelation('client', 'field_id', 3)->get();
-        $temaTotal = $tema->sum('total');
-        $temaCount = count($tema);
+        // $tema = Invoice::whereRelation('client', 'field_id', 3)->get();
+        // $temaTotal = $tema->sum('total');
+        // $temaCount = count($tema);
 
-        $takoradi = Invoice::whereRelation('client', 'field_id', 4)->get();
-        $takoradiTotal = $takoradi->sum('total');
-        $takoradiCount = count($takoradi);
+        // $takoradi = Invoice::whereRelation('client', 'field_id', 4)->get();
+        // $takoradiTotal = $takoradi->sum('total');
+        // $takoradiCount = count($takoradi);
 
-        $koforidua = Invoice::whereRelation('client', 'field_id', 5)->get();
-        $koforiduaTotal = $koforidua->sum('total');
-        $koforiduaCount = count($koforidua);
+        // $koforidua = Invoice::whereRelation('client', 'field_id', 5)->get();
+        // $koforiduaTotal = $koforidua->sum('total');
+        // $koforiduaCount = count($koforidua);
 
-        $kumasi = Invoice::whereRelation('client', 'field_id', 6)->get();
-        $kumasiTotal = $kumasi->sum('total');
-        $kumasiCount = count($kumasi);
+        // $kumasi = Invoice::whereRelation('client', 'field_id', 6)->get();
+        // $kumasiTotal = $kumasi->sum('total');
+        // $kumasiCount = count($kumasi);
 
-        $shyhills = Invoice::whereRelation('client', 'field_id', 7)->get();
-        $shyhillsTotal = $shyhills->sum('total');
-        $shyhillsCount = count($shyhills);
+        // $shyhills = Invoice::whereRelation('client', 'field_id', 7)->get();
+        // $shyhillsTotal = $shyhills->sum('total');
+        // $shyhillsCount = count($shyhills);
 
-        // dd($koforidua->sum('total'), count($koforidua));
-       return view('sales.invoice_dashboard', compact('reportInvoices', 'accra' , 'botwe' , 'tema','shyhills' , 'takoradi' , 'koforidua' , 'kumasi' ,'accraTotal', 'accraCount', 'botweTotal', 'botweCount', 'temaTotal', 'shyhillsTotal', 'shyhillsCount' ,'temaCount', 'takoradiTotal', 'takoradiCount', 'koforiduaTotal', 'koforiduaCount', 'kumasiTotal', 'kumasiCount'));
+        // dd($reportInvoices);
+       return view('sales.invoice_dashboard');
     }
 
     // Display invoices with part payment outstanding

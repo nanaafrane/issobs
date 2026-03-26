@@ -5,8 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\User;
 use App\Models\Client;
-use App\Models\InvoiceData;
 use App\Models\Service;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Invoice extends Model
 {
@@ -53,11 +53,11 @@ class Invoice extends Model
         return $this->belongsTo(Client::class);
     }
 
-
-            // app/Models/Invoice.php
-    public function invoiceData() 
+        // One Invoice has many InvoiceDetails
+    public function invoice_data(): HasMany
     {
-        return $this->hasMany(InvoiceData::class, 'invoice_number', 'id'); 
+        return $this->hasMany(InvoiceData::class); 
     }
+
 
 }

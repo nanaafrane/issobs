@@ -12,7 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('invoice_data', function (Blueprint $table) {
-            $table->unsignedBigInteger('invoice_number')->nullable();
+            $table->id();
+            $table->foreignId('invoice_id')->constrained()->onDelete('cascade');
             $table->string('service_name')->nullable();
             $table->string('description')->nullable();
             $table->decimal('quantity')->nullable();
