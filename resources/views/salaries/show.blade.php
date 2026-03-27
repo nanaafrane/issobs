@@ -345,9 +345,10 @@
                                                         <h7>  BANK NAME : <strong> {{ strtoupper($salary->bank?->name ) }} </strong>  </h7> <br>
                                                         <h7> BANK ACCOUNT   : <strong> {{ strtoupper($salary?->account_number ) }} </strong> </h7> <br>
                                                         <h7> BANK BRANCH  : <strong> {{ strtoupper($salary?->branch ) }} </strong> </h7>  <br>
-                                                            @if($salary->employee->tax_button == 'on')
-                                                            <h7> TAX   : <strong> GH&#8373; {{ strtoupper($salary?->tax ) }} </strong> </h7>  
-                                                            @endif
+                                                        @endif
+                                                        <br>
+                                                        @if($salary->employee->tax_button == 'on')
+                                                        <h5 > <span class="text-danger">TAX</span>   : <strong> GH&#8373; {{ strtoupper($salary?->tax ) }} </strong> </h5>  
                                                         @endif
                                                     </address>
                                                 </div>
@@ -360,13 +361,13 @@
                                                     <div class="row">
                                                     <div class="col"> 
                                                     <address>
-                                                        <h7> BASIC SALARY </h7> 
-                                                        <h7 > ALLOWANCE  </h7>  
-                                                        <h7 > SSNIT 5% ADD UP </h7>  
-                                                        <h7> OVERTIME </h7>   
-                                                        <h7> AIRTIME ALLOWANCE </h7> 
-                                                        <h7> REIMBURSEMENT </h7> 
-                                                        <h7> TRANSPORTATION ALLOWANCE </h7>
+                                                        <h7> BASIC SALARY </h7> <br>
+                                                        <h7 > ALLOWANCE  </h7>  <br>
+                                                        <h7 > SSNIT 5% ADD UP </h7>   <br>
+                                                        <h7> OVERTIME </h7>   <br>
+                                                        <h7> AIRTIME ALLOWANCE </h7> <br>
+                                                        <h7> REIMBURSEMENT </h7> <br>
+                                                        <h7> T&T ALLOWANCE </h7> <br>
                                                         <h5> <strong>GROSS SALARY </strong>  </h5> 
                                                     </address>
                                                     </div>
@@ -403,12 +404,12 @@
                                                     <div class="col"> 
                                                     <address>
                                                         <h7> BASIC SALARY   </h7> <br> 
-                                                        <h7 > ALLOWANCE   <br> 
+                                                        <h7 > ALLOWANCE </h7>  <br> 
                                                         <h7 > SSNIT 5% ADD UP  </h7>  <br>
                                                         <h7> OVERTIME   <br>
                                                         <h7> AIRTIME ALLOWANCE  <br>
                                                         <h7> REIMBURSEMENT  <br>
-                                                        <h7> TRANSPORTATION ALLOWANCE  <br>
+                                                        <h7> T&T ALLOWANCE  <br>
                                                         <h5> <strong>GROSS SALARY </strong>  </h5> 
                                                     </address>
 
@@ -452,6 +453,8 @@
 
                                                 <div class="col">
                                                     <address>
+                                                        <h7> SSNIT 5% DEDUCTED  </h7> <br> 
+                                                        <h7> TAX  </h7> <br> 
                                                         <h7> WELFARE  </h7> <br> 
                                                         <h7 > MAINTENANCE </h7>  <br> 
                                                         <h7 >ABSENT </h7>  <br>
@@ -475,6 +478,8 @@
 
                                                 <div class="col text-end">
                                                     <address>
+                                                        <h7> <strong>   GH&#8373; {{ number_format($salary->ssnit_tier2_5, 2)  }} </strong>  </h7> <br> 
+                                                        <h7> <strong>   GH&#8373; {{ number_format($salary->tax, 2)  }} </strong>  </h7> <br> 
                                                         <h7> <strong>   GH&#8373; {{ number_format($salary->welfare, 2)  }} </strong>  </h7> <br> 
                                                         <h7 > <strong>  GH&#8373; {{ number_format($salary->maintenance, 2)  }} </strong> </h7>  <br> 
                                                         <h7 > <strong>  GH&#8373; {{ number_format($salary->absent, 2) }} </strong> </h7>  <br>

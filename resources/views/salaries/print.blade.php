@@ -77,7 +77,7 @@
                                             </div>
                                             <div class="row mb-3">
                                                 <div class="col-12 col-sm-6 col-md-6">
-                                                    <h6 class="text-danger"> <strong> BASIC INFO </strong>  </h6>
+                                                    <h5 class="text-danger"> <strong> BASIC INFO </strong>  </h5>
                                                     <address>
                                                         <h7> EMPLOYEE ID : <strong> FWSS {{ $salary->employee_id }} </strong> </h7> <br>
                                                         <h7>   EMPLOYEE NAME :<strong> {{ strtoupper($salary->employee?->name)  }} </strong>  </h7> <br>
@@ -87,41 +87,42 @@
                                                     </address>
                                                 </div>
                                                 <div class="col-12 col-sm-6 col-md-6">
-                                                <h6 class="text-danger text-end"> <strong> PAYMENT INFO </strong>  </h6>
+                                                <h5 class="text-danger text-end"> <strong> PAYMENT INFO </strong>  </h5>
                                                     <address>
                                                         <h7> PAYMENT TYPE : <strong> {{ strtoupper($salary->payment_type ) }} </strong> </h7> <br>
                                                         @if($salary->payment_type == 'Bank')
                                                         <h7>  BANK NAME : <strong> {{ strtoupper($salary->bank?->name ) }} </strong>  </h7> <br>
                                                         <h7> BANK ACCOUNT   : <strong> {{ strtoupper($salary?->account_number ) }} </strong> </h7> <br>
                                                         <h7> BANK BRANCH  : <strong> {{ strtoupper($salary?->branch ) }} </strong> </h7>  <br>
-                                                            @if($salary->employee->tax_button == 'on')
-                                                            <h7> TAX   : <strong> GH&#8373; {{ strtoupper($salary?->tax ) }} </strong> </h7>  
-                                                            @endif
+                                                        @endif
+                                                        <br>
+                                                        @if($salary->employee->tax_button == 'on')
+                                                        <h5 > <span class="text-danger">TAX</span>   : <strong> GH&#8373; {{ strtoupper($salary?->tax ) }} </strong> </h5>  
                                                         @endif
                                                     </address>
                                                 </div>
                                             </div>
-                                            <hr style="height: 5px; margin-top: -25px; background-color : black"/>
+                                            <hr style="height: 5px; background-color : black"/>
                                             @if($salary->employee->ssnit_button == 'on')
                                             <div class="row mb-3">
                                                 <div class="col 8">
-                                                    <h6 class="text-danger"> <strong> EARNINGS </strong>  </h6>
+                                                    <h5 class="text-danger"> <strong> EARNINGS </strong>  </h5>
                                                     <div class="row">
                                                     <div class="col"> 
-                                                    <address style="font-size: 0.8rem">
-                                                        <h7> BASIC SALARY </h7> 
-                                                        <h7 > ALLOWANCE  </h7>  
-                                                        <h7 > SSNIT 5% ADD UP </h7>  
-                                                        <h7> OVERTIME </h7>   
-                                                        <h7> AIRTIME ALLOWANCE </h7> 
-                                                        <h7> REIMBURSEMENT </h7> 
-                                                        <h7> TRANSPORTATION ALLOWANCE </h7>
-                                                        <h6> <strong>GROSS SALARY </strong>  </h6> 
+                                                    <address>
+                                                        <h7> BASIC SALARY </h7> <br>
+                                                        <h7 > ALLOWANCE  </h7>  <br>
+                                                        <h7 > SSNIT 5% ADD UP </h7>   <br>
+                                                        <h7> OVERTIME </h7>   <br>
+                                                        <h7> AIRTIME ALLOWANCE </h7> <br>
+                                                        <h7> REIMBURSEMENT </h7> <br>
+                                                        <h7> T&T ALLOWANCE </h7> <br>
+                                                        <h5> <strong>GROSS SALARY </strong>  </h5> 
                                                     </address>
                                                     </div>
 
                                                     <div class="col text-end">
-                                                        <address style="font-size: 0.8rem">
+                                                        <address>
                                                             <h7> <strong>   GH&#8373; {{ number_format($salary->basic_salary, 2)  }} </strong>  </h7> <br> 
                                                             <h7 > <strong>  GH&#8373; {{ number_format($salary->allowances, 2)  }} </strong> </h7>  <br> 
                                                             <h7 > <strong>  GH&#8373; {{ number_format($salary->ssnit_tier2_5, 2) }} </strong> </h7>  <br>
@@ -129,17 +130,17 @@
                                                             <h7> <strong>   GH&#8373; {{ number_format($salary->airtime_allowance, 2) }} </strong>  </h7> <br>
                                                             <h7>  <strong>  GH&#8373; {{ number_format($salary->reimbursements, 2) }} </strong>  </h7> <br>
                                                             <h7>  <strong>  GH&#8373; {{ number_format($salary->transport_allowance, 2) }} </strong>  </h7> <br>
-                                                            <h6> <strong>   GH&#8373; {{ number_format($salary->gross_salary, 2) }} </strong>  </h6> 
+                                                            <h5> <strong>   GH&#8373; {{ number_format($salary->gross_salary, 2) }} </strong>  </h5> 
                                                         </address>
                                                     </div>
                                                     </div>
                                                 </div>
                                                 <div class="col 4">
-                                                <h6 class="text-danger text-end"> <strong> PENSIONS </strong>  </h6>
-                                                    <address class="text-end" style="font-size: 0.8rem">
+                                                <h5 class="text-danger text-end"> <strong> PENSIONS </strong>  </h5>
+                                                    <address class="text-end">
                                                         <h7> TIER 1 : <strong> {{ number_format($salary->ssnit_tier1_0_5, 2) }}  </strong>  </h7> <br>
                                                         <h7> TIER 2 : <strong>  {{ number_format($salary->ssnit_tier2_5, 2) }}  </strong> </h7> <br>
-                                                        <h6> SUMMARY  : <strong>  GH&#8373; {{ number_format($salary->ssnit_tier1_0_5 + $salary->ssnit_tier2_5, 2) }}  </strong> </h6>  
+                                                        <h5> SUMMARY  : <strong>  GH&#8373; {{ number_format($salary->ssnit_tier1_0_5 + $salary->ssnit_tier2_5, 2) }}  </strong> </h5>  
                                                     </address>
                                                 </div>
                                             </div>
@@ -147,24 +148,24 @@
 
                                             <div class="row mb-3">
                                                 <div class="col">
-                                                    <h6 class="text-danger"> <strong> EARNINGS </strong>  </h6>
+                                                    <h5 class="text-danger"> <strong> EARNINGS </strong>  </h5>
                                                     <div class="row">
                                                     <div class="col"> 
-                                                    <address style="font-size: 0.8rem">
+                                                    <address>
                                                         <h7> BASIC SALARY   </h7> <br> 
-                                                        <h7 > ALLOWANCE   <br> 
+                                                        <h7 > ALLOWANCE </h7>  <br> 
                                                         <h7 > SSNIT 5% ADD UP  </h7>  <br>
                                                         <h7> OVERTIME   <br>
                                                         <h7> AIRTIME ALLOWANCE  <br>
                                                         <h7> REIMBURSEMENT  <br>
-                                                        <h7> TRANSPORTATION ALLOWANCE  <br>
-                                                        <h6> <strong>GROSS SALARY </strong>  </h6> 
+                                                        <h7> T&T ALLOWANCE  <br>
+                                                        <h5> <strong>GROSS SALARY </strong>  </h5> 
                                                     </address>
 
                                                     </div>
 
                                                     <div class="col text-end">
-                                                        <address style="font-size: 0.8rem">
+                                                        <address>
                                                             <h7> <strong>   GH&#8373; {{ number_format($salary->basic_salary, 2)  }} </strong>  </h7> <br> 
                                                             <h7 > <strong>  GH&#8373; {{ number_format($salary->allowances, 2)  }} </strong> </h7>  <br> 
                                                             <h7 ><strong>  GH&#8373; {{ number_format($salary->ssnit_tier2_5, 2) }} </strong> </h7>  <br>
@@ -172,7 +173,7 @@
                                                             <h7> <strong>  GH&#8373; {{ number_format($salary->airtime_allowance, 2) }} </strong>  </h7> <br>
                                                             <h7>  <strong>  GH&#8373; {{ number_format($salary->reimbursements, 2) }} </strong>  </h7> <br>
                                                             <h7>  <strong>  GH&#8373; {{ number_format($salary->transport_allowance, 2) }} </strong>  </h7> <br>
-                                                            <h6> <strong>  GH&#8373; {{ number_format($salary->gross_salary, 2) }} </strong>  </h6> 
+                                                            <h5> <strong>  GH&#8373; {{ number_format($salary->gross_salary, 2) }} </strong>  </h5> 
                                                         </address>
                                                     </div>
 
@@ -182,10 +183,10 @@
                                                 @if($salary->employee->ssnit_button == 'on')
                                                 <div class="col">
                                                 <h5 class="text-danger text-end"> <strong> PENSIONS </strong>  </h5>
-                                                    <address style="font-size: 0.8rem">
+                                                    <address>
                                                         <h7> TIER 1 : <strong> {{ number_format($salary->ssnit_tier1_0_5, 2) }}  </strong>  </h7> <br>
                                                         <h7> TIER 2   : <strong>  {{ number_format($salary->ssnit_tier2_5, 2) }}  </strong> </h7> <br>
-                                                        <h6> SUMMARY  : <strong> {{ number_format($salary->ssnit_tier1_0_5 + $salary->ssnit_tier2_5, 2) }}  </strong> </h6>  
+                                                        <h5> SUMMARY  : <strong> {{ number_format($salary->ssnit_tier1_0_5 + $salary->ssnit_tier2_5, 2) }}  </strong> </h5>  
                                                     </address>
                                                 </div>
                                                 @endif
@@ -193,14 +194,16 @@
                                             @endif
         
 
-                                            <hr style="height: 5px; margin-top: -25px; background-color : black"/>
+                                            <hr style="height: 5px; background-color : black"/>
                                             <div class="row mb-3">
                                                 <div class="col-12 col-sm-12 col-md-12">
-                                                    <h6 class="text-danger"> <strong> DEDUCTIONS  </strong>  </h6>
+                                                    <h5 class="text-danger"> <strong> DEDUCTIONS  </strong>  </h5>
                                                 <div class="row"> 
 
                                                 <div class="col">
-                                                    <address style="font-size: 0.8rem">
+                                                    <address>
+                                                        <h7> SSNIT 5% DEDUCTED  </h7> <br> 
+                                                        <h7> TAX  </h7> <br> 
                                                         <h7> WELFARE  </h7> <br> 
                                                         <h7 > MAINTENANCE </h7>  <br> 
                                                         <h7 >ABSENT </h7>  <br>
@@ -217,13 +220,15 @@
                                                         <h7> WALK IN  </h7> <br>
                                                         <h7> TOTAL DEDUCTIONS </h7> <br>
                                                         
-                                                        <h6><strong> NET SALARY  </strong>  </h6> 
+                                                        <h5><strong> NET SALARY  </strong>  </h5> 
                                                     </address>
 
                                                 </div>
 
                                                 <div class="col text-end">
-                                                    <address style="font-size: 0.8rem">
+                                                    <address>
+                                                        <h7> <strong>   GH&#8373; {{ number_format($salary->ssnit_tier2_5, 2)  }} </strong>  </h7> <br> 
+                                                        <h7> <strong>   GH&#8373; {{ number_format($salary->tax, 2)  }} </strong>  </h7> <br> 
                                                         <h7> <strong>   GH&#8373; {{ number_format($salary->welfare, 2)  }} </strong>  </h7> <br> 
                                                         <h7 > <strong>  GH&#8373; {{ number_format($salary->maintenance, 2)  }} </strong> </h7>  <br> 
                                                         <h7 > <strong>  GH&#8373; {{ number_format($salary->absent, 2) }} </strong> </h7>  <br>
@@ -248,20 +253,20 @@
                                                 </div>
                                             </div>
 
-                                            <hr style="height: 5px; margin-top: -25px; background-color : black"/>
+                                            <hr style="height: 5px; background-color : black"/>
                                             <div class="row mb-3">
-                                                <div class="col-12 col-sm-12 col-md-12">
-                                                    <h6 class="text-danger"> <strong> EMPLOYER CONTRIBUTION  </strong>  </h6>
+                                            <div class="col-12 col-sm-12 col-md-12">
+                                                    <h5 class="text-danger"> <strong> EMPLOYER CONTRIBUTION  </strong>  </h5>
                                                 <div class="row"> 
                                                 <div class="col">
-                                                    <address style="font-size: 0.8rem">
-                                                        <h6> SOCIAL SECURITY TIER 1  </h6> <br> 
+                                                    <address>
+                                                        <h5> SOCIAL SECURITY TIER 1  </h5> <br> 
                                                     </address>
                                                 </div>
 
                                                 <div class="col text-end">
-                                                    <address style="font-size: 0.8rem">
-                                                        <h6> <strong>   GH&#8373; {{ number_format($salary->ssnit_tobe_paid13_5, 2)  }} </strong>  </h6>
+                                                    <address>
+                                                        <h5> <strong>   GH&#8373; {{ number_format($salary->ssnit_tobe_paid13_5, 2)  }} </strong>  </h5> <br> 
                                                     </address>
                                                 </div>
 
@@ -269,25 +274,26 @@
                                                 </div>
                                             </div> 
 
-                                            <hr style="height: 5px; margin-top: -35px; background-color : black"/>
+                                            <hr style="height: 5px; background-color : black"/>
                                             <div class="row mb-3">
                                                 <div class="col-12 col-sm-12 col-md-12">
                                                 <div class="row"> 
                                                 <div class="col">
-                                                    <address style="font-size: 0.8rem">
-                                                        <h6> TOTAL  </h6>
+                                                    <address>
+                                                        <h5> TOTAL  </h5> <br> 
                                                     </address>
                                                 </div>
 
                                                 <div class="col text-end">
-                                                    <address style="font-size: 0.8rem">
-                                                        <h6> <strong>   GH&#8373; {{ number_format($salary->ssnit_tobe_paid13_5, 2)  }} </strong>  </h6> 
+                                                    <address>
+                                                        <h5> <strong>   GH&#8373; {{ number_format($salary->ssnit_tobe_paid13_5, 2)  }} </strong>  </h5> <br> 
                                                     </address>
                                                 </div>
 
                                                 </div>
                                                 </div>
                                             </div> 
+
 
                                         </div>
                                 </section>
