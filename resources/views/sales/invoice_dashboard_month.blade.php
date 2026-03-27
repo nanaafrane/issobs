@@ -650,7 +650,7 @@
                         @foreach($reportInvoices as $key => $invoice)
                         <tr>
                              <td>{{$key +1 }}</td>
-                                <td> #FWSSi{{$invoice->id}} </td>
+                                <td> FWSSi{{$invoice->id}} </td>
                                 <td> {{ $invoice->invoice_month?->format('F, Y') }}</td>
                                 @if ($invoice->client->name === $invoice->client->business_name)
                                 <td> {{$invoice->client->business_name}} </td>
@@ -663,65 +663,52 @@
                                 <td> {{$invoice->created_at->format('F l d, Y, H:i A')}} </td>
                                 <td> {{$invoice->due_date->diffForHumans()}} </td>
                                
+                               
                                 <td>
-                                    @if (count($invoice->invoice_data) > 1 )
-                                        <ol class="m-0 align-items-center">
-                                        @foreach ( $invoice->invoice_data as $service )
-                                        
-                                            <li> {{ $service->service_name }} </li> <br>
-                                            
+                                    @if (count($invoice->invoice_data) > 1)
+                                        @foreach ( $invoice->invoice_data as $num => $service )
+                                            {{  $num +1  }}.  {{ $service->service_name }} <br> <br>
                                         @endforeach
-                                        </ol>
                                     @else
-                                        <ol class="list-unstyled users-list m-0 avatar-group d-flex align-items-center">
                                         @foreach ( $invoice->invoice_data as $service )
-                                        
-                                            <li> {{ $service->service_name }} </li> <br>
-                                            
+                                             {{ $service->service_name }} 
                                         @endforeach
-                                    
-                                        </ol>
                                     @endif
 
                                 </td>
                                
+                            
                                 <td>
                                     @if (count($invoice->invoice_data) > 1)
-                                                                            <ol class="m-0 align-items-center">
-                                       @foreach ( $invoice->invoice_data as $description )
+                                       @foreach ( $invoice->invoice_data as $des => $description )
                                       
-                                         <li> {{ $description->description }} </li> <br>
+                                         {{  $des +1  }}. {{ $description->description }} <br> <br>
                                            
                                        @endforeach
                                    
-                                    </ol>
                                     @else
-                                        <ol class="list-unstyled users-list m-0 avatar-group d-flex align-items-center">
                                        @foreach ( $invoice->invoice_data as $description )
                                       
-                                         <li> {{ $description->description }} </li> <br>
+                                         {{ $description->description }}
                                            
                                        @endforeach
                                    
-                                    </ol>
                                     @endif
                                 </td>
 
                                 <td>
                                     @if (count($invoice->invoice_data) > 1)
-                                                                            <ol class="m-0 align-items-center">
-                                       @foreach ( $invoice->invoice_data as $guards )
+                                       @foreach ( $invoice->invoice_data as $guad => $guards )
                                       
-                                         <li> {{ $guards->quantity }} </li> <br>
+                                          {{  $guad +1  }}.  {{ $guards->quantity }} <br> <br>
                                            
                                        @endforeach
                                    
                                     </ol>
                                     @else
-                                        <ol class="list-unstyled users-list m-0 avatar-group d-flex align-items-center">
                                        @foreach ( $invoice->invoice_data as $guards )
                                       
-                                         <li> {{ $guards->quantity }} </li> <br>
+                                          {{ $guards->quantity }} 
                                            
                                        @endforeach
                                    
@@ -733,23 +720,19 @@
 
                                 <td>
                                     @if (count($invoice->invoice_data) > 1)
-                                        <ol class="m-0 align-items-center">
-                                       @foreach ( $invoice->invoice_data as $rate )
+                                       @foreach ( $invoice->invoice_data as $rat => $rate )
                                       
-                                         <li>GH&#x20B5; {{number_format($rate->unit_price, 2) }} </li>
+                                         {{  $rat +1  }}. GH&#x20B5; {{number_format($rate->unit_price, 2) }} <br> <br>
                                            
                                        @endforeach
                                    
-                                    </ol>
                                     @else
-                                    <ol class="list-unstyled users-list m-0 avatar-group d-flex align-items-center">
                                        @foreach ( $invoice->invoice_data as $rate )
                                       
-                                         <li>GH&#x20B5; {{number_format($rate->unit_price, 2) }} </li>
+                                          GH&#x20B5; {{number_format($rate->unit_price, 2) }}
                                            
                                        @endforeach
                                    
-                                    </ol>
                                     @endif
 
                                 </td>
@@ -984,7 +967,7 @@
                 },
                     {
                         extend: 'excelHtml5',
-                        title: 'Receipts',
+                        title: 'Invoices',
                         className: 'btn btn-secondary',
                         exportOptions: {
                             columns: ':visible'
