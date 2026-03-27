@@ -1018,7 +1018,7 @@ class SalaryController extends Controller
         $bank = Bank::findOrFail($bank_id);
         // dd($bank->name);
 
-        return (new SalaryBankExport($month, $bank_id, ['BANK NAME : '=> $bank->name, 'MONTH : ' => $date]))->download( $bank->name.' Salaries For '.$date.'.xlsx'); 
+        return (new SalaryBankExport($month, $bank_id, [ $bank->name, $date]))->download( $bank->name.' Salaries For '.$date.'.xlsx'); 
     }
 
 

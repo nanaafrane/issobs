@@ -711,7 +711,7 @@
                                 <td> {{ $employee->created_at?->diffForHumans() }} </td>
                                 <td>{{ $employee->updated_at?->format('F, Y') }} </td>
                                 <td>{{ $employee->updated_at?->diffForHumans() }} </td>
-                                <td>{{  $employee->user1?->name }}</td>
+                                <td>{{  $employee->user?->name }}</td>
                                <td>
                                 <div class="dropdown">
                                     <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown">
@@ -786,7 +786,7 @@
                                 <td> {{ $employee->created_at?->diffForHumans() }} </td>
                                 <td>{{ $employee->updated_at?->format('F, Y') }} </td>
                                 <td>{{ $employee->updated_at?->diffForHumans() }} </td>
-                                <td>{{  $employee->user1?->name }}</td>
+                                <td>{{  $employee->user?->name }}</td>
                                <td>
                                 <div class="dropdown">
                                     <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown">
@@ -850,7 +850,7 @@
                                 <td> {{ $employee->created_at?->diffForHumans() }} </td>
                                 <td>{{ $employee->updated_at?->format('F, Y') }} </td>
                                 <td>{{ $employee->updated_at?->diffForHumans() }} </td>
-                                <td>{{  $employee->user1?->name }}</td>
+                                <td>{{  $employee->user?->name }}</td>
                                <td>
                                 <div class="dropdown">
                                     <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown">
@@ -914,7 +914,7 @@
                                 <td> {{ $employee->created_at?->diffForHumans() }} </td>
                                 <td>{{ $employee->updated_at?->format('F, Y') }} </td>
                                 <td>{{ $employee->updated_at?->diffForHumans() }} </td>
-                                <td>{{  $employee->user1?->name }}</td>
+                                <td>{{  $employee->user?->name }}</td>
                                <td>
                                 <div class="dropdown">
                                     <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown">
@@ -978,7 +978,7 @@
                                 <td> {{ $employee->created_at?->diffForHumans() }} </td>
                                 <td>{{ $employee->updated_at?->format('F, Y') }} </td>
                                 <td>{{ $employee->updated_at?->diffForHumans() }} </td>
-                                <td>{{  $employee->user1?->name }}</td>
+                                <td>{{  $employee->user?->name }}</td>
                                <td>
                                 <div class="dropdown">
                                     <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown">
@@ -1043,7 +1043,7 @@
                                 <td> {{ $employee->created_at?->diffForHumans() }} </td>
                                 <td>{{ $employee->updated_at?->format('F, Y') }} </td>
                                 <td>{{ $employee->updated_at?->diffForHumans() }} </td>
-                                <td>{{  $employee->user1?->name }}</td>
+                                <td>{{  $employee->user?->name }}</td>
                                <td>
                                 <div class="dropdown">
                                     <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown">
@@ -1107,7 +1107,7 @@
                                 <td> {{ $employee->created_at?->diffForHumans() }} </td>
                                 <td>{{ $employee->updated_at?->format('F, Y') }} </td>
                                 <td>{{ $employee->updated_at?->diffForHumans() }} </td>
-                                <td>{{  $employee->user1?->name }}</td>
+                                <td>{{  $employee->user?->name }}</td>
                                <td>
                                 <div class="dropdown">
                                     <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown">

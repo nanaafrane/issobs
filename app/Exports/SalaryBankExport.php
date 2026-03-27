@@ -86,7 +86,9 @@ class SalaryBankExport implements FromQuery, WithMapping , WithHeadings, WithDra
     public function headings(): array
     {
         return [
-        [$this->dynamicHeaders],
+        ['FIRST WATCH SECURITY SERVICES LTD' ],
+        [ strtoupper($this->dynamicHeaders[0]) ],
+        [ strtoupper($this->dynamicHeaders[1]) ],
         [       
         'EMPLOYEE ID',
         'STATUS',
@@ -112,22 +114,28 @@ class SalaryBankExport implements FromQuery, WithMapping , WithHeadings, WithDra
         $drawing->setDescription('Company Logo');
         $drawing->setPath('https://issobs.com/img/icons/brands/issobs.png');
         $drawing->setHeight(90);
-        $drawing->setCoordinates('K1'); // Top-left corner
+        $drawing->setCoordinates('G1'); // Top-left corner
 
         return $drawing;
     }
 
     public function startCell(): string
     {
-        return 'A2'; 
+        return 'A1'; 
     }
 
 
     public function styles(Worksheet $sheet)
     {
         // Set the height of the first row to 100 pixels for a large logo
-        $sheet->getRowDimension(1)->setRowHeight(80);
+        // $sheet->getRowDimension(1)->setRowHeight(50);
 
+        return [
+            // Style the first row (header) as bold text.
+            1 => ['font' => ['bold' => true, 'size' => 18]],
+            2 => ['font' => ['bold' => true , 'size' => 18]],
+            3 => ['font' => ['bold' => true, 'size' => 18]],
+        ];
         // Optional: Set specific column width
         // $sheet->getColumnDimension('A')->setWidth(30);
     }
@@ -140,19 +148,25 @@ class SalaryBankExport implements FromQuery, WithMapping , WithHeadings, WithDra
     {
         return [
             AfterSheet::class => function(AfterSheet $event) {
+              
+                            // Insert row 4 and set data
+                $event->sheet->insertNewRowBefore(4, 1);
+              
+
                 // Get the highest row number (last row with data)
                 $lastRow = $event->sheet->getHighestRow();
-                
+               
+
                 // Add 1 to get the row number for the total
                 $totalRow = $lastRow + 1;
 
                 // Append the formula for total (e.g., column C)
-                $event->sheet->setCellValue('J' . $totalRow, 'Total');
-                $event->sheet->setCellValue('K' . $totalRow, '=SUM(K3:C' . $lastRow . ')');
+                $event->sheet->setCellValue('J4', 'Total');
+                $event->sheet->setCellValue('K4', '=SUM(K6:K' . $lastRow . ')');
 
-                // Optional: Style the total row (Bold)
-                $event->sheet->getStyle('J'.$totalRow.':K'.$totalRow)
-                    ->getFont()->setBold(true);
+                // Optional: Style the total row (Bold) HOW TO GET DYNAMIC ROW ('J'.$totalRow.':K'.$totalRow)
+                $event->sheet->getStyle('J4:K4')
+                    ->getFont()->setBold(true)->setSize(14);
             },
         ];
     }
