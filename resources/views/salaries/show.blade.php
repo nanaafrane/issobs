@@ -353,7 +353,7 @@
                                                     </address>
                                                 </div>
                                             </div>
-                                            <hr style="height: 5px; background-color : black"/>
+                                            <hr style="height: 5px; background-color : black; margin-top: -16px;"/>
                                             @if($salary->employee->ssnit_button == 'on')
                                             <div class="row mb-3">
                                                 <div class="col 8">
@@ -445,7 +445,7 @@
                                             @endif
         
 
-                                            <hr style="height: 5px; background-color : black"/>
+                                            <hr style="height: 5px; background-color : black; margin-top: -20px;"/>
                                             <div class="row mb-3">
                                                 <div class="col-12 col-sm-12 col-md-12">
                                                     <h5 class="text-danger"> <strong> DEDUCTIONS  </strong>  </h5>
@@ -504,7 +504,7 @@
                                                 </div>
                                             </div>
 
-                                            <hr style="height: 5px; background-color : black"/>
+                                            <hr style="height: 5px; background-color : black; margin-top: -20px;"/>
                                             <div class="row mb-3">
                                             <div class="col-12 col-sm-12 col-md-12">
                                                     <h5 class="text-danger"> <strong> EMPLOYER CONTRIBUTION  </strong>  </h5>
@@ -525,7 +525,7 @@
                                                 </div>
                                             </div> 
 
-                                            <hr style="height: 5px; background-color : black"/>
+                                            <hr style="height: 5px; background-color : black ; margin-top: -40px;"/>
                                             <div class="row mb-3">
                                                 <div class="col-12 col-sm-12 col-md-12">
                                                 <div class="row"> 
