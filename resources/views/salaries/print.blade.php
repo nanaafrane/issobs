@@ -125,11 +125,11 @@
                                                         <address>
                                                             <h7> <strong>   GH&#8373; {{ number_format($salary->basic_salary, 2)  }} </strong>  </h7> <br> 
                                                             <h7 > <strong>  GH&#8373; {{ number_format($salary->allowances, 2)  }} </strong> </h7>  <br> 
-                                                            <h7 > <strong>  GH&#8373; {{ number_format($salary->ssnit_tier2_5, 2) }} </strong> </h7>  <br>
-                                                            <h7> <strong>   GH&#8373; {{ number_format($salary->overtime, 2) }} </strong> </h7>   <br>
-                                                            <h7> <strong>   GH&#8373; {{ number_format($salary->airtime_allowance, 2) }} </strong>  </h7> <br>
-                                                            <h7>  <strong>  GH&#8373; {{ number_format($salary->reimbursements, 2) }} </strong>  </h7> <br>
-                                                            <h7>  <strong>  GH&#8373; {{ number_format($salary->transport_allowance, 2) }} </strong>  </h7> <br>
+                                                            <h7 > <strong>   {{ $salary->ssnit_tier2_5 }} </strong> </h7>  <br>
+                                                            <h7> <strong>    {{ $salary->overtime }} </strong> </h7>   <br>
+                                                            <h7> <strong>    {{ $salary->airtime_allowance }} </strong>  </h7> <br>
+                                                            <h7>  <strong>   {{ $salary->reimbursements }} </strong>  </h7> <br>
+                                                            <h7>  <strong>   {{ $salary->transport_allowance }} </strong>  </h7> <br>
                                                             <h5> <strong>   GH&#8373; {{ number_format($salary->gross_salary, 2) }} </strong>  </h5> 
                                                         </address>
                                                     </div>
@@ -168,11 +168,11 @@
                                                         <address>
                                                             <h7> <strong>   GH&#8373; {{ number_format($salary->basic_salary, 2)  }} </strong>  </h7> <br> 
                                                             <h7 > <strong>  GH&#8373; {{ number_format($salary->allowances, 2)  }} </strong> </h7>  <br> 
-                                                            <h7 ><strong>  GH&#8373; {{ number_format($salary->ssnit_tier2_5, 2) }} </strong> </h7>  <br>
-                                                            <h7> <strong> GH&#8373; {{ number_format($salary->overtime, 2) }} </strong> </h7>   <br>
-                                                            <h7> <strong>  GH&#8373; {{ number_format($salary->airtime_allowance, 2) }} </strong>  </h7> <br>
-                                                            <h7>  <strong>  GH&#8373; {{ number_format($salary->reimbursements, 2) }} </strong>  </h7> <br>
-                                                            <h7>  <strong>  GH&#8373; {{ number_format($salary->transport_allowance, 2) }} </strong>  </h7> <br>
+                                                            <h7 ><strong>  {{ $salary->ssnit_tier2_5 }} </strong> </h7>  <br>
+                                                            <h7> <strong> {{ $salary->overtime }} </strong> </h7>   <br>
+                                                            <h7> <strong>  {{ $salary->airtime_allowance }} </strong>  </h7> <br>
+                                                            <h7>  <strong>  {{ $salary->reimbursements }} </strong>  </h7> <br>
+                                                            <h7>  <strong>  {{ $salary->transport_allowance }} </strong>  </h7> <br>
                                                             <h5> <strong>  GH&#8373; {{ number_format($salary->gross_salary, 2) }} </strong>  </h5> 
                                                         </address>
                                                     </div>
@@ -227,22 +227,22 @@
 
                                                 <div class="col text-end">
                                                     <address>
-                                                        <h7> <strong>   GH&#8373; {{ number_format($salary->ssnit_tier2_5, 2)  }} </strong>  </h7> <br> 
-                                                        <h7> <strong>   GH&#8373; {{ number_format($salary->tax, 2)  }} </strong>  </h7> <br> 
-                                                        <h7> <strong>   GH&#8373; {{ number_format($salary->welfare, 2)  }} </strong>  </h7> <br> 
-                                                        <h7 > <strong>  GH&#8373; {{ number_format($salary->maintenance, 2)  }} </strong> </h7>  <br> 
-                                                        <h7 > <strong>  GH&#8373; {{ number_format($salary->absent, 2) }} </strong> </h7>  <br>
-                                                        <h7> <strong> GH&#8373; {{ number_format($salary->amnt_ded_cof_start_date, 2) }} </strong> </h7>   <br>
-                                                        <h7> <strong>  GH&#8373; {{ number_format($salary->boot, 2) }} </strong>  </h7> <br>
-                                                        <h7> <strong>  GH&#8373; {{ number_format($salary->iou, 2) }} </strong>  </h7> <br>
-                                                        <h7>  <strong>  GH&#8373; {{ number_format($salary->hostel, 2) }} </strong>  </h7> <br>
-                                                        <h7> <strong>  GH&#8373; {{ number_format($salary->insurance, 2) }} </strong>  </h7> <br>
-                                                        <h7> <strong>  GH&#8373; {{ number_format($salary->other_deductions, 2) }} </strong>  </h7> <br>
-                                                        <h7> <strong>  GH&#8373; {{ number_format($salary->reprimand, 2) }} </strong>  </h7> <br>
-                                                        <h7> <strong>  GH&#8373; {{ number_format($salary->raincoat, 2) }} </strong>  </h7> <br>
-                                                        <h7> <strong>  GH&#8373; {{ number_format($salary->meal, 2) }} </strong>  </h7> <br>
-                                                        <h7>  <strong>  GH&#8373; {{ number_format($salary->loan, 2) }} </strong>  </h7> <br>
-                                                        <h7>  <strong>  GH&#8373; {{ number_format($salary->walkin, 2) }} </strong>  </h7> <br>
+                                                        <h7> <strong>    {{ $salary->ssnit_tier2_5  }} </strong>  </h7> <br> 
+                                                        <h7> <strong>    {{ $salary->tax  }} </strong>  </h7> <br> 
+                                                        <h7> <strong>    {{ $salary->welfare  }} </strong>  </h7> <br> 
+                                                        <h7 > <strong>   {{ $salary->maintenance  }} </strong> </h7>  <br> 
+                                                        <h7 > <strong>   {{ $salary->absent }} </strong> </h7>  <br>
+                                                        <h7> <strong>  {{ $salary->amnt_ded_cof_start_date }} </strong> </h7>   <br>
+                                                        <h7> <strong>   {{ $salary->boot }} </strong>  </h7> <br>
+                                                        <h7> <strong>   {{ $salary->iou }} </strong>  </h7> <br>
+                                                        <h7>  <strong>   {{ $salary->hostel }} </strong>  </h7> <br>
+                                                        <h7> <strong>   {{ $salary->insurance }} </strong>  </h7> <br>
+                                                        <h7> <strong>   {{ $salary->other_deductions }} </strong>  </h7> <br>
+                                                        <h7> <strong>   {{ $salary->reprimand }} </strong>  </h7> <br>
+                                                        <h7> <strong>   {{ $salary->raincoat }} </strong>  </h7> <br>
+                                                        <h7> <strong>   {{ $salary->meal }} </strong>  </h7> <br>
+                                                        <h7>  <strong>   {{ $salary->loan }} </strong>  </h7> <br>
+                                                        <h7>  <strong>   {{ $salary->walkin }} </strong>  </h7> <br>
                                                         <h7> <strong>  GH&#8373; {{ number_format($salary->total_deductions, 2) }} </strong>  </h7> <br>
                                                         
                                                         <h5> <strong>  GH&#8373; {{ number_format($salary->net_salary, 2) }} </strong>  </h5> 
