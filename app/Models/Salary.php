@@ -55,6 +55,8 @@ class Salary extends Model
         'ssnit_comp_cont_13',
         'ssnit_tobe_paid13_5',
         'cost_to_company',
+        'user_id',
+        'user_id1',
 
         
     ];
@@ -71,6 +73,11 @@ class Salary extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function user1()
+    {
+        return $this->belongsTo(User::class, 'user_id1');
     }
 
     public function field()

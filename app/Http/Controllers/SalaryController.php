@@ -113,7 +113,7 @@ class SalaryController extends Controller
         $banks = Bank::all();
         $fields = Field::all(); 
 
-        $groupedBankSalaries = Salary::where('salary_month', $date)->whereIn('bank_id', $banks->pluck('id')->toArray())->groupBy('bank_id')->get(['bank_id', DB::raw('SUM(gross_salary) as gross'), DB::raw('SUM(total_deductions) as deductions'),  DB::raw('SUM(net_salary) as paid'),  DB::raw('COUNT(*) as total_employees')]);
+        $groupedBankSalaries = Salary::where('salary_month', $date)->where('payment_type', 'Bank')->whereIn('bank_id', $banks->pluck('id')->toArray())->groupBy('bank_id')->get(['bank_id', DB::raw('SUM(gross_salary) as gross'), DB::raw('SUM(total_deductions) as deductions'),  DB::raw('SUM(net_salary) as paid'),  DB::raw('COUNT(*) as total_employees')]);
         // dd($groupedBankSalaries->sum('total_employees'));
 
         $groupedCashkSalaries = Salary::where('salary_month', $date)->where('payment_type', 'Cash')->whereIn('field_id', $fields->pluck('id')->toArray())->groupBy('field_id')->get(['field_id', DB::raw('SUM(gross_salary) as gross'), DB::raw('SUM(total_deductions) as deductions'),  DB::raw('SUM(net_salary) as paid'),  DB::raw('COUNT(*) as total_employees')]);
@@ -239,7 +239,7 @@ class SalaryController extends Controller
     {
         // get all from salaries where payment type is bank and is equal to incoming bank_id and month is in current month
         $bank = Bank::findOrfail($bank_id);
-        $BankSalaries = Salary::where('salary_month', $month)->where('bank_id', $bank_id)->get();
+        $BankSalaries = Salary::where('salary_month', $month)->where('payment_type', 'Bank')->where('bank_id', $bank_id)->get();
         // dd( $BankSalaries);
         return view('salaries.bankmonth', compact('BankSalaries', 'bank', 'month'));
     }
@@ -777,6 +777,7 @@ class SalaryController extends Controller
             $salary->ssnit_comp_cont_13 =  $ssnit_13 ?? $salary->ssnit_comp_cont_13 ;
             $salary->ssnit_tobe_paid13_5 = $ssnit_13_5 ?? $salary->ssnit_tobe_paid13_5 ;
             $salary->cost_to_company = $netSalay + $ssnit_13_5 ?? $salary->cost_to_company ;  
+            $salary->user_id1 = Auth::id();
 
             $salary->save();    
             
@@ -902,6 +903,7 @@ class SalaryController extends Controller
             $salary->client_id = $request['client_id'] ;
             // UPDATE LOCATION
             $salary->location = $request['location'] ;
+            $salary->user_id1 = Auth::id();
 
             $salary->save(); 
 

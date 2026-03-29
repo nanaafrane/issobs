@@ -336,12 +336,18 @@
                                 <tr>
                                     <th>#</th>
                                     <th>STAFF ID</th>
+                                    <th>STATUS</th>
                                     <th> NAME </th>
                                     <th>FIELD</th>
                                     <th> ROLE</th>
                                     <th>CLIENT</th>
                                     <th>LOCATION </th>
                                     <th> NET SALARY </th>
+                                    <th>CREATED BY</th>
+                                    <th>UPDATED</th>
+                                    <th>UPDATED BY</th>
+                                    <th>PERIOD</th>
+                                    <th>ACTION</th>
                                 </tr>
                             </thead>
                             <tbody class="table-border-bottom-0">
@@ -349,12 +355,33 @@
                                 <tr>
                                     <td> {{ $key + 1 }} </td>
                                     <td> FWSS{{ $salary->employee?->id }} </td>
+                                                    @if($salary->payment_status == 'pending')
+                                                        <td> <span class="badge bg-label-danger"> {{ $salary->payment_status }} </span> </td>
+                                                    @else 
+                                                        <td> <span class="badge bg-label-success">  {{ $salary->payment_status }} </span> </td>
+                                                    @endif
                                     <td> {{ strtoupper($salary->employee?->name) }} </td>
                                     <td> {{ strtoupper($salary->field?->name) }} </td>
                                     <td> {{ $salary->employee?->role?->name }} </td>
                                     <td> {{ $salary->client?->name || $salary->client?->business_name ? $salary->client?->name . $salary->client?->business_name :  $salary->location }} </td>
                                     <td> {{  strtoupper($salary?->location) }} </td>
                                     <td> GH&#x20B5; {{ number_format($salary->net_salary, 2) }} </td>
+                                    <td>{{  $salary->user?->name }}</td>
+                                    <td> {{$salary->updated_at->format('F l d, Y, H:i A')}} </td>
+                                    <td> {{ $salary->user1?->name }} </td>
+                                    <td> {{$salary->updated_at->diffForHumans()}} </td>
+                                            <td>
+                                                <div class="dropdown">
+                                                    <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown">
+                                                        <i class="icon-base bx bx-dots-vertical-rounded"></i>
+                                                    </button>
+                                                    <div class="dropdown-menu">
+                                                        <a class="dropdown-item" href="{{url('salaries', $salary->id)}}"><i class="icon-base bx bxs-bullseye"></i> view</a>
+                                                        <a class="dropdown-item" href="/salaries/{{$salary->id}}/edit"><i class="icon-base bx bx-edit-alt me-1"></i> Edit</a>
+
+                                                    </div>
+                                                </div>
+                                            </td>
                                 </tr>
                                 @endforeach
                             </tbody>

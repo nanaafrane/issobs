@@ -59,7 +59,8 @@ return new class extends Migration
             $table->decimal('ssnit_comp_cont_13', 15, 2)->default(0);
             $table->decimal('ssnit_tobe_paid13_5', 15, 2)->default(0);
             $table->decimal('cost_to_company', 15, 2)->default(0);
-            $table->integer('user_id');
+            $table->integer('user_id')->nullable();
+            $table->integer('user_id1')->nullable();
             $table->timestamps();
         });
     }
