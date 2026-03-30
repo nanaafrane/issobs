@@ -273,10 +273,8 @@
                             </div>
                         </div>
                         <p class="mb-1"><strong> FIELD OFFICE :  {{ strtoupper($field->name) }}  </strong> </p> <br>
-                        <h4 class="card-title mb-3 text-white"><strong> GH&#x20B5;  {{ number_format($salariesPensions->sum('ssnit_tobe_paid13_5'), 2) }} </strong> </h4> <br>
-                        <small class="fw-medium">SSNIT 13% : GH&#x20B5;  {{ number_format($salariesPensions->sum('ssnit_comp_cont_13'), 2) }}  </small> <br>
-                        <small class="fw-medium"> TIER 1 : GH&#x20B5; {{ number_format($salariesPensions->sum('ssnit_tier1_0_5'), 2) }}  </small> <br>
-                        <small class="fw-medium"> TIER 2 : GH&#x20B5; {{ number_format($salariesPensions->sum('ssnit_tier2_5'), 2) }}  </small>
+                        <h4 class="card-title mb-3 text-white"><strong> GH&#x20B5;  {{ number_format($salariesIou->sum('iou'), 2) }} </strong> </h4> <br>
+                        <small class="fw-medium"> NET SALARY : GH&#x20B5; {{ number_format($salariesIou->sum('net_salary'), 2) }}  </small> <br>
 
                     </div>
                 </div>
@@ -289,7 +287,7 @@
         <div class="row">
             <div class="col-lg-12 mb-4">
                 <div class="card">
-                    <h5 class="card-header"> Salaries PENSIONS  </h5>
+                    <h5 class="card-header"> Salaries IOU  </h5>
                     <div class="card-body"> 
                     <div class="table-responsive text-nowrap">
                         <table class="table table-hover" id="myTable">
@@ -298,22 +296,18 @@
                                     <th>#</th>
                                     <th> EMPLOYEE NAME </th>
                                     <th> FIELD OFFICE</th>
-                                    <th>TIER 1</th>
-                                    <th>TIER 2</th>
-                                    <th>CONTRIBUTION 13%</th>
-                                    <th>CONTRIBUTION 13.5%</th>
+                                    <th>IOU </th>
+                                    <th>NET SALARY</th>
                                 </tr>
                             </thead>
                             <tbody class="table-border-bottom-0">
-                                @foreach($salariesPensions as $key => $pension)
+                                @foreach($salariesIou as $key => $iou)
                                 <tr>
                                     <td> {{ $key + 1 }} </td>
-                                    <td> {{ strtoupper($pension->employee->name) }} </td>
-                                    <td> {{ $pension->field->name }} </td>
-                                    <td> GH&#x20B5; {{ number_format($pension->ssnit_tier1_0_5, 2) }} </td>
-                                    <td> GH&#x20B5; {{ number_format($pension->ssnit_tier2_5, 2) }} </td>
-                                    <td> GH&#x20B5; {{ number_format($pension->ssnit_comp_cont_13, 2) }} </td>
-                                    <td> GH&#x20B5; {{ number_format($pension->ssnit_tobe_paid13_5, 2) }} </td>
+                                    <td> {{ strtoupper($iou->employee->name) }} </td>
+                                    <td> {{ $iou->field->name }} </td>
+                                    <td> GH&#x20B5; {{ number_format($iou->iou, 2) }} </td>
+                                    <td> GH&#x20B5; {{ number_format($iou->net_salary, 2) }} </td>
                                 </tr>
                                 @endforeach
                             </tbody>
@@ -362,7 +356,7 @@
                 },
                     {
                         extend: 'excelHtml5',
-                        title:  "{{ $field->name . ' PENSIONS ' . \Carbon\Carbon::parse($month)->format('F Y')}}",
+                        title:  "{{ $field->name . ' IOU ' . \Carbon\Carbon::parse($month)->format('F Y')}}",
                         className: 'btn btn-secondary',
                         exportOptions: {
                             columns: ':visible'

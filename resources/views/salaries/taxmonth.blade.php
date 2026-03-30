@@ -353,7 +353,7 @@
                 },
                     {
                         extend: 'excelHtml5',
-                        title: 'Salaries',
+                        title:  "{{ $field->name . ' TAX ' . \Carbon\Carbon::parse($month)->format('F Y')}}",
                         className: 'btn btn-secondary',
                         exportOptions: {
                             columns: ':visible'

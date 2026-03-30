@@ -270,14 +270,14 @@
 
         <div class="row">
             <div class="col-12">
-                <h3 class="card-header"> <i class="icon-base bx bx-transfer-alt"></i> Salaries Transaction   @if (isset($date)) <strong> / For Month: {{  \Carbon\Carbon::parse($date)->format('F Y') }}</strong> @endif </h3>
+                <h3 class="card-header"> <i class="icon-base bx bx-transfer-alt"></i> Salaries Transaction   @if (isset($month)) <strong> / For Month: {{  \Carbon\Carbon::parse($month)->format('F Y') }}</strong> @endif </h3>
 
             </div>
         </div><br>
 
          @if(Auth::user()->hasRole(['Invoice','Manager', 'Finance Manager' ]))
         <div class="row">
-            <div class="col-lg-3">
+            <div class="col-lg-2">
                 <div  class="card h-100 bg-dark text-white">
                     <div class="card-body">
                         <div class="card-title d-flex align-items-start justify-content-between mb-4">
@@ -298,7 +298,7 @@
                 </div>
             </div>
 
-            <div class="col-lg-3">
+            <div class="col-lg-2">
                 <div  class="card h-100 bg-dark text-white">
                     <div class="card-body">
                         <div class="card-title d-flex align-items-start justify-content-between mb-4">
@@ -319,7 +319,7 @@
             </div>
 
 
-            <div class="col-lg-3">
+            <div class="col-lg-2">
                 <div  class="card h-100 bg-dark text-white">
                     <div class="card-body">
                         <div class="card-title d-flex align-items-start justify-content-between mb-4">
@@ -338,7 +338,7 @@
                     </div>
                 </div>
             </div>
-            <div class="col-lg-3">
+            <div class="col-lg-2">
                 <div  class="card h-100 bg-dark text-white">
                     <div class="card-body">
                         <div class="card-title d-flex align-items-start justify-content-between mb-4">
@@ -358,6 +358,45 @@
                 </div>
             </div>
 
+            <div class="col-lg-2">
+                <div  class="card h-100 bg-dark text-white">
+                    <div class="card-body">
+                        <div class="card-title d-flex align-items-start justify-content-between mb-4">
+                            <div class="avatar flex-shrink-0">
+                                <img
+                                    src="{{ asset('img/icons/unicons/paypal.png') }}"
+                                    alt="chart success"
+                                    class="rounded" />
+                            </div>
+
+                        </div>
+                        <p class="mb-1"><strong> OVERTIME </strong></p>
+                        <h4 class="card-title mb-3 text-white"><strong> &#x20B5; {{ number_format($salariesOvertime->sum('overtime'), 2) }} </strong> </h4> <br>
+                        <small class="fw-medium"> TOTAL :  GH&#x20B5; {{ number_format($salariesOvertime->sum('paid') , 2) }} </small> <br>
+                        <small class="fw-medium"> EMPLOYEES : {{ $salariesOvertime->sum('total_employees') }} </small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-2">
+                <div  class="card h-100 bg-dark text-white">
+                    <div class="card-body">
+                        <div class="card-title d-flex align-items-start justify-content-between mb-4">
+                            <div class="avatar flex-shrink-0">
+                                <img
+                                    src="{{ asset('img/icons/unicons/paypal.png') }}"
+                                    alt="chart success"
+                                    class="rounded" />
+                            </div>
+
+                        </div>
+                        <p class="mb-1"><strong> IOU </strong></p>
+                        <h4 class="card-title mb-3 text-white"><strong> &#x20B5; {{ number_format($salariesIOU->sum('iou'), 2) }} </strong> </h4> <br>
+                        <small class="fw-medium"> TOTAL :  GH&#x20B5; {{ number_format($salariesIOU->sum('paid') , 2) }} </small> <br>
+                        <small class="fw-medium"> EMPLOYEES : {{ $salariesIOU->sum('total_employees') }} </small>
+                    </div>
+                </div>
+            </div>
 
         </div> <br> <br>
                      <div class="card-header  ml-2  d-none d-lg-block">
@@ -370,7 +409,7 @@
         <div class="nav-align-top">
             <ul class="nav nav-pills mb-4 nav-fill" role="tablist">
 
-                @if(Auth::user()->hasRole(['Finance Manager', 'Invoice']) )
+                @if(Auth::user()->hasRole(['Finance Manager', 'Invoice', 'Manager']) )
                 <li class="nav-item mb-1 mb-sm-0">
                     <button
                         type="button"
@@ -442,6 +481,40 @@
                         class="nav-link"
                         role="tab"
                         data-bs-toggle="tab"
+                        data-bs-target="#navs-pills-justified-overtime"
+                        aria-controls="navs-pills-justified-overtime"
+                        aria-selected="false">
+                        <span class="d-none d-sm-inline-flex align-items-center"><i class="icon-base bx bx-home icon-sm me-1_5"></i>Overtime
+                            <span class="badge rounded-pill bg-danger ms-1_5"> {{ $salariesOvertime->count() }}</span>
+                        </span>
+                        <i class="icon-base bx bx-home icon-sm d-sm-none"></i>
+                    </button>
+                </li>
+
+
+                <li class="nav-item mb-1 mb-sm-0">
+                    <button
+                        type="button"
+                        class="nav-link"
+                        role="tab"
+                        data-bs-toggle="tab"
+                        data-bs-target="#navs-pills-justified-iou"
+                        aria-controls="navs-pills-justified-iou"
+                        aria-selected="false">
+                        <span class="d-none d-sm-inline-flex align-items-center"><i class="icon-base bx bx-home icon-sm me-1_5"></i>IOU
+                            <span class="badge rounded-pill bg-danger ms-1_5"> {{ $salariesIOU->count() }}</span>
+                        </span>
+                        <i class="icon-base bx bx-home icon-sm d-sm-none"></i>
+                    </button>
+                </li>
+
+
+                <li class="nav-item mb-1 mb-sm-0">
+                    <button
+                        type="button"
+                        class="nav-link"
+                        role="tab"
+                        data-bs-toggle="tab"
                         data-bs-target="#navs-pills-justified-master"
                         aria-controls="navs-pills-justified-master"
                         aria-selected="false">
@@ -482,7 +555,7 @@
                                     <td> GH&#x20B5; {{ number_format($banks->paid, 2) }} </td>
                                     <td> {{ $banks->total_employees }} </td>
                                     <td> 
-                                        <a href="/salariesBankMonth/{{ $banks->bank->id }}/{{ $date }}" class="btn btn-dark btn-sm">
+                                        <a href="/salariesBankMonth/{{ $banks->bank->id }}/{{ $month }}" class="btn btn-dark btn-sm">
                                             <i class="bx bx-show"></i> 
                                         </a>    
                                     </td>
@@ -519,7 +592,7 @@
                                     <td> GH&#x20B5; {{ number_format($cash->paid, 2) }} </td>
                                     <td> {{ $cash->total_employees }} </td>
                                     <td> 
-                                        <a href="/salariesCashMonth/{{ $cash->field?->id }}/{{ $date }}" class="btn btn-dark btn-sm">
+                                        <a href="/salariesCashMonth/{{ $cash->field?->id }}/{{ $month->format('F Y') }}" class="btn btn-dark btn-sm">
                                             <i class="bx bx-show"></i> 
                                         </a>    
                                     </td>
@@ -555,7 +628,7 @@
                                     <td> GH&#x20B5; {{ number_format($taxes->tax, 2) }} </td>
                                     <td> {{ $taxes->total_employees }} </td>
                                     <td> 
-                                        <a href="/salariesTaxMonth/{{ $taxes->field?->id }}/{{ $date }}" class="btn btn-dark btn-sm">
+                                        <a href="/salariesTaxMonth/{{ $taxes->field?->id }}/{{ $month->format('F Y') }}" class="btn btn-dark btn-sm">
                                             <i class="bx bx-show"></i> 
                                         </a>    
                                     </td>   
@@ -596,7 +669,7 @@
                                     <td> GH&#x20B5; {{ number_format($pensions->cont13_5, 2) }} </td>
                                     <td> {{ $pensions->total_employees }} </td>
                                     <td> 
-                                        <a href="/salariesPensionMonth/{{ $pensions->field?->id }}/{{ $date }}" class="btn btn-dark btn-sm">
+                                        <a href="/salariesPensionMonth/{{ $pensions->field?->id }}/{{ $month->format('F Y') }}" class="btn btn-dark btn-sm">
                                             <i class="bx bx-show"></i> 
                                         </a>    
                                     </td>   
@@ -605,7 +678,73 @@
                             </tbody>
                         </table>
                     </div>
+                </div>
 
+
+                <div class="tab-pane fade" id="navs-pills-justified-overtime" role="tabpanel">
+                    <div class="table-responsive text-nowrap">
+                        <table id="myTableiOvertime" class="display">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Field</th>
+                                    <th>Overtime</th>
+                                    <th>Net Salary</th>
+                                    <th>Employees</th>
+                                    <th> View Employees</th>
+                                </tr>
+                            </thead>
+                            <tbody class="table-border-bottom-0">
+                              @foreach ($salariesOvertime as $key => $overtime)
+                                   <tr>
+                                    <td> {{ $key + 1 }} </td>
+                                    <td>{{ $overtime->field?->name }}</td>
+                                    <td> GH&#x20B5; {{ number_format($overtime->overtime, 2) }} </td>
+                                    <td> GH&#x20B5; {{ number_format($overtime->paid, 2) }}</td>
+                                    <td> {{ $overtime->total_employees }} </td>
+                                    <td> 
+                                        <a href="/salariesOvertimeMonth/{{ $overtime->field?->id }}/{{ $month->format('F Y') }}" class="btn btn-dark btn-sm">
+                                            <i class="bx bx-show"></i> 
+                                        </a>    
+                                    </td>   
+                                </tr>
+                                    @endforeach 
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="navs-pills-justified-iou" role="tabpanel">
+                    <div class="table-responsive text-nowrap">
+                        <table id="myTableiIou" class="display">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Field</th>
+                                    <th>IOU</th>
+                                    <th>Net Salary</th>
+                                    <th>Employees</th>
+                                    <th> View Employees</th>
+                                </tr>
+                            </thead>
+                            <tbody class="table-border-bottom-0">
+                              @foreach ($salariesIOU as $key => $iou)
+                                   <tr>
+                                    <td> {{ $key + 1 }} </td>
+                                    <td>{{ $iou->field?->name }}</td>
+                                    <td> GH&#x20B5; {{ number_format($iou->iou, 2) }} </td>
+                                    <td> GH&#x20B5; {{ number_format($iou->paid, 2) }}</td>
+                                    <td> {{ $iou->total_employees }} </td>
+                                    <td> 
+                                        <a href="/salariesIouMonth/{{ $iou->field?->id }}/{{ $month->format('F Y') }}" class="btn btn-dark btn-sm">
+                                            <i class="bx bx-show"></i> 
+                                        </a>    
+                                    </td>   
+                                </tr>
+                                    @endforeach 
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
 
 
@@ -779,6 +918,8 @@
         let myTableiBotwe = new DataTable('#myTableiBotwe');
         let myTableiShyhills = new DataTable('#myTableiShyhills');
         let myTableiTema = new DataTable('#myTableiTema');
+        let myTableiOvertime = new DataTable('#myTableiOvertime');
+        let myTableiIou = new DataTable('#myTableiIou');
 
         new DataTable('#myTableimaster', {
             responsive: true,

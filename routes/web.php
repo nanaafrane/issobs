@@ -122,6 +122,8 @@ Route::get('salariesBankMonth/{bank_id}/{month}', [SalaryController::class, 'ban
 Route::get('salariesCashMonth/{field_id}/{month}', [SalaryController::class, 'cashMonth'])->name('salaries.cashMonth');
 Route::get('salariesTaxMonth/{field_id}/{month}', [SalaryController::class, 'TaxMonth'] );
 Route::get('salariesPensionMonth/{field_id}/{month}',  [SalaryController::class, 'PensionMonth']);
+Route::get('salariesOvertimeMonth/{field_id}/{month}',  [SalaryController::class, 'OvertimeMonth']);
+Route::get('salariesIouMonth/{field_id}/{month}',  [SalaryController::class, 'IouMonth']);
 
 Route::get('salariesMonth', [SalaryController::class, 'salariesMonth'])->name('salaries.salariesMonth');
 Route::get('salariesInvPayroll', [SalaryController::class, 'InvToParoll']);
