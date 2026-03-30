@@ -127,10 +127,12 @@ class SalaryController extends Controller
         $salariesOvertime = Salary::whereMonth('salary_month', $month->month)->where('overtime', '>', 0)->whereIn('field_id', $fields->pluck('id')->toArray())->groupBy('field_id')->get(['field_id', DB::raw('SUM(net_salary) as paid'), DB::raw('SUM(overtime) as overtime'),  DB::raw('COUNT(*) as total_employees')]);
 
         $salariesIOU = Salary::whereMonth('salary_month', $month->month)->where('iou', '>', 0)->whereIn('field_id', $fields->pluck('id')->toArray())->groupBy('field_id')->get(['field_id', DB::raw('SUM(net_salary) as paid'), DB::raw('SUM(iou) as iou'),  DB::raw('COUNT(*) as total_employees')]);
+       
+        $salariesBoots = Salary::whereMonth('salary_month', $month->month)->where('boot', '>', 0)->whereIn('field_id', $fields->pluck('id')->toArray())->groupBy('field_id')->get(['field_id', DB::raw('SUM(net_salary) as paid'), DB::raw('SUM(boot) as boot'),  DB::raw('COUNT(*) as total_employees')]);
 
         $salariesMaster = Salary::whereMonth('salary_month', $month->month)->get();
         // dd($salariesOvertime, $salariesIOU);
-        return view('salaries.salariesmonth', compact('groupedBankSalaries','groupedCashkSalaries', 'salariesTaxes', 'salariesPensions', 'month', 'salariesMaster', 'salariesOvertime', 'salariesIOU'));
+        return view('salaries.salariesmonth', compact('groupedBankSalaries','groupedCashkSalaries', 'salariesTaxes', 'salariesPensions', 'month', 'salariesMaster', 'salariesOvertime', 'salariesIOU', 'salariesBoots'));
     }
 
 
@@ -324,6 +326,22 @@ class SalaryController extends Controller
         $salariesIou = Salary::whereMonth('salary_month', $month->month)->where('iou', '>', 0)->where('field_id', $field_id)->get();
         return view('salaries.ioumonth', compact('salariesIou', 'field', 'month'));
     }
+
+
+    /**
+     * Display salaries Iou for a month.
+     */
+    public function BootMonth($field_id, $month)
+    {
+         $month = Carbon::parse($month);
+        
+        // dd($field_id, $month);
+        $field = Field::findOrfail($field_id);
+        $salariesBoots = Salary::whereMonth('salary_month', $month->month)->where('boot', '>', 0)->where('field_id', $field_id)->get();
+        return view('salaries.bootmonth', compact('salariesBoots', 'field', 'month'));
+    }
+
+
 
     /**
      * Show the form for comparing invoices to payroll.

@@ -396,9 +396,34 @@
                         <small class="fw-medium"> EMPLOYEES : {{ $salariesIOU->sum('total_employees') }} </small>
                     </div>
                 </div>
-            </div>
+            </div>            
 
-        </div> <br> <br>
+        </div> <br>
+
+        <div class="row">
+            <div class="col-lg-2">
+                <div  class="card h-100 bg-dark text-white">
+                    <div class="card-body">
+                        <div class="card-title d-flex align-items-start justify-content-between mb-4">
+                            <div class="avatar flex-shrink-0">
+                                <img
+                                    src="{{ asset('img/icons/unicons/paypal.png') }}"
+                                    alt="chart success"
+                                    class="rounded" />
+                            </div>
+
+                        </div>
+                        <p class="mb-1"><strong> BOOTS </strong></p>
+                        <h4 class="card-title mb-3 text-white"><strong> &#x20B5; {{ number_format($salariesBoots->sum('boot'), 2) }} </strong> </h4> <br>
+                        <small class="fw-medium"> TOTAL :  GH&#x20B5; {{ number_format($salariesBoots->sum('paid') , 2) }} </small> <br>
+                        <small class="fw-medium"> EMPLOYEES : {{ $salariesBoots->sum('total_employees') }} </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        
+        <br> <br>
                      <div class="card-header  ml-2  d-none d-lg-block">
                   @include('flash-messages')
         </div> <br>
@@ -503,6 +528,22 @@
                         aria-selected="false">
                         <span class="d-none d-sm-inline-flex align-items-center"><i class="icon-base bx bx-home icon-sm me-1_5"></i>IOU
                             <span class="badge rounded-pill bg-danger ms-1_5"> {{ $salariesIOU->count() }}</span>
+                        </span>
+                        <i class="icon-base bx bx-home icon-sm d-sm-none"></i>
+                    </button>
+                </li>
+
+                <li class="nav-item mb-1 mb-sm-0">
+                    <button
+                        type="button"
+                        class="nav-link"
+                        role="tab"
+                        data-bs-toggle="tab"
+                        data-bs-target="#navs-pills-justified-boot"
+                        aria-controls="navs-pills-justified-boot"
+                        aria-selected="false">
+                        <span class="d-none d-sm-inline-flex align-items-center"><i class="icon-base bx bx-home icon-sm me-1_5"></i>BOOTS
+                            <span class="badge rounded-pill bg-danger ms-1_5"> {{ $salariesBoots->count() }}</span>
                         </span>
                         <i class="icon-base bx bx-home icon-sm d-sm-none"></i>
                     </button>
@@ -748,6 +789,40 @@
                 </div>
 
 
+                <div class="tab-pane fade" id="navs-pills-justified-boot" role="tabpanel">
+                    <div class="table-responsive text-nowrap">
+                        <table id="myTableiboot" class="display">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Field</th>
+                                    <th>Boots</th>
+                                    <th>Net Salary</th>
+                                    <th>Employees</th>
+                                    <th> View Employees</th>
+                                </tr>
+                            </thead>
+                            <tbody class="table-border-bottom-0">
+                              @foreach ($salariesBoots as $key => $boots)
+                                   <tr>
+                                    <td> {{ $key + 1 }} </td>
+                                    <td>{{ $boots->field?->name }}</td>
+                                    <td> GH&#x20B5; {{ number_format($boots->boot, 2) }} </td>
+                                    <td> GH&#x20B5; {{ number_format($boots->paid, 2) }}</td>
+                                    <td> {{ $boots->total_employees }} </td>
+                                    <td> 
+                                        <a href="/salariesBootMonth/{{ $boots->field?->id }}/{{ $month->format('F Y') }}" class="btn btn-dark btn-sm">
+                                            <i class="bx bx-show"></i> 
+                                        </a>    
+                                    </td>   
+                                </tr>
+                                    @endforeach 
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+
                  <div class="tab-pane fade" id="navs-pills-justified-master" role="tabpanel">
                     <form action="/salariesBulkCash" method="POST">
                         @csrf
@@ -920,6 +995,7 @@
         let myTableiTema = new DataTable('#myTableiTema');
         let myTableiOvertime = new DataTable('#myTableiOvertime');
         let myTableiIou = new DataTable('#myTableiIou');
+        let myTableiboot = new DataTable('#myTableiboot');
 
         new DataTable('#myTableimaster', {
             responsive: true,
