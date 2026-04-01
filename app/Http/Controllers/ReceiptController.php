@@ -670,36 +670,36 @@ class ReceiptController extends Controller
     {
         // $receipt_AllPayment = Receipt::sum('total');
 
-        $reportReceipt =  Receipt::all();
-        $accra = Receipt::whereRelation('client', 'field_id', 1)->get();
-        $accraTotal = $accra->sum('total');
-        $accraCount = count($accra);
+        // $reportReceipt =  Receipt::all();
+        // $accra = Receipt::whereRelation('client', 'field_id', 1)->get();
+        // $accraTotal = $accra->sum('total');
+        // $accraCount = count($accra);
 
-        $botwe = Receipt::whereRelation('client', 'field_id', 2)->get();
-        $botweTotal = $botwe->sum('total');
-        $botweCount = count($botwe);
+        // $botwe = Receipt::whereRelation('client', 'field_id', 2)->get();
+        // $botweTotal = $botwe->sum('total');
+        // $botweCount = count($botwe);
 
-        $tema = Receipt::whereRelation('client', 'field_id', 3)->get();
-        $temaTotal = $tema->sum('total');
-        $temaCount = count($tema);
+        // $tema = Receipt::whereRelation('client', 'field_id', 3)->get();
+        // $temaTotal = $tema->sum('total');
+        // $temaCount = count($tema);
 
-        $takoradi = Receipt::whereRelation('client', 'field_id', 4)->get();
-        $takoradiTotal = $takoradi->sum('total');
-        $takoradiCount = count($takoradi);
+        // $takoradi = Receipt::whereRelation('client', 'field_id', 4)->get();
+        // $takoradiTotal = $takoradi->sum('total');
+        // $takoradiCount = count($takoradi);
 
-        $koforidua = Receipt::whereRelation('client', 'field_id', 5)->get();
-        $koforiduaTotal = $koforidua->sum('total');
-        $koforiduaCount = count($koforidua);
+        // $koforidua = Receipt::whereRelation('client', 'field_id', 5)->get();
+        // $koforiduaTotal = $koforidua->sum('total');
+        // $koforiduaCount = count($koforidua);
 
-        $kumasi = Receipt::whereRelation('client', 'field_id', 6)->get();
-        $kumasiTotal = $kumasi->sum('total');
-        $kumasiCount = count($kumasi);
+        // $kumasi = Receipt::whereRelation('client', 'field_id', 6)->get();
+        // $kumasiTotal = $kumasi->sum('total');
+        // $kumasiCount = count($kumasi);
 
-        $shyhills = Receipt::whereRelation('client', 'field_id', 7)->get();
-        $shyhillsTotal = $shyhills->sum('total');
-        $shyhillsCount = count($shyhills);
+        // $shyhills = Receipt::whereRelation('client', 'field_id', 7)->get();
+        // $shyhillsTotal = $shyhills->sum('total');
+        // $shyhillsCount = count($shyhills);
 
-        return view('sales.receipt_dashboard', compact('reportReceipt', 'accra', 'botwe', 'tema', 'shyhills','takoradi', 'koforidua', 'kumasi' ,'accraTotal', 'accraCount', 'botweTotal', 'botweCount', 'temaTotal', 'temaCount', 'shyhillsTotal', 'shyhillsCount', 'takoradiTotal', 'takoradiCount', 'koforiduaTotal', 'koforiduaCount', 'kumasiTotal', 'kumasiCount'));
+        return view('sales.receipt_dashboard');
     }
 
     // Search all receipts for a given month
@@ -740,7 +740,7 @@ class ReceiptController extends Controller
         $shyhillsTotal = $shyhills->sum('total');
         $shyhillsCount = count($shyhills);
 
-        return view('sales.receipt_dashboard', compact('reportReceipt', 'reportReceiptCount', 'month','reportReceiptTotal','accra', 'botwe', 'tema', 'shyhills','takoradi', 'koforidua', 'kumasi' ,'accraTotal', 'accraCount', 'botweTotal', 'botweCount', 'temaTotal', 'temaCount', 'shyhillsTotal', 'shyhillsCount', 'takoradiTotal', 'takoradiCount', 'koforiduaTotal', 'koforiduaCount', 'kumasiTotal', 'kumasiCount'));
+        return view('sales.receipt_dashboard_search', compact('reportReceipt', 'reportReceiptCount', 'month','reportReceiptTotal','accra', 'botwe', 'tema', 'shyhills','takoradi', 'koforidua', 'kumasi' ,'accraTotal', 'accraCount', 'botweTotal', 'botweCount', 'temaTotal', 'temaCount', 'shyhillsTotal', 'shyhillsCount', 'takoradiTotal', 'takoradiCount', 'koforiduaTotal', 'koforiduaCount', 'kumasiTotal', 'kumasiCount'));
     }
 
 

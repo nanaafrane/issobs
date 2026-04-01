@@ -4,10 +4,7 @@
     <link rel="stylesheet" href="https://cdn.datatables.net/2.3.3/css/dataTables.dataTables.css" />
     <link rel="stylesheet" href="https://cdn.datatables.net/buttons/3.2.4/css/buttons.dataTables.css">
     <link href="https://cdn.datatables.net/columncontrol/1.1.1/css/columnControl.dataTables.min.css" rel="stylesheet">
-
     @endsection
-
-
 
     @section('side_nav')
     <!-- Menu -->
@@ -56,7 +53,6 @@
                     <div class="text-truncate" data-i18n="Transaction">Transactions</div>
                 </a>
             </li>
-
             @if(Auth::user()->hasRole(['Invoice', 'Finance Manager']))
             <li class="menu-item">
                 <a href="{{ url('invoice') }}" class="menu-link">
@@ -88,7 +84,6 @@
           </ul>
       </li>
             @endif
-
 
       @if(Auth::user()->hasRole(['Finance Manager']))
                   <li class="menu-item">
@@ -124,11 +119,6 @@
           <li class="menu-item">
               <a href="{{url('employeesBank')}}" class="menu-link">
               <div class="text-truncate" data-i18n="SList">Employee Banks</div>
-              </a>
-          </li>
-            <li class="menu-item">
-              <a href="{{url('employeesCash')}}" class="menu-link">
-              <div class="text-truncate" data-i18n="SList">Employee Cash</div>
               </a>
           </li>
           </ul>
@@ -173,11 +163,6 @@
                     <li class="menu-item">
               <a href="{{url('employeesBank')}}" class="menu-link">
               <div class="text-truncate" data-i18n="SList">Employee Banks</div>
-              </a>
-          </li>
-                      <li class="menu-item">
-              <a href="{{url('employeesCash')}}" class="menu-link">
-              <div class="text-truncate" data-i18n="SList">Employee Cash</div>
               </a>
           </li>
           </ul>
@@ -242,7 +227,7 @@
                 <div class="text-truncate" data-i18n="Payroll">Payroll</div>
                 </a>
                 <ul class="menu-sub">
-            @if(Auth::user()->hasRole(['Invoice', 'Finance Manager']))
+                @if(Auth::user()->hasRole(['Invoice', 'Finance Manager']))
                 <li class="menu-item">
                     <a href="{{ url('salaries') }}" class="menu-link">
                     <i class="menu-icon tf-icons bx bxs-user-account"></i>
@@ -266,13 +251,6 @@
                 </li>
 
                 <li class="menu-item">
-                    <a href="{{ url('salariesBulkCash') }}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bxs-group"></i>
-                    <div class="text-truncate" data-i18n="Transaction">Bulk Cash Salaries</div>
-                    </a>
-                </li>
-
-                <li class="menu-item">
                     <a href="{{ url('salariesInvPayroll') }}" class="menu-link">
                     <i class="menu-icon tf-icons bx bx-git-compare"></i>
                     <div class="text-truncate" data-i18n="InvtoPayroll">Invoice to Payroll</div>
@@ -280,12 +258,13 @@
                 </li>
                 </ul>
             </li>
-        @endif
+      @endif
+
+
         </ul>
     </aside>
     <!-- / Menu -->
     @endsection
-
 
 
 
@@ -295,18 +274,18 @@
 
         <div class="row">
             <div class="col-12">
-                <h3 class="card-header text-primary"> <i class="icon-base bx bx-bxs-receipt"></i> All Invoices  @if (isset($month)) <strong> / For Month: {{  \Carbon\Carbon::parse($month)->format('F Y') }}</strong> @endif </h3>
+                <h3 class="card-header text-primary"> <i class="icon-base bx bx-bxs-receipt"></i> All Payment @if (isset($month)) <strong> / In The Month: {{  \Carbon\Carbon::parse($month)->format('F Y') }}</strong> @endif </h3>
             </div>
         </div><br>
 
-        @if(isset($invoiceTotal) && isset($invoiceCount))
-            <div class="row mb-4">
+        @if(isset($reportReceiptTotal) && isset($reportReceiptCount))
+        <div class="row mb-4">
             <div class="col-lg-12 col-md-6 mb-4 mb-md-0">
-                <div  class="card h-100 bg-danger text-white">
+                <div style="background:  #152356; color: white;" class="card h-100">
                     <div class="card-body">
-                            <p class="mb-1"><strong> INVOICES </strong> </p>
-                            <h4 class="card-title mb-3 text-white"><strong> GH&#x20B5; {{ number_format($invoiceTotal, 2) }}  </strong> </h4>
-                            <small class="fw-medium"> TOTAL INVOICES GENERATED : {{ $invoiceCount }}  </small>
+                            <p class="mb-1"><strong> PAYMENTS  </strong> </p>
+                            <h4 class="card-title mb-3 text-white"><strong> GH&#x20B5; {{ number_format($reportReceiptTotal, 2) }}  </strong> </h4>
+                            <small class="fw-medium">  <strong>  TOTAL : {{ number_format( $reportReceiptCount, 2) }}</strong> </small> <br>
                     </div>
                 </div>
             </div>
@@ -316,75 +295,75 @@
         @if(Auth::user()->hasRole(['Invoice', 'Finance Manager']))
         <div class="row">
             <div class="col-lg-2">
-                <div style="background: crimson; color: white;" class="card h-100">
+                <div style="background: #152356; color: white;" class="card h-100">
                     <div class="card-body">
                         <div class="card-title d-flex align-items-start justify-content-between mb-4">
                             <div class="avatar flex-shrink-0">
                                 <img
-                                    src="img/icons/unicons/paypal.png"
+                                    src="img/icons/unicons/wallet-info.png"
                                     alt="chart success"
                                     class="rounded" />
                             </div>
                         </div>
                         <p class="mb-1"><strong> ACCRA </strong> </p>
-                        <h4 class="card-title mb-3 text-white"><strong>&#x20B5;{{$accraTotal}} </strong> </h4>
-                        <small class="fw-medium"> TOTAL INVOICES : <strong> {{$accraCount}}</strong> </small>
+                        <h4 class="card-title mb-3 text-white"><strong>&#x20B5;{{number_format($accraTotal, 2)}} </strong> </h4>
+                        <small class="fw-medium"> TOTAL PAYMENTS : <strong> {{$accraCount}}</strong> </small>
                     </div>
                 </div>
             </div>
 
             <div class="col-lg-2">
-                <div style="background: crimson; color: white;" class="card h-100">
+                <div style="background: #152356; color: white;" class="card h-100">
                     <div class="card-body">
                         <div class="card-title d-flex align-items-start justify-content-between mb-4">
                             <div class="avatar flex-shrink-0">
                                 <img
-                                    src="img/icons/unicons/paypal.png"
+                                    src="img/icons/unicons/wallet-info.png"
                                     alt="chart success"
                                     class="rounded" />
                             </div>
                         </div>
                         <p class="mb-1"><strong> BOTWE </strong></p>
-                        <h4 class="card-title mb-3 text-white"><strong>&#x20B5;{{$botweTotal}}</strong> </h4>
-                        <small class="fw-medium"> TOTAL INVOICES : <strong> {{$botweCount}} </strong> </small>
+                        <h4 class="card-title mb-3 text-white"><strong>&#x20B5;{{number_format($botweTotal,2)}}</strong> </h4>
+                        <small class="fw-medium"> TOTAL PAYMENTS : <strong> {{$botweCount}} </strong> </small>
                     </div>
                 </div>
             </div>
 
 
             <div class="col-lg-2">
-                <div style="background: crimson; color: white;" class="card h-100">
+                <div style="background: #152356; color: white;" class="card h-100">
                     <div class="card-body">
                         <div class="card-title d-flex align-items-start justify-content-between mb-4">
                             <div class="avatar flex-shrink-0">
                                 <img
-                                    src="img/icons/unicons/paypal.png"
-                                    alt="chart success"
-                                    class="rounded" />
-                            </div>
-
-                        </div>
-                        <p class="mb-1"><strong> SHAIILLS </strong></p>
-                        <h4 class="card-title mb-3 text-white"><strong>&#x20B5;{{$shyhillsTotal}} </strong> </h4>
-                        <small class="fw-medium"> TOTAL INVOICES : <strong> {{$shyhillsCount}} </strong> </small>
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-2">
-                <div style="background: crimson; color: white;" class="card h-100">
-                    <div class="card-body">
-                        <div class="card-title d-flex align-items-start justify-content-between mb-4">
-                            <div class="avatar flex-shrink-0">
-                                <img
-                                    src="img/icons/unicons/paypal.png"
+                                    src="img/icons/unicons/wallet-info.png"
                                     alt="chart success"
                                     class="rounded" />
                             </div>
 
                         </div>
                         <p class="mb-1"><strong> TEMA </strong></p>
-                        <h4 class="card-title mb-3 text-white"><strong>&#x20B5;{{$temaTotal}} </strong> </h4>
-                        <small class="fw-medium"> TOTAL INVOICES : <strong> {{$temaCount}} </strong> </small>
+                        <h4 class="card-title mb-3 text-white"> <strong>&#x20B5;{{number_format($temaTotal, 2)}} </strong> </h4>
+                        <small class="fw-medium"> TOTAL PAYMENTS : <strong> {{$temaCount}} </strong> </small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-2">
+                <div style="background: #152356; color: white;" class="card h-100">
+                    <div class="card-body">
+                        <div class="card-title d-flex align-items-start justify-content-between mb-4">
+                            <div class="avatar flex-shrink-0">
+                                <img
+                                    src="img/icons/unicons/wallet-info.png"
+                                    alt="chart success"
+                                    class="rounded" />
+                            </div>
+
+                        </div>
+                        <p class="mb-1"><strong> SHAIHILLS </strong></p>
+                        <h4 class="card-title mb-3 text-white"> <strong>&#x20B5;{{number_format($shyhillsTotal, 2)}} </strong> </h4>
+                        <small class="fw-medium"> TOTAL PAYMENTS : <strong> {{$shyhillsCount}} </strong> </small>
                     </div>
                 </div>
             </div>
@@ -392,56 +371,56 @@
 
 
             <div class="col-lg-2">
-                <div style="background: crimson; color: white;" class="card h-100">
+                <div style="background: #152356; color: white;" class="card h-100">
                     <div class="card-body">
                         <div class="card-title d-flex align-items-start justify-content-between mb-4">
                             <div class="avatar flex-shrink-0">
                                 <img
-                                    src="img/icons/unicons/paypal.png"
+                                    src="img/icons/unicons/wallet-info.png"
                                     class="rounded" />
                             </div>
 
                         </div>
                         <p class="mb-1">TAKORADI</p>
-                        <h4 class="card-title mb-3 text-white">&#x20B5; {{$takoradiTotal}}</h4>
-                        <small class="fw-medium"> TOTAL INVOICES : {{$takoradiCount}} </small>
+                        <h4 class="card-title mb-3 text-white"> <strong> &#x20B5; {{number_format($takoradiTotal,2)}} </strong></h4>
+                        <small class="fw-medium"> TOTAL PAYMENTS : {{$takoradiCount}} </small>
                     </div>
                 </div>
             </div>
 
             <div class="col-lg-2">
-                <div style="background: crimson; color: white;" class="card h-100">
+                <div style="background: #152356; color: white;" class="card h-100">
                     <div class="card-body">
                         <div class="card-title d-flex align-items-start justify-content-between mb-4">
                             <div class="avatar flex-shrink-0">
                                 <img
-                                    src="img/icons/unicons/paypal.png"
+                                    src="img/icons/unicons/wallet-info.png"
                                     class="rounded" />
                             </div>
 
                         </div>
                         <p class="mb-1"> <strong> KOFORIDUA </strong> </p>
-                        <h4 class="card-title mb-3 text-white">&#x20B5;{{$koforiduaTotal}}</h4>
-                        <small class="fw-medium"> TOTAL INVOICES : <strong> {{$koforiduaCount}} </strong> </small>
+                        <h4 class="card-title mb-3 text-white"><strong>&#x20B5;{{number_format($koforiduaTotal,2)}}</strong></h4>
+                        <small class="fw-medium"> TOTAL PAYMENTS : <strong> {{$koforiduaCount}} </strong> </small>
                     </div>
                 </div>
             </div>
 
 
             <div class="col-lg-2 m-3">
-                <div style="background: crimson; color: white;" class="card h-100">
+                <div style="background: #152356; color: white;" class="card h-100">
                     <div class="card-body">
                         <div class="card-title d-flex align-items-start justify-content-between mb-4">
                             <div class="avatar flex-shrink-0">
                                 <img
-                                    src="img/icons/unicons/paypal.png"
+                                    src="img/icons/unicons/wallet-info.png"
                                     class="rounded" />
                             </div>
 
                         </div>
                         <p class="mb-1"><strong> KUMASI </strong> </p>
-                        <h4 class="card-title mb-3 text-white">&#x20B5;{{$kumasiTotal}}</h4>
-                        <small class="fw-medium"> TOTAL INVOICES : <strong> {{$kumasiCount}} </strong> </small>
+                        <h4 class="card-title mb-3 text-white"><strong>&#x20B5;{{number_format($kumasiTotal,2)}}</strong></h4>
+                        <small class="fw-medium"> TOTAL PAYMENTS : <strong> {{$kumasiCount}} </strong> </small>
                     </div>
                 </div>
             </div>
@@ -450,19 +429,19 @@
         @elseif(Auth::user()->field?->name == 'Accra')
         <div class="row">
             <div class="col-xxl-12 mb-6 order-0">
-                <div style="background: crimson; color: white;" class="card h-100">
+                <div style="background: #152356; color: white;" class="card h-100">
                     <div class="card-body">
                         <div class="card-title d-flex align-items-start justify-content-between mb-4">
                             <div class="avatar flex-shrink-0">
                                 <img
-                                    src="img/icons/unicons/paypal.png"
+                                    src="img/icons/unicons/wallet-info.png"
                                     alt="chart success"
                                     class="rounded" />
                             </div>
                         </div>
                         <p class="mb-1"><strong> ACCRA </strong> </p>
-                        <h4 class="card-title mb-3 text-white"><strong>&#x20B5;{{$accraTotal}} </strong> </h4>
-                        <small class="fw-medium"> TOTAL INVOICES : <strong> {{$accraCount}}</strong> </small>
+                        <h4 class="card-title mb-3 text-white"><strong>&#x20B5;{{number_format($accraTotal,2)}} </strong> </h4>
+                        <small class="fw-medium"> TOTAL PAYMENTS : <strong> {{$accraCount}}</strong> </small>
                     </div>
                 </div>
             </div>
@@ -472,19 +451,19 @@
         @if(Auth::user()->field?->name == 'Botwe')
         <div class="row">
             <div class="col-xxl-12 mb-6 order-0">
-                <div style="background: crimson; color: white;" class="card h-100">
+                <div style="background: #152356; color: white;" class="card h-100">
                     <div class="card-body">
                         <div class="card-title d-flex align-items-start justify-content-between mb-4">
                             <div class="avatar flex-shrink-0">
                                 <img
-                                    src="img/icons/unicons/paypal.png"
+                                    src="img/icons/unicons/wallet-info.png"
                                     alt="chart success"
                                     class="rounded" />
                             </div>
                         </div>
                         <p class="mb-1"><strong> BOTWE </strong> </p>
-                        <h4 class="card-title mb-3 text-white"><strong>&#x20B5;{{$botweTotal}} </strong> </h4>
-                        <small class="fw-medium"> TOTAL INVOICES : <strong> {{$botweCount}}</strong> </small>
+                        <h4 class="card-title mb-3 text-white"><strong>&#x20B5;{{number_format($botweTotal,2)}} </strong> </h4>
+                        <small class="fw-medium"> TOTAL PAYMENTS : <strong> {{$botweCount}}</strong> </small>
                     </div>
                 </div>
             </div>
@@ -493,38 +472,20 @@
 
         @if(Auth::user()->field?->name == 'Tema')
         <div class="row">
-            <div class="col-xxl-6 mb-6 order-0">
-                <div style="background: crimson; color: white;" class="card h-100">
+            <div class="col-xxl-12 mb-6 order-0">
+                <div style="background: #152356; color: white;" class="card h-100">
                     <div class="card-body">
                         <div class="card-title d-flex align-items-start justify-content-between mb-4">
                             <div class="avatar flex-shrink-0">
                                 <img
-                                    src="img/icons/unicons/paypal.png"
-                                    alt="chart success"
-                                    class="rounded" />
-                            </div>
-                        </div>
-                        <p class="mb-1"><strong> SHAIILLS </strong> </p>
-                        <h4 class="card-title mb-3 text-white"><strong>&#x20B5;{{$shyhillsTotal}} </strong> </h4>
-                        <small class="fw-medium"> TOTAL INVOICES : <strong> {{$shyhillsCount}}</strong> </small>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-xxl-6 mb-6 order-0">
-                <div style="background: crimson; color: white;" class="card h-100">
-                    <div class="card-body">
-                        <div class="card-title d-flex align-items-start justify-content-between mb-4">
-                            <div class="avatar flex-shrink-0">
-                                <img
-                                    src="img/icons/unicons/paypal.png"
+                                    src="img/icons/unicons/wallet-info.png"
                                     alt="chart success"
                                     class="rounded" />
                             </div>
                         </div>
                         <p class="mb-1"><strong> TEMA </strong> </p>
-                        <h4 class="card-title mb-3 text-white"><strong>&#x20B5;{{$temaTotal}} </strong> </h4>
-                        <small class="fw-medium"> TOTAL INVOICES : <strong> {{$temaCount}}</strong> </small>
+                        <h4 class="card-title mb-3 text-white"><strong>&#x20B5;{{number_format($temaTotal,2)}} </strong> </h4>
+                        <small class="fw-medium"> TOTAL PAYMENTS : <strong> {{$temaCount}}</strong> </small>
                     </div>
                 </div>
             </div>
@@ -535,19 +496,19 @@
         @if(Auth::user()->field?->name == 'Takoradi')
         <div class="row">
             <div class="col-xxl-12 mb-6 order-0">
-                <div style="background: crimson; color: white;" class="card h-100">
+                <div style="background: #152356; color: white;" class="card h-100">
                     <div class="card-body">
                         <div class="card-title d-flex align-items-start justify-content-between mb-4">
                             <div class="avatar flex-shrink-0">
                                 <img
-                                    src="img/icons/unicons/paypal.png"
+                                    src="img/icons/unicons/wallet-info.png"
                                     alt="chart success"
                                     class="rounded" />
                             </div>
                         </div>
                         <p class="mb-1"><strong> TAKORADI </strong> </p>
-                        <h4 class="card-title mb-3 text-white"><strong>&#x20B5;{{$takoradiTotal}} </strong> </h4>
-                        <small class="fw-medium"> TOTAL INVOICES : <strong> {{$takoradiCount}}</strong> </small>
+                        <h4 class="card-title mb-3 text-white"><strong>&#x20B5;{{number_format($takoradiTotal,2)}} </strong> </h4>
+                        <small class="fw-medium"> TOTAL PAYMENTS : <strong> {{$takoradiCount}}</strong> </small>
                     </div>
                 </div>
             </div>
@@ -558,19 +519,19 @@
         @if(Auth::user()->field?->name == 'Koforidua')
         <div class="row">
             <div class="col-xxl-12 mb-6 order-0">
-                <div style="background: crimson; color: white;" class="card h-100">
+                <div style="background: #152356; color: white;" class="card h-100">
                     <div class="card-body">
                         <div class="card-title d-flex align-items-start justify-content-between mb-4">
                             <div class="avatar flex-shrink-0">
                                 <img
-                                    src="img/icons/unicons/paypal.png"
+                                    src="img/icons/unicons/wallet-info.png"
                                     alt="chart success"
                                     class="rounded" />
                             </div>
                         </div>
                         <p class="mb-1"><strong> KOFORIDUA </strong> </p>
-                        <h4 class="card-title mb-3 text-white"><strong>&#x20B5;{{$koforiduaTotal}} </strong> </h4>
-                        <small class="fw-medium"> TOTAL INVOICES : <strong> {{$koforiduaCount}}</strong> </small>
+                        <h4 class="card-title mb-3 text-white"><strong>&#x20B5;{{number_format($koforiduaTotal,2)}} </strong> </h4>
+                        <small class="fw-medium"> TOTAL PAYMENTS : <strong> {{$koforiduaCount}}</strong> </small>
                     </div>
                 </div>
             </div>
@@ -581,19 +542,19 @@
         @if(Auth::user()->field?->name == 'Kumasi')
         <div class="row">
             <div class="col-xxl-12 mb-6 order-0">
-                <div style="background: crimson; color: white;" class="card h-100">
+                <div style="background: #152356; color: white;" class="card h-100">
                     <div class="card-body">
                         <div class="card-title d-flex align-items-start justify-content-between mb-4">
                             <div class="avatar flex-shrink-0">
                                 <img
-                                    src="img/icons/unicons/paypal.png"
+                                    src="img/icons/unicons/wallet-info.png"
                                     alt="chart success"
                                     class="rounded" />
                             </div>
                         </div>
                         <p class="mb-1"><strong> KUMASI </strong> </p>
-                        <h4 class="card-title mb-3 text-white"><strong>&#x20B5;{{$kumasiTotal}} </strong> </h4>
-                        <small class="fw-medium"> TOTAL INVOICES : <strong> {{$kumasiCount}}</strong> </small>
+                        <h4 class="card-title mb-3 text-white"><strong>&#x20B5;{{number_format($kumasiTotal, 2)}} </strong> </h4>
+                        <small class="fw-medium"> TOTAL PAYMENTS : <strong> {{$kumasiCount}}</strong> </small>
                     </div>
                 </div>
             </div>
@@ -602,7 +563,7 @@
         <br><br>
 
         <div class="row">
-            <form action="/invoiceSearch" method="GET">
+            <form action="/receiptSearch" method="GET">
                 @csrf
                 <div class="col">
 
@@ -616,38 +577,25 @@
                 </div>
             </form>
         </div>
+         <hr> <br>  
 
-        <hr> <br>        
 
         <div class="row">
             <div class="col">
                 <table id="myTable" class="display">
                     <thead>
                         <tr>
-                            <th>#</th>
+                            <th>id</th>
+                            <th>R.Month</th>
                             <th>Invoice No.</th>
-                            <th>Invoice Month</th>
+                            <th>Inv. Month</th>
                             <th>Client Name</th>
                             <th>Phone No.</th>
                             <th> Field Office </th>
                             <th> Staff </th>
                             <th>Date Created</th>
-                            <th>Due Date</th>
-                            <th>Service </th>
-                            <th> Description</th>
-                            <th> Gurds </th>
-                            <th> Rate </th>
-                            <th> Invoice Value </th>
+                            <th>Inv Amount</th>
                             <th>Paid</th>
-                            <th>Balance</th>
-                            <th>Status</th>
-                            <th>Action</th>
-
-                            <th>Deductions</th>
-                            <th>Other Payment</th>
-
-                            <th>WHT</th>
-                            <th>VAT 7%</th>
 
                             <th>Cheque Bank</th>
                             <th>Cheque Ref</th>
@@ -659,249 +607,95 @@
 
                             <th>MoMo </th>
                             <th>Cash </th>
-                            <th>Total</th>
+
+                            <th>Deductions</th>
+                            <th>Other Payment</th>
+                            <th>WHT</th>
+                            <th>VAT 7%</th>
+
+                            <th>Balance</th>
+                            <th>Status</th>
+                            <th>View</th>
                         </tr>
                     </thead>
+
                     <tbody>
 
-                        @if(Auth::user()->hasRole(['Invoice', 'Finance Manager']))
-                        @foreach($reportInvoices as $key => $invoice)
+                        @if(Auth::user()->hasRole(['Invoice','Finance Manager']))
+                        @foreach($reportReceipt as $receipt)
                         <tr>
-                             <td>{{$key +1 }}</td>
-                                <td> FWSSi{{$invoice->id}} </td>
-                                <td> {{ $invoice->invoice_month?->format('F, Y') }}</td>
-                                @if ($invoice->client->name === $invoice->client->business_name)
-                                <td> {{$invoice->client->business_name}} </td>
-                                @else
-                                <td> {{$invoice->client->name}} {{$invoice->client->business_name}} </td>
-                                @endif
-                                <td> {{$invoice->client->phone_number}} </td>
-                                <td> {{$invoice->client->field->name}} </td>
-                                <td> {{$invoice->user->name}} </td>
-                                <td> {{$invoice->created_at->format('F l d, Y, H:i A')}} </td>
-                                <td> {{$invoice->due_date->diffForHumans()}} </td>
-                               
-                               
-                                <td>
-                                    @if (count($invoice->invoice_data) > 1)
-                                        @foreach ( $invoice->invoice_data as $num => $service )
-                                            {{  $num +1  }}.  {{ $service->service_name }} <br> <br>
-                                        @endforeach
-                                    @else
-                                        @foreach ( $invoice->invoice_data as $service )
-                                             {{ $service->service_name }} 
-                                        @endforeach
-                                    @endif
+                            <td>FWSSR{{$receipt->id}}</td>
+                            <td> {{ $receipt->receipt_month?->format('F, Y') }} </td>
+                            <td>FWSSi{{$receipt->invoice_id}} </td>
+                            <td> {{ $receipt->invoice?->invoice_month?->format('F, Y') }} </td>
+                            @if ($receipt->client->name === $receipt->client->business_name)
+                            <td> {{$receipt->client->business_name}} </td>
+                            @else
+                            <td> {{$receipt->client->name}} {{$receipt->client->business_name}} </td>
+                            @endif
+                            <td> {{$receipt->client->phone_number}} </td>
+                            <td> {{$receipt->client->field->name}} </td>
+                            <td> {{$receipt->user->name}} </td>
+                            <td> {{$receipt->created_at->diffForHumans()}} </td>
+                            <!-- <td>GH&#x20B5; {{$receipt->invoice->total}} </td> -->
+                            <td>  GH&#x20B5; {{$receipt->invoice->total}}</td>
 
-                                </td>
-                               
-                            
-                                <td>
-                                    @if (count($invoice->invoice_data) > 1)
-                                       @foreach ( $invoice->invoice_data as $des => $description )
-                                      
-                                         {{  $des +1  }}. {{ $description->description }} <br> <br>
-                                           
-                                       @endforeach
-                                   
-                                    @else
-                                       @foreach ( $invoice->invoice_data as $description )
-                                      
-                                         {{ $description->description }}
-                                           
-                                       @endforeach
-                                   
-                                    @endif
-                                </td>
+                            <td> GH&#x20B5; {{$receipt->total}} </td>
 
-                                <td>
-                                    @if (count($invoice->invoice_data) > 1)
-                                       @foreach ( $invoice->invoice_data as $guad => $guards )
-                                      
-                                          {{  $guad +1  }}.  {{ $guards->quantity }} <br> <br>
-                                           
-                                       @endforeach
-                                   
-                                    </ol>
-                                    @else
-                                       @foreach ( $invoice->invoice_data as $guards )
-                                      
-                                          {{ $guards->quantity }} 
-                                           
-                                       @endforeach
-                                   
-                                    </ol>
-                                    @endif
+                            <td> {{$receipt->cheque_bank}} </td>
+                            <td> {{$receipt->cheque_reference}} </td>
+                            <td> GH&#x20B5; {{$receipt->cheque_amount}} </td>
+                            <td> {{$receipt->transfer_bank}} </td>
+                            <td> {{$receipt->transfer_reference}} </td>
+                            <td> GH&#x20B5; {{$receipt->transfer_amount}} </td>
+                            <td> GH&#x20B5; {{$receipt->momo_amount}} </td>
+                            <td> GH&#x20B5; {{$receipt->cash_amount}} </td>
 
 
-                                </td>
+                           <td> GH&#x20B5; {{$receipt->dAmount}} </td>
+                           <td> GH&#x20B5; {{$receipt->other_payment_amnt}} </td>
+                           <td> GH&#x20B5; {{$receipt->wht_amount}} </td>
+                           <td> GH&#x20B5; {{$receipt->vat7_value}} </td>
 
-                                <td>
-                                    @if (count($invoice->invoice_data) > 1)
-                                       @foreach ( $invoice->invoice_data as $rat => $rate )
-                                      
-                                         {{  $rat +1  }}. GH&#x20B5; {{number_format($rate->unit_price, 2) }} <br> <br>
-                                           
-                                       @endforeach
-                                   
-                                    @else
-                                       @foreach ( $invoice->invoice_data as $rate )
-                                      
-                                          GH&#x20B5; {{number_format($rate->unit_price, 2) }}
-                                           
-                                       @endforeach
-                                   
-                                    @endif
+                            <td> GH&#x20B5;  {{ $receipt->invoice->total - $receipt->total - $receipt->dAmount }} </td>
 
-                                </td>
+                            @if($receipt->status == 'completed')
+                            <td><span class="badge bg-label-success">{{$receipt->status}}</span></td>
+                            @else
+                            <td><span class="badge bg-label-danger">{{$receipt->status}}</span></td>
+                            @endif
 
-                                <td> GH&#x20B5; {{number_format($invoice->total,2)}} </td>
-                                @if ($invoice->status == 'completed')
-                                <td> GH&#x20B5;{{ number_format($invoice->total, 2)}} </td>
-                                @elseif($invoice->status == 'uncompleted')
-                                <td> GH&#x20B5;{{ number_format($invoice->total - $invoice->balance, 2)}} </td>
-                                @else
-                                <td> GH&#x20B5; 0.00 </td>
-                                @endif
-
-                                @if ($invoice->status == 'unpaid')
-                                <td> GH&#x20B5; {{number_format($invoice?->total,2)}} </td> 
-                                @else
-                                <td> GH&#x20B5; {{number_format($invoice?->balance,2)}} </td> 
-                                @endif
-
-
-                                @if($invoice->status == 'completed')
-                                <td><span class="badge bg-label-success">{{$invoice->status}}</span></td>
-                                @else
-                                <td><span class="badge bg-label-danger">{{$invoice->status}}</span></td>
-                                @endif
-                                <td>
-                                    <a href="{{url('invoice', $invoice->id)}}" class="btn btn-danger">
-                                        <i class="icon-base bx bxs-bullseye"></i>
-                                    </a>
-                                </td>
-
-
-                                <td>
-                                        @foreach ( $invoice->receipt as $deda => $dama )
-                                      
-                                        {{ $dama->dAmount }} <br> <br>
-                                           
-                                       @endforeach
-                                </td>
-                                <td>
-                                        @foreach ( $invoice->receipt as $other => $otherpay )
-                                      
-                                        {{ $otherpay->other_payment_amnt }} <br> <br>
-                                           
-                                       @endforeach
-                                </td>
-                                <td>
-                                        @foreach ( $invoice->receipt as $wht => $whtamnt )
-                                      
-                                        {{ $whtamnt->wht_amount }} <br> <br>
-                                           
-                                       @endforeach
-                                </td>
-                                <td>
-                                        @foreach ( $invoice->receipt as $vat => $vat7 )
-                                      
-                                        {{ $vat7->vat7_value }} <br> <br>
-                                           
-                                       @endforeach
-                                </td>
-
-                                <td>
-                                    @foreach ( $invoice->receipt as $cheq => $chequ )
-                                      
-                                        {{ $chequ->cheque_bank }} <br> <br>
-                                           
-                                       @endforeach
-                                </td>
-                                <td>
-                                      @foreach ( $invoice->receipt as $cheqre => $chequref )
-                                      
-                                        {{ $chequref->cheque_reference }} <br> <br>
-                                           
-                                       @endforeach
-                                </td>
-                                <td>
-                                        @foreach ( $invoice->receipt as $cheqama => $cheqamnt )
-                                      
-                                       GH&#x20B5; {{ number_format($cheqamnt->cheque_amount, 2) }} <br> <br>
-                                           
-                                       @endforeach
-                                </td>
-                                <td>
-                                        @foreach ( $invoice->receipt as $trans => $tansfer )
-                                      
-                                        {{ $tansfer->transfer_bank }} <br> <br>
-                                           
-                                       @endforeach
-                                </td>
-                                <td> 
-                                      @foreach ( $invoice->receipt as $transref => $tansferref )
-                                      
-                                        {{ $tansferref->transfer_reference }} <br> <br>
-                                           
-                                       @endforeach
-                                </td>
-                                <td>
-                                        @foreach ( $invoice->receipt as $transama => $transamnt )
-                                      
-                                        {{ $transamnt->transfer_amount }} <br> <br>
-                                           
-                                       @endforeach
-                                </td>
-                                <td>
-                                        @foreach ( $invoice->receipt as $mo => $momo )
-                                      
-                                        GH&#x20B5;{{ number_format($momo->momo_amount,2) }} <br> <br>
-                                           
-                                       @endforeach
-                                </td>
-                                <td>
-                                        @foreach ( $invoice->receipt as $ca => $cash )
-                                      
-                                        GH&#x20B5;{{ number_format($cash->cash_amount,2) }} <br> <br>
-                                           
-                                       @endforeach
-                                </td>
-                                <td>
-                                         @foreach ( $invoice->receipt as $tot => $total )
-                                      
-                                        GH&#x20B5;{{ number_format($total->total,2) }} <br> <br>
-                                           
-                                       @endforeach  
-                                </td>
+                            <td>
+                                <a href="{{url('receipt', $receipt->id)}}" class="btn btn-info">
+                                    <i class="icon-base bx bxs-bullseye"></i>
+                                </a>
+                            </td>
                         </tr>
                         @endforeach
-
-
-
                         @elseif(Auth::user()->field?->name == 'Accra')
-                        @foreach($accra as $invoice)
+                        @foreach($accra as $receipt)
                         <tr>
-                            <td> #FWSSi{{$invoice->id}} </td>
-                            <td> {{$invoice->client->name}}</td>
-                            <td> {{$invoice->client->phone_number}} </td>
-                            <td> {{$invoice->client->business_name}} </td>
-                            <td> {{$invoice->client->field->name}} </td>
-                            <td> {{$invoice->user->name}} </td>
-                            <td> {{$invoice->created_at}} </td>
-                            <td> {{$invoice->due_date}} </td>
-                            <td> </td>
-                            <td> </td>
-                            <td> </td>
-                            <td> GH&#x20B5; {{number_format($invoice->total,2)}} </td>
-                            @if($invoice->status == 'completed')
-                            <td><span class="badge bg-label-success">{{$invoice->status}}</span></td>
+                            <td>FWSSR{{$receipt->id}}</td>
+                            <td>FWSSi{{$receipt->invoice_id}} </td>
+                            <td> {{$receipt->client->name}}</td>
+                            <td> {{$receipt->client->phone_number}} </td>
+                            <td> {{$receipt->client->business_name}} </td>
+                            <td> {{$receipt->client->field->name}} </td>
+                            <td> {{$receipt->user->name}} </td>
+                            <td> {{$receipt->created_at->diffForHumans()}} </td>
+                            <!-- <td>GH&#x20B5; {{$receipt->invoice->total}} </td> -->
+
+                            <td> GH&#x20B5; {{$receipt->total}} </td>
+
+
+                            @if($receipt->status == 'completed')
+                            <td><span class="badge bg-label-success">{{$receipt->status}}</span></td>
                             @else
-                            <td><span class="badge bg-label-danger">{{$invoice->status}}</span></td>
+                            <td><span class="badge bg-label-danger">{{$receipt->status}}</span></td>
                             @endif
+
                             <td>
-                                <a href="{{url('invoice', $invoice->id)}}" class="btn btn-danger">
+                                <a href="{{url('receipt', $receipt->id)}}" class="btn btn-info">
                                     <i class="icon-base bx bxs-bullseye"></i>
                                 </a>
                             </td>
@@ -911,24 +705,29 @@
 
 
                         @if(Auth::user()->field?->name == 'Botwe')
-                        @foreach($botwe as $invoice)
+                        @foreach($botwe as $receipt)
                         <tr>
-                            <td> #FWSSi{{$invoice->id}} </td>
-                            <td> {{$invoice->client->name}}</td>
-                            <td> {{$invoice->client->phone_number}} </td>
-                            <td> {{$invoice->client->business_name}} </td>
-                            <td> {{$invoice->client->field->name}} </td>
-                            <td> {{$invoice->user->name}} </td>
-                            <td> {{$invoice->created_at}} </td>
-                            <td> {{$invoice->due_date}} </td>
-                            <td> GH&#x20B5; {{number_format($invoice->total,2)}} </td>
-                            @if($invoice->status == 'completed')
-                            <td><span class="badge bg-label-success">{{$invoice->status}}</span></td>
+                            <td>FWSSR{{$receipt->id}}</td>
+                            <td>FWSSi{{$receipt->invoice_id}} </td>
+                            <td> {{$receipt->client->name}}</td>
+                            <td> {{$receipt->client->phone_number}} </td>
+                            <td> {{$receipt->client->business_name}} </td>
+                            <td> {{$receipt->client->field->name}} </td>
+                            <td> {{$receipt->user->name}} </td>
+                            <td> {{$receipt->created_at->diffForHumans()}} </td>
+                            <!-- <td>GH&#x20B5; {{$receipt->invoice->total}} </td> -->
+
+                            <td> GH&#x20B5; {{$receipt->total}} </td>
+
+
+                            @if($receipt->status == 'completed')
+                            <td><span class="badge bg-label-success">{{$receipt->status}}</span></td>
                             @else
-                            <td><span class="badge bg-label-danger">{{$invoice->status}}</span></td>
+                            <td><span class="badge bg-label-danger">{{$receipt->status}}</span></td>
                             @endif
+
                             <td>
-                                <a href="{{url('invoice', $invoice->id)}}" class="btn btn-danger">
+                                <a href="{{url('receipt', $receipt->id)}}" class="btn btn-info">
                                     <i class="icon-base bx bxs-bullseye"></i>
                                 </a>
                             </td>
@@ -938,24 +737,29 @@
 
 
                         @if(Auth::user()->field?->name == 'Tema')
-                        @foreach($tema as $invoice)
+                        @foreach($tema as $receipt)
                         <tr>
-                            <td> #FWSSi{{$invoice->id}} </td>
-                            <td> {{$invoice->client->name}}</td>
-                            <td> {{$invoice->client->phone_number}} </td>
-                            <td> {{$invoice->client->business_name}} </td>
-                            <td> {{$invoice->client->field->name}} </td>
-                            <td> {{$invoice->user->name}} </td>
-                            <td> {{$invoice->created_at}} </td>
-                            <td> {{$invoice->due_date}} </td>
-                            <td> GH&#x20B5; {{number_format($invoice->total,2)}} </td>
-                            @if($invoice->status == 'completed')
-                            <td><span class="badge bg-label-success">{{$invoice->status}}</span></td>
+                            <td>FWSSR{{$receipt->id}}</td>
+                            <td>FWSSi{{$receipt->invoice_id}} </td>
+                            <td> {{$receipt->client->name}}</td>
+                            <td> {{$receipt->client->phone_number}} </td>
+                            <td> {{$receipt->client->business_name}} </td>
+                            <td> {{$receipt->client->field->name}} </td>
+                            <td> {{$receipt->user->name}} </td>
+                            <td> {{$receipt->created_at->diffForHumans()}} </td>
+                            <!-- <td>GH&#x20B5; {{$receipt->invoice->total}} </td> -->
+
+                            <td> GH&#x20B5; {{$receipt->total}} </td>
+
+
+                            @if($receipt->status == 'completed')
+                            <td><span class="badge bg-label-success">{{$receipt->status}}</span></td>
                             @else
-                            <td><span class="badge bg-label-danger">{{$invoice->status}}</span></td>
+                            <td><span class="badge bg-label-danger">{{$receipt->status}}</span></td>
                             @endif
+
                             <td>
-                                <a href="{{url('invoice', $invoice->id)}}" class="btn btn-danger">
+                                <a href="{{url('receipt', $receipt->id)}}" class="btn btn-info">
                                     <i class="icon-base bx bxs-bullseye"></i>
                                 </a>
                             </td>
@@ -965,24 +769,29 @@
 
 
                         @if(Auth::user()->field?->name == 'Takoradi')
-                        @foreach($takoradi as $invoice)
+                        @foreach($takoradi as $receipt)
                         <tr>
-                            <td> #FWSSi{{$invoice->id}} </td>
-                            <td> {{$invoice->client->name}}</td>
-                            <td> {{$invoice->client->phone_number}} </td>
-                            <td> {{$invoice->client->business_name}} </td>
-                            <td> {{$invoice->client->field->name}} </td>
-                            <td> {{$invoice->user->name}} </td>
-                            <td> {{$invoice->created_at}} </td>
-                            <td> {{$invoice->due_date}} </td>
-                            <td> GH&#x20B5; {{number_format($invoice->total,2)}} </td>
-                            @if($invoice->status == 'completed')
-                            <td><span class="badge bg-label-success">{{$invoice->status}}</span></td>
+                            <td>FWSSR{{$receipt->id}}</td>
+                            <td>FWSSi{{$receipt->invoice_id}} </td>
+                            <td> {{$receipt->client->name}}</td>
+                            <td> {{$receipt->client->phone_number}} </td>
+                            <td> {{$receipt->client->business_name}} </td>
+                            <td> {{$receipt->client->field->name}} </td>
+                            <td> {{$receipt->user->name}} </td>
+                            <td> {{$receipt->created_at->diffForHumans()}} </td>
+                            <!-- <td>GH&#x20B5; {{$receipt->invoice->total}} </td> -->
+
+                            <td> GH&#x20B5; {{$receipt->total}} </td>
+
+
+                            @if($receipt->status == 'completed')
+                            <td><span class="badge bg-label-success">{{$receipt->status}}</span></td>
                             @else
-                            <td><span class="badge bg-label-danger">{{$invoice->status}}</span></td>
+                            <td><span class="badge bg-label-danger">{{$receipt->status}}</span></td>
                             @endif
+
                             <td>
-                                <a href="{{url('invoice', $invoice->id)}}" class="btn btn-danger">
+                                <a href="{{url('receipt', $receipt->id)}}" class="btn btn-info">
                                     <i class="icon-base bx bxs-bullseye"></i>
                                 </a>
                             </td>
@@ -992,24 +801,29 @@
 
 
                         @if(Auth::user()->field?->name == 'Koforidua')
-                        @foreach($koforidua as $invoice)
+                        @foreach($koforidua as $receipt)
                         <tr>
-                            <td> #FWSSi{{$invoice->id}} </td>
-                            <td> {{$invoice->client->name}}</td>
-                            <td> {{$invoice->client->phone_number}} </td>
-                            <td> {{$invoice->client->business_name}} </td>
-                            <td> {{$invoice->client->field->name}} </td>
-                            <td> {{$invoice->user->name}} </td>
-                            <td> {{$invoice->created_at}} </td>
-                            <td> {{$invoice->due_date}} </td>
-                            <td> GH&#x20B5; {{number_format($invoice->total,2)}} </td>
-                            @if($invoice->status == 'completed')
-                            <td><span class="badge bg-label-success">{{$invoice->status}}</span></td>
+                            <td>FWSSR{{$receipt->id}}</td>
+                            <td>FWSSi{{$receipt->invoice_id}} </td>
+                            <td> {{$receipt->client->name}}</td>
+                            <td> {{$receipt->client->phone_number}} </td>
+                            <td> {{$receipt->client->business_name}} </td>
+                            <td> {{$receipt->client->field->name}} </td>
+                            <td> {{$receipt->user->name}} </td>
+                            <td> {{$receipt->created_at->diffForHumans()}} </td>
+                            <!-- <td>GH&#x20B5; {{$receipt->invoice->total}} </td> -->
+
+                            <td> GH&#x20B5; {{$receipt->total}} </td>
+
+
+                            @if($receipt->status == 'completed')
+                            <td><span class="badge bg-label-success">{{$receipt->status}}</span></td>
                             @else
-                            <td><span class="badge bg-label-danger">{{$invoice->status}}</span></td>
+                            <td><span class="badge bg-label-danger">{{$receipt->status}}</span></td>
                             @endif
+
                             <td>
-                                <a href="{{url('invoice', $invoice->id)}}" class="btn btn-danger">
+                                <a href="{{url('receipt', $receipt->id)}}" class="btn btn-info">
                                     <i class="icon-base bx bxs-bullseye"></i>
                                 </a>
                             </td>
@@ -1019,24 +833,29 @@
 
 
                         @if(Auth::user()->field?->name == 'Kumasi')
-                        @foreach($kumasi as $invoice)
+                        @foreach($kumasi as $receipt)
                         <tr>
-                            <td> #FWSSi{{$invoice->id}} </td>
-                            <td> {{$invoice->client->name}}</td>
-                            <td> {{$invoice->client->phone_number}} </td>
-                            <td> {{$invoice->client->business_name}} </td>
-                            <td> {{$invoice->client->field->name}} </td>
-                            <td> {{$invoice->user->name}} </td>
-                            <td> {{$invoice->created_at}} </td>
-                            <td> {{$invoice->due_date}} </td>
-                            <td> GH&#x20B5; {{number_format($invoice->total,2)}} </td>
-                            @if($invoice->status == 'completed')
-                            <td><span class="badge bg-label-success">{{$invoice->status}}</span></td>
+                            <td>FWSSR{{$receipt->id}}</td>
+                            <td>FWSSi{{$receipt->invoice_id}} </td>
+                            <td> {{$receipt->client->name}}</td>
+                            <td> {{$receipt->client->phone_number}} </td>
+                            <td> {{$receipt->client->business_name}} </td>
+                            <td> {{$receipt->client->field->name}} </td>
+                            <td> {{$receipt->user->name}} </td>
+                            <td> {{$receipt->created_at->diffForHumans()}} </td>
+                            <!-- <td>GH&#x20B5; {{$receipt->invoice->total}} </td> -->
+
+                            <td> GH&#x20B5; {{$receipt->total}} </td>
+
+
+                            @if($receipt->status == 'completed')
+                            <td><span class="badge bg-label-success">{{$receipt->status}}</span></td>
                             @else
-                            <td><span class="badge bg-label-danger">{{$invoice->status}}</span></td>
+                            <td><span class="badge bg-label-danger">{{$receipt->status}}</span></td>
                             @endif
+
                             <td>
-                                <a href="{{url('invoice', $invoice->id)}}" class="btn btn-danger">
+                                <a href="{{url('receipt', $receipt->id)}}" class="btn btn-info">
                                     <i class="icon-base bx bxs-bullseye"></i>
                                 </a>
                             </td>
@@ -1046,6 +865,7 @@
 
 
                     </tbody>
+
                 </table>
 
             </div>
@@ -1072,6 +892,7 @@
             responsive: true,
 
             layout: {
+            
               topStart: {
                 buttons: [ 
                 {
@@ -1082,7 +903,7 @@
                 },
                     {
                         extend: 'excelHtml5',
-                        title: 'Invoices',
+                        title: 'Receipts',
                         className: 'btn btn-secondary',
                         exportOptions: {
                             columns: ':visible'
@@ -1092,13 +913,13 @@
                 ]
             }
 
+
             },
             columnControl: [
                 ['search']
             ]
         });
     </script>
-
 
     @endsection
 

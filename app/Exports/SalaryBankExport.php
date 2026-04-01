@@ -3,6 +3,7 @@
 namespace App\Exports;
 
 use App\Models\Salary;
+use Carbon\Carbon;
 // use Maatwebsite\Excel\Concerns\FromCollection;
 
 use Maatwebsite\Excel\Concerns\FromQuery;
@@ -36,7 +37,7 @@ class SalaryBankExport implements FromQuery, WithMapping , WithHeadings, WithDra
 
     public function __construct($month, $bank_id, array $headers)
     {
-        $this->month = $month;
+        $this->month = Carbon::parse($month);
         $this->bank_id = $bank_id;
         $this->dynamicHeaders = $headers;
     
@@ -45,7 +46,7 @@ class SalaryBankExport implements FromQuery, WithMapping , WithHeadings, WithDra
     
     public function query()
     {
-        return Salary::query()->where('bank_id', $this->bank_id )->where('salary_month', $this->month)->select([
+        return Salary::query()->where('bank_id', $this->bank_id )->where('payment_type', 'Bank')->whereMonth('salary_month', $this->month->month)->select([
         'employee_id',
         'payment_status',
         'employee_id',

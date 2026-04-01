@@ -324,7 +324,7 @@
                                 
                                 <button class="btn btn-success" name="submit" value="approve" onclick="return confirm('Kindly Confirm?')" type="submit"> <i class="icon-base bx bx-recycle"> </i> {{ __('Approve') }}</button>                   
                         
-                                <a href="/exportBank/{{ \Carbon\Carbon::parse($month)->format('F, Y') }}/{{ $bank->id }}" class="btn btn-dark m-4" > <i class="icon-base bx bx-bxs-file-plus"> </i> {{ __(' Excel Bank Download') }}</a>                   
+                                <a href="/exportBank/{{ $month }}/{{ $bank->id }}" class="btn btn-dark m-4" > <i class="icon-base bx bx-bxs-file-plus"> </i> {{ __(' Excel Bank Download') }}</a>                   
                             </div>
 
                             

@@ -250,7 +250,7 @@ class SalaryController extends Controller
         // get all from salaries where payment type is bank and is equal to incoming bank_id and month is in current month
         $bank = Bank::findOrfail($bank_id);
         $BankSalaries = Salary::whereMonth('salary_month', $month->month)->where('payment_type', 'Bank')->where('bank_id', $bank_id)->get();
-        // dd( $BankSalaries);
+        // dd( $BankSalaries); 
         return view('salaries.bankmonth', compact('BankSalaries', 'bank', 'month'));
     }
 
@@ -1057,13 +1057,15 @@ class SalaryController extends Controller
     {
         // dd($date, $bank_id);
         // GET SALARY MONTH
-        $month = Carbon::createFromFormat('F, Y',$date)->startOfMonth()->format('Y-m-d H:i:s');
-
+         $month = Carbon::parse($date)->format('F, Y');
+        // $month = Carbon::createFromFormat('F, Y',$date)->startOfMonth()->format('Y-m-d H:i:s');
+       
+        // dd($month->month);
         //GET SALARY BANK
         $bank = Bank::findOrFail($bank_id);
         // dd($bank->name);
 
-        return (new SalaryBankExport($month, $bank_id, [ $bank->name, $date]))->download( $bank->name.' Salaries For '.$date.'.xlsx'); 
+        return (new SalaryBankExport($date, $bank_id, [ $bank->name, $month]))->download( $bank->name.' Salaries For '.$month.'.xlsx'); 
     }
 
 
