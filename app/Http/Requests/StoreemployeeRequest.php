@@ -26,7 +26,7 @@ class StoreemployeeRequest extends FormRequest
             'image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
             'name' => 'required|string|max:255',
             'gender'=> 'required|string|in:male,female',
-            'phone_number'=> 'required|string|min:12',
+            'phone_number'=> 'required|string|min:12|unique:employees,phone_number',
             'channel' => 'nullable|string',
             'date_of_birth'=> 'nullable|date',
             'nia_number'=> 'nullable|string|max:50|unique:employees,nia_number',

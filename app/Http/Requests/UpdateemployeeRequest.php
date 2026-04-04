@@ -26,10 +26,10 @@ class UpdateemployeeRequest extends FormRequest
             'image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
             'name' => 'nullable|string|max:255',
             'gender'=> 'nullable|string|in:male,female',
-            'phone_number'=> 'nullable|string|min:12',
+            'phone_number'=> 'nullable|string|min:12|unique:employees,phone_number',
             'channel' => 'nullable|string',
             'date_of_birth'=> 'nullable|date',
-            'nia_number'=> 'nullable|string|max:50',
+            'nia_number'=> 'nullable|string|max:50|unique:employees,nia_number',
             'address'=> 'nullable|string|max:500',
             'marital_status'=> 'nullable|string|in:single,married,divorced,widowed',
             'worker_type'=> 'nullable|string|in:employee,contractor',
@@ -48,7 +48,7 @@ class UpdateemployeeRequest extends FormRequest
             'gurantor_name'=> 'nullable|string|max:255',
             'gurantor_number'=> 'nullable|string|max:20',
             'gurantor_address'=> 'nullable|string|max:500',
-            'gurantor_nia_number'=> 'nullable|string|max:50',
+            'gurantor_nia_number'=> 'nullable|string|max:50|unique:employees,gurantor_nia_number',
             'relationship'=> 'nullable|string|max:100',
         ];
     }
