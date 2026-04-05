@@ -196,40 +196,73 @@ class InvoiceController extends Controller
         $reportInvoices = Invoice::where('invoice_month', $month)->get();
         $invoiceTotal = $reportInvoices->sum('total');
         $invoiceCount = $reportInvoices->count();
+        $reportInvoicesGuards = $this->totalInvoiceGuards($reportInvoices);
 
         $accra = Invoice::whereRelation('client', 'field_id', 1)->where('invoice_month', $month)->get();
         $accraTotal = $accra->sum('total');
         $accraCount = count($accra);
+        $accraGuards = $this->totalInvoiceGuards($accra);
+        
 
         $botwe = Invoice::whereRelation('client', 'field_id', 2)->where('invoice_month', $month)->get();
         $botweTotal = $botwe->sum('total');
         $botweCount = count($botwe);
+        $botweGuards = $this->totalInvoiceGuards($botwe);
 
         $tema = Invoice::whereRelation('client', 'field_id', 3)->where('invoice_month', $month)->get();
         $temaTotal = $tema->sum('total');
         $temaCount = count($tema);
+        $temaGuards = $this->totalInvoiceGuards($tema);
+
 
         $takoradi = Invoice::whereRelation('client', 'field_id', 4)->where('invoice_month', $month)->get();
         $takoradiTotal = $takoradi->sum('total');
         $takoradiCount = count($takoradi);
+        $takoradiGuards = $this->totalInvoiceGuards($takoradi);
+
 
         $koforidua = Invoice::whereRelation('client', 'field_id', 5)->where('invoice_month', $month)->get();
         $koforiduaTotal = $koforidua->sum('total');
         $koforiduaCount = count($koforidua);
+        $koforiduaGuards = $this->totalInvoiceGuards($koforidua);
+
 
         $kumasi = Invoice::whereRelation('client', 'field_id', 6)->where('invoice_month', $month)->get();
         $kumasiTotal = $kumasi->sum('total');
         $kumasiCount = count($kumasi);
+        $kumasiGuards = $this->totalInvoiceGuards($kumasi);
+
 
         $shyhills = Invoice::whereRelation('client', 'field_id', 7)->where('invoice_month', $month)->get();
         $shyhillsTotal = $shyhills->sum('total');
         $shyhillsCount = count($shyhills);
+        $shyhillsGuards = $this->totalInvoiceGuards($shyhills);
 
 
         // dd($invoicemonth);
-        return view('sales.invoice_dashboard_month', compact('invoiceTotal', 'month','invoiceCount', 'reportInvoices', 'accraTotal', 'accraCount', 'botweTotal', 'botweCount', 'temaTotal', 'temaCount', 'takoradiTotal', 'takoradiCount', 'koforiduaTotal', 'koforiduaCount', 'kumasiTotal', 'kumasiCount', 'shyhillsTotal', 'shyhillsCount'));
+        return view('sales.invoice_dashboard_month', compact('reportInvoicesGuards', 'accraGuards', 'botweGuards', 'temaGuards', 'takoradiGuards', 'koforiduaGuards', 'kumasiGuards', 'shyhillsGuards', 'invoiceTotal', 'month','invoiceCount', 'reportInvoices', 'accraTotal', 'accraCount', 'botweTotal', 'botweCount', 'temaTotal', 'temaCount', 'takoradiTotal', 'takoradiCount', 'koforiduaTotal', 'koforiduaCount', 'kumasiTotal', 'kumasiCount', 'shyhillsTotal', 'shyhillsCount'));
          
     }   
+
+
+        /**
+     * Function to take invoices and return the total number of guards for that invoice
+     */
+
+        public function totalInvoiceGuards($invoices)
+        {
+                    foreach($invoices as $invoice)
+            {
+                foreach($invoice->invoice_data as $data)
+                    {
+                        $guards[] =  $data->quantity;
+                    }
+            }
+
+            return count($guards) ;
+        }
+
+
 
     /**
      * Show the form for editing the specified resource.

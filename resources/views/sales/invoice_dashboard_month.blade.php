@@ -306,7 +306,7 @@
                     <div class="card-body">
                             <p class="mb-1"><strong> INVOICES </strong> </p>
                             <h4 class="card-title mb-3 text-white"><strong> GH&#x20B5; {{ number_format($invoiceTotal, 2) }}  </strong> </h4>
-                            <small class="fw-medium"> TOTAL INVOICES GENERATED : {{ $invoiceCount }}  </small>
+                            <small class="fw-medium"> TOTAL INVOICES GENERATED  / TOTAL NUMBER OF INVOICE GUARDS : {{ $invoiceCount }}  / {{ $reportInvoicesGuards }} </small>
                     </div>
                 </div>
             </div>
@@ -327,8 +327,10 @@
                             </div>
                         </div>
                         <p class="mb-1"><strong> ACCRA </strong> </p>
-                        <h4 class="card-title mb-3 text-white"><strong>&#x20B5;{{$accraTotal}} </strong> </h4>
-                        <small class="fw-medium"> TOTAL INVOICES : <strong> {{$accraCount}}</strong> </small>
+                        <h4 class="card-title mb-3 text-white"><strong>&#x20B5;{{number_format($accraTotal,2)}} </strong> </h4>
+                        <small class="fw-medium"> TOTAL INVOICES  : <strong> {{$accraCount}}  </strong> </small>
+                        <hr>
+                        <small class="fw-medium"> INVOICE GUARDS : <strong>  {{ $accraGuards }}</strong> </small>
                     </div>
                 </div>
             </div>
@@ -345,8 +347,10 @@
                             </div>
                         </div>
                         <p class="mb-1"><strong> BOTWE </strong></p>
-                        <h4 class="card-title mb-3 text-white"><strong>&#x20B5;{{$botweTotal}}</strong> </h4>
+                        <h4 class="card-title mb-3 text-white"><strong>&#x20B5;{{number_format($botweTotal,2)}}</strong> </h4>
                         <small class="fw-medium"> TOTAL INVOICES : <strong> {{$botweCount}} </strong> </small>
+                        <hr>
+                        <small class="fw-medium"> INVOICE GUARDS : <strong> {{$botweGuards}} </strong> </small>
                     </div>
                 </div>
             </div>
@@ -365,8 +369,10 @@
 
                         </div>
                         <p class="mb-1"><strong> SHAIILLS </strong></p>
-                        <h4 class="card-title mb-3 text-white"><strong>&#x20B5;{{$shyhillsTotal}} </strong> </h4>
+                        <h4 class="card-title mb-3 text-white"><strong>&#x20B5;{{number_format($shyhillsTotal,2)}} </strong> </h4>
                         <small class="fw-medium"> TOTAL INVOICES : <strong> {{$shyhillsCount}} </strong> </small>
+                        <hr>
+                        <small class="fw-medium"> INVOICE GUARDS : <strong> {{$shyhillsGuards}} </strong> </small>
                     </div>
                 </div>
             </div>
@@ -383,8 +389,10 @@
 
                         </div>
                         <p class="mb-1"><strong> TEMA </strong></p>
-                        <h4 class="card-title mb-3 text-white"><strong>&#x20B5;{{$temaTotal}} </strong> </h4>
+                        <h4 class="card-title mb-3 text-white"><strong>&#x20B5;{{number_format($temaTotal,2)}} </strong> </h4>
                         <small class="fw-medium"> TOTAL INVOICES : <strong> {{$temaCount}} </strong> </small>
+                        <hr>
+                        <small class="fw-medium"> INVOICE GUARDS : <strong> {{$temaGuards}} </strong> </small>
                     </div>
                 </div>
             </div>
@@ -402,9 +410,11 @@
                             </div>
 
                         </div>
-                        <p class="mb-1">TAKORADI</p>
-                        <h4 class="card-title mb-3 text-white">&#x20B5; {{$takoradiTotal}}</h4>
+                        <p class="mb-1"><strong>TAKORADI </strong></p>
+                        <h4 class="card-title mb-3 text-white"><strong> &#x20B5; {{number_format($takoradiTotal,2)}}</strong></h4>
                         <small class="fw-medium"> TOTAL INVOICES : {{$takoradiCount}} </small>
+                        <hr>
+                        <small class="fw-medium"> INVOICE GUARDS : {{$takoradiGuards}} </small>
                     </div>
                 </div>
             </div>
@@ -421,8 +431,10 @@
 
                         </div>
                         <p class="mb-1"> <strong> KOFORIDUA </strong> </p>
-                        <h4 class="card-title mb-3 text-white">&#x20B5;{{$koforiduaTotal}}</h4>
+                        <h4 class="card-title mb-3 text-white"><strong> &#x20B5;{{number_format($koforiduaTotal,2)}}</strong></h4>
                         <small class="fw-medium"> TOTAL INVOICES : <strong> {{$koforiduaCount}} </strong> </small>
+                        <hr>
+                        <small class="fw-medium"> INVOICE GUARDS : <strong> {{$koforiduaGuards}} </strong> </small>
                     </div>
                 </div>
             </div>
@@ -440,8 +452,10 @@
 
                         </div>
                         <p class="mb-1"><strong> KUMASI </strong> </p>
-                        <h4 class="card-title mb-3 text-white">&#x20B5;{{$kumasiTotal}}</h4>
+                        <h4 class="card-title mb-3 text-white"><strong> &#x20B5;{{number_format($kumasiTotal,2)}}</strong></h4>
                         <small class="fw-medium"> TOTAL INVOICES : <strong> {{$kumasiCount}} </strong> </small>
+                        <hr>
+                        <small class="fw-medium"> INVOICE GUARDS : <strong> {{$kumasiGuards}} </strong> </small>
                     </div>
                 </div>
             </div>
