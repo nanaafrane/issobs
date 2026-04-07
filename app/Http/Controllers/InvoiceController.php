@@ -198,6 +198,7 @@ class InvoiceController extends Controller
         $invoiceCount = $reportInvoices->count();
         $reportInvoicesGuards = $this->totalInvoiceGuards($reportInvoices);
 
+
         $accra = Invoice::whereRelation('client', 'field_id', 1)->where('invoice_month', $month)->get();
         $accraTotal = $accra->sum('total');
         $accraCount = count($accra);
@@ -226,7 +227,6 @@ class InvoiceController extends Controller
         $koforiduaCount = count($koforidua);
         $koforiduaGuards = $this->totalInvoiceGuards($koforidua);
 
-
         $kumasi = Invoice::whereRelation('client', 'field_id', 6)->where('invoice_month', $month)->get();
         $kumasiTotal = $kumasi->sum('total');
         $kumasiCount = count($kumasi);
@@ -251,15 +251,16 @@ class InvoiceController extends Controller
 
         public function totalInvoiceGuards($invoices)
         {
-                    foreach($invoices as $invoice)
+            foreach($invoices as $invoice)
             {
                 foreach($invoice->invoice_data as $data)
                     {
                         $guards[] =  $data->quantity;
+                        //   $data->quantity . "<br>";
                     }
             }
+        return collect($guards)->sum() ;
 
-            return count($guards) ;
         }
 
 
