@@ -316,7 +316,8 @@
 
             <div class="row">
             <div class="col-12">
-                <h3 class="card-header"> <i class="icon-base bx bxs-user-account"></i> Employee Net For {{ $month?->format('F, Y') }} Is : {{ $newRecruit?->count() + count($reinstate)  - count($terminate) }} </h3>
+                <h3 class="card-header"> <i class="icon-base bx bxs-user-account"></i> Employee Net For {{ $month?->format('F, Y') }} Is : {{ $newRecruit?->count() + count($reinstate)  - count($terminate) }} </h3> <br>
+                <h3 class="card-header">  Employee For Salary {{ $month?->format('F, Y') }} : {{ $activeSalaryEmployees > 0 ? $activeSalaryEmployees : $activeEmployees  }} </h3> <br>
             </div>
         </div><br>
         <hr />

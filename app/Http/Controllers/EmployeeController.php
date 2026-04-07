@@ -16,6 +16,7 @@ use App\Models\Department;
 use App\Models\Field;
 use App\Models\PaymentInfo;
 use App\Models\Role;
+use App\Models\Salary;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -570,11 +571,14 @@ class EmployeeController extends Controller
                 $terminate[] =  employee::findOrFail($id);
             }
 
+        $activeEmployees = employee::where('status', 'Active')->count();
+        $activeSalaryEmployees = Salary::whereMonth('salary_month', $month->month)->count();
+        // dd($activeSalaryEmployees);
         // $terminateCount = count($terminate);
         // dd($newRecruit, $reinstate, $terminate);
         // $netEmployees = $
 
-        return view('employees.nrritview', compact('newRecruit', 'reinstate', 'terminate', 'month'));
+        return view('employees.nrritview', compact('newRecruit', 'reinstate', 'terminate', 'month', 'activeSalaryEmployees', 'activeEmployees'));
     }
 
     public function employeesPending()
