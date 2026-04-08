@@ -130,9 +130,11 @@ class SalaryController extends Controller
        
         $salariesBoots = Salary::whereMonth('salary_month', $month->month)->where('boot', '>', 0)->whereIn('field_id', $fields->pluck('id')->toArray())->groupBy('field_id')->get(['field_id', DB::raw('SUM(net_salary) as paid'), DB::raw('SUM(boot) as boot'),  DB::raw('COUNT(*) as total_employees')]);
 
-        $salariesMaster = Salary::whereMonth('salary_month', $month->month)->get();
+        $salariesHold = Salary::whereMonth('salary_month', $month->month)->where('payment_status', 'Hold')->whereIn('field_id', $fields->pluck('id')->toArray())->groupBy('field_id')->get(['field_id', DB::raw('SUM(net_salary) as paid'),  DB::raw('COUNT(*) as total_employees')]);
+
+        $salariesMaster = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved'])->get();
         // dd($salariesOvertime, $salariesIOU);
-        return view('salaries.salariesmonth', compact('groupedBankSalaries','groupedCashkSalaries', 'salariesTaxes', 'salariesPensions', 'month', 'salariesMaster', 'salariesOvertime', 'salariesIOU', 'salariesBoots'));
+        return view('salaries.salariesmonth', compact('groupedBankSalaries','groupedCashkSalaries', 'salariesTaxes', 'salariesPensions', 'month', 'salariesMaster', 'salariesOvertime', 'salariesIOU', 'salariesBoots', 'salariesHold'));
     }
 
 
@@ -185,7 +187,7 @@ class SalaryController extends Controller
         $salaryIds = $request->input('salary', []);
         // dd($salaryIds);
         if (empty($salaryIds)) {
-            return back()->with('error', 'No salaries selected for BULK CASH PAYMENT.');
+            return back()->with('error', 'No Employee salary selected.');
         }
        elseif(isset($request->submit) && $request->submit == 'bulk')
         {
@@ -193,6 +195,12 @@ class SalaryController extends Controller
             
             Salary::whereIn('id', $salaryIds)->update(['status1' => 'Bulk Cash']);
             return back()->with('success', 'Salaries added for BULK CASH PAYMENT: ' . implode(', ', $salaryIds));
+        }
+        else{
+
+            Salary::whereIn('id', $salaryIds)->update(['payment_status' => 'hold']);
+            return back()->with('success', 'Employees salaries have been Held : ' . implode(', ', $salaryIds));
+            // return back()->with('success', 'Employees salaries have been Held.');
         }
     }
 
@@ -249,7 +257,7 @@ class SalaryController extends Controller
         // dd($month);
         // get all from salaries where payment type is bank and is equal to incoming bank_id and month is in current month
         $bank = Bank::findOrfail($bank_id);
-        $BankSalaries = Salary::whereMonth('salary_month', $month->month)->where('payment_type', 'Bank')->where('bank_id', $bank_id)->get();
+        $BankSalaries = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved'])->where('payment_type', 'Bank')->where('bank_id', $bank_id)->get();
         // dd( $BankSalaries); 
         return view('salaries.bankmonth', compact('BankSalaries', 'bank', 'month'));
     }
@@ -265,11 +273,28 @@ class SalaryController extends Controller
         // get all cash salaries where field office is field_id and month is incoming month
         $field = Field::findOrfail($field_id);
         // dd($field->name, $month);
-        $CashSalaries = Salary::whereMonth('salary_month', $month->month)->where('payment_type', 'Cash')->where('field_id', $field_id)->get();
+        $CashSalaries = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved'])->where('payment_type', 'Cash')->where('field_id', $field_id)->get();
         // dd($CashSalaries);
         return view('salaries.cashmonth', compact('CashSalaries', 'field', 'month'));
 
     }
+
+
+    /**
+     * Display salaries Cash month view.
+     */
+    public function holdMonth($field_id, $month)
+    {
+         $month = Carbon::parse($month);
+        // get all cash salaries where field office is field_id and month is incoming month
+        $field = Field::findOrfail($field_id);
+        // dd($field->name, $month);
+        $HoldSalaries = Salary::whereMonth('salary_month', $month->month)->where('payment_status', 'hold')->where('field_id', $field_id)->get();
+        // dd($CashSalaries);
+        return view('salaries.holdmonth', compact('HoldSalaries', 'field', 'month'));
+
+    }
+
 
 
     /**
@@ -281,7 +306,7 @@ class SalaryController extends Controller
 
         // dd($field_id, $month);
         $field = Field::findOrfail($field_id);
-        $salariesTaxes = Salary::whereMonth('salary_month', $month->month)->where('tax', '>', 0)->where('field_id', $field_id)->get();
+        $salariesTaxes = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved'])->where('tax', '>', 0)->where('field_id', $field_id)->get();
         return view('salaries.taxmonth', compact('salariesTaxes', 'field', 'month'));
     }
 
@@ -295,7 +320,7 @@ class SalaryController extends Controller
         
         // dd($field_id, $month);
         $field = Field::findOrfail($field_id);
-        $salariesPensions = Salary::whereMonth('salary_month', $month->month)->where('ssnit_tobe_paid13_5', '>', 0)->where('field_id', $field_id)->get();
+        $salariesPensions = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved'])->where('ssnit_tobe_paid13_5', '>', 0)->where('field_id', $field_id)->get();
         return view('salaries.pensionmonth', compact('salariesPensions', 'field', 'month'));
     }
 
@@ -309,7 +334,7 @@ class SalaryController extends Controller
         
         // dd($field_id, $month);
         $field = Field::findOrfail($field_id);
-        $salariesOvertime = Salary::whereMonth('salary_month', $month->month)->where('overtime', '>', 0)->where('field_id', $field_id)->get();
+        $salariesOvertime = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved'])->where('overtime', '>', 0)->where('field_id', $field_id)->get();
         return view('salaries.overtimemonth', compact('salariesOvertime', 'field', 'month'));
     }
 
@@ -323,7 +348,7 @@ class SalaryController extends Controller
         
         // dd($field_id, $month);
         $field = Field::findOrfail($field_id);
-        $salariesIou = Salary::whereMonth('salary_month', $month->month)->where('iou', '>', 0)->where('field_id', $field_id)->get();
+        $salariesIou = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved'])->where('iou', '>', 0)->where('field_id', $field_id)->get();
         return view('salaries.ioumonth', compact('salariesIou', 'field', 'month'));
     }
 
@@ -337,7 +362,7 @@ class SalaryController extends Controller
         
         // dd($field_id, $month);
         $field = Field::findOrfail($field_id);
-        $salariesBoots = Salary::whereMonth('salary_month', $month->month)->where('boot', '>', 0)->where('field_id', $field_id)->get();
+        $salariesBoots = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved'])->where('boot', '>', 0)->where('field_id', $field_id)->get();
         return view('salaries.bootmonth', compact('salariesBoots', 'field', 'month'));
     }
 
@@ -1017,7 +1042,7 @@ class SalaryController extends Controller
                         continue;
                     }
 
-                    Salary::where('id', $salary->id)->update(['payment_status' => 'approved']);
+                    Salary::where('id', $salary->id)->update(['payment_status' => 'approved', 'user_id1' => Auth::id()]);
                 }
             //  dd(count($alreadyProcessed));
             if (!empty($alreadyProcessed))

@@ -120,6 +120,7 @@ Route::get('salariesBulkHisory', [SalaryController::class, 'BulkCashMonthHistory
 
 Route::get('salariesBankMonth/{bank_id}/{month}', [SalaryController::class, 'bankMonth'])->name('salaries.bankMonth');
 Route::get('salariesCashMonth/{field_id}/{month}', [SalaryController::class, 'cashMonth'])->name('salaries.cashMonth');
+Route::get('salariesHoldMonth/{field_id}/{month}', [SalaryController::class, 'holdMonth'])->name('salaries.holdMonth');
 Route::get('salariesTaxMonth/{field_id}/{month}', [SalaryController::class, 'TaxMonth'] );
 Route::get('salariesPensionMonth/{field_id}/{month}',  [SalaryController::class, 'PensionMonth']);
 Route::get('salariesOvertimeMonth/{field_id}/{month}',  [SalaryController::class, 'OvertimeMonth']);

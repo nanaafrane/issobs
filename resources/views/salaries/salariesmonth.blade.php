@@ -438,7 +438,7 @@
                 <li class="nav-item mb-1 mb-sm-0">
                     <button
                         type="button"
-                        class="nav-link active"
+                        class="nav-link"
                         role="tab"
                         data-bs-toggle="tab"
                         data-bs-target="#navs-pills-justified-accra"
@@ -553,7 +553,7 @@
                 <li class="nav-item mb-1 mb-sm-0">
                     <button
                         type="button"
-                        class="nav-link"
+                        class="nav-link active"
                         role="tab"
                         data-bs-toggle="tab"
                         data-bs-target="#navs-pills-justified-master"
@@ -566,13 +566,28 @@
                     </button>
                 </li>
 
+                <li class="nav-item mb-1 mb-sm-0">
+                    <button
+                        type="button"
+                        class="nav-link"
+                        role="tab"
+                        data-bs-toggle="tab"
+                        data-bs-target="#navs-pills-justified-hold"
+                        aria-controls="navs-pills-justified-hold"
+                        aria-selected="false">
+                        <span class="d-none d-sm-inline-flex align-items-center"><i class="icon-base bx bx-home icon-sm me-1_5"></i> HOLD
+                            <span class="badge rounded-pill bg-danger ms-1_5"> {{ $salariesHold->count() }} </span>
+                        </span>
+                        <i class="icon-base bx bx-home icon-sm d-sm-none"></i>
+                    </button>
+                </li>
                 @endif
 
             </ul>
 
 
             <div class="tab-content">
-                <div class="tab-pane fade show active" id="navs-pills-justified-accra" role="tabpanel">
+                <div class="tab-pane fade " id="navs-pills-justified-accra" role="tabpanel">
                     <div class="table-responsive">
                         <table id="myTableiAccra" class="display">
                             <thead>
@@ -823,7 +838,7 @@
                 </div>
 
 
-                 <div class="tab-pane fade" id="navs-pills-justified-master" role="tabpanel">
+                 <div class="tab-pane fade show active" id="navs-pills-justified-master" role="tabpanel">
                     <form action="/salariesBulkCash" method="POST">
                         @csrf
                         <div class="table-responsive text-nowrap">
@@ -832,6 +847,9 @@
 
                             <div class="form-check form-check-inline">
                                 <button class="btn btn-dark" name="submit" value="bulk" onclick="return confirm('Kindly Confirm?')" type="submit"> <i class="icon-base bx bx-bxs-file-plus"> </i> {{ __(' Add To Bulk Cash Salaries') }}</button>                   
+                                
+                                <button class="btn btn-danger m-4" name="submit" value="hold" onclick="return confirm('Kindly Confirm?')" type="submit"> <i class="icon-base bx bx-bxs-file-plus"> </i> {{ __(' Hold') }}</button>                   
+                                
                                 <a href="{{ url('/exportMaster', $salariesMaster[0]->salary_month?->format('F, Y'))}} " class="btn btn-success m-4" > <i class="icon-base bx bx-bxs-file-plus"> </i> {{ __(' Excel Download Master') }}</a>                   
                           
                           
@@ -840,57 +858,58 @@
                             <table id="myTableimaster" class="display">
                                 <thead>
                                     <tr>
-                                                    <th> </th>
-                                                    <th> Edit </th>
-                                                    <th> View </th>
-                                                    <th>Bulk Cash</th>
-                                                    <th> id</th>
-                                                    <th> Salary Month </th>
-                                                    <th> employee_id </th>
-                                                    <th> Name</th>
-                                                    <th> Department </th>
-                                                    <th> Role</th>
-                                                    <th> Field </th>
-                                                    <th> Emp. Type </th>
-                                                    <th> Client </th>
-                                                    <th> Location </th>
-                                                    <th> SSNIT No.</th>
-                                                    <th> TIN No.</th>
-                                                    <th> Payment Type</th>
-                                                    <th> Bank Name </th>
-                                                    <th> Branch </th>
-                                                    <th> Account No.</th>
-                                                    <th> Basic Salary</th>
-                                                    <th> Allowances</th>
-                                                    <th> airtime_allowance</th>
-                                                    <th> overtime</th>
-                                                    <th> reimbursements </th>
-                                                    <th> transport_allowance</th>
-                                                    <th> ssnit_tier2_5</th>
-                                                    <th> ssnit_tier2_5d</th>
-                                                    <th> tax</th>
-                                                    <th> ssnit_tier1_0_5</th>
-                                                    <th> welfare </th>
-                                                    <th> maintenance</th>
-                                                    <th> absent</th>
-                                                    <th> boot</th>
-                                                    <th> iou</th>
-                                                    <th> hostel</th>
-                                                    <th> insurance</th>
-                                                    <th> reprimand</th>
-                                                    <th> scouter </th>
-                                                    <th> raincoat </th>
-                                                    <th> meal</th>
-                                                    <th> loan</th>
-                                                    <th> walkin</th>
-                                                    <th> amnt_ded_cof_start_date</th>
-                                                    <th> other_deductions</th>
-                                                    <th> gross_salary </th>
-                                                    <th> total_deductions</th>
-                                                    <th> net_salary </th>
-                                                    <th> ssnit_comp_cont_13 </th>
-                                                    <th> ssnit_tobe_paid13_5</th>
-                                                    <th> cost_to_company </th>
+                                        <th> </th>
+                                        <th> Edit </th>
+                                        <th> View </th>
+                                        <th> Bulk Cash</th>
+                                        <th>Payment Status</th>
+                                        <th> id</th>
+                                        <th> Salary Month </th>
+                                        <th> employee_id </th>
+                                        <th> Name</th>
+                                        <th> Department </th>
+                                        <th> Role</th>
+                                        <th> Field </th>
+                                        <th> Emp. Type </th>
+                                        <th> Client </th>
+                                        <th> Location </th>
+                                        <th> SSNIT No.</th>
+                                        <th> TIN No.</th>
+                                        <th> Payment Type</th>
+                                        <th> Bank Name </th>
+                                        <th> Branch </th>
+                                        <th> Account No.</th>
+                                        <th> Basic Salary</th>
+                                        <th> Allowances</th>
+                                        <th> airtime_allowance</th>
+                                        <th> overtime</th>
+                                        <th> reimbursements </th>
+                                        <th> transport_allowance</th>
+                                        <th> ssnit_tier2_5</th>
+                                        <th> ssnit_tier2_5d</th>
+                                        <th> tax</th>
+                                        <th> ssnit_tier1_0_5</th>
+                                        <th> welfare </th>
+                                        <th> maintenance</th>
+                                        <th> absent</th>
+                                        <th> boot</th>
+                                        <th> iou</th>
+                                        <th> hostel</th>
+                                        <th> insurance</th>
+                                        <th> reprimand</th>
+                                        <th> scouter </th>
+                                        <th> raincoat </th>
+                                        <th> meal </th>
+                                        <th> loan </th>
+                                        <th> walkin </th>
+                                        <th> amnt_ded_cof_start_date</th>
+                                        <th> other_deductions</th>
+                                        <th> gross_salary </th>
+                                        <th> total_deductions</th>
+                                        <th> net_salary </th>
+                                        <th> ssnit_comp_cont_13 </th>
+                                        <th> ssnit_tobe_paid13_5</th>
+                                        <th> cost_to_company </th>
                                     </tr>
                                 </thead>
                                 <tbody class="table-border-bottom-0">
@@ -908,7 +927,7 @@
                                                     @else 
                                                         <td> <span class="badge bg-label-danger">  {{ $salary->status1 }} </span> </td>
                                                     @endif
-                                                   
+                                                    <td>{{ $salary->payment_status }} </td>
                                                     <td> {{ $salary->id }} </td>
                                                     <td> {{$salary->salary_month?->format('F, Y')}} </td>
                                                     <td> {{ $salary?->employee_id }} </td>
@@ -964,6 +983,37 @@
                     </form>
                 </div>
 
+                <div class="tab-pane fade" id="navs-pills-justified-hold" role="tabpanel">
+                    <div class="table-responsive text-nowrap">
+                        <table id="myTableihold" class="display">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Field</th>
+                                    <th>Net Salary</th>
+                                    <th>Employees</th>
+                                    <th> View Employees</th>
+                                </tr>
+                            </thead>
+                            <tbody class="table-border-bottom-0">
+                              @foreach ($salariesHold as $key => $hold)
+                                   <tr>
+                                    <td> {{ $key + 1 }} </td>
+                                    <td>{{ $hold->field?->name }}</td>
+                                    <td> GH&#x20B5; {{ number_format($hold->paid, 2) }}</td>
+                                    <td> {{ $hold->total_employees }} </td>
+                                    <td> 
+                                        <a href="/salariesHoldMonth/{{ $hold->field?->id }}/{{ $month->format('F Y') }}" class="btn btn-dark btn-sm">
+                                            <i class="bx bx-show"></i> 
+                                        </a>    
+                                    </td>   
+                                </tr>
+                                    @endforeach 
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
             </div>
         </div>
 
@@ -996,13 +1046,30 @@
         let myTableiOvertime = new DataTable('#myTableiOvertime');
         let myTableiIou = new DataTable('#myTableiIou');
         let myTableiboot = new DataTable('#myTableiboot');
+        let myTableihold = new DataTable('#myTableihold');
+
+        // new DataTable('#myTableimaster', {
+        //     responsive: true,
+        //       dom: 'lftrip',
+        //       lengthMenu: [[10, 25, 50, 100, 500], [10, 25, 50, 100, 500]],
+        //       columnControl: [ ['search'] ]
+        // });
+
 
         new DataTable('#myTableimaster', {
-            responsive: true,
-              dom: 'lftrip',
-              lengthMenu: [[10, 25, 50, 100, 500], [10, 25, 50, 100, 500]],
-              columnControl: [ ['search'] ]
-        });
+                        fixedColumns: {
+                        start: 0,
+                        end: 0
+                    },
+                    fixedHeader: {
+                        header: true,
+                        footer: true
+                    },
+                    paging: false,
+                    scrollCollapse: true,
+                    scrollX: true,
+                    scrollY: 600
+                });
 
     </script>
 
