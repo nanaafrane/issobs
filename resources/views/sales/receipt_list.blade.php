@@ -302,6 +302,7 @@
                                         <tr>
                                             <th>id</th>
                                             <th>Invoice No.</th>
+                                            <th>Invoice Month</th>
                                             <th>Client Name</th>
                                             <th>R. Month</th>
                                             <th>Business Name </th>
@@ -320,6 +321,7 @@
                                         <tr>
                                             <td>FWSSR{{$receipt->id}}</td>
                                             <td>FWSSi{{$receipt->invoice_id}} </td>
+                                            <td>{{$receipt->invoice?->invoice_month?->format('F, Y') }} </td>
                                             <td> {{$receipt->client->name}}</td>
                                             <td> {{$receipt->receipt_month?->format('F l d, Y')}} </td>
                                             <td> {{$receipt->client->business_name}} </td>

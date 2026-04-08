@@ -625,7 +625,7 @@
                         @foreach($reportReceipt as $receipt)
                         <tr>
                             <td>FWSSR{{$receipt->id}}</td>
-                            <td> {{ $receipt->receipt_month?->format('F, Y') }} </td>
+                            <td> {{ $receipt->receipt_month?->format('l, F j, Y') }} </td>
                             <td>FWSSi{{$receipt->invoice_id}} </td>
                             <td> {{ $receipt->invoice?->invoice_month?->format('F, Y') }} </td>
                             @if ($receipt->client->name === $receipt->client->business_name)
