@@ -586,7 +586,7 @@
                     <thead>
                         <tr>
                             <th>id</th>
-                            <th>R.Month</th>
+                            <th>Receipt Date</th>
                             <th>Invoice No.</th>
                             <th>Inv. Month</th>
                             <th>Client Name</th>
