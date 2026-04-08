@@ -92,7 +92,7 @@ class ProformaController extends Controller
             for($i=0; $i<$quantity_count; $i++)
             { 
                 DB::table('invoice_data')->insert([
-                'invoice_number' => $invoice_number,
+                'invoice_id' => $invoice_number,
                 'service_name' => $service[$i],
                 'description' => $description[$i],
                 'quantity' => $quantity[$i],
@@ -144,7 +144,7 @@ class ProformaController extends Controller
     {
         //
         // dd($proforma);
-         $proforma_data = DB::table('invoice_data')->where('invoice_number', $proforma->id)->orderBy('invoice_number', 'desc')->get();
+         $proforma_data = DB::table('invoice_data')->where('invoice_id', $proforma->id)->orderBy('invoice_id', 'desc')->get();
         return view('sales.proforma_show', compact('proforma', 'proforma_data'));
     }
 
@@ -156,7 +156,7 @@ class ProformaController extends Controller
         //
         $services = Service::all();
         $clients = ProformaClient::all();
-        $proforma_data = DB::table('invoice_data')->where('invoice_number', $proforma->id)->get();
+        $proforma_data = DB::table('invoice_data')->where('invoice_id', $proforma->id)->get();
         return view('sales.proforma_edit', compact('proforma', 'proforma_data' ,'services', 'clients'));
     }
 
@@ -206,15 +206,15 @@ class ProformaController extends Controller
         // dd($description, $service_name, $quantity, $quantity_count, $unit_price, $amount, $sum_amount_from_invoice, $nhilAmount, $getfundAmount, $chrlAmount, $sub_total_without_vat, $vatAmount, $total);
         if ($quantity_count > 0)
         {
-            DB::table('invoice_data')->where('invoice_number', $proforma->id)->delete();
+            DB::table('invoice_data')->where('invoice_id', $proforma->id)->delete();
             for($i = 0; $i<$quantity_count; $i++) {
 
                 DB::table('invoice_data')->upsert(
                     [
-                        'invoice_number'=> $proforma->id, 'service_name'=> $service_name[$i], 'description' => $description[$i], 'quantity' => $quantity[$i], 'unit_price' => $unit_price[$i], 'amount' => $amount[$i],
+                        'invoice_id'=> $proforma->id, 'service_name'=> $service_name[$i], 'description' => $description[$i], 'quantity' => $quantity[$i], 'unit_price' => $unit_price[$i], 'amount' => $amount[$i],
                     ],
 
-                    ['invoice_number'],
+                    ['invoice_id'],
 
                     ['description','quantity', 'unit_price', 'amount']
 
@@ -252,7 +252,7 @@ class ProformaController extends Controller
         //
         
           Proforma::destroy($proforma->id);
-          DB::table('invoice_data')->where('invoice_number', $proforma->id)->delete();
+          DB::table('invoice_data')->where('invoice_id', $proforma->id)->delete();
 
         return redirect('proforma')->with('error', 'Proforma Deleted Successfully');
     }
@@ -260,7 +260,7 @@ class ProformaController extends Controller
     public function printProforma($invoice_id)
     {
         $invoice = Proforma::findOrFail($invoice_id);
-        $invoice_data = DB::table('invoice_data')->where('invoice_number', $invoice_id)->orderBy('invoice_number', 'desc')->get();
+        $invoice_data = DB::table('invoice_data')->where('invoice_id', $invoice_id)->orderBy('invoice_id', 'desc')->get();
         return view('sales.printProforma', compact('invoice', 'invoice_data'));
     }
 
