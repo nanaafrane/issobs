@@ -1018,7 +1018,7 @@ class SalaryController extends Controller
         $salaryIds = $request->input('salary', []);
         // dd($salaryIds);
         if (empty($salaryIds)) {
-            return back()->with('error', 'No salaries selected for DELETION or APPROVAL.');
+            return back()->with('error', 'No salaries selected');
         }
 
         if(isset($request->submit) && $request->submit == 'delete')
@@ -1051,6 +1051,31 @@ class SalaryController extends Controller
                 }
             return back()->with('success', 'Approved salaries with IDs: ' . implode(', ', $salaryIds));
         }
+        elseif(isset($request->submit) && $request->submit == 'hold')
+            {
+                    // return "you are moving from hold to main";
+                $salaries = Salary::findOrFail($salaryIds);
+                foreach ($salaries as $salary) 
+                {
+                    $exists = Salary::where('id', $salary->id)
+                                    ->where('payment_status', 'pending')
+                                    ->exists();
+                    if ($exists) {
+                        $alreadyProcessed[] = $salary->id;
+                        continue;
+                    }
+
+                    Salary::where('id', $salary->id)->update(['payment_status' => 'pending', 'user_id1' => Auth::id()]);
+                }
+            //  dd(count($alreadyProcessed));
+            if (!empty($alreadyProcessed))
+                 {
+                    return back()->with('error', 'Salaries with the IDs have already been Moved to Main: '. implode(', ', $alreadyProcessed). ' The remaining have been Appoved ')  ;
+                }
+            return back()->with('success', 'Moved salaries with IDs: ' . implode(', ', $salaryIds));
+            }
+
+
     }
 
 
