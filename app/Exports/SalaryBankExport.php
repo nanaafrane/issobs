@@ -35,6 +35,9 @@ class SalaryBankExport implements FromQuery, WithMapping , WithHeadings, WithDra
         protected $bank_id;
         protected $dynamicHeaders;
 
+            // 1. Define the counter property
+        private $rowNumber = 0;
+
     public function __construct($month, $bank_id, array $headers)
     {
         $this->month = Carbon::parse($month);
@@ -49,6 +52,7 @@ class SalaryBankExport implements FromQuery, WithMapping , WithHeadings, WithDra
         return Salary::query()->where('bank_id', $this->bank_id )->where('payment_type', 'Bank')->whereMonth('salary_month', $this->month->month)->whereIn('payment_status', ['pending', 'approved'])->select([
         'employee_id',
         'payment_status',
+        'updated_at',
         'employee_id',
         'field_id',
         'role_id',
@@ -67,8 +71,10 @@ class SalaryBankExport implements FromQuery, WithMapping , WithHeadings, WithDra
     public function map($salary): array
     {
         return [
+             ++$this->rowNumber,
             "FWSS ". $salary->employee_id,
             $salary->payment_status,
+            $salary->updated_at->format('F l d, Y, H:i A'),
             $salary->employee?->name,
             $salary->field?->name,
             $salary->role?->name,
@@ -89,10 +95,12 @@ class SalaryBankExport implements FromQuery, WithMapping , WithHeadings, WithDra
         return [
         ['FIRST WATCH SECURITY SERVICES LTD' ],
         [ strtoupper($this->dynamicHeaders[0]) ],
-        [ strtoupper($this->dynamicHeaders[1]) ],
-        [       
+        [ strtoupper($this->dynamicHeaders[1])." SALARY" ],
+        [  
+        '#',     
         'EMPLOYEE ID',
         'STATUS',
+        'UPDATED',
         'NAME',
         'FIELD',
         'ROLE',

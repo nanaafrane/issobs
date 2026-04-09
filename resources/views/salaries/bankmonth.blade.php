@@ -470,25 +470,23 @@
         // });
 
         new DataTable('#myTable', {
-            fixedColumns: {
-            start: 0,
-            end: 0
-        },
-        fixedHeader: {
-            header: true,
-            footer: true
-        },
-        paging: false,
-        scrollCollapse: true,
-        scrollX: true,
-        scrollY: 500
-});
-
-
+                    fixedColumns: {
+                    start: 0,
+                    end: 0
+                },
+                fixedHeader: {
+                    header: true,
+                    footer: true
+                },
+                paging: false,
+                scrollCollapse: true,
+                scrollX: true,
+                scrollY: 500
+        });
 
     </script>
 
-        <script>
+    <script>
         $(document).ready(function() {
             $('#options').change(function() {
                 $('.checkBoxes').prop('checked', function(i, val) {
