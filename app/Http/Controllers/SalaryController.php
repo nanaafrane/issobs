@@ -193,12 +193,12 @@ class SalaryController extends Controller
         {
             // echo 'Approving';
             
-            Salary::whereIn('id', $salaryIds)->update(['status1' => 'Bulk Cash']);
+            Salary::whereIn('id', $salaryIds)->update(['status1' => 'Bulk Cash' , 'user_id1' => Auth::id() ]);
             return back()->with('success', 'Salaries added for BULK CASH PAYMENT: ' . implode(', ', $salaryIds));
         }
         else{
 
-            Salary::whereIn('id', $salaryIds)->update(['payment_status' => 'hold']);
+            Salary::whereIn('id', $salaryIds)->update(['payment_status' => 'hold', 'user_id1' => Auth::id() ]);
             return back()->with('success', 'Employees salaries have been Held : ' . implode(', ', $salaryIds));
             // return back()->with('success', 'Employees salaries have been Held.');
         }

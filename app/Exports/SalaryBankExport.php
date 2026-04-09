@@ -62,7 +62,7 @@ class SalaryBankExport implements FromQuery, WithMapping , WithHeadings, WithDra
         'branch',
         'account_number',
         'net_salary',
-        ]);
+        ])->orderBy('client_id', 'ASC');
     }
 
     /**
