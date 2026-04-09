@@ -117,8 +117,13 @@ class SalaryController extends Controller
 
         $groupedBankSalaries = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved'])->where('payment_type', 'Bank')->whereIn('bank_id', $banks->pluck('id')->toArray())->groupBy('bank_id')->get(['bank_id', DB::raw('SUM(gross_salary) as gross'), DB::raw('SUM(total_deductions) as deductions'),  DB::raw('SUM(net_salary) as paid'),  DB::raw('COUNT(*) as total_employees')]);
         // // dd($groupedBankSalaries->sum('total_employees'));
+        $salariesHoldBank = Salary::whereMonth('salary_month', $month->month)->where('payment_status', 'Hold')->where('payment_type', 'Bank')->whereIn('bank_id', $banks->pluck('id')->toArray())->groupBy('bank_id')->get(['bank_id', DB::raw('SUM(gross_salary) as gross'), DB::raw('SUM(total_deductions) as deductions'),  DB::raw('SUM(net_salary) as paid'),  DB::raw('COUNT(*) as total_employees')]);
+
 
         $groupedCashkSalaries = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved'])->where('payment_type', 'Cash')->whereIn('field_id', $fields->pluck('id')->toArray())->groupBy('field_id')->get(['field_id', DB::raw('SUM(gross_salary) as gross'), DB::raw('SUM(total_deductions) as deductions'),  DB::raw('SUM(net_salary) as paid'),  DB::raw('COUNT(*) as total_employees')]);
+
+        $salariesHoldCash = Salary::whereMonth('salary_month', $month->month)->where('payment_status', 'Hold')->where('payment_type', 'Cash')->whereIn('field_id', $fields->pluck('id')->toArray())->groupBy('field_id')->get(['field_id', DB::raw('SUM(net_salary) as paid'),  DB::raw('COUNT(*) as total_employees')]);
+
 
         $salariesTaxes = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved'])->where('tax', '>', 0)->whereIn('field_id', $fields->pluck('id')->toArray())->groupBy('field_id')->get(['field_id', DB::raw('SUM(net_salary) as paid'), DB::raw('SUM(tax) as tax'),  DB::raw('COUNT(*) as total_employees')]);
 
@@ -130,11 +135,12 @@ class SalaryController extends Controller
        
         $salariesBoots = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved'])->where('boot', '>', 0)->whereIn('field_id', $fields->pluck('id')->toArray())->groupBy('field_id')->get(['field_id', DB::raw('SUM(net_salary) as paid'), DB::raw('SUM(boot) as boot'),  DB::raw('COUNT(*) as total_employees')]);
 
-        $salariesHold = Salary::whereMonth('salary_month', $month->month)->where('payment_status', 'Hold')->whereIn('field_id', $fields->pluck('id')->toArray())->groupBy('field_id')->get(['field_id', DB::raw('SUM(net_salary) as paid'),  DB::raw('COUNT(*) as total_employees')]);
+       
 
         $salariesMaster = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved'])->get();
+       
         // dd($salariesOvertime, $salariesIOU);
-        return view('salaries.salariesmonth', compact('groupedBankSalaries','groupedCashkSalaries', 'salariesTaxes', 'salariesPensions', 'month', 'salariesMaster', 'salariesOvertime', 'salariesIOU', 'salariesBoots', 'salariesHold'));
+        return view('salaries.salariesmonth', compact('groupedBankSalaries','groupedCashkSalaries', 'salariesTaxes', 'salariesPensions', 'month', 'salariesMaster', 'salariesOvertime', 'salariesIOU', 'salariesBoots', 'salariesHoldCash', 'salariesHoldBank'));
     }
 
 
@@ -263,6 +269,21 @@ class SalaryController extends Controller
     }
 
 
+        /**
+     * Display salaries bank month view.
+     */
+    public function bankholdMonth($bank_id, $month)
+    {
+         $month = Carbon::parse($month);
+        // dd($month);
+        // get all from salaries where payment type is bank and is equal to incoming bank_id and month is in current month
+        $bank = Bank::findOrfail($bank_id);
+        $BankSalaries = Salary::whereMonth('salary_month', $month->month)->where('payment_status', 'hold')->where('payment_type', 'Bank')->where('bank_id', $bank_id)->get();
+        // dd( $BankSalaries); 
+        return view('salaries.holdbankmonth', compact('BankSalaries', 'bank', 'month'));
+    }
+
+
 
     /**
      * Display salaries Cash month view.
@@ -281,17 +302,17 @@ class SalaryController extends Controller
 
 
     /**
-     * Display salaries Cash month view.
+     * Display salaries Cash HOLD month view.
      */
-    public function holdMonth($field_id, $month)
+    public function cashholdMonth($field_id, $month)
     {
          $month = Carbon::parse($month);
         // get all cash salaries where field office is field_id and month is incoming month
         $field = Field::findOrfail($field_id);
         // dd($field->name, $month);
-        $HoldSalaries = Salary::whereMonth('salary_month', $month->month)->where('payment_status', 'hold')->where('field_id', $field_id)->get();
+        $HoldSalaries = Salary::whereMonth('salary_month', $month->month)->where('payment_status', 'hold')->where('payment_type', 'Cash')->where('field_id', $field_id)->get();
         // dd($CashSalaries);
-        return view('salaries.holdmonth', compact('HoldSalaries', 'field', 'month'));
+        return view('salaries.holdcashmonth', compact('HoldSalaries', 'field', 'month'));
 
     }
 

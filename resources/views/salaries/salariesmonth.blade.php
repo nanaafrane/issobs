@@ -289,7 +289,7 @@
                             </div>
                         </div>
                         <p class="mb-1"><strong> BANKS </strong> </p>
-                        <h4 class="card-title mb-3 text-white"><strong> &#x20B5;  {{ number_format($groupedBankSalaries->sum('paid'), 2) }} </strong> </h4> <br>
+                        <h4 class="card-title mb-3 text-white"><strong> &#x20B5;  {{ number_format($groupedBankSalaries->sum('paid'), 2) }} </strong> </h4> 
                         <small class="fw-medium">TOTAL DEDUCTIONS : </small> <br>
                         <small class="fw-medium"> GH&#x20B5;  {{ number_format($groupedBankSalaries->sum('deductions'), 2) }}  </small> <br>
                         <small class="fw-medium"> EMPLOYEES : {{ $groupedBankSalaries->sum('total_employees') }}  </small>
@@ -310,7 +310,7 @@
                             </div>
                         </div>
                         <p class="mb-1"><strong> CASH </strong></p>
-                        <h4 class="card-title mb-3 text-white"><strong> &#x20B5; {{ number_format($groupedCashkSalaries->sum('paid'), 2) }} </strong> </h4> <br>
+                        <h4 class="card-title mb-3 text-white"><strong> &#x20B5; {{ number_format($groupedCashkSalaries->sum('paid'), 2) }} </strong> </h4> 
                         <small class="fw-medium">TOTAL DEDUCTIONS : </small> <br>
                         <small class="fw-medium"> GH&#x20B5;  {{ number_format($groupedCashkSalaries->sum('deductions'), 2) }}  </small> <br>
                         <small class="fw-medium"> EMPLOYEES : {{ $groupedCashkSalaries->sum('total_employees') }}  </small>
@@ -332,7 +332,7 @@
 
                         </div>
                         <p class="mb-1"><strong> TAX </strong></p>
-                        <h4 class="card-title mb-3 text-white"><strong> &#x20B5; {{ number_format($salariesTaxes->sum('tax'), 2) }} </strong> </h4> <br>
+                        <h4 class="card-title mb-3 text-white"><strong> &#x20B5; {{ number_format($salariesTaxes->sum('tax'), 2) }} </strong> </h4> 
                         <small class="fw-medium"> TOTAL :  GH&#x20B5; {{ number_format($salariesTaxes->sum('paid'), 2) }} </small> <br>
                         <small class="fw-medium"> EMPLOYEES : {{ $salariesTaxes->sum('total_employees') }} </small>
                     </div>
@@ -351,7 +351,7 @@
 
                         </div>
                         <p class="mb-1"><strong> PENSIONS </strong></p>
-                        <h4 class="card-title mb-3 text-white"><strong> &#x20B5; {{ number_format($salariesPensions->sum('cont13_5'), 2) }} </strong> </h4> <br>
+                        <h4 class="card-title mb-3 text-white"><strong> &#x20B5; {{ number_format($salariesPensions->sum('cont13_5'), 2) }} </strong> </h4> 
                         <small class="fw-medium"> TOTAL :  GH&#x20B5; {{ number_format($salariesPensions->sum('paid') , 2) }} </small> <br>
                         <small class="fw-medium"> EMPLOYEES : {{ $salariesPensions->sum('total_employees') }} </small>
                     </div>
@@ -371,7 +371,7 @@
 
                         </div>
                         <p class="mb-1"><strong> OVERTIME </strong></p>
-                        <h4 class="card-title mb-3 text-white"><strong> &#x20B5; {{ number_format($salariesOvertime->sum('overtime'), 2) }} </strong> </h4> <br>
+                        <h4 class="card-title mb-3 text-white"><strong> &#x20B5; {{ number_format($salariesOvertime->sum('overtime'), 2) }} </strong> </h4> 
                         <small class="fw-medium"> TOTAL :  GH&#x20B5; {{ number_format($salariesOvertime->sum('paid') , 2) }} </small> <br>
                         <small class="fw-medium"> EMPLOYEES : {{ $salariesOvertime->sum('total_employees') }} </small>
                     </div>
@@ -391,7 +391,7 @@
 
                         </div>
                         <p class="mb-1"><strong> IOU </strong></p>
-                        <h4 class="card-title mb-3 text-white"><strong> &#x20B5; {{ number_format($salariesIOU->sum('iou'), 2) }} </strong> </h4> <br>
+                        <h4 class="card-title mb-3 text-white"><strong> &#x20B5; {{ number_format($salariesIOU->sum('iou'), 2) }} </strong> </h4> 
                         <small class="fw-medium"> TOTAL :  GH&#x20B5; {{ number_format($salariesIOU->sum('paid') , 2) }} </small> <br>
                         <small class="fw-medium"> EMPLOYEES : {{ $salariesIOU->sum('total_employees') }} </small>
                     </div>
@@ -414,7 +414,7 @@
 
                         </div>
                         <p class="mb-1"><strong> BOOTS </strong></p>
-                        <h4 class="card-title mb-3 text-white"><strong> &#x20B5; {{ number_format($salariesBoots->sum('boot'), 2) }} </strong> </h4> <br>
+                        <h4 class="card-title mb-3 text-white"><strong> &#x20B5; {{ number_format($salariesBoots->sum('boot'), 2) }} </strong> </h4> 
                         <small class="fw-medium"> TOTAL :  GH&#x20B5; {{ number_format($salariesBoots->sum('paid') , 2) }} </small> <br>
                         <small class="fw-medium"> EMPLOYEES : {{ $salariesBoots->sum('total_employees') }} </small>
                     </div>
@@ -576,7 +576,6 @@
                         aria-controls="navs-pills-justified-hold"
                         aria-selected="false">
                         <span class="d-none d-sm-inline-flex align-items-center"><i class="icon-base bx bx-home icon-sm me-1_5"></i> HOLD
-                            <span class="badge rounded-pill bg-danger ms-1_5"> {{ $salariesHold->count() }} </span>
                         </span>
                         <i class="icon-base bx bx-home icon-sm d-sm-none"></i>
                     </button>
@@ -984,34 +983,75 @@
                 </div>
 
                 <div class="tab-pane fade" id="navs-pills-justified-hold" role="tabpanel">
+                   
                     <div class="table-responsive text-nowrap">
-                        <table id="myTableihold" class="display">
+                            <h5 class="card-header"> CASH HOLD  </h5>
+                        <table id="myTableiholdcash" class="display">
                             <thead>
                                 <tr>
                                     <th>#</th>
                                     <th>Field</th>
+                                    <th>Gross Salary</th>
+                                    <th>Total Deductions</th>
+                                    <th>Net Salary </th>
+                                    <th>Employees</th>
+                                    <th> View Employees</th>
+                                </tr>
+                            </thead>
+                            <tbody class="table-border-bottom-0">
+                              @foreach ($salariesHoldCash as $key => $hold)
+                                   <tr>
+                                    <td> {{ $key + 1 }} </td>
+                                    <td>{{ $hold->field?->name }}</td>
+                                    <td> GH&#x20B5; {{ number_format($hold->gross, 2) }} </td>
+                                    <td> GH&#x20B5; {{ number_format($hold->deductions, 2) }} </td>
+                                    <td> GH&#x20B5; {{ number_format($hold->paid, 2) }} </td>
+                                    <td> {{ $hold->total_employees }} </td>
+                                    <td> 
+                                        <a href="/salariesCashHoldMonth/{{ $hold->field?->id }}/{{ $month->format('F Y') }}" class="btn btn-dark btn-sm">
+                                            <i class="bx bx-show"></i> 
+                                        </a>    
+                                    </td> 
+                                </tr>
+                                    @endforeach 
+                            </tbody>
+                        </table>
+                    </div> <br> <br>
+                
+                    <div class="table-responsive text-nowrap">
+                            <h5 class="card-header"> BANK HOLD  </h5>
+                        <table id="myTableiholdbank" class="display">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Bank Name</th>
+                                    <th>Gross Salary</th>
+                                    <th>Total Deductions</th>
                                     <th>Net Salary</th>
                                     <th>Employees</th>
                                     <th> View Employees</th>
                                 </tr>
                             </thead>
                             <tbody class="table-border-bottom-0">
-                              @foreach ($salariesHold as $key => $hold)
+                              @foreach ($salariesHoldBank as $key => $bhold)
                                    <tr>
                                     <td> {{ $key + 1 }} </td>
-                                    <td>{{ $hold->field?->name }}</td>
-                                    <td> GH&#x20B5; {{ number_format($hold->paid, 2) }}</td>
-                                    <td> {{ $hold->total_employees }} </td>
+                                    <td> {{ $bhold->bank->name }} </td>
+                                    <td> GH&#x20B5; {{ number_format($bhold->gross, 2) }} </td>
+                                    <td> GH&#x20B5; {{ number_format($bhold->deductions, 2) }} </td>
+                                    <td> GH&#x20B5; {{ number_format($bhold->paid, 2) }} </td>
+                                    <td> {{ $bhold->total_employees }} </td>
                                     <td> 
-                                        <a href="/salariesHoldMonth/{{ $hold->field?->id }}/{{ $month->format('F Y') }}" class="btn btn-dark btn-sm">
+                                        <a href="/salariesBankHoldMonth/{{ $bhold->bank->id }}/{{ $month }}" class="btn btn-dark btn-sm">
                                             <i class="bx bx-show"></i> 
                                         </a>    
-                                    </td>   
+                                    </td>  
                                 </tr>
                                     @endforeach 
                             </tbody>
                         </table>
                     </div>
+
                 </div>
 
             </div>
@@ -1046,7 +1086,8 @@
         let myTableiOvertime = new DataTable('#myTableiOvertime');
         let myTableiIou = new DataTable('#myTableiIou');
         let myTableiboot = new DataTable('#myTableiboot');
-        let myTableihold = new DataTable('#myTableihold');
+        let myTableiholdcash = new DataTable('#myTableiholdcash');
+        let myTableiholdbank = new DataTable('#myTableiholdbank');
 
         // new DataTable('#myTableimaster', {
         //     responsive: true,
