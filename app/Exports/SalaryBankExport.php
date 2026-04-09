@@ -46,7 +46,7 @@ class SalaryBankExport implements FromQuery, WithMapping , WithHeadings, WithDra
     
     public function query()
     {
-        return Salary::query()->where('bank_id', $this->bank_id )->where('payment_type', 'Bank')->whereMonth('salary_month', $this->month->month)->select([
+        return Salary::query()->where('bank_id', $this->bank_id )->where('payment_type', 'Bank')->whereMonth('salary_month', $this->month->month)->whereIn('payment_status', ['pending', 'approved'])->select([
         'employee_id',
         'payment_status',
         'employee_id',
