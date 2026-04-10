@@ -314,10 +314,10 @@
                         </div>
                         <p class="mb-1"><strong> FIELD OFFICE :  {{ strtoupper($field->name) }}  </strong> </p> <br>
                         <h4 class="card-title mb-3 text-white"><strong> GH&#x20B5;  {{ number_format($CashSalaries->sum('net_salary'), 2) }} </strong> </h4> <br>
-                         <h6  class="card-title mb-3 text-white">TOTAL PENDING : GH&#x20B5;  {{ number_format($CashSalariespending->sum('net_salary'), 2) }}   |  TOTAL PENDING EMPLOYEES :  {{ $CashSalariespending->count() }}  </h6> 
-                        <h6  class="card-title mb-3 text-white"> TOTAL APPROVED : GH&#x20B5; {{ number_format($CashSalariesapproved->sum('net_salary'), 2) }} |  TOTAL PENDING EMPLOYEES :  {{ $CashSalariesapproved->count() }} </h6> 
-                        <h6  class="card-title mb-3 text-white"> TOTAL HOLD : GH&#x20B5; {{ number_format($CashSalarieshold->sum('net_salary'), 2) }}  |  TOTAL PENDING EMPLOYEES :  {{ $CashSalarieshold->count() }} </h6> <hr>
-                        <h6  class="card-title mb-3 text-white"> OVERALL TOTAL  : GH&#x20B5; {{ number_format($CashSalariesAll->sum('net_salary'), 2) }} |  TOTAL PENDING EMPLOYEES :  {{ $CashSalariesAll->count() }} </h6>
+                         <h6  class="card-title mb-3 text-white">TOTAL PENDING : GH&#x20B5;  {{ number_format($CashSalariespending->sum('net_salary'), 2) }}   |   PENDING EMPLOYEES :  {{ $CashSalariespending->count() }}  </h6> 
+                        <h6  class="card-title mb-3 text-white"> TOTAL APPROVED : GH&#x20B5; {{ number_format($CashSalariesapproved->sum('net_salary'), 2) }} |   APPROVED EMPLOYEES :  {{ $CashSalariesapproved->count() }} </h6> 
+                        <h6  class="card-title mb-3 text-white"> TOTAL HOLD : GH&#x20B5; {{ number_format($CashSalarieshold->sum('net_salary'), 2) }}  |   HOLD EMPLOYEES :  {{ $CashSalarieshold->count() }} </h6> <hr>
+                        <h6  class="card-title mb-3 text-white"> OVERALL TOTAL  : GH&#x20B5; {{ number_format($CashSalariesAll->sum('net_salary'), 2) }} |   OVERALL EMPLOYEES :  {{ $CashSalariesAll->count() }} </h6>
 
                     </div>
                 </div>
