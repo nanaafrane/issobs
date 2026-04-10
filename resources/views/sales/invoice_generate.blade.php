@@ -291,11 +291,11 @@
                                 <h4 class="text-danger">From</h4>
                                 <address>
                                     <strong>FIRST WATCH SECURITY SERVICE LIMITED.</strong><br>
-                                    P.O.BOX AN 18529,<br>
-                                    GPS: GA-105-4850,<br>
+                                    P.O.BOX AN 18529, GPS : GA-105-4850,<br>
                                     BOUNDARY ROAD, ACCRA NORTH.<br>
-                                    Tel: +233(0) 501 696 315, +233(0) 560 027 411.<br>
-                                    Email: info@firstwatchsecgh.com.
+                                    TEL : {{$client->field->number}}, +233(0) 560 027 411.<br>
+                                    EMAIL : info@firstwatchsecgh.com. <br>
+                                    EMAIL : invoice.firstwatchsecgh@gmail.com.
                                 </address>
                             </div>
                         </div>
@@ -329,7 +329,7 @@
                             <input type="text" name="client_id" value="{{$client->id}}" hidden>
                             <div class="row">
                                 <div class="col-6">
-                                    <h6 class="card-header">Due Date</h6>
+                                    <h6 class="card-header">Due For Payment</h6>
                                     <div class="input-group">
                                         <input name="due_date" type="datetime-local" class="form-control" required>
                                     </div>

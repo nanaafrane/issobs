@@ -73,11 +73,11 @@
                                             <h5 class="text-danger">From</h5>
                                             <address style="font-size: 0.7rem">
                                                 <strong>FIRST WATCH SECURITY SERVICE LIMITED.</strong><br>
-                                                P.O.BOX AN 18529,<br>
-                                                GPS: GA-105-4850,<br>
+                                                P.O.BOX AN 18529, GPS : GA-105-4850,<br>
                                                 BOUNDARY ROAD, ACCRA NORTH.<br>
-                                                Tel: +233(0) 501 696 315, +233(0) 560 027 411.<br>
-                                                Email: info@firstwatchsecgh.com.
+                                                TEL : {{$invoice->client->field->number}}, +233(0) 560 027 411.<br>
+                                                EMAIL : info@firstwatchsecgh.com. <br>
+                                                EMAIL : invoice.firstwatchsecgh@gmail.com.
                                             </address>
                                         </div>
                                     </div>

@@ -6,6 +6,10 @@
      <link rel="stylesheet" href="{{asset('vendor/css/datatables.css')}}" /> 
 
     <link href="https://cdn.datatables.net/columncontrol/1.1.1/css/columnControl.dataTables.min.css" rel="stylesheet">
+
+    <link rel="stylesheet" href="https://cdn.datatables.net/fixedheader/4.0.5/css/fixedHeader.dataTables.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/fixedcolumns/5.0.5/css/fixedColumns.dataTables.css">
+    
     @endsection
 
 

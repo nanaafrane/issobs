@@ -296,11 +296,11 @@
                                 <h4 class="text-danger">From</h4>
                                 <address>
                                     <strong>FIRST WATCH SECURITY SERVICE LIMITED.</strong><br>
-                                    P.O.BOX AN 18529,<br>
-                                    GPS: GA-105-4850,<br>
+                                    P.O.BOX AN 18529, GPS : GA-105-4850,<br>
                                     BOUNDARY ROAD, ACCRA NORTH.<br>
-                                    Tel: +233(0) 501 696 315, +233(0) 560 027 411.<br>
-                                    Email: info@firstwatchsecgh.com.
+                                    TEL : {{$invoice->client->field->number}}, +233(0) 560 027 411.<br>
+                                    EMAIL : info@firstwatchsecgh.com. <br>
+                                    EMAIL : invoice.firstwatchsecgh@gmail.com.
                                 </address>
                             </div>
                         </div>
@@ -335,11 +335,11 @@
                                     <span class="col-12">Inv #: FWSSi{{$invoice->id}}</span>
                                 </h5>
                                 <address>
-                                    <span class="card-header"> Issued : </span>
-                                    <span class="col-6"> {{$invoice->created_at->format('d/m/Y H:i A')}} </span> <br>
+                                    <span class="card-header"> Date Of Invoice : </span>
+                                    <span class="col-6"> {{$invoice->created_at->format('d/m/Y')}} </span> <br>
 
-                                    <span class="card-header">Due : </span>
-                                    <span class="col-6">{{$invoice->due_date->format('d/m/Y H:i A')}} </span>
+                                    <span class="card-header"> Due For Payment : </span>
+                                    <span class="col-6">{{$invoice->due_date->format('d/m/Y')}} </span>
 
                                 </address>
                             </div>

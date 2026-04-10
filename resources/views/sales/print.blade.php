@@ -72,11 +72,11 @@
                                                 <h5 class="text-danger">From</h5>
                                                 <address style="font-size: 0.7rem">
                                                     <strong>FIRST WATCH SECURITY SERVICE LIMITED.</strong><br>
-                                                    P.O.BOX AN 18529,<br>
-                                                    GPS: GA-105-4850,<br>
+                                                    P.O.BOX AN 18529, GPS : GA-105-4850,<br>
                                                     BOUNDARY ROAD, ACCRA NORTH.<br>
-                                                    Tel: +233(0) 501 696 315, +233(0) 560 027 411.<br>
-                                                    Email: info@firstwatchsecgh.com.
+                                                    TEL : {{$invoice->client->field->number}}, +233(0) 560 027 411.<br>
+                                                    EMAIL : info@firstwatchsecgh.com. <br>
+                                                    EMAIL : invoice.firstwatchsecgh@gmail.com.
                                                 </address>
                                             </div>
                                         </div>
@@ -98,10 +98,10 @@
                                                     <span class="col-12">Inv #: FWSSi{{$invoice->id}}</span>
                                                 </h6>
                                                 <address style="font-size: 0.7rem">
-                                                    <span class="card-header"> Issued : </span>
+                                                    <span class="card-header">  Date Of Invoice : </span>
                                                     <span class="col-6"> {{$invoice->created_at->format('d/m/Y H:i A')}} </span> <br>
 
-                                                    <span class="card-header">Due : </span>
+                                                    <span class="card-header"> Due For Payment : </span>
                                                     <span class="col-6">{{$invoice->due_date->format('d/m/Y H:i A')}} </span>
 
                                                 </address>
@@ -141,11 +141,11 @@
                                         <div class="row mb-3">
                                             <div class="col-12 col-sm-6 col-md-8">
                                                 <address style="font-size: 0.7em" class="mt-5">
-                                                    <div> <strong> BANK DETAILS </strong> </div><br>
+                                                    <!-- <div> <strong> BANK DETAILS </strong> </div><br>
                                                     <strong> Bank : {{  strtoupper($invoice->client?->field?->bank?->name) }}</strong><br>
                                                     <strong> A/C Name. : FIRST WATCH SECURITY SERVICES LIMITED </strong> <br>
                                                     <strong> A/C No. :  {{ $invoice->client?->field?->bank?->acc_number }} </strong> <br>
-                                                    <strong> Branch : {{  $invoice->client?->field?->bank?->branch }}</strong> <br><br>
+                                                    <strong> Branch : {{  $invoice->client?->field?->bank?->branch }}</strong> <br><br> -->
                                                     <!-- <hr class="text-dark"> -->
                                                     <div> <strong> MOMO DETAILS </strong> </div><br>
                                                     <strong> MoMo No. : 0555062422 </strong> <br>
@@ -170,7 +170,7 @@
                                                     <strong>GRAND TOTAL: GH&#8373; {{number_format($invoice->total, 2) }}</strong> <br>
                                                 </address>
                                             </div>
-                                        <h7><small> Invoice created by {{$invoice->user->name}} on {{$invoice->updated_at}} </small></h7>
+                                        <h7><small> Invoice created by {{$invoice->user->name}} on {{$invoice->updated_at?->format('F l d, Y')}} </small></h7>
 
                                         </div>
                                     </div>

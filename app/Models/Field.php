@@ -13,6 +13,7 @@ class Field extends Model
         'user_id',
         'status',
         'bank_id',
+        'number'
     ];
 
     public function user()
