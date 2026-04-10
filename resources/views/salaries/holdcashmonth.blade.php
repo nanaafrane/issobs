@@ -314,8 +314,7 @@
                         </div>
                         <p class="mb-1"><strong> HOLD FIELD OFFICE :  {{ strtoupper($field->name) }}  </strong> </p> <br>
                         <h4 class="card-title mb-3 text-white"><strong> GH&#x20B5;  {{ number_format($HoldSalaries->sum('net_salary'), 2) }} </strong> </h4> <br>
-                        <small class="fw-medium">TOTAL DEDUCTIONS : GH&#x20B5;  {{ number_format($HoldSalaries->sum('total_deductions'), 2) }}  </small> <br>
-                        <small class="fw-medium"> TOTAL GROSS SALARY : GH&#x20B5; {{ number_format($HoldSalaries->sum('gross_salary'), 2) }}  </small>
+                        <small class="fw-medium">TOTAL HOLD EMPLOYEES :   {{ $HoldSalaries->count() }}  </small> <br>
 
                     </div>
                 </div>

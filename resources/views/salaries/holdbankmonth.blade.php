@@ -295,10 +295,9 @@
                                     class="rounded" />
                             </div>
                         </div>
-                        <p class="mb-1"><strong> BANK NAME :  {{ strtoupper($bank->name) }}  </strong> </p> <br>
-                        <h4 class="card-title mb-3 text-white"><strong> GH&#x20B5;  {{ number_format($BankSalaries->sum('net_salary'), 2) }} </strong> </h4> <br>
-                        <small class="fw-medium">TOTAL DEDUCTIONS : GH&#x20B5;  {{ number_format($BankSalaries->sum('total_deductions'), 2) }}  </small> <br>
-                        <small class="fw-medium"> TOTAL GROSS SALARY : GH&#x20B5; {{ number_format($BankSalaries->sum('gross_salary'), 2) }}  </small>
+                        <p class="mb-1"><strong> HOLD BANK NAME :  {{ strtoupper($bank->name) }}  </strong> </p> <br>
+                        <h4 class="card-title mb-3 text-white"><strong> GH&#x20B5;  {{ number_format($BankSalaries->sum('net_salary'), 2) }} </strong> </h4> 
+                        <h6 class="card-title mb-3 text-white"> TOTAL HOLD EMPLOYEES : GH&#x20B5; {{ $BankSalaries->count() }}  </h6>
 
                     </div>
                 </div>

@@ -299,8 +299,10 @@
                         </div>
                         <p class="mb-1"><strong> BANK NAME :  {{ strtoupper($bank->name) }}  </strong> </p> <br>
                         <h4 class="card-title mb-3 text-white"><strong> GH&#x20B5;  {{ number_format($BankSalaries->sum('net_salary'), 2) }} </strong> </h4> <br>
-                        <small class="fw-medium">TOTAL DEDUCTIONS : GH&#x20B5;  {{ number_format($BankSalaries->sum('total_deductions'), 2) }}  </small> <br>
-                        <small class="fw-medium"> TOTAL GROSS SALARY : GH&#x20B5; {{ number_format($BankSalaries->sum('gross_salary'), 2) }}  </small>
+                        <h6  class="card-title mb-3 text-white">TOTAL PENDING : GH&#x20B5;  {{ number_format($BankSalariespending->sum('net_salary'), 2) }}   |  TOTAL PENDING EMPLOYEES :  {{ $BankSalariespending->count() }}  </h6> 
+                        <h6  class="card-title mb-3 text-white"> TOTAL APPROVED : GH&#x20B5; {{ number_format($BankSalariesapproved->sum('net_salary'), 2) }} |  TOTAL PENDING EMPLOYEES :  {{ $BankSalariesapproved->count() }} </h6> 
+                        <h6  class="card-title mb-3 text-white"> TOTAL HOLD : GH&#x20B5; {{ number_format($BankSalarieshold->sum('net_salary'), 2) }}  |  TOTAL PENDING EMPLOYEES :  {{ $BankSalarieshold->count() }} </h6> <hr>
+                        <h6  class="card-title mb-3 text-white"> OVERALL TOTAL  : GH&#x20B5; {{ number_format($BankSalariesAll->sum('net_salary'), 2) }} |  TOTAL PENDING EMPLOYEES :  {{ $BankSalariesAll->count() }} </h6>
 
                     </div>
                 </div>

@@ -264,8 +264,12 @@ class SalaryController extends Controller
         // get all from salaries where payment type is bank and is equal to incoming bank_id and month is in current month
         $bank = Bank::findOrfail($bank_id);
         $BankSalaries = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved'])->where('payment_type', 'Bank')->where('bank_id', $bank_id)->get();
+        $BankSalariesAll = Salary::whereMonth('salary_month', $month->month)->where('payment_type', 'Bank')->where('bank_id', $bank_id)->get();
+        $BankSalariespending = Salary::whereMonth('salary_month', $month->month)->where('payment_status', 'pending')->where('payment_type', 'Bank')->where('bank_id', $bank_id)->get();
+        $BankSalariesapproved = Salary::whereMonth('salary_month', $month->month)->where('payment_status', 'approved')->where('payment_type', 'Bank')->where('bank_id', $bank_id)->get();
+        $BankSalarieshold = Salary::whereMonth('salary_month', $month->month)->where('payment_status', 'hold')->where('payment_type', 'Bank')->where('bank_id', $bank_id)->get();
         // dd( $BankSalaries); 
-        return view('salaries.bankmonth', compact('BankSalaries', 'bank', 'month'));
+        return view('salaries.bankmonth', compact('BankSalaries', 'BankSalarieshold','BankSalariespending', 'BankSalariesAll','BankSalariesapproved','bank', 'month'));
     }
 
 
@@ -295,8 +299,12 @@ class SalaryController extends Controller
         $field = Field::findOrfail($field_id);
         // dd($field->name, $month);
         $CashSalaries = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved'])->where('payment_type', 'Cash')->where('field_id', $field_id)->get();
+        $CashSalariesAll = Salary::whereMonth('salary_month', $month->month)->where('payment_type', 'Cash')->where('field_id', $field_id)->get();
+        $CashSalariespending = Salary::whereMonth('salary_month', $month->month)->where('payment_status', 'pending')->where('payment_type', 'Cash')->where('field_id', $field_id)->get();
+        $CashSalariesapproved = Salary::whereMonth('salary_month', $month->month)->where('payment_status', 'approved')->where('payment_type', 'Cash')->where('field_id', $field_id)->get();
+        $CashSalarieshold = Salary::whereMonth('salary_month', $month->month)->where('payment_status', 'hold')->where('payment_type', 'Cash')->where('field_id', $field_id)->get();
         // dd($CashSalaries);
-        return view('salaries.cashmonth', compact('CashSalaries', 'field', 'month'));
+        return view('salaries.cashmonth', compact('CashSalaries', 'CashSalariesAll', 'CashSalariespending',  'CashSalariesapproved', 'CashSalarieshold','field', 'month'));
 
     }
 
