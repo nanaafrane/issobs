@@ -932,9 +932,9 @@
                                                     @endif
 
                                                     @if ($salary->payment_status == 'pending')
-                                                    <td> <td> <span class="badge bg-label-info"> {{ $salary->payment_status }} </span> </td>
+                                                    <td>  <span class="badge bg-label-info"> {{ $salary->payment_status }} </span> </td>
                                                     @else
-                                                    <td> <td> <span class="badge bg-label-success"> {{ $salary->payment_status }} </span> </td>
+                                                    <td> <span class="badge bg-label-success"> {{ $salary->payment_status }} </span> </td>
                                                     @endif
 
 
