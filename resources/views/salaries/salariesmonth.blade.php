@@ -930,7 +930,14 @@
                                                     @else 
                                                         <td> <span class="badge bg-label-danger">  {{ $salary->status1 }} </span> </td>
                                                     @endif
-                                                    <td>{{ $salary->payment_status }} </td>
+
+                                                    @if ($salary->payment_status == 'pending')
+                                                    <td> <td> <span class="badge bg-label-info"> {{ $salary->payment_status }} </span> </td>
+                                                    @else
+                                                    <td> <td> <span class="badge bg-label-success"> {{ $salary->payment_status }} </span> </td>
+                                                    @endif
+
+
                                                     <td> {{ $salary->id }} </td>
                                                     <td> {{$salary->salary_month?->format('F, Y')}} </td>
                                                     <td> {{ $salary?->employee_id }} </td>

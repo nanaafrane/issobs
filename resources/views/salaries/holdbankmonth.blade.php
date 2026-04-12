@@ -358,7 +358,7 @@
                                             <td> {{ $key + 1 }} </td>
                                             <td> FWSS{{ $salary->employee?->id }} </td>
                                                                                                                                         
-                                                    @if($salary->payment_status == 'pending')
+                                                    @if($salary->payment_status == 'hold')
                                                         <td> <span class="badge bg-label-warning"> {{ $salary->payment_status }} </span> </td>
                                                     @else 
                                                         <td> <span class="badge bg-label-danger">  {{ $salary->payment_status }} </span> </td>
