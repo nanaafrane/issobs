@@ -31,7 +31,7 @@ class SalaryExport implements FromQuery, WithMapping , WithHeadings
 
     public function query()
     {
-        return Salary::query()->where('salary_month', $this->month)->whereIn('payment_status', ['pending', 'approved'])->select([
+        return Salary::query()->where('salary_month', $this->month)->select([
         'id',
         'employee_id',
         'employee_id',

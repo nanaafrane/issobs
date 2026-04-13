@@ -140,7 +140,7 @@ class SalaryController extends Controller
 
        
 
-        $salariesMaster = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved'])->get();
+        $salariesMaster = Salary::whereMonth('salary_month', $month->month)->get();
        
         // dd($salariesOvertime, $salariesIOU);
         return view('salaries.salariesmonth', compact('groupedBankSalaries','groupedCashkSalaries', 'salariesTaxes', 'salariesPensions', 'month', 'salariesMaster', 'salariesOvertime', 'salariesIOU', 'salariesBoots', 'salariesHoldCash', 'salariesHoldBank'));
