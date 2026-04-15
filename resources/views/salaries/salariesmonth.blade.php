@@ -274,7 +274,7 @@
 
         <div class="row">
             <div class="col-12">
-                <h3 class="card-header"> <i class="icon-base bx bx-transfer-alt"></i> Salaries Transaction   @if (isset($month)) <strong> / For Month: {{  \Carbon\Carbon::parse($month)->format('F Y') }}</strong> @endif </h3>
+                <h3 class="card-header"> <i class="icon-base bx bx-transfer-alt"></i> Salaries Transaction   @if (isset($month)) <strong> / For Month: {{  \Carbon\Carbon::parse($month)->format('F Y') }}  </strong> {{ $month->month }} @endif </h3>
 
             </div>
         </div><br>
@@ -876,6 +876,7 @@
                                         <th> Emp. Type </th>
                                         <th> Client </th>
                                         <th> Location </th>
+                                        <th> Inv. Status </th>
                                         <th> SSNIT No.</th>
                                         <th> TIN No.</th>
                                         <th> Payment Type</th>
@@ -952,6 +953,7 @@
                                                     <td> {{ $salary->employee?->worker_type }} </td>
                                                     <td> {{ $salary->client?->name }} {{ $salary->client?->business_name }}</td>
                                                     <td> {{ $salary->location }} </td>
+                                                    <td> {{ $salary->client?->invoices()->whereMonth('invoice_month', $month->month)->pluck('status') }} </td>
                                                     <td> {{$salary->paymentInfo?->ssnit_number}}</td>
                                                     <td> {{$salary->paymentInfo?->tin_number}}</td>
                                                     <td> {{$salary->payment_type}}</td>
@@ -1113,6 +1115,9 @@
 
 
         new DataTable('#myTableimaster', {
+
+              columnControl: [ ['search'] ],
+
                         fixedColumns: {
                         start: 0,
                         end: 0

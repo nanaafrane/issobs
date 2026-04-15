@@ -330,7 +330,7 @@
                                 </div>
 
                                 <div id="vat7_value" @if ($receipt->vat7_value > 0) style="display: flex;" @else style="display: none;" @endif class="col-md-6">
-                                    <input name="vat7_value" type="number" class="form-control" value="{{$invoice->sub_total * 0.07 }}" step="any">
+                                    <input name="vat7_value" type="number" class="form-control" value="{{ $receipt->vat7_value }}" step="any">
                                 </div>
                             </div>
                             <br>

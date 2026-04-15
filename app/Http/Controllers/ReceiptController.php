@@ -513,16 +513,20 @@ class ReceiptController extends Controller
 
         // update the invoice 
         $invoice = Invoice::findorFail($receipt->invoice_id);
-        $invoice->balance = $invoice->total - $total - $dAmount;
-        $invoice->status = $request->input('status');
-        $invoice->wht_amount = $this->wht_amount;
-        $invoice->amount_received = $sum_of_amountPaid_minus_wht;
-        $invoice->vat7_value = $vat7_value;
-        $invoice->vat7_amount = $this->vat7_amount;
-        $invoice->save();
+       
 
         if($receipt->status == "completed")
         {
+
+            $invoice->balance = 0;
+            $invoice->status = $request->input('status');
+            $invoice->wht_amount = $this->wht_amount;
+            $invoice->amount_received = $sum_of_amountPaid_minus_wht;
+            $invoice->vat7_value = $vat7_value;
+            $invoice->vat7_amount = $this->vat7_amount;
+            $invoice->save();
+
+
             // update transaction
             Transaction::where('receipt_id', $receipt->id)->update([ 
                 'receipt_amount' => $total,
@@ -530,9 +534,20 @@ class ReceiptController extends Controller
                 'balance' => 0,
                 'checks' => 'd',
             ]);
+
+
         }
         elseif($receipt->status == "uncompleted")
         {
+
+            $invoice->balance = $invoice->total - $total - $dAmount;
+            $invoice->status = $request->input('status');
+            $invoice->wht_amount = $this->wht_amount;
+            $invoice->amount_received = $sum_of_amountPaid_minus_wht;
+            $invoice->vat7_value = $vat7_value;
+            $invoice->vat7_amount = $this->vat7_amount;
+            $invoice->save();
+
             // update transaction
             $transaction = Transaction::where('receipt_id', $receipt->id)->first();
             $transaction->receipt_amount = $total;
@@ -540,6 +555,7 @@ class ReceiptController extends Controller
             $transaction->balance = $transaction->invoice->balance;
             $transaction->checks = null;
             $transaction->save();
+            
         }
 
 
