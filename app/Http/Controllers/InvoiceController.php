@@ -432,6 +432,8 @@ class InvoiceController extends Controller
     {
 
         $reportInvoices =  Invoice::whereIn('status', ['unpaid', 'uncompleted'])->get();
+        $reportPinvoices = Invoice::where('balance', '>', 0.00)->where('status', 'uncompleted')->get();
+
 
         $accra = Invoice::whereRelation('client', 'field_id', 1)->whereIn('status', ['unpaid', 'uncompleted'])->get();
         $accraPcount = Invoice::whereRelation('client', 'field_id', 1)->where('balance', '>', 0.00)->where('status', 'uncompleted')->get();
@@ -476,7 +478,7 @@ class InvoiceController extends Controller
         $shyhillsCount = count($shyhills);
 
 
-        return view('sales.invoice_outstanding', compact('accraPcount','botwePcount', 'temaPcount', 'takoradiPcount', 'koforiduaPcount', 'kumasiPcount', 'shyhillsPcount','reportInvoices', 'accra', 'botwe', 'tema', 'shyhills','takoradi', 'koforidua', 'kumasi','accraTotal', 'accraCount', 'botweTotal', 'botweCount', 'temaTotal', 'shyhillsTotal', 'shyhillsCount','temaCount', 'takoradiTotal', 'takoradiCount', 'koforiduaTotal', 'koforiduaCount', 'kumasiTotal', 'kumasiCount'));
+        return view('sales.invoice_outstanding', compact('reportPinvoices', 'accraPcount','botwePcount', 'temaPcount', 'takoradiPcount', 'koforiduaPcount', 'kumasiPcount', 'shyhillsPcount','reportInvoices', 'accra', 'botwe', 'tema', 'shyhills','takoradi', 'koforidua', 'kumasi','accraTotal', 'accraCount', 'botweTotal', 'botweCount', 'temaTotal', 'shyhillsTotal', 'shyhillsCount','temaCount', 'takoradiTotal', 'takoradiCount', 'koforiduaTotal', 'koforiduaCount', 'kumasiTotal', 'kumasiCount'));
     }
 
     // Search invoices with part payment outstanding   
@@ -485,38 +487,47 @@ class InvoiceController extends Controller
         $month = Carbon::parse($request->month)->format('Y-m-d');
 
         $reportInvoices = Invoice::whereIn('status', ['unpaid','uncompleted'])->where('invoice_month', $month)->get();
+        $reportPinvoices = Invoice::where('balance', '>', 0.00)->where('status', 'uncompleted')->where('invoice_month', $month)->get();
+
         $invoiceTotal = $reportInvoices->sum('total');
         $invoiceCount = $reportInvoices->count();
 
         $accra = Invoice::whereRelation('client', 'field_id', 1)->whereIn('status', ['unpaid','uncompleted'])->where('invoice_month', $month)->get();
+        $accraPcount = Invoice::whereRelation('client', 'field_id', 1)->where('balance', '>', 0.00)->where('status', 'uncompleted')->where('invoice_month', $month)->get();
         $accraTotal = $accra->sum('total');
         $accraCount = count($accra);
 
         $botwe = Invoice::whereRelation('client', 'field_id', 2)->whereIn('status', ['unpaid','uncompleted'])->where('invoice_month', $month)->get();
+        $botwePcount = Invoice::whereRelation('client', 'field_id', 2)->where('balance', '>', 0.00)->where('status', 'uncompleted')->where('invoice_month', $month)->get();
         $botweTotal = $botwe->sum('total');
         $botweCount = count($botwe);
 
         $tema = Invoice::whereRelation('client', 'field_id', 3)->whereIn('status', ['unpaid','uncompleted'])->where('invoice_month', $month)->get();
+        $temaPcount = Invoice::whereRelation('client', 'field_id', 3)->where('balance', '>', 0.00)->where('status', 'uncompleted')->where('invoice_month', $month)->get();
         $temaTotal = $tema->sum('total');
         $temaCount = count($tema);
 
         $takoradi = Invoice::whereRelation('client', 'field_id', 4)->whereIn('status', ['unpaid','uncompleted'])->where('invoice_month', $month)->get();
+        $takoradiPcount = Invoice::whereRelation('client', 'field_id', 4)->where('balance', '>', 0.00)->where('status', 'uncompleted')->where('invoice_month', $month)->get();
         $takoradiTotal = $takoradi->sum('total');
         $takoradiCount = count($takoradi);
 
         $koforidua = Invoice::whereRelation('client', 'field_id', 5)->whereIn('status', ['unpaid','uncompleted'])->where('invoice_month', $month)->get();
+        $koforiduaPcount = Invoice::whereRelation('client', 'field_id', 5)->where('balance', '>', 0.00)->where('status', 'uncompleted')->where('invoice_month', $month)->get();
         $koforiduaTotal = $koforidua->sum('total');
         $koforiduaCount = count($koforidua);
 
         $kumasi = Invoice::whereRelation('client', 'field_id', 6)->whereIn('status', ['unpaid','uncompleted'])->where('invoice_month', $month)->get();
+        $kumasiPcount = Invoice::whereRelation('client', 'field_id', 6)->where('balance', '>', 0.00)->where('status', 'uncompleted')->where('invoice_month', $month)->get();
         $kumasiTotal = $kumasi->sum('total');
         $kumasiCount = count($kumasi);
 
         $shyhills = Invoice::whereRelation('client', 'field_id', 7)->whereIn('status', ['unpaid','uncompleted'])->where('invoice_month', $month)->get();
+        $shyhillsPcount = Invoice::whereRelation('client', 'field_id', 7)->where('balance', '>', 0.00)->where('status', 'uncompleted')->where('invoice_month', $month)->get();
         $shyhillsTotal = $shyhills->sum('total');
         $shyhillsCount = count($shyhills);
 
-        return view('sales.invoice_outstanding', compact('reportInvoices', 'month', 'invoiceTotal', 'invoiceCount', 'accra', 'botwe', 'tema', 'shyhills','takoradi', 'koforidua', 'kumasi','accraTotal', 'accraCount', 'botweTotal', 'botweCount', 'temaTotal', 'shyhillsTotal', 'shyhillsCount','temaCount', 'takoradiTotal', 'takoradiCount', 'koforiduaTotal', 'koforiduaCount', 'kumasiTotal', 'kumasiCount'));
+        return view('sales.invoice_outstanding', compact('reportPinvoices', 'accraPcount', 'botwePcount', 'temaPcount', 'takoradiPcount', 'koforiduaPcount', 'kumasiPcount', 'shyhillsPcount', 'month', 'reportInvoices', 'invoiceTotal', 'invoiceCount', 'accra', 'botwe', 'tema', 'shyhills','takoradi', 'koforidua', 'kumasi','accraTotal', 'accraCount', 'botweTotal', 'botweCount', 'temaTotal', 'shyhillsTotal', 'shyhillsCount','temaCount', 'takoradiTotal', 'takoradiCount', 'koforiduaTotal', 'koforiduaCount', 'kumasiTotal', 'kumasiCount'));
     }
 
 

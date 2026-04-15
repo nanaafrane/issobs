@@ -285,8 +285,9 @@
                     <div class="card-body">
                             <p class="mb-1"><strong> INVOICES </strong> </p>
                             <h4 class="card-title mb-3 text-white"><strong> GH&#x20B5; {{ number_format($invoiceTotal, 2) }}  </strong> </h4>
-                            <small class="fw-medium"> TOTAL INVOICES GENERATED : {{ $invoiceCount }}  </small>
-                            <small class="fw-medium"> PART PAYMENT OUTSTANDING : {{ $invoiceCount }}  </small>
+                            <small class="fw-medium"> TOTAL INVOICES GENERATED : {{ $invoiceCount }}  </small><br>
+                            <small class="fw-medium"><strong>  PART PAY'T OUTSTANDING : &#x20B5;{{ number_format($reportPinvoices->sum('balance'),2) }} </strong> </small><br>
+                            <small class="fw-medium"> <strong>  PART PAY'T INVOICES : {{ count($reportPinvoices) }} </strong> </small>
                     </div>
                 </div>
             </div>
