@@ -346,6 +346,7 @@
                                         <input
                                            name="receipt_month" type="date"
                                            class="form-control @error('receipt_month') is-invalid @enderror"
+                                           value="{{ \Carbon\Carbon::parse($receipt->receipt_month)->format('Y-m-d') }}"
                                             required>
                                         @error('receipt_month')
                                         <span class="invalid-feedback" role="alert">
