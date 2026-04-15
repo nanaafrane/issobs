@@ -286,6 +286,7 @@
                             <p class="mb-1"><strong> INVOICES </strong> </p>
                             <h4 class="card-title mb-3 text-white"><strong> GH&#x20B5; {{ number_format($invoiceTotal, 2) }}  </strong> </h4>
                             <small class="fw-medium"> TOTAL INVOICES GENERATED : {{ $invoiceCount }}  </small>
+                            <small class="fw-medium"> PART PAYMENT OUTSTANDING : {{ $invoiceCount }}  </small>
                     </div>
                 </div>
             </div>
@@ -294,7 +295,7 @@
 
         @if(Auth::user()->hasRole(['Invoice','Finance Manager']))
         <div class="row">
-            <div class="col-lg-2">
+            <div class="col-lg-3">
                 <div style="background: #ffe0e0ff; " class="card h-100">
                     <div class="card-body">
                         <div class="card-title d-flex align-items-start justify-content-between mb-4">
@@ -306,13 +307,15 @@
                             </div>
                         </div>
                         <p class="mb-1"><strong> ACCRA </strong> </p>
-                        <h4 class="card-title mb-3"><strong>&#x20B5;{{$accraTotal}} </strong> </h4>
-                        <small class="fw-medium"> TOTAL INVOICES : <strong> {{$accraCount}}</strong> </small>
+                        <h4 class="card-title mb-3"><strong>&#x20B5;{{number_format($accraTotal,2)}} </strong> </h4>
+                        <small class="fw-medium"> <strong>  TOTAL INVOICES : {{$accraCount}}</strong> </small> <br>
+                        <small class="fw-medium"><strong>  PART PAY'T OUTSTANDING : &#x20B5;{{ number_format($accraPcount->sum('balance'),2) }} </strong> </small><br>
+                        <small class="fw-medium"> <strong>  NUMBER OF INVOICES : {{ count($accraPcount) }} </strong> </small>
                     </div>
                 </div>
             </div>
 
-            <div class="col-lg-2">
+            <div class="col-lg-3">
                 <div style="background: #ffe0e0ff; " class="card h-100">
                     <div class="card-body">
                         <div class="card-title d-flex align-items-start justify-content-between mb-4">
@@ -324,14 +327,16 @@
                             </div>
                         </div>
                         <p class="mb-1"><strong> BOTWE </strong></p>
-                        <h4 class="card-title mb-3"><strong>&#x20B5;{{$botweTotal}}</strong> </h4>
-                        <small class="fw-medium"> TOTAL INVOICES : <strong> {{$botweCount}} </strong> </small>
+                        <h4 class="card-title mb-3"><strong>&#x20B5;{{number_format($botweTotal,2)}}</strong> </h4>
+                        <small class="fw-medium">  <strong> TOTAL INVOICES : {{$botweCount}} </strong> </small> <br>
+                        <small class="fw-medium"><strong>  PART PAY'T OUTSTANDING : &#x20B5;{{ number_format($botwePcount->sum('balance'),2) }} </strong> </small><br>
+                        <small class="fw-medium"> <strong> NUMBER OF INVOICES : {{ count($botwePcount) }} </strong>  </small>
                     </div>
                 </div>
             </div>
 
 
-            <div class="col-lg-2">
+            <div class="col-lg-3">
                 <div style="background: #ffe0e0ff; " class="card h-100">
                     <div class="card-body">
                         <div class="card-title d-flex align-items-start justify-content-between mb-4">
@@ -344,12 +349,14 @@
 
                         </div>
                         <p class="mb-1"><strong> SHAIHILLS </strong></p>
-                        <h4 class="card-title mb-3"><strong>&#x20B5;{{$shyhillsTotal}} </strong> </h4>
-                        <small class="fw-medium"> TOTAL INVOICES : <strong> {{$shyhillsCount}} </strong> </small>
+                        <h4 class="card-title mb-3"><strong>&#x20B5;{{number_format($shyhillsTotal,2)}} </strong> </h4>
+                        <small class="fw-medium"> <strong>TOTAL INVOICES :  {{$shyhillsCount}} </strong> </small><br>
+                        <small class="fw-medium"> <strong> PART PAY'T OUTSTANDING : &#x20B5;{{ number_format($shyhillsPcount->sum('balance'),2) }}  </strong>  </small><br>
+                        <small class="fw-medium"> <strong> NUMBER OF INVOICES : {{ count($shyhillsPcount) }} </strong>  </small>
                     </div>
                 </div>
             </div>
-            <div class="col-lg-2">
+            <div class="col-lg-3">
                 <div style="background: #ffe0e0ff; " class="card h-100">
                     <div class="card-body">
                         <div class="card-title d-flex align-items-start justify-content-between mb-4">
@@ -362,15 +369,17 @@
 
                         </div>
                         <p class="mb-1"><strong> TEMA </strong></p>
-                        <h4 class="card-title mb-3"><strong>&#x20B5;{{$temaTotal}} </strong> </h4>
-                        <small class="fw-medium"> TOTAL INVOICES : <strong> {{$temaCount}} </strong> </small>
+                        <h4 class="card-title mb-3"><strong>&#x20B5;{{number_format($temaTotal,2)}} </strong> </h4>
+                        <small class="fw-medium"><strong> TOTAL INVOICES :  {{$temaCount}} </strong> </small> <br>
+                        <small class="fw-medium"> <strong> PART PAY'T OUTSTANDING : &#x20B5;{{ number_format($temaPcount->sum('balance'),2) }} </strong>  </small><br>
+                        <small class="fw-medium"> <strong>  NUMBER OF INVOICES : {{ count($temaPcount) }} </strong> </small>
                     </div>
                 </div>
             </div>
 
 
 
-            <div class="col-lg-2">
+            <div class="col-lg-3 m-3">
                 <div style="background: #ffe0e0ff; " class="card h-100">
                     <div class="card-body">
                         <div class="card-title d-flex align-items-start justify-content-between mb-4">
@@ -382,13 +391,15 @@
 
                         </div>
                         <p class="mb-1">TAKORADI</p>
-                        <h4 class="card-title mb-3">&#x20B5; {{$takoradiTotal}}</h4>
-                        <small class="fw-medium"> TOTAL INVOICES : {{$takoradiCount}} </small>
+                        <h4 class="card-title mb-3"> <strong>  &#x20B5; {{number_format($takoradiTotal,2)}} </strong></h4>
+                        <small class="fw-medium"><strong> TOTAL INVOICES : {{$takoradiCount}} </strong> </small> <br>
+                        <small class="fw-medium"> <strong>  PART PAY'T OUTSTANDING : &#x20B5;{{ number_format($takoradiPcount->sum('balance'),2) }}  </strong></small><br>
+                        <small class="fw-medium"> <strong>  NUMBER OF INVOICES : {{ count($takoradiPcount) }} </strong> </small>
                     </div>
                 </div>
             </div>
 
-            <div class="col-lg-2">
+            <div class="col-lg-3 m-3">
                 <div style="background: #ffe0e0ff; " class="card h-100">
                     <div class="card-body">
                         <div class="card-title d-flex align-items-start justify-content-between mb-4">
@@ -400,14 +411,16 @@
 
                         </div>
                         <p class="mb-1"> <strong> KOFORIDUA </strong> </p>
-                        <h4 class="card-title mb-3">&#x20B5;{{$koforiduaTotal}}</h4>
-                        <small class="fw-medium"> TOTAL INVOICES : <strong> {{$koforiduaCount}} </strong> </small>
+                        <h4 class="card-title mb-3"><strong> &#x20B5;{{number_format($koforiduaTotal,2)}} </strong></h4>
+                        <small class="fw-medium"> <strong>  TOTAL INVOICES : {{$koforiduaCount}} </strong> </small><br>
+                        <small class="fw-medium"> <strong> PART PAY'T OUTSTANDING : &#x20B5;{{ number_format($koforiduaPcount->sum('balance'),2) }} </strong>  </small><br>
+                        <small class="fw-medium"><strong>  NUMBER OF INVOICES : {{ count($koforiduaPcount) }} </strong> </small>
                     </div>
                 </div>
             </div>
 
 
-            <div class="col-lg-2 m-3">
+            <div class="col-lg-3 m-3">
                 <div style="background: #ffe0e0ff; " class="card h-100">
                     <div class="card-body">
                         <div class="card-title d-flex align-items-start justify-content-between mb-4">
@@ -419,8 +432,10 @@
 
                         </div>
                         <p class="mb-1"><strong> KUMASI </strong> </p>
-                        <h4 class="card-title mb-3">&#x20B5;{{$kumasiTotal}}</h4>
-                        <small class="fw-medium"> TOTAL INVOICES : <strong> {{$kumasiCount}} </strong> </small>
+                        <h4 class="card-title mb-3"> <strong> &#x20B5;{{number_format($kumasiTotal,2)}}  </strong></h4>
+                        <small class="fw-medium"> <strong> TOTAL INVOICES : {{$kumasiCount}} </strong> </small> <br>
+                        <small class="fw-medium"> <strong>  PART PAY'T OUTSTANDING : &#x20B5;{{ number_format($kumasiPcount->sum('balance'),2) }} </strong> </small><br>
+                        <small class="fw-medium"><strong>  NUMBER OF INVOICES : {{ count($kumasiPcount) }} </strong> </small>
                     </div>
                 </div>
             </div>
@@ -440,7 +455,7 @@
                             </div>
                         </div>
                         <p class="mb-1"><strong> ACCRA </strong> </p>
-                        <h4 class="card-title mb-3"><strong>&#x20B5;{{$accraTotal}} </strong> </h4>
+                        <h4 class="card-title mb-3"><strong>&#x20B5;{{number_format($accraTotal,2)}} </strong> </h4>
                         <small class="fw-medium"> TOTAL INVOICES : <strong> {{$accraCount}}</strong> </small>
                     </div>
                 </div>
@@ -462,7 +477,7 @@
                             </div>
                         </div>
                         <p class="mb-1"><strong> BOTWE </strong> </p>
-                        <h4 class="card-title mb-3"><strong>&#x20B5;{{$botweTotal}} </strong> </h4>
+                        <h4 class="card-title mb-3"><strong>&#x20B5;{{number_format($botweTotal,2)}} </strong> </h4>
                         <small class="fw-medium"> TOTAL INVOICES : <strong> {{$botweCount}}</strong> </small>
                     </div>
                 </div>
@@ -484,7 +499,7 @@
                             </div>
                         </div>
                         <p class="mb-1"><strong> SHAIHILLS </strong> </p>
-                        <h4 class="card-title mb-3"><strong>&#x20B5;{{$shyhillsTotal}} </strong> </h4>
+                        <h4 class="card-title mb-3"><strong>&#x20B5;{{number_format($shyhillsTotal,2)}} </strong> </h4>
                         <small class="fw-medium"> TOTAL INVOICES : <strong> {{$shyhillsCount}}</strong> </small>
                     </div>
                 </div>
@@ -501,7 +516,7 @@
                             </div>
                         </div>
                         <p class="mb-1"><strong> TEMA </strong> </p>
-                        <h4 class="card-title mb-3"><strong>&#x20B5;{{$temaTotal}} </strong> </h4>
+                        <h4 class="card-title mb-3"><strong>&#x20B5;{{number_format($temaTotal,2)}} </strong> </h4>
                         <small class="fw-medium"> TOTAL INVOICES : <strong> {{$temaCount}}</strong> </small>
                     </div>
                 </div>
@@ -524,7 +539,7 @@
                             </div>
                         </div>
                         <p class="mb-1"><strong> TAKORADI </strong> </p>
-                        <h4 class="card-title mb-3"><strong>&#x20B5;{{$takoradiTotal}} </strong> </h4>
+                        <h4 class="card-title mb-3"><strong>&#x20B5;{{number_format($takoradiTotal,2)}} </strong> </h4>
                         <small class="fw-medium"> TOTAL INVOICES : <strong> {{$takoradiCount}}</strong> </small>
                     </div>
                 </div>
@@ -547,7 +562,7 @@
                             </div>
                         </div>
                         <p class="mb-1"><strong> KOFORIDUA </strong> </p>
-                        <h4 class="card-title mb-3"><strong>&#x20B5;{{$koforiduaTotal}} </strong> </h4>
+                        <h4 class="card-title mb-3"><strong>&#x20B5;{{number_format($koforiduaTotal,2)}} </strong> </h4>
                         <small class="fw-medium"> TOTAL INVOICES : <strong> {{$koforiduaCount}}</strong> </small>
                     </div>
                 </div>
@@ -570,7 +585,7 @@
                             </div>
                         </div>
                         <p class="mb-1"><strong> KUMASI </strong> </p>
-                        <h4 class="card-title mb-3"><strong>&#x20B5;{{$kumasiTotal}} </strong> </h4>
+                        <h4 class="card-title mb-3"><strong>&#x20B5;{{number_format($kumasiTotal,2)}} </strong> </h4>
                         <small class="fw-medium"> TOTAL INVOICES : <strong> {{$kumasiCount}}</strong> </small>
                     </div>
                 </div>
@@ -606,12 +621,17 @@
                             <th>Invoice Month</th>
                             <th>Client Name</th>
                             <th>Phone No.</th>
-                            <th>Business Name </th>
                             <th> Field Office </th>
                             <th> Staff </th>
                             <th>Date Created</th>
                             <th>Due Date</th>
-                            <th>Amount</th>
+                            <th>Service </th>
+                            <th> Description</th>
+                            <th> Gurds </th>
+                            <th> Rate </th>
+                            <th> Invoice Value </th>
+                            <th>Paid</th>
+                            <th>Balance</th>
                             <th>Status</th>
                             <th>Action</th>
                         </tr>
@@ -621,27 +641,120 @@
                         @if(Auth::user()->hasRole(['Invoice','Finance Manager']))
                         @foreach($reportInvoices as $key => $invoice)
                         <tr>
-                             <td>{{$key +1 }}</td>
-                                <td> #FWSSi{{$invoice->id}} </td>
+                                <td>{{$key +1 }}</td>
+                                <td> FWSSi{{$invoice->id}} </td>
                                 <td> {{ $invoice->invoice_month?->format('F, Y') }}</td>
-                                <td> {{$invoice->client->name}}</td>
-                                <td> {{$invoice->client->phone_number}} </td>
+                                @if ($invoice->client->name === $invoice->client->business_name)
                                 <td> {{$invoice->client->business_name}} </td>
+                                @else
+                                <td> {{$invoice->client->name}} {{$invoice->client->business_name}} </td>
+                                @endif
+                                <td> {{$invoice->client->phone_number}} </td>
                                 <td> {{$invoice->client->field->name}} </td>
                                 <td> {{$invoice->user->name}} </td>
                                 <td> {{$invoice->created_at->format('F l d, Y, H:i A')}} </td>
                                 <td> {{$invoice->due_date->diffForHumans()}} </td>
+                               
+                               
+                                <td>
+                                    @if (count($invoice->invoice_data) > 1)
+                                        @foreach ( $invoice->invoice_data as $num => $service )
+                                            {{  $num +1  }}.  {{ $service->service_name }} <br> <br>
+                                        @endforeach
+                                    @else
+                                        @foreach ( $invoice->invoice_data as $service )
+                                             {{ $service->service_name }} 
+                                        @endforeach
+                                    @endif
+
+                                </td>
+                               
+                            
+                                <td>
+                                    @if (count($invoice->invoice_data) > 1)
+                                       @foreach ( $invoice->invoice_data as $des => $description )
+                                      
+                                         {{  $des +1  }}. {{ $description->description }} <br> <br>
+                                           
+                                       @endforeach
+                                   
+                                    @else
+                                       @foreach ( $invoice->invoice_data as $description )
+                                      
+                                         {{ $description->description }}
+                                           
+                                       @endforeach
+                                   
+                                    @endif
+                                </td>
+
+                                <td>
+                                    @if (count($invoice->invoice_data) > 1)
+                                       @foreach ( $invoice->invoice_data as $guad => $guards )
+                                      
+                                          {{  $guad +1  }}.  {{ $guards->quantity }} <br> <br>
+                                           
+                                       @endforeach
+                                   
+                                    </ol>
+                                    @else
+                                       @foreach ( $invoice->invoice_data as $guards )
+                                      
+                                          {{ $guards->quantity }} 
+                                           
+                                       @endforeach
+                                   
+                                    </ol>
+                                    @endif
+
+
+                                </td>
+
+                                <td>
+                                    @if (count($invoice->invoice_data) > 1)
+                                       @foreach ( $invoice->invoice_data as $rat => $rate )
+                                      
+                                         {{  $rat +1  }}. GH&#x20B5; {{number_format($rate->unit_price, 2) }} <br> <br>
+                                           
+                                       @endforeach
+                                   
+                                    @else
+                                       @foreach ( $invoice->invoice_data as $rate )
+                                      
+                                          GH&#x20B5; {{number_format($rate->unit_price, 2) }}
+                                           
+                                       @endforeach
+                                   
+                                    @endif
+
+                                </td>
+
                                 <td> GH&#x20B5; {{number_format($invoice->total,2)}} </td>
+                                @if ($invoice->status == 'completed')
+                                <td> GH&#x20B5;{{ number_format($invoice->total, 2)}} </td>
+                                @elseif($invoice->status == 'uncompleted')
+                                <td> GH&#x20B5;{{ number_format($invoice->total - $invoice->balance, 2)}} </td>
+                                @else
+                                <td> GH&#x20B5; 0.00 </td>
+                                @endif
+
+                                @if ($invoice->status == 'unpaid')
+                                <td> GH&#x20B5; {{number_format($invoice?->total,2)}} </td> 
+                                @else
+                                <td> GH&#x20B5; {{number_format($invoice?->balance,2)}} </td> 
+                                @endif
+
+
                                 @if($invoice->status == 'completed')
                                 <td><span class="badge bg-label-success">{{$invoice->status}}</span></td>
                                 @else
                                 <td><span class="badge bg-label-danger">{{$invoice->status}}</span></td>
                                 @endif
-                            <td>
-                                <a href="{{url('invoice', $invoice->id)}}" class="btn btn-danger">
-                                    <i class="icon-base bx bxs-bullseye"></i>
-                                </a>
-                            </td>
+                                <td>
+                                    <a href="{{url('invoice', $invoice->id)}}" class="btn btn-danger">
+                                        <i class="icon-base bx bxs-bullseye"></i>
+                                    </a>
+                                </td>
                         </tr>
                         @endforeach
                         @elseif(Auth::user()->field?->name == 'Accra')

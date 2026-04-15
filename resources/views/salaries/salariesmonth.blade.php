@@ -274,7 +274,7 @@
 
         <div class="row">
             <div class="col-12">
-                <h3 class="card-header"> <i class="icon-base bx bx-transfer-alt"></i> Salaries Transaction   @if (isset($month)) <strong> / For Month: {{  \Carbon\Carbon::parse($month)->format('F Y') }}  </strong> {{ $month->month }} @endif </h3>
+                <h3 class="card-header"> <i class="icon-base bx bx-transfer-alt"></i> Salaries Transaction   @if (isset($month)) <strong> / For Month: {{  \Carbon\Carbon::parse($month)->format('F Y') }}  </strong>  @endif </h3>
 
             </div>
         </div><br>
