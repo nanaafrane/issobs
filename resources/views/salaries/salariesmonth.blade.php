@@ -445,6 +445,23 @@
                         class="nav-link"
                         role="tab"
                         data-bs-toggle="tab"
+                        data-bs-target="#navs-pills-justified-clients"
+                        aria-controls="navs-pills-justified-clients"
+                        aria-selected="true">
+                        <span class="d-none d-sm-inline-flex align-items-center">
+                            <i class="icon-base bx bx-home icon-sm me-1_5"></i>Clients
+                            <span class="badge rounded-pill bg-danger ms-1_5"> {{ $salariesClients->count() }} </span>
+                        </span>
+                        <i class="icon-base bx bx-home icon-sm d-sm-none"></i>
+                    </button>
+                </li>
+              
+                <li class="nav-item mb-1 mb-sm-0">
+                    <button
+                        type="button"
+                        class="nav-link"
+                        role="tab"
+                        data-bs-toggle="tab"
                         data-bs-target="#navs-pills-justified-accra"
                         aria-controls="navs-pills-justified-accra"
                         aria-selected="true">
@@ -590,6 +607,37 @@
 
 
             <div class="tab-content">
+                <div class="tab-pane fade " id="navs-pills-justified-clients" role="tabpanel">
+                    <div class="table-responsive">
+                        <table id="myTableiClient" class="display">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Client Name</th>
+                                    <th>Net Salary</th>
+                                    <th>Employees</th>
+                                    <th> View Employees</th>
+                                </tr>
+                            </thead>
+                            <tbody class="table-border-bottom-0">
+                                @foreach($salariesClients as $key => $clients)
+                                <tr>
+                                    <td> {{ $key + 1 }} </td>
+                                    <td> {{ $clients->client?->name }} {{ $clients->client?->business_name }} </td>
+                                    <td> GH&#x20B5; {{ number_format($clients->paid, 2) }} </td>
+                                    <td> {{ $clients->total_employees }} </td>
+                                    <td> 
+                                        <a href="/salariesClientMonth/{{$clients->client_id}} / {{$month}} " class="btn btn-dark btn-sm">
+                                            <i class="bx bx-show"></i> 
+                                        </a>    
+                                    </td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
                 <div class="tab-pane fade " id="navs-pills-justified-accra" role="tabpanel">
                     <div class="table-responsive">
                         <table id="myTableiAccra" class="display">
@@ -1096,7 +1144,8 @@
 
 
     <script>
-        let myTableiAccra = new DataTable('#myTableiAccra');
+        let myTableiAccra = new DataTable('#myTableiAccra'); 
+        let myTableiClient = new DataTable('#myTableiClient'); 
         let myTableiBotwe = new DataTable('#myTableiBotwe');
         let myTableiShyhills = new DataTable('#myTableiShyhills');
         let myTableiTema = new DataTable('#myTableiTema');
