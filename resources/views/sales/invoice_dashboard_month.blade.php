@@ -800,7 +800,7 @@
                                 <td>
                                     @foreach ( $invoice->receipt as $dedate => $ddate )
                                       
-                                        {{ $ddate->receipt_month?->format('l, F d, Y') }} <br> <br>
+                                        {{ $ddate->receipt_month?->format('F l d, Y') }} <br> <br>
                                            
                                        @endforeach
                                 </td>
