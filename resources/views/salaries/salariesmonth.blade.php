@@ -608,6 +608,7 @@
 
             <div class="tab-content">
                 <div class="tab-pane fade " id="navs-pills-justified-clients" role="tabpanel">
+                    
                     <div class="table-responsive">
                         <table id="myTableiClient" class="display">
                             <thead>
@@ -650,6 +651,7 @@
                             </tbody>
                         </table>
                     </div>
+               
                 </div>
 
                 <div class="tab-pane fade " id="navs-pills-justified-accra" role="tabpanel">
@@ -1159,7 +1161,6 @@
 
     <script>
         let myTableiAccra = new DataTable('#myTableiAccra'); 
-        let myTableiClient = new DataTable('#myTableiClient'); 
         let myTableiBotwe = new DataTable('#myTableiBotwe');
         let myTableiShyhills = new DataTable('#myTableiShyhills');
         let myTableiTema = new DataTable('#myTableiTema');
@@ -1169,12 +1170,26 @@
         let myTableiholdcash = new DataTable('#myTableiholdcash');
         let myTableiholdbank = new DataTable('#myTableiholdbank');
 
+        let myTablecategorya = new DataTable('#myTablecategorya'); 
+        let myTablecategoryb = new DataTable('#myTablecategoryb'); 
+        let myTablecategoryc = new DataTable('#myTablecategoryc'); 
+        let myTablecategoryd = new DataTable('#myTablecategoryd'); 
+
         // new DataTable('#myTableimaster', {
         //     responsive: true,
         //       dom: 'lftrip',
         //       lengthMenu: [[10, 25, 50, 100, 500], [10, 25, 50, 100, 500]],
         //       columnControl: [ ['search'] ]
         // });
+        let myTableiClient = new DataTable('#myTableiClient', {
+                responsive: true,
+                    dom: 'Bflrtip',
+                    buttons: [
+                        'excel'
+                    ],
+                lengthMenu: [[10, 25, 50, 100, 500], [10, 25, 50, 100, 500]],
+                columnControl: [ ['search'] ]
+        }); 
 
 
         new DataTable('#myTableimaster', {
