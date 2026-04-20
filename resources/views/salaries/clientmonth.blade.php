@@ -346,6 +346,51 @@
                                 <table class="table table-hover" id="myTable">
                                     <thead class="table-dark">
                                         <tr>
+
+                                        <th> employee_id </th>
+                                        <th> Name</th>
+                                        <th> Department </th>
+                                        <th> Role</th>
+                                        <th> Field </th>
+                                        <th> Emp. Type </th>
+                                        <th> Client </th>
+                                        <th> Location </th>
+                                        <th> Inv. Status </th>
+                                        <th> SSNIT No.</th>
+                                        <th> TIN No.</th>
+                                        <th> Payment Type</th>
+                                        <th> Bank Name </th>
+                                        <th> Branch </th>
+                                        <th> Account No.</th>
+                                        <th> Basic Salary</th>
+                                        <th> Allowances</th>
+                                        <th> airtime_allowance</th>
+                                        <th> overtime</th>
+                                        <th> reimbursements </th>
+                                        <th> transport_allowance</th>
+                                        <th> ssnit_tier2_5</th>
+                                        <th> ssnit_tier2_5d</th>
+                                        <th> tax</th>
+                                        <th> ssnit_tier1_0_5</th>
+                                        <th> welfare </th>
+                                        <th> maintenance</th>
+                                        <th> absent</th>
+                                        <th> boot</th>
+                                        <th> iou</th>
+                                        <th> hostel</th>
+                                        <th> insurance</th>
+                                        <th> reprimand</th>
+                                        <th> scouter </th>
+                                        <th> raincoat </th>
+                                        <th> meal </th>
+                                        <th> loan </th>
+                                        <th> walkin </th>
+                                        <th> amnt_ded_cof_start_date</th>
+                                        <th> other_deductions</th>
+                                        <th> gross_salary </th>
+                                        <th> total_deductions</th>
+
+
                                             <th></th>
                                             <th>#</th>
                                             <th>STAFF ID</th>

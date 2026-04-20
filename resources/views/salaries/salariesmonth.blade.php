@@ -614,7 +614,11 @@
                                 <tr>
                                     <th>#</th>
                                     <th>Client Name</th>
+                                    <th>Inv Value</th>
+                                    <th>Inv Status</th>
                                     <th>Net Salary</th>
+                                    <th> Difference </th>
+                                    <th>Status</th>
                                     <th>Employees</th>
                                     <th> View Employees</th>
                                 </tr>
@@ -624,7 +628,17 @@
                                 <tr>
                                     <td> {{ $key + 1 }} </td>
                                     <td> {{ $clients->client?->name }} {{ $clients->client?->business_name }} </td>
+                                    <td> GH&#x20B5; {{ number_format( $clients->client?->invoices()->whereMonth('invoice_month', $month->month)->sum('total'),2)  }} </td>
+                                    <td>  {{ $clients->client?->invoices()->whereMonth('invoice_month', $month->month)->pluck('status') }} </td>
                                     <td> GH&#x20B5; {{ number_format($clients->paid, 2) }} </td>
+                                    <td> GH&#x20B5; {{ number_format($clients->client?->invoices()->whereMonth('invoice_month', $month->month)->sum('total') - $clients->paid, 2) }} </td>
+                                   
+                                    @if( $clients->client?->invoices()->whereMonth('invoice_month', $month->month)->sum('total') <= $clients->paid )
+                                        <td><span class="badge bg-label-danger"> Loss </span></td>
+                                    @else
+                                        <td><span class="badge bg-label-success"> Profit </span></td>
+                                    @endif
+                                   
                                     <td> {{ $clients->total_employees }} </td>
                                     <td> 
                                         <a href="/salariesClientMonth/{{$clients->client_id}} / {{$month}} " class="btn btn-dark btn-sm">

@@ -657,6 +657,7 @@
                             <th>Status</th>
                             <th>Action</th>
 
+                            <th>Reciept Date</th>
                             <th>Deductions</th>
                             <th>Other Payment</th>
 
@@ -796,6 +797,13 @@
                                     </a>
                                 </td>
 
+                                <td>
+                                    @foreach ( $invoice->receipt as $dedate => $ddate )
+                                      
+                                        {{ $ddate->receipt_month?->format('l, F d, Y') }} <br> <br>
+                                           
+                                       @endforeach
+                                </td>
 
                                 <td>
                                         @foreach ( $invoice->receipt as $deda => $dama )
