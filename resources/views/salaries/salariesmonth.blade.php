@@ -615,6 +615,7 @@
                                 <tr>
                                     <th>#</th>
                                     <th>Client Name</th>
+                                    <th>Field</th>
                                     <th>Inv Value</th>
                                     <th>Inv Status</th>
                                     <th>Net Salary</th>
@@ -629,6 +630,8 @@
                                 <tr>
                                     <td> {{ $key + 1 }} </td>
                                     <td> {{ $clients->client?->name }} {{ $clients->client?->business_name }} </td>
+                                    <td> {{ $clients->client?->field?->name }} </td>
+
                                     <td> GH&#x20B5; {{ number_format( $clients->client?->invoices()->whereMonth('invoice_month', $month->month)->sum('total'),2)  }} </td>
                                     <td>  {{ $clients->client?->invoices()->whereMonth('invoice_month', $month->month)->pluck('status') }} </td>
                                     <td> GH&#x20B5; {{ number_format($clients->paid, 2) }} </td>
