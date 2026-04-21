@@ -329,9 +329,16 @@
                                     <label class="form-check-label" for="vat"> 7 % VAT </label>
                                 </div>
 
-                                <div id="vat7_value" @if ($receipt->vat7_value > 0) style="display: flex;" @else style="display: none;" @endif class="col-md-6">
-                                    <input name="vat7_value" type="number" class="form-control" value="{{ $receipt->vat7_value }}" step="any">
-                                </div>
+                                 @if ($invoice->sub_total > 0.00)
+                                    <div id="vat7_value" @if ($receipt->vat7_value > 0) style="display: flex;" @else style="display: none;" @endif class="col-md-6">
+                                        <input name="vat7_value" type="number" class="form-control" value="{{ $invoice->sub_total * 0.07 }}" step="any">
+                                    </div>
+                                @else
+                                    <div id="vat7_value" @if ($receipt->vat7_value > 0) style="display: flex;" @else style="display: none;" @endif class="col-md-6">
+                                        <input name="vat7_value" type="number" class="form-control" value="{{ $invoice->sub_amount * 0.07 }}" step="any">
+                                    </div>
+                                @endif
+                           
                             </div>
                             <br>
                                                      
