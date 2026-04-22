@@ -494,7 +494,7 @@
                                 <br>
 
                                 <!-- show if Bank Transfer value is selected -->
-                                <div id="transferrow" @if ($receipt->mode == 'bank_transfer') style="display: flex;" @else style="display: none;" @endif  class="row g-6">
+                                <div id="transferrow" @if ($receipt->mode == 'transfer') style="display: flex;" @else style="display: none;" @endif  class="row g-6">
                                     <div class="col mb-0">
                                         <label for="transfer_reference" class="form-label"> {{ __('TRANSFER REFERENCE #') }} </label>
                                         <input

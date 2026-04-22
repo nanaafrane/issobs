@@ -197,6 +197,7 @@ class ReceiptController extends Controller
         {
             $vat7_value = $request->float('vat7_value');
             $this->vat7_amount = $sum_of_amountPaid_minus_wht - $vat7_value ;
+            $total = $total + $vat7_value;
             
         }
         // if($deductions_from_form == "on")
@@ -225,12 +226,16 @@ class ReceiptController extends Controller
             // // create Receipt
                $receipt_id = $this->createReceipt($invoice_id, $dAmount, $description, $receipt_date, $vat7_value, $this->vat7_amount, $client_id, $from, $mode, $cheque_reference, $cheque_amount, $cheque_bank, $transfer_reference, $transfer_amount, $transfer_bank, $momo_transactin_id, $momo_amount, $cash_amount, $other_payment_descri, $other_payment_amnt, $user_id, $status, $total, $this->wht_amount, $sum_of_amountPaid_minus_wht, $image);
 
+                // get balance
+                $balance = $invoice_data->total - $total;
+                // dd($balance);
                 // update the invoice status to completed and update the balance to 0
                 $invoice_data->status = $status;
                 $invoice_data->wht_amount = $invoice_data->wht_amount + $this->wht_amount;
                 $invoice_data->amount_received = $invoice_data->amount_received + $sum_of_amountPaid_minus_wht;
                 $invoice_data->vat7_value = $vat7_value;
                 $invoice_data->vat7_amount = $this->vat7_amount;
+                $invoice_data->balance = $balance;
                 $invoice_data->save();
 
                 $transaction = new Transaction();
@@ -239,7 +244,7 @@ class ReceiptController extends Controller
                 $transaction->invoice_amount = $invoice_data->total;
                 $transaction->receipt_id = $receipt_id;
                 $transaction->receipt_amount = $total + $dAmount;
-                $transaction->balance = 0;
+                $transaction->balance = $balance;
                 $transaction->status = $status;
                 $transaction->save();
 
@@ -279,7 +284,7 @@ class ReceiptController extends Controller
             $transaction->invoice_amount = $invoice_data->total;
             $transaction->receipt_id = $receipt_id;
             $transaction->receipt_amount = $total + $dAmount;
-            $transaction->balance = 0;
+            $transaction->balance = $balance;
             $transaction->status = $status;
             $transaction->save();
 
@@ -481,6 +486,7 @@ class ReceiptController extends Controller
             //  $request->input('vat7_value');
             $vat7_value = $request->float('vat7_value');
             $this->vat7_amount = $sum_of_amountPaid_minus_wht - $vat7_value ;
+            $total = $total + $vat7_value;
         }
 
         $receipt->invoice_id = $request->input('invoice_id');
@@ -516,12 +522,12 @@ class ReceiptController extends Controller
 
         // update the invoice 
         $invoice = Invoice::findorFail($receipt->invoice_id);
-       
+        // $balance = $invoice->balance - $total - $dAmount ;
 
         if($receipt->status == "completed")
         {
 
-            $invoice->balance = 0;
+            $invoice->balance = $invoice->total - $total - $dAmount;
             $invoice->status = $request->input('status');
             $invoice->wht_amount = $this->wht_amount;
             $invoice->amount_received = $sum_of_amountPaid_minus_wht;
@@ -534,7 +540,7 @@ class ReceiptController extends Controller
             Transaction::where('receipt_id', $receipt->id)->update([ 
                 'receipt_amount' => $total,
                 'status' => $request->input('status'),
-                'balance' => 0,
+                'balance' => $invoice->total - $total,
                 'checks' => 'd',
             ]);
 
