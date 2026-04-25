@@ -6,6 +6,7 @@ use App\Models\Receipt;
 use App\Http\Requests\StoreReceiptRequest;
 use App\Http\Requests\UpdateReceiptRequest;
 use App\Http\Requests\InvoiceToPayrollSearchRequest;
+use App\Models\category;
 use App\Models\Client;
 use App\Models\Collection;
 use App\Models\Field;
@@ -16,6 +17,8 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+
+use function Symfony\Component\Clock\now;
 
 class ReceiptController extends Controller
 {
@@ -436,7 +439,7 @@ class ReceiptController extends Controller
      */
     public function update(UpdateReceiptRequest $request, Receipt $receipt)
     {
-        //
+        
         // dd($request->all());
         // if receipt has been deposited, do not allow update   
         $collection = Collection::where('receipt_id', $receipt->id)->first();
@@ -520,7 +523,7 @@ class ReceiptController extends Controller
         $receipt->save();
 
 
-        // update the invoice 
+        // // update the invoice 
         $invoice = Invoice::findorFail($receipt->invoice_id);
         // $balance = $invoice->balance - $total - $dAmount ;
 
@@ -567,6 +570,62 @@ class ReceiptController extends Controller
             
         }
 
+        // // ASSIGN TO A CATEGORY
+        // return $invoice->invoice_month?->format('Y-m') . " / ". $receipt->receipt_month?->format('Y-m');
+        $inv  = Carbon::parse($invoice->invoice_month);
+        $rec  = Carbon::parse($receipt->receipt_month);
+        // $client = Client::findOrFail($receipt->client_id);
+        $category = new category();
+
+            // 2. Condition: Same Month
+            if ($rec->isSameMonth($inv) || $rec->lt($inv)) 
+                
+            {
+                // ASSIGN TO CATEGORY A
+                $category->name = 'Category A';
+                $category->client_id = $receipt->client_id;
+                $category->user_id = Auth::id();
+                $category->category_month = $invoice->invoice_month;
+                $category->save();
+            }
+
+            else
+            {
+
+                if ($rec->isSameMonth($inv->copy()->addMonth()) && $rec->day >= 1 && $rec->day <= 9) {
+                //    ASSIGN TO CATEGORY B
+                    $category->name = 'Category B';
+                    $category->client_id = $receipt->client_id;
+                    $category->user_id = Auth::id();
+                    $category->category_month = $invoice->invoice_month;
+                    $category->save();
+                }
+
+                // 4. Condition: 10th to 15th of the following month
+                if ($rec->isSameMonth($inv->copy()->addMonth()) && $rec->day >= 10 && $rec->day <= 15) {
+                //    ASSIGN TO CATEGORY C
+                    $category->name = 'Category C';
+                    $category->client_id = $receipt->client_id;
+                    $category->user_id = Auth::id();
+                    $category->category_month = $invoice->invoice_month;
+                    $category->save();    
+                }
+
+                // 5. Condition: 16th to 20th of the following month
+                if ($rec->isSameMonth($inv->copy()->addMonth()) && $rec->day >= 16 && $rec->day <= 20) {
+                //    ASSIGN TO CATEGORY D
+                    $category->name = 'Category D';
+                    $category->client_id = $receipt->client_id;
+                    $category->user_id = Auth::id();
+                    $category->category_month = $invoice->invoice_month;
+                    $category->save();    
+                }
+
+                // return false; 
+                
+            }
+
+
 
         // update collection
         $collection = Collection::where('receipt_id', $receipt->id);
@@ -578,6 +637,9 @@ class ReceiptController extends Controller
             'transfer_amount' => $transfer_amount,
             'total_amount' => $total,
         ]); 
+
+        
+
 
         return redirect()->route('receipt.show',['receipt' => $receipt->id])->with('primary', 'Receipt  Updated Successfully');
 

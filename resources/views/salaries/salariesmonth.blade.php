@@ -447,7 +447,7 @@
                         data-bs-toggle="tab"
                         data-bs-target="#navs-pills-justified-clients"
                         aria-controls="navs-pills-justified-clients"
-                        aria-selected="true">
+                        aria-selected="false">
                         <span class="d-none d-sm-inline-flex align-items-center">
                             <i class="icon-base bx bx-home icon-sm me-1_5"></i>Clients
                             <span class="badge rounded-pill bg-danger ms-1_5"> {{ $salariesClients->count() }} </span>
@@ -464,7 +464,7 @@
                         data-bs-toggle="tab"
                         data-bs-target="#navs-pills-justified-accra"
                         aria-controls="navs-pills-justified-accra"
-                        aria-selected="true">
+                        aria-selected="false">
                         <span class="d-none d-sm-inline-flex align-items-center">
                             <i class="icon-base bx bx-home icon-sm me-1_5"></i>Banks
                             <span class="badge rounded-pill bg-danger ms-1_5"> {{ $groupedBankSalaries->count() }} </span>
@@ -579,7 +579,7 @@
                         data-bs-toggle="tab"
                         data-bs-target="#navs-pills-justified-master"
                         aria-controls="navs-pills-justified-master"
-                        aria-selected="false">
+                        aria-selected="true">
                         <span class="d-none d-sm-inline-flex align-items-center"><i class="icon-base bx bx-home icon-sm me-1_5"></i> Master
                             <span class="badge rounded-pill bg-danger ms-1_5"> {{ $salariesMaster->count() }} </span>
                         </span>
@@ -608,52 +608,306 @@
 
             <div class="tab-content">
                 <div class="tab-pane fade " id="navs-pills-justified-clients" role="tabpanel">
-                    
-                    <div class="table-responsive">
-                        <table id="myTableiClient" class="display">
-                            <thead>
-                                <tr>
-                                    <th>#</th>
-                                    <th>Client Name</th>
-                                    <th>Field</th>
-                                    <th>Inv Value</th>
-                                    <th>Inv Status</th>
-                                    <th>Net Salary</th>
-                                    <th> Difference </th>
-                                    <th>Status</th>
-                                    <th>Employees</th>
-                                    <th> View Employees</th>
-                                </tr>
-                            </thead>
-                            <tbody class="table-border-bottom-0">
-                                @foreach($salariesClients as $key => $clients)
-                                <tr>
-                                    <td> {{ $key + 1 }} </td>
-                                    <td> {{ $clients->client?->name }} {{ $clients->client?->business_name }} </td>
-                                    <td> {{ $clients->client?->field?->name }} </td>
 
-                                    <td> GH&#x20B5; {{ number_format( $clients->client?->invoices()->whereMonth('invoice_month', $month->month)->sum('total'),2)  }} </td>
-                                    <td>  {{ $clients->client?->invoices()->whereMonth('invoice_month', $month->month)->pluck('status') }} </td>
-                                    <td> GH&#x20B5; {{ number_format($clients->paid, 2) }} </td>
-                                    <td> GH&#x20B5; {{ number_format($clients->client?->invoices()->whereMonth('invoice_month', $month->month)->sum('total') - $clients->paid, 2) }} </td>
-                                   
-                                    @if( $clients->client?->invoices()->whereMonth('invoice_month', $month->month)->sum('total') <= $clients->paid )
-                                        <td><span class="badge bg-label-danger"> Loss </span></td>
-                                    @else
-                                        <td><span class="badge bg-label-success"> Profit </span></td>
-                                    @endif
-                                   
-                                    <td> {{ $clients->total_employees }} </td>
-                                    <td> 
-                                        <a href="/salariesClientMonth/{{$clients->client_id}} / {{$month}} " class="btn btn-dark btn-sm">
-                                            <i class="bx bx-show"></i> 
-                                        </a>    
-                                    </td>
-                                </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
+                             <div class="nav-align-top">
+                                <ul class="nav nav-pills mb-4 nav-fill" role="tablist">
+                                    
+                                    <li class="nav-item mb-1 mb-sm-0">
+                                        <button
+                                            type="button"
+                                            class="nav-link"
+                                            role="tab"
+                                            data-bs-toggle="tab"
+                                            data-bs-target="#navs-pills-justified-categorya"
+                                            aria-controls="navs-pills-justified-categorya"
+                                            aria-selected="true">
+                                            <span class="d-none d-sm-inline-flex align-items-center">
+                                                <i class="icon-base bx bx-home icon-sm me-1_5"></i>CATEGORY A
+                                                <span class="badge rounded-pill bg-danger ms-1_5"> {{ $clientA->count() }} </span>
+                                            </span>
+                                            <i class="icon-base bx bx-home icon-sm d-sm-none"></i>
+                                        </button>
+                                    </li>
+
+                                    <li class="nav-item mb-1 mb-sm-0">
+                                        <button
+                                            type="button"
+                                            class="nav-link"
+                                            role="tab"
+                                            data-bs-toggle="tab"
+                                            data-bs-target="#navs-pills-justified-categoryb"
+                                            aria-controls="navs-pills-justified-categoryb"
+                                            aria-selected="true">
+                                            <span class="d-none d-sm-inline-flex align-items-center">
+                                                <i class="icon-base bx bx-home icon-sm me-1_5"></i>CATEGORY B
+                                                <span class="badge rounded-pill bg-danger ms-1_5"> 0 </span>
+                                            </span>
+                                            <i class="icon-base bx bx-home icon-sm d-sm-none"></i>
+                                        </button>
+                                    </li>
+
+                                    <li class="nav-item mb-1 mb-sm-0">
+                                        <button
+                                            type="button"
+                                            class="nav-link"
+                                            role="tab"
+                                            data-bs-toggle="tab"
+                                            data-bs-target="#navs-pills-justified-categoryc"
+                                            aria-controls="navs-pills-justified-categoryc"
+                                            aria-selected="true">
+                                            <span class="d-none d-sm-inline-flex align-items-center">
+                                                <i class="icon-base bx bx-home icon-sm me-1_5"></i>CATEGORY C
+                                                <span class="badge rounded-pill bg-danger ms-1_5"> 0 </span>
+                                            </span>
+                                            <i class="icon-base bx bx-home icon-sm d-sm-none"></i>
+                                        </button>
+                                    </li>
+
+                                    <li class="nav-item mb-1 mb-sm-0">
+                                        <button
+                                            type="button"
+                                            class="nav-link"
+                                            role="tab"
+                                            data-bs-toggle="tab"
+                                            data-bs-target="#navs-pills-justified-categoryd"
+                                            aria-controls="navs-pills-justified-categoryd"
+                                            aria-selected="true">
+                                            <span class="d-none d-sm-inline-flex align-items-center">
+                                                <i class="icon-base bx bx-home icon-sm me-1_5"></i>CATEGORY D
+                                                <span class="badge rounded-pill bg-danger ms-1_5"> 0 </span>
+                                            </span>
+                                            <i class="icon-base bx bx-home icon-sm d-sm-none"></i>
+                                        </button>
+                                    </li>
+
+                                    <li class="nav-item mb-1 mb-sm-0">
+                                        <button
+                                            type="button"
+                                            class="nav-link"
+                                            role="tab"
+                                            data-bs-toggle="tab"
+                                            data-bs-target="#navs-pills-justified-clientmaster"
+                                            aria-controls="navs-pills-justified-clientmaster"
+                                            aria-selected="true">
+                                            <span class="d-none d-sm-inline-flex align-items-center">
+                                                <i class="icon-base bx bx-home icon-sm me-1_5"></i>CLIENT MASTER
+                                                <span class="badge rounded-pill bg-danger ms-1_5"> {{ $salariesClients->count() }} </span>
+                                            </span>
+                                            <i class="icon-base bx bx-home icon-sm d-sm-none"></i>
+                                        </button>
+                                    </li>
+
+                                </ul>
+                             </div>
+
+                             <div class="tab-content">
+                                
+                                <div class="tab-pane fade " id="navs-pills-justified-categorya" role="tabpanel">
+                                    <div class="table-responsive">
+                                        <table id="myTablecategorya" class="display">
+                                            <thead>
+                                                <tr>
+                                                    <th>#</th>
+                                                    <th>Client Name</th>
+                                                    <th>Field</th>
+                                                    <th>Inv Value</th>
+                                                    <th>Inv Status</th>
+                                                    <th>Net Salary</th>
+                                                    <th> Difference </th>
+                                                    <th>Status</th>
+                                                    <th>Employees</th>
+                                                    <th> View Employees</th>
+
+                                                </tr>
+                                            </thead>
+                                            <tbody class="table-border-bottom-0">
+                                                @foreach($clientA as $key => $catA)
+                                                <tr>
+                                                    <td> {{ $key + 1 }} </td>
+                                                    <td> {{ $catA->client?->name }} {{ $catA->client?->business_name }} </td>
+                                                    <td> {{ $catA->client?->field?->name }} </td>
+
+                                                    <td> GH&#x20B5; {{ number_format( $catA->client?->invoices()->whereMonth('invoice_month', $month->month)->sum('total'),2)  }} </td>
+                                                    <td>  {{ $catA->client?->invoices()->whereMonth('invoice_month', $month->month)->pluck('status') }} </td>
+                                                    <td> GH&#x20B5; {{ number_format($catA->paid, 2) }} </td>
+                                                    <td> GH&#x20B5; {{ number_format($catA->client?->invoices()->whereMonth('invoice_month', $month->month)->sum('total') - $catA->paid, 2) }} </td>
+                                                
+                                                    @if( $catA->client?->invoices()->whereMonth('invoice_month', $month->month)->sum('total') <= $catA->paid )
+                                                        <td><span class="badge bg-label-danger"> Loss </span></td>
+                                                    @else
+                                                        <td><span class="badge bg-label-success"> Profit </span></td>
+                                                    @endif
+                                                
+                                                    <td> {{ $catA->total_employees }} </td>
+                                                    <td> 
+                                                        <a href="/salariesClientMonth/{{$catA->client_id}} / {{$month}} " class="btn btn-dark btn-sm">
+                                                            <i class="bx bx-show"></i> 
+                                                        </a>    
+                                                    </td>
+                                                </tr>
+                                                @endforeach
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                <div class="tab-pane fade " id="navs-pills-justified-categoryb" role="tabpanel">
+                                    <div class="table-responsive">
+                                        <table id="myTablecategoryb" class="display">
+                                            <thead>
+                                                <tr>
+                                                    <th>#</th>
+                                                    <th>Bank Name</th>
+                                                    <th>Gross Salary</th>
+                                                    <th>Total Deductions</th>
+                                                    <th>Net Salary</th>
+                                                    <th>Employees</th>
+                                                    <th> View Employees</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody class="table-border-bottom-0">
+                                                @foreach($groupedBankSalaries as $key => $banks)
+                                                <tr>
+                                                    <td> {{ $key + 1 }} </td>
+                                                    <td> {{ $banks->bank->name }} </td>
+                                                    <td> GH&#x20B5; {{ number_format($banks->gross, 2) }} </td>
+                                                    <td> GH&#x20B5; {{ number_format($banks->deductions, 2) }} </td>
+                                                    <td> GH&#x20B5; {{ number_format($banks->paid, 2) }} </td>
+                                                    <td> {{ $banks->total_employees }} </td>
+                                                    <td> 
+                                                        <a href="/salariesBankMonth/{{ $banks->bank->id }}/{{ $month }}" class="btn btn-dark btn-sm">
+                                                            <i class="bx bx-show"></i> 
+                                                        </a>    
+                                                    </td>
+                                                </tr>
+                                                @endforeach
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+
+                                <div class="tab-pane fade " id="navs-pills-justified-categoryc" role="tabpanel">
+                                    <div class="table-responsive">
+                                        <table id="myTablecategoryc" class="display">
+                                            <thead>
+                                                <tr>
+                                                    <th>#</th>
+                                                    <th>Bank Name</th>
+                                                    <th>Gross Salary</th>
+                                                    <th>Total Deductions</th>
+                                                    <th>Net Salary</th>
+                                                    <th>Employees</th>
+                                                    <th> View Employees</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody class="table-border-bottom-0">
+                                                @foreach($groupedBankSalaries as $key => $banks)
+                                                <tr>
+                                                    <td> {{ $key + 1 }} </td>
+                                                    <td> {{ $banks->bank->name }} </td>
+                                                    <td> GH&#x20B5; {{ number_format($banks->gross, 2) }} </td>
+                                                    <td> GH&#x20B5; {{ number_format($banks->deductions, 2) }} </td>
+                                                    <td> GH&#x20B5; {{ number_format($banks->paid, 2) }} </td>
+                                                    <td> {{ $banks->total_employees }} </td>
+                                                    <td> 
+                                                        <a href="/salariesBankMonth/{{ $banks->bank->id }}/{{ $month }}" class="btn btn-dark btn-sm">
+                                                            <i class="bx bx-show"></i> 
+                                                        </a>    
+                                                    </td>
+                                                </tr>
+                                                @endforeach
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+
+                                <div class="tab-pane fade " id="navs-pills-justified-categoryd" role="tabpanel">
+                                    <div class="table-responsive">
+                                        <table id="myTablecategoryd" class="display">
+                                            <thead>
+                                                <tr>
+                                                    <th>#</th>
+                                                    <th>Bank Name</th>
+                                                    <th>Gross Salary</th>
+                                                    <th>Total Deductions</th>
+                                                    <th>Net Salary</th>
+                                                    <th>Employees</th>
+                                                    <th> View Employees</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody class="table-border-bottom-0">
+                                                @foreach($groupedBankSalaries as $key => $banks)
+                                                <tr>
+                                                    <td> {{ $key + 1 }} </td>
+                                                    <td> {{ $banks->bank->name }} </td>
+                                                    <td> GH&#x20B5; {{ number_format($banks->gross, 2) }} </td>
+                                                    <td> GH&#x20B5; {{ number_format($banks->deductions, 2) }} </td>
+                                                    <td> GH&#x20B5; {{ number_format($banks->paid, 2) }} </td>
+                                                    <td> {{ $banks->total_employees }} </td>
+                                                    <td> 
+                                                        <a href="/salariesBankMonth/{{ $banks->bank->id }}/{{ $month }}" class="btn btn-dark btn-sm">
+                                                            <i class="bx bx-show"></i> 
+                                                        </a>    
+                                                    </td>
+                                                </tr>
+                                                @endforeach
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                            
+                                <div class="tab-pane fade " id="navs-pills-justified-clientmaster" role="tabpanel">
+                                    <div class="table-responsive">
+                                        <table id="myTableiclientmaster" class="display">
+                                            <thead>
+                                                <tr>
+                                                    <th>#</th>
+                                                    <th>Client Name</th>
+                                                    <th>Field</th>
+                                                    <th>Inv Value</th>
+                                                    <th>Inv Status</th>
+                                                    <th>Net Salary</th>
+                                                    <th> Difference </th>
+                                                    <th>Status</th>
+                                                    <th>Employees</th>
+                                                    <th> View Employees</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody class="table-border-bottom-0">
+                                                @foreach($salariesClients as $cm => $clientMaster)
+                                                <tr>
+                                                    <td> {{ $cm + 1 }} </td>
+                                                    <td> {{ $clientMaster->client?->name }} {{ $clientMaster->client?->business_name }} </td>
+                                                    <td> {{ $clientMaster->client?->field?->name }} </td>
+
+                                                    <td> GH&#x20B5; {{ number_format( $clientMaster->client?->invoices()->whereMonth('invoice_month', $month->month)->sum('total'),2)  }} </td>
+                                                    <td>  {{ $clientMaster->client?->invoices()->whereMonth('invoice_month', $month->month)->pluck('status') }} </td>
+                                                    <td> GH&#x20B5; {{ number_format($clientMaster->paid, 2) }} </td>
+                                                    <td> GH&#x20B5; {{ number_format($clientMaster->client?->invoices()->whereMonth('invoice_month', $month->month)->sum('total') - $clientMaster->paid, 2) }} </td>
+                                                
+                                                    @if( $clientMaster->client?->invoices()->whereMonth('invoice_month', $month->month)->sum('total') <= $clientMaster->paid )
+                                                        <td><span class="badge bg-label-danger"> Loss </span></td>
+                                                    @else
+                                                        <td><span class="badge bg-label-success"> Profit </span></td>
+                                                    @endif
+                                                
+                                                    <td> {{ $clientMaster->total_employees }} </td>
+                                                    <td> 
+                                                        <a href="/salariesClientMonth/{{$clientMaster->client_id}} / {{$month}} " class="btn btn-dark btn-sm">
+                                                            <i class="bx bx-show"></i> 
+                                                        </a>    
+                                                    </td>
+                                                </tr>
+                                                @endforeach
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                             </div>
                
                 </div>
 
@@ -1184,7 +1438,7 @@
         //       lengthMenu: [[10, 25, 50, 100, 500], [10, 25, 50, 100, 500]],
         //       columnControl: [ ['search'] ]
         // });
-        let myTableiClient = new DataTable('#myTableiClient', {
+        let myTableiclientmaster = new DataTable('#myTableiclientmaster', {
                 responsive: true,
                     dom: 'Bflrtip',
                     buttons: [

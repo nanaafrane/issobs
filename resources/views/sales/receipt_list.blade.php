@@ -308,7 +308,7 @@
                                             <th>Business Name </th>
                                             <th> Field Office </th>
                                             <th> Staff </th>
-                                            <th>Date Created</th>
+                                            <th>Receipt Date</th>
                                             <!-- <th>Date Updated</th> -->
                                             <!-- <th>Owing</th> -->
                                             <th>Paid</th>
@@ -327,7 +327,7 @@
                                             <td> {{$receipt->client->business_name}} </td>
                                             <td> {{$receipt->client->field->name}} </td>
                                             <td> {{$receipt->user->name}} </td>
-                                            <td> {{$receipt->created_at->format('F l d, Y, H:i A')}} </td>
+                                            <td> {{$receipt->receipt_month?->format('F l d, Y, H:i A')}} </td>
                                             <!-- <td>GH&#x20B5; {{$receipt->invoice->total}} </td> -->
 
                                             <td> GH&#x20B5; {{number_format($receipt->total, 2)}} </td>

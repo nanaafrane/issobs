@@ -23,6 +23,7 @@ class Client extends Model
         'gps',
         'map',
         'field_id',
+        'status',
         'user_id'
     ];
 

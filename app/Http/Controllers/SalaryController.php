@@ -22,6 +22,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Imports\SalaryImport;
+use App\Models\category;
 use App\Models\PaymentInfo;
 use Maatwebsite\Excel\Excel as MaatwebsiteExcel;
 use PhpOffice\PhpSpreadsheet\Calculation\MathTrig\Sum;
@@ -117,7 +118,8 @@ class SalaryController extends Controller
 
         $banks = Bank::all();
         $fields = Field::all();
-        $clients = Client::all(); 
+        $clients = Client::all();
+        // $categories = category::all(); 
 
         $groupedBankSalaries = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved'])->where('payment_type', 'Bank')->whereIn('bank_id', $banks->pluck('id')->toArray())->groupBy('bank_id')->get(['bank_id', DB::raw('SUM(gross_salary) as gross'), DB::raw('SUM(total_deductions) as deductions'),  DB::raw('SUM(net_salary) as paid'),  DB::raw('COUNT(*) as total_employees')]);
         // // dd($groupedBankSalaries->sum('total_employees'));
@@ -145,8 +147,18 @@ class SalaryController extends Controller
         
         $salariesClients  = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved'])->whereIn('client_id', $clients->pluck('id')->toArray())->groupBy('client_id')->get(['client_id', DB::raw('SUM(net_salary) as paid'), DB::raw('COUNT(*) as total_employees')]);
        
-        // dd($salariesClients);
-        return view('salaries.salariesmonth', compact('salariesClients','groupedBankSalaries','groupedCashkSalaries', 'salariesTaxes', 'salariesPensions', 'month', 'salariesMaster', 'salariesOvertime', 'salariesIOU', 'salariesBoots', 'salariesHoldCash', 'salariesHoldBank'));
+       
+
+        $CategoryAClient = category::with(['salaries' => function ($query) use ($month) {
+            $query->whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved']);
+        }, 'salaries.client'])->where('name', 'Category A')->whereMonth('category_month', $month->month)->pluck('client_id')->toArray();
+
+        // dd( $CategoryAClient);
+        $clientA = Salary::whereMonth('salary_month', $month->month)->whereIn('client_id', $CategoryAClient)->groupBy('client_id')->get(['client_id', DB::raw('SUM(net_salary) as net_salary'), DB::raw('COUNT(employee_id) as total_employees')]);
+        // dd( $clientA);
+
+
+        return view('salaries.salariesmonth', compact('clientA','salariesClients','groupedBankSalaries','groupedCashkSalaries', 'salariesTaxes', 'salariesPensions', 'month', 'salariesMaster', 'salariesOvertime', 'salariesIOU', 'salariesBoots', 'salariesHoldCash', 'salariesHoldBank'));
     }
 
 
@@ -268,7 +280,7 @@ class SalaryController extends Controller
          $month = Carbon::parse($month);
         // dd($month);
         // get all from salaries where payment type is bank and is equal to incoming bank_id and month is in current month
-        $bank = Bank::findOrfail($bank_id);
+        $bank = Bank::f($bank_id);
         $BankSalaries = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved'])->where('payment_type', 'Bank')->where('bank_id', $bank_id)->get();
         $BankSalariesAll = Salary::whereMonth('salary_month', $month->month)->where('payment_type', 'Bank')->where('bank_id', $bank_id)->get();
         $BankSalariespending = Salary::whereMonth('salary_month', $month->month)->where('payment_status', 'pending')->where('payment_type', 'Bank')->where('bank_id', $bank_id)->get();

@@ -100,7 +100,7 @@
       </li>
       <li class="menu-item ">
           <a href="javascript:void(0);" class="menu-link menu-toggle">
-          <i class="menu-icon tf-icons bx bxs-user-account"></i>
+          <i class="menu-icon tf-icons bx bxs-user-account bg-info"></i>
           <div class="text-truncate" data-i18n="Staffs">Employees</div>
           </a>
           <ul class="menu-sub">
@@ -132,6 +132,13 @@
 
           </ul>
       </li>
+
+      <li class="menu-item">
+        <a href="{{url('category')}}" class="menu-link">
+          <i class="menu-icon tf-icons bx bxs-category bg-info"></i>
+          <div class="text-truncate" data-i18n="Categories">Categories</div>
+        </a>
+      </li>
       @elseif(Auth::user()->hasRole(['Invoice' ,'Director']))
 
       <li class="menu-header small text-uppercase"><span class="menu-header-text text-info">Management</span></li>
@@ -155,7 +162,7 @@
         </li>
         <li class="menu-item ">
           <a href="javascript:void(0);" class="menu-link menu-toggle">
-          <i class="menu-icon tf-icons bx bxs-user-account"></i>
+          <i class="menu-icon tf-icons bx bxs-category bg-info"></i>
           <div class="text-truncate" data-i18n="Staffs">Employees</div>
           </a>
           <ul class="menu-sub">

@@ -99,6 +99,7 @@ class Salary extends Model
     {
         return $this->belongsTo(Client::class);
     } 
+
     
     public function bank()
     {

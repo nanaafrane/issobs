@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\BankController;
 use App\Http\Controllers\BankDepositController;
+use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\CollectionController;
 use App\Http\Controllers\DepartmentController;
@@ -47,8 +48,10 @@ Route::resource('role', RoleController::class);
 Route::resource('field', FieldController::class);
 Route::resource('client', ClientController::class);
 Route::get('clientAttachGuards/{id}', [ClientController::class, 'clientAttachGuards']);
+Route::resource('category', CategoryController::class); 
 
 Route::resource('service', ServiceController::class);
+
 
 // Route::get('invoice/list', [InvoiceController::class, 'list']);
 Route::resource('transaction', TransactionController::class);
