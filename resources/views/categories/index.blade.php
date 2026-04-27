@@ -324,45 +324,56 @@
         </div><br>
 
         <div class="row">
-            <div class="col-xxl-12 mb-6 order-0">
-                <div style="background: #cbfcffff;" class="card">
-                    <div class="d-flex align-items-start row">
-                        <div class="col-sm-7">
-                            <div class="card-body">
-                                <h1> </h1>
-                                <h6 class="card-title  mb-3">TOTAL NUMBER OF CATEGORIES </h6>
-                            </div>
+                <form action="/categorySearch" method="GET">
+                    @csrf
+                    <div class="col">
+
+                        <label for="month" class="form-label"> <strong>   CHOOSE A MONTH TO SEARCH </strong> </label> <br>
+
+                        <div class="form-check form-check-inline">
+                            <input type="month" class="form-control" name="month" required/> <br>
+                            
+                            <button class="btn btn-dark" type="submit"> <i class="icon-base bx bx-arrow-from-left"> </i> {{ __('') }}</button>
                         </div>
                     </div>
-                </div>
-            </div>
+                </form>
            
 
         </div> <br> <br>
 
-        <div class="card-header  ml-2  d-none d-lg-block">
-            @include('flash-messages')
-        </div>
 
+        @if ( isset($categories) && count($categories) > 0 )
 
+        <div class="col-lg-8">
+            <div  class="card h-100 bg-info text-white">
+                <div class="card-body">
+                    <p class="mb-1"><strong> TOTAL CATEGORIES CLIENTS FOR : {{ strtoupper($categories[0]->category_month?->format('F Y')) }}  </strong></p>
+                    <h4 class="card-title mb-3 text-white"><strong> {{ $categories->count() }} </strong> </h4> 
+                </div>
+            </div>
+        </div> <br> <br>
 
         <div class="row">
             <div class="col-8">
                 <table id="myTable" class="display">
                     <thead>
                         <tr>
-                            <th> # ID.</th>
+                            <th> #</th>
+                            <th>Client Name</th>
                             <th> Name</th>
+                            <th> Month</th>
                             <th>Staff</th>
                             <th>Action</th>
                         </tr>
                     </thead>
                     <tbody>
 
-                        @foreach($categories as $category)
+                        @foreach($categories as $key => $category)
                         <tr>
-                            <td> {{$category?->id}} </td>
+                            <td> {{$key + 1}} </td>
+                            <td> {{ $category->client?->name }} {{ $category->client?->business_name }} </td>
                             <td> {{$category?->name}}</td>
+                            <td> {{ $category->category_month?->format('F Y') }} </td>
                             <td> {{ $category->user?->name }} </td>
                             <td>
                                 <div class="dropdown">
@@ -383,45 +394,21 @@
 
             </div>
 
-            <div class="col-4">
-                <br>
-                <h3 class="card-header text-info"> <i class="icon-base bx bxs-buildings"></i> Add Category </h3>
-                <br>
+        </div> 
+        @else
 
-                <form method="POST" action="category">
-                    @csrf
-                    <div class="row">
-                        <div class="col mb-0">
-                            <label for="name" class="form-label"> {{ __('Name') }}</label>
-                            <input
-                                type="text"
-                                name="name"
-                                id="name"
-                                class="form-control @error('name') is-invalid @enderror"
-                                value="{{ old('name')}}"
-                                placeholder="Category Name"
-                                required
-                                autocomplete="name"
-                                autofocus>
-
-                            @error('name')
-                            <span class="invalid-feedback" role="alert">
-                                <strong>{{ $message }}</strong>
-                            </span>
-                            @enderror
-
-
-                        </div>
-
-                    </div>
-
-                    <br>
-                    <div class="modal-footer">
-                        <button type="submit" class="btn btn-info d-grid w-100">{{ __('Add') }}</button>
-                    </div>
-                </form>
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title text-danger"> <i class="icon-base bx bx-error-alt"></i> No Categories,  Please select a month to view categories.  </h5>
+                    </div>      
+                </div>
             </div>
         </div>
+
+        @endif
+
         
     </div>
   <!-- / Content -->

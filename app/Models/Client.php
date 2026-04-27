@@ -24,7 +24,9 @@ class Client extends Model
         'map',
         'field_id',
         'status',
-        'user_id'
+        'user_id',
+        'category_name',
+        'category_month',
     ];
 
 

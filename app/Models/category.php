@@ -11,7 +11,8 @@ class category extends Model
     protected $fillable = [
         'name',
         'user_id',
-        'client_id'
+        'client_id',
+        'category_month'
     ];
 
     public function user()
@@ -23,6 +24,16 @@ class category extends Model
     {
     return $this->hasMany(Salary::class);
     }
+
+    public function client()
+    {
+        return $this->belongsTo(Client::class);
+    }
+
+
+    protected $casts = [
+        'category_month' => 'date',
+    ];
 
 
 }

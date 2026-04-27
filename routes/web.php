@@ -49,6 +49,9 @@ Route::resource('field', FieldController::class);
 Route::resource('client', ClientController::class);
 Route::get('clientAttachGuards/{id}', [ClientController::class, 'clientAttachGuards']);
 Route::resource('category', CategoryController::class); 
+Route::post('categoryAssign', [CategoryController::class, 'categoryAssign']); 
+Route::post('categoryReAssign', [CategoryController::class, 'categoryReAssign']); 
+Route::get('categorySearch', [CategoryController::class, 'categorySearch']); 
 
 Route::resource('service', ServiceController::class);
 
@@ -131,6 +134,7 @@ Route::get('salariesOvertimeMonth/{field_id}/{month}',  [SalaryController::class
 Route::get('salariesIouMonth/{field_id}/{month}',  [SalaryController::class, 'IouMonth']);
 Route::get('salariesBootMonth/{field_id}/{month}',  [SalaryController::class, 'BootMonth']);
 Route::get('salariesClientMonth/{client_id}/{month}',  [SalaryController::class, 'ClientMonth']);
+Route::get('salariesClientHoldMonth/{client_id}/{month}',  [SalaryController::class, 'ClientHoldMonth']);
 
 Route::get('salariesMonth', [SalaryController::class, 'salariesMonth'])->name('salaries.salariesMonth');
 Route::get('salariesInvPayroll', [SalaryController::class, 'InvToParoll']);

@@ -258,6 +258,88 @@ class ReceiptController extends Controller
             //     // select all transactions with this current invoice iD and assign value d to the checks culumn
             Transaction::where('invoice_id', $invoice_id)->update(['checks' => 'd']);
 
+
+
+        // // ASSIGN TO A CATEGORY
+        // return $invoice->invoice_month?->format('Y-m') . " / ". $receipt->receipt_month?->format('Y-m');
+        $inv  = Carbon::parse($invoice_data->invoice_month);
+        $created_receipt = Receipt::findOrfail($receipt_id);
+        $rec  = Carbon::parse($created_receipt->receipt_month);
+        // $client = Client::findOrFail($receipt->client_id);
+        $category = new category();
+        $client = Client::findOrfail($created_receipt->client_id);
+
+            // 2. Condition: Same Month
+            if ($rec->isSameMonth($inv) || $rec->lt($inv)) 
+                
+            {
+                // ASSIGN TO CATEGORY A
+                $category->name = 'Category A';
+                $category->client_id = $created_receipt->client_id;
+                $category->user_id = Auth::id();
+                $category->category_month = $invoice_data->invoice_month;
+                $category->save();
+
+                // UPDATE CLIENT AND MONTH
+                $client->category_name = 'Category A';
+                $client->category_month = $invoice_data->invoice_month;
+                $client->save();
+            }
+
+            else
+            {
+
+                if ($rec->isSameMonth($inv->copy()->addMonth()) && $rec->day >= 1 && $rec->day <= 9) {
+                //    ASSIGN TO CATEGORY B
+                    $category->name = 'Category B';
+                    $category->client_id = $created_receipt->client_id;
+                    $category->user_id = Auth::id();
+                    $category->category_month = $invoice_data->invoice_month;
+                    $category->save();
+
+                    // UPDATE CLIENT AND MONTH
+                    $client->category_name = 'Category B';
+                    $client->category_month = $invoice_data->invoice_month;
+                    $client->save();
+                }
+
+                // 4. Condition: 10th to 15th of the following month
+                if ($rec->isSameMonth($inv->copy()->addMonth()) && $rec->day >= 10 && $rec->day <= 15) {
+                //    ASSIGN TO CATEGORY C
+                    $category->name = 'Category C';
+                    $category->client_id = $created_receipt->client_id;
+                    $category->user_id = Auth::id();
+                    $category->category_month = $invoice_data->invoice_month;
+                    $category->save();  
+                    
+                    // UPDATE CLIENT AND MONTH
+                    $client->category_name = 'Category C';
+                    $client->category_month = $invoice_data->invoice_month;
+                    $client->save();
+                }
+
+                // 5. Condition: 16th to 20th of the following month
+                if ($rec->isSameMonth($inv->copy()->addMonth()) && $rec->day >= 16 && $rec->day <= 20) {
+                //    ASSIGN TO CATEGORY D
+                    $category->name = 'Category D';
+                    $category->client_id = $created_receipt->client_id;
+                    $category->user_id = Auth::id();
+                    $category->category_month = $invoice_data->invoice_month;
+                    $category->save();   
+                    
+                    // UPDATE CLIENT AND MONTH
+                    $client->category_name = 'Category D';
+                    $client->category_month = $invoice_data->invoice_month;
+                    $client->save();
+                }
+
+                // return false; 
+                
+            }
+        // // END ASSIGN TO A CATEGORY
+
+
+
                 // return redirect('receipt')->with('primary', 'Receipt created Successfully');
             return redirect()->route('receipt.show',['receipt' => $receipt_id])->with('primary', 'Receipt  Craeated Successfully');
 
@@ -296,6 +378,87 @@ class ReceiptController extends Controller
 
             // // select all transactions with this current invoice iD and assign value D to the checks culumn
             Transaction::where('invoice_id', $invoice_id)->update(['checks' => 'd']);
+
+        // // ASSIGN TO A CATEGORY
+        // return $invoice->invoice_month?->format('Y-m') . " / ". $receipt->receipt_month?->format('Y-m');
+        $inv  = Carbon::parse($invoice_data->invoice_month);
+        $created_receipt = Receipt::findOrfail($receipt_id);
+        $rec  = Carbon::parse($created_receipt->receipt_month);
+        // $client = Client::findOrFail($receipt->client_id);
+        $category = new category();
+        $client = Client::findOrfail($created_receipt->client_id);
+
+            // 2. Condition: Same Month
+            if ($rec->isSameMonth($inv) || $rec->lt($inv)) 
+                
+            {
+                // ASSIGN TO CATEGORY A
+                $category->name = 'Category A';
+                $category->client_id = $created_receipt->client_id;
+                $category->user_id = Auth::id();
+                $category->category_month = $invoice_data->invoice_month;
+                $category->save();
+
+                // UPDATE CLIENT AND MONTH
+                $client->category_name = 'Category A';
+                $client->category_month = $invoice_data->invoice_month;
+                $client->save();
+            }
+
+            else
+            {
+
+                if ($rec->isSameMonth($inv->copy()->addMonth()) && $rec->day >= 1 && $rec->day <= 9) {
+                //    ASSIGN TO CATEGORY B
+                    $category->name = 'Category B';
+                    $category->client_id = $created_receipt->client_id;
+                    $category->user_id = Auth::id();
+                    $category->category_month = $invoice_data->invoice_month;
+                    $category->save();
+
+                    // UPDATE CLIENT AND MONTH
+                    $client->category_name = 'Category B';
+                    $client->category_month = $invoice_data->invoice_month;
+                    $client->save();
+                }
+
+                // 4. Condition: 10th to 15th of the following month
+                if ($rec->isSameMonth($inv->copy()->addMonth()) && $rec->day >= 10 && $rec->day <= 15) {
+                //    ASSIGN TO CATEGORY C
+                    $category->name = 'Category C';
+                    $category->client_id = $created_receipt->client_id;
+                    $category->user_id = Auth::id();
+                    $category->category_month = $invoice_data->invoice_month;
+                    $category->save();  
+                    
+                    // UPDATE CLIENT AND MONTH
+                    $client->category_name = 'Category C';
+                    $client->category_month = $invoice_data->invoice_month;
+                    $client->save();
+                }
+
+                // 5. Condition: 16th to 20th of the following month
+                if ($rec->isSameMonth($inv->copy()->addMonth()) && $rec->day >= 16 && $rec->day <= 20) {
+                //    ASSIGN TO CATEGORY D
+                    $category->name = 'Category D';
+                    $category->client_id = $created_receipt->client_id;
+                    $category->user_id = Auth::id();
+                    $category->category_month = $invoice_data->invoice_month;
+                    $category->save();   
+                    
+                    // UPDATE CLIENT AND MONTH
+                    $client->category_name = 'Category D';
+                    $client->category_month = $invoice_data->invoice_month;
+                    $client->save();
+                }
+
+                // return false; 
+                
+            }
+        // // END ASSIGN TO A CATEGORY
+
+
+
 
             // return redirect('receipt')->with('success', 'Receipt created Successfully');
             return redirect()->route('receipt.show',['receipt' => $receipt_id])->with('primary', 'Receipt  Craeated Successfully');
@@ -344,6 +507,88 @@ class ReceiptController extends Controller
 
             // CREATE A COLLECTION HERE.................
             $this->create_collection($current_collection, $receipt_id, $cash_amount, $momo_amount, $cheque_amount, $transfer_amount, $total, $client->field->id );
+
+
+        // // ASSIGN TO A CATEGORY
+        // return $invoice->invoice_month?->format('Y-m') . " / ". $receipt->receipt_month?->format('Y-m');
+        $inv  = Carbon::parse($invoice_data->invoice_month);
+        $created_receipt = Receipt::findOrfail($receipt_id);
+        $rec  = Carbon::parse($created_receipt->receipt_month);
+        // $client = Client::findOrFail($receipt->client_id);
+        $category = new category();
+        $client = Client::findOrfail($created_receipt->client_id);
+
+            // 2. Condition: Same Month
+            if ($rec->isSameMonth($inv) || $rec->lt($inv)) 
+                
+            {
+                // ASSIGN TO CATEGORY A
+                $category->name = 'Category A';
+                $category->client_id = $created_receipt->client_id;
+                $category->user_id = Auth::id();
+                $category->category_month = $invoice_data->invoice_month;
+                $category->save();
+
+                // UPDATE CLIENT AND MONTH
+                $client->category_name = 'Category A';
+                $client->category_month = $invoice_data->invoice_month;
+                $client->save();
+            }
+
+            else
+            {
+
+                if ($rec->isSameMonth($inv->copy()->addMonth()) && $rec->day >= 1 && $rec->day <= 9) {
+                //    ASSIGN TO CATEGORY B
+                    $category->name = 'Category B';
+                    $category->client_id = $created_receipt->client_id;
+                    $category->user_id = Auth::id();
+                    $category->category_month = $invoice_data->invoice_month;
+                    $category->save();
+
+                    // UPDATE CLIENT AND MONTH
+                    $client->category_name = 'Category B';
+                    $client->category_month = $invoice_data->invoice_month;
+                    $client->save();
+                }
+
+                // 4. Condition: 10th to 15th of the following month
+                if ($rec->isSameMonth($inv->copy()->addMonth()) && $rec->day >= 10 && $rec->day <= 15) {
+                //    ASSIGN TO CATEGORY C
+                    $category->name = 'Category C';
+                    $category->client_id = $created_receipt->client_id;
+                    $category->user_id = Auth::id();
+                    $category->category_month = $invoice_data->invoice_month;
+                    $category->save();  
+                    
+                    // UPDATE CLIENT AND MONTH
+                    $client->category_name = 'Category C';
+                    $client->category_month = $invoice_data->invoice_month;
+                    $client->save();
+                }
+
+                // 5. Condition: 16th to 20th of the following month
+                if ($rec->isSameMonth($inv->copy()->addMonth()) && $rec->day >= 16 && $rec->day <= 20) {
+                //    ASSIGN TO CATEGORY D
+                    $category->name = 'Category D';
+                    $category->client_id = $created_receipt->client_id;
+                    $category->user_id = Auth::id();
+                    $category->category_month = $invoice_data->invoice_month;
+                    $category->save();   
+                    
+                    // UPDATE CLIENT AND MONTH
+                    $client->category_name = 'Category D';
+                    $client->category_month = $invoice_data->invoice_month;
+                    $client->save();
+                }
+
+                // return false; 
+                
+            }
+        // // END ASSIGN TO A CATEGORY
+
+
+
 
             return redirect()->route('receipt.show',['receipt' => $receipt_id])->with('primary', 'Receipt  Craeated Successfully');
     
@@ -576,6 +821,7 @@ class ReceiptController extends Controller
         $rec  = Carbon::parse($receipt->receipt_month);
         // $client = Client::findOrFail($receipt->client_id);
         $category = new category();
+        $client = Client::findOrfail($receipt->client_id);
 
             // 2. Condition: Same Month
             if ($rec->isSameMonth($inv) || $rec->lt($inv)) 
@@ -587,6 +833,11 @@ class ReceiptController extends Controller
                 $category->user_id = Auth::id();
                 $category->category_month = $invoice->invoice_month;
                 $category->save();
+
+                // UPDATE CLIENT AND MONTH
+                $client->category_name = 'Category A';
+                $client->category_month = $invoice->invoice_month;
+                $client->save();
             }
 
             else
@@ -599,6 +850,11 @@ class ReceiptController extends Controller
                     $category->user_id = Auth::id();
                     $category->category_month = $invoice->invoice_month;
                     $category->save();
+
+                    // UPDATE CLIENT AND MONTH
+                    $client->category_name = 'Category B';
+                    $client->category_month = $invoice->invoice_month;
+                    $client->save();
                 }
 
                 // 4. Condition: 10th to 15th of the following month
@@ -608,7 +864,12 @@ class ReceiptController extends Controller
                     $category->client_id = $receipt->client_id;
                     $category->user_id = Auth::id();
                     $category->category_month = $invoice->invoice_month;
-                    $category->save();    
+                    $category->save();  
+                    
+                    // UPDATE CLIENT AND MONTH
+                    $client->category_name = 'Category C';
+                    $client->category_month = $invoice->invoice_month;
+                    $client->save();
                 }
 
                 // 5. Condition: 16th to 20th of the following month
@@ -618,13 +879,18 @@ class ReceiptController extends Controller
                     $category->client_id = $receipt->client_id;
                     $category->user_id = Auth::id();
                     $category->category_month = $invoice->invoice_month;
-                    $category->save();    
+                    $category->save();   
+                    
+                    // UPDATE CLIENT AND MONTH
+                    $client->category_name = 'Category D';
+                    $client->category_month = $invoice->invoice_month;
+                    $client->save();
                 }
 
                 // return false; 
                 
             }
-
+        // // END ASSIGN TO A CATEGORY
 
 
         // update collection

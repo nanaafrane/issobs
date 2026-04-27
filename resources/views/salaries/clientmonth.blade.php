@@ -336,6 +336,8 @@
                     <div class="col-lg-12 mb-4">
                         <input class="form-check-input form-check-inline" type="checkbox" value="" id="options" />
                         <div class="form-check form-check-inline">
+                            <button class="btn btn-danger m-4" name="submit" value="hold" onclick="return confirm('Kindly Confirm?')" type="submit"> <i class="icon-base bx bx-bxs-file-plus"> </i> {{ __(' Hold') }}</button>                   
+
                             <button class="btn btn-success" name="submit" value="approve" onclick="return confirm('Kindly Confirm?')" type="submit"> <i class="icon-base bx bx-recycle"> </i> {{ __('Approve') }}</button>                   
                         </div>
 

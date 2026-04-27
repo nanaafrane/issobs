@@ -575,7 +575,7 @@
 
                             <div class="mb-3 col-md-4">
                               <label for="location" class="form-label"> <strong>  {{ __('Location') }} * </strong> </label>
-                              <input  class="form-control @error('location') is-invalid @enderror" type="text" id="location" name="location"  placeholder="Address Name or Location Name" value="{{$employee->location}}" autofocus />
+                              <textarea  class="form-control @error('location') is-invalid @enderror" type="text" id="location" name="location"  placeholder="Address Name or Location Name" autofocus >{{$employee->location}}</textarea>
                                 @error('location')
                                 <span class="invalid-feedback" role="alert">
                                     <strong>{{ $message }}</strong>

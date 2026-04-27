@@ -294,7 +294,7 @@
 
         <div class="row">
             <div class="col-12">
-                <h3 class="card-header"> <i class="icon-base bx bx-transfer-alt"></i> {{ $field->name }}   @if (isset($month)) <strong> / For Month: {{  \Carbon\Carbon::parse($month)->format('F Y') }}</strong> @endif </h3>
+                <h3 class="card-header"> <i class="icon-base bx bx-transfer-alt"></i> {{ $client->name }}{{ $client->business_name }}    @if (isset($month)) <strong> / For Month: {{  \Carbon\Carbon::parse($month)->format('F Y') }}</strong> @endif </h3>
 
             </div>
         </div><br>
@@ -312,12 +312,10 @@
                                     class="rounded" />
                             </div>
                         </div>
-                        <p class="mb-1"><strong> FIELD OFFICE CASH :  {{ strtoupper($field->name) }}  </strong> </p> <br>
-                        <h4 class="card-title mb-3 text-white"><strong> GH&#x20B5;  {{ number_format($CashSalaries->sum('net_salary'), 2) }} </strong> </h4> <br>
-                         <h6  class="card-title mb-3 text-white">TOTAL PENDING : GH&#x20B5;  {{ number_format($CashSalariespending->sum('net_salary'), 2) }}   |   PENDING EMPLOYEES :  {{ $CashSalariespending->count() }}  </h6> 
-                        <h6  class="card-title mb-3 text-white"> TOTAL APPROVED : GH&#x20B5; {{ number_format($CashSalariesapproved->sum('net_salary'), 2) }} |   APPROVED EMPLOYEES :  {{ $CashSalariesapproved->count() }} </h6> 
-                        <h6  class="card-title mb-3 text-white"> TOTAL HOLD : GH&#x20B5; {{ number_format($CashSalarieshold->sum('net_salary'), 2) }}  |   HOLD EMPLOYEES :  {{ $CashSalarieshold->count() }} </h6> <hr>
-                        <h6  class="card-title mb-3 text-white"> OVERALL TOTAL  : GH&#x20B5; {{ number_format($CashSalariesAll->sum('net_salary'), 2) }} |   OVERALL EMPLOYEES :  {{ $CashSalariesAll->count() }} </h6>
+                        <p class="mb-1"><strong> CLIENT HOLD NAME :  {{ strtoupper($client->name) }}   {{ strtoupper($client->business_name) }} </strong> </p> <br>
+                        <h4 class="card-title mb-3 text-white"><strong> GH&#x20B5;  {{ number_format($ClientSalarieshold->sum('net_salary'), 2) }} </strong> </h4> <br>
+                         <h6  class="card-title mb-3 text-white">TOTAL REJECTED : GH&#x20B5;  {{ number_format($ClientSalariesrejected->sum('net_salary'), 2) }}   |   REJECTED EMPLOYEES :  {{ $ClientSalariesrejected->count() }}  </h6> 
+                        <h6  class="card-title mb-3 text-white"> TOTAL  : GH&#x20B5; {{ number_format($ClientSalariesHoldAll->sum('net_salary'), 2) }} |   EMPLOYEES :  {{ $ClientSalariesHoldAll->count() }} </h6> 
 
                     </div>
                 </div>
@@ -336,26 +334,64 @@
                     <div class="col-lg-12 mb-4">
                         <input class="form-check-input form-check-inline" type="checkbox" value="" id="options" />
                         <div class="form-check form-check-inline">
-                            <button class="btn btn-success" name="submit" value="approve" onclick="return confirm('Kindly Confirm?')" type="submit"> <i class="icon-base bx bx-recycle"> </i> {{ __('Approve') }}</button>                   
+                            <button class="btn btn-success" name="submit" value="hold" onclick="return confirm('Kindly Confirm?')" type="submit"> <i class="icon-base bx bx-recycle"> </i> {{ __('Move To Main') }}</button>                   
                         </div>
 
                         <div class="card">
-                            <h5 class="card-header"> Salaries Paid via Cash  </h5>
+                            <h5 class="card-header"> Client Employee Salaries  </h5>
                             <div class="card-body"> 
                             <div class="table-responsive text-nowrap">
                                 <table class="table table-hover" id="myTable">
                                     <thead class="table-dark">
                                         <tr>
+
                                             <th></th>
                                             <th>#</th>
-                                            <th>STAFF ID</th>
-                                            <th>STATUS</th>
-                                            <th> NAME </th>
-                                            <th>FIELD</th>
-                                            <th> ROLE</th>
-                                            <th>CLIENT</th>
-                                            <th>LOCATION </th>
-                                            <th> NET SALARY </th>
+                                            <th>Staff ID</th>
+                                        <th>Status</th>
+                                        <th>Month</th>
+                                        <th>Name</th>
+                                        <th> Department </th>
+                                        <th> Role</th>
+                                        <th> Field </th>
+                                        <th> Emp. Type </th>
+                                        <th> Client </th>
+                                        <th> Location </th>
+                                        <th> Inv. Status </th>
+                                        <th> net_salary </th>
+                                        <th> SSNIT No.</th>
+                                        <th> TIN No.</th>
+                                        <th> Payment Type</th>
+                                        <th> Bank Name </th>
+                                        <th> Branch </th>
+                                        <th> Account No.</th>
+                                        <th> Basic Salary</th>
+                                        <th> Allowances</th>
+                                        <th> airtime_allowance</th>
+                                        <th> overtime</th>
+                                        <th> reimbursements </th>
+                                        <th> transport_allowance</th>
+                                        <th> ssnit_tier2_5</th>
+                                        <th> ssnit_tier2_5d</th>
+                                        <th> tax</th>
+                                        <th> ssnit_tier1_0_5</th>
+                                        <th> welfare </th>
+                                        <th> maintenance</th>
+                                        <th> absent</th>
+                                        <th> boot</th>
+                                        <th> iou</th>
+                                        <th> hostel</th>
+                                        <th> insurance</th>
+                                        <th> reprimand</th>
+                                        <th> scouter </th>
+                                        <th> raincoat </th>
+                                        <th> meal </th>
+                                        <th> loan </th>
+                                        <th> walkin </th>
+                                        <th> amnt_ded_cof_start_date</th>
+                                        <th> other_deductions</th>
+                                        <th> gross_salary </th>
+                                        <th> total_deductions</th>
                                             <th>CREATED BY</th>
                                             <th>UPDATED</th>
                                             <th>UPDATED BY</th>
@@ -364,22 +400,65 @@
                                         </tr>
                                     </thead>
                                     <tbody class="table-border-bottom-0">
-                                        @foreach($CashSalaries as $key => $salary)
+                                        @foreach($ClientSalariesHoldAll as $key => $salary)
                                         <tr>
                                             <td> <input class="checkBoxes form-check-input" type="checkbox" name="salary[]" value="{{ $salary->id }}" /> </td>
                                             <td> {{ $key + 1 }} </td>
                                             <td> FWSS{{ $salary->employee?->id }} </td>
-                                                            @if($salary->payment_status == 'pending')
-                                                                <td> <span class="badge bg-label-info"> {{ $salary->payment_status }} </span> </td>
-                                                            @else 
-                                                                <td> <span class="badge bg-label-success">  {{ $salary->payment_status }} </span> </td>
-                                                            @endif
-                                            <td> {{ strtoupper($salary->employee?->name) }} </td>
-                                            <td> {{ strtoupper($salary->field?->name) }} </td>
-                                            <td> {{ $salary->employee?->role?->name }} </td>
-                                            <td> {{ $salary->client?->name || $salary->client?->business_name ? $salary->client?->name . $salary->client?->business_name :  $salary->location }} </td>
-                                            <td> {{  strtoupper($salary?->location) }} </td>
-                                            <td> GH&#x20B5; {{ number_format($salary->net_salary, 2) }} </td>
+
+                                                    @if ($salary->payment_status == 'pending')
+                                                    <td>  <span class="badge bg-label-info"> {{ $salary->payment_status }} </span> </td>
+                                                    @elseif($salary->payment_status == 'hold')
+                                                    <td> <span class="badge bg-label-warning"> {{ $salary->payment_status }} </span> </td>
+                                                    @elseif($salary->payment_status == 'rejected')
+                                                    <td> <span class="badge bg-label-danger"> {{ $salary->payment_status }} </span> </td>
+                                                    @else
+                                                    <td> <span class="badge bg-label-success"> {{ $salary->payment_status }} </span> </td>
+                                                    @endif
+
+                                                    <td> {{$salary->salary_month?->format('F, Y')}} </td>
+                                                    <td> {{ strtoupper($salary->employee?->name) }} </td>
+                                                    <td> {{ $salary->department?->name }} </td>
+                                                    <td> {{ $salary->role?->name }} </td>
+                                                    <td> {{ $salary->field?->name }} </td>
+                                                    <td> {{ $salary->employee?->worker_type }} </td>
+                                                    <td> {{ $salary->client?->name }} {{ $salary->client?->business_name }}</td>
+                                                    <td> {{ $salary->location }} </td>
+                                                    <td> {{ $salary->client?->invoices()->whereMonth('invoice_month', $month->month)->pluck('status') }} </td>
+                                                    <td>  {{ number_format( $salary->net_salary,2) }} </td>  
+                                                    <td> {{$salary->paymentInfo?->ssnit_number}}</td>
+                                                    <td> {{$salary->paymentInfo?->tin_number}}</td>
+                                                    <td> {{$salary->payment_type}}</td>
+                                                    <td> {{$salary->bank?->name}}</td>
+                                                    <td> {{$salary->branch}}</td>
+                                                    <td> {{$salary->account_number}}</td>
+                                                    <td> {{$salary->basic_salary}}</td>
+                                                    <td> {{$salary->allowances}}</td>
+                                                    <td> {{$salary->airtime_allowance}}</td>
+                                                    <td> {{$salary->overtime}}</td>
+                                                    <td> {{$salary->reimbursements}}</td>
+                                                    <td> {{$salary->transport_allowance}}</td>
+                                                    <td> {{$salary->ssnit_tier2_5}}</td>
+                                                    <td> {{$salary->ssnit_tier2_5d}}</td>   
+                                                    <td> {{$salary->tax}} </td>                            
+                                                    <td> {{$salary->ssnit_tier1_0_5}} </td>                            
+                                                    <td> {{$salary->welfare}} </td>                            
+                                                    <td> {{$salary->maintenance}} </td>                            
+                                                    <td> {{$salary->absent}} </td>                            
+                                                    <td> {{$salary->boot}} </td>                            
+                                                    <td> {{$salary->iou}} </td>                            
+                                                    <td> {{$salary->hostel}} </td>                            
+                                                    <td> {{$salary->insurance}} </td>                            
+                                                    <td> {{$salary->reprimand}} </td>                            
+                                                    <td> {{$salary->scouter}} </td>                            
+                                                    <td> {{$salary->raincoat}} </td>                            
+                                                    <td> {{$salary->meal}} </td>                            
+                                                    <td> {{$salary->loan}} </td>                            
+                                                    <td> {{$salary->walkin}} </td>                            
+                                                    <td> {{$salary->amnt_ded_cof_start_date}} </td>                            
+                                                    <td> {{$salary->other_deductions}} </td>                            
+                                                    <td> {{$salary->gross_salary}} </td>                            
+                                                    <td> {{$salary->total_deductions}} </td>                            
                                             <td>{{  $salary->user?->name }}</td>
                                             <td> {{$salary->updated_at->format('F l d, Y, H:i A')}} </td>
                                             <td> {{ $salary->user1?->name }} </td>
@@ -445,7 +524,7 @@
                 },
                     {
                         extend: 'excelHtml5',
-                        title:  "{{ $field->name . ' CASH SALARIES ' . \Carbon\Carbon::parse($month)->format('F Y')}}",
+                        title:  "{{ $client->name.  $client->business_name . ' CASH SALARIES ' . \Carbon\Carbon::parse($month)->format('F Y')}}",
                         className: 'btn btn-secondary',
                         exportOptions: {
                             columns: ':visible'

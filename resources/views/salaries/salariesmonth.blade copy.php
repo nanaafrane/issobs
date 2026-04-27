@@ -703,22 +703,12 @@
                              <div class="tab-content">
                                 
                                 <div class="tab-pane fade " id="navs-pills-justified-categorya" role="tabpanel">
-                                    <form action="/categoryReAssign" method="POST">
-                                        @csrf
-                                        <input type="text" name="month" value="{{ $month }}" hidden>
-                                        <input class="form-check-input form-check-inline" type="checkbox" value="" id="options" />
-                                    
-                                        <div class="form-check form-check-inline">
-                                            <button class="btn btn-dark" name="submit" value="" onclick="return confirm('Kindly Confirm?')" type="submit"> <i class="icon-base bx bx-recycle"> </i> {{ __('ReAssign Category') }}</button>                   
-                                        </div>
                                     <div class="table-responsive">
                                         <table id="myTablecategorya" class="display">
                                             <thead>
                                                 <tr>
-                                                    <th></th>
                                                     <th>#</th>
                                                     <th>Client Name</th>
-                                                    <th>Category_Name</th>
                                                     <th>Field</th>
                                                     <th>Inv Value</th>
                                                     <th>Inv Status</th>
@@ -733,19 +723,10 @@
                                             <tbody class="table-border-bottom-0">
                                                 @foreach($clientA as $key => $catA)
                                                 <tr>
-                                                    <td> <input class="checkBoxes form-check-input" type="checkbox" name="client[{{ $key + 1 }}]" value="{{ $catA->client?->id }}" /> </td>
                                                     <td> {{ $key + 1 }} </td>
                                                     <td> {{ $catA->client?->name }} {{ $catA->client?->business_name }} </td>
-                                                    <td> 
-                                                                <select name="name[{{ $key + 1 }}]" class="form-select @error('name') is-invalid @enderror" id="name" value="{{ old('name')}}" required>
-                                                                    <option >Choose...</option>
-                                                                    <option selected value="Category A">Category A </option>
-                                                                    <option value="Category B">Category B </option>
-                                                                    <option value="Category C">Category C </option>
-                                                                    <option value="Category D">Category D </option>
-                                                                </select>
-                                                    </td>
                                                     <td> {{ $catA->client?->field?->name }} </td>
+
                                                     <td> GH&#x20B5; {{ number_format( $catA->client?->invoices()->whereMonth('invoice_month', $month->month)->sum('total'),2)  }} </td>
                                                     <td>  {{ $catA->client?->invoices()->whereMonth('invoice_month', $month->month)->pluck('status') }} </td>
                                                     <td> GH&#x20B5; {{ number_format($catA->paid, 2) }} </td>
@@ -768,26 +749,15 @@
                                             </tbody>
                                         </table>
                                     </div>
-                                    </form>
                                 </div>
 
                                 <div class="tab-pane fade " id="navs-pills-justified-categoryb" role="tabpanel">
-                                    <form action="/categoryReAssign" method="POST">
-                                        @csrf
-                                        <input type="text" name="month" value="{{ $month }}" hidden>
-                                        <input class="form-check-input form-check-inline" type="checkbox" value="" id="options" />
-                                    
-                                        <div class="form-check form-check-inline">
-                                            <button class="btn btn-dark" name="submit" value="" onclick="return confirm('Kindly Confirm?')" type="submit"> <i class="icon-base bx bx-recycle"> </i> {{ __('ReAssign Category') }}</button>                   
-                                        </div>
                                     <div class="table-responsive">
                                         <table id="myTablecategoryb" class="display">
                                             <thead>
                                                 <tr>
-                                                    <th></th>
                                                     <th>#</th>
                                                     <th>Client Name</th>
-                                                    <th>Category_Name</th>
                                                     <th>Field</th>
                                                     <th>Inv Value</th>
                                                     <th>Inv Status</th>
@@ -801,19 +771,10 @@
                                             <tbody class="table-border-bottom-0">
                                                 @foreach($clientB as $keyb => $catB)
                                                 <tr>
-                                                    <td> <input class="checkBoxes form-check-input" type="checkbox" name="client[{{ $keyb + 1 }}]" value="{{ $catB->client?->id }}" /> </td>
-                                                   <td> {{ $keyb + 1 }} </td>
+                                                   <td> {{ $key + 1 }} </td>
                                                     <td> {{ $catB->client?->name }} {{ $catB->client?->business_name }} </td>
-                                                    <td> 
-                                                                <select name="name[{{ $keyb + 1 }}]" class="form-select @error('name') is-invalid @enderror" id="name" value="{{ old('name')}}" required>
-                                                                    <option value="">Choose...</option>
-                                                                    <option value="Category A">Category A </option>
-                                                                    <option selected value="Category B">Category B </option>
-                                                                    <option value="Category C">Category C </option>
-                                                                    <option value="Category D">Category D </option>
-                                                                </select>    
-                                                    </td>
                                                     <td> {{ $catB->client?->field?->name }} </td>
+
                                                     <td> GH&#x20B5; {{ number_format( $catB->client?->invoices()->whereMonth('invoice_month', $month->month)->sum('total'),2)  }} </td>
                                                     <td>  {{ $catB->client?->invoices()->whereMonth('invoice_month', $month->month)->pluck('status') }} </td>
                                                     <td> GH&#x20B5; {{ number_format($catB->paid, 2) }} </td>
@@ -836,28 +797,16 @@
                                             </tbody>
                                         </table>
                                     </div>
-                                    </form>
                                 </div>
 
 
                                 <div class="tab-pane fade " id="navs-pills-justified-categoryc" role="tabpanel">
-                                    <form action="/categoryReAssign" method="POST">
-                                        @csrf
-                                        <input type="text" name="month" value="{{ $month }}" hidden>
-                                        <input class="form-check-input form-check-inline" type="checkbox" value="" id="options" />
-                                    
-                                        <div class="form-check form-check-inline">
-                                            <button class="btn btn-dark" name="submit" value="" onclick="return confirm('Kindly Confirm?')" type="submit"> <i class="icon-base bx bx-recycle"> </i> {{ __('ReAssign Category') }}</button>                   
-                                        </div>
-
                                     <div class="table-responsive">
                                         <table id="myTablecategoryc" class="display">
                                             <thead>
                                                 <tr>
-                                                    <th></th>
                                                     <th>#</th>
                                                     <th>Client Name</th>
-                                                    <th>Category_Name</th>
                                                     <th>Field</th>
                                                     <th>Inv Value</th>
                                                     <th>Inv Status</th>
@@ -871,19 +820,10 @@
                                             <tbody class="table-border-bottom-0">
                                                 @foreach($clientC as $keyc => $catC)
                                                 <tr>
-                                                    <td> <input class="checkBoxes form-check-input" type="checkbox" name="client[{{ $keyc + 1 }}]" value="{{ $catC->client?->id }}" /> </td>
                                                    <td> {{ $keyc + 1 }} </td>
                                                     <td> {{ $catC->client?->name }} {{ $catC->client?->business_name }} </td>
-                                                    <td> 
-                                                                <select name="name[{{ $keyc + 1 }}]" class="form-select @error('name') is-invalid @enderror" id="name" value="{{ old('name')}}" required>
-                                                                    <option value="">Choose...</option>
-                                                                    <option value="Category A">Category A </option>
-                                                                    <option value="Category B">Category B </option>
-                                                                    <option selected value="Category C">Category C </option>
-                                                                    <option value="Category D">Category D </option>
-                                                                </select>
-                                                    </td>
                                                     <td> {{ $catC->client?->field?->name }} </td>
+
                                                     <td> GH&#x20B5; {{ number_format( $catC->client?->invoices()->whereMonth('invoice_month', $month->month)->sum('total'),2)  }} </td>
                                                     <td>  {{ $catC->client?->invoices()->whereMonth('invoice_month', $month->month)->pluck('status') }} </td>
                                                     <td> GH&#x20B5; {{ number_format($catC->paid, 2) }} </td>
@@ -906,28 +846,16 @@
                                             </tbody>
                                         </table>
                                     </div>
-                                    </form>
                                 </div>
 
 
                                 <div class="tab-pane fade " id="navs-pills-justified-categoryd" role="tabpanel">
-                                    <form action="/categoryReAssign" method="POST">
-                                        @csrf
-                                        <input type="text" name="month" value="{{ $month }}" hidden>
-                                        <input class="form-check-input form-check-inline" type="checkbox" value="" id="options" />
-                                    
-                                        <div class="form-check form-check-inline">
-                                            <button class="btn btn-dark" name="submit" value="" onclick="return confirm('Kindly Confirm?')" type="submit"> <i class="icon-base bx bx-recycle"> </i> {{ __('ReAssign Category') }}</button>                   
-                                        </div>
-
                                     <div class="table-responsive">
                                         <table id="myTablecategoryd" class="display">
                                             <thead>
                                                 <tr>
-                                                    <th></th>
                                                     <th>#</th>
                                                     <th>Client Name</th>
-                                                    <th>Category_Name</th>
                                                     <th>Field</th>
                                                     <th>Inv Value</th>
                                                     <th>Inv Status</th>
@@ -941,19 +869,10 @@
                                             <tbody class="table-border-bottom-0">
                                                 @foreach($clientD as $keyd => $catD)
                                                 <tr>
-                                                    <td> <input class="checkBoxes form-check-input" type="checkbox" name="client[{{ $keyd + 1 }}]" value="{{ $catD->client?->id }}" /> </td>
                                                    <td> {{ $keyd + 1 }} </td>
                                                     <td> {{ $catD->client?->name }} {{ $catD->client?->business_name }} </td>
-                                                   <td> 
-                                                        <select name="name[{{ $keyd + 1 }}]" class="form-select @error('name') is-invalid @enderror" id="name" value="{{ old('name')}}" required>
-                                                            <option value="">Choose...</option>
-                                                            <option value="Category A">Category A </option>
-                                                            <option value="Category B">Category B </option>
-                                                            <option value="Category C">Category C </option>
-                                                            <option selected value="Category D">Category D </option>
-                                                        </select>
-                                                   </td>
                                                     <td> {{ $catD->client?->field?->name }} </td>
+
                                                     <td> GH&#x20B5; {{ number_format( $catD->client?->invoices()->whereMonth('invoice_month', $month->month)->sum('total'),2)  }} </td>
                                                     <td>  {{ $catD->client?->invoices()->whereMonth('invoice_month', $month->month)->pluck('status') }} </td>
                                                     <td> GH&#x20B5; {{ number_format($catD->paid, 2) }} </td>
@@ -976,81 +895,55 @@
                                             </tbody>
                                         </table>
                                     </div>
-                                    </form>
                                 </div>
 
                             
                                 <div class="tab-pane fade " id="navs-pills-justified-clientmaster" role="tabpanel">
-                                    <form action="/categoryAssign" method="POST">
-                                        @csrf
-                                        <input type="text" name="month" value="{{ $month }}" hidden>
-                                        <input class="form-check-input form-check-inline" type="checkbox" value="" id="options" />
-                                    
-                                        <div class="form-check form-check-inline">
-                                            <button class="btn btn-dark" name="submit" value="" onclick="return confirm('Kindly Confirm?')" type="submit"> <i class="icon-base bx bx-recycle"> </i> {{ __('Assign Category') }}</button>                   
-                                        </div>
-                                        
-                                        <div class="table-responsive">
-                                            <table id="myTableiclientmaster" class="display">
-                                                <thead>
-                                                    <tr>
-                                                        <th></th>
-                                                        <th>#</th>
-                                                        <th>Client Name</th>
-                                                        <th>Category</th>
-                                                        <th> Assign New_Category</th>
-                                                        <th>Field</th>
-                                                        <th>Inv Value</th>
-                                                        <th>Inv Status</th>
-                                                        <th>Net Salary</th>
-                                                        <th> Difference </th>
-                                                        <th>Status</th>
-                                                        <th>Employees</th>
-                                                        <th> View Employees</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody class="table-border-bottom-0">
-                                                    @foreach($salariesClients as $cm => $clientMaster)
-                                                    <tr>
-                                                        <td> <input class="checkBoxes form-check-input" type="checkbox" name="client[]" value="{{ $clientMaster->client?->id }}" /> </td>
-                                                        <td> {{ $cm + 1 }} </td>
-                                                        <td> {{ $clientMaster->client?->name }} {{ $clientMaster->client?->business_name }} </td>
-                                                        <td> @if ( $clientMaster->client?->category_month == \Carbon\Carbon::parse($month)->format('Y-m-d') ) {{ $clientMaster->client?->category_name }} @endif </td>
-                                                        <td>
-                                                                <select name="name[]" class="form-select @error('name') is-invalid @enderror" id="name" value="{{ old('name')}}" required>
-                                                                    <option selected disabled>Choose...</option>
-                                                                    <option value="Category A">Category A </option>
-                                                                    <option value="Category B">Category B </option>
-                                                                    <option value="Category C">Category C </option>
-                                                                    <option value="Category D">Category D </option>
-                                                                </select>
-                                                        </td>
-                                                        <td> {{ $clientMaster->client?->field?->name }} </td>
-                                                        <td> GH&#x20B5; {{ number_format( $clientMaster->client?->invoices()->whereMonth('invoice_month', $month->month)->sum('total'),2)  }} </td>
-                                                        <td>  {{ $clientMaster->client?->invoices()->whereMonth('invoice_month', $month->month)->pluck('status') }} </td>
-                                                        <td> GH&#x20B5; {{ number_format($clientMaster->paid, 2) }} </td>
-                                                        <td> GH&#x20B5; {{ number_format($clientMaster->client?->invoices()->whereMonth('invoice_month', $month->month)->sum('total') - $clientMaster->paid, 2) }} </td>
-                                                    
-                                                        @if( $clientMaster->client?->invoices()->whereMonth('invoice_month', $month->month)->sum('total') <= $clientMaster->paid )
-                                                            <td><span class="badge bg-label-danger"> Loss </span></td>
-                                                        @else
-                                                            <td><span class="badge bg-label-success"> Profit </span></td>
-                                                        @endif
-                                                    
-                                                        <td> {{ $clientMaster->total_employees }} </td>
-                                                        <td> 
-                                                            <a href="/salariesClientMonth/{{$clientMaster->client_id}} / {{$month}} " class="btn btn-dark btn-sm">
-                                                                <i class="bx bx-show"></i> 
-                                                            </a>    
-                                                        </td>
+                                    <div class="table-responsive">
+                                        <table id="myTableiclientmaster" class="display">
+                                            <thead>
+                                                <tr>
+                                                    <th>#</th>
+                                                    <th>Client Name</th>
+                                                    <th>Field</th>
+                                                    <th>Inv Value</th>
+                                                    <th>Inv Status</th>
+                                                    <th>Net Salary</th>
+                                                    <th> Difference </th>
+                                                    <th>Status</th>
+                                                    <th>Employees</th>
+                                                    <th> View Employees</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody class="table-border-bottom-0">
+                                                @foreach($salariesClients as $cm => $clientMaster)
+                                                <tr>
+                                                    <td> {{ $cm + 1 }} </td>
+                                                    <td> {{ $clientMaster->client?->name }} {{ $clientMaster->client?->business_name }} </td>
+                                                    <td> {{ $clientMaster->client?->field?->name }} </td>
 
-                                                    </tr>
-                                                    @endforeach
-                                                </tbody>
-                                            </table>
-                                        </div>
-
-                                    </form>
+                                                    <td> GH&#x20B5; {{ number_format( $clientMaster->client?->invoices()->whereMonth('invoice_month', $month->month)->sum('total'),2)  }} </td>
+                                                    <td>  {{ $clientMaster->client?->invoices()->whereMonth('invoice_month', $month->month)->pluck('status') }} </td>
+                                                    <td> GH&#x20B5; {{ number_format($clientMaster->paid, 2) }} </td>
+                                                    <td> GH&#x20B5; {{ number_format($clientMaster->client?->invoices()->whereMonth('invoice_month', $month->month)->sum('total') - $clientMaster->paid, 2) }} </td>
+                                                
+                                                    @if( $clientMaster->client?->invoices()->whereMonth('invoice_month', $month->month)->sum('total') <= $clientMaster->paid )
+                                                        <td><span class="badge bg-label-danger"> Loss </span></td>
+                                                    @else
+                                                        <td><span class="badge bg-label-success"> Profit </span></td>
+                                                    @endif
+                                                
+                                                    <td> {{ $clientMaster->total_employees }} </td>
+                                                    <td> 
+                                                        <a href="/salariesClientMonth/{{$clientMaster->client_id}} / {{$month}} " class="btn btn-dark btn-sm">
+                                                            <i class="bx bx-show"></i> 
+                                                        </a>    
+                                                    </td>
+                                                </tr>
+                                                @endforeach
+                                            </tbody>
+                                        </table>
+                                    </div>
                                 </div>
 
                              </div>
@@ -1316,7 +1209,7 @@
                             <input class="form-check-input form-check-inline" type="checkbox" value="" id="options" />
 
                             <div class="form-check form-check-inline">
-                                <!-- <button class="btn btn-dark" name="submit" value="bulk" onclick="return confirm('Kindly Confirm?')" type="submit"> <i class="icon-base bx bx-bxs-file-plus"> </i> {{ __(' Add To Bulk Cash Salaries') }}</button>                    -->
+                                <button class="btn btn-dark" name="submit" value="bulk" onclick="return confirm('Kindly Confirm?')" type="submit"> <i class="icon-base bx bx-bxs-file-plus"> </i> {{ __(' Add To Bulk Cash Salaries') }}</button>                   
                                 
                                 <button class="btn btn-danger m-4" name="submit" value="hold" onclick="return confirm('Kindly Confirm?')" type="submit"> <i class="icon-base bx bx-bxs-file-plus"> </i> {{ __(' Hold') }}</button>                   
                                 
@@ -1331,7 +1224,7 @@
                                         <th> </th>
                                         <th> Edit </th>
                                         <th> View </th>
-                                        <!-- <th> Bulk Cash</th> -->
+                                        <th> Bulk Cash</th>
                                         <th>Payment Status</th>
                                         <th> id</th>
                                         <th> Salary Month </th>
@@ -1390,6 +1283,14 @@
                                                     <td> <input class="checkBoxes form-check-input" type="checkbox" name="salary[]" value="{{ $salary->id }}" /> </td>
                                                     <td><a class="dropdown-item" href="/salaries/{{$salary->id}}/edit"><i class="icon-base bx bx-edit-alt me-1"></i></a> </td>
                                                     <td><a class="dropdown-item" href="/salaries/{{$salary->id}}"><i class="icon-base bx bxs-bullseye"></i></a> </td>
+                                                   
+                                                    @if($salary->status1 == 'Bulk Cash')
+                                                        <td> <span class="badge bg-label-dark"> {{ $salary->status1 }} </span> </td>
+                                                    @elseif($salary->status1 == 'success')
+                                                        <td> <span class="badge bg-label-success">  {{ $salary->status1 }} </span> </td>
+                                                    @else 
+                                                        <td> <span class="badge bg-label-danger">  {{ $salary->status1 }} </span> </td>
+                                                    @endif
 
                                                     @if ($salary->payment_status == 'pending')
                                                     <td>  <span class="badge bg-label-info"> {{ $salary->payment_status }} </span> </td>
@@ -1460,344 +1361,73 @@
 
                 <div class="tab-pane fade" id="navs-pills-justified-hold" role="tabpanel">
                    
-                             <div class="nav-align-top">
-                                <ul class="nav nav-pills mb-4 nav-fill" role="tablist">
-                                    
-                                    <li class="nav-item mb-1 mb-sm-0">
-                                        <button
-                                            type="button"
-                                            class="nav-link"
-                                            role="tab"
-                                            data-bs-toggle="tab"
-                                            data-bs-target="#navs-pills-justified-categoryahold"
-                                            aria-controls="navs-pills-justified-categoryahold"
-                                            aria-selected="true">
-                                            <span class="d-none d-sm-inline-flex align-items-center">
-                                                <i class="icon-base bx bx-home icon-sm me-1_5"></i>CATEGORY A HOLD
-                                                <span class="badge rounded-pill bg-danger ms-1_5"> {{ $clientAHold->count() }} </span>
-                                            </span>
-                                            <i class="icon-base bx bx-home icon-sm d-sm-none"></i>
-                                        </button>
-                                    </li>
-
-                                    <li class="nav-item mb-1 mb-sm-0">
-                                        <button
-                                            type="button"
-                                            class="nav-link"
-                                            role="tab"
-                                            data-bs-toggle="tab"
-                                            data-bs-target="#navs-pills-justified-categorybhold"
-                                            aria-controls="navs-pills-justified-categorybhold"
-                                            aria-selected="true">
-                                            <span class="d-none d-sm-inline-flex align-items-center">
-                                                <i class="icon-base bx bx-home icon-sm me-1_5"></i>CATEGORY B HOLD
-                                                <span class="badge rounded-pill bg-danger ms-1_5"> {{ $clientBHold->count() }} </span>
-                                            </span>
-                                            <i class="icon-base bx bx-home icon-sm d-sm-none"></i>
-                                        </button>
-                                    </li>
-
-                                    <li class="nav-item mb-1 mb-sm-0">
-                                        <button
-                                            type="button"
-                                            class="nav-link"
-                                            role="tab"
-                                            data-bs-toggle="tab"
-                                            data-bs-target="#navs-pills-justified-categorychold"
-                                            aria-controls="navs-pills-justified-categorychold"
-                                            aria-selected="true">
-                                            <span class="d-none d-sm-inline-flex align-items-center">
-                                                <i class="icon-base bx bx-home icon-sm me-1_5"></i>CATEGORY C HOLD
-                                                <span class="badge rounded-pill bg-danger ms-1_5"> {{ $clientCHold->count() }} </span>
-                                            </span>
-                                            <i class="icon-base bx bx-home icon-sm d-sm-none"></i>
-                                        </button>
-                                    </li>
-
-                                    <li class="nav-item mb-1 mb-sm-0">
-                                        <button
-                                            type="button"
-                                            class="nav-link"
-                                            role="tab"
-                                            data-bs-toggle="tab"
-                                            data-bs-target="#navs-pills-justified-categorydhold"
-                                            aria-controls="navs-pills-justified-categorydhold"
-                                            aria-selected="true">
-                                            <span class="d-none d-sm-inline-flex align-items-center">
-                                                <i class="icon-base bx bx-home icon-sm me-1_5"></i>CATEGORY D HOLD
-                                                <span class="badge rounded-pill bg-danger ms-1_5"> {{ $clientDHold->count() }} </span>
-                                            </span>
-                                            <i class="icon-base bx bx-home icon-sm d-sm-none"></i>
-                                        </button>
-                                    </li>
-
-                                    <li class="nav-item mb-1 mb-sm-0">
-                                        <button
-                                            type="button"
-                                            class="nav-link"
-                                            role="tab"
-                                            data-bs-toggle="tab"
-                                            data-bs-target="#navs-pills-justified-clientmasterhold"
-                                            aria-controls="navs-pills-justified-clientmasterhold"
-                                            aria-selected="true">
-                                            <span class="d-none d-sm-inline-flex align-items-center">
-                                                <i class="icon-base bx bx-home icon-sm me-1_5"></i>CLIENT MASTER HOLD
-                                                <span class="badge rounded-pill bg-danger ms-1_5"> {{ $salariesClientsHold->count() }} </span>
-                                            </span>
-                                            <i class="icon-base bx bx-home icon-sm d-sm-none"></i>
-                                        </button>
-                                    </li>
-
-                                </ul>
-                             </div>
-
-                             <div class="tab-content">
-                                
-                                <div class="tab-pane fade " id="navs-pills-justified-categoryahold" role="tabpanel">
-                                    <div class="table-responsive">
-                                        <table id="myTablecategoryahold" class="display">
-                                            <thead>
-                                                <tr>
-                                                    <th>#</th>
-                                                    <th>Client Name</th>
-                                                    <th>Field</th>
-                                                    <th>Inv Value</th>
-                                                    <th>Inv Status</th>
-                                                    <th>Net Salary</th>
-                                                    <th> Difference </th>
-                                                    <th>Status</th>
-                                                    <th>Employees</th>
-                                                    <th> View Employees</th>
-
-                                                </tr>
-                                            </thead>
-                                            <tbody class="table-border-bottom-0">
-                                                @foreach($clientAHold as $keyah => $catAHold)
-                                                <tr>
-                                                    <td> {{ $keyah + 1 }} </td>
-                                                    <td> {{ $catAHold->client?->name }} {{ $catAHold->client?->business_name }} </td>
-                                                    <td> {{ $catAHold->client?->field?->name }} </td>
-
-                                                    <td> GH&#x20B5; {{ number_format( $catAHold->client?->invoices()->whereMonth('invoice_month', $month->month)->sum('total'),2)  }} </td>
-                                                    <td>  {{ $catAHold->client?->invoices()->whereMonth('invoice_month', $month->month)->pluck('status') }} </td>
-                                                    <td> GH&#x20B5; {{ number_format($catAHold->paid, 2) }} </td>
-                                                    <td> GH&#x20B5; {{ number_format($catAHold->client?->invoices()->whereMonth('invoice_month', $month->month)->sum('total') - $catAHold->paid, 2) }} </td>
-                                                
-                                                    @if( $catAHold->client?->invoices()->whereMonth('invoice_month', $month->month)->sum('total') <= $catAHold->paid )
-                                                        <td><span class="badge bg-label-danger"> Loss </span></td>
-                                                    @else
-                                                        <td><span class="badge bg-label-success"> Profit </span></td>
-                                                    @endif
-                                                
-                                                    <td> {{ $catAHold->total_employees }} </td>
-                                                    <td> 
-                                                        <a href="/salariesClientHoldMonth/{{$catAHold->client_id}} / {{$month}} " class="btn btn-dark btn-sm">
-                                                            <i class="bx bx-show"></i> 
-                                                        </a>    
-                                                    </td>
-                                                </tr>
-                                                @endforeach
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-
-                                <div class="tab-pane fade " id="navs-pills-justified-categorybhold" role="tabpanel">
-                                    <div class="table-responsive">
-                                        <table id="myTablecategorybhold" class="display">
-                                            <thead>
-                                                <tr>
-                                                    <th>#</th>
-                                                    <th>Client Name</th>
-                                                    <th>Field</th>
-                                                    <th>Inv Value</th>
-                                                    <th>Inv Status</th>
-                                                    <th>Net Salary</th>
-                                                    <th> Difference </th>
-                                                    <th>Status</th>
-                                                    <th>Employees</th>
-                                                    <th> View Employees</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody class="table-border-bottom-0">
-                                                @foreach($clientBHold as $keybh => $catBHold)
-                                                <tr>
-                                                   <td> {{ $keybh + 1 }} </td>
-                                                    <td> {{ $catBHold->client?->name }} {{ $catBHold->client?->business_name }} </td>
-                                                    <td> {{ $catBHold->client?->field?->name }} </td>
-
-                                                    <td> GH&#x20B5; {{ number_format( $catBHold->client?->invoices()->whereMonth('invoice_month', $month->month)->sum('total'),2)  }} </td>
-                                                    <td>  {{ $catBHold->client?->invoices()->whereMonth('invoice_month', $month->month)->pluck('status') }} </td>
-                                                    <td> GH&#x20B5; {{ number_format($catBHold->paid, 2) }} </td>
-                                                    <td> GH&#x20B5; {{ number_format($catBHold->client?->invoices()->whereMonth('invoice_month', $month->month)->sum('total') - $catBHold->paid, 2) }} </td>
-                                                
-                                                    @if( $catBHold->client?->invoices()->whereMonth('invoice_month', $month->month)->sum('total') <= $catBHold->paid )
-                                                        <td><span class="badge bg-label-danger"> Loss </span></td>
-                                                    @else
-                                                        <td><span class="badge bg-label-success"> Profit </span></td>
-                                                    @endif
-                                                
-                                                    <td> {{ $catBHold->total_employees }} </td>
-                                                    <td> 
-                                                        <a href="/salariesClientHoldMonth/{{$catBHold->client_id}} / {{$month}} " class="btn btn-dark btn-sm">
-                                                            <i class="bx bx-show"></i> 
-                                                        </a>    
-                                                    </td>
-                                                </tr>
-                                                @endforeach
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-
-
-                                <div class="tab-pane fade " id="navs-pills-justified-categorychold" role="tabpanel">
-                                    <div class="table-responsive">
-                                        <table id="myTablecategorychold" class="display">
-                                            <thead>
-                                                <tr>
-                                                    <th>#</th>
-                                                    <th>Client Name</th>
-                                                    <th>Field</th>
-                                                    <th>Inv Value</th>
-                                                    <th>Inv Status</th>
-                                                    <th>Net Salary</th>
-                                                    <th> Difference </th>
-                                                    <th>Status</th>
-                                                    <th>Employees</th>
-                                                    <th> View Employees</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody class="table-border-bottom-0">
-                                                @foreach($clientCHold as $keych => $catCHold)
-                                                <tr>
-                                                   <td> {{ $keych + 1 }} </td>
-                                                    <td> {{ $catCHold->client?->name }} {{ $catCHold->client?->business_name }} </td>
-                                                    <td> {{ $catCHold->client?->field?->name }} </td>
-
-                                                    <td> GH&#x20B5; {{ number_format( $catCHold->client?->invoices()->whereMonth('invoice_month', $month->month)->sum('total'),2)  }} </td>
-                                                    <td>  {{ $catCHold->client?->invoices()->whereMonth('invoice_month', $month->month)->pluck('status') }} </td>
-                                                    <td> GH&#x20B5; {{ number_format($catCHold->paid, 2) }} </td>
-                                                    <td> GH&#x20B5; {{ number_format($catCHold->client?->invoices()->whereMonth('invoice_month', $month->month)->sum('total') - $catCHold->paid, 2) }} </td>
-                                                
-                                                    @if( $catCHold->client?->invoices()->whereMonth('invoice_month', $month->month)->sum('total') <= $catCHold->paid )
-                                                        <td><span class="badge bg-label-danger"> Loss </span></td>
-                                                    @else
-                                                        <td><span class="badge bg-label-success"> Profit </span></td>
-                                                    @endif
-                                                
-                                                    <td> {{ $catCHold->total_employees }} </td>
-                                                    <td> 
-                                                        <a href="/salariesClientHoldMonth/{{$catCHold->client_id}} / {{$month}} " class="btn btn-dark btn-sm">
-                                                            <i class="bx bx-show"></i> 
-                                                        </a>    
-                                                    </td>
-                                                </tr>
-                                                @endforeach
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-
-
-                                <div class="tab-pane fade " id="navs-pills-justified-categorydhold" role="tabpanel">
-                                    <div class="table-responsive">
-                                        <table id="myTablecategorydhold" class="display">
-                                            <thead>
-                                                <tr>
-                                                    <th>#</th>
-                                                    <th>Client Name</th>
-                                                    <th>Field</th>
-                                                    <th>Inv Value</th>
-                                                    <th>Inv Status</th>
-                                                    <th>Net Salary</th>
-                                                    <th> Difference </th>
-                                                    <th>Status</th>
-                                                    <th>Employees</th>
-                                                    <th> View Employees</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody class="table-border-bottom-0">
-                                                @foreach($clientDHold as $keydh => $catDHold)
-                                                <tr>
-                                                   <td> {{ $keydh + 1 }} </td>
-                                                    <td> {{ $catDHold->client?->name }} {{ $catDHold->client?->business_name }} </td>
-                                                    <td> {{ $catDHold->client?->field?->name }} </td>
-
-                                                    <td> GH&#x20B5; {{ number_format( $catDHold->client?->invoices()->whereMonth('invoice_month', $month->month)->sum('total'),2)  }} </td>
-                                                    <td>  {{ $catDHold->client?->invoices()->whereMonth('invoice_month', $month->month)->pluck('status') }} </td>
-                                                    <td> GH&#x20B5; {{ number_format($catDHold->paid, 2) }} </td>
-                                                    <td> GH&#x20B5; {{ number_format($catDHold->client?->invoices()->whereMonth('invoice_month', $month->month)->sum('total') - $catDHold->paid, 2) }} </td>
-                                                
-                                                    @if( $catDHold->client?->invoices()->whereMonth('invoice_month', $month->month)->sum('total') <= $catDHold->paid )
-                                                        <td><span class="badge bg-label-danger"> Loss </span></td>
-                                                    @else
-                                                        <td><span class="badge bg-label-success"> Profit </span></td>
-                                                    @endif
-                                                
-                                                    <td> {{ $catDHold->total_employees }} </td>
-                                                    <td> 
-                                                        <a href="/salariesClientHoldMonth/{{$catDHold->client_id}} / {{$month}} " class="btn btn-dark btn-sm">
-                                                            <i class="bx bx-show"></i> 
-                                                        </a>    
-                                                    </td>
-                                                </tr>
-                                                @endforeach
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-
-                            
-                                <div class="tab-pane fade " id="navs-pills-justified-clientmasterhold" role="tabpanel">
-                                    <div class="table-responsive">
-                                        <table id="myTableiclientmasterhold" class="display">
-                                            <thead>
-                                                <tr>
-                                                    <th>#</th>
-                                                    <th>Client Name</th>
-                                                    <th>Field</th>
-                                                    <th>Inv Value</th>
-                                                    <th>Inv Status</th>
-                                                    <th>Net Salary</th>
-                                                    <th> Difference </th>
-                                                    <th>Status</th>
-                                                    <th>Employees</th>
-                                                    <th> View Employees</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody class="table-border-bottom-0">
-                                                @foreach($salariesClientsHold as $cm => $clientMasterHold)
-                                                <tr>
-                                                    <td> {{ $cm + 1 }} </td>
-                                                    <td> {{ $clientMasterHold->client?->name }} {{ $clientMasterHold->client?->business_name }} </td>
-                                                    <td> {{ $clientMasterHold->client?->field?->name }} </td>
-
-                                                    <td> GH&#x20B5; {{ number_format( $clientMasterHold->client?->invoices()->whereMonth('invoice_month', $month->month)->sum('total'),2)  }} </td>
-                                                    <td>  {{ $clientMasterHold->client?->invoices()->whereMonth('invoice_month', $month->month)->pluck('status') }} </td>
-                                                    <td> GH&#x20B5; {{ number_format($clientMasterHold->paid, 2) }} </td>
-                                                    <td> GH&#x20B5; {{ number_format($clientMasterHold->client?->invoices()->whereMonth('invoice_month', $month->month)->sum('total') - $clientMasterHold->paid, 2) }} </td>
-                                                
-                                                    @if( $clientMasterHold->client?->invoices()->whereMonth('invoice_month', $month->month)->sum('total') <= $clientMasterHold->paid )
-                                                        <td><span class="badge bg-label-danger"> Loss </span></td>
-                                                    @else
-                                                        <td><span class="badge bg-label-success"> Profit </span></td>
-                                                    @endif
-                                                
-                                                    <td> {{ $clientMasterHold->total_employees }} </td>
-                                                    <td> 
-                                                        <a href="/salariesClientHoldMonth/{{$clientMasterHold->client_id}} / {{$month}} " class="btn btn-dark btn-sm">
-                                                            <i class="bx bx-show"></i> 
-                                                        </a>    
-                                                    </td>
-                                                </tr>
-                                                @endforeach
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-
-                             </div>
+                    <div class="table-responsive text-nowrap">
+                            <h5 class="card-header"> CASH HOLD  </h5>
+                        <table id="myTableiholdcash" class="display">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Field</th>
+                                    <th>Gross Salary</th>
+                                    <th>Total Deductions</th>
+                                    <th>Net Salary </th>
+                                    <th>Employees</th>
+                                    <th> View Employees</th>
+                                </tr>
+                            </thead>
+                            <tbody class="table-border-bottom-0">
+                              @foreach ($salariesHoldCash as $key => $hold)
+                                   <tr>
+                                    <td> {{ $key + 1 }} </td>
+                                    <td>{{ $hold->field?->name }}</td>
+                                    <td> GH&#x20B5; {{ number_format($hold->gross, 2) }} </td>
+                                    <td> GH&#x20B5; {{ number_format($hold->deductions, 2) }} </td>
+                                    <td> GH&#x20B5; {{ number_format($hold->paid, 2) }} </td>
+                                    <td> {{ $hold->total_employees }} </td>
+                                    <td> 
+                                        <a href="/salariesCashHoldMonth/{{ $hold->field?->id }}/{{ $month->format('F Y') }}" class="btn btn-dark btn-sm">
+                                            <i class="bx bx-show"></i> 
+                                        </a>    
+                                    </td> 
+                                </tr>
+                                    @endforeach 
+                            </tbody>
+                        </table>
+                    </div> <br> <br>
+                
+                    <div class="table-responsive text-nowrap">
+                            <h5 class="card-header"> BANK HOLD  </h5>
+                        <table id="myTableiholdbank" class="display">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Bank Name</th>
+                                    <th>Gross Salary</th>
+                                    <th>Total Deductions</th>
+                                    <th>Net Salary</th>
+                                    <th>Employees</th>
+                                    <th> View Employees</th>
+                                </tr>
+                            </thead>
+                            <tbody class="table-border-bottom-0">
+                              @foreach ($salariesHoldBank as $key => $bhold)
+                                   <tr>
+                                    <td> {{ $key + 1 }} </td>
+                                    <td> {{ $bhold->bank->name }} </td>
+                                    <td> GH&#x20B5; {{ number_format($bhold->gross, 2) }} </td>
+                                    <td> GH&#x20B5; {{ number_format($bhold->deductions, 2) }} </td>
+                                    <td> GH&#x20B5; {{ number_format($bhold->paid, 2) }} </td>
+                                    <td> {{ $bhold->total_employees }} </td>
+                                    <td> 
+                                        <a href="/salariesBankHoldMonth/{{ $bhold->bank->id }}/{{ $month }}" class="btn btn-dark btn-sm">
+                                            <i class="bx bx-show"></i> 
+                                        </a>    
+                                    </td>  
+                                </tr>
+                                    @endforeach 
+                            </tbody>
+                        </table>
+                    </div>
 
                 </div>
 
@@ -1841,27 +1471,12 @@
         let myTablecategoryc = new DataTable('#myTablecategoryc'); 
         let myTablecategoryd = new DataTable('#myTablecategoryd'); 
 
-        let myTablecategoryahold = new DataTable('#myTablecategoryahold'); 
-        let myTablecategorybhold = new DataTable('#myTablecategorybhold'); 
-        let myTablecategorychold = new DataTable('#myTablecategorychold'); 
-        let myTablecategorydhold = new DataTable('#myTablecategorydhold'); 
-
         // new DataTable('#myTableimaster', {
         //     responsive: true,
         //       dom: 'lftrip',
         //       lengthMenu: [[10, 25, 50, 100, 500], [10, 25, 50, 100, 500]],
         //       columnControl: [ ['search'] ]
         // });
-        let myTableiclientmasterhold = new DataTable('#myTableiclientmasterhold', {
-                responsive: true,
-                    dom: 'Bflrtip',
-                    buttons: [
-                        'excel'
-                    ],
-                lengthMenu: [[10, 25, 50, 100, 500], [10, 25, 50, 100, 500]],
-                columnControl: [ ['search'] ]
-        }); 
-
         let myTableiclientmaster = new DataTable('#myTableiclientmaster', {
                 responsive: true,
                     dom: 'Bflrtip',

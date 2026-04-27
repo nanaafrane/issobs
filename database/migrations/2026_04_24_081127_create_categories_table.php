@@ -16,6 +16,8 @@ return new class extends Migration
             $table->string('name');
             $table->integer('client_id')->unsigned()->nullable();
             $table->integer('user_id')->unsigned()->nullable();
+            $table->date('category_month')->nullable();
+            
             $table->timestamps();
         });
     }

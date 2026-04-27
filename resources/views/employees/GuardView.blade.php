@@ -391,7 +391,7 @@
                                           @endforeach
                                       </select>                            
                                   </td>
-                                  <td> <input type="text" name="location[]" value="{{ $employee->location }} " class="form-control"> </td>
+                                  <td> <textarea type="text" name="location[]" class="form-control"> {{ $employee->location }} </textarea> </td>
                               @if($employee->status == 'Active')
                               <td><span class="badge bg-label-success">{{$employee->status}}</span></td>
                               @else
