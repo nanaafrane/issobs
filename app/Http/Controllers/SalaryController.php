@@ -238,21 +238,22 @@ class SalaryController extends Controller
     }
 
 
-    /**
-     * Function to take invoices and return the total number of guards for that invoice
-     */
 
+        /**
+         * Calculate the total number of guards from a collection of invoices.
+         *
+         * @param iterable $invoices  Collection or array of Invoice models
+         * @return int  Total number of guards across all invoices
+         */
         public function totalInvoiceGuards($invoices)
         {
-            foreach($invoices as $invoice)
-            {
-                foreach($invoice->invoice_data as $data)
-                    {
-                        $guards[] =  $data->quantity;
-                        //   $data->quantity . "<br>";
-                    }
+            $guards = [];
+            foreach($invoices as $invoice) {
+                foreach($invoice->invoice_data as $data) {
+                    $guards[] = $data->quantity;
+                }
             }
-        return collect($guards)->sum() ;
+            return array_sum($guards);
 
         }
 
