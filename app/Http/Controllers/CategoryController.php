@@ -111,7 +111,7 @@ class CategoryController extends Controller
         }
 
         if (!empty($alreadyProcessed)) {
-            return back()->with('error', 'The Clients with the IDs have already been add to this month: '. implode(', ', $alreadyProcessed)) ;
+            return back()->with('error', 'The Clients with the IDs have already been Assign to a Category for this month: '. implode(', ', $alreadyProcessed)) ;
         }
         return back()->with('success', 'Clients added to this month salary'); 
 

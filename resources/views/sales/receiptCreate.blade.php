@@ -277,9 +277,12 @@
                         <li>{{ $error }}</li>
                     @endforeach
                 </ul>
-            </div>
+            </div><br>
         @endif
 
+        <div class="card-header  ml-2  d-none d-lg-block">
+                  @include('flash-messages')
+        </div> <br>
         <div class="row mb-6 gy-6">
             <div class="col-xl">
                 <div class="card">

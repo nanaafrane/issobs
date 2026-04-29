@@ -3,6 +3,7 @@
     @section('css')
     <link rel="stylesheet" href="https://cdn.datatables.net/2.3.5/css/dataTables.dataTables.css" />
     <link rel="stylesheet" href="https://cdn.datatables.net/buttons/3.2.5/css/buttons.dataTables.css">    
+    <link href="https://cdn.datatables.net/columncontrol/1.1.1/css/columnControl.dataTables.min.css" rel="stylesheet">  
     @endsection
 
 
@@ -343,8 +344,8 @@
                             <h5 class="card-header"> Salaries Paid via Cash  </h5>
                             <div class="card-body"> 
                             <div class="table-responsive text-nowrap">
-                                <table class="table table-hover" id="myTable">
-                                    <thead class="table-dark">
+                                <table class="display" id="myTable">
+                                    <thead class="table-border-bottom-0">
                                         <tr>
                                             <th></th>
                                             <th>#</th>
@@ -426,6 +427,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+
+    <script src="https://cdn.datatables.net/columncontrol/1.1.1/js/dataTables.columnControl.min.js"></script>
 
 
     <script>

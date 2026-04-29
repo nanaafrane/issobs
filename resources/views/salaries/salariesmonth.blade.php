@@ -5,10 +5,11 @@
     <link rel="stylesheet" href="https://cdn.datatables.net/buttons/3.2.5/css/buttons.dataTables.css">   
      <link rel="stylesheet" href="{{asset('vendor/css/datatables.css')}}" /> 
 
-    <link href="https://cdn.datatables.net/columncontrol/1.1.1/css/columnControl.dataTables.min.css" rel="stylesheet">
 
     <link rel="stylesheet" href="https://cdn.datatables.net/fixedheader/4.0.5/css/fixedHeader.dataTables.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/fixedcolumns/5.0.5/css/fixedColumns.dataTables.css">
+    <link href="https://cdn.datatables.net/columncontrol/1.1.1/css/columnControl.dataTables.min.css" rel="stylesheet">
+
     
     @endsection
 
@@ -281,7 +282,7 @@
 
          @if(Auth::user()->hasRole(['Invoice','Manager', 'Finance Manager' ]))
         <div class="row">
-            <div class="col-lg-2">
+            <div class="col-lg-2 h-100" >
                 <div  class="card h-100 bg-dark text-white">
                     <div class="card-body">
                         <div class="card-title d-flex align-items-start justify-content-between mb-4">
@@ -294,15 +295,15 @@
                         </div>
                         <p class="mb-1"><strong> BANKS </strong> </p>
                         <h4 class="card-title mb-3 text-white"><strong> &#x20B5;  {{ number_format($groupedBankSalaries->sum('paid'), 2) }} </strong> </h4> 
-                        <small class="fw-medium">TOTAL DEDUCTIONS : </small> <br>
-                        <small class="fw-medium"> GH&#x20B5;  {{ number_format($groupedBankSalaries->sum('deductions'), 2) }}  </small> <br>
+                        <!-- <small class="fw-medium">TOTAL DEDUCTIONS : </small> <br> -->
+                        <!-- <small class="fw-medium"> GH&#x20B5;  {{ number_format($groupedBankSalaries->sum('deductions'), 2) }}  </small> <br> -->
                         <small class="fw-medium"> EMPLOYEES : {{ $groupedBankSalaries->sum('total_employees') }}  </small>
 
                     </div>
                 </div>
             </div>
 
-            <div class="col-lg-2">
+            <div class="col-lg-2 h-100">
                 <div  class="card h-100 bg-dark text-white">
                     <div class="card-body">
                         <div class="card-title d-flex align-items-start justify-content-between mb-4">
@@ -315,8 +316,8 @@
                         </div>
                         <p class="mb-1"><strong> CASH </strong></p>
                         <h4 class="card-title mb-3 text-white"><strong> &#x20B5; {{ number_format($groupedCashkSalaries->sum('paid'), 2) }} </strong> </h4> 
-                        <small class="fw-medium">TOTAL DEDUCTIONS : </small> <br>
-                        <small class="fw-medium"> GH&#x20B5;  {{ number_format($groupedCashkSalaries->sum('deductions'), 2) }}  </small> <br>
+                        <!-- <small class="fw-medium">TOTAL DEDUCTIONS : </small> <br> -->
+                        <!-- <small class="fw-medium"> GH&#x20B5;  {{ number_format($groupedCashkSalaries->sum('deductions'), 2) }}  </small> <br> -->
                         <small class="fw-medium"> EMPLOYEES : {{ $groupedCashkSalaries->sum('total_employees') }}  </small>
                     </div>
                 </div>
@@ -324,6 +325,115 @@
 
 
             <div class="col-lg-2">
+                <div  class="card h-100 bg-secondary text-white">
+                    <div class="card-body">
+                        <div class="card-title d-flex align-items-start justify-content-between mb-4">
+                            <div class="avatar flex-shrink-0">
+                                <img
+                                    src="{{ asset('img/icons/unicons/paypal.png') }}"
+                                    alt="chart dark"
+                                    class="rounded" />
+                            </div>
+
+                        </div>
+                        <p class="mb-1"><strong> CATEGORY A  </strong></p>
+                        <h4 class="card-title mb-3 text-white"><strong> &#x20B5; {{ number_format($clientA->sum('net_salary'), 2) }} </strong> </h4> 
+                        <small class="fw-medium"> <strong>  INVOICES :  &#x20B5; {{ number_format($clientAInvoices->sum('total'), 2) }}  </strong> </small> <br>
+                        <small class="fw-medium"> CLIENTS :   {{ $clientA->count()  }} </small> <br>
+                        <small class="fw-medium"> EMPLOYEES : {{ $clientA->sum('total_employees') }} </small> <br>
+                        <small class="fw-medium text-danger"> <strong> HOLD : {{ $clientAHold->sum('total_employees') }} </strong> </small> <br>
+                        <small class="fw-medium">  INVOICE GUARDS : {{ $clientAInvoicesGuards }}</small>
+
+                        <hr>
+                        <small class="fw-medium"> <strong>  CASH : &#x20B5; {{ number_format($clientACash->sum('net_salary'), 2) }} | {{ $clientACash->count() }} </strong> </small> <br>
+                        <small class="fw-medium"> <strong>  BANK : &#x20B5; {{ number_format($clientABank->sum('net_salary'), 2) }} | {{ $clientABank->count() }} </strong> </small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-2">
+                <div  class="card h-100 bg-secondary text-white">
+                    <div class="card-body">
+                        <div class="card-title d-flex align-items-start justify-content-between mb-4">
+                            <div class="avatar flex-shrink-0">
+                                <img
+                                    src="{{ asset('img/icons/unicons/paypal.png') }}"
+                                    alt="chart dark"
+                                    class="rounded" />
+                            </div>
+
+                        </div>
+                        <p class="mb-1"><strong> CATEGORY B </strong></p>
+                        <h4 class="card-title mb-3 text-white"><strong> &#x20B5; {{ number_format($clientB->sum('net_salary'), 2) }} </strong> </h4> 
+                        <small class="fw-medium"> <strong>  INVOICES :  &#x20B5; {{ number_format($clientBInvoices->sum('total'), 2) }} </strong> </small> <br>
+                        <small class="fw-medium"> CLIENTS :  {{ $clientB->count() }} </small> <br>
+                        <small class="fw-medium"> EMPLOYEES : {{ $clientB->sum('total_employees') }} </small>  <br>
+                        <small class="fw-medium text-danger"> <strong> HOLD : {{ $clientBHold->sum('total_employees') }} </strong> </small>  <br>
+                         <small class="fw-medium">  INVOICE GUARDS : {{ $clientBInvoicesGuards }}</small>
+                        <hr>
+                        <small class="fw-medium"> <strong>  CASH : &#x20B5; {{ number_format($clientBCash->sum('net_salary'), 2) }} | {{ $clientBCash->count() }} </strong> </small> <br>
+                        <small class="fw-medium"> <strong>  BANK : &#x20B5; {{ number_format($clientBBank->sum('net_salary'), 2) }} | {{ $clientBBank->count() }} </strong> </small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-2">
+                <div  class="card h-100 bg-secondary text-white">
+                    <div class="card-body">
+                        <div class="card-title d-flex align-items-start justify-content-between mb-4">
+                            <div class="avatar flex-shrink-0">
+                                <img
+                                    src="{{ asset('img/icons/unicons/paypal.png') }}"
+                                    alt="chart success"
+                                    class="rounded" />
+                            </div>
+
+                        </div>
+                        <p class="mb-1"><strong> CATEGORY C  </strong></p>
+                        <h4 class="card-title mb-3 text-white"><strong> &#x20B5; {{ number_format($clientC->sum('net_salary'), 2) }} </strong> </h4> 
+                        <small class="fw-medium"> <strong>  INVOICES :  &#x20B5; {{ number_format($clientCInvoices->sum('total'), 2) }} </strong> </small> <br>
+                        <small class="fw-medium"> CLIENTS : {{ $clientC->count() }} </small> <br>
+                        <small class="fw-medium"> EMPLOYEES : {{ $clientC->sum('total_employees') }} </small> <br>
+                        <small class="fw-medium text-danger"> <strong> HOLD : {{ $clientCHold->sum('total_employees') }} </strong> </small> <br>
+                         <small class="fw-medium">  INVOICE GUARDS : {{ $clientCInvoicesGuards }}</small>
+                        <hr>
+                        <small class="fw-medium"> <strong>  CASH : &#x20B5; {{ number_format($clientCCash->sum('net_salary'), 2)  }} |  {{  $clientCCash->count() }} </strong> </small> <br>
+                        <small class="fw-medium"> <strong>  BANK : &#x20B5; {{ number_format($clientCBank->sum('net_salary'), 2) }} | {{ $clientCBank->count() }} </strong> </small> 
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-2">
+                <div  class="card h-100 bg-secondary text-white">
+                    <div class="card-body">
+                        <div class="card-title d-flex align-items-start justify-content-between mb-4">
+                            <div class="avatar flex-shrink-0">
+                                <img
+                                    src="{{ asset('img/icons/unicons/paypal.png') }}"
+                                    alt="chart success"
+                                    class="rounded" />
+                            </div>
+
+                        </div>
+                        <p class="mb-1"><strong> CATEGORY D  </strong></p>
+                        <h4 class="card-title mb-3 text-white"><strong> &#x20B5; {{ number_format($clientD->sum('net_salary'), 2) }} </strong> </h4> 
+                        <small class="fw-medium"> <strong>  INVOICES :  &#x20B5; {{ number_format($clientDInvoices->sum('total'), 2) }} </strong> </small> <br>
+                        <small class="fw-medium"> CLIENTS :  {{ $clientD->count() }} </small> <br>
+                        <small class="fw-medium"> EMPLOYEES : {{ $clientD->sum('total_employees') }} </small> <br>
+                        <small class="fw-medium text-danger"> <strong> HOLD : {{ $clientDHold->sum('total_employees') }} </strong> </small> <br>
+                         <small class="fw-medium">  INVOICE GUARDS : {{ $clientDInvoicesGuards }}</small>
+                        <hr>
+                        <small class="fw-medium"> <strong>  CASH : &#x20B5; {{ number_format($clientDCash->sum('net_salary'), 2) }} | {{ $clientDCash->count() }} </strong> </small> <br>
+                        <small class="fw-medium"> <strong>  BANK : &#x20B5; {{ number_format($clientDBank->sum('net_salary'), 2) }} | {{ $clientDBank->count() }} </strong> </small>  
+                    </div>
+                </div>
+            </div>            
+
+        </div> <br>
+
+        <div class="row">
+
+            <div class="col-lg-2" style="transform: translateY(-150px);">
                 <div  class="card h-100 bg-dark text-white">
                     <div class="card-body">
                         <div class="card-title d-flex align-items-start justify-content-between mb-4">
@@ -337,12 +447,12 @@
                         </div>
                         <p class="mb-1"><strong> TAX </strong></p>
                         <h4 class="card-title mb-3 text-white"><strong> &#x20B5; {{ number_format($salariesTaxes->sum('tax'), 2) }} </strong> </h4> 
-                        <small class="fw-medium"> TOTAL :  GH&#x20B5; {{ number_format($salariesTaxes->sum('paid'), 2) }} </small> <br>
+                        <!-- <small class="fw-medium"> TOTAL :  GH&#x20B5; {{ number_format($salariesTaxes->sum('paid'), 2) }} </small> <br> -->
                         <small class="fw-medium"> EMPLOYEES : {{ $salariesTaxes->sum('total_employees') }} </small>
                     </div>
                 </div>
             </div>
-            <div class="col-lg-2">
+            <div class="col-lg-2" style="transform: translateY(-150px);">
                 <div  class="card h-100 bg-dark text-white">
                     <div class="card-body">
                         <div class="card-title d-flex align-items-start justify-content-between mb-4">
@@ -356,8 +466,28 @@
                         </div>
                         <p class="mb-1"><strong> PENSIONS </strong></p>
                         <h4 class="card-title mb-3 text-white"><strong> &#x20B5; {{ number_format($salariesPensions->sum('cont13_5'), 2) }} </strong> </h4> 
-                        <small class="fw-medium"> TOTAL :  GH&#x20B5; {{ number_format($salariesPensions->sum('paid') , 2) }} </small> <br>
+                        <!-- <small class="fw-medium"> TOTAL :  GH&#x20B5; {{ number_format($salariesPensions->sum('paid') , 2) }} </small> <br> -->
                         <small class="fw-medium"> EMPLOYEES : {{ $salariesPensions->sum('total_employees') }} </small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-2">
+                <div  class="card h-100 bg-dark text-white">
+                    <div class="card-body">
+                        <div class="card-title d-flex align-items-start justify-content-between mb-4">
+                            <div class="avatar flex-shrink-0">
+                                <img
+                                    src="{{ asset('img/icons/unicons/paypal.png') }}"
+                                    alt="chart success"
+                                    class="rounded" />
+                            </div>
+
+                        </div>
+                        <p class="mb-1"><strong> BOOTS </strong></p>
+                        <h4 class="card-title mb-3 text-white"><strong> &#x20B5; {{ number_format($salariesBoots->sum('boot'), 2) }} </strong> </h4> 
+                        <!-- <small class="fw-medium"> TOTAL :  GH&#x20B5; {{ number_format($salariesBoots->sum('paid') , 2) }} </small> <br> -->
+                        <small class="fw-medium"> EMPLOYEES : {{ $salariesBoots->sum('total_employees') }} </small>
                     </div>
                 </div>
             </div>
@@ -376,7 +506,7 @@
                         </div>
                         <p class="mb-1"><strong> OVERTIME </strong></p>
                         <h4 class="card-title mb-3 text-white"><strong> &#x20B5; {{ number_format($salariesOvertime->sum('overtime'), 2) }} </strong> </h4> 
-                        <small class="fw-medium"> TOTAL :  GH&#x20B5; {{ number_format($salariesOvertime->sum('paid') , 2) }} </small> <br>
+                        <!-- <small class="fw-medium"> TOTAL :  GH&#x20B5; {{ number_format($salariesOvertime->sum('paid') , 2) }} </small> <br> -->
                         <small class="fw-medium"> EMPLOYEES : {{ $salariesOvertime->sum('total_employees') }} </small>
                     </div>
                 </div>
@@ -396,34 +526,12 @@
                         </div>
                         <p class="mb-1"><strong> IOU </strong></p>
                         <h4 class="card-title mb-3 text-white"><strong> &#x20B5; {{ number_format($salariesIOU->sum('iou'), 2) }} </strong> </h4> 
-                        <small class="fw-medium"> TOTAL :  GH&#x20B5; {{ number_format($salariesIOU->sum('paid') , 2) }} </small> <br>
+                        <!-- <small class="fw-medium"> TOTAL :  GH&#x20B5; {{ number_format($salariesIOU->sum('paid') , 2) }} </small> <br> -->
                         <small class="fw-medium"> EMPLOYEES : {{ $salariesIOU->sum('total_employees') }} </small>
                     </div>
                 </div>
-            </div>            
+            </div>  
 
-        </div> <br>
-
-        <div class="row">
-            <div class="col-lg-2">
-                <div  class="card h-100 bg-dark text-white">
-                    <div class="card-body">
-                        <div class="card-title d-flex align-items-start justify-content-between mb-4">
-                            <div class="avatar flex-shrink-0">
-                                <img
-                                    src="{{ asset('img/icons/unicons/paypal.png') }}"
-                                    alt="chart success"
-                                    class="rounded" />
-                            </div>
-
-                        </div>
-                        <p class="mb-1"><strong> BOOTS </strong></p>
-                        <h4 class="card-title mb-3 text-white"><strong> &#x20B5; {{ number_format($salariesBoots->sum('boot'), 2) }} </strong> </h4> 
-                        <small class="fw-medium"> TOTAL :  GH&#x20B5; {{ number_format($salariesBoots->sum('paid') , 2) }} </small> <br>
-                        <small class="fw-medium"> EMPLOYEES : {{ $salariesBoots->sum('total_employees') }} </small>
-                    </div>
-                </div>
-            </div>
         </div>
         
         
@@ -721,6 +829,7 @@
                                                     <th>Category_Name</th>
                                                     <th>Field</th>
                                                     <th>Inv Value</th>
+                                                    <th>Inv Guards</th>
                                                     <th>Inv Status</th>
                                                     <th>Net Salary</th>
                                                     <th> Difference </th>
@@ -746,12 +855,23 @@
                                                                 </select>
                                                     </td>
                                                     <td> {{ $catA->client?->field?->name }} </td>
-                                                    <td> GH&#x20B5; {{ number_format( $catA->client?->invoices()->whereMonth('invoice_month', $month->month)->sum('total'),2)  }} </td>
-                                                    <td>  {{ $catA->client?->invoices()->whereMonth('invoice_month', $month->month)->pluck('status') }} </td>
-                                                    <td> GH&#x20B5; {{ number_format($catA->paid, 2) }} </td>
-                                                    <td> GH&#x20B5; {{ number_format($catA->client?->invoices()->whereMonth('invoice_month', $month->month)->sum('total') - $catA->paid, 2) }} </td>
+                                                    <td> @php  $catAinv = $catA->client?->invoices()->whereMonth('invoice_month', $month->month)->get(); @endphp GH&#x20B5; {{  number_format($catAinv->sum('total'), 2)  }} </td>
+                                                  
+                                                    <td>  
+                                                        @php
+                                                            $guardsa = [];
+                                                            foreach ($catAinv as $invGuard) {
+                                                                $guardsa[] = $invGuard->invoice_data()->sum('quantity');
+                                                            }
+                                                        @endphp
+                                                        {{ collect($guardsa)->sum() }}
+                                                    </td>
+
+                                                    <td>  {{ $catAinv->pluck('status') }} </td>
+                                                    <td> GH&#x20B5; {{ number_format($catA->net_salary, 2) }} </td>
+                                                    <td> GH&#x20B5; {{ number_format( $catAinv->sum('total') - $catA->net_salary, 2) }} </td>
                                                 
-                                                    @if( $catA->client?->invoices()->whereMonth('invoice_month', $month->month)->sum('total') <= $catA->paid )
+                                                    @if( $catAinv->sum('total') <= $catA->net_salary )
                                                         <td><span class="badge bg-label-danger"> Loss </span></td>
                                                     @else
                                                         <td><span class="badge bg-label-success"> Profit </span></td>
@@ -790,6 +910,7 @@
                                                     <th>Category_Name</th>
                                                     <th>Field</th>
                                                     <th>Inv Value</th>
+                                                    <th>Inv Guards</th>
                                                     <th>Inv Status</th>
                                                     <th>Net Salary</th>
                                                     <th> Difference </th>
@@ -814,12 +935,21 @@
                                                                 </select>    
                                                     </td>
                                                     <td> {{ $catB->client?->field?->name }} </td>
-                                                    <td> GH&#x20B5; {{ number_format( $catB->client?->invoices()->whereMonth('invoice_month', $month->month)->sum('total'),2)  }} </td>
-                                                    <td>  {{ $catB->client?->invoices()->whereMonth('invoice_month', $month->month)->pluck('status') }} </td>
+                                                    <td> @php $catBinv = $catB->client?->invoices()->whereMonth('invoice_month', $month->month)->get() @endphp GH&#x20B5; {{ number_format( $catBinv->sum('total'),2)  }} </td>
+                                                    <td> 
+                                                        @php
+                                                            $guardsb = [];
+                                                            foreach ($catBinv as $invGuard) {
+                                                                $guardsb[] = $invGuard->invoice_data()->sum('quantity');
+                                                            }
+                                                        @endphp
+                                                        {{ collect($guardsb)->sum() }}
+                                                    </td>
+                                                    <td>  {{ $catBinv->pluck('status') }} </td>
                                                     <td> GH&#x20B5; {{ number_format($catB->paid, 2) }} </td>
-                                                    <td> GH&#x20B5; {{ number_format($catB->client?->invoices()->whereMonth('invoice_month', $month->month)->sum('total') - $catB->paid, 2) }} </td>
+                                                    <td> GH&#x20B5; {{ number_format($catBinv->sum('total') - $catB->paid, 2) }} </td>
                                                 
-                                                    @if( $catB->client?->invoices()->whereMonth('invoice_month', $month->month)->sum('total') <= $catB->paid )
+                                                    @if( $catBinv->sum('total') <= $catB->paid )
                                                         <td><span class="badge bg-label-danger"> Loss </span></td>
                                                     @else
                                                         <td><span class="badge bg-label-success"> Profit </span></td>
@@ -860,6 +990,7 @@
                                                     <th>Category_Name</th>
                                                     <th>Field</th>
                                                     <th>Inv Value</th>
+                                                    <th>Inv Guards</th>
                                                     <th>Inv Status</th>
                                                     <th>Net Salary</th>
                                                     <th> Difference </th>
@@ -884,12 +1015,21 @@
                                                                 </select>
                                                     </td>
                                                     <td> {{ $catC->client?->field?->name }} </td>
-                                                    <td> GH&#x20B5; {{ number_format( $catC->client?->invoices()->whereMonth('invoice_month', $month->month)->sum('total'),2)  }} </td>
-                                                    <td>  {{ $catC->client?->invoices()->whereMonth('invoice_month', $month->month)->pluck('status') }} </td>
+                                                    <td>  @php $catCinv = $catC->client?->invoices()->whereMonth('invoice_month', $month->month)->get() @endphp GH&#x20B5; {{ number_format( $catCinv->sum('total'),2)  }} </td>
+                                                    <td>
+                                                        @php
+                                                            $guardsc = [];
+                                                            foreach ($catCinv as $invGuard) {
+                                                                $guardsc[] = $invGuard->invoice_data()->sum('quantity');
+                                                            }
+                                                        @endphp
+                                                        {{ collect($guardsc)->sum() }}
+                                                    </td>
+                                                    <td>  {{ $catCinv->pluck('status') }} </td>
                                                     <td> GH&#x20B5; {{ number_format($catC->paid, 2) }} </td>
-                                                    <td> GH&#x20B5; {{ number_format($catC->client?->invoices()->whereMonth('invoice_month', $month->month)->sum('total') - $catC->paid, 2) }} </td>
+                                                    <td> GH&#x20B5; {{ number_format($catCinv->sum('total') - $catC->paid, 2) }} </td>
                                                 
-                                                    @if( $catC->client?->invoices()->whereMonth('invoice_month', $month->month)->sum('total') <= $catC->paid )
+                                                    @if( $catCinv->sum('total') <= $catC->paid )
                                                         <td><span class="badge bg-label-danger"> Loss </span></td>
                                                     @else
                                                         <td><span class="badge bg-label-success"> Profit </span></td>
@@ -930,6 +1070,7 @@
                                                     <th>Category_Name</th>
                                                     <th>Field</th>
                                                     <th>Inv Value</th>
+                                                    <th>Inv Guards</th>
                                                     <th>Inv Status</th>
                                                     <th>Net Salary</th>
                                                     <th> Difference </th>
@@ -954,12 +1095,21 @@
                                                         </select>
                                                    </td>
                                                     <td> {{ $catD->client?->field?->name }} </td>
-                                                    <td> GH&#x20B5; {{ number_format( $catD->client?->invoices()->whereMonth('invoice_month', $month->month)->sum('total'),2)  }} </td>
-                                                    <td>  {{ $catD->client?->invoices()->whereMonth('invoice_month', $month->month)->pluck('status') }} </td>
+                                                    <td> @php $catDinv = $catD->client?->invoices()->whereMonth('invoice_month', $month->month)->get() @endphp GH&#x20B5; {{ number_format( $catDinv->sum('total'),2)  }} </td>
+                                                    <td> 
+                                                        @php
+                                                            $guardsd = [];
+                                                            foreach ($catDinv as $invGuard) {
+                                                                $guardsd[] = $invGuard->invoice_data()->sum('quantity');
+                                                            }
+                                                        @endphp
+                                                        {{ collect($guardsd)->sum() }}
+                                                    </td>
+                                                    <td>  {{ $catDinv->pluck('status') }} </td>
                                                     <td> GH&#x20B5; {{ number_format($catD->paid, 2) }} </td>
-                                                    <td> GH&#x20B5; {{ number_format($catD->client?->invoices()->whereMonth('invoice_month', $month->month)->sum('total') - $catD->paid, 2) }} </td>
+                                                    <td> GH&#x20B5; {{ number_format($catDinv->sum('total') - $catD->paid, 2) }} </td>
                                                 
-                                                    @if( $catD->client?->invoices()->whereMonth('invoice_month', $month->month)->sum('total') <= $catD->paid )
+                                                    @if( $catDinv->sum('total') <= $catD->paid )
                                                         <td><span class="badge bg-label-danger"> Loss </span></td>
                                                     @else
                                                         <td><span class="badge bg-label-success"> Profit </span></td>
@@ -1001,6 +1151,7 @@
                                                         <th> Assign New_Category</th>
                                                         <th>Field</th>
                                                         <th>Inv Value</th>
+                                                        <th>Inv Guards</th>
                                                         <th>Inv Status</th>
                                                         <th>Net Salary</th>
                                                         <th> Difference </th>
@@ -1026,12 +1177,21 @@
                                                                 </select>
                                                         </td>
                                                         <td> {{ $clientMaster->client?->field?->name }} </td>
-                                                        <td> GH&#x20B5; {{ number_format( $clientMaster->client?->invoices()->whereMonth('invoice_month', $month->month)->sum('total'),2)  }} </td>
-                                                        <td>  {{ $clientMaster->client?->invoices()->whereMonth('invoice_month', $month->month)->pluck('status') }} </td>
+                                                        <td> @php $clientInv = $clientMaster->client?->invoices()->whereMonth('invoice_month', $month->month)->get() @endphp GH&#x20B5; {{ number_format($clientInv->sum('total'), 2) }} </td>
+                                                        <td> 
+                                                            @php
+                                                                $guards = [];
+                                                                foreach ($clientInv as $invGuard) {
+                                                                    $guards[] = $invGuard->invoice_data()->sum('quantity');
+                                                                }
+                                                            @endphp
+                                                            {{ collect($guards)->sum() }}
+                                                        </td>
+                                                        <td>  {{ $clientInv->pluck('status') }} </td>
                                                         <td> GH&#x20B5; {{ number_format($clientMaster->paid, 2) }} </td>
-                                                        <td> GH&#x20B5; {{ number_format($clientMaster->client?->invoices()->whereMonth('invoice_month', $month->month)->sum('total') - $clientMaster->paid, 2) }} </td>
-                                                    
-                                                        @if( $clientMaster->client?->invoices()->whereMonth('invoice_month', $month->month)->sum('total') <= $clientMaster->paid )
+                                                        <td> GH&#x20B5; {{ number_format($clientInv->sum('total') - $clientMaster->paid, 2) }} </td>
+
+                                                        @if( $clientInv->sum('total') <= $clientMaster->paid )
                                                             <td><span class="badge bg-label-danger"> Loss </span></td>
                                                         @else
                                                             <td><span class="badge bg-label-success"> Profit </span></td>
@@ -1822,6 +1982,11 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
     <script src="https://cdn.datatables.net/buttons/3.2.4/js/buttons.html5.min.js"></script>
+
+    <script src="https://cdn.datatables.net/fixedcolumns/5.0.5/js/dataTables.fixedColumns.js"> </script>           
+    <script src="https://cdn.datatables.net/fixedcolumns/5.0.5/js/fixedColumns.dataTables.js"></script>     
+    <script src="https://cdn.datatables.net/fixedheader/4.0.5/js/dataTables.fixedHeader.js"></script>      
+    <script src="https://cdn.datatables.net/fixedheader/4.0.5/js/fixedHeader.dataTables.js"></script>  
     <script src="https://cdn.datatables.net/columncontrol/1.1.1/js/dataTables.columnControl.min.js"></script>
 
 

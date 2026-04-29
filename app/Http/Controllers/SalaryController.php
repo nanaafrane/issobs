@@ -123,7 +123,7 @@ class SalaryController extends Controller
 
         $groupedBankSalaries = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved'])->where('payment_type', 'Bank')->whereIn('bank_id', $banks->pluck('id')->toArray())->groupBy('bank_id')->get(['bank_id', DB::raw('SUM(gross_salary) as gross'), DB::raw('SUM(total_deductions) as deductions'),  DB::raw('SUM(net_salary) as paid'),  DB::raw('COUNT(*) as total_employees')]);
         // // dd($groupedBankSalaries->sum('total_employees'));
-        $salariesHoldBank = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['hold','rejected'])->where('payment_type', 'Bank')->whereIn('bank_id', $banks->pluck('id')->toArray())->groupBy('bank_id')->get(['bank_id', DB::raw('SUM(gross_salary) as gross'), DB::raw('SUM(total_deductions) as deductions'),  DB::raw('SUM(net_salary) as paid'),  DB::raw('COUNT(*) as total_employees')]);
+        // $salariesHoldBank = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['hold','rejected'])->where('payment_type', 'Bank')->whereIn('bank_id', $banks->pluck('id')->toArray())->groupBy('bank_id')->get(['bank_id', DB::raw('SUM(gross_salary) as gross'), DB::raw('SUM(total_deductions) as deductions'),  DB::raw('SUM(net_salary) as paid'),  DB::raw('COUNT(*) as total_employees')]);
 
 
 
@@ -131,7 +131,7 @@ class SalaryController extends Controller
 
         $groupedCashkSalaries = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved'])->where('payment_type', 'Cash')->whereIn('field_id', $fields->pluck('id')->toArray())->groupBy('field_id')->get(['field_id', DB::raw('SUM(gross_salary) as gross'), DB::raw('SUM(total_deductions) as deductions'),  DB::raw('SUM(net_salary) as paid'),  DB::raw('COUNT(*) as total_employees')]);
 
-        $salariesHoldCash = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['hold','rejected'])->where('payment_type', 'Cash')->whereIn('field_id', $fields->pluck('id')->toArray())->groupBy('field_id')->get(['field_id', DB::raw('SUM(net_salary) as paid'),  DB::raw('COUNT(*) as total_employees')]);
+        // $salariesHoldCash = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['hold','rejected'])->where('payment_type', 'Cash')->whereIn('field_id', $fields->pluck('id')->toArray())->groupBy('field_id')->get(['field_id', DB::raw('SUM(net_salary) as paid'),  DB::raw('COUNT(*) as total_employees')]);
 
 
         $salariesTaxes = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved'])->where('tax', '>', 0)->whereIn('field_id', $fields->pluck('id')->toArray())->groupBy('field_id')->get(['field_id', DB::raw('SUM(net_salary) as paid'), DB::raw('SUM(tax) as tax'),  DB::raw('COUNT(*) as total_employees')]);
@@ -149,7 +149,6 @@ class SalaryController extends Controller
         $salariesClients  = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved'])->whereIn('client_id', $clients->pluck('id')->toArray())->groupBy('client_id')->get(['client_id', DB::raw('SUM(net_salary) as paid'), DB::raw('COUNT(*) as total_employees')]);
         $salariesClientsHold  = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['hold','rejected'])->whereIn('client_id', $clients->pluck('id')->toArray())->groupBy('client_id')->get(['client_id', DB::raw('SUM(net_salary) as paid'), DB::raw('COUNT(*) as total_employees')]);
        
-       
 
         // CLIENTS SALARY GROUPINGS
 
@@ -159,14 +158,35 @@ class SalaryController extends Controller
         }, 'salaries.client'])->where('name', 'Category A')->whereMonth('category_month', $month->month)->pluck('client_id')->toArray();
 
         // dd( $CategoryAClient);
+        // SUM ALL INVOICES FOR CLIENTS IN CATEGORY A
+        $clientAInvoices = Invoice::whereIn('client_id', $CategoryAClient)->whereMonth('invoice_month', $month->month)->get();
+        $clientAInvoicesGuards = $this->totalInvoiceGuards($clientAInvoices);
+        // SUM ALL SALARIES FOR WITH PAYEMNT STATUS PENDING OR APPROVED AND PAYEMENT TYPE IS CASH FOR CLIENTS IN CATEGORY A
+        $clientACash = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved'])->where('payment_type', 'Cash')->whereIn('client_id', $CategoryAClient)->get();
+       
+        // SUM ALL SALARIES FOR WITH PAYEMNT STATUS PENDING OR APPROVED AND PAYEMENT TYPE IS BANK FOR CLIENTS IN CATEGORY A
+        $clientABank = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved'])->where('payment_type', 'Bank')->whereIn('client_id', $CategoryAClient)->get();
+        
+        
         $clientA = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved'])->whereIn('client_id', $CategoryAClient)->groupBy('client_id')->get(['client_id', DB::raw('SUM(net_salary) as net_salary'), DB::raw('COUNT(employee_id) as total_employees')]);
         $clientAHold = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['hold','rejected'])->whereIn('client_id', $CategoryAClient)->groupBy('client_id')->get(['client_id', DB::raw('SUM(net_salary) as net_salary'), DB::raw('COUNT(employee_id) as total_employees')]);
+        // dd( $CategoryAClient, $clientAInvoices, $clientA, $clientACash);
        
        
         // CATEGORY B
         $CategoryBClient = category::with(['salaries' => function ($query) use ($month) {
             $query->whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved']);
         }, 'salaries.client'])->where('name', 'Category B')->whereMonth('category_month', $month->month)->pluck('client_id')->toArray();
+
+                // SUM ALL INVOICES FOR CLIENTS IN CATEGORY B
+        $clientBInvoices = Invoice::whereIn('client_id', $CategoryBClient)->whereMonth('invoice_month', $month->month)->get();
+        $clientBInvoicesGuards = $this->totalInvoiceGuards($clientBInvoices);
+       
+        // SUM ALL SALARIES FOR WITH PAYEMNT STATUS PENDING OR APPROVED AND PAYEMENT TYPE IS CASH FOR CLIENTS IN CATEGORY B
+        $clientBCash = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved'])->where('payment_type', 'Cash')->whereIn('client_id', $CategoryBClient)->get();
+       
+        // SUM ALL SALARIES FOR WITH PAYEMNT STATUS PENDING OR APPROVED AND PAYEMENT TYPE IS BANK FOR CLIENTS IN CATEGORY B
+        $clientBBank = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved'])->where('payment_type', 'Bank')->whereIn('client_id', $CategoryBClient)->get();
 
         // dd( $CategoryBClient);
         $clientB = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved'])->whereIn('client_id', $CategoryBClient)->groupBy('client_id')->get(['client_id', DB::raw('SUM(net_salary) as net_salary'), DB::raw('COUNT(employee_id) as total_employees')]);
@@ -178,6 +198,16 @@ class SalaryController extends Controller
             $query->whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved']);
         }, 'salaries.client'])->where('name', 'Category C')->whereMonth('category_month', $month->month)->pluck('client_id')->toArray();
 
+                // SUM ALL INVOICES FOR CLIENTS IN CATEGORY C
+        $clientCInvoices = Invoice::whereIn('client_id', $CategoryCClient)->whereMonth('invoice_month', $month->month)->get();
+        $clientCInvoicesGuards = $this->totalInvoiceGuards($clientCInvoices);
+       
+        // SUM ALL SALARIES FOR WITH PAYEMNT STATUS PENDING OR APPROVED AND PAYEMENT TYPE IS CASH FOR CLIENTS IN CATEGORY C
+        $clientCCash = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved'])->where('payment_type', 'Cash')->whereIn('client_id', $CategoryCClient)->get();
+       
+        // SUM ALL SALARIES FOR WITH PAYEMNT STATUS PENDING OR APPROVED AND PAYEMENT TYPE IS BANK FOR CLIENTS IN CATEGORY C
+        $clientCBank = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved'])->where('payment_type', 'Bank')->whereIn('client_id', $CategoryCClient)->get();
+
         // dd( $CategoryCClient);
         $clientC = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved'])->whereIn('client_id', $CategoryCClient)->groupBy('client_id')->get(['client_id', DB::raw('SUM(net_salary) as net_salary'), DB::raw('COUNT(employee_id) as total_employees')]);
         $clientCHold = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['hold','rejected'])->whereIn('client_id', $CategoryCClient)->groupBy('client_id')->get(['client_id', DB::raw('SUM(net_salary) as net_salary'), DB::raw('COUNT(employee_id) as total_employees')]);
@@ -188,14 +218,43 @@ class SalaryController extends Controller
             $query->whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved']);
         }, 'salaries.client'])->where('name', 'Category D')->whereMonth('category_month', $month->month)->pluck('client_id')->toArray();
 
+                // SUM ALL INVOICES FOR CLIENTS IN CATEGORY D
+        $clientDInvoices = Invoice::whereIn('client_id', $CategoryDClient)->whereMonth('invoice_month', $month->month)->get();
+        $clientDInvoicesGuards = $this->totalInvoiceGuards($clientDInvoices);
+       
+        // SUM ALL SALARIES FOR WITH PAYEMNT STATUS PENDING OR APPROVED AND PAYEMENT TYPE IS CASH FOR CLIENTS IN CATEGORY D
+        $clientDCash = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved'])->where('payment_type', 'Cash')->whereIn('client_id', $CategoryDClient)->get();
+       
+        // SUM ALL SALARIES FOR WITH PAYEMNT STATUS PENDING OR APPROVED AND PAYEMENT TYPE IS BANK FOR CLIENTS IN CATEGORY D
+        $clientDBank = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved'])->where('payment_type', 'Bank')->whereIn('client_id', $CategoryDClient)->get();
+
         // dd( $CategoryCClient);
         $clientD = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved'])->whereIn('client_id', $CategoryDClient)->groupBy('client_id')->get(['client_id', DB::raw('SUM(net_salary) as net_salary'), DB::raw('COUNT(employee_id) as total_employees')]);
         $clientDHold = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['hold','rejected'])->whereIn('client_id', $CategoryDClient)->groupBy('client_id')->get(['client_id', DB::raw('SUM(net_salary) as net_salary'), DB::raw('COUNT(employee_id) as total_employees')]);
 
        
         // dd( $clientA);
-        return view('salaries.salariesmonth', compact('clientA','clientB', 'clientC', 'clientD', 'clientAHold','clientBHold', 'clientCHold', 'clientDHold','salariesClients', 'salariesClientsHold','groupedBankSalaries','groupedCashkSalaries', 'salariesTaxes', 'salariesPensions', 'month', 'salariesMaster', 'salariesOvertime', 'salariesIOU', 'salariesBoots', 'salariesHoldCash', 'salariesHoldBank'));
+        return view('salaries.salariesmonth', compact('clientA', 'clientAInvoices', 'clientAInvoicesGuards', 'clientACash', 'clientABank', 'clientB', 'clientBInvoices', 'clientBInvoicesGuards', 'clientBCash', 'clientBBank','clientC', 'clientCInvoices', 'clientCInvoicesGuards', 'clientCCash', 'clientCBank', 'clientD', 'clientDInvoices', 'clientDInvoicesGuards', 'clientDCash', 'clientDBank', 'clientAHold','clientBHold', 'clientCHold', 'clientDHold','salariesClients', 'salariesClientsHold','groupedBankSalaries','groupedCashkSalaries', 'salariesTaxes', 'salariesPensions', 'month', 'salariesMaster', 'salariesOvertime', 'salariesIOU', 'salariesBoots'));
     }
+
+
+    /**
+     * Function to take invoices and return the total number of guards for that invoice
+     */
+
+        public function totalInvoiceGuards($invoices)
+        {
+            foreach($invoices as $invoice)
+            {
+                foreach($invoice->invoice_data as $data)
+                    {
+                        $guards[] =  $data->quantity;
+                        //   $data->quantity . "<br>";
+                    }
+            }
+        return collect($guards)->sum() ;
+
+        }
 
 
     public function transactionSalary()
@@ -287,25 +346,25 @@ class SalaryController extends Controller
        
     }
 
-    public function BulkCashMonthHistory(Request $request)
-    {
-    //    dd($request->all());
-        $month = Carbon::parse($request->month);
+    // public function BulkCashMonthHistory(Request $request)
+    // {
+    // //    dd($request->all());
+    //     $month = Carbon::parse($request->month);
     
-       $salaries = Salary::where('status1', 'success')->whereMonth('salary_month', $month->month)->get();
-    //    dd($salaries);
-       foreach($salaries as $salary)
-        {
-            $hubtelIDs[] = $salary->hubtel_id;
-        }
+    //    $salaries = Salary::where('status1', 'success')->whereMonth('salary_month', $month->month)->get();
+    // //    dd($salaries);
+    //    foreach($salaries as $salary)
+    //     {
+    //         $hubtelIDs[] = $salary->hubtel_id;
+    //     }
 
-        $hubtel = DB::table('hubtel')->whereIn('id', $hubtelIDs)->get();
-        $data = json_decode($hubtel, true);
-        // dd($salaries, $data);
+    //     $hubtel = DB::table('hubtel')->whereIn('id', $hubtelIDs)->get();
+    //     $data = json_decode($hubtel, true);
+    //     // dd($salaries, $data);
 
-       return view('salaries.BulkCashView', compact('salaries', 'data'));
+    //    return view('salaries.BulkCashView', compact('salaries', 'data'));
        
-    }
+    // }
 
 
     /**
@@ -471,6 +530,7 @@ class SalaryController extends Controller
 
         $salariesClients = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved'])->where('client_id', $client_id)->get();
 
+        // dd($salariesClients, $ClientSalarieshold, $ClientSalariesapproved, $ClientSalariespending, $ClientSalariesAll);
         return view('salaries.clientmonth', compact('ClientSalarieshold','ClientSalariesapproved','ClientSalariespending','ClientSalariesAll','salariesClients', 'client', 'month'));
     }
 
@@ -1200,7 +1260,7 @@ class SalaryController extends Controller
                                     ->where('payment_status', 'approved')
                                     ->exists();
                     if ($exists) {
-                        $alreadyProcessed[] = $salary->id;
+                        $alreadyProcessed[] = $salary->employee?->name . " with Salary ID: " . $salary->id;
                         continue;
                     }
 
@@ -1215,6 +1275,29 @@ class SalaryController extends Controller
         }
         elseif(isset($request->submit) && $request->submit == 'hold')
             {
+                    // return "you are moving from main to hold";
+                $salaries = Salary::findOrFail($salaryIds);
+                foreach ($salaries as $salary) 
+                {
+                    $exists = Salary::where('id', $salary->id)
+                                    ->where('payment_status', 'hold')
+                                    ->exists();
+                    if ($exists) {
+                        $alreadyProcessed[] = $salary->employee?->name . " with Salary ID: " . $salary->id;
+                        continue;
+                    }
+
+                    Salary::where('id', $salary->id)->update(['payment_status' => 'hold', 'user_id1' => Auth::id()]);
+                }
+            //  dd(count($alreadyProcessed));
+            if (!empty($alreadyProcessed))
+                 {
+                    return back()->with('error', 'Salaries with the IDs have already been Held : '. implode(', ', $alreadyProcessed). ' The remaining have been Appoved ')  ;
+                }
+            return back()->with('success', 'Moved salaries with IDs: ' . implode(', ', $salaryIds));
+            }
+            elseif(isset($request->submit) && $request->submit == 'main')
+            {
                     // return "you are moving from hold to main";
                 $salaries = Salary::findOrFail($salaryIds);
                 foreach ($salaries as $salary) 
@@ -1223,7 +1306,7 @@ class SalaryController extends Controller
                                     ->where('payment_status', 'pending')
                                     ->exists();
                     if ($exists) {
-                        $alreadyProcessed[] = $salary->id;
+                        $alreadyProcessed[] = $salary->employee?->name . " with Salary ID: " . $salary->id;
                         continue;
                     }
 

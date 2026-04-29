@@ -3,6 +3,7 @@
     @section('css')
     <link rel="stylesheet" href="https://cdn.datatables.net/2.3.5/css/dataTables.dataTables.css" />
     <link rel="stylesheet" href="https://cdn.datatables.net/buttons/3.2.5/css/buttons.dataTables.css">    
+    <link href="https://cdn.datatables.net/columncontrol/1.1.1/css/columnControl.dataTables.min.css" rel="stylesheet"> 
     @endsection
 
 
@@ -301,7 +302,7 @@
 
          @if(Auth::user()->hasRole(['Invoice','Manager', 'Finance Manager' ]))
         <div class="row">
-            <div class="col-lg-12 mb-4">
+            <div class="col-lg-6 mb-4">
                 <div  class="card h-100 bg-dark text-white">
                     <div class="card-body">
                         <div class="card-title d-flex align-items-start justify-content-between mb-4">
@@ -320,6 +321,27 @@
                     </div>
                 </div>
             </div>
+
+                        <div class="col-lg-6 mb-4">
+                <div  class="card h-100 bg-dark text-white">
+                    <div class="card-body text-end">
+                        <div class="card-title d-flex align-items-end justify-content-between mb-4">
+                            <div class="avatar flex-shrink-0">
+                                <img
+                                    src="{{ asset('img/icons/unicons/paypal.png') }}"
+                                    alt="chart success"
+                                    class="rounded" />
+                            </div>
+                        </div>
+
+                        <h4 class="card-title mb-3 text-white"><strong> CASH HOLD : GH&#x20B5; {{ number_format($ClientSalarieshold->where('payment_type', 'Cash')->sum('net_salary') ,2) }}  </strong> </h6> <br>
+                        <h4 class="card-title mb-3 text-white"><strong> BANK HOLD : GH&#x20B5; {{ number_format($ClientSalarieshold->where('payment_type', 'Bank')->sum('net_salary') ,2) }}  </strong> </h6> <br>
+
+
+                    </div>
+                </div>
+            </div>
+
         </div> <br>
         @endif
         
@@ -334,15 +356,15 @@
                     <div class="col-lg-12 mb-4">
                         <input class="form-check-input form-check-inline" type="checkbox" value="" id="options" />
                         <div class="form-check form-check-inline">
-                            <button class="btn btn-success" name="submit" value="hold" onclick="return confirm('Kindly Confirm?')" type="submit"> <i class="icon-base bx bx-recycle"> </i> {{ __('Move To Main') }}</button>                   
+                            <button class="btn btn-success" name="submit" value="main" onclick="return confirm('Kindly Confirm?')" type="submit"> <i class="icon-base bx bx-recycle"> </i> {{ __('Move To Main') }}</button>                   
                         </div>
 
                         <div class="card">
                             <h5 class="card-header"> Client Employee Salaries  </h5>
                             <div class="card-body"> 
                             <div class="table-responsive text-nowrap">
-                                <table class="table table-hover" id="myTable">
-                                    <thead class="table-dark">
+                                <table class="display" id="myTable">
+                                    <thead class="table-border-bottom-0">
                                         <tr>
 
                                             <th></th>
@@ -505,6 +527,9 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+
+    <script src="https://cdn.datatables.net/columncontrol/1.1.1/js/dataTables.columnControl.min.js"></script>
+
 
 
     <script>

@@ -3,8 +3,11 @@
     @section('css')
     <link rel="stylesheet" href="https://cdn.datatables.net/2.3.5/css/dataTables.dataTables.css" />
     <!-- <link rel="stylesheet" href="https://cdn.datatables.net/buttons/3.2.5/css/buttons.dataTables.css">     -->
+    <link href="https://cdn.datatables.net/columncontrol/1.1.1/css/columnControl.dataTables.min.css" rel="stylesheet">
+
     <link rel="stylesheet" href="https://cdn.datatables.net/fixedheader/4.0.5/css/fixedHeader.dataTables.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/fixedcolumns/5.0.5/css/fixedColumns.dataTables.css">
+
     @endsection
 
 
@@ -334,8 +337,8 @@
                             <h5 class="card-header"> Salaries Paid via Banks  </h5>
                             <div class="card-body"> 
                             <div class="table-responsive text-nowrap">
-                                <table class="table table-hover" id="myTable">
-                                    <thead class="table-dark">
+                                <table class="display" id="myTable">
+                                    <thead class="table-border-bottom-0">
                                         <tr>
                                             <th></th>
                                             <th>#</th>
@@ -422,6 +425,7 @@
     <script src="https://cdn.datatables.net/fixedcolumns/5.0.5/js/fixedColumns.dataTables.js"></script>     
     <script src="https://cdn.datatables.net/fixedheader/4.0.5/js/dataTables.fixedHeader.js"></script>      
     <script src="https://cdn.datatables.net/fixedheader/4.0.5/js/fixedHeader.dataTables.js"></script>  
+    <script src="https://cdn.datatables.net/columncontrol/1.1.1/js/dataTables.columnControl.min.js"></script>
 
     <!-- <script src="https://cdn.datatables.net/buttons/3.2.5/js/dataTables.buttons.js"></script>
     <script src="https://cdn.datatables.net/buttons/3.2.5/js/buttons.dataTables.js"></script>
@@ -472,6 +476,7 @@
         // });
 
         new DataTable('#myTable', {
+              columnControl: [ ['search'] ],
                     fixedColumns: {
                     start: 0,
                     end: 0

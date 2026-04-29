@@ -264,6 +264,18 @@ class ReceiptController extends Controller
         // return $invoice->invoice_month?->format('Y-m') . " / ". $receipt->receipt_month?->format('Y-m');
         $inv  = Carbon::parse($invoice_data->invoice_month);
         $created_receipt = Receipt::findOrfail($receipt_id);
+
+                        //  CHECK IF CLIENT CATEGORY ALREADY EXIST FOR THE SAME MONTH
+            $exists = category::where('client_id', $created_receipt->client_id)
+                            ->whereMonth('category_month', $inv->month)
+                            ->exists();
+
+            if ($exists) {
+                    return redirect()->route('receipt.show',['receipt' => $receipt_id])->with('warning', 'Receipt  Craeated Successfully, This Receipt Client Aleady Has an Assigned Category');
+
+                    // return back()->with('error', 'This Receipt Client Has Aleady been Assigned a Category, Kindly Remove existing one from Categories Model and Create the Receipt againg : '. $created_receipt->client_id) ;                      
+                }
+
         $rec  = Carbon::parse($created_receipt->receipt_month);
         // $client = Client::findOrFail($receipt->client_id);
         $category = new category();
@@ -384,6 +396,19 @@ class ReceiptController extends Controller
         $inv  = Carbon::parse($invoice_data->invoice_month);
         $created_receipt = Receipt::findOrfail($receipt_id);
         $rec  = Carbon::parse($created_receipt->receipt_month);
+
+                        //  CHECK IF CLIENT CATEGORY ALREADY EXIST FOR THE SAME MONTH
+            $exists = category::where('client_id', $created_receipt->client_id)
+                            ->whereMonth('category_month', $inv->month)
+                            ->exists();
+
+            if ($exists) {
+                    return redirect()->route('receipt.show',['receipt' => $receipt_id])->with('warning', 'Receipt  Craeated Successfully, This Receipt Client Aleady Has an Assigned Category');
+
+                    // return back()->with('error', 'This Receipt Client Has Aleady been Assigned a Category, Kindly Remove existing one from Categories Model and Create the Receipt againg : '. $created_receipt->client_id) ;           
+                }
+
+
         // $client = Client::findOrFail($receipt->client_id);
         $category = new category();
         $client = Client::findOrfail($created_receipt->client_id);
@@ -514,6 +539,17 @@ class ReceiptController extends Controller
         $inv  = Carbon::parse($invoice_data->invoice_month);
         $created_receipt = Receipt::findOrfail($receipt_id);
         $rec  = Carbon::parse($created_receipt->receipt_month);
+
+                //  CHECK IF CLIENT CATEGORY ALREADY EXIST FOR THE SAME MONTH
+            $exists = category::where('client_id', $created_receipt->client_id)
+                            ->whereMonth('category_month', $inv->month)
+                            ->exists();
+
+            if ($exists) {
+                    // return back()->with('error', 'This Receipt Client Has Aleady been Assigned a Category, Kindly Remove existing one from Categories Model and update the Receipt : '. $created_receipt->client_id) ;
+                    return redirect()->route('receipt.show',['receipt' => $receipt_id])->with('warning', 'Receipt  Craeated Successfully, This Receipt Client Aleady Has an Assigned Category');
+                }
+
         // $client = Client::findOrFail($receipt->client_id);
         $category = new category();
         $client = Client::findOrfail($created_receipt->client_id);
@@ -815,14 +851,19 @@ class ReceiptController extends Controller
             
         }
 
-        // // ASSIGN TO A CATEGORY
+        // // REASSIGN TO A CATEGORY
         // return $invoice->invoice_month?->format('Y-m') . " / ". $receipt->receipt_month?->format('Y-m');
         $inv  = Carbon::parse($invoice->invoice_month);
         $rec  = Carbon::parse($receipt->receipt_month);
         // $client = Client::findOrFail($receipt->client_id);
-        $category = new category();
+        // dd($receipt->client_id, $receipt->receipt_month?->format('Y-m'));
+
+        $category = category::where('client_id', $receipt->client_id)->whereMonth('category_month', $inv->month)->first();
         $client = Client::findOrfail($receipt->client_id);
 
+        // dd($category);
+        if($category && isset($category))
+            {
             // 2. Condition: Same Month
             if ($rec->isSameMonth($inv) || $rec->lt($inv)) 
                 
@@ -891,6 +932,7 @@ class ReceiptController extends Controller
                 
             }
         // // END ASSIGN TO A CATEGORY
+            }
 
 
         // update collection
