@@ -132,6 +132,12 @@
               </a>
           </li>
           </ul>
+                <li class="menu-item">
+        <a href="{{url('category')}}" class="menu-link">
+          <i class="menu-icon tf-icons bx bxs-category bg-info"></i>
+          <div class="text-truncate" data-i18n="Categories">Categories</div>
+        </a>
+      </li>
       </li>
       @elseif(Auth::user()->hasRole(['Invoice']))
 
