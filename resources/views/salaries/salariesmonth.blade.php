@@ -2011,12 +2011,12 @@
         let myTablecategorychold = new DataTable('#myTablecategorychold'); 
         let myTablecategorydhold = new DataTable('#myTablecategorydhold'); 
 
-        // new DataTable('#myTableimaster', {
-        //     responsive: true,
-        //       dom: 'lftrip',
-        //       lengthMenu: [[10, 25, 50, 100, 500], [10, 25, 50, 100, 500]],
-        //       columnControl: [ ['search'] ]
-        // });
+        new DataTable('#myTableimaster', {
+            responsive: true,
+              dom: 'Blftrip',
+              lengthMenu: [[10, 25, 50, 100, 500], [10, 25, 50, 100, 500]],
+              columnControl: [ ['search'] ]
+        });
         let myTableiclientmasterhold = new DataTable('#myTableiclientmasterhold', {
                 responsive: true,
                     dom: 'Bflrtip',

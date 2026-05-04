@@ -433,7 +433,34 @@ class InvoiceController extends Controller
 
         $reportInvoices =  Invoice::whereIn('status', ['unpaid', 'uncompleted'])->get();
         $reportPinvoices = Invoice::where('balance', '>', 0.00)->where('status', 'uncompleted')->get();
+        
 
+        // Get invoices Group each invoice by aging periods (0-30 days, 31-60 days, 61-90 days, 90+ days) 
+
+        $reportInvoicesAging = Invoice::whereIn('status', ['unpaid', 'uncompleted'])->get()->groupBy(function($invoice) {
+          
+            $dueDate = Carbon::parse($invoice->due_date);
+            $now = Carbon::now();
+            $diffInDays = $dueDate->diffInDays($now);
+
+            if ($diffInDays <= 30) {
+                return '0-30 days';
+            } elseif ($diffInDays <= 60) {
+                return '31-60 days';
+            } elseif ($diffInDays <= 90) {
+                return '61-90 days';
+            } else {
+                return '90+ days';
+            }
+
+        });
+
+        // foreach($reportInvoicesAging['0-30 days'] as $invoice)
+        // {
+        //     // dd( $invoice);
+        //     echo  $invoice . " <br> <br> ";
+        // }   
+        // // dd($reportInvoicesAging['0-30 days']);
 
         $accra = Invoice::whereRelation('client', 'field_id', 1)->whereIn('status', ['unpaid', 'uncompleted'])->get();
         $accraPcount = Invoice::whereRelation('client', 'field_id', 1)->where('balance', '>', 0.00)->where('status', 'uncompleted')->get();
@@ -478,7 +505,7 @@ class InvoiceController extends Controller
         $shyhillsCount = count($shyhills);
 
 
-        return view('sales.invoice_outstanding', compact('reportPinvoices', 'accraPcount','botwePcount', 'temaPcount', 'takoradiPcount', 'koforiduaPcount', 'kumasiPcount', 'shyhillsPcount','reportInvoices', 'accra', 'botwe', 'tema', 'shyhills','takoradi', 'koforidua', 'kumasi','accraTotal', 'accraCount', 'botweTotal', 'botweCount', 'temaTotal', 'shyhillsTotal', 'shyhillsCount','temaCount', 'takoradiTotal', 'takoradiCount', 'koforiduaTotal', 'koforiduaCount', 'kumasiTotal', 'kumasiCount'));
+        return view('sales.invoice_outstanding', compact( 'reportInvoicesAging', 'reportPinvoices', 'accraPcount','botwePcount', 'temaPcount', 'takoradiPcount', 'koforiduaPcount', 'kumasiPcount', 'shyhillsPcount','reportInvoices', 'accra', 'botwe', 'tema', 'shyhills','takoradi', 'koforidua', 'kumasi','accraTotal', 'accraCount', 'botweTotal', 'botweCount', 'temaTotal', 'shyhillsTotal', 'shyhillsCount','temaCount', 'takoradiTotal', 'takoradiCount', 'koforiduaTotal', 'koforiduaCount', 'kumasiTotal', 'kumasiCount'));
     }
 
     // Search invoices with part payment outstanding   
