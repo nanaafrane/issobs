@@ -407,12 +407,12 @@
                                         <a class="dropdown-item" href="{{url('employees', $employee->id)}}/edit"><i class="icon-base bx bx-edit-alt me-1"></i> Edit</a>
                                         <hr>
                                         <a class="dropdown-item" href="{{url('employeesSalary', $employee->id)}}"><i class="icon-base bx bx-money-withdraw"></i> Salaries</a>
-                                        <hr>
+                                        <!-- <hr>
                                         @if ($employee->status == 'Active')
                                             <a class="dropdown-item" href="{{url('terminateEmployee', $employee->id )}}"><i class="icon-base bx bx-user-x me-1" onclick="return confirm('Kindly Confirm?')"></i> Terminate</a>
                                         @else
                                         <a class="dropdown-item" href="{{url('employeeReinstate', $employee->id )}}" onclick="return confirm('Kindly Confirm?')"><i class="icon-base bx bx-edit-alt me-1"></i>Re-Instate </a>
-                                        @endif
+                                        @endif -->
 
                                     </div>
                                 </div>
