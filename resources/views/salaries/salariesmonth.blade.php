@@ -2010,15 +2010,63 @@
         let myTableiholdcash = new DataTable('#myTableiholdcash');
         let myTableiholdbank = new DataTable('#myTableiholdbank');
 
-        let myTablecategorya = new DataTable('#myTablecategorya'); 
-        let myTablecategoryb = new DataTable('#myTablecategoryb'); 
-        let myTablecategoryc = new DataTable('#myTablecategoryc'); 
-        let myTablecategoryd = new DataTable('#myTablecategoryd'); 
+        let myTablecategorya = new DataTable('#myTablecategorya', {
+                responsive: true,
+                    dom: 'Bflrtip',
+                    buttons: [
+                        'excel'
+                    ],
+        }); 
+        let myTablecategoryb = new DataTable('#myTablecategoryb', {
+                responsive: true,
+                    dom: 'Bflrtip',
+                    buttons: [
+                        'excel'
+                    ],
+        }); 
+        let myTablecategoryc = new DataTable('#myTablecategoryc', {
+                responsive: true,
+                    dom: 'Bflrtip',
+                    buttons: [
+                        'excel'
+                    ],
+        }); 
+        let myTablecategoryd = new DataTable('#myTablecategoryd', {
+                responsive: true,
+                    dom: 'Bflrtip',
+                    buttons: [
+                        'excel'
+                    ],
+        }); 
 
-        let myTablecategoryahold = new DataTable('#myTablecategoryahold'); 
-        let myTablecategorybhold = new DataTable('#myTablecategorybhold'); 
-        let myTablecategorychold = new DataTable('#myTablecategorychold'); 
-        let myTablecategorydhold = new DataTable('#myTablecategorydhold'); 
+        let myTablecategoryahold = new DataTable('#myTablecategoryahold', {
+                responsive: true,
+                    dom: 'Bflrtip',
+                    buttons: [
+                        'excel'
+                    ],
+        }); 
+        let myTablecategorybhold = new DataTable('#myTablecategorybhold', {
+                            responsive: true,
+                    dom: 'Bflrtip',
+                    buttons: [
+                        'excel'
+                    ],
+        }); 
+        let myTablecategorychold = new DataTable('#myTablecategorychold', {
+                            responsive: true,
+                    dom: 'Bflrtip',
+                    buttons: [
+                        'excel'
+                    ],
+        }); 
+        let myTablecategorydhold = new DataTable('#myTablecategorydhold', {
+                            responsive: true,
+                    dom: 'Bflrtip',
+                    buttons: [
+                        'excel'
+                    ],
+        }); 
 
         let myTableiclientmasterhold = new DataTable('#myTableiclientmasterhold', {
                 responsive: true,
