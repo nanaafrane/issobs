@@ -818,6 +818,9 @@
                                     
                                         <div class="form-check form-check-inline">
                                             <button class="btn btn-dark" name="submit" value="" onclick="return confirm('Kindly Confirm?')" type="submit"> <i class="icon-base bx bx-recycle"> </i> {{ __('ReAssign Category') }}</button>                   
+                                       
+                                            <a href="/exportCategory/{{ $month }}/Category A" class="btn btn-success m-4" > <i class="icon-base bx bx-bxs-file-plus"> </i> {{ __(' Excel Download Category') }}</a>                   
+
                                         </div>
                                     <div class="table-responsive">
                                         <table id="myTablecategorya" class="display">
@@ -899,6 +902,8 @@
                                     
                                         <div class="form-check form-check-inline">
                                             <button class="btn btn-dark" name="submit" value="" onclick="return confirm('Kindly Confirm?')" type="submit"> <i class="icon-base bx bx-recycle"> </i> {{ __('ReAssign Category') }}</button>                   
+                                            <a href="/exportCategory/{{ $month }}/Category B" class="btn btn-success m-4" > <i class="icon-base bx bx-bxs-file-plus"> </i> {{ __(' Excel Download Category') }}</a>                   
+                                       
                                         </div>
                                     <div class="table-responsive">
                                         <table id="myTablecategoryb" class="display">
@@ -978,6 +983,8 @@
                                     
                                         <div class="form-check form-check-inline">
                                             <button class="btn btn-dark" name="submit" value="" onclick="return confirm('Kindly Confirm?')" type="submit"> <i class="icon-base bx bx-recycle"> </i> {{ __('ReAssign Category') }}</button>                   
+                                            <a href="/exportCategory/{{ $month }}/Category C" class="btn btn-success m-4" > <i class="icon-base bx bx-bxs-file-plus"> </i> {{ __(' Excel Download Category') }}</a>                   
+                                       
                                         </div>
 
                                     <div class="table-responsive">
@@ -1058,6 +1065,8 @@
                                     
                                         <div class="form-check form-check-inline">
                                             <button class="btn btn-dark" name="submit" value="" onclick="return confirm('Kindly Confirm?')" type="submit"> <i class="icon-base bx bx-recycle"> </i> {{ __('ReAssign Category') }}</button>                   
+                                            <a href="/exportCategory/{{ $month }}/Category D" class="btn btn-success m-4" > <i class="icon-base bx bx-bxs-file-plus"> </i> {{ __(' Excel Download Category') }}</a>                   
+                                       
                                         </div>
 
                                     <div class="table-responsive">
@@ -2011,12 +2020,6 @@
         let myTablecategorychold = new DataTable('#myTablecategorychold'); 
         let myTablecategorydhold = new DataTable('#myTablecategorydhold'); 
 
-        new DataTable('#myTableimaster', {
-            responsive: true,
-              dom: 'Blftrip',
-              lengthMenu: [[10, 25, 50, 100, 500], [10, 25, 50, 100, 500]],
-              columnControl: [ ['search'] ]
-        });
         let myTableiclientmasterhold = new DataTable('#myTableiclientmasterhold', {
                 responsive: true,
                     dom: 'Bflrtip',
@@ -2039,7 +2042,11 @@
 
 
         new DataTable('#myTableimaster', {
-
+                responsive: true,
+                    dom: 'Bflrtip',
+                    buttons: [
+                        'excel'
+                    ],
               columnControl: [ ['search'] ],
 
                         fixedColumns: {

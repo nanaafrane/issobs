@@ -154,6 +154,7 @@ Route::get('sendMoneyCallback', [SendMoneyController::class, 'sendMoneyCallback'
 
 Route::get('exportMaster/{month}', [SalaryController::class, 'exportMaster']);
 Route::get('exportBank/{month}/{bank_id}', [SalaryController::class, 'exportBank']);
+Route::get('exportCategory/{month}/{category}', [SalaryController::class, 'exportCategory']);
 // Route::get('clientAttachGuards', function(){
 // //    ATTACHING CLIENTS
 //     // $clientId = 111;

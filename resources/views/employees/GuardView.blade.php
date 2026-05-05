@@ -375,7 +375,7 @@
 
                             @foreach ($guards as $key => $employee )
                           <tr>
-                              <td> <input class="checkBoxes form-check-input" type="checkbox" name="employees[]" value="{{ $employee->id }}" /></td>
+                              <td> <input class="checkBoxes form-check-input" type="checkbox" name="employees[{{ $key + 1 }}]" value="{{ $employee->id }}" /></td>
                               <td> {{ $key + 1 }} </td>
                               <td> FWSS {{ $employee->id }}  </td>
                               <td>{{$employee->name}}  </td>
@@ -385,13 +385,13 @@
                               <td> {{ $employee->field?->name }}   </td>
 
                                   <td> 
-                                      <select name="client_id[]" class="form-select @error('client_id') is-invalid @enderror" id="client_id">
+                                      <select name="client_id[{{ $key + 1 }}]" class="form-select @error('client_id') is-invalid @enderror" id="client_id">
                                           @foreach($clients as $client)
                                           <option  @if($client->id == $employee->client?->id) selected @endif  value="{{$client->id}}">{{$client->name}} {{$client->business_name}}</option>
                                           @endforeach
                                       </select>                            
                                   </td>
-                                  <td> <textarea type="text" name="location[]" class="form-control"> {{ $employee->location }} </textarea> </td>
+                                  <td> <textarea type="text" name="location[{{ $key + 1 }}]" class="form-control"> {{ $employee->location }} </textarea> </td>
                               @if($employee->status == 'Active')
                               <td><span class="badge bg-label-success">{{$employee->status}}</span></td>
                               @else

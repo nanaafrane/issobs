@@ -455,13 +455,6 @@ class InvoiceController extends Controller
 
         });
 
-        // foreach($reportInvoicesAging['0-30 days'] as $invoice)
-        // {
-        //     // dd( $invoice);
-        //     echo  $invoice . " <br> <br> ";
-        // }   
-        // // dd($reportInvoicesAging['0-30 days']);
-
         $accra = Invoice::whereRelation('client', 'field_id', 1)->whereIn('status', ['unpaid', 'uncompleted'])->get();
         $accraPcount = Invoice::whereRelation('client', 'field_id', 1)->where('balance', '>', 0.00)->where('status', 'uncompleted')->get();
 

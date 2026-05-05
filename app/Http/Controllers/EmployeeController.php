@@ -356,36 +356,56 @@ class EmployeeController extends Controller
         // dd($request->all());
 
         $employees = $request->input('employees', []);
-        $clients = $request->input('client_id', []);
-        $locations = $request->input('location', []);
+        // $clients = $request->input('client_id', []);
+        // $locations = $request->input('location', []);
 
         // dd($employees, $clients, $locations);
         if (empty($employees)) {
             return back()->with('error', 'No Guard Selected to ReAssign.');
         }
 
-        // dd($employees);
-        foreach ($employees as $key => $employee)
-        {
+        collect($request->employees)->map(function ($employeeId, $index) use ($request) {
 
-            // echo $employee .' ' . $clients[$key]. ' ' .$locations[$key] .'<br>';
-            $employee = employee::findOrFail($employee);
-            $employee->client_id = $clients[$key];
-            $alreadyProcessed[] =  $clients[$key];
-            $employee->location = $locations[$key];
-            $employee->save();
+            //  $clients = $request->input('client_id', []);
+            //  $locations = $request->input('location', []);
 
-            $employee->update([
-                'client_id' => $clients[$key],
-                'location' => $locations[$key],
-            ]);
-        }
+            // update category for the client and month
+            $employee = employee::findOrFail($employeeId);
+            if ($employee) {
+                $employee->client_id = $request->client_id[$index];
+                $employee->location = $request->location[$index];
+                $employee->save();
+            }
 
-        if(!empty( $alreadyProcessed))
-        {
-            return redirect()->route('client.index')->with('success', 'Guard successfully ReAssigned! Client: '. implode(', ', $alreadyProcessed));
-        }
-        // // return back()->with('success', 'Guard successfully ReAssigned!');
+            
+        });
+
+         return back()->with('success', 'Guard successfully ReAssigned!');  
+        
+
+        // // dd($employees);
+        // foreach ($employees as $key => $employee)
+        // {
+
+        //     // echo $employee .' ' . $clients[$key]. ' ' .$locations[$key] .'<br>';
+        //     $employee = employee::findOrFail($employee);
+        //     $employee->client_id = $clients[$key];
+        //     $alreadyProcessed[] =  $clients[$key];
+        //     $employee->location = $locations[$key];
+        //     $employee->save();
+
+        //     $employee->update([
+        //         'client_id' => $clients[$key],
+        //         'location' => $locations[$key],
+        //     ]);
+        // }
+
+        // if(!empty( $alreadyProcessed))
+        // {
+        //     return redirect()->route('client.index')->with('success', 'Guard successfully ReAssigned! Client: '. implode(', ', $alreadyProcessed));
+        // }
+        // // // return back()->with('success', 'Guard successfully ReAssigned!');
+   
     }
 
     public function terminateEmployee(Request $request, $id)

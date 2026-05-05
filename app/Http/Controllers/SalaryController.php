@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Exports\SalaryBankExport;
+use App\Exports\SalaryCategoryExport;
 use App\Exports\SalaryExport;
 use App\Http\Requests\InvoiceToPayrollSearchRequest;
 use App\Http\Requests\SalariesUploadRequest;
@@ -110,11 +111,7 @@ class SalaryController extends Controller
     {
         //
         // dd($request->month);
-        //  Carbon::createFromFormat('F, Y',$request->input('salary_month'))->startOfMonth()->format('Y-m-d H:i:s');
          $month = Carbon::parse($request->month);
-        //  $date = Carbon::createFromFormat('Y-m',$request->month)->format('F, Y');
-
-        //  dd($month->format('F Y'));
 
         $banks = Bank::all();
         $fields = Field::all();
@@ -1362,6 +1359,15 @@ class SalaryController extends Controller
         // dd($bank->name);
 
         return (new SalaryBankExport($date, $bank_id, [ $bank->name, $month]))->download( $bank->name.' Salaries For '.$month.'.xlsx'); 
+    }
+
+
+    public function exportCategory($date, $category)
+    {
+        // dd($date, $category);
+         $month = Carbon::parse($date)->format('F, Y');
+
+        return (new SalaryCategoryExport($date, $category))->download( $category.' Salaries For '.$month.'.xlsx'); 
     }
 
 
