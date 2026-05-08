@@ -339,6 +339,7 @@
                         <p class="mb-1"><strong> CATEGORY A  </strong></p>
                         <h4 class="card-title mb-3 text-white"><strong> &#x20B5; {{ number_format($clientA->sum('net_salary'), 2) }} </strong> </h4> 
                         <small class="fw-medium"> <strong>  INVOICES :  &#x20B5; {{ number_format($clientAInvoices->sum('total'), 2) }}  </strong> </small> <br>
+                        <!-- <small class="fw-medium"> <strong>  RECEIPTS :  &#x20B5; {{ number_format($clientAInvoices->sum('total'), 2) }}  </strong> </small> <br> -->
                         <small class="fw-medium"> CLIENTS :   {{ $clientA->count()  }} </small> <br>
                         <small class="fw-medium"> EMPLOYEES : {{ $clientA->sum('total_employees') }} </small> <br>
                         <small class="fw-medium text-danger"> <strong> HOLD : {{ $clientAHold->sum('total_employees') }} </strong> </small> <br>

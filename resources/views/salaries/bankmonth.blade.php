@@ -344,6 +344,7 @@
                                             <th>#</th>
                                             <th>STAFF ID</th>
                                             <th>STATUS</th>
+                                            <th>CATEGORY</th>
                                             <th> NAME </th>
                                             <th>FIELD</th>
                                             <th> ROLE</th>
@@ -372,7 +373,7 @@
                                                     @else 
                                                         <td> <span class="badge bg-label-success">  {{ $salary->payment_status }} </span> </td>
                                                     @endif
-
+                                            <td> @if ( $salary->client?->category_month == \Carbon\Carbon::parse($month)->format('Y-m-d') ) {{ $salary->client?->category_name }} @endif </td>
                                             <td> {{ strtoupper($salary->employee?->name) }} </td>
                                             <td> {{ strtoupper($salary->field?->name) }} </td>
                                             <td> {{ strtoupper( $salary->employee?->role?->name) }} </td>

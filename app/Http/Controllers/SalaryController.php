@@ -157,6 +157,30 @@ class SalaryController extends Controller
         // dd( $CategoryAClient);
         // SUM ALL INVOICES FOR CLIENTS IN CATEGORY A
         $clientAInvoices = Invoice::whereIn('client_id', $CategoryAClient)->whereMonth('invoice_month', $month->month)->get();
+        
+        // // get the total of all cash payments for all invoices for clients in category A
+        // $categoryAInvoiceCashPayments = 0;  
+        //     foreach($clientAInvoices as $invoice)
+        //         {
+        //             foreach($invoice->receipt as $receipt)
+        //             {
+        //                 if($receipt->payment_type == 'Cash')
+        //                 {
+        //                     $categoryAInvoiceCashPayments += $receipt->dAmount;
+        //                 }
+        //             }
+        //         }   
+        
+        
+
+
+
+        // foreach($clientAInvoices as $invoice)
+        //     {
+        //          $invoice->receipt()->get('transfer_amount') . '<br>';
+        //     }
+        // // dd($clientAInvoices);
+
         $clientAInvoicesGuards = $this->totalInvoiceGuards($clientAInvoices);
         // SUM ALL SALARIES FOR WITH PAYEMNT STATUS PENDING OR APPROVED AND PAYEMENT TYPE IS CASH FOR CLIENTS IN CATEGORY A
         $clientACash = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved'])->where('payment_type', 'Cash')->whereIn('client_id', $CategoryAClient)->get();
