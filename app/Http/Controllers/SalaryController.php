@@ -158,39 +158,17 @@ class SalaryController extends Controller
         // SUM ALL INVOICES FOR CLIENTS IN CATEGORY A
         $clientAInvoices = Invoice::whereIn('client_id', $CategoryAClient)->whereMonth('invoice_month', $month->month)->get();
         
-        // // get the total of all cash payments for all invoices for clients in category A
-        // $categoryAInvoiceCashPayments = 0;  
-        //     foreach($clientAInvoices as $invoice)
-        //         {
-        //             foreach($invoice->receipt as $receipt)
-        //             {
-        //                 if($receipt->payment_type == 'Cash')
-        //                 {
-        //                     $categoryAInvoiceCashPayments += $receipt->dAmount;
-        //                 }
-        //             }
-        //         }   
 
         $clientAReceipts = [];
 
         foreach($clientAInvoices as $invoice)
             {
                 // collect invoices
-                // $clientAReceipts['cash'] = $clientAReceipts->push( $invoice->receipt()->pluck('cash_amount'));
-                // $clientAReceipts['momo'] = $clientAReceipts->push( $invoice->receipt()->pluck('momo_amount'));
-                // $clientAReceipts['transfer'] = $clientAReceipts->push( $invoice->receipt()->pluck('transfer_amount'));
-                // $clientAReceipts['cheque'] = $clientAReceipts->push( $invoice->receipt()->pluck('cheque_amount'));
-
                $clientAReceipts['cash'][] =  $invoice->receipt()->pluck('cash_amount');
                $clientAReceipts['momo'][] =  $invoice->receipt()->pluck('momo_amount');
                $clientAReceipts['transfer'][] =  $invoice->receipt()->pluck('transfer_amount');
                $clientAReceipts['cheque'][] =  $invoice->receipt()->pluck('cheque_amount');
             }
-            // sum cash, momo, transfer, cheque payments for client A
-            // $clientAReceipts['cash'] = $clientAReceipts['cash'];
-            // $clientAReceipts['momo'] = $clientAReceipts['momo'];
-            // $clientAReceipts['transfer'] = $clientAReceipts['transfer'];
-            // $clientAReceipts['cheque'] = $clientAReceipts['cheque'];
 
         // dd(collect($clientAReceipts['cheque'])->flatten()->sum());
 
@@ -212,8 +190,22 @@ class SalaryController extends Controller
             $query->whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved']);
         }, 'salaries.client'])->where('name', 'Category B')->whereMonth('category_month', $month->month)->pluck('client_id')->toArray();
 
-                // SUM ALL INVOICES FOR CLIENTS IN CATEGORY B
+        // SUM ALL INVOICES FOR CLIENTS IN CATEGORY B
         $clientBInvoices = Invoice::whereIn('client_id', $CategoryBClient)->whereMonth('invoice_month', $month->month)->get();
+
+        $clientBReceipts = [];
+
+        foreach($clientBInvoices as $invoice)
+            {
+                // collect invoices
+               $clientBReceipts['cash'][] =  $invoice->receipt()->pluck('cash_amount');
+               $clientBReceipts['momo'][] =  $invoice->receipt()->pluck('momo_amount');
+               $clientBReceipts['transfer'][] =  $invoice->receipt()->pluck('transfer_amount');
+               $clientBReceipts['cheque'][] =  $invoice->receipt()->pluck('cheque_amount');
+            }
+
+        // dd(collect($clientBReceipts['cheque'])->flatten()->sum());
+
         $clientBInvoicesGuards = $this->totalInvoiceGuards($clientBInvoices);
        
         // SUM ALL SALARIES FOR WITH PAYEMNT STATUS PENDING OR APPROVED AND PAYEMENT TYPE IS CASH FOR CLIENTS IN CATEGORY B
@@ -234,6 +226,20 @@ class SalaryController extends Controller
 
                 // SUM ALL INVOICES FOR CLIENTS IN CATEGORY C
         $clientCInvoices = Invoice::whereIn('client_id', $CategoryCClient)->whereMonth('invoice_month', $month->month)->get();
+
+        $clientCReceipts = [];
+
+        foreach($clientCInvoices as $invoice)
+            {
+                // collect invoices
+               $clientCReceipts['cash'][] =  $invoice->receipt()->pluck('cash_amount');
+               $clientCReceipts['momo'][] =  $invoice->receipt()->pluck('momo_amount');
+               $clientCReceipts['transfer'][] =  $invoice->receipt()->pluck('transfer_amount');
+               $clientCReceipts['cheque'][] =  $invoice->receipt()->pluck('cheque_amount');
+            }
+
+        // dd(collect($clientCReceipts['cheque'])->flatten()->sum());
+
         $clientCInvoicesGuards = $this->totalInvoiceGuards($clientCInvoices);
        
         // SUM ALL SALARIES FOR WITH PAYEMNT STATUS PENDING OR APPROVED AND PAYEMENT TYPE IS CASH FOR CLIENTS IN CATEGORY C
@@ -254,6 +260,20 @@ class SalaryController extends Controller
 
                 // SUM ALL INVOICES FOR CLIENTS IN CATEGORY D
         $clientDInvoices = Invoice::whereIn('client_id', $CategoryDClient)->whereMonth('invoice_month', $month->month)->get();
+
+        $clientDReceipts = [];
+
+        foreach($clientDInvoices as $invoice)
+            {
+                // collect invoices
+               $clientDReceipts['cash'][] =  $invoice->receipt()->pluck('cash_amount');
+               $clientDReceipts['momo'][] =  $invoice->receipt()->pluck('momo_amount');
+               $clientDReceipts['transfer'][] =  $invoice->receipt()->pluck('transfer_amount');
+               $clientDReceipts['cheque'][] =  $invoice->receipt()->pluck('cheque_amount');
+            }
+
+        // dd(collect($clientDReceipts['cheque'])->flatten()->sum());
+
         $clientDInvoicesGuards = $this->totalInvoiceGuards($clientDInvoices);
        
         // SUM ALL SALARIES FOR WITH PAYEMNT STATUS PENDING OR APPROVED AND PAYEMENT TYPE IS CASH FOR CLIENTS IN CATEGORY D
@@ -268,7 +288,7 @@ class SalaryController extends Controller
 
        
         // dd( $clientA);
-        return view('salaries.salariesmonth', compact('clientA', 'clientAInvoices', 'clientAInvoicesGuards', 'clientACash', 'clientABank', 'clientB', 'clientBInvoices', 'clientBInvoicesGuards', 'clientBCash', 'clientBBank','clientC', 'clientCInvoices', 'clientCInvoicesGuards', 'clientCCash', 'clientCBank', 'clientD', 'clientDInvoices', 'clientDInvoicesGuards', 'clientDCash', 'clientDBank', 'clientAHold','clientBHold', 'clientCHold', 'clientDHold','salariesClients', 'salariesClientsHold','groupedBankSalaries','groupedCashkSalaries', 'salariesTaxes', 'salariesPensions', 'month', 'salariesMaster', 'salariesOvertime', 'salariesIOU', 'salariesBoots'));
+        return view('salaries.salariesmonth', compact('clientA', 'clientAReceipts', 'clientAInvoices', 'clientAInvoicesGuards', 'clientACash', 'clientABank', 'clientB', 'clientBReceipts', 'clientBInvoices', 'clientBInvoicesGuards', 'clientBCash', 'clientBBank','clientC', 'clientCReceipts', 'clientCInvoices', 'clientCInvoicesGuards', 'clientCCash', 'clientCBank', 'clientD', 'clientDReceipts', 'clientDInvoices', 'clientDInvoicesGuards', 'clientDCash', 'clientDBank', 'clientAHold','clientBHold', 'clientCHold', 'clientDHold','salariesClients', 'salariesClientsHold','groupedBankSalaries','groupedCashkSalaries', 'salariesTaxes', 'salariesPensions', 'month', 'salariesMaster', 'salariesOvertime', 'salariesIOU', 'salariesBoots'));
     }
 
 

@@ -173,7 +173,7 @@ class SalaryBankExport implements FromQuery, WithMapping , WithHeadings, WithDra
 
                 // Append the formula for total (e.g., column C)
                 $event->sheet->setCellValue('M4', 'Total');
-                $event->sheet->setCellValue('N4', '=SUM(M6:M' . $lastRow . ')');
+                $event->sheet->setCellValue('N4', '=SUM(N6:N' . $lastRow . ')');
 
                 // Optional: Style the total row (Bold) HOW TO GET DYNAMIC ROW ('J'.$totalRow.':K'.$totalRow)
                 $event->sheet->getStyle('M4:N4')
