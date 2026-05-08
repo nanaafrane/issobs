@@ -1502,7 +1502,8 @@
                                         <th> Edit </th>
                                         <th> View </th>
                                         <!-- <th> Bulk Cash</th> -->
-                                        <th>Payment Status</th>
+                                        <th> Payment Status</th>
+                                        <th> Category </th>
                                         <th> id</th>
                                         <th> Salary Month </th>
                                         <th> employee_id </th>
@@ -1571,7 +1572,7 @@
                                                     <td> <span class="badge bg-label-success"> {{ $salary->payment_status }} </span> </td>
                                                     @endif
 
-
+                                                    <td> @if ( $salary->client?->category_month == \Carbon\Carbon::parse($month)->format('Y-m-d') ) {{ $salary->client?->category_name }} @endif </td>
                                                     <td> {{ $salary->id }} </td>
                                                     <td> {{$salary->salary_month?->format('F, Y')}} </td>
                                                     <td> {{ $salary?->employee_id }} </td>

@@ -171,27 +171,28 @@ class SalaryController extends Controller
         //             }
         //         }   
 
-        // $clientAReceipts = collect('');
-        // foreach($clientAInvoices as $invoice)
-        //     {
-        //         // collect invoices
-        //         $clientAReceipts['cash'][] = $clientAReceipts->push( $invoice->receipt()->pluck('cash_amount'));
-        //         $clientAReceipts['momo'][] = $clientAReceipts->push( $invoice->receipt()->pluck('momo_amount'));
-        //         $clientAReceipts['transfer'][] = $clientAReceipts->push( $invoice->receipt()->pluck('transfer_amount'));
-        //         $clientAReceipts['cheque'][] = $clientAReceipts->push( $invoice->receipt()->pluck('cheque_amount'));
+        $clientAReceipts = [];
 
-        //     //    $clientAReceipts['cash'][] =  $invoice->receipt()->pluck('cash_amount');
-        //     //    $clientAReceipts['momo'][] =  $invoice->receipt()->pluck('momo_amount');
-        //     //    $clientAReceipts['transfer'][] =  $invoice->receipt()->pluck('transfer_amount');
-        //     //    $clientAReceipts['cheque'][] =  $invoice->receipt()->pluck('cheque_amount');
-        //     }
-        //     // sum cash, momo, transfer, cheque payments for client A
-        //     // $clientAReceipts['cash'] = $clientAReceipts['cash'];
-        //     // $clientAReceipts['momo'] = $clientAReceipts['momo'];
-        //     // $clientAReceipts['transfer'] = $clientAReceipts['transfer'];
-        //     // $clientAReceipts['cheque'] = $clientAReceipts['cheque'];
+        foreach($clientAInvoices as $invoice)
+            {
+                // collect invoices
+                // $clientAReceipts['cash'] = $clientAReceipts->push( $invoice->receipt()->pluck('cash_amount'));
+                // $clientAReceipts['momo'] = $clientAReceipts->push( $invoice->receipt()->pluck('momo_amount'));
+                // $clientAReceipts['transfer'] = $clientAReceipts->push( $invoice->receipt()->pluck('transfer_amount'));
+                // $clientAReceipts['cheque'] = $clientAReceipts->push( $invoice->receipt()->pluck('cheque_amount'));
 
-        // dd($clientAReceipts);
+               $clientAReceipts['cash'][] =  $invoice->receipt()->pluck('cash_amount');
+               $clientAReceipts['momo'][] =  $invoice->receipt()->pluck('momo_amount');
+               $clientAReceipts['transfer'][] =  $invoice->receipt()->pluck('transfer_amount');
+               $clientAReceipts['cheque'][] =  $invoice->receipt()->pluck('cheque_amount');
+            }
+            // sum cash, momo, transfer, cheque payments for client A
+            // $clientAReceipts['cash'] = $clientAReceipts['cash'];
+            // $clientAReceipts['momo'] = $clientAReceipts['momo'];
+            // $clientAReceipts['transfer'] = $clientAReceipts['transfer'];
+            // $clientAReceipts['cheque'] = $clientAReceipts['cheque'];
+
+        // dd(collect($clientAReceipts['cheque'])->flatten()->sum());
 
         $clientAInvoicesGuards = $this->totalInvoiceGuards($clientAInvoices);
         // SUM ALL SALARIES FOR WITH PAYEMNT STATUS PENDING OR APPROVED AND PAYEMENT TYPE IS CASH FOR CLIENTS IN CATEGORY A
