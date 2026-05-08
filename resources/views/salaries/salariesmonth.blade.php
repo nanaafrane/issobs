@@ -339,7 +339,7 @@
                         <p class="mb-1"><strong> CATEGORY A  </strong></p>
                         <h4 class="card-title mb-3 text-white"><strong> &#x20B5; {{ number_format($clientA->sum('net_salary'), 2) }} </strong> </h4> 
                         <small class="fw-medium"> <strong>  INVOICES :  &#x20B5; {{ number_format($clientAInvoices->sum('total'), 2) }}  </strong> </small> <br>
-                        <small class="fw-medium"> <strong>  RECEIPTS :  &#x20B5; {{ number_format( collect($clientAReceipts['transfer'])->flatten()->sum() + collect($clientAReceipts['cheque'])->flatten()->sum() + collect($clientAReceipts['cash'])->flatten()->sum() + collect($clientAReceipts['momo'])->flatten()->sum(), 2) }}  </strong> </small> <br>
+                        <small class="fw-medium"> <strong>  RECEIPTS :  &#x20B5; @if (isset($clientAReceipts)) {{ number_format( collect($clientAReceipts['transfer'])->flatten()->sum() + collect($clientAReceipts['cheque'])->flatten()->sum() + collect($clientAReceipts['cash'])->flatten()->sum() + collect($clientAReceipts['momo'])->flatten()->sum(), 2) }}  @endif </strong> </small> <br>
                         <small class="fw-medium"> CLIENTS :   {{ $clientA->count()  }} </small> <br>
                         <small class="fw-medium"> EMPLOYEES : {{ $clientA->sum('total_employees') }} </small> <br>
                         <small class="fw-medium text-danger"> <strong> HOLD : {{ $clientAHold->sum('total_employees') }} </strong> </small> <br>
@@ -367,7 +367,7 @@
                         <p class="mb-1"><strong> CATEGORY B </strong></p>
                         <h4 class="card-title mb-3 text-white"><strong> &#x20B5; {{ number_format($clientB->sum('net_salary'), 2) }} </strong> </h4> 
                         <small class="fw-medium"> <strong>  INVOICES :  &#x20B5; {{ number_format($clientBInvoices->sum('total'), 2) }} </strong> </small> <br>
-                        <small class="fw-medium"> <strong>  RECEIPTS :  &#x20B5; {{ number_format( collect($clientBReceipts['transfer'])->flatten()->sum() + collect($clientBReceipts['cheque'])->flatten()->sum() + collect($clientBReceipts['cash'])->flatten()->sum() + collect($clientBReceipts['momo'])->flatten()->sum(), 2) }} </strong> </small> <br>
+                        <small class="fw-medium"> <strong>  RECEIPTS :  &#x20B5; @if (isset($clientBReceipts)) {{ number_format( collect($clientBReceipts['transfer'])->flatten()->sum() + collect($clientBReceipts['cheque'])->flatten()->sum() + collect($clientBReceipts['cash'])->flatten()->sum() + collect($clientBReceipts['momo'])->flatten()->sum(), 2) }} @endif </strong> </small> <br>
                         <small class="fw-medium"> CLIENTS :  {{ $clientB->count() }} </small> <br>
                         <small class="fw-medium"> EMPLOYEES : {{ $clientB->sum('total_employees') }} </small>  <br>
                         <small class="fw-medium text-danger"> <strong> HOLD : {{ $clientBHold->sum('total_employees') }} </strong> </small>  <br>
@@ -394,7 +394,7 @@
                         <p class="mb-1"><strong> CATEGORY C  </strong></p>
                         <h4 class="card-title mb-3 text-white"><strong> &#x20B5; {{ number_format($clientC->sum('net_salary'), 2) }} </strong> </h4> 
                         <small class="fw-medium"> <strong>  INVOICES :  &#x20B5; {{ number_format($clientCInvoices->sum('total'), 2) }} </strong> </small> <br>
-                        <small class="fw-medium"> <strong>  RECEIPTS :  &#x20B5; {{ number_format( collect($clientCReceipts['transfer'])->flatten()->sum() + collect($clientCReceipts['cheque'])->flatten()->sum() + collect($clientCReceipts['cash'])->flatten()->sum() + collect($clientCReceipts['momo'])->flatten()->sum(), 2) }} </strong> </small> <br>
+                        <small class="fw-medium"> <strong>  RECEIPTS :  &#x20B5; @if (isset($clientCReceipts)) {{ number_format( collect($clientCReceipts['transfer'])->flatten()->sum() + collect($clientCReceipts['cheque'])->flatten()->sum() + collect($clientCReceipts['cash'])->flatten()->sum() + collect($clientCReceipts['momo'])->flatten()->sum(), 2) }} @endif </strong> </small> <br>
                         <small class="fw-medium"> CLIENTS : {{ $clientC->count() }} </small> <br>
                         <small class="fw-medium"> EMPLOYEES : {{ $clientC->sum('total_employees') }} </small> <br>
                         <small class="fw-medium text-danger"> <strong> HOLD : {{ $clientCHold->sum('total_employees') }} </strong> </small> <br>
@@ -421,7 +421,7 @@
                         <p class="mb-1"><strong> CATEGORY D  </strong></p>
                         <h4 class="card-title mb-3 text-white"><strong> &#x20B5; {{ number_format($clientD->sum('net_salary'), 2) }} </strong> </h4> 
                         <small class="fw-medium"> <strong>  INVOICES :  &#x20B5; {{ number_format($clientDInvoices->sum('total'), 2) }} </strong> </small> <br>
-                        <small class="fw-medium"> <strong>  RECEIPTS :  &#x20B5; {{ number_format( collect($clientDReceipts['transfer'])->flatten()->sum() + collect($clientDReceipts['cheque'])->flatten()->sum() + collect($clientDReceipts['cash'])->flatten()->sum() + collect($clientDReceipts['momo'])->flatten()->sum(), 2) }} </strong> </small> <br>
+                        <small class="fw-medium"> <strong>  RECEIPTS :  &#x20B5; @if (isset($clientDReceipts)) {{ number_format( collect($clientDReceipts['transfer'])->flatten()->sum() + collect($clientDReceipts['cheque'])->flatten()->sum() + collect($clientDReceipts['cash'])->flatten()->sum() + collect($clientDReceipts['momo'])->flatten()->sum(), 2) }} @endif </strong> </small> <br>
                         <small class="fw-medium"> CLIENTS :  {{ $clientD->count() }} </small> <br>
                         <small class="fw-medium"> EMPLOYEES : {{ $clientD->sum('total_employees') }} </small> <br>
                         <small class="fw-medium text-danger"> <strong> HOLD : {{ $clientDHold->sum('total_employees') }} </strong> </small> <br>
