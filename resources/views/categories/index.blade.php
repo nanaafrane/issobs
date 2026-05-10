@@ -3,6 +3,7 @@
     @section('css')
     <link rel="stylesheet" href="https://cdn.datatables.net/2.3.3/css/dataTables.dataTables.css" />
     <link rel="stylesheet" href="https://cdn.datatables.net/buttons/3.2.4/css/buttons.dataTables.css">
+    <link href="https://cdn.datatables.net/columncontrol/1.1.1/css/columnControl.dataTables.min.css" rel="stylesheet">
     @endsection
 
 
@@ -427,6 +428,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
     <script src="https://cdn.datatables.net/buttons/3.2.4/js/buttons.html5.min.js"></script>
+    <script src="https://cdn.datatables.net/columncontrol/1.1.1/js/dataTables.columnControl.min.js"></script>
 
 
     <script>
@@ -438,20 +440,6 @@
                     buttons: ['excelHtml5', 'pdfHtml5']
                 }
             }
-        });
-    </script>
-
-    <script>
-        new DataTable('#myTable1', {
-            responsive: true,
-           
-            //             layout: {
-            //     topStart: {
-            //         buttons: ['excelHtml5']
-            //     }
-            // }
-
-
         });
     </script>
 
