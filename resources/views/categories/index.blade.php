@@ -439,7 +439,11 @@
                 topStart: {
                     buttons: ['excelHtml5', 'pdfHtml5']
                 }
-            }
+            },
+
+             columnControl: [
+                ['search']
+            ]
         });
     </script>
 
