@@ -361,6 +361,7 @@
                         <tr>
                             <th> #</th>
                             <th>Client Name</th>
+                            <th>Field</th>
                             <th> Name</th>
                             <th> Month</th>
                             <th>Staff</th>
@@ -373,6 +374,7 @@
                         <tr>
                             <td> {{$key + 1}} </td>
                             <td> {{ $category->client?->name }} {{ $category->client?->business_name }} </td>
+                            <td> {{ $category->client?->field?->name }} </td>
                             <td> {{$category?->name}}</td>
                             <td> {{ $category->category_month?->format('F Y') }} </td>
                             <td> {{ $category->user?->name }} </td>
