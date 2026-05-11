@@ -955,10 +955,10 @@
                                                         {{ collect($guardsb)->sum() }}
                                                     </td>
                                                     <td>  {{ $catBinv->pluck('status') }} </td>
-                                                    <td> GH&#x20B5; {{ number_format($catB->paid, 2) }} </td>
-                                                    <td> GH&#x20B5; {{ number_format($catBinv->sum('total') - $catB->paid, 2) }} </td>
+                                                    <td> GH&#x20B5; {{ number_format($catB->net_salary, 2) }} </td>
+                                                    <td> GH&#x20B5; {{ number_format($catBinv->sum('total') - $catB->net_salary, 2) }} </td>
                                                 
-                                                    @if( $catBinv->sum('total') <= $catB->paid )
+                                                    @if( $catBinv->sum('total') <= $catB->net_salary )
                                                         <td><span class="badge bg-label-danger"> Loss </span></td>
                                                     @else
                                                         <td><span class="badge bg-label-success"> Profit </span></td>
@@ -1037,10 +1037,10 @@
                                                         {{ collect($guardsc)->sum() }}
                                                     </td>
                                                     <td>  {{ $catCinv->pluck('status') }} </td>
-                                                    <td> GH&#x20B5; {{ number_format($catC->paid, 2) }} </td>
-                                                    <td> GH&#x20B5; {{ number_format($catCinv->sum('total') - $catC->paid, 2) }} </td>
+                                                    <td> GH&#x20B5; {{ number_format($catC->net_salary, 2) }} </td>
+                                                    <td> GH&#x20B5; {{ number_format($catCinv->sum('total') - $catC->net_salary, 2) }} </td>
                                                 
-                                                    @if( $catCinv->sum('total') <= $catC->paid )
+                                                    @if( $catCinv->sum('total') <= $catC->net_salary )
                                                         <td><span class="badge bg-label-danger"> Loss </span></td>
                                                     @else
                                                         <td><span class="badge bg-label-success"> Profit </span></td>
@@ -1119,10 +1119,10 @@
                                                         {{ collect($guardsd)->sum() }}
                                                     </td>
                                                     <td>  {{ $catDinv->pluck('status') }} </td>
-                                                    <td> GH&#x20B5; {{ number_format($catD->paid, 2) }} </td>
-                                                    <td> GH&#x20B5; {{ number_format($catDinv->sum('total') - $catD->paid, 2) }} </td>
+                                                    <td> GH&#x20B5; {{ number_format($catD->net_salary, 2) }} </td>
+                                                    <td> GH&#x20B5; {{ number_format($catDinv->sum('total') - $catD->net_salary, 2) }} </td>
                                                 
-                                                    @if( $catDinv->sum('total') <= $catD->paid )
+                                                    @if( $catDinv->sum('total') <= $catD->net_salary )
                                                         <td><span class="badge bg-label-danger"> Loss </span></td>
                                                     @else
                                                         <td><span class="badge bg-label-success"> Profit </span></td>
@@ -1754,10 +1754,10 @@
 
                                                     <td> GH&#x20B5; {{ number_format( $catAHold->client?->invoices()->whereMonth('invoice_month', $month->month)->sum('total'),2)  }} </td>
                                                     <td>  {{ $catAHold->client?->invoices()->whereMonth('invoice_month', $month->month)->pluck('status') }} </td>
-                                                    <td> GH&#x20B5; {{ number_format($catAHold->paid, 2) }} </td>
-                                                    <td> GH&#x20B5; {{ number_format($catAHold->client?->invoices()->whereMonth('invoice_month', $month->month)->sum('total') - $catAHold->paid, 2) }} </td>
+                                                    <td> GH&#x20B5; {{ number_format($catAHold->net_salary, 2) }} </td>
+                                                    <td> GH&#x20B5; {{ number_format($catAHold->client?->invoices()->whereMonth('invoice_month', $month->month)->sum('total') - $catAHold->net_salary, 2) }} </td>
                                                 
-                                                    @if( $catAHold->client?->invoices()->whereMonth('invoice_month', $month->month)->sum('total') <= $catAHold->paid )
+                                                    @if( $catAHold->client?->invoices()->whereMonth('invoice_month', $month->month)->sum('total') <= $catAHold->net_salary )
                                                         <td><span class="badge bg-label-danger"> Loss </span></td>
                                                     @else
                                                         <td><span class="badge bg-label-success"> Profit </span></td>
@@ -1802,10 +1802,10 @@
 
                                                     <td> GH&#x20B5; {{ number_format( $catBHold->client?->invoices()->whereMonth('invoice_month', $month->month)->sum('total'),2)  }} </td>
                                                     <td>  {{ $catBHold->client?->invoices()->whereMonth('invoice_month', $month->month)->pluck('status') }} </td>
-                                                    <td> GH&#x20B5; {{ number_format($catBHold->paid, 2) }} </td>
-                                                    <td> GH&#x20B5; {{ number_format($catBHold->client?->invoices()->whereMonth('invoice_month', $month->month)->sum('total') - $catBHold->paid, 2) }} </td>
+                                                    <td> GH&#x20B5; {{ number_format($catBHold->net_salary, 2) }} </td>
+                                                    <td> GH&#x20B5; {{ number_format($catBHold->client?->invoices()->whereMonth('invoice_month', $month->month)->sum('total') - $catBHold->net_salary, 2) }} </td>
                                                 
-                                                    @if( $catBHold->client?->invoices()->whereMonth('invoice_month', $month->month)->sum('total') <= $catBHold->paid )
+                                                    @if( $catBHold->client?->invoices()->whereMonth('invoice_month', $month->month)->sum('total') <= $catBHold->net_salary )
                                                         <td><span class="badge bg-label-danger"> Loss </span></td>
                                                     @else
                                                         <td><span class="badge bg-label-success"> Profit </span></td>
@@ -1851,10 +1851,10 @@
 
                                                     <td> GH&#x20B5; {{ number_format( $catCHold->client?->invoices()->whereMonth('invoice_month', $month->month)->sum('total'),2)  }} </td>
                                                     <td>  {{ $catCHold->client?->invoices()->whereMonth('invoice_month', $month->month)->pluck('status') }} </td>
-                                                    <td> GH&#x20B5; {{ number_format($catCHold->paid, 2) }} </td>
-                                                    <td> GH&#x20B5; {{ number_format($catCHold->client?->invoices()->whereMonth('invoice_month', $month->month)->sum('total') - $catCHold->paid, 2) }} </td>
+                                                    <td> GH&#x20B5; {{ number_format($catCHold->net_salary, 2) }} </td>
+                                                    <td> GH&#x20B5; {{ number_format($catCHold->client?->invoices()->whereMonth('invoice_month', $month->month)->sum('total') - $catCHold->net_salary, 2) }} </td>
                                                 
-                                                    @if( $catCHold->client?->invoices()->whereMonth('invoice_month', $month->month)->sum('total') <= $catCHold->paid )
+                                                    @if( $catCHold->client?->invoices()->whereMonth('invoice_month', $month->month)->sum('total') <= $catCHold->net_salary )
                                                         <td><span class="badge bg-label-danger"> Loss </span></td>
                                                     @else
                                                         <td><span class="badge bg-label-success"> Profit </span></td>
@@ -1900,10 +1900,10 @@
 
                                                     <td> GH&#x20B5; {{ number_format( $catDHold->client?->invoices()->whereMonth('invoice_month', $month->month)->sum('total'),2)  }} </td>
                                                     <td>  {{ $catDHold->client?->invoices()->whereMonth('invoice_month', $month->month)->pluck('status') }} </td>
-                                                    <td> GH&#x20B5; {{ number_format($catDHold->paid, 2) }} </td>
-                                                    <td> GH&#x20B5; {{ number_format($catDHold->client?->invoices()->whereMonth('invoice_month', $month->month)->sum('total') - $catDHold->paid, 2) }} </td>
+                                                    <td> GH&#x20B5; {{ number_format($catDHold->net_salary, 2) }} </td>
+                                                    <td> GH&#x20B5; {{ number_format($catDHold->client?->invoices()->whereMonth('invoice_month', $month->month)->sum('total') - $catDHold->net_salary, 2) }} </td>
                                                 
-                                                    @if( $catDHold->client?->invoices()->whereMonth('invoice_month', $month->month)->sum('total') <= $catDHold->paid )
+                                                    @if( $catDHold->client?->invoices()->whereMonth('invoice_month', $month->month)->sum('total') <= $catDHold->net_salary )
                                                         <td><span class="badge bg-label-danger"> Loss </span></td>
                                                     @else
                                                         <td><span class="badge bg-label-success"> Profit </span></td>
