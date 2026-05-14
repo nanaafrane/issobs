@@ -364,6 +364,7 @@
                             <th>Field</th>
                             <th> Name</th>
                             <th> Month</th>
+                            <th>Period</th>
                             <th>Staff</th>
                             <th>Action</th>
                         </tr>
@@ -377,6 +378,7 @@
                             <td> {{ $category->client?->field?->name }} </td>
                             <td> {{$category?->name}}</td>
                             <td> {{ $category->category_month?->format('F Y') }} </td>
+                            <td> {{ $category->category_month?->format('F l d, Y, H:i A') }} </td>
                             <td> {{ $category->user?->name }} </td>
                             <td>
                                 <div class="dropdown">
