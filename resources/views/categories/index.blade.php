@@ -378,7 +378,7 @@
                             <td> {{ $category->client?->field?->name }} </td>
                             <td> {{$category?->name}}</td>
                             <td> {{ $category->category_month?->format('F Y') }} </td>
-                            <td> {{ $category->category_month?->format('F l d, Y, H:i A') }} </td>
+                            <td> {{ $category->updated_at?->format('F l d, Y, H:i A') }} </td>
                             <td> {{ $category->user?->name }} </td>
                             <td>
                                 <div class="dropdown">
