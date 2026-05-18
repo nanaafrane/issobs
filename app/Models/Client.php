@@ -25,6 +25,7 @@ class Client extends Model
         'field_id',
         'status',
         'user_id',
+        'category_id',
         'category_name',
         'category_month',
     ];
@@ -43,6 +44,16 @@ class Client extends Model
     public function invoices () : HasMany
     {
         return $this->hasMany(Invoice::class);
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function category()
+    {
+        return $this->belongsTo(category::class);
     }
 
 

@@ -22,6 +22,7 @@ return new class extends Migration
             $table->string('map')->nullable();
             $table->integer('field_id')->nullable();
             $table->integer('user_id')->nullable();
+            $table->integer('category_id')->nullable();
             $table->string('category_name')->nullable();
             $table->date('category_month')->nullable();
             $table->timestamps();

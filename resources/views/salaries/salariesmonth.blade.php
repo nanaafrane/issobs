@@ -282,49 +282,8 @@
 
          @if(Auth::user()->hasRole(['Invoice','Manager', 'Finance Manager' ]))
         <div class="row">
-            <div class="col-lg-2 h-100" >
-                <div  class="card h-100 bg-dark text-white">
-                    <div class="card-body">
-                        <div class="card-title d-flex align-items-start justify-content-between mb-4">
-                            <div class="avatar flex-shrink-0">
-                                <img
-                                    src="{{ asset('img/icons/unicons/paypal.png') }}"
-                                    alt="chart success"
-                                    class="rounded" />
-                            </div>
-                        </div>
-                        <p class="mb-1"><strong> BANKS </strong> </p>
-                        <h4 class="card-title mb-3 text-white"><strong> &#x20B5;  {{ number_format($groupedBankSalaries->sum('paid'), 2) }} </strong> </h4> 
-                        <!-- <small class="fw-medium">TOTAL DEDUCTIONS : </small> <br> -->
-                        <!-- <small class="fw-medium"> GH&#x20B5;  {{ number_format($groupedBankSalaries->sum('deductions'), 2) }}  </small> <br> -->
-                        <small class="fw-medium"> EMPLOYEES : {{ $groupedBankSalaries->sum('total_employees') }}  </small>
 
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-lg-2 h-100">
-                <div  class="card h-100 bg-dark text-white">
-                    <div class="card-body">
-                        <div class="card-title d-flex align-items-start justify-content-between mb-4">
-                            <div class="avatar flex-shrink-0">
-                                <img
-                                    src="{{ asset('img/icons/unicons/paypal.png') }}"
-                                    alt="chart success"
-                                    class="rounded" />
-                            </div>
-                        </div>
-                        <p class="mb-1"><strong> CASH </strong></p>
-                        <h4 class="card-title mb-3 text-white"><strong> &#x20B5; {{ number_format($groupedCashkSalaries->sum('paid'), 2) }} </strong> </h4> 
-                        <!-- <small class="fw-medium">TOTAL DEDUCTIONS : </small> <br> -->
-                        <!-- <small class="fw-medium"> GH&#x20B5;  {{ number_format($groupedCashkSalaries->sum('deductions'), 2) }}  </small> <br> -->
-                        <small class="fw-medium"> EMPLOYEES : {{ $groupedCashkSalaries->sum('total_employees') }}  </small>
-                    </div>
-                </div>
-            </div>
-
-
-            <div class="col-lg-2">
+        <div class="col-lg-3">
                 <div  class="card h-100 bg-secondary text-white">
                     <div class="card-body">
                         <div class="card-title d-flex align-items-start justify-content-between mb-4">
@@ -334,17 +293,19 @@
                                     alt="chart dark"
                                     class="rounded" />
                             </div>
+                        <h5 class="mb-1 text-white"><strong> CATEGORY A  </strong></h5>
 
                         </div>
-                        <p class="mb-1"><strong> CATEGORY A  </strong></p>
-                        <h4 class="card-title mb-3 text-white"><strong> &#x20B5; {{ number_format($clientA->sum('net_salary'), 2) }} </strong> </h4> 
+                        <h2 class="card-title mb-3 text-white"><strong> &#x20B5; {{ number_format($clientA->sum('net_salary'), 2) }} </strong> </h2> 
                         <small class="fw-medium"> <strong>  INVOICES :  &#x20B5; {{ number_format($clientAInvoices->sum('total'), 2) }}  </strong> </small> <br>
                         <small class="fw-medium"> <strong>  RECEIPTS :  &#x20B5; @if (isset($clientAReceipts['transfer'])) {{ number_format( collect($clientAReceipts['transfer'])->flatten()->sum() + collect($clientAReceipts['cheque'])->flatten()->sum() + collect($clientAReceipts['cash'])->flatten()->sum() + collect($clientAReceipts['momo'])->flatten()->sum(), 2) }} @endif </strong> </small> <br>
                         <small class="fw-medium"> CLIENTS :   {{ $clientA->count()  }} </small> <br>
-                        <small class="fw-medium"> EMPLOYEES : {{ $clientA->sum('total_employees') }} </small> <br>
-                        <small class="fw-medium text-danger"> <strong> HOLD : {{ $clientAHold->sum('total_employees') }} </strong> </small> <br>
+                        
+                        <div class="d-flex justify-content-between">
+                            <div> <small class="fw-medium"> EMPLOYEES : {{ $clientA->sum('total_employees') }} </small>    </div>   
+                            <div>  <small class="fw-medium text-danger"> <strong> HOLD : {{ $clientAHold->sum('total_employees') }} </strong> </small> </div>
+                        </div>
                         <small class="fw-medium">  INVOICE GUARDS : {{ $clientAInvoicesGuards }}</small>
-
                         <hr>
                         <small class="fw-medium"> <strong>  CASH : &#x20B5; {{ number_format($clientACash->sum('net_salary'), 2) }} | {{ $clientACash->count() }} </strong> </small> <br>
                         <small class="fw-medium"> <strong>  BANK : &#x20B5; {{ number_format($clientABank->sum('net_salary'), 2) }} | {{ $clientABank->count() }} </strong> </small>
@@ -352,7 +313,7 @@
                 </div>
             </div>
 
-            <div class="col-lg-2">
+            <div class="col-lg-3">
                 <div  class="card h-100 bg-secondary text-white">
                     <div class="card-body">
                         <div class="card-title d-flex align-items-start justify-content-between mb-4">
@@ -362,15 +323,17 @@
                                     alt="chart dark"
                                     class="rounded" />
                             </div>
+                        <h5 class="mb-1 text-white"><strong> CATEGORY B </strong></h5>
 
                         </div>
-                        <p class="mb-1"><strong> CATEGORY B </strong></p>
-                        <h4 class="card-title mb-3 text-white"><strong> &#x20B5; {{ number_format($clientB->sum('net_salary'), 2) }} </strong> </h4> 
+                        <h2 class="card-title mb-3 text-white"><strong> &#x20B5; {{ number_format($clientB->sum('net_salary'), 2) }} </strong> </h2> 
                         <small class="fw-medium"> <strong>  INVOICES :  &#x20B5; {{ number_format($clientBInvoices->sum('total'), 2) }} </strong> </small> <br>
                         <small class="fw-medium"> <strong>  RECEIPTS :  &#x20B5; @if (isset($clientBReceipts['transfer'])) {{ number_format( collect($clientBReceipts['transfer'])->flatten()->sum() + collect($clientBReceipts['cheque'])->flatten()->sum() + collect($clientBReceipts['cash'])->flatten()->sum() + collect($clientBReceipts['momo'])->flatten()->sum(), 2) }} @endif </strong> </small> <br>
                         <small class="fw-medium"> CLIENTS :  {{ $clientB->count() }} </small> <br>
-                        <small class="fw-medium"> EMPLOYEES : {{ $clientB->sum('total_employees') }} </small>  <br>
-                        <small class="fw-medium text-danger"> <strong> HOLD : {{ $clientBHold->sum('total_employees') }} </strong> </small>  <br>
+                        <div class="d-flex justify-content-between">
+                            <small class="fw-medium"> EMPLOYEES : {{ $clientB->sum('total_employees') }} </small>  
+                            <small class="fw-medium text-danger"> <strong> HOLD : {{ $clientBHold->sum('total_employees') }} </strong> </small> 
+                        </div>
                          <small class="fw-medium">  INVOICE GUARDS : {{ $clientBInvoicesGuards }}</small>
                         <hr>
                         <small class="fw-medium"> <strong>  CASH : &#x20B5; {{ number_format($clientBCash->sum('net_salary'), 2) }} | {{ $clientBCash->count() }} </strong> </small> <br>
@@ -379,7 +342,7 @@
                 </div>
             </div>
 
-            <div class="col-lg-2">
+            <div class="col-lg-3">
                 <div  class="card h-100 bg-secondary text-white">
                     <div class="card-body">
                         <div class="card-title d-flex align-items-start justify-content-between mb-4">
@@ -389,15 +352,17 @@
                                     alt="chart success"
                                     class="rounded" />
                             </div>
+                        <h5 class="mb-1 text-white"><strong> CATEGORY C  </strong></h5>
 
                         </div>
-                        <p class="mb-1"><strong> CATEGORY C  </strong></p>
-                        <h4 class="card-title mb-3 text-white"><strong> &#x20B5; {{ number_format($clientC->sum('net_salary'), 2) }} </strong> </h4> 
+                        <h2 class="card-title mb-3 text-white"><strong> &#x20B5; {{ number_format($clientC->sum('net_salary'), 2) }} </strong> </h2> 
                         <small class="fw-medium"> <strong>  INVOICES :  &#x20B5; {{ number_format($clientCInvoices->sum('total'), 2) }} </strong> </small> <br>
                         <small class="fw-medium"> <strong>  RECEIPTS :  &#x20B5; @if (isset($clientCReceipts['transfer'])) {{ number_format( collect($clientCReceipts['transfer'])->flatten()->sum() + collect($clientCReceipts['cheque'])->flatten()->sum() + collect($clientCReceipts['cash'])->flatten()->sum() + collect($clientCReceipts['momo'])->flatten()->sum(), 2) }} @endif </strong> </small> <br>
                         <small class="fw-medium"> CLIENTS : {{ $clientC->count() }} </small> <br>
-                        <small class="fw-medium"> EMPLOYEES : {{ $clientC->sum('total_employees') }} </small> <br>
-                        <small class="fw-medium text-danger"> <strong> HOLD : {{ $clientCHold->sum('total_employees') }} </strong> </small> <br>
+                       <div class="d-flex justify-content-between">
+                            <small class="fw-medium"> EMPLOYEES : {{ $clientC->sum('total_employees') }} </small> 
+                            <small class="fw-medium text-danger"> <strong> HOLD : {{ $clientCHold->sum('total_employees') }} </strong> </small>
+                       </div>
                          <small class="fw-medium">  INVOICE GUARDS : {{ $clientCInvoicesGuards }}</small>
                         <hr>
                         <small class="fw-medium"> <strong>  CASH : &#x20B5; {{ number_format($clientCCash->sum('net_salary'), 2)  }} |  {{  $clientCCash->count() }} </strong> </small> <br>
@@ -406,7 +371,7 @@
                 </div>
             </div>
 
-            <div class="col-lg-2">
+            <div class="col-lg-3">
                 <div  class="card h-100 bg-secondary text-white">
                     <div class="card-body">
                         <div class="card-title d-flex align-items-start justify-content-between mb-4">
@@ -416,15 +381,17 @@
                                     alt="chart success"
                                     class="rounded" />
                             </div>
+                        <h5 class="mb-1 text-white"><strong> CATEGORY D  </strong></h5>
 
                         </div>
-                        <p class="mb-1"><strong> CATEGORY D  </strong></p>
-                        <h4 class="card-title mb-3 text-white"><strong> &#x20B5; {{ number_format($clientD->sum('net_salary'), 2) }} </strong> </h4> 
+                        <h2 class="card-title mb-3 text-white"><strong> &#x20B5; {{ number_format($clientD->sum('net_salary'), 2) }} </strong> </h2> 
                         <small class="fw-medium"> <strong>  INVOICES :  &#x20B5; {{ number_format($clientDInvoices->sum('total'), 2) }} </strong> </small> <br>
                         <small class="fw-medium"> <strong>  RECEIPTS :  &#x20B5; @if (isset($clientDReceipts['transfer'])) {{ number_format( collect($clientDReceipts['transfer'])->flatten()->sum() + collect($clientDReceipts['cheque'])->flatten()->sum() + collect($clientDReceipts['cash'])->flatten()->sum() + collect($clientDReceipts['momo'])->flatten()->sum(), 2) }} @endif </strong> </small> <br>
                         <small class="fw-medium"> CLIENTS :  {{ $clientD->count() }} </small> <br>
-                        <small class="fw-medium"> EMPLOYEES : {{ $clientD->sum('total_employees') }} </small> <br>
-                        <small class="fw-medium text-danger"> <strong> HOLD : {{ $clientDHold->sum('total_employees') }} </strong> </small> <br>
+                       <div class="d-flex justify-content-between">
+                            <small class="fw-medium"> EMPLOYEES : {{ $clientD->sum('total_employees') }} </small>
+                            <small class="fw-medium text-danger"> <strong> HOLD : {{ $clientDHold->sum('total_employees') }} </strong> </small> 
+                       </div>
                          <small class="fw-medium">  INVOICE GUARDS : {{ $clientDInvoicesGuards }}</small>
                         <hr>
                         <small class="fw-medium"> <strong>  CASH : &#x20B5; {{ number_format($clientDCash->sum('net_salary'), 2) }} | {{ $clientDCash->count() }} </strong> </small> <br>
@@ -437,7 +404,7 @@
 
         <div class="row">
 
-            <div class="col-lg-2" style="transform: translateY(-150px);">
+            <div class="col-lg-2">
                 <div  class="card h-100 bg-dark text-white">
                     <div class="card-body">
                         <div class="card-title d-flex align-items-start justify-content-between mb-4">
@@ -456,7 +423,7 @@
                     </div>
                 </div>
             </div>
-            <div class="col-lg-2" style="transform: translateY(-150px);">
+            <div class="col-lg-2" >
                 <div  class="card h-100 bg-dark text-white">
                     <div class="card-body">
                         <div class="card-title d-flex align-items-start justify-content-between mb-4">
@@ -834,6 +801,7 @@
                                                     <th>#</th>
                                                     <th>Client Name</th>
                                                     <th>Category_Name</th>
+                                                    <th>Category_Date</th>
                                                     <th>Field</th>
                                                     <th>Inv Value</th>
                                                     <th>Inv Guards</th>
@@ -852,15 +820,16 @@
                                                     <td> <input class="checkBoxes form-check-input" type="checkbox" name="client[{{ $key + 1 }}]" value="{{ $catA->client?->id }}" /> </td>
                                                     <td> {{ $key + 1 }} </td>
                                                     <td> {{ $catA->client?->name }} {{ $catA->client?->business_name }} </td>
-                                                    <td> 
-                                                                <select name="name[{{ $key + 1 }}]" class="form-select @error('name') is-invalid @enderror" id="name" value="{{ old('name')}}" required>
-                                                                    <option >Choose...</option>
-                                                                    <option selected value="Category A">Category A </option>
-                                                                    <option value="Category B">Category B </option>
-                                                                    <option value="Category C">Category C </option>
-                                                                    <option value="Category D">Category D </option>
-                                                                </select>
+                                                    <td>
+                                                        <select name="name[{{ $key + 1 }}]" class="form-select @error('name') is-invalid @enderror" id="name" value="{{ old('name')}}" required>
+                                                            <option >Choose...</option>
+                                                            <option selected value="Category A">Category A </option>
+                                                            <option value="Category B">Category B </option>
+                                                            <option value="Category C">Category C </option>
+                                                            <option value="Category D">Category D </option>
+                                                        </select>
                                                     </td>
+                                                    <td> @if( $catA->client?->category_month == \Carbon\Carbon::parse($month)->format('Y-m-d') ) {{ $catA->client?->category?->updated_at?->format('F l d, Y') }} @endif </td>
                                                     <td> {{ $catA->client?->field?->name }} </td>
                                                     <td> @php  $catAinv = $catA->client?->invoices()->whereMonth('invoice_month', $month->month)->get(); @endphp GH&#x20B5; {{  number_format($catAinv->sum('total'), 2)  }} </td>
                                                   
@@ -917,6 +886,7 @@
                                                     <th>#</th>
                                                     <th>Client Name</th>
                                                     <th>Category_Name</th>
+                                                    <th> Category_Date </th>
                                                     <th>Field</th>
                                                     <th>Inv Value</th>
                                                     <th>Inv Guards</th>
@@ -943,6 +913,7 @@
                                                                     <option value="Category D">Category D </option>
                                                                 </select>    
                                                     </td>
+                                                    <td>  @if( $catB->client?->category_month == \Carbon\Carbon::parse($month)->format('Y-m-d') ) {{ $catB->client?->category?->updated_at?->format('F l d, Y') }} @endif </td>
                                                     <td> {{ $catB->client?->field?->name }} </td>
                                                     <td> @php $catBinv = $catB->client?->invoices()->whereMonth('invoice_month', $month->month)->get() @endphp GH&#x20B5; {{ number_format( $catBinv->sum('total'),2)  }} </td>
                                                     <td> 
@@ -999,6 +970,7 @@
                                                     <th>#</th>
                                                     <th>Client Name</th>
                                                     <th>Category_Name</th>
+                                                    <th>Category_Date</th>
                                                     <th>Field</th>
                                                     <th>Inv Value</th>
                                                     <th>Inv Guards</th>
@@ -1025,6 +997,7 @@
                                                                     <option value="Category D">Category D </option>
                                                                 </select>
                                                     </td>
+                                                    <td> @if( $catC->client?->category_month == \Carbon\Carbon::parse($month)->format('Y-m-d') ) {{ $catC->client?->category?->updated_at?->format('F l d, Y') }} @endif </td>
                                                     <td> {{ $catC->client?->field?->name }} </td>
                                                     <td>  @php $catCinv = $catC->client?->invoices()->whereMonth('invoice_month', $month->month)->get() @endphp GH&#x20B5; {{ number_format( $catCinv->sum('total'),2)  }} </td>
                                                     <td>
@@ -1081,6 +1054,7 @@
                                                     <th>#</th>
                                                     <th>Client Name</th>
                                                     <th>Category_Name</th>
+                                                    <th> Category_Date </th>
                                                     <th>Field</th>
                                                     <th>Inv Value</th>
                                                     <th>Inv Guards</th>
@@ -1107,6 +1081,7 @@
                                                             <option selected value="Category D">Category D </option>
                                                         </select>
                                                    </td>
+                                                    <td> @if( $catD->client?->category_month == \Carbon\Carbon::parse($month)->format('Y-m-d') ) {{ $catD->client?->category?->updated_at?->format('F l d, Y') }} @endif </td>
                                                     <td> {{ $catD->client?->field?->name }} </td>
                                                     <td> @php $catDinv = $catD->client?->invoices()->whereMonth('invoice_month', $month->month)->get() @endphp GH&#x20B5; {{ number_format( $catDinv->sum('total'),2)  }} </td>
                                                     <td> 
@@ -1161,6 +1136,7 @@
                                                         <th>#</th>
                                                         <th>Client Name</th>
                                                         <th>Category</th>
+                                                        <th> Category_Date </th>
                                                         <th> Assign New_Category</th>
                                                         <th>Field</th>
                                                         <th>Inv Value</th>
@@ -1179,7 +1155,9 @@
                                                         <td> <input class="checkBoxes form-check-input" type="checkbox" name="client[]" value="{{ $clientMaster->client?->id }}" /> </td>
                                                         <td> {{ $cm + 1 }} </td>
                                                         <td> {{ $clientMaster->client?->name }} {{ $clientMaster->client?->business_name }} </td>
-                                                        <td> @if ( $clientMaster->client?->category_month == \Carbon\Carbon::parse($month)->format('Y-m-d') ) {{ $clientMaster->client?->category_name }} @endif </td>
+                                                        <td> @if ( $clientMaster->client?->category_month == \Carbon\Carbon::parse($month)->format('Y-m-d') ) {{ $clientMaster->client?->category_name }} @endif  </td>
+                                                        <!-- <td>   {{ $clientMaster->client?->category?->name }}  </td> -->
+                                                        <td> @if ( $clientMaster->client?->category_month == \Carbon\Carbon::parse($month)->format('Y-m-d') ) {{ $clientMaster->client?->category?->updated_at?->format('F l d, Y') }} @endif </td>
                                                         <td>
                                                                 <select name="name[]" class="form-select @error('name') is-invalid @enderror" id="name" value="{{ old('name')}}" required>
                                                                     <option selected disabled>Choose...</option>
@@ -1978,6 +1956,1004 @@
             </div>
         </div>
 
+            <br> <br>
+          <hr> <br> <br>
+        <h4> Salary Summary</h4>
+        <div class="row">
+            <!-- FIELD OFFICES SUMMARY -->
+            <div class="col-lg-6">
+                    <div class="nav-align-top">
+                        <ul class="nav nav-pills mb-4 nav-fill" role="tablist">
+                                <li class="nav-item mb-1 mb-sm-0">
+                                    <button
+                                        type="button"
+                                        class="nav-link active"
+                                        role="tab"
+                                        data-bs-toggle="tab"
+                                        data-bs-target="#navs-pills-justified-accrasummary"
+                                        aria-controls="navs-pills-justified-accrasummary"
+                                        aria-selected="false">
+                                        <span class="d-none d-sm-inline-flex align-items-center">
+                                            <i class="icon-base bx bx-home icon-sm me-1_5"></i>ACCRA
+                                            <span class="badge rounded-pill bg-danger ms-1_5">  </span>
+                                        </span>
+                                        <i class="icon-base bx bx-home icon-sm d-sm-none"></i>
+                                    </button>
+                                </li>  
+                                
+                                <li class="nav-item mb-1 mb-sm-0">
+                                    <button
+                                        type="button"
+                                        class="nav-link"
+                                        role="tab"
+                                        data-bs-toggle="tab"
+                                        data-bs-target="#navs-pills-justified-botwesummary"
+                                        aria-controls="navs-pills-justified-botwesummary"
+                                        aria-selected="false">
+                                        <span class="d-none d-sm-inline-flex align-items-center">
+                                            <i class="icon-base bx bx-home icon-sm me-1_5"></i>BOTWE
+                                            <span class="badge rounded-pill bg-danger ms-1_5">  </span>
+                                        </span>
+                                        <i class="icon-base bx bx-home icon-sm d-sm-none"></i>
+                                    </button>
+                                </li>
+                                
+                                <li class="nav-item mb-1 mb-sm-0">
+                                    <button
+                                        type="button"
+                                        class="nav-link"
+                                        role="tab"
+                                        data-bs-toggle="tab"
+                                        data-bs-target="#navs-pills-justified-temasummary"
+                                        aria-controls="navs-pills-justified-temasummary"
+                                        aria-selected="false">
+                                        <span class="d-none d-sm-inline-flex align-items-center">
+                                            <i class="icon-base bx bx-home icon-sm me-1_5"></i>TEMA
+                                            <span class="badge rounded-pill bg-danger ms-1_5">  </span>
+                                        </span>
+                                        <i class="icon-base bx bx-home icon-sm d-sm-none"></i>
+                                    </button>
+                                </li>
+                                
+                                
+                                <li class="nav-item mb-1 mb-sm-0">
+                                    <button
+                                        type="button"
+                                        class="nav-link"
+                                        role="tab"
+                                        data-bs-toggle="tab"
+                                        data-bs-target="#navs-pills-justified-shyhillssummary"
+                                        aria-controls="navs-pills-justified-shyhillssummary"
+                                        aria-selected="false">
+                                        <span class="d-none d-sm-inline-flex align-items-center">
+                                            <i class="icon-base bx bx-home icon-sm me-1_5"></i>SHAIHILLS
+                                            <span class="badge rounded-pill bg-danger ms-1_5">  </span>
+                                        </span>
+                                        <i class="icon-base bx bx-home icon-sm d-sm-none"></i>
+                                    </button>
+                                </li> 
+
+                                <li class="nav-item mb-1 mb-sm-0">
+                                    <button
+                                        type="button"
+                                        class="nav-link"
+                                        role="tab"
+                                        data-bs-toggle="tab"
+                                        data-bs-target="#navs-pills-justified-takoradisummary"
+                                        aria-controls="navs-pills-justified-takoradisummary"
+                                        aria-selected="false">
+                                        <span class="d-none d-sm-inline-flex align-items-center">
+                                            <i class="icon-base bx bx-home icon-sm me-1_5"></i>TAKORADI
+                                            <span class="badge rounded-pill bg-danger ms-1_5">  </span>
+                                        </span>
+                                        <i class="icon-base bx bx-home icon-sm d-sm-none"></i>
+                                    </button>
+                                </li> 
+
+                                <li class="nav-item mb-1 mb-sm-0">
+                                    <button
+                                        type="button"
+                                        class="nav-link"
+                                        role="tab"
+                                        data-bs-toggle="tab"
+                                        data-bs-target="#navs-pills-justified-koforiduasummary"
+                                        aria-controls="navs-pills-justified-koforiduasummary"
+                                        aria-selected="false">
+                                        <span class="d-none d-sm-inline-flex align-items-center">
+                                            <i class="icon-base bx bx-home icon-sm me-1_5"></i>KOFORIDUA
+                                            <span class="badge rounded-pill bg-danger ms-1_5">  </span>
+                                        </span>
+                                        <i class="icon-base bx bx-home icon-sm d-sm-none"></i>
+                                    </button>
+                                </li> 
+
+                                <li class="nav-item mb-1 mb-sm-0">
+                                    <button
+                                        type="button"
+                                        class="nav-link"
+                                        role="tab"
+                                        data-bs-toggle="tab"
+                                        data-bs-target="#navs-pills-justified-kumasisummary"
+                                        aria-controls="navs-pills-justified-kumasisummary"
+                                        aria-selected="false">
+                                        <span class="d-none d-sm-inline-flex align-items-center">
+                                            <i class="icon-base bx bx-home icon-sm me-1_5"></i>KUMASI
+                                            <span class="badge rounded-pill bg-danger ms-1_5">  </span>
+                                        </span>
+                                        <i class="icon-base bx bx-home icon-sm d-sm-none"></i>
+                                    </button>
+                                </li> 
+
+                        </ul>
+
+                        <div class="tab-content">
+                    
+                            <div class="tab-pane fade show active" id="navs-pills-justified-accrasummary" role="tabpanel">
+                                <!-- ACCRA -->
+                                <div class="row">
+                                    <div class="col h-100" >
+                                        <div  class="card h-100 bg-dark text-white">
+                                            <div class="card-body">
+                                                <div class="card-title d-flex align-items-start justify-content-between mb-4">
+                                                    <div class="avatar flex-shrink-0">
+                                                        <img
+                                                            src="{{ asset('img/icons/unicons/paypal.png') }}"
+                                                            alt="chart success"
+                                                            class="rounded" />
+                                                    </div>
+                                                    <h3 class="card-title text-white"> <strong> ACCRA </strong>  </h3>
+                                                </div>
+                                                <div class="row">
+                                                    <div class="col">
+                                                        <!-- TOTAL -->
+                                                        <p class="mb-1"><strong>  TOTAL SALARY </strong> </p>
+                                                        <h4 class="card-title text-white"><strong> &#x20B5;  {{ number_format($salariesMaster->where('field_id', 1)->sum('net_salary'), 2) }} </strong> </h4> 
+                                                        <h6 class="card-title text-white"><strong> &#x20B5; NUMBER OF EMPLOYEES : {{ $salariesMaster->where('field_id', 1)->count() }} </strong> </h6> 
+                                                        <br> <hr style="margin-top: -8px;"> <br>
+                                                    
+                                                        <!-- PAID -->
+                                                        <p class="mb-1"><strong>  TOTAL  PAID </strong> </p>
+                                                        <h4 class="card-title text-info"><strong> &#x20B5;  {{ number_format($salariesMaster->where('field_id', 1)->where('payment_status', 'approved')->sum('net_salary'), 2) }} </strong> </h4> 
+                                                        <h6 class="card-title text-info"><strong> &#x20B5; NUMBER OF EMPLOYEES : {{ $salariesMaster->where('field_id', 1)->where('payment_status', 'approved')->count() }} </strong> </h6> 
+                                                        <br> <hr style="margin-top: -8px;"> <br>
+                                                    
+                                                        <!-- OUTSTANDING -->
+                                                        <p class="mb-0"><strong>  TOTAL  OUTSTANDING </strong> </p>
+                                                        <h4 class="card-title text-danger"><strong> &#x20B5;  {{ number_format($salariesMaster->where('field_id', 1)->whereIn('payment_status', ['pending', 'hold'])->sum('net_salary'), 2) }} </strong> </h4> 
+                                                        <h6 class="card-title text-danger"><strong> &#x20B5; NUMBER OF EMPLOYEES : {{ $salariesMaster->where('field_id', 1)->whereIn('payment_status', ['pending', 'hold'])->count() }} </strong> </h6> 
+                                                        <!-- <br> <hr style="margin-top: -8px;"> <br> -->
+                                                    </div>
+
+                                                    <div class="col ">
+                                                        <!-- TOTAL -->
+                                                        <div class="d-flex justify-content-between">
+                                                                <div> <strong class="text-success">BANK AMOUNT  </strong>  </div>   | 
+                                                                <div> <strong class="text-warning">MOMO AMOUNT  </strong> </div>
+                                                        </div>
+
+                                                        <div class="d-flex justify-content-between">
+                                                                <div>  <h4 class="card-title text-white"><strong> {{ number_format($salariesMaster->where('field_id', 1)->where('payment_type', 'Bank')->sum('net_salary'), 2) }}  </strong> </h4>   </div> 
+                                                                <div>  <h4 class="card-title text-white"><strong>  {{ number_format($salariesMaster->where('field_id', 1)->where('payment_type', 'Cash')->sum('net_salary'), 2) }} </strong> </h4>  </div>   
+                                                        </div>
+                                                    
+                                                        <div class="d-flex justify-content-between">
+                                                                <div> <h6 class="card-title text-white"><strong>  N0 of Emp' : {{ $salariesMaster->where('field_id', 1)->where('payment_type', 'Bank')->count() }} </strong> </h6>   </div>  
+                                                                <div> <h6 class="card-title text-white"><strong>  N0 of Emp' : {{ $salariesMaster->where('field_id', 1)->where('payment_type', 'Cash')->count() }} </strong> </h6>   </div>  
+                                                        </div> 
+                                                        <hr> <br>     
+                                                        
+                                                        <!-- PAID -->
+                                                        <div class="d-flex justify-content-between">
+                                                                <div> <strong class="text-success">BANK PAID  </strong>  </div>   | 
+                                                                <div> <strong class="text-warning">MOMO PAID  </strong> </div>
+                                                        </div>
+
+                                                        <div class="d-flex justify-content-between">
+                                                                <div>  <h4 class="card-title text-info"><strong> {{ number_format($salariesMaster->where('field_id', 1)->where('payment_type', 'Bank')->where('payment_status', 'approved')->sum('net_salary'), 2) }}  </strong> </h4>   </div> 
+                                                                <div>  <h4 class="card-title text-info"><strong>  {{ number_format($salariesMaster->where('field_id', 1)->where('payment_type', 'Cash')->where('payment_status', 'approved')->sum('net_salary'), 2) }} </strong> </h4>  </div>   
+                                                        </div>
+                                                    
+                                                        <div class="d-flex justify-content-between">
+                                                                <div> <h6 class="card-title text-info"><strong>  N0 of Emp' : {{ $salariesMaster->where('field_id', 1)->where('payment_type', 'Bank')->where('payment_status', 'approved')->count() }} </strong> </h6>   </div>  
+                                                                <div> <h6 class="card-title text-info"><strong>  N0 of Emp' : {{ $salariesMaster->where('field_id', 1)->where('payment_type', 'Cash')->where('payment_status', 'approved')->count() }} </strong> </h6>   </div>  
+                                                        </div> 
+                                                        <hr> <br>  
+
+                                                        <!-- OUTSTANDING -->
+                                                        <div class="d-flex justify-content-between">
+                                                                <div> <strong class="text-success">BANK OUTSTD'N  </strong>  </div>   | 
+                                                                <div> <strong class="text-warning">MOMO OUTSTD'N  </strong> </div>
+                                                        </div>
+
+                                                        <div class="d-flex justify-content-between">
+                                                                <div>  <h4 class="card-title text-danger"><strong> {{ number_format($salariesMaster->where('field_id', 1)->where('payment_type', 'Bank')->whereIn('payment_status', ['hold', 'pending', 'rejected'])->sum('net_salary'), 2) }}  </strong> </h4>   </div> 
+                                                                <div>  <h4 class="card-title text-danger"><strong>  {{ number_format($salariesMaster->where('field_id', 1)->where('payment_type', 'Cash')->whereIn('payment_status', ['hold', 'pending', 'rejected'])->sum('net_salary'), 2) }} </strong> </h4>  </div>   
+                                                        </div>
+                                                    
+                                                        <div class="d-flex justify-content-between">
+                                                                <div> <h6 class="card-title text-danger"><strong>  N0 of Emp' : {{ $salariesMaster->where('field_id', 1)->where('payment_type', 'Bank')->whereIn('payment_status', ['hold', 'pending', 'rejected'])->count() }} </strong> </h6>   </div>  
+                                                                <div> <h6 class="card-title text-danger"><strong>  N0 of Emp' : {{ $salariesMaster->where('field_id', 1)->where('payment_type', 'Cash')->whereIn('payment_status', ['hold', 'pending', 'rejected'])->count() }} </strong> </h6>   </div>  
+                                                        </div> 
+                                                        <!-- <hr> <br>  -->
+                                                    
+                                                    </div>
+
+
+
+
+
+                                                </div>
+                                                
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                           
+                            </div>
+
+                            <div class="tab-pane fade" id="navs-pills-justified-botwesummary" role="tabpanel">  
+
+                                <!-- BOTWE -->
+                                <div class="row">
+                                    <div class="col h-100" >
+                                        <div  class="card h-100 bg-dark text-white">
+                                            <div class="card-body">
+                                                <div class="card-title d-flex align-items-start justify-content-between mb-4">
+                                                    <div class="avatar flex-shrink-0">
+                                                        <img
+                                                            src="{{ asset('img/icons/unicons/paypal.png') }}"
+                                                            alt="chart success"
+                                                            class="rounded" />
+                                                    </div>
+                                                    <h3 class="card-title text-white"> <strong> BOTWE </strong>  </h3>
+                                                </div>
+                                                <div class="row">
+                                                    <div class="col">
+                                                        <!-- TOTAL -->
+                                                        <p class="mb-1"><strong>  TOTAL SALARY </strong> </p>
+                                                        <h4 class="card-title text-white"><strong> &#x20B5;  {{ number_format($salariesMaster->where('field_id', 2)->sum('net_salary'), 2) }} </strong> </h4> 
+                                                        <h6 class="card-title text-white"><strong> &#x20B5; NUMBER OF EMPLOYEES : {{ $salariesMaster->where('field_id', 2)->count() }} </strong> </h6> 
+                                                        <br> <hr style="margin-top: -8px;"> <br>
+                                                    
+                                                        <!-- PAID -->
+                                                        <p class="mb-1"><strong>  TOTAL  PAID </strong> </p>
+                                                        <h4 class="card-title text-info"><strong> &#x20B5;  {{ number_format($salariesMaster->where('field_id', 2)->where('payment_status', 'approved')->sum('net_salary'), 2) }} </strong> </h4> 
+                                                        <h6 class="card-title text-info"><strong> &#x20B5; NUMBER OF EMPLOYEES : {{ $salariesMaster->where('field_id', 2)->where('payment_status', 'approved')->count() }} </strong> </h6> 
+                                                        <br> <hr style="margin-top: -8px;"> <br>
+                                                    
+                                                        <!-- OUTSTANDING -->
+                                                        <p class="mb-0"><strong>  TOTAL  OUTSTANDING </strong> </p>
+                                                        <h4 class="card-title text-danger"><strong> &#x20B5;  {{ number_format($salariesMaster->where('field_id', 2)->whereIn('payment_status', ['pending', 'hold'])->sum('net_salary'), 2) }} </strong> </h4> 
+                                                        <h6 class="card-title text-danger"><strong> &#x20B5; NUMBER OF EMPLOYEES : {{ $salariesMaster->where('field_id', 2)->whereIn('payment_status', ['pending', 'hold'])->count() }} </strong> </h6> 
+                                                        <!-- <br> <hr style="margin-top: -8px;"> <br> -->
+                                                    </div>
+
+                                                    <div class="col ">
+                                                        <!-- TOTAL -->
+                                                        <div class="d-flex justify-content-between">
+                                                                <div> <strong class="text-success">BANK AMOUNT  </strong>  </div>   | 
+                                                                <div> <strong class="text-warning">MOMO AMOUNT  </strong> </div>
+                                                        </div>
+
+                                                        <div class="d-flex justify-content-between">
+                                                                <div>  <h4 class="card-title text-white"><strong> {{ number_format($salariesMaster->where('field_id', 2)->where('payment_type', 'Bank')->sum('net_salary'), 2) }}  </strong> </h4>   </div> 
+                                                                <div>  <h4 class="card-title text-white"><strong>  {{ number_format($salariesMaster->where('field_id', 2)->where('payment_type', 'Cash')->sum('net_salary'), 2) }} </strong> </h4>  </div>   
+                                                        </div>
+                                                    
+                                                        <div class="d-flex justify-content-between">
+                                                                <div> <h6 class="card-title text-white"><strong>  N0 of Emp' : {{ $salariesMaster->where('field_id', 2)->where('payment_type', 'Bank')->count() }} </strong> </h6>   </div>  
+                                                                <div> <h6 class="card-title text-white"><strong>  N0 of Emp' : {{ $salariesMaster->where('field_id', 2)->where('payment_type', 'Cash')->count() }} </strong> </h6>   </div>  
+                                                        </div> 
+                                                        <hr> <br>     
+                                                        
+                                                        <!-- PAID -->
+                                                        <div class="d-flex justify-content-between">
+                                                                <div> <strong class="text-success">BANK PAID  </strong>  </div>   | 
+                                                                <div> <strong class="text-warning">MOMO PAID  </strong> </div>
+                                                        </div>
+
+                                                        <div class="d-flex justify-content-between">
+                                                                <div>  <h4 class="card-title text-info"><strong> {{ number_format($salariesMaster->where('field_id', 2)->where('payment_type', 'Bank')->where('payment_status', 'approved')->sum('net_salary'), 2) }}  </strong> </h4>   </div> 
+                                                                <div>  <h4 class="card-title text-info"><strong>  {{ number_format($salariesMaster->where('field_id', 2)->where('payment_type', 'Cash')->where('payment_status', 'approved')->sum('net_salary'), 2) }} </strong> </h4>  </div>   
+                                                        </div>
+                                                    
+                                                        <div class="d-flex justify-content-between">
+                                                                <div> <h6 class="card-title text-info"><strong>  N0 of Emp' : {{ $salariesMaster->where('field_id', 2)->where('payment_type', 'Bank')->where('payment_status', 'approved')->count() }} </strong> </h6>   </div>  
+                                                                <div> <h6 class="card-title text-info"><strong>  N0 of Emp' : {{ $salariesMaster->where('field_id', 2)->where('payment_type', 'Cash')->where('payment_status', 'approved')->count() }} </strong> </h6>   </div>  
+                                                        </div> 
+                                                        <hr> <br>  
+
+                                                        <!-- OUTSTANDING -->
+                                                        <div class="d-flex justify-content-between">
+                                                                <div> <strong class="text-success">BANK OUTSTD'N  </strong>  </div>   | 
+                                                                <div> <strong class="text-warning">MOMO OUTSTD'N  </strong> </div>
+                                                        </div>
+
+                                                        <div class="d-flex justify-content-between">
+                                                                <div>  <h4 class="card-title text-danger"><strong> {{ number_format($salariesMaster->where('field_id', 2)->where('payment_type', 'Bank')->whereIn('payment_status', ['hold', 'pending', 'rejected'])->sum('net_salary'), 2) }}  </strong> </h4>   </div> 
+                                                                <div>  <h4 class="card-title text-danger"><strong>  {{ number_format($salariesMaster->where('field_id', 2)->where('payment_type', 'Cash')->whereIn('payment_status', ['hold', 'pending', 'rejected'])->sum('net_salary'), 2) }} </strong> </h4>  </div>   
+                                                        </div>
+                                                    
+                                                        <div class="d-flex justify-content-between">
+                                                                <div> <h6 class="card-title text-danger"><strong>  N0 of Emp' : {{ $salariesMaster->where('field_id', 2)->where('payment_type', 'Bank')->whereIn('payment_status', ['hold', 'pending', 'rejected'])->count() }} </strong> </h6>   </div>  
+                                                                <div> <h6 class="card-title text-danger"><strong>  N0 of Emp' : {{ $salariesMaster->where('field_id', 2)->where('payment_type', 'Cash')->whereIn('payment_status', ['hold', 'pending', 'rejected'])->count() }} </strong> </h6>   </div>  
+                                                        </div> 
+                                                        <!-- <hr> <br>  -->
+                                                    
+                                                    </div>
+                                                </div>
+                                                
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <br>
+
+                            </div>
+
+                            <div class="tab-pane fade" id="navs-pills-justified-temasummary" role="tabpanel">  
+
+                                <!-- TEMA -->
+                                <div class="row">
+                                    <div class="col h-100" >
+                                        <div  class="card h-100 bg-dark text-white">
+                                            <div class="card-body">
+                                                <div class="card-title d-flex align-items-start justify-content-between mb-4">
+                                                    <div class="avatar flex-shrink-0">
+                                                        <img
+                                                            src="{{ asset('img/icons/unicons/paypal.png') }}"
+                                                            alt="chart success"
+                                                            class="rounded" />
+                                                    </div>
+                                                    <h3 class="card-title text-white"> <strong> TEMA </strong>  </h3>
+                                                </div>
+                                                <div class="row">
+                                                    <div class="col">
+                                                        <!-- TOTAL -->
+                                                        <p class="mb-1"><strong>  TOTAL SALARY </strong> </p>
+                                                        <h4 class="card-title text-white"><strong> &#x20B5;  {{ number_format($salariesMaster->where('field_id', 3)->sum('net_salary'), 2) }} </strong> </h4> 
+                                                        <h6 class="card-title text-white"><strong> &#x20B5; NUMBER OF EMPLOYEES : {{ $salariesMaster->where('field_id', 3)->count() }} </strong> </h6> 
+                                                        <br> <hr style="margin-top: -8px;"> <br>
+                                                    
+                                                        <!-- PAID -->
+                                                        <p class="mb-1"><strong>  TOTAL  PAID </strong> </p>
+                                                        <h4 class="card-title text-info"><strong> &#x20B5;  {{ number_format($salariesMaster->where('field_id', 3)->where('payment_status', 'approved')->sum('net_salary'), 2) }} </strong> </h4> 
+                                                        <h6 class="card-title text-info"><strong> &#x20B5; NUMBER OF EMPLOYEES : {{ $salariesMaster->where('field_id', 3)->where('payment_status', 'approved')->count() }} </strong> </h6> 
+                                                        <br> <hr style="margin-top: -8px;"> <br>
+                                                    
+                                                        <!-- OUTSTANDING -->
+                                                        <p class="mb-0"><strong>  TOTAL  OUTSTANDING </strong> </p>
+                                                        <h4 class="card-title text-danger"><strong> &#x20B5;  {{ number_format($salariesMaster->where('field_id', 3)->whereIn('payment_status', ['pending', 'hold'])->sum('net_salary'), 2) }} </strong> </h4> 
+                                                        <h6 class="card-title text-danger"><strong> &#x20B5; NUMBER OF EMPLOYEES : {{ $salariesMaster->where('field_id', 3)->whereIn('payment_status', ['pending', 'hold'])->count() }} </strong> </h6> 
+                                                        <!-- <br> <hr style="margin-top: -8px;"> <br> -->
+                                                    </div>
+
+                                                    <div class="col ">
+                                                        <!-- TOTAL -->
+                                                        <div class="d-flex justify-content-between">
+                                                                <div> <strong class="text-success">BANK AMOUNT  </strong>  </div>   | 
+                                                                <div> <strong class="text-warning">MOMO AMOUNT  </strong> </div>
+                                                        </div>
+
+                                                        <div class="d-flex justify-content-between">
+                                                                <div>  <h4 class="card-title text-white"><strong> {{ number_format($salariesMaster->where('field_id', 3)->where('payment_type', 'Bank')->sum('net_salary'), 2) }}  </strong> </h4>   </div> 
+                                                                <div>  <h4 class="card-title text-white"><strong>  {{ number_format($salariesMaster->where('field_id', 3)->where('payment_type', 'Cash')->sum('net_salary'), 2) }} </strong> </h4>  </div>   
+                                                        </div>
+                                                    
+                                                        <div class="d-flex justify-content-between">
+                                                                <div> <h6 class="card-title text-white"><strong>  N0 of Emp' : {{ $salariesMaster->where('field_id', 3)->where('payment_type', 'Bank')->count() }} </strong> </h6>   </div>  
+                                                                <div> <h6 class="card-title text-white"><strong>  N0 of Emp' : {{ $salariesMaster->where('field_id', 3)->where('payment_type', 'Cash')->count() }} </strong> </h6>   </div>  
+                                                        </div> 
+                                                        <hr> <br>     
+                                                        
+                                                        <!-- PAID -->
+                                                        <div class="d-flex justify-content-between">
+                                                                <div> <strong class="text-success">BANK PAID  </strong>  </div>   | 
+                                                                <div> <strong class="text-warning">MOMO PAID  </strong> </div>
+                                                        </div>
+
+                                                        <div class="d-flex justify-content-between">
+                                                                <div>  <h4 class="card-title text-info"><strong> {{ number_format($salariesMaster->where('field_id', 3)->where('payment_type', 'Bank')->where('payment_status', 'approved')->sum('net_salary'), 2) }}  </strong> </h4>   </div> 
+                                                                <div>  <h4 class="card-title text-info"><strong>  {{ number_format($salariesMaster->where('field_id', 3)->where('payment_type', 'Cash')->where('payment_status', 'approved')->sum('net_salary'), 2) }} </strong> </h4>  </div>   
+                                                        </div>
+                                                    
+                                                        <div class="d-flex justify-content-between">
+                                                                <div> <h6 class="card-title text-info"><strong>  N0 of Emp' : {{ $salariesMaster->where('field_id', 3)->where('payment_type', 'Bank')->where('payment_status', 'approved')->count() }} </strong> </h6>   </div>  
+                                                                <div> <h6 class="card-title text-info"><strong>  N0 of Emp' : {{ $salariesMaster->where('field_id', 3)->where('payment_type', 'Cash')->where('payment_status', 'approved')->count() }} </strong> </h6>   </div>  
+                                                        </div> 
+                                                        <hr> <br>  
+
+                                                        <!-- OUTSTANDING -->
+                                                        <div class="d-flex justify-content-between">
+                                                                <div> <strong class="text-success">BANK OUTSTD'N  </strong>  </div>   | 
+                                                                <div> <strong class="text-warning">MOMO OUTSTD'N  </strong> </div>
+                                                        </div>
+
+                                                        <div class="d-flex justify-content-between">
+                                                                <div>  <h4 class="card-title text-danger"><strong> {{ number_format($salariesMaster->where('field_id', 3)->where('payment_type', 'Bank')->whereIn('payment_status', ['hold', 'pending', 'rejected'])->sum('net_salary'), 2) }}  </strong> </h4>   </div> 
+                                                                <div>  <h4 class="card-title text-danger"><strong>  {{ number_format($salariesMaster->where('field_id', 3)->where('payment_type', 'Cash')->whereIn('payment_status', ['hold', 'pending', 'rejected'])->sum('net_salary'), 2) }} </strong> </h4>  </div>   
+                                                        </div>
+                                                    
+                                                        <div class="d-flex justify-content-between">
+                                                                <div> <h6 class="card-title text-danger"><strong>  N0 of Emp' : {{ $salariesMaster->where('field_id', 3)->where('payment_type', 'Bank')->whereIn('payment_status', ['hold', 'pending', 'rejected'])->count() }} </strong> </h6>   </div>  
+                                                                <div> <h6 class="card-title text-danger"><strong>  N0 of Emp' : {{ $salariesMaster->where('field_id', 3)->where('payment_type', 'Cash')->whereIn('payment_status', ['hold', 'pending', 'rejected'])->count() }} </strong> </h6>   </div>  
+                                                        </div> 
+                                                        <!-- <hr> <br>  -->
+                                                    
+                                                    </div>
+                                                </div>
+                                                
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <br>
+
+                            </div>
+
+
+                            <div class="tab-pane fade" id="navs-pills-justified-shyhillssummary" role="tabpanel">  
+
+                                <!-- SHHILLS -->
+                                <div class="row">
+                                    <div class="col h-100" >
+                                        <div  class="card h-100 bg-dark text-white">
+                                            <div class="card-body">
+                                                <div class="card-title d-flex align-items-start justify-content-between mb-4">
+                                                    <div class="avatar flex-shrink-0">
+                                                        <img
+                                                            src="{{ asset('img/icons/unicons/paypal.png') }}"
+                                                            alt="chart success"
+                                                            class="rounded" />
+                                                    </div>
+                                                    <h3 class="card-title text-white"> <strong> SHAIHILLS </strong>  </h3>
+                                                </div>
+                                                <div class="row">
+                                                    <div class="col">
+                                                        <!-- TOTAL -->
+                                                        <p class="mb-1"><strong>  TOTAL SALARY </strong> </p>
+                                                        <h4 class="card-title text-white"><strong> &#x20B5;  {{ number_format($salariesMaster->where('field_id', 7)->sum('net_salary'), 2) }} </strong> </h4> 
+                                                        <h6 class="card-title text-white"><strong> &#x20B5; NUMBER OF EMPLOYEES : {{ $salariesMaster->where('field_id', 7)->count() }} </strong> </h6> 
+                                                        <br> <hr style="margin-top: -8px;"> <br>
+                                                    
+                                                        <!-- PAID -->
+                                                        <p class="mb-1"><strong>  TOTAL  PAID </strong> </p>
+                                                        <h4 class="card-title text-info"><strong> &#x20B5;  {{ number_format($salariesMaster->where('field_id', 7)->where('payment_status', 'approved')->sum('net_salary'), 2) }} </strong> </h4> 
+                                                        <h6 class="card-title text-info"><strong> &#x20B5; NUMBER OF EMPLOYEES : {{ $salariesMaster->where('field_id', 7)->where('payment_status', 'approved')->count() }} </strong> </h6> 
+                                                        <br> <hr style="margin-top: -8px;"> <br>
+                                                    
+                                                        <!-- OUTSTANDING -->
+                                                        <p class="mb-0"><strong>  TOTAL  OUTSTANDING </strong> </p>
+                                                        <h4 class="card-title text-danger"><strong> &#x20B5;  {{ number_format($salariesMaster->where('field_id', 7)->whereIn('payment_status', ['pending', 'hold'])->sum('net_salary'), 2) }} </strong> </h4> 
+                                                        <h6 class="card-title text-danger"><strong> &#x20B5; NUMBER OF EMPLOYEES : {{ $salariesMaster->where('field_id', 7)->whereIn('payment_status', ['pending', 'hold'])->count() }} </strong> </h6> 
+                                                        <!-- <br> <hr style="margin-top: -8px;"> <br> -->
+                                                    </div>
+
+                                                    <div class="col ">
+                                                        <!-- TOTAL -->
+                                                        <div class="d-flex justify-content-between">
+                                                                <div> <strong class="text-success">BANK AMOUNT  </strong>  </div>   | 
+                                                                <div> <strong class="text-warning">MOMO AMOUNT  </strong> </div>
+                                                        </div>
+
+                                                        <div class="d-flex justify-content-between">
+                                                                <div>  <h4 class="card-title text-white"><strong> {{ number_format($salariesMaster->where('field_id', 7)->where('payment_type', 'Bank')->sum('net_salary'), 2) }}  </strong> </h4>   </div> 
+                                                                <div>  <h4 class="card-title text-white"><strong>  {{ number_format($salariesMaster->where('field_id', 7)->where('payment_type', 'Cash')->sum('net_salary'), 2) }} </strong> </h4>  </div>   
+                                                        </div>
+                                                    
+                                                        <div class="d-flex justify-content-between">
+                                                                <div> <h6 class="card-title text-white"><strong>  N0 of Emp' : {{ $salariesMaster->where('field_id', 7)->where('payment_type', 'Bank')->count() }} </strong> </h6>   </div>  
+                                                                <div> <h6 class="card-title text-white"><strong>  N0 of Emp' : {{ $salariesMaster->where('field_id', 7)->where('payment_type', 'Cash')->count() }} </strong> </h6>   </div>  
+                                                        </div> 
+                                                        <hr> <br>     
+                                                        
+                                                        <!-- PAID -->
+                                                        <div class="d-flex justify-content-between">
+                                                                <div> <strong class="text-success">BANK PAID  </strong>  </div>   | 
+                                                                <div> <strong class="text-warning">MOMO PAID  </strong> </div>
+                                                        </div>
+
+                                                        <div class="d-flex justify-content-between">
+                                                                <div>  <h4 class="card-title text-info"><strong> {{ number_format($salariesMaster->where('field_id', 7)->where('payment_type', 'Bank')->where('payment_status', 'approved')->sum('net_salary'), 2) }}  </strong> </h4>   </div> 
+                                                                <div>  <h4 class="card-title text-info"><strong>  {{ number_format($salariesMaster->where('field_id', 7)->where('payment_type', 'Cash')->where('payment_status', 'approved')->sum('net_salary'), 2) }} </strong> </h4>  </div>   
+                                                        </div>
+                                                    
+                                                        <div class="d-flex justify-content-between">
+                                                                <div> <h6 class="card-title text-info"><strong>  N0 of Emp' : {{ $salariesMaster->where('field_id', 7)->where('payment_type', 'Bank')->where('payment_status', 'approved')->count() }} </strong> </h6>   </div>  
+                                                                <div> <h6 class="card-title text-info"><strong>  N0 of Emp' : {{ $salariesMaster->where('field_id', 7)->where('payment_type', 'Cash')->where('payment_status', 'approved')->count() }} </strong> </h6>   </div>  
+                                                        </div> 
+                                                        <hr> <br>  
+
+                                                        <!-- OUTSTANDING -->
+                                                        <div class="d-flex justify-content-between">
+                                                                <div> <strong class="text-success">BANK OUTSTD'N  </strong>  </div>   | 
+                                                                <div> <strong class="text-warning">MOMO OUTSTD'N  </strong> </div>
+                                                        </div>
+
+                                                        <div class="d-flex justify-content-between">
+                                                                <div>  <h4 class="card-title text-danger"><strong> {{ number_format($salariesMaster->where('field_id', 7)->where('payment_type', 'Bank')->whereIn('payment_status', ['hold', 'pending', 'rejected'])->sum('net_salary'), 2) }}  </strong> </h4>   </div> 
+                                                                <div>  <h4 class="card-title text-danger"><strong>  {{ number_format($salariesMaster->where('field_id', 7)->where('payment_type', 'Cash')->whereIn('payment_status', ['hold', 'pending', 'rejected'])->sum('net_salary'), 2) }} </strong> </h4>  </div>   
+                                                        </div>
+                                                    
+                                                        <div class="d-flex justify-content-between">
+                                                                <div> <h6 class="card-title text-danger"><strong>  N0 of Emp' : {{ $salariesMaster->where('field_id', 7)->where('payment_type', 'Bank')->whereIn('payment_status', ['hold', 'pending', 'rejected'])->count() }} </strong> </h6>   </div>  
+                                                                <div> <h6 class="card-title text-danger"><strong>  N0 of Emp' : {{ $salariesMaster->where('field_id', 7)->where('payment_type', 'Cash')->whereIn('payment_status', ['hold', 'pending', 'rejected'])->count() }} </strong> </h6>   </div>  
+                                                        </div> 
+                                                        <!-- <hr> <br>  -->
+                                                    
+                                                    </div>
+                                                </div>
+                                                
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <br>
+
+                            </div>
+
+
+                            <div class="tab-pane fade" id="navs-pills-justified-takoradisummary" role="tabpanel">  
+
+                                <!-- TAKORADI -->
+                                <div class="row">
+                                    <div class="col h-100" >
+                                        <div  class="card h-100 bg-dark text-white">
+                                            <div class="card-body">
+                                                <div class="card-title d-flex align-items-start justify-content-between mb-4">
+                                                    <div class="avatar flex-shrink-0">
+                                                        <img
+                                                            src="{{ asset('img/icons/unicons/paypal.png') }}"
+                                                            alt="chart success"
+                                                            class="rounded" />
+                                                    </div>
+                                                    <h3 class="card-title text-white"> <strong> TAKORADI </strong>  </h3>
+                                                </div>
+                                                <div class="row">
+                                                    <div class="col">
+                                                        <!-- TOTAL -->
+                                                        <p class="mb-1"><strong>  TOTAL SALARY </strong> </p>
+                                                        <h4 class="card-title text-white"><strong> &#x20B5;  {{ number_format($salariesMaster->where('field_id', 4)->sum('net_salary'), 2) }} </strong> </h4> 
+                                                        <h6 class="card-title text-white"><strong> &#x20B5; NUMBER OF EMPLOYEES : {{ $salariesMaster->where('field_id', 4)->count() }} </strong> </h6> 
+                                                        <br> <hr style="margin-top: -8px;"> <br>
+                                                    
+                                                        <!-- PAID -->
+                                                        <p class="mb-1"><strong>  TOTAL  PAID </strong> </p>
+                                                        <h4 class="card-title text-info"><strong> &#x20B5;  {{ number_format($salariesMaster->where('field_id', 4)->where('payment_status', 'approved')->sum('net_salary'), 2) }} </strong> </h4> 
+                                                        <h6 class="card-title text-info"><strong> &#x20B5; NUMBER OF EMPLOYEES : {{ $salariesMaster->where('field_id', 4)->where('payment_status', 'approved')->count() }} </strong> </h6> 
+                                                        <br> <hr style="margin-top: -8px;"> <br>
+                                                    
+                                                        <!-- OUTSTANDING -->
+                                                        <p class="mb-0"><strong>  TOTAL  OUTSTANDING </strong> </p>
+                                                        <h4 class="card-title text-danger"><strong> &#x20B5;  {{ number_format($salariesMaster->where('field_id', 4)->whereIn('payment_status', ['pending', 'hold'])->sum('net_salary'), 2) }} </strong> </h4> 
+                                                        <h6 class="card-title text-danger"><strong> &#x20B5; NUMBER OF EMPLOYEES : {{ $salariesMaster->where('field_id', 4)->whereIn('payment_status', ['pending', 'hold'])->count() }} </strong> </h6> 
+                                                        <!-- <br> <hr style="margin-top: -8px;"> <br> -->
+                                                    </div>
+
+                                                    <div class="col ">
+                                                        <!-- TOTAL -->
+                                                        <div class="d-flex justify-content-between">
+                                                                <div> <strong class="text-success">BANK AMOUNT  </strong>  </div>   | 
+                                                                <div> <strong class="text-warning">MOMO AMOUNT  </strong> </div>
+                                                        </div>
+
+                                                        <div class="d-flex justify-content-between">
+                                                                <div>  <h4 class="card-title text-white"><strong> {{ number_format($salariesMaster->where('field_id', 4)->where('payment_type', 'Bank')->sum('net_salary'), 2) }}  </strong> </h4>   </div> 
+                                                                <div>  <h4 class="card-title text-white"><strong>  {{ number_format($salariesMaster->where('field_id', 4)->where('payment_type', 'Cash')->sum('net_salary'), 2) }} </strong> </h4>  </div>   
+                                                        </div>
+                                                    
+                                                        <div class="d-flex justify-content-between">
+                                                                <div> <h6 class="card-title text-white"><strong>  N0 of Emp' : {{ $salariesMaster->where('field_id', 4)->where('payment_type', 'Bank')->count() }} </strong> </h6>   </div>  
+                                                                <div> <h6 class="card-title text-white"><strong>  N0 of Emp' : {{ $salariesMaster->where('field_id', 4)->where('payment_type', 'Cash')->count() }} </strong> </h6>   </div>  
+                                                        </div> 
+                                                        <hr> <br>     
+                                                        
+                                                        <!-- PAID -->
+                                                        <div class="d-flex justify-content-between">
+                                                                <div> <strong class="text-success">BANK PAID  </strong>  </div>   | 
+                                                                <div> <strong class="text-warning">MOMO PAID  </strong> </div>
+                                                        </div>
+
+                                                        <div class="d-flex justify-content-between">
+                                                                <div>  <h4 class="card-title text-info"><strong> {{ number_format($salariesMaster->where('field_id', 4)->where('payment_type', 'Bank')->where('payment_status', 'approved')->sum('net_salary'), 2) }}  </strong> </h4>   </div> 
+                                                                <div>  <h4 class="card-title text-info"><strong>  {{ number_format($salariesMaster->where('field_id', 4)->where('payment_type', 'Cash')->where('payment_status', 'approved')->sum('net_salary'), 2) }} </strong> </h4>  </div>   
+                                                        </div>
+                                                    
+                                                        <div class="d-flex justify-content-between">
+                                                                <div> <h6 class="card-title text-info"><strong>  N0 of Emp' : {{ $salariesMaster->where('field_id', 4)->where('payment_type', 'Bank')->where('payment_status', 'approved')->count() }} </strong> </h6>   </div>  
+                                                                <div> <h6 class="card-title text-info"><strong>  N0 of Emp' : {{ $salariesMaster->where('field_id', 4)->where('payment_type', 'Cash')->where('payment_status', 'approved')->count() }} </strong> </h6>   </div>  
+                                                        </div> 
+                                                        <hr> <br>  
+
+                                                        <!-- OUTSTANDING -->
+                                                        <div class="d-flex justify-content-between">
+                                                                <div> <strong class="text-success">BANK OUTSTD'N  </strong>  </div>   | 
+                                                                <div> <strong class="text-warning">MOMO OUTSTD'N  </strong> </div>
+                                                        </div>
+
+                                                        <div class="d-flex justify-content-between">
+                                                                <div>  <h4 class="card-title text-danger"><strong> {{ number_format($salariesMaster->where('field_id', 4)->where('payment_type', 'Bank')->whereIn('payment_status', ['hold', 'pending', 'rejected'])->sum('net_salary'), 2) }}  </strong> </h4>   </div> 
+                                                                <div>  <h4 class="card-title text-danger"><strong>  {{ number_format($salariesMaster->where('field_id', 4)->where('payment_type', 'Cash')->whereIn('payment_status', ['hold', 'pending', 'rejected'])->sum('net_salary'), 2) }} </strong> </h4>  </div>   
+                                                        </div>
+                                                    
+                                                        <div class="d-flex justify-content-between">
+                                                                <div> <h6 class="card-title text-danger"><strong>  N0 of Emp' : {{ $salariesMaster->where('field_id', 4)->where('payment_type', 'Bank')->whereIn('payment_status', ['hold', 'pending', 'rejected'])->count() }} </strong> </h6>   </div>  
+                                                                <div> <h6 class="card-title text-danger"><strong>  N0 of Emp' : {{ $salariesMaster->where('field_id', 4)->where('payment_type', 'Cash')->whereIn('payment_status', ['hold', 'pending', 'rejected'])->count() }} </strong> </h6>   </div>  
+                                                        </div> 
+                                                        <!-- <hr> <br>  -->
+                                                    
+                                                    </div>
+                                                </div>
+                                                
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <br>
+
+                            </div>
+
+
+                            <div class="tab-pane fade" id="navs-pills-justified-koforiduasummary" role="tabpanel">  
+
+                                <!-- KOFORIDUA -->
+                                <div class="row">
+                                    <div class="col h-100" >
+                                        <div  class="card h-100 bg-dark text-white">
+                                            <div class="card-body">
+                                                <div class="card-title d-flex align-items-start justify-content-between mb-4">
+                                                    <div class="avatar flex-shrink-0">
+                                                        <img
+                                                            src="{{ asset('img/icons/unicons/paypal.png') }}"
+                                                            alt="chart success"
+                                                            class="rounded" />
+                                                    </div>
+                                                    <h3 class="card-title text-white"> <strong> KOFORIDUA </strong>  </h3>
+                                                </div>
+                                                <div class="row">
+                                                    <div class="col">
+                                                        <!-- TOTAL -->
+                                                        <p class="mb-1"><strong>  TOTAL SALARY </strong> </p>
+                                                        <h4 class="card-title text-white"><strong> &#x20B5;  {{ number_format($salariesMaster->where('field_id', 5)->sum('net_salary'), 2) }} </strong> </h4> 
+                                                        <h6 class="card-title text-white"><strong> &#x20B5; NUMBER OF EMPLOYEES : {{ $salariesMaster->where('field_id', 5)->count() }} </strong> </h6> 
+                                                        <br> <hr style="margin-top: -8px;"> <br>
+                                                    
+                                                        <!-- PAID -->
+                                                        <p class="mb-1"><strong>  TOTAL  PAID </strong> </p>
+                                                        <h4 class="card-title text-info"><strong> &#x20B5;  {{ number_format($salariesMaster->where('field_id', 5)->where('payment_status', 'approved')->sum('net_salary'), 2) }} </strong> </h4> 
+                                                        <h6 class="card-title text-info"><strong> &#x20B5; NUMBER OF EMPLOYEES : {{ $salariesMaster->where('field_id', 5)->where('payment_status', 'approved')->count() }} </strong> </h6> 
+                                                        <br> <hr style="margin-top: -8px;"> <br>
+                                                    
+                                                        <!-- OUTSTANDING -->
+                                                        <p class="mb-0"><strong>  TOTAL  OUTSTANDING </strong> </p>
+                                                        <h4 class="card-title text-danger"><strong> &#x20B5;  {{ number_format($salariesMaster->where('field_id', 5)->whereIn('payment_status', ['pending', 'hold'])->sum('net_salary'), 2) }} </strong> </h4> 
+                                                        <h6 class="card-title text-danger"><strong> &#x20B5; NUMBER OF EMPLOYEES : {{ $salariesMaster->where('field_id', 5)->whereIn('payment_status', ['pending', 'hold'])->count() }} </strong> </h6> 
+                                                        <!-- <br> <hr style="margin-top: -8px;"> <br> -->
+                                                    </div>
+
+                                                    <div class="col ">
+                                                        <!-- TOTAL -->
+                                                        <div class="d-flex justify-content-between">
+                                                                <div> <strong class="text-success">BANK AMOUNT  </strong>  </div>   | 
+                                                                <div> <strong class="text-warning">MOMO AMOUNT  </strong> </div>
+                                                        </div>
+
+                                                        <div class="d-flex justify-content-between">
+                                                                <div>  <h4 class="card-title text-white"><strong> {{ number_format($salariesMaster->where('field_id', 5)->where('payment_type', 'Bank')->sum('net_salary'), 2) }}  </strong> </h4>   </div> 
+                                                                <div>  <h4 class="card-title text-white"><strong>  {{ number_format($salariesMaster->where('field_id', 5)->where('payment_type', 'Cash')->sum('net_salary'), 2) }} </strong> </h4>  </div>   
+                                                        </div>
+                                                    
+                                                        <div class="d-flex justify-content-between">
+                                                                <div> <h6 class="card-title text-white"><strong>  N0 of Emp' : {{ $salariesMaster->where('field_id', 5)->where('payment_type', 'Bank')->count() }} </strong> </h6>   </div>  
+                                                                <div> <h6 class="card-title text-white"><strong>  N0 of Emp' : {{ $salariesMaster->where('field_id', 5)->where('payment_type', 'Cash')->count() }} </strong> </h6>   </div>  
+                                                        </div> 
+                                                        <hr> <br>     
+                                                        
+                                                        <!-- PAID -->
+                                                        <div class="d-flex justify-content-between">
+                                                                <div> <strong class="text-success">BANK PAID  </strong>  </div>   | 
+                                                                <div> <strong class="text-warning">MOMO PAID  </strong> </div>
+                                                        </div>
+
+                                                        <div class="d-flex justify-content-between">
+                                                                <div>  <h4 class="card-title text-info"><strong> {{ number_format($salariesMaster->where('field_id', 5)->where('payment_type', 'Bank')->where('payment_status', 'approved')->sum('net_salary'), 2) }}  </strong> </h4>   </div> 
+                                                                <div>  <h4 class="card-title text-info"><strong>  {{ number_format($salariesMaster->where('field_id', 5)->where('payment_type', 'Cash')->where('payment_status', 'approved')->sum('net_salary'), 2) }} </strong> </h4>  </div>   
+                                                        </div>
+                                                    
+                                                        <div class="d-flex justify-content-between">
+                                                                <div> <h6 class="card-title text-info"><strong>  N0 of Emp' : {{ $salariesMaster->where('field_id', 5)->where('payment_type', 'Bank')->where('payment_status', 'approved')->count() }} </strong> </h6>   </div>  
+                                                                <div> <h6 class="card-title text-info"><strong>  N0 of Emp' : {{ $salariesMaster->where('field_id', 5)->where('payment_type', 'Cash')->where('payment_status', 'approved')->count() }} </strong> </h6>   </div>  
+                                                        </div> 
+                                                        <hr> <br>  
+
+                                                        <!-- OUTSTANDING -->
+                                                        <div class="d-flex justify-content-between">
+                                                                <div> <strong class="text-success">BANK OUTSTD'N  </strong>  </div>   | 
+                                                                <div> <strong class="text-warning">MOMO OUTSTD'N  </strong> </div>
+                                                        </div>
+
+                                                        <div class="d-flex justify-content-between">
+                                                                <div>  <h4 class="card-title text-danger"><strong> {{ number_format($salariesMaster->where('field_id', 5)->where('payment_type', 'Bank')->whereIn('payment_status', ['hold', 'pending', 'rejected'])->sum('net_salary'), 2) }}  </strong> </h4>   </div> 
+                                                                <div>  <h4 class="card-title text-danger"><strong>  {{ number_format($salariesMaster->where('field_id', 5)->where('payment_type', 'Cash')->whereIn('payment_status', ['hold', 'pending', 'rejected'])->sum('net_salary'), 2) }} </strong> </h4>  </div>   
+                                                        </div>
+                                                    
+                                                        <div class="d-flex justify-content-between">
+                                                                <div> <h6 class="card-title text-danger"><strong>  N0 of Emp' : {{ $salariesMaster->where('field_id', 5)->where('payment_type', 'Bank')->whereIn('payment_status', ['hold', 'pending', 'rejected'])->count() }} </strong> </h6>   </div>  
+                                                                <div> <h6 class="card-title text-danger"><strong>  N0 of Emp' : {{ $salariesMaster->where('field_id', 5)->where('payment_type', 'Cash')->whereIn('payment_status', ['hold', 'pending', 'rejected'])->count() }} </strong> </h6>   </div>  
+                                                        </div> 
+                                                        <!-- <hr> <br>  -->
+                                                    
+                                                    </div>
+                                                </div>
+                                                
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <br>
+
+                            </div>
+
+
+                            <div class="tab-pane fade" id="navs-pills-justified-kumasisummary" role="tabpanel">  
+
+                                <!-- KUMASI -->
+                                <div class="row">
+                                    <div class="col h-100" >
+                                        <div  class="card h-100 bg-dark text-white">
+                                            <div class="card-body">
+                                                <div class="card-title d-flex align-items-start justify-content-between mb-4">
+                                                    <div class="avatar flex-shrink-0">
+                                                        <img
+                                                            src="{{ asset('img/icons/unicons/paypal.png') }}"
+                                                            alt="chart success"
+                                                            class="rounded" />
+                                                    </div>
+                                                    <h3 class="card-title text-white"> <strong> KUMASI </strong>  </h3>
+                                                </div>
+                                                <div class="row">
+                                                    <div class="col">
+                                                        <!-- TOTAL -->
+                                                        <p class="mb-1"><strong>  TOTAL SALARY </strong> </p>
+                                                        <h4 class="card-title text-white"><strong> &#x20B5;  {{ number_format($salariesMaster->where('field_id', 6)->sum('net_salary'), 2) }} </strong> </h4> 
+                                                        <h6 class="card-title text-white"><strong> &#x20B5; NUMBER OF EMPLOYEES : {{ $salariesMaster->where('field_id', 6)->count() }} </strong> </h6> 
+                                                        <br> <hr style="margin-top: -8px;"> <br>
+                                                    
+                                                        <!-- PAID -->
+                                                        <p class="mb-1"><strong>  TOTAL  PAID </strong> </p>
+                                                        <h4 class="card-title text-info"><strong> &#x20B5;  {{ number_format($salariesMaster->where('field_id', 6)->where('payment_status', 'approved')->sum('net_salary'), 2) }} </strong> </h4> 
+                                                        <h6 class="card-title text-info"><strong> &#x20B5; NUMBER OF EMPLOYEES : {{ $salariesMaster->where('field_id', 6)->where('payment_status', 'approved')->count() }} </strong> </h6> 
+                                                        <br> <hr style="margin-top: -8px;"> <br>
+                                                    
+                                                        <!-- OUTSTANDING -->
+                                                        <p class="mb-0"><strong>  TOTAL  OUTSTANDING </strong> </p>
+                                                        <h4 class="card-title text-danger"><strong> &#x20B5;  {{ number_format($salariesMaster->where('field_id', 6)->whereIn('payment_status', ['pending', 'hold'])->sum('net_salary'), 2) }} </strong> </h4> 
+                                                        <h6 class="card-title text-danger"><strong> &#x20B5; NUMBER OF EMPLOYEES : {{ $salariesMaster->where('field_id', 6)->whereIn('payment_status', ['pending', 'hold'])->count() }} </strong> </h6> 
+                                                        <!-- <br> <hr style="margin-top: -8px;"> <br> -->
+                                                    </div>
+
+                                                    <div class="col ">
+                                                        <!-- TOTAL -->
+                                                        <div class="d-flex justify-content-between">
+                                                                <div> <strong class="text-success">BANK AMOUNT  </strong>  </div>   | 
+                                                                <div> <strong class="text-warning">MOMO AMOUNT  </strong> </div>
+                                                        </div>
+
+                                                        <div class="d-flex justify-content-between">
+                                                                <div>  <h4 class="card-title text-white"><strong> {{ number_format($salariesMaster->where('field_id', 6)->where('payment_type', 'Bank')->sum('net_salary'), 2) }}  </strong> </h4>   </div> 
+                                                                <div>  <h4 class="card-title text-white"><strong>  {{ number_format($salariesMaster->where('field_id', 6)->where('payment_type', 'Cash')->sum('net_salary'), 2) }} </strong> </h4>  </div>   
+                                                        </div>
+                                                    
+                                                        <div class="d-flex justify-content-between">
+                                                                <div> <h6 class="card-title text-white"><strong>  N0 of Emp' : {{ $salariesMaster->where('field_id', 6)->where('payment_type', 'Bank')->count() }} </strong> </h6>   </div>  
+                                                                <div> <h6 class="card-title text-white"><strong>  N0 of Emp' : {{ $salariesMaster->where('field_id', 6)->where('payment_type', 'Cash')->count() }} </strong> </h6>   </div>  
+                                                        </div> 
+                                                        <hr> <br>     
+                                                        
+                                                        <!-- PAID -->
+                                                        <div class="d-flex justify-content-between">
+                                                                <div> <strong class="text-success">BANK PAID  </strong>  </div>   | 
+                                                                <div> <strong class="text-warning">MOMO PAID  </strong> </div>
+                                                        </div>
+
+                                                        <div class="d-flex justify-content-between">
+                                                                <div>  <h4 class="card-title text-info"><strong> {{ number_format($salariesMaster->where('field_id', 6)->where('payment_type', 'Bank')->where('payment_status', 'approved')->sum('net_salary'), 2) }}  </strong> </h4>   </div> 
+                                                                <div>  <h4 class="card-title text-info"><strong>  {{ number_format($salariesMaster->where('field_id', 6)->where('payment_type', 'Cash')->where('payment_status', 'approved')->sum('net_salary'), 2) }} </strong> </h4>  </div>   
+                                                        </div>
+                                                    
+                                                        <div class="d-flex justify-content-between">
+                                                                <div> <h6 class="card-title text-info"><strong>  N0 of Emp' : {{ $salariesMaster->where('field_id', 6)->where('payment_type', 'Bank')->where('payment_status', 'approved')->count() }} </strong> </h6>   </div>  
+                                                                <div> <h6 class="card-title text-info"><strong>  N0 of Emp' : {{ $salariesMaster->where('field_id', 6)->where('payment_type', 'Cash')->where('payment_status', 'approved')->count() }} </strong> </h6>   </div>  
+                                                        </div> 
+                                                        <hr> <br>  
+
+                                                        <!-- OUTSTANDING -->
+                                                        <div class="d-flex justify-content-between">
+                                                                <div> <strong class="text-success">BANK OUTSTD'N  </strong>  </div>   | 
+                                                                <div> <strong class="text-warning">MOMO OUTSTD'N  </strong> </div>
+                                                        </div>
+
+                                                        <div class="d-flex justify-content-between">
+                                                                <div>  <h4 class="card-title text-danger"><strong> {{ number_format($salariesMaster->where('field_id', 6)->where('payment_type', 'Bank')->whereIn('payment_status', ['hold', 'pending', 'rejected'])->sum('net_salary'), 2) }}  </strong> </h4>   </div> 
+                                                                <div>  <h4 class="card-title text-danger"><strong>  {{ number_format($salariesMaster->where('field_id', 6)->where('payment_type', 'Cash')->whereIn('payment_status', ['hold', 'pending', 'rejected'])->sum('net_salary'), 2) }} </strong> </h4>  </div>   
+                                                        </div>
+                                                    
+                                                        <div class="d-flex justify-content-between">
+                                                                <div> <h6 class="card-title text-danger"><strong>  N0 of Emp' : {{ $salariesMaster->where('field_id', 6)->where('payment_type', 'Bank')->whereIn('payment_status', ['hold', 'pending', 'rejected'])->count() }} </strong> </h6>   </div>  
+                                                                <div> <h6 class="card-title text-danger"><strong>  N0 of Emp' : {{ $salariesMaster->where('field_id', 6)->where('payment_type', 'Cash')->whereIn('payment_status', ['hold', 'pending', 'rejected'])->count() }} </strong> </h6>   </div>  
+                                                        </div> 
+                                                        <!-- <hr> <br>  -->
+                                                    
+                                                    </div>
+                                                </div>
+                                                
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <br>
+
+                            </div>
+
+                        </div>
+                   
+                    </div>
+
+            </div>
+
+            <!-- OVERALL SUMMARY -->
+            <div class="col-lg-6 " style="margin-top: 50px;">
+                <div class="row">
+                    <div class="col h-100" >
+                        <div  class="card h-100 bg-dark text-white">
+                            <div class="card-body">
+                                <div class="card-title d-flex align-items-start justify-content-between mb-4">
+                                    <div class="avatar flex-shrink-0">
+                                        <img
+                                            src="{{ asset('img/icons/unicons/paypal.png') }}"
+                                            alt="chart success"
+                                            class="rounded" />
+                                    </div>
+                                </div>
+                                <div class="row">
+
+                                    <div class="col">
+
+                                        <!-- TOTAL -->
+                                        <p class="mb-1"><strong>  TOTAL SALARIES </strong> </p>
+                                        <h4 class="card-title text-white"><strong> &#x20B5;  {{ number_format($salariesMaster->sum('net_salary'), 2) }} </strong> </h4> 
+                                        <h6 class="card-title text-white"><strong> &#x20B5; NUMBER OF EMPLOYEES : {{ $salariesMaster->count() }} </strong> </h6> 
+                                        
+                                    </div>
+
+                                    <div class="col">
+
+                                        <!-- TOTAL -->
+                                        <div class="d-flex justify-content-between">
+                                                <div> <strong>PAID   </strong>  </div>   | 
+                                                <div> <strong>OUTSTANDINGS   </strong> </div>
+                                        </div>
+
+                                        <div class="d-flex justify-content-between">
+                                                <div>  <h4 class="card-title text-info"><strong> {{ number_format($salariesMaster->where('payment_status', 'approved')->sum('net_salary'), 2) }}  </strong> </h4>   </div> 
+                                                <div>  <h4 class="card-title text-danger"><strong>  {{ number_format( $salariesMaster->whereIn('payment_status', ['pending', 'hold'])->sum('net_salary'), 2)  }} </strong> </h4>  </div>   
+                                        </div>
+                                      
+                                        <div class="d-flex justify-content-between">
+                                                <div> <h6 class="card-title text-info"><strong>  N0 of Emp' : {{ $salariesMaster->where('payment_status', 'approved')->count() }} </strong> </h6>   </div>  
+                                                <div> <h6 class="card-title text-danger"><strong>  N0 of Emp' : {{ $salariesMaster->whereIn('payment_status', ['pending', 'hold'])->count() }} </strong> </h6>   </div>  
+                                        </div> 
+                                   </div>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <br>
+                <div class="row">
+                    <div class="col h-100">
+                        <div  class="card h-100 bg-dark text-white">
+                            <div class="card-body">
+                                <div class="card-title d-flex align-items-start justify-content-between mb-4">
+                                    <div class="avatar flex-shrink-0">
+                                        <img
+                                            src="{{ asset('img/icons/unicons/paypal.png') }}"
+                                            alt="chart success"
+                                            class="rounded" />
+                                    </div>
+                                </div>
+                                <div class="row">
+
+                                    <div class="col">
+
+                                        <!-- TOTAL -->
+                                        <p class="mb-1"><strong class="text-success">  TOTAL BANKS </strong> </p>
+                                        <h4 class="card-title text-white"><strong> &#x20B5;  {{ number_format($salariesMaster->where('payment_type', 'Bank')->sum('net_salary'), 2) }} </strong> </h4> 
+                                        <h6 class="card-title text-white"><strong> &#x20B5; NUMBER OF EMPLOYEES : {{ $salariesMaster->where('payment_type', 'Bank')->count() }} </strong> </h6> 
+                                        
+                                    </div>
+
+                                    <div class="col">
+
+                                        <!-- TOTAL -->
+                                        <div class="d-flex justify-content-between">
+                                                <div> <strong>PAID   </strong>  </div>   | 
+                                                <div> <strong>OUTSTANDINGS   </strong> </div>
+                                        </div>
+
+                                        <div class="d-flex justify-content-between">
+                                                <div>  <h4 class="card-title text-info"><strong> {{ number_format($salariesMaster->where('payment_type', 'Bank')->where('payment_status', 'approved')->sum('net_salary'), 2) }}  </strong> </h4>   </div> 
+                                                <div>  <h4 class="card-title text-danger"><strong>  {{ number_format($salariesMaster->where('payment_type','Bank')->whereIn('payment_status', ['pending', 'hold'])->sum('net_salary'))  }} </strong> </h4>  </div>   
+                                        </div>
+                                      
+                                        <div class="d-flex justify-content-between">
+                                                <div> <h6 class="card-title text-info"><strong>  N0 of Emp' : {{ $salariesMaster->where('payment_type', 'Bank')->where('payment_status', 'approved')->count() }} </strong> </h6>   </div>  
+                                                <div> <h6 class="card-title text-danger"><strong>  N0 of Emp' : {{ $salariesMaster->where('payment_type', 'Bank')->whereIn('payment_status', ['pending', 'hold'])->count() }} </strong> </h6>   </div>  
+                                        </div> 
+                                   </div>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div> 
+                </div>
+  
+                <br>
+                <div class="row">
+                    <div class="col h-100">
+                        <div  class="card h-100 bg-dark text-white">
+                            <div class="card-body">
+                                <div class="card-title d-flex align-items-start justify-content-between mb-4">
+                                    <div class="avatar flex-shrink-0">
+                                        <img
+                                            src="{{ asset('img/icons/unicons/paypal.png') }}"
+                                            alt="chart success"
+                                            class="rounded" />
+                                    </div>
+                                </div>
+
+                                <div class="row">
+
+                                    <div class="col">
+
+                                        <!-- TOTAL -->
+                                        <p class="mb-1"><strong class="text-warning">  TOTAL MOMO </strong> </p>
+                                        <h4 class="card-title text-white"><strong> &#x20B5;  {{ number_format(       $salariesMaster->where('payment_type', 'Cash')->sum('net_salary')    + $salariesMaster->where('payment_type', 'cash')->sum('net_salary'), 2) }} </strong> </h4> 
+                                        <h6 class="card-title text-white"><strong> &#x20B5; NUMBER OF EMPLOYEES : {{ $salariesMaster->where('payment_type', 'Cash')->count()       + $salariesMaster->where('payment_type', 'cash')->count() }} </strong> </h6> 
+                                        
+                                    </div>
+
+                                    <div class="col">
+
+                                        <!-- TOTAL -->
+                                        <div class="d-flex justify-content-between">
+                                                <div> <strong>PAID   </strong>  </div>   | 
+                                                <div> <strong>OUTSTANDINGS   </strong> </div>
+                                        </div>
+
+                                        <div class="d-flex justify-content-between">
+                                                <div>  <h4 class="card-title text-info"><strong> {{ number_format($salariesMaster->where('payment_type', 'Cash')->where('payment_status', 'approved')->sum('net_salary')  + $salariesMaster->where('payment_type', 'cash')->where('payment_status', 'approved')->sum('net_salary'), 2) }}  </strong> </h4>   </div> 
+                                                <div>  <h4 class="card-title text-danger"><strong>  {{ number_format($salariesMaster->where('payment_type', 'Cash')->whereIn('payment_status', ['pending', 'rejected', 'hold'])->sum('net_salary')  + $salariesMaster->where('payment_type', 'cash')->whereIn('payment_status', ['pending', 'rejected', 'hold'])->sum('net_salary'), 2)  }} </strong> </h4>  </div>   
+                                        </div>
+                                      
+                                        <div class="d-flex justify-content-between">
+                                                <div> <h6 class="card-title text-info"><strong>  N0 of Emp' : {{ $salariesMaster->where('payment_type', 'Cash')->where('payment_status', 'approved')->count()  + $salariesMaster->where('payment_type', 'cash')->where('payment_status', 'approved')->count() }} </strong> </h6>   </div>  
+                                                <div> <h6 class="card-title text-danger"><strong> N0 of Emp' : {{ $salariesMaster->where('payment_type', 'Cash')->whereIn('payment_status', ['pending', 'rejected', 'hold'])->count()  + $salariesMaster->where('payment_type', 'cash')->whereIn('payment_status', ['pending', 'rejected', 'hold'])->count() }} </strong> </h6>   </div>  
+                                        </div> 
+                                   </div>
+                                </div>
+
+
+                            </div>
+                        </div>
+                    </div> 
+                </div>
+
+            </div>
+
+        </div> 
+        <br>
 
     </div>
   <!-- / Content -->

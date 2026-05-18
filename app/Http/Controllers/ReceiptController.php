@@ -293,8 +293,10 @@ class ReceiptController extends Controller
                 $category->save();
 
                 // UPDATE CLIENT AND MONTH
+                $client->category_id = $category->id;
                 $client->category_name = 'Category A';
                 $client->category_month = $invoice_data->invoice_month;
+                $client->user_id = Auth::id();
                 $client->save();
             }
 
@@ -310,8 +312,10 @@ class ReceiptController extends Controller
                     $category->save();
 
                     // UPDATE CLIENT AND MONTH
+                    $client->category_id = $category->id;
                     $client->category_name = 'Category B';
                     $client->category_month = $invoice_data->invoice_month;
+                    $client->user_id = Auth::id();
                     $client->save();
                 }
 
@@ -325,8 +329,10 @@ class ReceiptController extends Controller
                     $category->save();  
                     
                     // UPDATE CLIENT AND MONTH
+                    $client->category_id = $category->id;
                     $client->category_name = 'Category C';
                     $client->category_month = $invoice_data->invoice_month;
+                    $client->user_id = Auth::id();
                     $client->save();
                 }
 
@@ -340,8 +346,10 @@ class ReceiptController extends Controller
                     $category->save();   
                     
                     // UPDATE CLIENT AND MONTH
+                    $client->category_id = $category->id;
                     $client->category_name = 'Category D';
                     $client->category_month = $invoice_data->invoice_month;
+                    $client->user_id = Auth::id();
                     $client->save();
                 }
 
@@ -425,8 +433,10 @@ class ReceiptController extends Controller
                 $category->save();
 
                 // UPDATE CLIENT AND MONTH
+                $client->category_id = $category->id;
                 $client->category_name = 'Category A';
                 $client->category_month = $invoice_data->invoice_month;
+                $client->user_id = Auth::id();
                 $client->save();
             }
 
@@ -442,8 +452,10 @@ class ReceiptController extends Controller
                     $category->save();
 
                     // UPDATE CLIENT AND MONTH
+                    $client->category_id = $category->id;
                     $client->category_name = 'Category B';
                     $client->category_month = $invoice_data->invoice_month;
+                    $client->user_id = Auth::id();
                     $client->save();
                 }
 
@@ -457,8 +469,10 @@ class ReceiptController extends Controller
                     $category->save();  
                     
                     // UPDATE CLIENT AND MONTH
+                    $client->category_id = $category->id;
                     $client->category_name = 'Category C';
                     $client->category_month = $invoice_data->invoice_month;
+                    $client->user_id = Auth::id();
                     $client->save();
                 }
 
@@ -472,8 +486,10 @@ class ReceiptController extends Controller
                     $category->save();   
                     
                     // UPDATE CLIENT AND MONTH
+                    $client->category_id = $category->id;
                     $client->category_name = 'Category D';
                     $client->category_month = $invoice_data->invoice_month;
+                    $client->user_id = Auth::id();
                     $client->save();
                 }
 
@@ -566,6 +582,7 @@ class ReceiptController extends Controller
                 $category->save();
 
                 // UPDATE CLIENT AND MONTH
+                $client->category_id = $category->id;
                 $client->category_name = 'Category A';
                 $client->category_month = $invoice_data->invoice_month;
                 $client->save();
@@ -583,6 +600,7 @@ class ReceiptController extends Controller
                     $category->save();
 
                     // UPDATE CLIENT AND MONTH
+                    $client->category_id = $category->id;
                     $client->category_name = 'Category B';
                     $client->category_month = $invoice_data->invoice_month;
                     $client->save();
@@ -598,6 +616,7 @@ class ReceiptController extends Controller
                     $category->save();  
                     
                     // UPDATE CLIENT AND MONTH
+                    $client->category_id = $category->id;
                     $client->category_name = 'Category C';
                     $client->category_month = $invoice_data->invoice_month;
                     $client->save();
@@ -613,6 +632,7 @@ class ReceiptController extends Controller
                     $category->save();   
                     
                     // UPDATE CLIENT AND MONTH
+                    $client->category_id = $category->id;
                     $client->category_name = 'Category D';
                     $client->category_month = $invoice_data->invoice_month;
                     $client->save();

@@ -407,6 +407,50 @@
                         </div>
 
                     </div>
+                    <br>
+                    <hr>
+                    <br>
+                    <div class="row g-6">
+                        <div class="col mb-0">
+                            <div class="input-group">
+                                <label class="input-group-text" for="inputGroupSelect01">{{ __('Categories') }}</label>
+                                <select name="category_name" class="form-select @error('inputGroupSelect01') is-invalid @enderror" id="inputGroupSelect01" value="{{ old('category_name')}}" required>
+                                    @foreach($categories as $category)
+                                    <option @if($category == $client?->category?->name) selected @endif value="{{ $category }}">{{ $category }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            @error('category_name')
+                            <span class="invalid-feedback" role="alert">
+                                <strong>{{ $message }}</strong>
+                            </span>
+                            @enderror
+                        </div>
+
+                        <div class="col mb-0">
+                            <input type="text" name="user_id" id="user_id"  value="{{ Auth::id() }}" hidden>
+                            <div class="input-group">
+                                <input
+                                    type="text"
+                                    id="user_id"
+                                    class="form-control @error('user_id') is-invalid @enderror"
+                                    value="{{$client->user?->name}}"
+                                    placeholder="User Name"
+                                    autocomplete="user_id"
+                                    autofocus>
+
+                            </div>
+
+                            @error('user_id')
+                            <span class="invalid-feedback" role="alert">
+                                <strong>{{ $message }}</strong>
+                            </span>
+                            @enderror
+                        </div>
+
+                    </div>
+
 
                     <br>
                     <div class="modal-footer">

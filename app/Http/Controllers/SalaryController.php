@@ -283,8 +283,7 @@ class SalaryController extends Controller
         $clientD = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved'])->whereIn('client_id', $CategoryDClient)->groupBy('client_id')->get(['client_id', DB::raw('SUM(net_salary) as net_salary'), DB::raw('COUNT(employee_id) as total_employees')]);
         $clientDHold = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['hold','rejected'])->whereIn('client_id', $CategoryDClient)->groupBy('client_id')->get(['client_id', DB::raw('SUM(net_salary) as net_salary'), DB::raw('COUNT(employee_id) as total_employees')]);
 
-       
-        // dd( $clientA);
+
         return view('salaries.salariesmonth', compact('clientA', 'clientAReceipts', 'clientAInvoices', 'clientAInvoicesGuards', 'clientACash', 'clientABank', 'clientB', 'clientBReceipts', 'clientBInvoices', 'clientBInvoicesGuards', 'clientBCash', 'clientBBank','clientC', 'clientCReceipts', 'clientCInvoices', 'clientCInvoicesGuards', 'clientCCash', 'clientCBank', 'clientD', 'clientDReceipts', 'clientDInvoices', 'clientDInvoicesGuards', 'clientDCash', 'clientDBank', 'clientAHold','clientBHold', 'clientCHold', 'clientDHold','salariesClients', 'salariesClientsHold','groupedBankSalaries','groupedCashkSalaries', 'salariesTaxes', 'salariesPensions', 'month', 'salariesMaster', 'salariesOvertime', 'salariesIOU', 'salariesBoots'));
     }
 

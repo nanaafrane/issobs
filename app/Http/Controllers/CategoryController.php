@@ -105,6 +105,7 @@ class CategoryController extends Controller
             $category->save();
 
             // UPDATE CLIENT AND MONTH
+            $categoryClient->category_id = $category->id;
             $categoryClient->category_name = $request->name[$key];
             $categoryClient->category_month = $date->format('Y-m-d');
             $categoryClient->save();
@@ -149,11 +150,12 @@ class CategoryController extends Controller
                                 $category->name = $request->name[$index];
                                 $category->save();
                             }
-                            // update client category and month
+                            // update client category name
                             $client = Client::findorFail($clientId);
                             if ($client) {
+                                // $client->category_id = $category->id;
                                 $client->category_name = $request->name[$index];
-                                $client->category_month = $date->format('Y-m-d');
+                                // $client->category_month = $date->format('Y-m-d');
                                 $client->save();
                             }
 

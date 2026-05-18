@@ -202,7 +202,9 @@ class ClientController extends Controller
     {
         //dd($client);
         $fields = Field::all();
-        return view('clients.edit', compact('client', 'fields'));
+        $categories = ['Category A', 'Category B', 'Category C', 'Category D']; 
+        // dd($categories);
+        return view('clients.edit', compact('client', 'fields', 'categories'));
     }
 
     /**
