@@ -375,22 +375,22 @@
                                             <td>{{number_format($transaction->receipt?->amount_received, 2)}} </td>
                                             <td> 
                                                 @if ($transaction->receipt?->cheque_amount > 0.00)
-                                                     Cheque : {{ $transaction->receipt?->cheque_reference }} {{ $transaction->receipt?->cheque_bank }} 
+                                                   <strong>  Cheque : {{ $transaction->receipt?->cheque_reference }} {{ $transaction->receipt?->cheque_bank }}  </strong>  
                                                 @endif
                                                 <br>
 
                                                 @if ($transaction->receipt?->transfer_amount > 0.00)
-                                                     Transfer : {{ $transaction->receipt?->transfer_reference }} {{ $transaction->receipt?->transfer_bank }} 
+                                                    <strong> Transfer : {{ $transaction->receipt?->transfer_reference }} {{ $transaction->receipt?->transfer_bank }} </strong>  
                                                 @endif
                                                 <br>
 
                                                 @if ($transaction->receipt?->momo_amount > 0.00)
-                                                    MoMo : {{ $transaction->receipt?->momo_transactin_id }} 
+                                                    <strong> MoMo : {{ $transaction->receipt?->momo_transactin_id }} </strong>  
                                                 @endif
                                                 <br>
 
                                                 @if ($transaction->receipt?->cash_amount > 0.00)
-                                                    Cash 
+                                                    <strong> Cash </strong>  
                                                 @endif
                                                 <br>
 

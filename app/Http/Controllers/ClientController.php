@@ -203,6 +203,24 @@ class ClientController extends Controller
     public function statementOfAccount (Client $client)
     {
             dd($client);
+
+            $client = Client::findOrFail($clientId);
+            $startDate = $request->input('start_date', now()->startOfMonth());
+            $endDate = $request->input('end_date', now()->endOfMonth());
+
+            // Calculate opening balance before the start date
+            $previousInvoices = $client->invoices()->where('date', '<', $startDate)->sum('amount');
+            $previousPayments = $client->transactions()->where('date', '<', $startDate)->sum('amount');
+            $openingBalance = $previousInvoices - $previousPayments;
+
+            // Fetch all invoices and payments within the specified date range
+            $invoices = $client->invoices()->whereBetween('date', [$startDate, $endDate])->get();
+            $transactions = $client->transactions()->whereBetween('date', [$startDate, $endDate])->get();
+
+            // Combine and sort chronologically
+            $statementLines = $invoices->merge($transactions)->sortBy('date');
+
+            return view('clients.statement', compact('client', 'statementLines', 'openingBalance', 'startDate', 'endDate'));
     }
 
 
