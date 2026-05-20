@@ -304,6 +304,9 @@
 
         </div><br>
 
+        <a href="{{ url('clientStatement', $client->id )}}" class="btn btn-secondary"  type=" button"> Get Statement of Account </a>
+
+
         <div class="row mt-12">
 
             <div class="col-xl-12">
@@ -328,6 +331,7 @@
                         </li>
 
                     </ul>
+
                     <div class="tab-content">
 
                         <div class="tab-pane fade show active" id="navs-justified-home" role="tabpanel">
@@ -345,7 +349,9 @@
                                             <th>Receipt No.</th>
                                             <th>Receipt Amount</th>
                                             <th>Receipt WHT </th>
+                                            <th> VAT 7% </th>
                                             <th>Receipt WHT Amount</th>
+                                            <th> Mode </th>
                                             <th>Receipt Month</th>
 
                                             <th> Date </th>
@@ -359,17 +365,40 @@
                                         <tr>
                                             <td> FWSSi{{$transaction->invoice_id}} </td>
                                             <td> {{$transaction->client->name}} {{$transaction->client->business_name}}</td>
-                                            <td> GH&#8373; {{$transaction->invoice_amount}} </td>
+                                            <td> {{number_format($transaction->invoice_amount, 2)}} </td>
                                             <td> {{$transaction->invoice?->invoice_month?->format('F, Y')}} </td>
 
                                             <td> FWSSR{{$transaction->receipt_id}} </td>
-                                            <td> GH&#8373;{{$transaction->receipt_amount}} </td>
-                                            <td> GH&#8373;{{$transaction->receipt?->wht_amount}} </td>
-                                            <td> GH&#8373;{{$transaction->receipt?->amount_received}} </td>
+                                            <td>{{number_format($transaction->receipt_amount, 2 )}} </td>
+                                            <td>{{number_format($transaction->receipt?->wht_amount, 2 )}} </td>
+                                            <td>{{number_format($transaction->receipt?->vat7_value, 2 )}} </td>
+                                            <td>{{number_format($transaction->receipt?->amount_received, 2)}} </td>
+                                            <td> 
+                                                @if ($transaction->receipt?->cheque_amount > 0.00)
+                                                     Cheque : {{ $transaction->receipt?->cheque_reference }} {{ $transaction->receipt?->cheque_bank }} 
+                                                @endif
+                                                <br>
+
+                                                @if ($transaction->receipt?->transfer_amount > 0.00)
+                                                     Transfer : {{ $transaction->receipt?->transfer_reference }} {{ $transaction->receipt?->transfer_bank }} 
+                                                @endif
+                                                <br>
+
+                                                @if ($transaction->receipt?->momo_amount > 0.00)
+                                                    MoMo : {{ $transaction->receipt?->momo_transactin_id }} 
+                                                @endif
+                                                <br>
+
+                                                @if ($transaction->receipt?->cash_amount > 0.00)
+                                                    Cash 
+                                                @endif
+                                                <br>
+
+                                            </td>
                                             <td> {{$transaction->receipt?->receipt_month?->format('F, Y')}} </td>
 
                                             <td> {{$transaction->created_at->format('F l d, Y, H:i A')}} </td>
-                                            <td> {{$transaction->balance}} </td>
+                                            <td> {{number_format($transaction->balance,2)}} </td>
                                             @if($transaction->status == 'completed')
                                             <td> <span class="badge bg-label-success"> {{$transaction->status}} </span> </td>
                                             @else

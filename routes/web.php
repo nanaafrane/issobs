@@ -47,6 +47,7 @@ Route::resource('departments', DepartmentController::class);
 Route::resource('role', RoleController::class);
 Route::resource('field', FieldController::class);
 Route::resource('client', ClientController::class);
+Route::get('clientStatement/{client}', [ClientController::class, 'statementOfAccount']);
 Route::get('clientAttachGuards/{id}', [ClientController::class, 'clientAttachGuards']);
 Route::resource('category', CategoryController::class); 
 Route::post('categoryAssign', [CategoryController::class, 'categoryAssign']); 

@@ -46,6 +46,11 @@ class Client extends Model
         return $this->hasMany(Invoice::class);
     }
 
+    public function receipts () : HasMany
+    {
+        return $this->hasMany(Receipt::class);
+    }
+
     public function user()
     {
         return $this->belongsTo(User::class);

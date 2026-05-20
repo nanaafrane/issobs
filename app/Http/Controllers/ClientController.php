@@ -195,6 +195,19 @@ class ClientController extends Controller
         return view('clients.show', compact('client','transactionsCount', 'outstanding', 'balance_outstanding', 'transactions', 'total_invoice_amount', 'total_wth_amount', 'total_wth_amount_received'));
     }
 
+
+    /**
+     * Get clients statement of Accounts
+     */
+
+    public function statementOfAccount (Client $client)
+    {
+            dd($client);
+    }
+
+
+
+
     /**
      * Show the form for editing the specified resource.
      */
