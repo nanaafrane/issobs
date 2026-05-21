@@ -665,6 +665,7 @@
 
                             <th>Reciept Date</th>
                             <th>Deductions</th>
+                            <th>Ded Desc</th>
                             <th>Other Payment</th>
 
                             <th>WHT</th>
@@ -818,6 +819,15 @@
                                            
                                        @endforeach
                                 </td>
+
+                                <td>
+                                        @foreach ( $invoice->receipt as $dedesc => $dedescript )
+                                      
+                                        {{ $dedescript->description }} <br> <br>
+                                           
+                                       @endforeach
+                                </td>
+
                                 <td>
                                         @foreach ( $invoice->receipt as $other => $otherpay )
                                       
