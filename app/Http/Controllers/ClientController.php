@@ -211,6 +211,7 @@ class ClientController extends Controller
             // Calculate opening balance 
             $invoices = $client->invoices()->get();
             $receipts = $client->receipts()->get();
+            $transactions = Transaction::where('client_id', $client->id)->get();
             // dd($invoices, $receipts);
             // $openingBalance = $previousInvoices - $previousPayments;
 
@@ -220,8 +221,15 @@ class ClientController extends Controller
 
             // Combine and sort chronologically
             $statementLines = $invoices->merge($receipts)->sortBy('invoice_month');
-            dd($statementLines);
-            // return view('clients.statement', compact('client', 'statementLines', 'openingBalance', 'startDate', 'endDate'));
+            // dd($statementLines);
+            // foreach( $statementLines as $statement)
+            //     {
+            //         if($statement->count() <= 21 )
+            //             {
+            //                 echo $statement->id . " ". $statement->invoice_month?->format('F, Y').  ;
+            //             }
+            //     }   
+            return view('clients.statement', compact('client', 'invoices', 'transactions', 'statementLines'));
     }
 
 

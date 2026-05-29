@@ -284,11 +284,13 @@ class InvoiceController extends Controller
     public function update(UpdateInvoiceRequest $request, Invoice $invoice)
     {
         //
-        // dd($invoice, $request->all());
+        // dd($invoice, $request->input('invoice_month'))->format('Y-m-d');
         $service_name = $request->input('service');
         $client_id = $request->input('client_id');
         $due_date = $request->input('due_date');
         $invoice_month = Carbon::parse($request->input('invoice_month'))->format('Y-m-d');
+        // dd($invoice_month);
+
         $description   = $request->input('description');
         $quantity   = $request->input('quantity');
         $quantity_count = count($quantity);

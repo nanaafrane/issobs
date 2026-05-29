@@ -356,9 +356,9 @@
                                 </div>
                                 <div class="col-3"></div>
                                 <div class="col-3">
-                                    <h6 class="card-header"> Invoice Month</h6>
+                                    <h6 class="card-header"> Invoice Month </h6>
                                     <div class="input-group">
-                                        <input name="invoice_month" type="month" value="{{$invoice->invoice_month}}" class="form-control" required>
+                                        <input name="invoice_month" type="month" value="{{$invoice->invoice_month?->format('Y-m')}}" class="form-control" required>
                                     </div>
                                 </div>
                             </div> <br>
