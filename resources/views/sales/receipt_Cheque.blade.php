@@ -3,6 +3,8 @@
     @section('css')
     <link rel="stylesheet" href="https://cdn.datatables.net/2.3.3/css/dataTables.dataTables.css" />
     <link rel="stylesheet" href="https://cdn.datatables.net/buttons/3.2.4/css/buttons.dataTables.css">
+    <link href="https://cdn.datatables.net/columncontrol/1.1.1/css/columnControl.dataTables.min.css" rel="stylesheet">
+
     @endsection
 
     @section('side_nav')
@@ -553,10 +555,12 @@
                     <thead>
                         <tr>
                             <th>id</th>
+                            <th>Receipt Month</th>
                             <th>Invoice No.</th>
+                            <th>Invoice Amount</th>
+                            <th>Invoice Month</th>
                             <th>Client Name</th>
                             <th>Phone No.</th>
-                            <th>Business Name </th>
                             <th> Field Office </th>
                             <th> Staff </th>
                             <th>Date Created</th>
@@ -572,14 +576,15 @@
                         @foreach($chequeReceipt as $receipt)
                         <tr>
                             <td>FWSSR{{$receipt->id}}</td>
+                            <td> {{$receipt->receipt_month?->format('F Y')}} </td>
                             <td>FWSSi{{$receipt->invoice_id}} </td>
-                            <td> {{$receipt->client->name}}</td>
+                            <td> GH&#x20B5; {{$receipt->invoice?->total}} </td>
+                            <td> {{$receipt->invoice?->invoice_month?->format('F Y')}} </td>
+                            <td> {{$receipt->client->name}} {{$receipt->client->business_name}}</td>
                             <td> {{$receipt->client->phone_number}} </td>
-                            <td> {{$receipt->client->business_name}} </td>
                             <td> {{$receipt->client->field->name}} </td>
                             <td> {{$receipt->user->name}} </td>
                             <td> {{$receipt->created_at->diffForHumans()}} </td>
-                            <!-- <td>GH&#x20B5; {{$receipt->invoice->total}} </td> -->
 
                             <td> GH&#x20B5; {{$receipt->total}} </td>
 
@@ -602,9 +607,8 @@
                         <tr>
                             <td>FWSSR{{$receipt->id}}</td>
                             <td>FWSSi{{$receipt->invoice_id}} </td>
-                            <td> {{$receipt->client->name}}</td>
+                            <td> {{$receipt->client->name}} {{$receipt->client->business_name}} </td>
                             <td> {{$receipt->client->phone_number}} </td>
-                            <td> {{$receipt->client->business_name}} </td>
                             <td> {{$receipt->client->field->name}} </td>
                             <td> {{$receipt->user->name}} </td>
                             <td> {{$receipt->created_at->diffForHumans()}} </td>
@@ -634,9 +638,8 @@
                         <tr>
                             <td>FWSSR{{$receipt->id}}</td>
                             <td>FWSSi{{$receipt->invoice_id}} </td>
-                            <td> {{$receipt->client->name}}</td>
+                            <td> {{$receipt->client->name}} {{$receipt->client->business_name}} </td>
                             <td> {{$receipt->client->phone_number}} </td>
-                            <td> {{$receipt->client->business_name}} </td>
                             <td> {{$receipt->client->field->name}} </td>
                             <td> {{$receipt->user->name}} </td>
                             <td> {{$receipt->created_at->diffForHumans()}} </td>
@@ -666,9 +669,8 @@
                         <tr>
                             <td>FWSSR{{$receipt->id}}</td>
                             <td>FWSSi{{$receipt->invoice_id}} </td>
-                            <td> {{$receipt->client->name}}</td>
+                            <td> {{$receipt->client->name}} {{$receipt->client->business_name}} </td>
                             <td> {{$receipt->client->phone_number}} </td>
-                            <td> {{$receipt->client->business_name}} </td>
                             <td> {{$receipt->client->field->name}} </td>
                             <td> {{$receipt->user->name}} </td>
                             <td> {{$receipt->created_at->diffForHumans()}} </td>
@@ -698,9 +700,8 @@
                         <tr>
                             <td>FWSSR{{$receipt->id}}</td>
                             <td>FWSSi{{$receipt->invoice_id}} </td>
-                            <td> {{$receipt->client->name}}</td>
+                            <td> {{$receipt->client->name}} {{$receipt->client->business_name}} </td>
                             <td> {{$receipt->client->phone_number}} </td>
-                            <td> {{$receipt->client->business_name}} </td>
                             <td> {{$receipt->client->field->name}} </td>
                             <td> {{$receipt->user->name}} </td>
                             <td> {{$receipt->created_at->diffForHumans()}} </td>
@@ -730,9 +731,8 @@
                         <tr>
                             <td>FWSSR{{$receipt->id}}</td>
                             <td>FWSSi{{$receipt->invoice_id}} </td>
-                            <td> {{$receipt->client->name}}</td>
+                            <td> {{$receipt->client->name}} {{$receipt->client->business_name}} </td>
                             <td> {{$receipt->client->phone_number}} </td>
-                            <td> {{$receipt->client->business_name}} </td>
                             <td> {{$receipt->client->field->name}} </td>
                             <td> {{$receipt->user->name}} </td>
                             <td> {{$receipt->created_at->diffForHumans()}} </td>
@@ -762,9 +762,8 @@
                         <tr>
                             <td>FWSSR{{$receipt->id}}</td>
                             <td>FWSSi{{$receipt->invoice_id}} </td>
-                            <td> {{$receipt->client->name}}</td>
+                            <td> {{$receipt->client->name}} {{$receipt->client->business_name}} </td>
                             <td> {{$receipt->client->phone_number}} </td>
-                            <td> {{$receipt->client->business_name}} </td>
                             <td> {{$receipt->client->field->name}} </td>
                             <td> {{$receipt->user->name}} </td>
                             <td> {{$receipt->created_at->diffForHumans()}} </td>
@@ -810,6 +809,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
     <script src="https://cdn.datatables.net/buttons/3.2.4/js/buttons.html5.min.js"></script>
 
+    <script src="https://cdn.datatables.net/columncontrol/1.1.1/js/dataTables.columnControl.min.js"></script>
 
     <script>
         new DataTable('#myTable', {
@@ -817,9 +817,26 @@
 
             layout: {
                 topStart: {
-                    buttons: ['excelHtml5', 'pdfHtml5']
+                    buttons: [{
+                            extend: 'pageLength',
+                            text: '<i class="bx bxs-bullseye"></i> Show',
+                            className: 'btn btn-secondary',
+                            Options: [10, 25, 50, 100, 500], 
+                        },
+                        {
+                            extend: 'excelHtml5',
+                            text: '<i class="bx bxs-file-export"></i> Export to Excel',
+                            className: 'btn btn-secondary btn-sm',
+                            title: "Cheque Receipts",
+                            exportOptions: {
+                                columns: ':visible'
+                            }   
+                        }]
                 }
-            }
+            },
+             columnControl: [
+                ['search']
+            ]
         });
     </script>
 
