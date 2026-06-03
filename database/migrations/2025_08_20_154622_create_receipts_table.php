@@ -17,6 +17,7 @@ return new class extends Migration
             $table->integer('client_id')->nullable();
             $table->string('from')->nullable();
             $table->string('mode')->nullable();
+            $table->boolean('advance_payment')->nullable();
             $table->decimal('dAmount')->nullable();
             $table->date('receipt_month')->nullable();
             $table->string('description')->nullable();

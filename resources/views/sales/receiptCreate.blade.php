@@ -290,6 +290,11 @@
                         @csrf
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <h5 class="mb-0"> Receipt </h5>
+                            <div class="form-check mt-3">
+                                <input name="advance_payment" class="form-check-input" type="checkbox" value="advance" id="defaultCheck1" />
+                                <label class="form-check-label" for="defaultCheck1"> Tick For Advance Payment </label>
+                            </div>
+
                             <!-- <small class="text-body float-end">Merged input group</small> -->
 
                             <div class="button-wrapper">

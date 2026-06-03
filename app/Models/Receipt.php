@@ -12,6 +12,7 @@ class Receipt extends Model
         'client_id',
         'from',
         'mode',
+        'advance_payment',
         'receipt_month',
         'dAmount',
         'description',

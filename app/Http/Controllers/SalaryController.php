@@ -352,7 +352,7 @@ class SalaryController extends Controller
      */
     public function BulkCashStore (Request $request)
     {
-        // dd($request->all());
+        // dd($request->hold_reason);
                 
         $salaryIds = $request->input('salary', []);
         // dd($salaryIds);
@@ -368,7 +368,21 @@ class SalaryController extends Controller
         }
         else{
 
-            Salary::whereIn('id', $salaryIds)->update(['payment_status' => 'hold', 'user_id1' => Auth::id() ]);
+            $salaries = Salary::whereIn('id', $salaryIds)->get();
+            // dd($salaries);
+            foreach($salaries as $salary)
+            {
+                $salary->payment_status = 'hold';
+                $salary->user_id1 = Auth::id();
+                $salary->hold_reason = $request->hold_reason[$salary->id] ?? 'No reason provided';
+                $salary->save();
+            }
+
+            // Salary::whereIn('id', $salaryIds)->update([
+            //                                             'payment_status' => 'hold', 
+            //                                             'user_id1' => Auth::id(),
+            //                                             'hold_reason' => $request->hold_reason
+            //                                              ]);
             return back()->with('success', 'Employees salaries have been Held : ' . implode(', ', $salaryIds));
             // return back()->with('success', 'Employees salaries have been Held.');
         }
@@ -1338,7 +1352,11 @@ class SalaryController extends Controller
                         continue;
                     }
 
-                    Salary::where('id', $salary->id)->update(['payment_status' => 'hold', 'user_id1' => Auth::id()]);
+                    $salary->payment_status = 'hold';
+                    $salary->user_id1 = Auth::id();
+                    $salary->hold_reason = $request->hold_reason[$salary->id] ?? 'No reason provided';
+                    $salary->save();
+                    // Salary::where('id', $salary->id)->update(['payment_status' => 'hold', 'user_id1' => Auth::id()]);
                 }
             //  dd(count($alreadyProcessed));
             if (!empty($alreadyProcessed))

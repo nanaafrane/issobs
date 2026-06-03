@@ -1484,6 +1484,7 @@
                                         <th> View </th>
                                         <!-- <th> Bulk Cash</th> -->
                                         <th> Payment Status</th>
+                                        <th> Hold Reason</th>
                                         <th> Category </th>
                                         <th> id</th>
                                         <th> Salary Month </th>
@@ -1552,7 +1553,7 @@
                                                     @else
                                                     <td> <span class="badge bg-label-success"> {{ $salary->payment_status }} </span> </td>
                                                     @endif
-
+                                                    <td> <textarea type="text" name="hold_reason[{{ $salary->id }}]" class="form-control"> {{ $salary?->hold_reason }} </textarea> </td>
                                                     <td> @if ( $salary->client?->category_month == \Carbon\Carbon::parse($month)->format('Y-m-d') ) {{ $salary->client?->category_name }} @endif </td>
                                                     <td> {{ $salary->id }} </td>
                                                     <td> {{$salary->salary_month?->format('F, Y')}} </td>

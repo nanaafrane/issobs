@@ -375,6 +375,7 @@
                                             <th>#</th>
                                             <th>Staff ID</th>
                                         <th>Status</th>
+                                        <th>Hold Reason</th>
                                         <th>Month</th>
                                         <th>Name</th>
                                         <th> Department </th>
@@ -441,7 +442,7 @@
                                                     @else
                                                     <td> <span class="badge bg-label-success"> {{ $salary->payment_status }} </span> </td>
                                                     @endif
-
+                                                    <td> <textarea type="text" name="hold_reason[{{ $salary->id }}]" class="form-control"> {{ $salary?->hold_reason }} </textarea> </td>
                                                     <td> {{$salary->salary_month?->format('F, Y')}} </td>
                                                     <td> {{ strtoupper($salary->employee?->name) }} </td>
                                                     <td> {{ $salary->department?->name }} </td>

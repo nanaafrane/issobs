@@ -24,6 +24,7 @@ class Salary extends Model
         'status2',
         'hubtel_id',
         'payment_status',
+        'hold_reason',
         'basic_salary',
         'allowances',
         'airtime_allowance',

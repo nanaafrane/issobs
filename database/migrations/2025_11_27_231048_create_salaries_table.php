@@ -28,6 +28,7 @@ return new class extends Migration
             $table->string('branch')->nullable();
             $table->string('payment_type')->nullable();
             $table->string('payment_status')->default('pending');
+            $table->string('hold_reason')->nullable();
             $table->decimal('basic_salary', 15, 2)->default(0);
             $table->decimal('allowances', 15, 2)->default(0);
             $table->decimal('airtime_allowance')->default(0);
