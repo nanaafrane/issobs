@@ -566,6 +566,7 @@
                             <th>Date Created</th>
                             <th>Paid</th>
                             <th>Status</th>
+                            <th>Advance</th>
                             <th>View</th>
                         </tr>
                     </thead>
@@ -596,6 +597,7 @@
                             <td><span class="badge bg-label-danger">{{$receipt->status}}</span></td>
                             @endif
 
+                            <td> {{ $receipt->advance_payment }} </td>
                             <td>
                                 <a href="{{url('receipt', $receipt->id)}}" class="btn btn-info">
                                     <i class="icon-base bx bxs-bullseye"></i>

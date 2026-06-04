@@ -661,6 +661,7 @@
                             <th>Paid</th>
                             <th>Balance</th>
                             <th>Status</th>
+                            <th>Advance</th>
                             <th>Action</th>
 
                             <th>Reciept Date</th>
@@ -798,6 +799,14 @@
                                 @else
                                 <td><span class="badge bg-label-danger">{{$invoice->status}}</span></td>
                                 @endif
+                                <td>
+                                    @foreach ( $invoice->receipt as $adva => $advance )
+                                      
+                                            {{ $advance?->advance_payment }}  <br> <br>
+                                           
+                                       @endforeach
+
+                                </td>
                                 <td>
                                     <a href="{{url('invoice', $invoice->id)}}" class="btn btn-danger">
                                         <i class="icon-base bx bxs-bullseye"></i>

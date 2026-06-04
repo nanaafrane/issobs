@@ -588,6 +588,7 @@
                             <th>id</th>
                             <th>Receipt Date</th>
                             <th>Invoice No.</th>
+                            <th>Inv. Amount</th>
                             <th>Inv. Month</th>
                             <th>Client Name</th>
                             <th>Phone No.</th>
@@ -614,6 +615,7 @@
                             <th>VAT 7%</th>
 
                             <th>Balance</th>
+                            <th>Advance</th>
                             <th>Status</th>
                             <th>View</th>
                         </tr>
@@ -627,6 +629,7 @@
                             <td>FWSSR{{$receipt->id}}</td>
                             <td> {{ $receipt->receipt_month?->format('l, F j, Y') }} </td>
                             <td>FWSSi{{$receipt->invoice_id}} </td>
+                            <td> GH&#x20B5; {{$receipt->invoice->total}} </td>
                             <td> {{ $receipt->invoice?->invoice_month?->format('F, Y') }} </td>
                             @if ($receipt->client->name === $receipt->client->business_name)
                             <td> {{$receipt->client->business_name}} </td>
@@ -658,7 +661,7 @@
                            <td> GH&#x20B5; {{$receipt->vat7_value}} </td>
 
                             <td> GH&#x20B5;  {{ $receipt->invoice->total - $receipt->total - $receipt->dAmount }} </td>
-
+                            <td> {{ $receipt->advance_payment }} </td>
                             @if($receipt->status == 'completed')
                             <td><span class="badge bg-label-success">{{$receipt->status}}</span></td>
                             @else

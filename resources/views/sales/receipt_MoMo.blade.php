@@ -553,7 +553,10 @@
                     <thead>
                         <tr>
                             <th>id</th>
+                            <th>Receipt Month</th>
                             <th>Invoice No.</th>
+                            <th>Invoice Amount</th>
+                            <th>Invoice Month</th>
                             <th>Client Name</th>
                             <th>Phone No.</th>
                             <th>Business Name </th>
@@ -562,6 +565,7 @@
                             <th>Date Created</th>
                             <th>Paid</th>
                             <th>Status</th>
+                            <th>Advance</th>
                             <th>View</th>
                         </tr>
                     </thead>
@@ -572,7 +576,10 @@
                         @foreach($momoReceipt as $receipt)
                         <tr>
                             <td>FWSSR{{$receipt->id}}</td>
+                            <td> {{$receipt->receipt_month?->format('F Y')}} </td>
                             <td>FWSSi{{$receipt->invoice_id}} </td>
+                            <td> GH&#x20B5; {{$receipt->invoice?->total}} </td>
+                            <td> {{$receipt->invoice?->invoice_month?->format('F Y')}} </td>
                             <td> {{$receipt->client->name}}</td>
                             <td> {{$receipt->client->phone_number}} </td>
                             <td> {{$receipt->client->business_name}} </td>
@@ -589,7 +596,7 @@
                             @else
                             <td><span class="badge bg-label-danger">{{$receipt->status}}</span></td>
                             @endif
-
+                            <td> {{ $receipt->advance_payment }} </td>
                             <td>
                                 <a href="{{url('receipt', $receipt->id)}}" class="btn btn-info">
                                     <i class="icon-base bx bxs-bullseye"></i>
@@ -619,6 +626,7 @@
                             <td><span class="badge bg-label-danger">{{$receipt->status}}</span></td>
                             @endif
 
+                            <td> {{ $receipt->advance_payment }} </td>
                             <td>
                                 <a href="{{url('receipt', $receipt->id)}}" class="btn btn-info">
                                     <i class="icon-base bx bxs-bullseye"></i>
