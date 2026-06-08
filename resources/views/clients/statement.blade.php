@@ -256,31 +256,6 @@
             </div>
         </div>
 
-        <div class="row">
-
-
-            <div class="col-md-4 col-xl-4">
-                <div class="card text-bg-dark">
-                    <div class="card-body">
-                        <h5 class="card-title text-white"> Client Details <span class="badge bg-label-dark"> </span></h5>
-                        <hr>
-                        <p class="card-text">Client ID # : <strong> {{$client->id}}</strong> </p>
-                        <p class="card-text">Client Name : <strong>{{$client->name}}</strong> </p>
-                        <p class="card-text">Phone Number : <strong>{{$client->phone_number}}, {{ $client->phone_number1}}</strong> </p>
-                        <p class="card-text">Business Name : <strong>{{$client->business_name}}</strong> </p>
-                        <p class="card-text">Address : <strong>{{$client->address}}</strong> </p>
-                        <p class="card-text">Location : <strong>{{$client->field->name}}</strong> </p>
-
-                    </div>
-                </div>
-            </div>
-
-
-
-        </div><br>
-
-
-
         <div class="row mt-12">
 
             <div class="col-xl-12">
@@ -316,6 +291,7 @@
                                             <th>#</th>
                                             <th>Date</th>
                                             <th>Description</th>
+                                            <th>Payment Details </th>
                                             <th>Debit</th>
                                             <th>Credit</th>
                                             <th>Balance</th>
@@ -323,61 +299,24 @@
                                         </tr>
                                     </thead>
                                     <tbody class="table-border-bottom-0">
-                                        @foreach($statementLines as $key => $statement)
-
-                                            @if( $statement instanceof App\Models\Invoice && $key <= 21 )
+                                        @php $grandTotal = 0; @endphp
+                                        @foreach($data['description'] as $key => $statement)
                                                 <tr>
-                                                    <td> {{ $key + 1 }} </td>
-                                                    <td> {{ $statement->created_at->format('F, Y') }}  </td>
-                                                    <td> Invoice Month: {{ $statement->invoice_month?->format('F, Y') }} <br>  Invoice ID : FWSSI {{ $statement->id }} </td>
-                                                    <td>  {{ $statement->total }} </td>
-                                                    <td>  </td>
-                                                    <td>
-                                                        @if ($statement->status == 'uncompleted')
-                                                            {{ $statement->balance }}
-
-                                                        @elseif ($statement->status == 'unpaid') 
-                                                            {{ $statement->total }}
-                                                        @endif    
-                                                        
+                                                    <td> {{  $key + 1 }} </td>
+                                                    <td> {{$data['date'][$key] ?? ''}} </td>
+                                                    <td> {!! $statement !!} </td>
+                                                    <td> 
+                                                        @if(isset($data['credit'][$key]))
+                                                           {!! $data['details'][$key] !!}
+                                                        @endif
                                                     </td>
-                                                </tr>
-                                            @else
-
-                                                <tr>
-                                                    <td> {{ $key + 1 }} </td>
-                                                    <td> {{  $statement->receipt_month?->format('F l d, Y, H:i A') }} </td>
-                                                    <td>  Invoice Month : {{ $statement->invoice?->invoice_month?->format('F, Y') }} <br>  Invoice ID : FWSSI {{ $statement->invoice_id }} <br> Receipt ID : FWSRR {{  $statement->id  }} 
-                                                    
-                                                        <br> 
-                                                        @if ($statement->cheque_amount > 0.00)
-                                                            Cheque {{ $statement->cheque_reference }}, {{  $statement->cheque_bank }} <br>
-                                                            
-                                                        @endif
-                                                        @if ($statement->transfer_amount > 0.00)
-                                                            Transfer {{ $statement->transfer_reference }}, {{  $statement->transfer_bank }} <br>
-                                                            
-                                                        @endif
-
-                                                        @if ($statement->momo_amount > 0.00)
-                                                            Momo  {{ $statement->momo_transactin_id }} <br>
-                                                            
-                                                        @endif
-
-                                                        @if ($statement->cash_amount > 0.00)
-                                                            Cash <br>
-                                                            
-                                                        @endif
-                                                    
-                                                    </td>
-                                                    <td>   </td>
-                                                    <td>  {{ $statement->total }} </td>
-                                                    <td>   </td>
-                                                </tr>
-
-                                            @endif
-                                        
-
+                                                    <td>  {{$data['debit'][$key] ?? 0 }} </td>
+                                                    <td>   {{$data['credit'][$key] ?? 0 }} </td>
+                                                    <td> 
+                                                        @php $grandTotal += $data['balance'][$key]; @endphp
+                                                        {{  $grandTotal  }} 
+                                                     </td>
+                                                </tr>                                        
                                         @endforeach
                                     </tbody>
                                 </table>

@@ -203,15 +203,103 @@ class ClientController extends Controller
     public function statementOfAccount (Client $client)
     {
             // dd($client);
+            // $previousInvoices = Invoice::where('client_id', $client->id)->sum('total');
+            // dd($previousInvoices);
+            // $previousPayments = Receipt::where('client_id', $client->id)->sum('total');
+            // $openingBalance = $previousInvoices - $previousPayments;
+            // dd($previousInvoices, $previousPayments, $openingBalance);
+
+            $transactions = Transaction::where('client_id', $client->id)->get();
+
+            // dd( $transactions);
+
+
+            // $transactions->prepend((object)[
+            //     'type' => 'Opening Balance',
+            //     'amount' => $openingBalance,
+            //     'date' => $startDate->format('Y-m-d'),
+            // ]);
+            $data = [
+                'date' => [],
+                'description' =>[],
+                'details' => [],
+                'debit' =>[],
+                'credit'=>[],
+                'balance'=>[]
+            ];
+
+            foreach($transactions as $key => $statement)
+                {
+                    if($statement->receipt_amount == null)
+                        {
+                            $data['date'][$key] = $statement->invoice?->invoice_month?->format('F, Y') ;
+                            $data['debit'][$key] = $statement->invoice_amount;
+                            $data['description'][] = 'Debit '. "<br>". "Invoice ID : ". $statement->invoice_id  ;
+                            $data['balance'][] +=  $statement->invoice_amount ;
+        
+                            // if($statement->status == 'completed')
+                            //     {
+                            //         $data['credit'][] =  $statement->receipt_amount;
+                            //         $data['balance'][] +=  $statement->invoice_amount - $statement->receipt_amount;
+                            //     }
+                            // $data['balance'] =  $statement->invoice_amount;
+        
+                        }
+                    else
+                        {
+                            $data['date'][$key] = $statement->receipt?->receipt_month?->format('F l d, Y');
+                            $data['description'][] = 'Credit'. "<br>". " Invoice Month : ". $statement->invoice?->invoice_month?->format('F, Y').  "<br>". "Invoice ID : ".$statement->invoice_id .   "<br>". " Invoice Amount : ". $statement->invoice_amount ;
+
+                            if( $statement->receipt?->cash_amount > 0.00 )
+                                {
+                                    $data['details'][$key] =  "Cash ";
+                                }
+                            if( $statement->receipt?->momo_amount > 0.00 )
+                                {
+                                    $data['details'][$key] =  "MoMo ";
+                                }
+                            if( $statement->receipt?->transfer_amount > 0.00 )
+                                {
+                                    $data['details'][$key] =  "Transfer Bank : ". $statement->receipt?->transfer_bank . "<br> ". "Transfer Reference : ". $statement->receipt?->transfer_reference . "<br> ". "Amount : ". $statement->receipt?->transfer_amount . "<br>". "WTH : ". $statement->receipt?->wht_amount . "<br>". "VAT 7% : ". $statement->receipt?->vat7_value;
+                                }
+                            if( $statement->receipt?->cheque_amount > 0.00 )
+                                {
+                                    $data['details'][$key] =  "Cheque Bank : ". $statement->receipt?->cheque_bank . "<br>". "Cheque Reference : ". $statement->receipt?->cheque_reference . "<br>". "<br>". "Amount : ". $statement->receipt?->cheque_amount . "WTH : ". $statement->receipt?->wht_amount . "<br>". "VAT 7% : ". $statement->receipt?->vat7_value;
+                                }
+
+                            $data['credit'][$key] =  $statement->receipt_amount;
+
+                            $data['balance'][] -=  $statement->receipt_amount;
+                            //  $data['balance'] =  $statement->invoice_amount;
+                        }
+
+                }
+
+            // dd( $data);
+
+            // return $openingBalance;
+
+            // $statementLines = $statementLines->sortBy('date');
+           
+            // $statementLines->each(function ($line) {
+            //     if (isset($line->type) == 'Invoice') {
+            //       echo  $line->type = 'Invoice' . " - ". $line->amount = $line->total . "<br>";
+                
+            //     } elseif (isset($line->Receipt) == 'Receipt') {
+            //        echo $line->type = 'Receipt'. " - ". $line->amount = $line->amount_received . "<br>";
+                    
+            //     }
+            // });
+
 
             // $client = Client::findOrFail($clientId);
             // $startDate = $request->input('start_date', now()->startOfMonth());
             // $endDate = $request->input('end_date', now()->endOfMonth());
 
             // Calculate opening balance 
-            $invoices = $client->invoices()->get();
-            $receipts = $client->receipts()->get();
-            $transactions = Transaction::where('client_id', $client->id)->get();
+            // $invoices = $client->invoices()->get();
+            // $receipts = $client->receipts()->get();
+            // $transactions = Transaction::where('client_id', $client->id)->get();
             // dd($invoices, $receipts);
             // $openingBalance = $previousInvoices - $previousPayments;
 
@@ -220,7 +308,7 @@ class ClientController extends Controller
             // $transactions = $client->transactions()->whereBetween('date', [$startDate, $endDate])->get();
 
             // Combine and sort chronologically
-            $statementLines = $invoices->merge($receipts)->sortBy('invoice_month');
+            // $statementLines = $invoices->merge($receipts)->sortBy('invoice_month');
             // dd($statementLines);
             // foreach( $statementLines as $statement)
             //     {
@@ -229,7 +317,7 @@ class ClientController extends Controller
             //                 echo $statement->id . " ". $statement->invoice_month?->format('F, Y').  ;
             //             }
             //     }   
-            return view('clients.statement', compact('client', 'invoices', 'transactions', 'statementLines'));
+            return view('clients.statement', compact('client', 'data'));
     }
 
 

@@ -136,7 +136,7 @@
           </li>
                       <li class="menu-item">
               <a href="{{url('employeesCash')}}" class="menu-link">
-              <div class="text-truncate" data-i18n="SList">Employee Cash</div>
+              <div class="text-truncate" data-i18n="SList">Employee MoMo</div>
               </a>
           </li>
                 </ul>
@@ -249,7 +249,7 @@
                                                         <li class="menu-item">
                     <a href="{{ url('salariesBulkCash') }}" class="menu-link">
                     <i class="menu-icon tf-icons bx bxs-group"></i>
-                    <div class="text-truncate" data-i18n="Transaction">Bulk Cash Salaries</div>
+                    <div class="text-truncate" data-i18n="Transaction">Bulk MoMo Salaries</div>
                     </a>
                 </li>
 
@@ -307,7 +307,7 @@
                         </div>
                         <small class="fw-medium">  INVOICE GUARDS : {{ $clientAInvoicesGuards }}</small>
                         <hr>
-                        <small class="fw-medium"> <strong>  CASH : &#x20B5; {{ number_format($clientACash->sum('net_salary'), 2) }} | {{ $clientACash->count() }} </strong> </small> <br>
+                        <small class="fw-medium"> <strong>  MOMO : &#x20B5; {{ number_format($clientACash->sum('net_salary'), 2) }} | {{ $clientACash->count() }} </strong> </small> <br>
                         <small class="fw-medium"> <strong>  BANK : &#x20B5; {{ number_format($clientABank->sum('net_salary'), 2) }} | {{ $clientABank->count() }} </strong> </small>
                     </div>
                 </div>
@@ -336,7 +336,7 @@
                         </div>
                          <small class="fw-medium">  INVOICE GUARDS : {{ $clientBInvoicesGuards }}</small>
                         <hr>
-                        <small class="fw-medium"> <strong>  CASH : &#x20B5; {{ number_format($clientBCash->sum('net_salary'), 2) }} | {{ $clientBCash->count() }} </strong> </small> <br>
+                        <small class="fw-medium"> <strong>  MOMO : &#x20B5; {{ number_format($clientBCash->sum('net_salary'), 2) }} | {{ $clientBCash->count() }} </strong> </small> <br>
                         <small class="fw-medium"> <strong>  BANK : &#x20B5; {{ number_format($clientBBank->sum('net_salary'), 2) }} | {{ $clientBBank->count() }} </strong> </small>
                     </div>
                 </div>
@@ -365,7 +365,7 @@
                        </div>
                          <small class="fw-medium">  INVOICE GUARDS : {{ $clientCInvoicesGuards }}</small>
                         <hr>
-                        <small class="fw-medium"> <strong>  CASH : &#x20B5; {{ number_format($clientCCash->sum('net_salary'), 2)  }} |  {{  $clientCCash->count() }} </strong> </small> <br>
+                        <small class="fw-medium"> <strong>  MOMO : &#x20B5; {{ number_format($clientCCash->sum('net_salary'), 2)  }} |  {{  $clientCCash->count() }} </strong> </small> <br>
                         <small class="fw-medium"> <strong>  BANK : &#x20B5; {{ number_format($clientCBank->sum('net_salary'), 2) }} | {{ $clientCBank->count() }} </strong> </small> 
                     </div>
                 </div>
@@ -394,7 +394,7 @@
                        </div>
                          <small class="fw-medium">  INVOICE GUARDS : {{ $clientDInvoicesGuards }}</small>
                         <hr>
-                        <small class="fw-medium"> <strong>  CASH : &#x20B5; {{ number_format($clientDCash->sum('net_salary'), 2) }} | {{ $clientDCash->count() }} </strong> </small> <br>
+                        <small class="fw-medium"> <strong>  MOMO : &#x20B5; {{ number_format($clientDCash->sum('net_salary'), 2) }} | {{ $clientDCash->count() }} </strong> </small> <br>
                         <small class="fw-medium"> <strong>  BANK : &#x20B5; {{ number_format($clientDBank->sum('net_salary'), 2) }} | {{ $clientDBank->count() }} </strong> </small>  
                     </div>
                 </div>
@@ -561,7 +561,7 @@
                         data-bs-target="#navs-pills-justified-botwe"
                         aria-controls="navs-pills-justified-botwe"
                         aria-selected="false">
-                        <span class="d-none d-sm-inline-flex align-items-center"><i class="icon-base bx bx-home icon-sm me-1_5"></i>Cash
+                        <span class="d-none d-sm-inline-flex align-items-center"><i class="icon-base bx bx-home icon-sm me-1_5"></i>MoMo
                             <span class="badge rounded-pill bg-danger ms-1_5"> {{ $groupedCashkSalaries->count() }} </span>
                         </span>
                         <i class="icon-base bx bx-home icon-sm d-sm-none"></i>

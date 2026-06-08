@@ -397,7 +397,7 @@
                                             </td>
                                             <td> {{$transaction->receipt?->receipt_month?->format('F, Y')}} </td>
 
-                                            <td> {{$transaction->created_at->format('F l d, Y, H:i A')}} </td>
+                                            <td> {{$transaction->created_at?->format('F l d, Y, H:i A')}} </td>
                                             <td> {{number_format($transaction->balance,2)}} </td>
                                             @if($transaction->status == 'completed')
                                             <td> <span class="badge bg-label-success"> {{$transaction->status}} </span> </td>
