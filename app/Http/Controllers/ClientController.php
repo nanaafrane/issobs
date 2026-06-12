@@ -169,9 +169,25 @@ class ClientController extends Controller
     public function store(StoreClientRequest $request)
     {
         //
+        // dd($request->all());
         $client = new Client();
-        $client->create($request->all());
-        return redirect()->back()->with('success', 'Client Added Sucessfully');
+        $client->create([
+            'name' => $request->name,
+            'phone_number' => $request->phone_number,
+            'phone_number1' => $request->phone_number1,
+            'business_name' => $request->business_name,
+            'address' => $request->address,
+            'field_id' => $request->field_id,
+            'branch' => $request->branch,
+            'rate' => $request->rate,
+            'guards' => $request->guards,
+            'start_date' => $request->start_date,
+            'scope_of_work' => $request->scope_of_work,
+            'state_institution' => $request->state_institution,
+            'status' => 'pending',
+            'user_id' => Auth::id(),    
+        ]);
+        return redirect('client')->with('info', $client->id. ' '.'Client Added Sucessfully');
     }
 
     /**
@@ -260,16 +276,16 @@ class ClientController extends Controller
                                 }
                             if( $statement->receipt?->transfer_amount > 0.00 )
                                 {
-                                    $data['details'][$key] =  "Transfer Bank : ". $statement->receipt?->transfer_bank . "<br> ". "Transfer Reference : ". $statement->receipt?->transfer_reference . "<br> ". "Amount : ". $statement->receipt?->transfer_amount . "<br>". "WTH : ". $statement->receipt?->wht_amount . "<br>". "VAT 7% : ". $statement->receipt?->vat7_value;
+                                    $data['details'][$key] =  "Transfer Bank : ". $statement->receipt?->transfer_bank . "<br> ". "Transfer Reference : ". $statement->receipt?->transfer_reference . "<br> ". "Amount : ". $statement->receipt?->transfer_amount . "<br>". "WTH : ". $statement->receipt?->wht_amount . "<br>". "VAT 7% :  ". $statement->receipt?->vat7_value;
                                 }
                             if( $statement->receipt?->cheque_amount > 0.00 )
                                 {
-                                    $data['details'][$key] =  "Cheque Bank : ". $statement->receipt?->cheque_bank . "<br>". "Cheque Reference : ". $statement->receipt?->cheque_reference . "<br>". "<br>". "Amount : ". $statement->receipt?->cheque_amount . "WTH : ". $statement->receipt?->wht_amount . "<br>". "VAT 7% : ". $statement->receipt?->vat7_value;
+                                    $data['details'][$key] =  "Cheque Bank : ". $statement->receipt?->cheque_bank . "<br>". "Cheque Reference : ". $statement->receipt?->cheque_reference . "<br>". "Amount : ". $statement->receipt?->cheque_amount . "<br>". "WTH : ". $statement->receipt?->wht_amount . "<br>". "VAT 7% :  ". $statement->receipt?->vat7_value;
                                 }
+                            $credit = $statement->receipt?->cash_amount + $statement->receipt?->momo_amount + $statement->receipt?->transfer_amount + $statement->receipt?->cheque_amount + $statement->receipt?->other_payment_amnt + $statement->receipt?->dAmount + $statement->receipt?->wht_amount  ;
+                            $data['credit'][$key] =  $credit;
 
-                            $data['credit'][$key] =  $statement->receipt_amount;
-
-                            $data['balance'][] -=  $statement->receipt_amount;
+                            $data['balance'][] -=  $credit;
                             //  $data['balance'] =  $statement->invoice_amount;
                         }
 
@@ -331,8 +347,67 @@ class ClientController extends Controller
         //dd($client);
         $fields = Field::all();
         $categories = ['Category A', 'Category B', 'Category C', 'Category D']; 
-        // dd($categories);
-        return view('clients.edit', compact('client', 'fields', 'categories'));
+        // Employees assigned to this client (based on employee.client_id)
+        $attachedEmployees = employee::where('client_id', $client->id)->get();
+
+        // Available employees (not assigned to this client) — limit to guards (department_id = 6) and active status
+        $availableEmployees = employee::where(function($q) use ($client) {
+            $q->where('client_id', '!=', $client->id)->orWhereNull('client_id');
+        })->where('department_id', 6)->where('status', 'Active')->get();
+
+        return view('clients.edit', compact('client', 'fields', 'categories', 'attachedEmployees', 'availableEmployees'));
+    }
+
+
+    /**
+     * Attach selected employees to a client (sets employee.client_id and pivot attach).
+     */
+    public function attachEmployees(\Illuminate\Http\Request $request, Client $client)
+    {
+        $employeeIds = $request->input('employees', []);
+        if (empty($employeeIds)) {
+            return back()->with('error', 'No employee selected to attach.');
+        }
+
+        foreach ($employeeIds as $id) {
+            $emp = employee::find($id);
+            if ($emp) {
+                // set direct client_id for compatibility with existing code
+                $emp->client_id = $client->id;
+                $emp->save();
+                // ensure pivot reflects association
+                $emp->clients()->syncWithoutDetaching([$client->id]);
+            }
+        }
+
+        return back()->with('success', 'Selected employees attached to client.');
+    }
+
+
+    /**
+     * Detach selected employees from a client (removes pivot and clears employee.client_id where matching).
+     */
+    public function detachEmployees(\Illuminate\Http\Request $request, Client $client)
+    {
+        $employeeIds = $request->input('employees', []);
+        if (empty($employeeIds)) {
+            return back()->with('error', 'No employee selected to detach.');
+        }
+
+        foreach ($employeeIds as $id) {
+            $emp = employee::find($id);
+            if ($emp) {
+                // remove pivot
+                $emp->clients()->detach([$client->id]);
+                // if the employee's client_id equals this client, clear it
+                if ($emp->client_id == $client->id) {
+                    $emp->client_id = null;
+                    $emp->save();
+                }
+            }
+        }
+
+        return back()->with('success', 'Selected employees detached from client.');
     }
 
     /**

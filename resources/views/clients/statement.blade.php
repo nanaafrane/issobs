@@ -310,11 +310,11 @@
                                                            {!! $data['details'][$key] !!}
                                                         @endif
                                                     </td>
-                                                    <td>  {{$data['debit'][$key] ?? 0 }} </td>
-                                                    <td>   {{$data['credit'][$key] ?? 0 }} </td>
+                                                    <td>  {{ number_format($data['debit'][$key] ?? 0, 2) }} </td>
+                                                    <td>   {{ number_format($data['credit'][$key] ?? 0, 2) }} </td>
                                                     <td> 
                                                         @php $grandTotal += $data['balance'][$key]; @endphp
-                                                        {{  $grandTotal  }} 
+                                                        {{  number_format(abs($grandTotal), 2)  }} 
                                                      </td>
                                                 </tr>                                        
                                         @endforeach

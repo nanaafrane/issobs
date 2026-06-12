@@ -261,189 +261,350 @@
     <!-- / Menu -->
     @endsection
 
+    @section('css')
+    <style>
+        .receipt-show-page .card {
+            border-radius: 1rem;
+        }
 
+        .receipt-show-page .card-body {
+            padding: 1.4rem;
+        }
+
+        .receipt-show-page .receipt-header {
+            border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+        }
+
+        .receipt-show-page .receipt-summary-label {
+            color: #6c757d;
+            font-size: 0.95rem;
+        }
+
+        .receipt-show-page .receipt-summary-value {
+            font-size: 1rem;
+        }
+
+        .receipt-show-page .receipt-status-badge {
+            min-width: 90px;
+        }
+
+        .receipt-show-page .table-sm td {
+            padding: 0.7rem 0.75rem;
+        }
+
+        .receipt-show-page .card.bg-light {
+            border: 1px solid #e9ecef;
+        }
+
+        .receipt-show-page .btn-outline-secondary {
+            min-width: 120px;
+        }
+
+        .receipt-show-page .offcanvas-body {
+            padding-top: 0;
+        }
+
+        /* Credit/Master card style for cash amount */
+        .receipt-show-page .cash-card {
+            background: linear-gradient(135deg,#1e3c72 0%,#2a5298 100%);
+            border: none;
+            color: #fff;
+            overflow: hidden;
+            position: relative;
+            box-shadow: 0 6px 18px rgba(28, 51, 84, 0.25);
+        }
+
+        .receipt-show-page .cash-card .amount-display {
+            font-size: 1.35rem;
+            font-weight: 700;
+            letter-spacing: 0.6px;
+        }
+
+        .receipt-show-page .cash-card::after {
+            content: '';
+            position: absolute;
+            right: -40px;
+            top: -40px;
+            width: 120px;
+            height: 120px;
+            background: rgba(255,255,255,0.06);
+            transform: rotate(45deg);
+            border-radius: 8px;
+        }
+
+        /* Generic payment card base */
+        .receipt-show-page .payment-card {
+            border: none;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            position: relative;
+            color: #fff;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+        }
+
+        .receipt-show-page .payment-card .amount-display {
+            font-size: 1.25rem;
+            font-weight: 700;
+            letter-spacing: 0.4px;
+        }
+
+        .receipt-show-page .payment-card.momo {
+            background: linear-gradient(135deg,#ffd89b 0%,#19547b 100%);
+            color: #1f2937;
+        }
+
+        .receipt-show-page .payment-card.transfer {
+            background: linear-gradient(135deg,#4b5563 0%,#111827 100%);
+        }
+
+        .receipt-show-page .payment-card.cheque {
+            background: linear-gradient(135deg,#4dd0e1 0%,#006064 100%);
+        }
+
+        .receipt-show-page .payment-card.other {
+            background: linear-gradient(135deg,#6a11cb 0%,#2575fc 100%);
+        }
+
+        @media (max-width: 991px) {
+            .receipt-show-page .receipt-header-actions {
+                flex-direction: column;
+                gap: 0.75rem;
+                align-items: stretch;
+            }
+        }
+
+        @media print {
+            .receipt-show-page .btn,
+            .receipt-show-page .offcanvas,
+            .receipt-show-page .layout-navbar,
+            .receipt-show-page footer,
+            .receipt-show-page .card-header,
+            .receipt-show-page .btn-outline-secondary {
+                display: none !important;
+            }
+            .receipt-show-page .container-xxl {
+                padding-top: 0 !important;
+            }
+        }
+    </style>
+    @endsection
 
     @section('content')
-    <div class="container-xxl flex-grow-1 container-p-y">
-        <div class="row">
-            <div class="col-6 mb-8">
-                <h3 class="card-header text-primary"> <i class="icon-base bx bx-bxs-receipt"></i> Receipt </h3>
-            </div>
-        </div>
-        <div class="card-header  ml-2  d-none d-lg-block">
-            @include('flash-messages')
-        </div>
-        <div class="row ms-10">
-            <div class="col-md-2 col-xl-2">
-                <div class="card-body">
+        <div class="container-xxl flex-grow-1 container-p-y receipt-show-page">
+
+            <div class="d-flex align-items-center justify-content-between mb-3 receipt-header">
+                <div class="d-flex align-items-center">
+                    <img src="{{asset('img/icons/brands/issobs.png')}}" alt="ISSOBS" width="48" class="me-3">
                     <div>
-                        <button
-                            class="btn btn-dark"
-                            type="button"
-                            data-bs-toggle="offcanvas"
-                            data-bs-target="#offcanvasDark"
-                            aria-controls="offcanvasDark">
-                            <i class="icon-base bx bxs-bullseye"> </i>
-                            Client
-                        </button>
-
-                        <div
-                            class="offcanvas offcanvas-end"
-                            tabindex="-1"
-                            id="offcanvasDark"
-                            aria-labelledby="offcanvasDarkLabel"
-                            data-bs-theme="dark">
-                            <div class="offcanvas-header">
-                                <h5 class="offcanvas-title text-info" id="offcanvasDarkLabel">Client Details</h5>
-                                <button
-                                    type="button"
-                                    class="btn-close"
-                                    data-bs-dismiss="offcanvas"
-                                    aria-label="Close"></button>
-                            </div>
-                            <div class="offcanvas-body my-auto mx-0 flex-grow-0">
-
-                                <h5 class="card-title text-info"> Client Details <span class="badge bg-label-dark"></span> </h5>
-                                <hr>
-                                <p class="card-text text-info">Client Name : <strong> {{$receipt->client->name}}</strong> </p>
-                                <p class="card-text text-info">Phone Number : <strong>{{$receipt->client->phone_number}}</strong></p>
-                                <p class="card-text text-info">Business Name : <strong> {{$receipt->client->business_name}} </strong> </p>
-                                <p class="card-text text-info">Address : <strong> {{$receipt->client->address}} </strong></p>
-                                <p class="card-text text-info">Location : <strong> {{$receipt->client->field->name}} </strong> </p>
-
-                                <button
-                                    type="button"
-                                    class="btn btn-outline-danger d-grid w-100"
-                                    data-bs-dismiss="offcanvas">
-                                    Close
-                                </button>
-                            </div>
-                        </div>
+                        <h3 class="mb-0">Receipt # : FWSSR{{$receipt->id}} </h3>
+                        <div class="text-muted small">Generated {{$receipt->created_at->format('F d, Y')}}</div>
                     </div>
                 </div>
-            </div>
-            <div class="col-md-5 col-xl-5">
-                <div class="card shadow-none bg-transparent border border-secondary text-secondary">
-                    <div class="card-body">
-                        <h4 class="card-title"> Receipt Details <span class="badge bg-dark"> {{$receipt->status}} </span></h4>
-                        <hr>
-                        <p class="card-text text-dark"><strong>Receipt #. : FWSSR{{$receipt->id}} </strong> </p>
-                        <p class="card-text text-dark"> <strong>From : {{$receipt->from}} </strong> </p>
-                        <p class="card-text text-dark"> <strong>Receipt Date : {{$receipt->receipt_month?->format('l F d, Y')}} </strong> <i class="icon-base bx bx-bxs-time"></i>  {{$receipt->receipt_month?->diffForHumans()}}</p>
-                       
-                        <p class="card-text text-dark"> <strong>Date Generated : {{$receipt->created_at->format('l F d, Y, H:i A')}} </strong> </p>
-                        <p class="card-text text-dark"> <strong><i class="icon-base bx bx-bxs-time"></i> {{$receipt->created_at?->diffForHumans()}} </strong> </p>
-                        <p class="card-text text-dark"> <strong>Date Updated : {{$receipt->updated_at->format('l F d, Y, H:i A')}} </strong> </p>
-                        <p class="card-text text-dark"> <strong><i class="icon-base bx bx-bxs-time"></i> {{$receipt->updated_at?->diffForHumans()}} </strong> </p>
-                        <hr>
-                        <p class="card-text text-dark"> <strong>WITHHOLDING TAX {{$wht->wht_rate * 100}}% : GH&#8373; {{number_format($receipt->wht_amount, 2)}} </strong> </p>
-                        <p class="card-text text-dark"> <strong>AMOUNT AFTER WTH : GH&#8373; {{number_format($receipt->amount_received, 2)}} </strong> </p>
-                        <p class="card-text text-dark"> <strong>7% VAT AMOUNT : GH&#8373; {{number_format($receipt->vat7_value, 2)}} </strong> </p>
-                        <p class="card-text text-dark"> <strong>AMOUNT AFTER 7% VAT : GH&#8373; {{number_format($receipt->vat7_amount, 2)}} </strong> </p>
-                        <hr>
-                        <p class="card-text text-dark"> <strong>OTHER DEDUCTIONS  : GH&#8373; {{number_format($receipt->dAmount, 2)}} </strong> </p>
-                        <p class="card-text text-dark"> <strong>DESCRIPTION  : {{$receipt->description}} </strong> </p>
-                        
-                        <h4 class="card-text text-dark"> <strong>Receipt Total : GH&#8373; {{number_format($receipt->total + $receipt->dAmount, 2) }} </strong> </h4>
-                    </div>
+
+                <div class="d-flex gap-2 receipt-header-actions">
+                    <a href="/receipt/{{$receipt->id}}/edit" class="btn btn-danger"><i class="bx bx-edit-alt me-1"></i> Edit</a>
+                    <button class="btn btn-outline-secondary" onclick="window.print()"><i class="bx bx-printer me-1"></i> Print</button>
                 </div>
             </div>
 
-            <div class="col-md-5 col-xl-5">
-                <div class="card text-bg-dark">
-                    <div class="card-body">
-                        <h5 class="card-title text-white"> Invoice Details <span class="badge bg-label-dark"> {{$receipt->invoice->status}} </span></h5>
-                        <hr>
-                        <p class="card-text">Invoice # : FWSSi{{$receipt->invoice_id}} </p>
-                        <p class="card-text">Invoice Amount : GH&#8373; {{ number_format($receipt->invoice->total, 2) }} </p>
-                        <!-- <p class="card-text">Initial Payment : GH&#8373; {{number_format($receipt->total, 2) }} </p> -->
-                        <p class="card-text text-info">Invoice Balance : <strong> GH&#8373; {{ number_format($receipt->invoice->balance, 2) }} </strong> </p>
-                        <p class="card-text">Invoice Date Created : {{$receipt->invoice->created_at->format('l F d, Y, H:i A')}} </p>
-                        <p class="card-text">Invoice Due Date : {{$receipt->invoice->due_date->format('l F d, Y, H:i A')}} </p>
+            <div class="card-header  ml-2  d-none d-lg-block">
+                @include('flash-messages')
+            </div>
 
-                        @if($receipt->invoice->status == 'completed')
-                        <div class="divider divider-dashed">
-                            <div class="divider-text"></div>
+            <div class="row g-3 mt-2">
+                <div class="col-lg-3">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title mb-2">Client</h5>
+                            <p class="mb-1"><strong>{{$receipt->client->name}}</strong></p>
+                            <p class="text-muted mb-1 small">{{$receipt->client->business_name}}</p>
+                            <p class="text-muted mb-1 small"> {{$receipt->client->phone_number}} | {{$receipt->client->phone_number1}} </p>
+                            <p class="text-muted mb-1 small">{{$receipt->client->field->name}} </p>
+                            <p class="text-muted mb-1 small"> {{$receipt->client->address}} </p>
                         </div>
-                        <!-- <p class="card-text text-danger">Total Amount Receiced : <strong> GH&#8373; {{number_format($receipt->invoice->amount_received, 2) }} </strong> </p>
-                        <p class="card-text text-danger">Total With Holdings : <strong> GH&#8373; {{number_format($receipt->invoice->wht_amount, 2) }} </strong> </p> -->
+                    </div>
+                 
+                    @if($receipt->cash_amount > 0)
+                    <div class="card cash-card mt-3 text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <small class="text-muted d-block">Payment</small>
+                                </div>
+                                <div class="text-end">
+                                    <small class="small">CASH</small>
+                                </div>
+                            </div>
+
+                            <div class="mt-3">
+                                <div class="amount-display">GH&#8373; {{ number_format($receipt->cash_amount, 2) }}</div>
+                                <div class="text-muted small">Amount received</div>
+                            </div>
+                        </div>
+                    </div>
+                    @endif
+
+                    @if($receipt->momo_amount > 0.00)
+                    <div class="card payment-card momo mt-3 text-dark">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <small class="text-muted d-block">Payment</small>
+                                </div>
+                                <div class="text-end">
+                                    <small class="small">MOMO</small>
+                                </div>
+                            </div>
+
+                            <div class="mt-3">
+                                <div class="amount-display">GH&#8373; {{number_format($receipt->momo_amount, 2) }}</div>
+                                <div class="text-muted small mt-1">Trans ID: {{$receipt->momo_transactin_id}}</div>
+                            </div>
+                        </div>
+                    </div>
+                    @endif
+
+                    @if($receipt->transfer_amount > 0.00)
+                    <div class="card payment-card transfer mt-3 text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <small class="text-muted d-block text-white-50">Payment</small>
+                                </div>
+                                <div class="text-end">
+                                    <small class="small text-white-50">BANK TRANSFER</small>
+                                </div>
+                            </div>
+
+                            <div class="mt-3">
+                                <div class="amount-display">GH&#8373; {{ number_format($receipt->transfer_amount, 2) }}</div>
+                                <div class="text-white-50 small mt-1">Ref: {{$receipt->transfer_reference}} • {{$receipt->transfer_bank}}</div>
+                            </div>
+                        </div>
+                    </div>
+                    @endif
+
+                    @if($receipt->cheque_amount > 0.00)
+                    <div class="card payment-card cheque mt-3 text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <small class="text-muted d-block text-white-50">Payment</small>
+                                </div>
+                                <div class="text-end">
+                                    <small class="small text-white-50">CHEQUE</small>
+                                </div>
+                            </div>
+
+                            <div class="mt-3">
+                                <div class="amount-display">GH&#8373; {{ number_format($receipt->cheque_amount, 2) }}</div>
+                                <div class="text-white-50 small mt-1">Ref: {{$receipt->cheque_reference}} • {{$receipt->cheque_bank}}</div>
+                            </div>
+                        </div>
+                        @if($receipt->image)
+                        <img class="card-img-top" src="@if($receipt->image) {{asset('storage/'.$receipt->image)}}  @endif" alt="Receipt image" />
                         @endif
                     </div>
-                </div>
-
-                @if($receipt->cash_amount > 0.00 )
-                <br>
-                <div class="card text-bg-success">
-                    <div class="card-body">
-                        <h5 class="card-title text-white"> CASH </h5>
-                        <hr>
-                        <p class="card-text"><strong>Amount : GH&#8373; {{ number_format($receipt->cash_amount, 2) }} </strong> </p>
-                    </div>
-                </div>
-                @endif
-                <br>
-
-                @if($receipt->other_payment_amnt > 0.00 )
-                <br>
-                <div class="card text-bg-dark">
-                    <div class="card-body">
-                        <h5 class="card-title text-white"> OTHER PAYMENT  </h5>
-                        <hr>
-                        <p class="card-text"><strong>Amount : GH&#8373; {{ number_format($receipt->other_payment_amnt, 2) }} </strong> </p>
-                        <p class="card-text"><strong>Description :  {{ $receipt->other_payment_descri }} </strong> </p>
-                    </div>
-                </div>
-                @endif
-                <br>
-
-                @if($receipt->momo_amount > 0.00)
-                <div class="card text-bg-warning">
-                    <div class="card-body">
-                        <h5 class="card-title text-white"> MOMO </h5>
-                        <hr>
-                        <p class="card-text"><strong>Transaction ID : {{$receipt->momo_transactin_id}} </strong> </p>
-                        <p class="card-text"><strong>Amount : GH&#8373; {{number_format($receipt->momo_amount, 2) }} </strong> </p>
-                    </div>
-                </div>
-                <br>
-                @endif
-
-                
-                @if($receipt->transfer_amount > 0.00)
-                <div class="card text-bg-secondary">
-                    <div class="card-body">
-                        <h5 class="card-title text-white"> TRANSFER </h5>
-                        <hr>
-                        <p class="card-text"><strong>Reference : {{$receipt->transfer_reference}} </strong> </p>
-                        <p class="card-text"><strong>Bank : {{$receipt->transfer_bank}} </strong> </p>
-                        <p class="card-text"><strong>Amount : GH&#8373; {{ number_format($receipt->transfer_amount, 2) }} </strong> </p>
-                    </div>
-                </div>
-                <br>
-                @endif
-                
-                
-                @if($receipt->cheque_amount > 0.00)
-                <div class="card text-bg-info">
-                    <div class="card-body">
-                        <h5 class="card-title text-white">CHEQUE</h5>
-                        <p class="card-text"><strong>Reference : {{$receipt->cheque_reference}} </strong> </p>
-                        <p class="card-text"><strong>Bank : {{$receipt->cheque_bank}} </strong> </p>
-                        <p class="card-text"><strong>Amount : GH&#8373; {{ number_format($receipt->cheque_amount, 2) }} </strong> </p>
-                    </div>
-                    @if($receipt->image)
-                    <img class="card-img-top" src="@if($receipt->image) {{asset('storage/'.$receipt->image)}}  @endif" alt="Card image cap" />
                     @endif
+
+                    @if($receipt->other_payment_amnt > 0.00 )
+                    <div class="card payment-card other mt-3 text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <small class="text-muted d-block text-white-50">Payment</small>
+                                </div>
+                                <div class="text-end">
+                                    <small class="small text-white-50">OTHER</small>
+                                </div>
+                            </div>
+
+                            <div class="mt-3">
+                                <div class="amount-display">GH&#8373; {{ number_format($receipt->other_payment_amnt, 2) }}</div>
+                                <div class="text-white-50 small mt-1">{{ $receipt->other_payment_descri }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    @endif
+
                 </div>
-                @endif
+
+                <div class="col-lg-6">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5>Receipt details <span class="badge bg-info ms-2">{{$receipt->status}}</span></h5>
+                            <hr>
+                            <div class="row mb-2">
+                                <div class="col-sm-6 text-muted">From</div>
+                                <div class="col-sm-6"><strong>{{$receipt->from}}</strong></div>
+
+                                <div class="col-sm-6 text-muted">Receipt Date</div>
+                                <div class="col-sm-6"><strong>{{$receipt->receipt_month?->format('F d, Y')}}</strong></div>
+
+                                <div class="col-sm-6 text-muted">Generated</div>
+                                <div class="col-sm-6"><strong>{{$receipt->created_at->format('F d, Y, H:i A')}}</strong></div>
+
+                                 <div class="col-sm-6 text-muted">Updated</div>
+                                <div class="col-sm-6 text-muted"><strong>{{$receipt->updated_at->format('F d, Y, H:i A')}}</strong></div>
+                            </div>
+
+                            <hr>
+
+                            <table class="table table-sm mb-0">
+                                <tbody>
+                                    <tr>
+                                        <td class="text-muted">Withholding ({{$wht->wht_rate * 100}}%)</td>
+                                        <td class="text-end">GH&#8373; {{number_format($receipt->wht_amount,2)}}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted">After WHT</td>
+                                        <td class="text-end">GH&#8373; {{number_format($receipt->amount_received,2)}}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted">7% VAT</td>
+                                        <td class="text-end">GH&#8373; {{number_format($receipt->vat7_value,2)}}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted">After VAT</td>
+                                        <td class="text-end">GH&#8373; {{number_format($receipt->vat7_amount,2)}}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted">Other Deductions <br> Description </td>
+                                        <td class="text-end">GH&#8373; {{number_format($receipt->dAmount,2)}} <br> {{ strtoupper($receipt->description) }} </td>
+
+                                    </tr>
+                                    <tr class="table-active">
+                                        <td class="fw-bold">Total</td>
+                                        <td class="fw-bold text-end">GH&#8373; {{number_format($receipt->total + $receipt->dAmount,2)}}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-3">
+                    <div class="card bg-dark text-white h-100">
+                        <div class="card-body">
+                            <h6 class="text-white">Invoice details <span class="badge bg-danger ms-2">payment {{$receipt->invoice?->status }}</span> </h6>
+                            <hr>
+                            <p class="mb-1">#FWSSi{{$receipt->invoice_id}}</p>
+                            <p class="mb-1">Month : {{$receipt->invoice_id}}</p>
+                            <p class="mb-1">Amount : GH&#8373; {{ number_format($receipt->invoice->total,2) }}</p>
+                            <p class="mb-1">Balance : <strong>GH&#8373; {{ number_format($receipt->invoice->balance,2) }}</strong></p>
+                            <p class="small text-muted">Due: {{$receipt->invoice->due_date->format('F d, Y')}}</p>
+
+
+                        </div>
+                    </div>
+                </div>
+
             </div>
+
         </div>
-    </div>
-
-
-    <div class="buy-now">
-        <a style="margin-bottom: 75px;" href="/receipt/{{$receipt->id}}/edit" class="btn btn-danger btn-buy-now"> <i class="icon-base bx bx-edit-alt me-1"></i> Edit</a>
-    </div>
 
     @endsection
 

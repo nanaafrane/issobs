@@ -462,6 +462,85 @@
             <div class="col-2"></div>
 
         </div>
+
+        <hr class="mt-5 mb-5" >
+
+        <!-- Add a ui to attach and detach employees -->
+        <div class="row mt-5">
+            <div class="col-6">
+                <div class="card">
+                    <div class="card-header">Attached Employees</div>
+                    <div class="card-body">
+                        <form method="POST" action="{{ route('client.detachEmployees', ['client' => $client->id]) }}">
+                            @csrf
+                            @if(isset($attachedEmployees) && $attachedEmployees->isNotEmpty())
+                            <div class="table-responsive">
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th></th>
+                                            <th>Name</th>
+                                            <th>Phone</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach($attachedEmployees as $emp)
+                                        <tr>
+                                            <td><input type="checkbox" name="employees[]" value="{{ $emp->id }}"></td>
+                                            <td>{{ $emp->name }}</td>
+                                            <td>{{ $emp->phone_number }}</td>
+                                        </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                            <button type="submit" class="btn btn-danger">Detach selected</button>
+                            @else
+                            <div class="alert alert-info">No employees attached to this client.</div>
+                            @endif
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-6">
+                <div class="card">
+                    <div class="card-header">Available Employees</div>
+                    <div class="card-body">
+                        <form method="POST" action="{{ route('client.attachEmployees', ['client' => $client->id]) }}">
+                            @csrf
+                            @if(isset($availableEmployees) && $availableEmployees->isNotEmpty())
+                            <div class="table-responsive">
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th></th>
+                                            <th>Name</th>
+                                            <th>Phone</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach($availableEmployees as $emp)
+                                        <tr>
+                                            <td><input type="checkbox" name="employees[]" value="{{ $emp->id }}"></td>
+                                            <td>{{ $emp->name }}</td>
+                                            <td>{{ $emp->phone_number }}</td>
+                                        </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                            <button type="submit" class="btn btn-success">Attach selected</button>
+                            @else
+                            <div class="alert alert-info">No available employees to attach.</div>
+                            @endif
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        
         <br><br><br><br><br><br><br><br>
         @endsection
 

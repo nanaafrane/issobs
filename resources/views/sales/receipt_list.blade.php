@@ -330,7 +330,7 @@
                                             <td> {{$receipt->receipt_month?->format('F l d, Y, H:i A')}} </td>
                                             <!-- <td>GH&#x20B5; {{$receipt->invoice->total}} </td> -->
 
-                                            <td> GH&#x20B5; {{number_format($receipt->total, 2)}} </td>
+                                            <td> GH&#x20B5; {{number_format($receipt->total + $receipt->dAmount , 2)}}  </td>
 
 
                                             @if($receipt->status == 'completed')
@@ -346,7 +346,7 @@
                                                     </button>
                                                     <div class="dropdown-menu">
                                                         <a class="dropdown-item" href="{{url('receipt', $receipt->id)}}"><i class="icon-base bx bxs-bullseye"></i> view</a>
-                                                        <a class="dropdown-item" href="receipt/{{$receipt->id}}/edit"><i class="icon-base bx bx-edit-alt me-1"></i> Edit</a>
+                                                        <a class="dropdown-item" href="/receipt/{{$receipt->id}}/edit"><i class="icon-base bx bx-edit-alt me-1"></i> Edit</a>
                                                         @if( Auth::user()->hasRole(['Finance Manager', 'Manager']) )
                                                         <form action="receipt/{{$receipt->id}}" method="POST">
                                                             @csrf

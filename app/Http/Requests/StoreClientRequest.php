@@ -26,7 +26,10 @@ class StoreClientRequest extends FormRequest
                 'phone_number' => ['required', 'min:10', 'max:10'],
                 // 'business_name' => ['required'],
                 // 'address' => ['required'],
-                'field_id' => ['required'],
+                'field_id' => 'required',
+                'rate' => ['required', 'numeric', 'min:1000'],
+                'guards' => 'required',
+                'start_date' => 'required',
         ];
     }
 }

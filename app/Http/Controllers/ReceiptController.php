@@ -22,8 +22,8 @@ use function Symfony\Component\Clock\now;
 
 class ReceiptController extends Controller
 {
-    public $wht_amount;
-    public $vat7_amount;
+    public ?float $wht_amount = null;
+    public ?float $vat7_amount = null;
 
     /**
      * Create a new controller instance.
@@ -137,7 +137,7 @@ class ReceiptController extends Controller
     public function store(StoreReceiptRequest $request)
     {
 
-        // // dd($request->all());
+        // dd($request->all());
         // Get all values from receipt form
         $status = $request->input('status');
         $wth_from_form = $request->input('wth');
@@ -158,8 +158,6 @@ class ReceiptController extends Controller
          }
         $receipt_date = $request->input('receipt_month');
         // $vat7_value = $request->float('vat7_value');
-        $dAmount = $request->float('dAmount');
-        $description = $request->input('description');
 
         $transfer_reference = $request->input('transfer_reference');
         $transfer_amount = $request->float('transfer_amount');
@@ -202,6 +200,7 @@ class ReceiptController extends Controller
                $sum_of_amountPaid_minus_wht = $total;
                $total = $total + $wht_amount;
         }
+
         if($vat_from_form == "on")
         {
             $vat7_value = $request->float('vat7_value');
@@ -209,10 +208,14 @@ class ReceiptController extends Controller
             $total = $total + $vat7_value;
             
         }
-        // if($deductions_from_form == "on")
-        // {
-        //     $dAmount;
-        // }
+
+        $dAmount = null;
+        $description = null;
+        if($deductions_from_form == "on")
+        {
+            $dAmount = $request->float('dAmount');
+            $description = $request->input('description');
+        }
         // dd($sum_of_amountPaid_minus_wht, $total);
         // end of if the payment has with holding turned on
 
@@ -221,7 +224,7 @@ class ReceiptController extends Controller
         $check1 =  $invoice_data->total + $invoice_data->balance;
         $check2 = $invoice_data->balance - $total - $dAmount ;
 
-    //    $fields = Field::pluck('id');
+         //    $fields = Field::pluck('id');
         $client = Client::findOrFail($client_id);
         // dd($client->field->id, $fields);
         $current_collection = Collection::where('field_id', $client->field->id)->latest()->first();
@@ -230,13 +233,13 @@ class ReceiptController extends Controller
         // if payment is one time and is complete //
         if($status == 'completed' && $check1 == $total + $dAmount )
         {
-            // return "you're here! full payment one time payment";
+            // return "you're here! full payment one time payment" . " - advance - ". $advance_payment. " - " . "deduction ". $dAmount;
 
             // // create Receipt
-               $receipt_id = $this->createReceipt($invoice_id,  $advance_payment, $dAmount, $description, $receipt_date, $vat7_value, $this->vat7_amount, $client_id, $from, $mode, $cheque_reference, $cheque_amount, $cheque_bank, $transfer_reference, $transfer_amount, $transfer_bank, $momo_transactin_id, $momo_amount, $cash_amount, $other_payment_descri, $other_payment_amnt, $user_id, $status, $total, $this->wht_amount, $sum_of_amountPaid_minus_wht, $image);
+               $receipt_id = $this->createReceipt( $invoice_id, $dAmount, $description, $advance_payment, $receipt_date, $vat7_value, $this->vat7_amount, $client_id, $from, $mode, $cheque_reference, $cheque_amount, $cheque_bank, $transfer_reference, $transfer_amount, $transfer_bank, $momo_transactin_id, $momo_amount, $cash_amount, $other_payment_descri, $other_payment_amnt, $user_id, $status, $total, $this->wht_amount, $sum_of_amountPaid_minus_wht, $image);
 
-                // get balance
-                $balance = $invoice_data->total - $total;
+            //     // get balance
+                $balance = $invoice_data->total - $total - $dAmount;
                 // dd($balance);
                 // update the invoice status to completed and update the balance to 0
                 $invoice_data->status = $status;
@@ -266,10 +269,10 @@ class ReceiptController extends Controller
 
 
 
-        // // ASSIGN TO A CATEGORY
-        // return $invoice->invoice_month?->format('Y-m') . " / ". $receipt->receipt_month?->format('Y-m');
-        $inv  = Carbon::parse($invoice_data->invoice_month);
-        $created_receipt = Receipt::findOrfail($receipt_id);
+            // // ASSIGN TO A CATEGORY
+            // return $invoice->invoice_month?->format('Y-m') . " / ". $receipt->receipt_month?->format('Y-m');
+            $inv  = Carbon::parse($invoice_data->invoice_month);
+            $created_receipt = Receipt::findOrfail($receipt_id);
 
                         //  CHECK IF CLIENT CATEGORY ALREADY EXIST FOR THE SAME MONTH
             $exists = category::where('client_id', $created_receipt->client_id)
@@ -282,10 +285,10 @@ class ReceiptController extends Controller
                     // return back()->with('error', 'This Receipt Client Has Aleady been Assigned a Category, Kindly Remove existing one from Categories Model and Create the Receipt againg : '. $created_receipt->client_id) ;                      
                 }
 
-        $rec  = Carbon::parse($created_receipt->receipt_month);
-        // $client = Client::findOrFail($receipt->client_id);
-        $category = new category();
-        $client = Client::findOrfail($created_receipt->client_id);
+            $rec  = Carbon::parse($created_receipt->receipt_month);
+            // $client = Client::findOrFail($receipt->client_id);
+            $category = new category();
+            $client = Client::findOrfail($created_receipt->client_id);
 
             // 2. Condition: Same Month
             if ($rec->isSameMonth($inv) || $rec->lt($inv)) 
@@ -362,7 +365,7 @@ class ReceiptController extends Controller
                 // return false; 
                 
             }
-        // // END ASSIGN TO A CATEGORY
+              // // END ASSIGN TO A CATEGORY
 
 
 
@@ -373,11 +376,11 @@ class ReceiptController extends Controller
         elseif($status == 'completed' && $check2 == 0 )
         {
 
-            // return "you're here! full payment after part payment";
-            $receipt_id = $this->createReceipt($invoice_id, $dAmount,  $advance_payment, $description, $receipt_date, $vat7_value, $this->vat7_amount, $client_id, $from, $mode, $cheque_reference, $cheque_amount, $cheque_bank, $transfer_reference, $transfer_amount, $transfer_bank, $momo_transactin_id, $momo_amount, $cash_amount, $other_payment_descri, $other_payment_amnt, $user_id, $status, $total, $this->wht_amount, $sum_of_amountPaid_minus_wht, $image);
+            // return "you're here! full payment after part payment" . "- advance - ". $advance_payment. " - " . "deduction ". $dAmount;
+            $receipt_id = $this->createReceipt($invoice_id, $dAmount, $description, $advance_payment, $receipt_date, $vat7_value, $this->vat7_amount, $client_id, $from, $mode, $cheque_reference, $cheque_amount, $cheque_bank, $transfer_reference, $transfer_amount, $transfer_bank, $momo_transactin_id, $momo_amount, $cash_amount, $other_payment_descri, $other_payment_amnt, $user_id, $status, $total, $this->wht_amount, $sum_of_amountPaid_minus_wht, $image);
 
             // get balance
-            $balance = $invoice_data->balance - $total;
+            $balance = $invoice_data->balance - ($total + $dAmount); 
 
             // update the invoice status from partpayment(uncomplete) to complete and update the balance to 0
             $invoice_data->balance = $balance;
@@ -405,11 +408,11 @@ class ReceiptController extends Controller
             // // select all transactions with this current invoice iD and assign value D to the checks culumn
             Transaction::where('invoice_id', $invoice_id)->update(['checks' => 'd']);
 
-        // // ASSIGN TO A CATEGORY
-        // return $invoice->invoice_month?->format('Y-m') . " / ". $receipt->receipt_month?->format('Y-m');
-        $inv  = Carbon::parse($invoice_data->invoice_month);
-        $created_receipt = Receipt::findOrfail($receipt_id);
-        $rec  = Carbon::parse($created_receipt->receipt_month);
+            // // ASSIGN TO A CATEGORY
+            // return $invoice->invoice_month?->format('Y-m') . " / ". $receipt->receipt_month?->format('Y-m');
+            $inv  = Carbon::parse($invoice_data->invoice_month);
+            $created_receipt = Receipt::findOrfail($receipt_id);
+            $rec  = Carbon::parse($created_receipt->receipt_month);
 
                         //  CHECK IF CLIENT CATEGORY ALREADY EXIST FOR THE SAME MONTH
             $exists = category::where('client_id', $created_receipt->client_id)
@@ -423,9 +426,9 @@ class ReceiptController extends Controller
                 }
 
 
-        // $client = Client::findOrFail($receipt->client_id);
-        $category = new category();
-        $client = Client::findOrfail($created_receipt->client_id);
+            // $client = Client::findOrFail($receipt->client_id);
+            $category = new category();
+            $client = Client::findOrfail($created_receipt->client_id);
 
             // 2. Condition: Same Month
             if ($rec->isSameMonth($inv) || $rec->lt($inv)) 
@@ -498,24 +501,19 @@ class ReceiptController extends Controller
                     $client->user_id = Auth::id();
                     $client->save();
                 }
-
-                // return false; 
                 
             }
-        // // END ASSIGN TO A CATEGORY
-
-
-
+               // // END ASSIGN TO A CATEGORY
 
             // return redirect('receipt')->with('success', 'Receipt created Successfully');
             return redirect()->route('receipt.show',['receipt' => $receipt_id])->with('primary', 'Receipt  Craeated Successfully');
 
         }
         else {
-            // return "you're here! part payment ";
+            // return "you're here! part payment " . " - advance - ". $advance_payment. " - " . "deduction ". $dAmount;
 
             // // get the balance of the invoice
-            if($invoice_data->balance > 0)
+            if($invoice_data->balance > 0.00)
             {
                 $balance = $invoice_data->balance - $total - $dAmount ;
             }
@@ -529,7 +527,7 @@ class ReceiptController extends Controller
 
             // create a receipt
             // $sum_of_amountPaid_minus_wht = null;
-            $receipt_id = $this->createReceipt($invoice_id, $dAmount,  $advance_payment, $description, $receipt_date, $vat7_value, $this->vat7_amount, $client_id, $from, $mode, $cheque_reference, $cheque_amount, $cheque_bank, $transfer_reference, $transfer_amount, $transfer_bank, $momo_transactin_id, $momo_amount, $cash_amount,$other_payment_descri, $other_payment_amnt, $user_id, $status, $total, $this->wht_amount, $sum_of_amountPaid_minus_wht, $image);
+            $receipt_id = $this->createReceipt($invoice_id, $dAmount, $description, $advance_payment, $receipt_date, $vat7_value, $this->vat7_amount, $client_id, $from, $mode, $cheque_reference, $cheque_amount, $cheque_bank, $transfer_reference, $transfer_amount, $transfer_bank, $momo_transactin_id, $momo_amount, $cash_amount,$other_payment_descri, $other_payment_amnt, $user_id, $status, $total, $this->wht_amount, $sum_of_amountPaid_minus_wht, $image);
 
             // update the invoice status to partpayment(uncomplete) and update the balance to current balance
             $invoice_data->balance = $balance;
@@ -556,11 +554,11 @@ class ReceiptController extends Controller
             $this->create_collection($current_collection, $receipt_id, $cash_amount, $momo_amount, $cheque_amount, $transfer_amount, $total, $client->field->id );
 
 
-        // // ASSIGN TO A CATEGORY
-        // return $invoice->invoice_month?->format('Y-m') . " / ". $receipt->receipt_month?->format('Y-m');
-        $inv  = Carbon::parse($invoice_data->invoice_month);
-        $created_receipt = Receipt::findOrfail($receipt_id);
-        $rec  = Carbon::parse($created_receipt->receipt_month);
+            // // ASSIGN TO A CATEGORY
+            // return $invoice->invoice_month?->format('Y-m') . " / ". $receipt->receipt_month?->format('Y-m');
+            $inv  = Carbon::parse($invoice_data->invoice_month);
+            $created_receipt = Receipt::findOrfail($receipt_id);
+            $rec  = Carbon::parse($created_receipt->receipt_month);
 
                 //  CHECK IF CLIENT CATEGORY ALREADY EXIST FOR THE SAME MONTH
             $exists = category::where('client_id', $created_receipt->client_id)
@@ -572,9 +570,9 @@ class ReceiptController extends Controller
                     return redirect()->route('receipt.show',['receipt' => $receipt_id])->with('warning', 'Receipt  Craeated Successfully, This Receipt Client Aleady Has an Assigned Category');
                 }
 
-        // $client = Client::findOrFail($receipt->client_id);
-        $category = new category();
-        $client = Client::findOrfail($created_receipt->client_id);
+            // $client = Client::findOrFail($receipt->client_id);
+            $category = new category();
+            $client = Client::findOrfail($created_receipt->client_id);
 
             // 2. Condition: Same Month
             if ($rec->isSameMonth($inv) || $rec->lt($inv)) 
@@ -647,10 +645,7 @@ class ReceiptController extends Controller
                 // return false; 
                 
             }
-        // // END ASSIGN TO A CATEGORY
-
-
-
+               // // END ASSIGN TO A CATEGORY
 
             return redirect()->route('receipt.show',['receipt' => $receipt_id])->with('primary', 'Receipt  Craeated Successfully');
     
@@ -769,7 +764,15 @@ class ReceiptController extends Controller
         $cash_amount = $request->float('cash_amount');
         $transfer_amount = $request->float('transfer_amount');
         $other_payment_amnt = $request->float('other_payment_amnt');
+        $deductions_from_form = $request->input('deductions');   
         
+        $dAmount = null;
+        $description = null;
+        if($deductions_from_form == "on")
+        {
+            $dAmount = $request->float('dAmount');
+            $description = $request->input('description');
+        }
 
         // sum all input payments
         $total = $cheque_amount + $momo_amount + $cash_amount + $transfer_amount + $other_payment_amnt;
@@ -779,7 +782,6 @@ class ReceiptController extends Controller
         $wth_from_form = $request->input('wth');
         $vat_from_form = $request->input('vat');
         $dAmount = $request->float('dAmount');
-
 
 
         // if the payment has with holding turned on;
@@ -812,22 +814,18 @@ class ReceiptController extends Controller
         $receipt->mode = $request->input('mode');
         $receipt->advance_payment = $advance_payment;
         $receipt->dAmount = $dAmount;
-        $receipt->description = $request->input('description');
+        $receipt->description = $description;
         $receipt->receipt_month = $request->input('receipt_month');
         $receipt->vat7_value = $vat7_value;
         $receipt->vat7_amount = $this->vat7_amount;
 
         $receipt->transfer_reference = $request->input('transfer_reference');
-        $receipt->transfer_amount = $request->float('transfer_amount');
         $receipt->transfer_bank = $request->input('transfer_bank');
 
         $receipt->cheque_reference = $request->input('cheque_reference');
-        $receipt->cheque_amount = $request->float('cheque_amount');
         $receipt->cheque_bank = $request->input('cheque_bank');
 
         $receipt->momo_transactin_id = $request->input('momo_transactin_id');
-        $receipt->momo_amount = $request->float('momo_amount');
-        $receipt->cash_amount = $request->float('cash_amount');
         $receipt->other_payment_descri = $request->input('other_payment_descri');
         $receipt->user_id = Auth::user()->id;
         $receipt->status = $request->input('status');
@@ -842,10 +840,27 @@ class ReceiptController extends Controller
         $invoice = Invoice::findorFail($receipt->invoice_id);
         // $balance = $invoice->balance - $total - $dAmount ;
 
-        if($receipt->status == "completed")
+        if($request->input('reset_balance') == 'reset')
+        {
+            $invoice->balance = 0;
+            $invoice->status = 'unpaid';
+            $invoice->save();
+
+            return redirect()->back()->with('info', 'Invoice balances reset completed, update all receipt with #FWSSi'. $invoice->id);
+        }
+
+        $check1 =  $invoice->total + $invoice->balance;
+        $check2 = $invoice->balance - $total - $dAmount ;
+
+
+        if($receipt->status == "completed" &&  $check1 == $total + $dAmount )
         {
 
-            $invoice->balance = $invoice->total - $total - $dAmount;
+            // get balance
+            $balance = $invoice->total - $total - $dAmount;
+
+
+            $invoice->balance = $balance;
             $invoice->status = $request->input('status');
             $invoice->wht_amount = $this->wht_amount;
             $invoice->amount_received = $sum_of_amountPaid_minus_wht;
@@ -856,18 +871,56 @@ class ReceiptController extends Controller
 
             // update transaction
             Transaction::where('receipt_id', $receipt->id)->update([ 
-                'receipt_amount' => $total,
+                'receipt_amount' => $total + $dAmount,
                 'status' => $request->input('status'),
-                'balance' => $invoice->total - $total,
+                'balance' => $balance,
                 'checks' => 'd',
             ]);
 
 
         }
+        elseif($receipt->status == "completed" && $check2 == 0 )
+        {
+
+            // get balance
+            $balance = $invoice->balance - ($total + $dAmount); 
+
+            $invoice->balance = $balance;
+            $invoice->status = $request->input('status');
+            $invoice->wht_amount = $this->wht_amount;
+            $invoice->amount_received = $sum_of_amountPaid_minus_wht;
+            $invoice->vat7_value = $vat7_value;
+            $invoice->vat7_amount = $this->vat7_amount;
+            $invoice->save();
+
+            // update transaction
+            Transaction::where('receipt_id', $receipt->id)->update([ 
+                'receipt_amount' => $total + $dAmount,
+                'status' => $request->input('status'),
+                'balance' => $balance,
+                'checks' => 'd',
+            ]);
+            
+        }
         elseif($receipt->status == "uncompleted")
         {
 
-            $invoice->balance = $invoice->total - $total - $dAmount;
+            // // get the balance of the invoice
+            $balance = 0;
+            if($invoice->balance > 0.00)
+            {
+                $balance = $invoice->balance - $total - $dAmount ;
+            }
+            elseif($invoice->status == 'completed')
+                {
+                    $balance = $invoice->total - $total - $dAmount ;
+                }
+            else{
+                // get the balance of the invoice
+                $balance = $invoice->total - $total - $dAmount ;
+            }
+
+            $invoice->balance = $balance;
             $invoice->status = $request->input('status');
             $invoice->wht_amount = $this->wht_amount;
             $invoice->amount_received = $sum_of_amountPaid_minus_wht;
@@ -877,9 +930,9 @@ class ReceiptController extends Controller
 
             // update transaction
             $transaction = Transaction::where('receipt_id', $receipt->id)->first();
-            $transaction->receipt_amount = $total;
+            $transaction->receipt_amount = $total + $dAmount;
             $transaction->status = $request->input('status');
-            $transaction->balance = $transaction->invoice->balance;
+            $transaction->balance = $balance;
             $transaction->checks = null;
             $transaction->save();
             
@@ -898,74 +951,74 @@ class ReceiptController extends Controller
         // dd($category);
         if($category && isset($category))
             {
-            // 2. Condition: Same Month
-            if ($rec->isSameMonth($inv) || $rec->lt($inv)) 
-                
-            {
-                // ASSIGN TO CATEGORY A
-                $category->name = 'Category A';
-                $category->client_id = $receipt->client_id;
-                $category->user_id = Auth::id();
-                $category->category_month = $invoice->invoice_month;
-                $category->save();
+                    // 2. Condition: Same Month
+                    if ($rec->isSameMonth($inv) || $rec->lt($inv)) 
+                        
+                    {
+                        // ASSIGN TO CATEGORY A
+                        $category->name = 'Category A';
+                        $category->client_id = $receipt->client_id;
+                        $category->user_id = Auth::id();
+                        $category->category_month = $invoice->invoice_month;
+                        $category->save();
 
-                // UPDATE CLIENT AND MONTH
-                $client->category_name = 'Category A';
-                $client->category_month = $invoice->invoice_month;
-                $client->save();
-            }
+                        // UPDATE CLIENT AND MONTH
+                        $client->category_name = 'Category A';
+                        $client->category_month = $invoice->invoice_month;
+                        $client->save();
+                    }
 
-            else
-            {
+                    else
+                    {
 
-                if ($rec->isSameMonth($inv->copy()->addMonth()) && $rec->day >= 1 && $rec->day <= 9) {
-                //    ASSIGN TO CATEGORY B
-                    $category->name = 'Category B';
-                    $category->client_id = $receipt->client_id;
-                    $category->user_id = Auth::id();
-                    $category->category_month = $invoice->invoice_month;
-                    $category->save();
+                        if ($rec->isSameMonth($inv->copy()->addMonth()) && $rec->day >= 1 && $rec->day <= 9) {
+                        //    ASSIGN TO CATEGORY B
+                            $category->name = 'Category B';
+                            $category->client_id = $receipt->client_id;
+                            $category->user_id = Auth::id();
+                            $category->category_month = $invoice->invoice_month;
+                            $category->save();
 
-                    // UPDATE CLIENT AND MONTH
-                    $client->category_name = 'Category B';
-                    $client->category_month = $invoice->invoice_month;
-                    $client->save();
-                }
+                            // UPDATE CLIENT AND MONTH
+                            $client->category_name = 'Category B';
+                            $client->category_month = $invoice->invoice_month;
+                            $client->save();
+                        }
 
-                // 4. Condition: 10th to 15th of the following month
-                if ($rec->isSameMonth($inv->copy()->addMonth()) && $rec->day >= 10 && $rec->day <= 15) {
-                //    ASSIGN TO CATEGORY C
-                    $category->name = 'Category C';
-                    $category->client_id = $receipt->client_id;
-                    $category->user_id = Auth::id();
-                    $category->category_month = $invoice->invoice_month;
-                    $category->save();  
-                    
-                    // UPDATE CLIENT AND MONTH
-                    $client->category_name = 'Category C';
-                    $client->category_month = $invoice->invoice_month;
-                    $client->save();
-                }
+                        // 4. Condition: 10th to 15th of the following month
+                        if ($rec->isSameMonth($inv->copy()->addMonth()) && $rec->day >= 10 && $rec->day <= 15) {
+                        //    ASSIGN TO CATEGORY C
+                            $category->name = 'Category C';
+                            $category->client_id = $receipt->client_id;
+                            $category->user_id = Auth::id();
+                            $category->category_month = $invoice->invoice_month;
+                            $category->save();  
+                            
+                            // UPDATE CLIENT AND MONTH
+                            $client->category_name = 'Category C';
+                            $client->category_month = $invoice->invoice_month;
+                            $client->save();
+                        }
 
-                // 5. Condition: 16th to 20th of the following month
-                if ($rec->isSameMonth($inv->copy()->addMonth()) && $rec->day >= 16 && $rec->day <= 20) {
-                //    ASSIGN TO CATEGORY D
-                    $category->name = 'Category D';
-                    $category->client_id = $receipt->client_id;
-                    $category->user_id = Auth::id();
-                    $category->category_month = $invoice->invoice_month;
-                    $category->save();   
-                    
-                    // UPDATE CLIENT AND MONTH
-                    $client->category_name = 'Category D';
-                    $client->category_month = $invoice->invoice_month;
-                    $client->save();
-                }
+                        // 5. Condition: 16th to 20th of the following month
+                        if ($rec->isSameMonth($inv->copy()->addMonth()) && $rec->day >= 16 && $rec->day <= 20) {
+                        //    ASSIGN TO CATEGORY D
+                            $category->name = 'Category D';
+                            $category->client_id = $receipt->client_id;
+                            $category->user_id = Auth::id();
+                            $category->category_month = $invoice->invoice_month;
+                            $category->save();   
+                            
+                            // UPDATE CLIENT AND MONTH
+                            $client->category_name = 'Category D';
+                            $client->category_month = $invoice->invoice_month;
+                            $client->save();
+                        }
 
-                // return false; 
-                
-            }
-        // // END ASSIGN TO A CATEGORY
+                        // return false; 
+                        
+                    }
+                // // END ASSIGN TO A CATEGORY
             }
 
 
@@ -1051,24 +1104,55 @@ class ReceiptController extends Controller
 
 
 
-// , $other_payment_amnt, $other_payment_descri,
-    public function createReceipt($invoice_id, $dAmount,  $advance_payment, $description, $receipt_date, $vat7_value, $vat7_amount, $client_id, $from, $mode, $cheque_reference, $cheque_amount, $cheque_bank, $transfer_reference, $transfer_amount, $transfer_bank, $momo_transactin_id, $momo_amount, $cash_amount,$other_payment_descri, $other_payment_amnt ,$user_id, $status, $total, $wht_amount, $sum_of_amountPaid_minus_wht, $image)
+    /**
+     * @param int $invoice_id
+     * @param float $dAmount
+     * @param string $description
+     * @param float $advance_payment
+     * @param string $receipt_date
+     * @param float $vat7_value
+     * @param float $vat7_amount
+     * @param int $client_id
+     * @param string $from
+     * @param string $mode
+     * @param string $transfer_reference
+     * @param float $transfer_amount
+     * @param string $transfer_bank
+     * @param string $cheque_reference
+     * @param float $cheque_amount
+     * @param string $cheque_bank
+     * @param string $momo_transactin_id
+     * @param float $momo_amount
+     * @param float $cash_amount
+     * @param string $other_payment_descri
+     * @param float $other_payment_amnt
+     * @param int $user_id
+     * @param string $status
+     * @param float $total
+     * @param float $wht_amount
+     * @param float $sum_of_amountPaid_minus_wht
+     * @param string|null $image
+     * @return int
+     */
+    public function createReceipt($invoice_id, $dAmount, $description, $advance_payment, $receipt_date, $vat7_value, $vat7_amount, $client_id, $from, $mode, $transfer_reference, $transfer_amount, $transfer_bank, $cheque_reference, $cheque_amount, $cheque_bank, $momo_transactin_id, $momo_amount, $cash_amount, $other_payment_descri, $other_payment_amnt, $user_id, $status, $total, $wht_amount, $sum_of_amountPaid_minus_wht, $image)
     {
 
         // dd($other_payment_amnt, $other_payment_descri);
         $newReceipt = new Receipt();
 
         $newReceipt->invoice_id = $invoice_id;
-        $newReceipt->client_id = $client_id;
-        $newReceipt->from = $from;
-        $newReceipt->mode = $mode;
-        $newReceipt->advance_payment = $advance_payment;
 
         $newReceipt->dAmount = $dAmount;
         $newReceipt->description = $description;
+        $newReceipt->advance_payment = $advance_payment;
         $newReceipt->receipt_month = $receipt_date;
         $newReceipt->vat7_value = $vat7_value;
         $newReceipt->vat7_amount = $vat7_amount;
+
+        $newReceipt->client_id = $client_id;
+        $newReceipt->from = $from;
+        $newReceipt->mode = $mode;
+
 
         $newReceipt->transfer_reference = $transfer_reference;
         $newReceipt->transfer_amount = $transfer_amount;

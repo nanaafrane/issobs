@@ -21,6 +21,12 @@ return new class extends Migration
             $table->string('gps')->nullable();
             $table->string('map')->nullable();
             $table->integer('field_id')->nullable();
+            $table->string('status')->nullable();
+            $table->date('start_date')->nullable();
+            $table->decimal('rate')->nullable();
+            $table->string('guards')->nullable();
+            $table->string('scope_of_work')->nullable();
+            $table->string('state_institution')->nullable();
             $table->integer('user_id')->nullable();
             $table->integer('category_id')->nullable();
             $table->string('category_name')->nullable();

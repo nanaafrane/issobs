@@ -292,6 +292,11 @@
                                 <input name="advance_payment" class="form-check-input" type="checkbox" value="advance" id="defaultCheck1" @if ($receipt->advance_payment == "advance") checked @endif />
                                 <label class="form-check-label" for="defaultCheck1"> Tick For Advance Payment </label>
                             </div>
+
+                            <div class="form-check mt-3">
+                                <input name="reset_balance" class="form-check-input" type="checkbox" value="reset" id="reset_balance"  />
+                                <label class="form-check-label" for="reset_balance"> Reset Invoice Balances </label>
+                            </div>
                             <!-- <small class="text-body float-end">Merged input group</small> -->
 
                             <div class="button-wrapper">
@@ -676,6 +681,7 @@
 
                 </div>
             </div>
+
         </div>
 
     </div>

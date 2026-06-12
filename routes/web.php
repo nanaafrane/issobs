@@ -49,6 +49,8 @@ Route::resource('field', FieldController::class);
 Route::resource('client', ClientController::class);
 Route::get('clientStatement/{client}', [ClientController::class, 'statementOfAccount']);
 Route::get('clientAttachGuards/{id}', [ClientController::class, 'clientAttachGuards']);
+Route::post('client/{client}/attach-employees', [ClientController::class, 'attachEmployees'])->name('client.attachEmployees');
+Route::post('client/{client}/detach-employees', [ClientController::class, 'detachEmployees'])->name('client.detachEmployees');
 Route::resource('category', CategoryController::class); 
 Route::post('categoryAssign', [CategoryController::class, 'categoryAssign']); 
 Route::post('categoryReAssign', [CategoryController::class, 'categoryReAssign']); 
@@ -156,20 +158,21 @@ Route::get('sendMoneyCallback', [SendMoneyController::class, 'sendMoneyCallback'
 Route::get('exportMaster/{month}', [SalaryController::class, 'exportMaster']);
 Route::get('exportBank/{month}/{bank_id}', [SalaryController::class, 'exportBank']);
 Route::get('exportCategory/{month}/{category}', [SalaryController::class, 'exportCategory']);
-// Route::get('clientAttachGuards', function(){
-// //    ATTACHING CLIENTS
-//     // $clientId = 111;
-//     // $employee = employee::findOrFail(2238);
-//     // $response = $employee->clients()->attach($clientId);
-//     // dd($response);
-//     // return "You are Testing MANY TO MANY / " . $response;
 
-// // RETRIEVING CLIENTS 
-//     $employee = employee::findOrFail(2238);
-//     $response = $employee->clients;
-//     dd($response);
-//     // foreach ($response as $key => $value) {
-//     //     # code...
-//     //     echo $value->name. " / ". $value->business_name ;
-//     // }
-// }); 
+Route::get('clientAttachGuards', function(){
+//    ATTACHING CLIENTS
+    $clientId = 111;
+    $employee = employee::findOrFail(2238);
+    $response = $employee->clients()->attach($clientId);
+    dd($response);
+    return "You are Testing MANY TO MANY / " . $response;
+
+// RETRIEVING CLIENTS 
+    $employee = employee::findOrFail(2238);
+    $response = $employee->clients;
+    dd($response);
+    // foreach ($response as $key => $value) {
+    //     # code...
+    //     echo $value->name. " / ". $value->business_name ;
+    // }
+}); 
