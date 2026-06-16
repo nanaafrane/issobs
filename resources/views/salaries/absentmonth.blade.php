@@ -1,15 +1,13 @@
 <x-hr-dashboard>
 
     @section('css')
-    <link rel="stylesheet" href="https://cdn.datatables.net/2.3.3/css/dataTables.dataTables.css" />
-    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/3.2.4/css/buttons.dataTables.css">
-
-    <link href="https://cdn.datatables.net/columncontrol/1.1.1/css/columnControl.dataTables.min.css" rel="stylesheet">
-
+    <link rel="stylesheet" href="https://cdn.datatables.net/2.3.5/css/dataTables.dataTables.css" />
+    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/3.2.5/css/buttons.dataTables.css">    
     @endsection
 
-    @section('side_nav')
-    <!-- Menu -->
+
+  @section('side_nav')
+  <!-- Menu -->
     <aside id="layout-menu" class="layout-menu menu-vertical menu bg-menu-theme">
         <div class="app-brand demo">
             <a href="#" class="app-brand-link">
@@ -123,11 +121,15 @@
                     <div class="text-truncate" data-i18n="SList">List</div>
                     </a>
                 </li>
-
+          <li class="menu-item">
+              <a href="{{url('employeesBank')}}" class="menu-link">
+              <div class="text-truncate" data-i18n="SList">Employee Banks</div>
+              </a>
+          </li>
                 </ul>
             </li>
         
-            <li class="menu-item active open">
+            <li class="menu-item ">
                 <a class="menu-link menu-toggle">
                     <i class="menu-icon tf-icons bx bx-bxs-user-detail"></i>
                     <div class="text-truncate" data-i18n="Clients"><strong>Clients</strong></div>
@@ -138,18 +140,11 @@
                             <div class="text-truncate" data-i18n="CRegister">Register</div>
                         </a>
                     </li>
-                    <li class="menu-item active">
+                    <li class="menu-item">
                         <a href="{{url('client')}}" class="menu-link">
                             <div class="text-truncate" data-i18n="CList">List</div>
                         </a>
                     </li>
-
-                    <li class="menu-item ">
-                        <a href="{{url('clientPending')}}" class="menu-link">
-                            <div class="text-truncate" data-i18n="CList">Pending</div>
-                        </a>
-                    </li>
-
                 </ul>
             </li>
 
@@ -208,30 +203,30 @@
 
             @endif
 
-            @if(Auth::user()->hasRole(['Invoice', 'Finance Manager', 'Manager']))
             <li class="menu-header small text-uppercase"><span class="menu-header-text">PAYROLL</span></li>
-            <li class="menu-item">
+            <li class="menu-item active open">
                     <a href="javascript:void(0);" class="menu-link menu-toggle">
                     <i class="menu-icon tf-icons bx bx-money-withdraw"></i>
                     <div class="text-truncate" data-i18n="Payroll">Payroll</div>
                     </a>
                     <ul class="menu-sub">
-                    <li class="menu-item">
+                    @if(Auth::user()->hasPermission('HR') || Auth::user()->hasRole(['Invoice']))
+                    <li class="menu-item ">
                         <a href="{{ url('salaries') }}" class="menu-link">
                         <i class="menu-icon tf-icons bx bxs-user-account"></i>
                         <div class="text-truncate" data-i18n="Employees">Add to Salaries</div>
                         </a>
                     </li>
-                    @if(Auth::user()->hasPermission('Accounts'))
+                    @endif
 
-                    <li class="menu-item">
+                    <li class="menu-item ">
                         <a href="{{ url('salaries/create') }}" class="menu-link">
                         <i class="menu-icon tf-icons bx bx-money-withdraw"></i>
                         <div class="text-truncate" data-i18n="Salaries">Salaries</div>
                         </a>
                     </li>
 
-                    <li class="menu-item">
+                    <li class="menu-item active">
                         <a href="{{ url('salariesTransaction') }}" class="menu-link">
                         <i class="menu-icon tf-icons bx bx-transfer-alt"></i>
                         <div class="text-truncate" data-i18n="Transaction">Transactions</div>
@@ -244,153 +239,138 @@
                         <div class="text-truncate" data-i18n="InvtoPayroll">Invoice to Payroll</div>
                         </a>
                     </li>
-                    @endif
-    
                     </ul>
                 </li>
-            @endif
         </ul>
     </aside>
-    <!-- / Menu -->
-    @endsection
+  <!-- / Menu -->
+  @endsection
 
 
-    @section('content')
+  @section('content')
+
+  <!-- Content -->
     <div class="container-xxl flex-grow-1 container-p-y">
+
         <div class="row">
-            <div class="col-6 mb-8">
-                <h3 class="card-header text-info"> <i class="icon-base bx bx-bxs-user-detail"></i> Client </h3>
+            <div class="col-12">
+                <h3 class="card-header"> <i class="icon-base bx bx-transfer-alt"></i> {{ $field->name }}   @if (isset($month)) <strong> / For Month: {{  \Carbon\Carbon::parse($month)->format('F Y') }}</strong> @endif </h3>
+
             </div>
-        </div>
+        </div><br>
 
-        <div class="row mt-12">
-
-            <div class="col-xl-12">
-                <!-- <h6 class="text-body-secondary">Filled Tabs</h6> -->
-                <div class="nav-align-top nav-tabs-shadow">
-                    <ul class="nav nav-tabs nav-fill" role="tablist">
-                        <li class="nav-item">
-                            <button
-                                type="button"
-                                class="nav-link active"
-                                role="tab"
-                                data-bs-toggle="tab"
-                                data-bs-target="#navs-justified-home"
-                                aria-controls="navs-justified-home"
-                                aria-selected="true">
-                                <span class="d-none d-sm-inline-flex align-items-center">
-                                    <i class="icon-base bx bx-bxs-receipt icon-sm me-1_5"></i>Transactions
-                                    <span class="badge rounded-pill badge-center h-px-20 w-px-20 bg-label-danger ms-1_5"> </span>
-                                </span>
-                                <i class="icon-base bx bx-bxs-receipt icon-sm d-sm-none"></i>
-                            </button>
-                        </li>
-
-                    </ul>
-
-                    <div class="tab-content">
-
-                        <div class="tab-pane fade show active" id="navs-justified-home" role="tabpanel">
-                            <div class="table-responsive text-normal-dark"> 
-                                <table id="myTabletrans" class="display">
-                                    <thead>
-                                        <tr>
-                                            <th>#</th>
-                                            <th>Date</th>
-                                            <th>Description</th>
-                                            <th>Payment Details </th>
-                                            <th>Debit</th>
-                                            <th>Credit</th>
-                                            <th>Balance</th>
-                                            
-                                        </tr>
-                                    </thead>
-                                    <tbody class="table-border-bottom-0">
-                                        @php $grandTotal = 0; @endphp
-                                        @foreach($data['description'] as $key => $statement)
-                                                <tr>
-                                                    <td> {{  $key + 1 }} </td>
-                                                    <td> {{$data['date'][$key] ?? ''}} </td>
-                                                    <td> {!! $statement !!} </td>
-                                                    <td> 
-                                                        @if(isset($data['credit'][$key]))
-                                                           {!! $data['details'][$key] !!}
-                                                        @endif
-                                                    </td>
-                                                    <td>  {{ number_format($data['debit'][$key] ?? 0, 2) }} </td>
-                                                    <td>   {{ number_format($data['credit'][$key] ?? 0, 2) }} </td>
-                                                    <td> 
-                                                        @php $grandTotal += $data['balance'][$key]; @endphp
-                                                        {{  number_format(abs($grandTotal), 2)  }} 
-                                                     </td>
-                                                </tr>                                        
-                                        @endforeach
-                                    </tbody>
-                                </table>
+         @if(Auth::user()->hasRole(['Invoice','Manager', 'Finance Manager' ]))
+        <div class="row">
+            <div class="col-lg-12 mb-4">
+                <div  class="card h-100 bg-dark text-white">
+                    <div class="card-body">
+                        <div class="card-title d-flex align-items-start justify-content-between mb-4">
+                            <div class="avatar flex-shrink-0">
+                                <img
+                                    src="{{ asset('img/icons/unicons/paypal.png') }}"
+                                    alt="chart success"
+                                    class="rounded" />
                             </div>
                         </div>
+                        <p class="mb-1"><strong> FIELD OFFICE :  {{ strtoupper($field->name) }}  </strong> </p> <br>
+                        <h4 class="card-title mb-3 text-white"><strong> GH&#x20B5;  {{ number_format($salariesAbsent->sum('absent'), 2) }} </strong> </h4> <br>
+                        <small class="fw-medium"> NET SALARY : GH&#x20B5; {{ number_format($salariesAbsent->sum('net_salary'), 2) }}  </small> <br>
 
                     </div>
                 </div>
             </div>
+        </div> <br>
+        @endif
 
+        <!-- Table -->  
+        <hr> <br>
+        <div class="row">
+            <div class="col-lg-12 mb-4">
+                <div class="card">
+                    <h5 class="card-header"> Salaries Absent  </h5>
+                    <div class="card-body"> 
+                    <div class="table-responsive text-nowrap">
+                        <table class="table table-hover" id="myTable">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>#</th>
+                                    <th> EMPLOYEE NAME </th>
+                                    <th> FIELD OFFICE</th>
+                                    <th>ABSENT </th>
+                                    <th>NET SALARY</th>
+                                </tr>
+                            </thead>
+                            <tbody class="table-border-bottom-0">
+                                @foreach($salariesAbsent as $key => $absents)
+                                <tr>
+                                    <td> {{ $key + 1 }} </td>
+                                    <td> {{ strtoupper($absents->employee->name) }} </td>
+                                    <td> {{ $absents->field->name }} </td>
+                                    <td> GH&#x20B5; {{ number_format($absents->absent, 2) }} </td>
+                                    <td> GH&#x20B5; {{ number_format($absents->net_salary, 2) }} </td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                    </div>
+                </div>
+            </div>
         </div>
+
+
+
     </div>
+  <!-- / Content -->
 
-    @endsection
-
+  @endsection
 
 
     @section('scripts')
 
     <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
-    <script src="https://cdn.datatables.net/2.3.3/js/dataTables.js"></script>
-    <script src="https://cdn.datatables.net/buttons/3.2.4/js/dataTables.buttons.js"></script>
-    <script src="https://cdn.datatables.net/buttons/3.2.4/js/buttons.dataTables.js"></script>
+    <script src="https://cdn.datatables.net/2.3.5/js/dataTables.js"></script>
+    <script src="https://cdn.datatables.net/buttons/3.2.5/js/dataTables.buttons.js"></script>
+    <script src="https://cdn.datatables.net/buttons/3.2.5/js/buttons.dataTables.js"></script>
+    <script src="https://cdn.datatables.net/buttons/3.2.5/js/buttons.html5.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/3.2.5/js/buttons.colVis.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
-    <script src="https://cdn.datatables.net/buttons/3.2.4/js/buttons.html5.min.js"></script>
-
-    <script src="https://cdn.datatables.net/columncontrol/1.1.1/js/dataTables.columnControl.min.js"></script>
 
 
     <script>
-        new DataTable('#myTabletrans', {
-            responsive: true,
-
-
-            layout: {
-                topStart: {
-                    
-                    buttons: [
-                        {
-                            extend: 'pageLength',
-                            text: '<i class="bx bxs-bullseye"></i> Show',
-                            className: 'btn btn-secondary',
-                            Options: [10, 25, 50, 100, 500], 
-                        },
-                        {
-                            extend: 'excelHtml5',
-                            text: '<i class="bx bxs-file-export"></i> Export to Excel',
-                            className: 'btn btn-secondary btn-sm',
-                            title: "{{ $client->name . $client->business_name . ' STATEMENT OF ACCOUNTS AS OF ' . now()->format('F j, Y') }}",
-                            exportOptions: {
-                                columns: ':visible'
-                            }   
+       
+      new DataTable('#myTable', {
+        //  dom: 'Blfrtip',
+        //  stateSave: false,
+        columnControl: [ ['search'] ],
+        layout: {
+            topStart: {
+                buttons: [ 
+                {
+                     extend: 'pageLength',
+                    text: 'Show',
+                    className: 'btn btn-secondary',
+                    Options: [10, 25, 50, 100, 250, 500, 1000, 2000], 
+                },
+                    {
+                        extend: 'excelHtml5',
+                        title:  "{{ $field->name . ' Boots ' . \Carbon\Carbon::parse($month)->format('F Y')}}",
+                        className: 'btn btn-secondary',
+                        exportOptions: {
+                            columns: ':visible'
                         }
-                    ]
-                }
-            },
-            columnControl: [
-                ['search']
-            ]
-        });
+                    },
+                ]
+            }
+        },
+                
+    });
+
+
+
     </script>
 
-
     @endsection
-
-
-
 </x-hr-dashboard>

@@ -35,120 +35,107 @@ class ClientController extends Controller
     {
         $user = Auth::user();
 
-        $clients = Client::all();
-        $clientIds = Client::pluck('id');
+        $clients = Client::where('status', 'active')->get();
+        $standardClients = $clients->where('state_institution', null)->values();
+        $stateClients = $clients->where('state_institution', 1)->values();
+        $standardClientsCount = count($standardClients);
+        $stateClientsCount = count($stateClients);
         $clientsCount = count($clients);
         $fields = Field::all();
+
         $totalGuards = employee::where('department_id', '6')->count();
-       
-        // $clientGuards = DB::table('employees')
-        //                         ->where('department_id', '6')
-        //                         // ->select('client_id')
-        //                         ->whereIn('client_id', $clientIds)
-        //                         ->groupBy('client_id')
-        //                         ->get([DB::select('select * from clients'), DB::raw('count(*) as total_employees')]);
-       
-    //    $salariesTaxes = Salary::where('salary_month', $date)->where('tax', '>', 0)->whereIn('field_id', $fields->pluck('id')->toArray())->groupBy('field_id')->get(['field_id', DB::raw('SUM(cost_to_company) as paid'), DB::raw('SUM(tax) as tax'),  DB::raw('COUNT(*) as total_employees')]);
 
-        // $clientGuards = Employee::whereIn('client_id', $clientIds)
-        //                                 ->get()
-        //                                 ->groupBy('client_id');
-
-        // $clientGuards = Client::whereIn('id', $clientIds)
-        //                 ->with('employees') // Assuming Client hasMany Employee
-        //                 ->get()
-        //                 ->groupBy('id');
-
-        // dd($clientGuards);
-        // foreach ($clientGuards as $data)
-        //     {
-        //         // dd($client);
-        //         // echo $client->id ."<br>". "<br>"; ->name . " / ". $client->employees->count
-        //         foreach($data as $client)
-        //             {
-        //                 echo $client->id . " / ". $client->employees?->count() ."<br>". "<br>";
-        //             }
-        //     }
-
-        $accra = Client::where('field_id', 1)->get();
+        // Separate standard and state institution clients by field
+        $accra = Client::where('field_id', 1)->where('status', 'active')->get();
+        $accraStandard = $accra->where('state_institution', null)->count();
+        $accraState = $accra->where('state_institution', 1)->count();
         $accraCount = count($accra);
         $totalaccraGuards = employee::where('department_id', '6')->where('field_id', 1)->count();
 
-
-        $botwe = Client::where('field_id', 2)->get();
+        $botwe = Client::where('field_id', 2)->where('status', 'active')->get();
+        $botweStandard = $botwe->where('state_institution', null)->count();
+        $botweState = $botwe->where('state_institution', 1)->count();
         $botweCount = count($botwe);
         $totalbotweGuards = employee::where('department_id', '6')->where('field_id', 2)->count();
 
-
-        $tema = Client::where('field_id', 3)->get();
+        $tema = Client::where('field_id', 3)->where('status', 'active')->get();
+        $temaStandard = $tema->where('state_institution', null)->count();
+        $temaState = $tema->where('state_institution', 1)->count();
         $temaCount = count($tema);
         $totaltemaGuards = employee::where('department_id', '6')->where('field_id', 3)->count();
 
-
-        $takoradi = Client::where('field_id', 4)->get();
+        $takoradi = Client::where('field_id', 4)->where('status', 'active')->get();
+        $takoradiStandard = $takoradi->where('state_institution', null)->count();
+        $takoradiState = $takoradi->where('state_institution', 1)->count();
         $takoradiCount = count($takoradi);
         $totaltakoradiGuards = employee::where('department_id', '6')->where('field_id', 4)->count();
 
-
-        $koforidua = Client::where('field_id', 5)->get();
+        $koforidua = Client::where('field_id', 5)->where('status', 'active')->get();
+        $koforiduaStandard = $koforidua->where('state_institution', null)->count();
+        $koforiduaState = $koforidua->where('state_institution', 1)->count();
         $koforiduaCount = count($koforidua);
         $totalkoforiduaGuards = employee::where('department_id', '6')->where('field_id', 5)->count();
 
-
-        $kumasi = Client::where('field_id', 6)->get();
+        $kumasi = Client::where('field_id', 6)->where('status', 'active')->get();
+        $kumasiStandard = $kumasi->where('state_institution', null)->count();
+        $kumasiState = $kumasi->where('state_institution', 1)->count();
         $kumasiCount = count($kumasi);
         $totalkumasiGuards = employee::where('department_id', '6')->where('field_id', 6)->count();
 
-
-        $shyhills = Client::where('field_id', 7)->get();
+        $shyhills = Client::where('field_id', 7)->where('status', 'active')->get();
+        $shyhillsStandard = $shyhills->where('state_institution', null)->count();
+        $shyhillsState = $shyhills->where('state_institution', 1)->count();
         $shyhillsCount = count($shyhills);
         $totalshyhillsGuards = employee::where('department_id', '6')->where('field_id', 7)->count();
 
-        // dd($accraCount, $botweCount, $temaCount, $takoradiCount, $koforiduaCount, $kumasiCount);
+        $compactData = compact(
+            'totalaccraGuards', 'totalbotweGuards', 'totaltemaGuards', 'totaltakoradiGuards', 
+            'totalkoforiduaGuards', 'totalkumasiGuards', 'totalshyhillsGuards', 
+            'clients', 'standardClients', 'stateClients', 'clientsCount', 'standardClientsCount', 
+            'stateClientsCount', 'fields', 'accraCount', 'accraStandard', 'accraState',
+            'botweCount', 'botweStandard', 'botweState', 'temaCount', 'temaStandard', 'temaState',
+            'takoradiCount', 'takoradiStandard', 'takoradiState', 'koforiduaCount', 'koforiduaStandard',
+            'koforiduaState', 'kumasiCount', 'kumasiStandard', 'kumasiState', 'shyhills', 'shyhillsCount',
+            'shyhillsStandard', 'shyhillsState', 'totalGuards'
+        );
 
         if($user->role->name == 'Invoice' || $user->role->name == 'Finance Manager' || $user->role->name == 'Manager' )
         {
-            return view('clients.index', compact('totalaccraGuards', 'totalbotweGuards', 'totaltemaGuards', 'totaltakoradiGuards', 'totalkoforiduaGuards', 'totalkumasiGuards', 'totalshyhillsGuards', 'clients', 'clientsCount', 'fields', 'accraCount', 'botweCount', 'temaCount', 'takoradiCount', 'koforiduaCount', 'kumasiCount', 'shyhills', 'shyhillsCount', 'totalGuards'));
-
+            return view('clients.index', $compactData);
         }elseif($user->field?->name == 'Accra')
         {
             $clients = $accra;
-            return view('clients.index', compact('clients', 'clientsCount', 'fields', 'accraCount'));
+            return view('clients.index', compact('clients', 'clientsCount', 'fields', 'accraCount', 'standardClients', 'stateClients', 'standardClientsCount', 'stateClientsCount'));
         }
 
         if ($user->field?->name == 'Botwe')
         {
             $clients = $botwe;
-            return view('clients.index', compact('clients', 'clientsCount', 'fields', 'botweCount', 'shyhills', 'shyhillsCount'));
-
+            return view('clients.index', compact('clients', 'clientsCount', 'fields', 'botweCount', 'shyhills', 'shyhillsCount', 'standardClients', 'stateClients', 'standardClientsCount', 'stateClientsCount'));
         }
-
 
         if ($user->field?->name == 'Tema')
         {
             $clients = $tema;
-            return view('clients.index', compact('clients', 'clientsCount', 'fields', 'temaCount'));
-
+            return view('clients.index', compact('clients', 'clientsCount', 'fields', 'temaCount', 'standardClients', 'stateClients', 'standardClientsCount', 'stateClientsCount'));
         }
 
         if ($user->field?->name == 'Takoradi')
         {
             $clients = $takoradi;
-            return view('clients.index', compact('clients', 'clientsCount', 'fields', 'takoradiCount'));
+            return view('clients.index', compact('clients', 'clientsCount', 'fields', 'takoradiCount', 'standardClients', 'stateClients', 'standardClientsCount', 'stateClientsCount'));
         }
-
 
         if ($user->field?->name == 'Koforidua')
         {
             $clients = $koforidua;
-            return view('clients.index', compact('clients', 'clientsCount', 'fields', 'koforiduaCount'));
+            return view('clients.index', compact('clients', 'clientsCount', 'fields', 'koforiduaCount', 'standardClients', 'stateClients', 'standardClientsCount', 'stateClientsCount'));
         }
-
 
         if ($user->field?->name == 'Kumasi')
         {
             $clients = $kumasi;
-            return view('clients.index', compact('clients', 'clientsCount', 'fields', 'kumasiCount'));
+            return view('clients.index', compact('clients', 'clientsCount', 'fields', 'kumasiCount', 'standardClients', 'stateClients', 'standardClientsCount', 'stateClientsCount'));
         }
 
     }
@@ -211,6 +198,16 @@ class ClientController extends Controller
         return view('clients.show', compact('client','transactionsCount', 'outstanding', 'balance_outstanding', 'transactions', 'total_invoice_amount', 'total_wth_amount', 'total_wth_amount_received'));
     }
 
+
+
+    /**
+     * Display a listing of the resource.
+     */
+    public function clientPending()
+    {
+        $clients = Client::where('status', 'pending')->get();
+        return view('clients.pending', compact('clients'));
+    }
 
     /**
      * Get clients statement of Accounts

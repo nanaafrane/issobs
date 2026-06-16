@@ -400,120 +400,17 @@
                 </div>
             </div>            
 
-        </div> <br>
-
-        <div class="row">
-
-            <div class="col-lg-2">
-                <div  class="card h-100 bg-dark text-white">
-                    <div class="card-body">
-                        <div class="card-title d-flex align-items-start justify-content-between mb-4">
-                            <div class="avatar flex-shrink-0">
-                                <img
-                                    src="{{ asset('img/icons/unicons/paypal.png') }}"
-                                    alt="chart success"
-                                    class="rounded" />
-                            </div>
-
-                        </div>
-                        <p class="mb-1"><strong> TAX </strong></p>
-                        <h4 class="card-title mb-3 text-white"><strong> &#x20B5; {{ number_format($salariesTaxes->sum('tax'), 2) }} </strong> </h4> 
-                        <!-- <small class="fw-medium"> TOTAL :  GH&#x20B5; {{ number_format($salariesTaxes->sum('paid'), 2) }} </small> <br> -->
-                        <small class="fw-medium"> EMPLOYEES : {{ $salariesTaxes->sum('total_employees') }} </small>
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-2" >
-                <div  class="card h-100 bg-dark text-white">
-                    <div class="card-body">
-                        <div class="card-title d-flex align-items-start justify-content-between mb-4">
-                            <div class="avatar flex-shrink-0">
-                                <img
-                                    src="{{ asset('img/icons/unicons/paypal.png') }}"
-                                    alt="chart success"
-                                    class="rounded" />
-                            </div>
-
-                        </div>
-                        <p class="mb-1"><strong> PENSIONS </strong></p>
-                        <h4 class="card-title mb-3 text-white"><strong> &#x20B5; {{ number_format($salariesPensions->sum('cont13_5'), 2) }} </strong> </h4> 
-                        <!-- <small class="fw-medium"> TOTAL :  GH&#x20B5; {{ number_format($salariesPensions->sum('paid') , 2) }} </small> <br> -->
-                        <small class="fw-medium"> EMPLOYEES : {{ $salariesPensions->sum('total_employees') }} </small>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-lg-2">
-                <div  class="card h-100 bg-dark text-white">
-                    <div class="card-body">
-                        <div class="card-title d-flex align-items-start justify-content-between mb-4">
-                            <div class="avatar flex-shrink-0">
-                                <img
-                                    src="{{ asset('img/icons/unicons/paypal.png') }}"
-                                    alt="chart success"
-                                    class="rounded" />
-                            </div>
-
-                        </div>
-                        <p class="mb-1"><strong> BOOTS </strong></p>
-                        <h4 class="card-title mb-3 text-white"><strong> &#x20B5; {{ number_format($salariesBoots->sum('boot'), 2) }} </strong> </h4> 
-                        <!-- <small class="fw-medium"> TOTAL :  GH&#x20B5; {{ number_format($salariesBoots->sum('paid') , 2) }} </small> <br> -->
-                        <small class="fw-medium"> EMPLOYEES : {{ $salariesBoots->sum('total_employees') }} </small>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-lg-2">
-                <div  class="card h-100 bg-dark text-white">
-                    <div class="card-body">
-                        <div class="card-title d-flex align-items-start justify-content-between mb-4">
-                            <div class="avatar flex-shrink-0">
-                                <img
-                                    src="{{ asset('img/icons/unicons/paypal.png') }}"
-                                    alt="chart success"
-                                    class="rounded" />
-                            </div>
-
-                        </div>
-                        <p class="mb-1"><strong> OVERTIME </strong></p>
-                        <h4 class="card-title mb-3 text-white"><strong> &#x20B5; {{ number_format($salariesOvertime->sum('overtime'), 2) }} </strong> </h4> 
-                        <!-- <small class="fw-medium"> TOTAL :  GH&#x20B5; {{ number_format($salariesOvertime->sum('paid') , 2) }} </small> <br> -->
-                        <small class="fw-medium"> EMPLOYEES : {{ $salariesOvertime->sum('total_employees') }} </small>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-lg-2">
-                <div  class="card h-100 bg-dark text-white">
-                    <div class="card-body">
-                        <div class="card-title d-flex align-items-start justify-content-between mb-4">
-                            <div class="avatar flex-shrink-0">
-                                <img
-                                    src="{{ asset('img/icons/unicons/paypal.png') }}"
-                                    alt="chart success"
-                                    class="rounded" />
-                            </div>
-
-                        </div>
-                        <p class="mb-1"><strong> IOU </strong></p>
-                        <h4 class="card-title mb-3 text-white"><strong> &#x20B5; {{ number_format($salariesIOU->sum('iou'), 2) }} </strong> </h4> 
-                        <!-- <small class="fw-medium"> TOTAL :  GH&#x20B5; {{ number_format($salariesIOU->sum('paid') , 2) }} </small> <br> -->
-                        <small class="fw-medium"> EMPLOYEES : {{ $salariesIOU->sum('total_employees') }} </small>
-                    </div>
-                </div>
-            </div>  
-
-        </div>
+        </div> 
         
         
-        <br> <br>
-                     <div class="card-header  ml-2  d-none d-lg-block">
-                  @include('flash-messages')
-        </div> <br>
+        
+            <div class="card-header  ml-2  d-none d-lg-block">
+                @include('flash-messages')
+            </div> <br>
         @endif
 
         <!-- Table -->  
-        <hr> <br> <br>
+         <br> 
         <div class="nav-align-top">
             <ul class="nav nav-pills mb-4 nav-fill" role="tablist">
 
@@ -563,87 +460,6 @@
                         aria-selected="false">
                         <span class="d-none d-sm-inline-flex align-items-center"><i class="icon-base bx bx-home icon-sm me-1_5"></i>MoMo
                             <span class="badge rounded-pill bg-danger ms-1_5"> {{ $groupedCashkSalaries->count() }} </span>
-                        </span>
-                        <i class="icon-base bx bx-home icon-sm d-sm-none"></i>
-                    </button>
-                </li>
-
-                <li class="nav-item mb-1 mb-sm-0">
-                    <button
-                        type="button"
-                        class="nav-link"
-                        role="tab"
-                        data-bs-toggle="tab"
-                        data-bs-target="#navs-pills-justified-shyhills"
-                        aria-controls="navs-pills-justified-shyhills"
-                        aria-selected="false">
-                        <span class="d-none d-sm-inline-flex align-items-center"><i class="icon-base bx bx-home icon-sm me-1_5"></i>Tax
-                            <span class="badge rounded-pill bg-danger ms-1_5"> {{ $salariesTaxes->count() }} </span>
-                        </span>
-                        <i class="icon-base bx bx-home icon-sm d-sm-none"></i>
-                    </button>
-                </li>
-
-                <li class="nav-item mb-1 mb-sm-0">
-                    <button
-                        type="button"
-                        class="nav-link"
-                        role="tab"
-                        data-bs-toggle="tab"
-                        data-bs-target="#navs-pills-justified-tema"
-                        aria-controls="navs-pills-justified-tema"
-                        aria-selected="false">
-                        <span class="d-none d-sm-inline-flex align-items-center"><i class="icon-base bx bx-home icon-sm me-1_5"></i>Pensions
-                            <span class="badge rounded-pill bg-danger ms-1_5"> {{ $salariesPensions->count() }}</span>
-                        </span>
-                        <i class="icon-base bx bx-home icon-sm d-sm-none"></i>
-                    </button>
-                </li>
-
-                <li class="nav-item mb-1 mb-sm-0">
-                    <button
-                        type="button"
-                        class="nav-link"
-                        role="tab"
-                        data-bs-toggle="tab"
-                        data-bs-target="#navs-pills-justified-overtime"
-                        aria-controls="navs-pills-justified-overtime"
-                        aria-selected="false">
-                        <span class="d-none d-sm-inline-flex align-items-center"><i class="icon-base bx bx-home icon-sm me-1_5"></i>Overtime
-                            <span class="badge rounded-pill bg-danger ms-1_5"> {{ $salariesOvertime->count() }}</span>
-                        </span>
-                        <i class="icon-base bx bx-home icon-sm d-sm-none"></i>
-                    </button>
-                </li>
-
-
-                <li class="nav-item mb-1 mb-sm-0">
-                    <button
-                        type="button"
-                        class="nav-link"
-                        role="tab"
-                        data-bs-toggle="tab"
-                        data-bs-target="#navs-pills-justified-iou"
-                        aria-controls="navs-pills-justified-iou"
-                        aria-selected="false">
-                        <span class="d-none d-sm-inline-flex align-items-center"><i class="icon-base bx bx-home icon-sm me-1_5"></i>IOU
-                            <span class="badge rounded-pill bg-danger ms-1_5"> {{ $salariesIOU->count() }}</span>
-                        </span>
-                        <i class="icon-base bx bx-home icon-sm d-sm-none"></i>
-                    </button>
-                </li>
-
-                <li class="nav-item mb-1 mb-sm-0">
-                    <button
-                        type="button"
-                        class="nav-link"
-                        role="tab"
-                        data-bs-toggle="tab"
-                        data-bs-target="#navs-pills-justified-boot"
-                        aria-controls="navs-pills-justified-boot"
-                        aria-selected="false">
-                        <span class="d-none d-sm-inline-flex align-items-center"><i class="icon-base bx bx-home icon-sm me-1_5"></i>BOOTS
-                            <span class="badge rounded-pill bg-danger ms-1_5"> {{ $salariesBoots->count() }}</span>
                         </span>
                         <i class="icon-base bx bx-home icon-sm d-sm-none"></i>
                     </button>
@@ -1281,184 +1097,6 @@
                     </div>
                 </div>
 
-                <div class="tab-pane fade" id="navs-pills-justified-shyhills" role="tabpanel">
-                    <div class="table-responsive text-nowrap">
-                        <table id="myTableiShyhills" class="display">
-                            <thead>
-                                <tr>
-                                   
-                                    <th>#</th>
-                                    <th>Field</th>
-                                    <th>Net Salary</th>
-                                    <th>Total Tax</th>
-                                    <th>Employees</th>
-                                    <th>View Employees</th>
-                                   
-                                </tr>
-                            </thead>
-                            <tbody class="table-border-bottom-0">
-                               @foreach ($salariesTaxes as $key => $taxes)
-                                   <tr>
-                                    <td> {{ $key + 1 }} </td>
-                                    <td>{{ $taxes->field?->name }}</td>
-                                    <td> GH&#x20B5; {{ number_format($taxes->paid, 2) }} </td>
-                                    <td> GH&#x20B5; {{ number_format($taxes->tax, 2) }} </td>
-                                    <td> {{ $taxes->total_employees }} </td>
-                                    <td> 
-                                        <a href="/salariesTaxMonth/{{ $taxes->field?->id }}/{{ $month->format('F Y') }}" class="btn btn-dark btn-sm">
-                                            <i class="bx bx-show"></i> 
-                                        </a>    
-                                    </td>   
-                                </tr>
-                                 @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-
-                </div>
-
-                <div class="tab-pane fade" id="navs-pills-justified-tema" role="tabpanel">
-                    <div class="table-responsive text-nowrap">
-                        <table id="myTableiTema" class="display">
-                            <thead>
-                                <tr>
-                                   
-                                    <th>#</th>
-                                    <th>Field</th>
-                                    <th>Tier 1</th>
-                                    <th>Tier 2</th>
-                                    <th>Net Salary</th>
-                                    <th>Cont 13</th>
-                                    <th>Cont 13.5</th>
-                                    <th>Employees</th>
-                                    <th> View Employees</th>
-                                </tr>
-                            </thead>
-                            <tbody class="table-border-bottom-0">
-                              @foreach ($salariesPensions as $key => $pensions)
-                                   <tr>
-                                    <td> {{ $key + 1 }} </td>
-                                    <td>{{ $pensions->field?->name }}</td>
-                                    <td> GH&#x20B5; {{ number_format($pensions->tier1, 2) }} </td>
-                                    <td> GH&#x20B5; {{ number_format($pensions->tier2, 2) }} </td>
-                                    <td> GH&#x20B5; {{ number_format($pensions->paid, 2) }}</td>
-                                    <td> GH&#x20B5; {{ number_format($pensions->cont13, 2) }} </td>
-                                    <td> GH&#x20B5; {{ number_format($pensions->cont13_5, 2) }} </td>
-                                    <td> {{ $pensions->total_employees }} </td>
-                                    <td> 
-                                        <a href="/salariesPensionMonth/{{ $pensions->field?->id }}/{{ $month->format('F Y') }}" class="btn btn-dark btn-sm">
-                                            <i class="bx bx-show"></i> 
-                                        </a>    
-                                    </td>   
-                                </tr>
-                                    @endforeach 
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-
-                <div class="tab-pane fade" id="navs-pills-justified-overtime" role="tabpanel">
-                    <div class="table-responsive text-nowrap">
-                        <table id="myTableiOvertime" class="display">
-                            <thead>
-                                <tr>
-                                    <th>#</th>
-                                    <th>Field</th>
-                                    <th>Overtime</th>
-                                    <th>Net Salary</th>
-                                    <th>Employees</th>
-                                    <th> View Employees</th>
-                                </tr>
-                            </thead>
-                            <tbody class="table-border-bottom-0">
-                              @foreach ($salariesOvertime as $key => $overtime)
-                                   <tr>
-                                    <td> {{ $key + 1 }} </td>
-                                    <td>{{ $overtime->field?->name }}</td>
-                                    <td> GH&#x20B5; {{ number_format($overtime->overtime, 2) }} </td>
-                                    <td> GH&#x20B5; {{ number_format($overtime->paid, 2) }}</td>
-                                    <td> {{ $overtime->total_employees }} </td>
-                                    <td> 
-                                        <a href="/salariesOvertimeMonth/{{ $overtime->field?->id }}/{{ $month->format('F Y') }}" class="btn btn-dark btn-sm">
-                                            <i class="bx bx-show"></i> 
-                                        </a>    
-                                    </td>   
-                                </tr>
-                                    @endforeach 
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <div class="tab-pane fade" id="navs-pills-justified-iou" role="tabpanel">
-                    <div class="table-responsive text-nowrap">
-                        <table id="myTableiIou" class="display">
-                            <thead>
-                                <tr>
-                                    <th>#</th>
-                                    <th>Field</th>
-                                    <th>IOU</th>
-                                    <th>Net Salary</th>
-                                    <th>Employees</th>
-                                    <th> View Employees</th>
-                                </tr>
-                            </thead>
-                            <tbody class="table-border-bottom-0">
-                              @foreach ($salariesIOU as $key => $iou)
-                                   <tr>
-                                    <td> {{ $key + 1 }} </td>
-                                    <td>{{ $iou->field?->name }}</td>
-                                    <td> GH&#x20B5; {{ number_format($iou->iou, 2) }} </td>
-                                    <td> GH&#x20B5; {{ number_format($iou->paid, 2) }}</td>
-                                    <td> {{ $iou->total_employees }} </td>
-                                    <td> 
-                                        <a href="/salariesIouMonth/{{ $iou->field?->id }}/{{ $month->format('F Y') }}" class="btn btn-dark btn-sm">
-                                            <i class="bx bx-show"></i> 
-                                        </a>    
-                                    </td>   
-                                </tr>
-                                    @endforeach 
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-
-                <div class="tab-pane fade" id="navs-pills-justified-boot" role="tabpanel">
-                    <div class="table-responsive text-nowrap">
-                        <table id="myTableiboot" class="display">
-                            <thead>
-                                <tr>
-                                    <th>#</th>
-                                    <th>Field</th>
-                                    <th>Boots</th>
-                                    <th>Net Salary</th>
-                                    <th>Employees</th>
-                                    <th> View Employees</th>
-                                </tr>
-                            </thead>
-                            <tbody class="table-border-bottom-0">
-                              @foreach ($salariesBoots as $key => $boots)
-                                   <tr>
-                                    <td> {{ $key + 1 }} </td>
-                                    <td>{{ $boots->field?->name }}</td>
-                                    <td> GH&#x20B5; {{ number_format($boots->boot, 2) }} </td>
-                                    <td> GH&#x20B5; {{ number_format($boots->paid, 2) }}</td>
-                                    <td> {{ $boots->total_employees }} </td>
-                                    <td> 
-                                        <a href="/salariesBootMonth/{{ $boots->field?->id }}/{{ $month->format('F Y') }}" class="btn btn-dark btn-sm">
-                                            <i class="bx bx-show"></i> 
-                                        </a>    
-                                    </td>   
-                                </tr>
-                                    @endforeach 
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-
                  <div class="tab-pane fade show active" id="navs-pills-justified-master" role="tabpanel">
                     <form action="/salariesBulkCash" method="POST">
                         @csrf
@@ -1957,8 +1595,639 @@
             </div>
         </div>
 
-            <br> <br>
-          <hr> <br> <br>
+        <br> <br>
+
+        <!-- cards -->
+
+        <div class="row">
+
+            <div class="col-lg-2">
+                <div  class="card bg-dark text-white">
+                    <div class="card-body">
+                        <p class="mb-1"><strong> TAX </strong></p>
+                        <h4 class="card-title mb-3 text-white"><strong> &#x20B5; {{ number_format($salariesTaxes->sum('tax'), 2) }} </strong> </h4> 
+                        <small class="fw-medium"> EMPLOYEES : {{ $salariesTaxes->sum('total_employees') }} </small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-2" >
+                <div  class="card bg-dark text-white">
+                    <div class="card-body">
+                        <p class="mb-1"><strong> PENSIONS </strong></p>
+                        <h4 class="card-title mb-3 text-white"><strong> &#x20B5; {{ number_format($salariesPensions->sum('cont13_5'), 2) }} </strong> </h4> 
+                        <small class="fw-medium"> EMPLOYEES : {{ $salariesPensions->sum('total_employees') }} </small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-2">
+                <div  class="card bg-dark text-white">
+                    <div class="card-body">
+                        <p class="mb-1"><strong> BOOTS </strong></p>
+                        <h4 class="card-title mb-3 text-white"><strong> &#x20B5; {{ number_format($salariesBoots->sum('boot'), 2) }} </strong> </h4> 
+                        <small class="fw-medium"> EMPLOYEES : {{ $salariesBoots->sum('total_employees') }} </small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-2">
+                <div  class="card bg-dark text-white">
+                    <div class="card-body">
+                        <p class="mb-1"><strong> OVERTIME </strong></p>
+                        <h4 class="card-title mb-3 text-white"><strong> &#x20B5; {{ number_format($salariesOvertime->sum('overtime'), 2) }} </strong> </h4> 
+                        <small class="fw-medium"> EMPLOYEES : {{ $salariesOvertime->sum('total_employees') }} </small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-2">
+                <div  class="card bg-dark text-white">
+                    <div class="card-body">
+                        <p class="mb-1"><strong> IOU </strong></p>
+                        <h4 class="card-title mb-3 text-white"><strong> &#x20B5; {{ number_format($salariesIOU->sum('iou'), 2) }} </strong> </h4> 
+                        <small class="fw-medium"> EMPLOYEES : {{ $salariesIOU->sum('total_employees') }} </small>
+                    </div>
+                </div>
+            </div>  
+
+            <div class="col-lg-2">
+                <div  class="card bg-dark text-white">
+                    <div class="card-body">
+                        <p class="mb-1"><strong> ABSENT </strong></p>
+                        <h4 class="card-title mb-3 text-white"><strong> &#x20B5; {{ number_format($salariesAbsent->sum('absent'), 2) }} </strong> </h4> 
+                        <small class="fw-medium"> EMPLOYEES : {{ $salariesAbsent->sum('total_employees') }} </small>
+                    </div>
+                </div>
+            </div>  
+
+            <div class="col-lg-2 mt-2">
+                <div  class="card bg-dark h-100 text-white">
+                    <div class="card-body">
+                        <p class="mb-1"><strong> AMNT DEDUCTED START DATE </strong></p>
+                        <h4 class="card-title mb-3 text-white"><strong> &#x20B5; {{ number_format($salariesAmtdedstart->sum('sDate_ded'), 2) }} </strong> </h4> 
+                        <small class="fw-medium"> EMPLOYEES : {{ $salariesAmtdedstart->sum('total_employees') }} </small>
+                    </div>
+                </div>
+            </div>  
+
+            <div class="col-lg-2 mt-2">
+                <div  class="card bg-dark h-100 text-white">
+                    <div class="card-body">
+                        <p class="mb-1"><strong> OTHER DEDUCTION </strong></p>
+                        <h4 class="card-title mb-3 text-white"><strong> &#x20B5; {{ number_format($salariesOtherDed->sum('odeduct'), 2) }} </strong> </h4> 
+                        <small class="fw-medium"> EMPLOYEES : {{ $salariesOtherDed->sum('total_employees') }} </small>
+                    </div>
+                </div>
+            </div>  
+
+            <div class="col-lg-2 mt-2">
+                <div  class="card bg-dark h-100 text-white">
+                    <div class="card-body">
+                        <p class="mb-1"><strong> REPRIMAND </strong></p>
+                        <h4 class="card-title mb-3 text-white"><strong> &#x20B5; {{ number_format($salariesReprimand->sum('reprimand'), 2) }} </strong> </h4> 
+                        <small class="fw-medium"> EMPLOYEES : {{ $salariesReprimand->sum('total_employees') }} </small>
+                    </div>
+                </div>
+            </div>  
+
+            <div class="col-lg-2 mt-2">
+                <div  class="card bg-dark h-100 text-white">
+                    <div class="card-body">
+                        <p class="mb-1"><strong> LOAN </strong></p>
+                        <h4 class="card-title mb-3 text-white"><strong> &#x20B5; {{ number_format($salariesLoan->sum('loan'), 2) }} </strong> </h4> 
+                        <small class="fw-medium"> EMPLOYEES : {{ $salariesLoan->sum('total_employees') }} </small>
+                    </div>
+                </div>
+            </div>  
+
+        </div>
+
+        <!-- end cards -->
+
+
+
+    <!-- Table -->  
+         <br> 
+        <div class="nav-align-top">
+            <ul class="nav nav-pills mb-4 nav-fill" role="tablist">
+
+                @if(Auth::user()->hasRole(['Finance Manager', 'Invoice', 'Manager']) )
+
+
+                <li class="nav-item mb-1 mb-sm-0">
+                    <button
+                        type="button"
+                        class="nav-link"
+                        role="tab"
+                        data-bs-toggle="tab"
+                        data-bs-target="#navs-pills-justified-tax"
+                        aria-controls="navs-pills-justified-tax"
+                        aria-selected="false">
+                        <span class="d-none d-sm-inline-flex align-items-center"><i class="icon-base bx bx-home icon-sm me-1_5"></i>Tax
+                            <span class="badge rounded-pill bg-danger ms-1_5"> {{ $salariesTaxes->count() }} </span>
+                        </span>
+                        <i class="icon-base bx bx-home icon-sm d-sm-none"></i>
+                    </button>
+                </li>
+
+                <li class="nav-item mb-1 mb-sm-0">
+                    <button
+                        type="button"
+                        class="nav-link"
+                        role="tab"
+                        data-bs-toggle="tab"
+                        data-bs-target="#navs-pills-justified-pensions"
+                        aria-controls="navs-pills-justified-pensions"
+                        aria-selected="false">
+                        <span class="d-none d-sm-inline-flex align-items-center"><i class="icon-base bx bx-home icon-sm me-1_5"></i>Pensions
+                            <span class="badge rounded-pill bg-danger ms-1_5"> {{ $salariesPensions->count() }}</span>
+                        </span>
+                        <i class="icon-base bx bx-home icon-sm d-sm-none"></i>
+                    </button>
+                </li>
+
+                <li class="nav-item mb-1 mb-sm-0">
+                    <button
+                        type="button"
+                        class="nav-link"
+                        role="tab"
+                        data-bs-toggle="tab"
+                        data-bs-target="#navs-pills-justified-overtime"
+                        aria-controls="navs-pills-justified-overtime"
+                        aria-selected="false">
+                        <span class="d-none d-sm-inline-flex align-items-center"><i class="icon-base bx bx-home icon-sm me-1_5"></i>Overtime
+                            <span class="badge rounded-pill bg-danger ms-1_5"> {{ $salariesOvertime->count() }}</span>
+                        </span>
+                        <i class="icon-base bx bx-home icon-sm d-sm-none"></i>
+                    </button>
+                </li>
+
+                <li class="nav-item mb-1 mb-sm-0">
+                    <button
+                        type="button"
+                        class="nav-link"
+                        role="tab"
+                        data-bs-toggle="tab"
+                        data-bs-target="#navs-pills-justified-iou"
+                        aria-controls="navs-pills-justified-iou"
+                        aria-selected="false">
+                        <span class="d-none d-sm-inline-flex align-items-center"><i class="icon-base bx bx-home icon-sm me-1_5"></i>IOU
+                            <span class="badge rounded-pill bg-danger ms-1_5"> {{ $salariesIOU->count() }}</span>
+                        </span>
+                        <i class="icon-base bx bx-home icon-sm d-sm-none"></i>
+                    </button>
+                </li>
+
+                <li class="nav-item mb-1 mb-sm-0">
+                    <button
+                        type="button"
+                        class="nav-link"
+                        role="tab"
+                        data-bs-toggle="tab"
+                        data-bs-target="#navs-pills-justified-boot"
+                        aria-controls="navs-pills-justified-boot"
+                        aria-selected="false">
+                        <span class="d-none d-sm-inline-flex align-items-center"><i class="icon-base bx bx-home icon-sm me-1_5"></i>Boots
+                            <span class="badge rounded-pill bg-danger ms-1_5"> {{ $salariesBoots->count() }}</span>
+                        </span>
+                        <i class="icon-base bx bx-home icon-sm d-sm-none"></i>
+                    </button>
+                </li>
+
+                <li class="nav-item mb-1 mb-sm-0">
+                    <button
+                        type="button"
+                        class="nav-link"
+                        role="tab"
+                        data-bs-toggle="tab"
+                        data-bs-target="#navs-pills-justified-absent"
+                        aria-controls="navs-pills-justified-absent"
+                        aria-selected="false">
+                        <span class="d-none d-sm-inline-flex align-items-center"><i class="icon-base bx bx-home icon-sm me-1_5"></i>Absent
+                            <span class="badge rounded-pill bg-danger ms-1_5"> {{ $salariesAbsent->count() }}</span>
+                        </span>
+                        <i class="icon-base bx bx-home icon-sm d-sm-none"></i>
+                    </button>
+                </li>
+
+                <li class="nav-item mb-1 mb-sm-0">
+                    <button
+                        type="button"
+                        class="nav-link"
+                        role="tab"
+                        data-bs-toggle="tab"
+                        data-bs-target="#navs-pills-justified-sDate_ded"
+                        aria-controls="navs-pills-justified-sDate_ded"
+                        aria-selected="false">
+                        <span class="d-none d-sm-inline-flex align-items-center"><i class="icon-base bx bx-home icon-sm me-1_5"></i>S.Date
+                            <span class="badge rounded-pill bg-danger ms-1_5"> {{ $salariesAmtdedstart->count() }}</span>
+                        </span>
+                        <i class="icon-base bx bx-home icon-sm d-sm-none"></i>
+                    </button>
+                </li>
+
+                <li class="nav-item mb-1 mb-sm-0">
+                    <button
+                        type="button"
+                        class="nav-link"
+                        role="tab"
+                        data-bs-toggle="tab"
+                        data-bs-target="#navs-pills-justified-odeduct"
+                        aria-controls="navs-pills-justified-odeduct"
+                        aria-selected="false">
+                        <span class="d-none d-sm-inline-flex align-items-center"><i class="icon-base bx bx-home icon-sm me-1_5"></i>O.Ded
+                            <span class="badge rounded-pill bg-danger ms-1_5"> {{ $salariesOtherDed->count() }}</span>
+                        </span>
+                        <i class="icon-base bx bx-home icon-sm d-sm-none"></i>
+                    </button>
+                </li>
+
+                <li class="nav-item mb-1 mb-sm-0">
+                    <button
+                        type="button"
+                        class="nav-link"
+                        role="tab"
+                        data-bs-toggle="tab"
+                        data-bs-target="#navs-pills-justified-reprimand"
+                        aria-controls="navs-pills-justified-reprimand"
+                        aria-selected="false">
+                        <span class="d-none d-sm-inline-flex align-items-center"><i class="icon-base bx bx-home icon-sm me-1_5"></i>Reprimand
+                            <span class="badge rounded-pill bg-danger ms-1_5"> {{ $salariesReprimand->count() }}</span>
+                        </span>
+                        <i class="icon-base bx bx-home icon-sm d-sm-none"></i>
+                    </button>
+                </li>
+
+                <li class="nav-item mb-1 mb-sm-0">
+                    <button
+                        type="button"
+                        class="nav-link"
+                        role="tab"
+                        data-bs-toggle="tab"
+                        data-bs-target="#navs-pills-justified-loan"
+                        aria-controls="navs-pills-justified-loan"
+                        aria-selected="false">
+                        <span class="d-none d-sm-inline-flex align-items-center"><i class="icon-base bx bx-home icon-sm me-1_5"></i>Loan
+                            <span class="badge rounded-pill bg-danger ms-1_5"> {{ $salariesLoan->count() }}</span>
+                        </span>
+                        <i class="icon-base bx bx-home icon-sm d-sm-none"></i>
+                    </button>
+                </li>
+                @endif
+
+            </ul>
+
+
+            <div class="tab-content">
+
+                <div class="tab-pane fade" id="navs-pills-justified-tax" role="tabpanel">
+                    <div class="table-responsive text-nowrap">
+                        <table id="myTableiShyhills" class="display">
+                            <thead>
+                                <tr>
+                                   
+                                    <th>#</th>
+                                    <th>Field</th>
+                                    <th>Net Salary</th>
+                                    <th>Total Tax</th>
+                                    <th>Employees</th>
+                                    <th>View Employees</th>
+                                   
+                                </tr>
+                            </thead>
+                            <tbody class="table-border-bottom-0">
+                               @foreach ($salariesTaxes as $key => $taxes)
+                                   <tr>
+                                    <td> {{ $key + 1 }} </td>
+                                    <td>{{ $taxes->field?->name }}</td>
+                                    <td> GH&#x20B5; {{ number_format($taxes->paid, 2) }} </td>
+                                    <td> GH&#x20B5; {{ number_format($taxes->tax, 2) }} </td>
+                                    <td> {{ $taxes->total_employees }} </td>
+                                    <td> 
+                                        <a href="/salariesTaxMonth/{{ $taxes->field?->id }}/{{ $month->format('F Y') }}" class="btn btn-dark btn-sm">
+                                            <i class="bx bx-show"></i> 
+                                        </a>    
+                                    </td>   
+                                </tr>
+                                 @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+
+                </div>
+
+                <div class="tab-pane fade" id="navs-pills-justified-pensions" role="tabpanel">
+                    <div class="table-responsive text-nowrap">
+                        <table id="myTableiTema" class="display">
+                            <thead>
+                                <tr>
+                                   
+                                    <th>#</th>
+                                    <th>Field</th>
+                                    <th>Tier 1</th>
+                                    <th>Tier 2</th>
+                                    <th>Net Salary</th>
+                                    <th>Cont 13</th>
+                                    <th>Cont 13.5</th>
+                                    <th>Employees</th>
+                                    <th> View Employees</th>
+                                </tr>
+                            </thead>
+                            <tbody class="table-border-bottom-0">
+                              @foreach ($salariesPensions as $key => $pensions)
+                                   <tr>
+                                    <td> {{ $key + 1 }} </td>
+                                    <td>{{ $pensions->field?->name }}</td>
+                                    <td> GH&#x20B5; {{ number_format($pensions->tier1, 2) }} </td>
+                                    <td> GH&#x20B5; {{ number_format($pensions->tier2, 2) }} </td>
+                                    <td> GH&#x20B5; {{ number_format($pensions->paid, 2) }}</td>
+                                    <td> GH&#x20B5; {{ number_format($pensions->cont13, 2) }} </td>
+                                    <td> GH&#x20B5; {{ number_format($pensions->cont13_5, 2) }} </td>
+                                    <td> {{ $pensions->total_employees }} </td>
+                                    <td> 
+                                        <a href="/salariesPensionMonth/{{ $pensions->field?->id }}/{{ $month->format('F Y') }}" class="btn btn-dark btn-sm">
+                                            <i class="bx bx-show"></i> 
+                                        </a>    
+                                    </td>   
+                                </tr>
+                                    @endforeach 
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+
+                <div class="tab-pane fade" id="navs-pills-justified-overtime" role="tabpanel">
+                    <div class="table-responsive text-nowrap">
+                        <table id="myTableiOvertime" class="display">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Field</th>
+                                    <th>Overtime</th>
+                                    <th>Net Salary</th>
+                                    <th>Employees</th>
+                                    <th> View Employees</th>
+                                </tr>
+                            </thead>
+                            <tbody class="table-border-bottom-0">
+                              @foreach ($salariesOvertime as $key => $overtime)
+                                   <tr>
+                                    <td> {{ $key + 1 }} </td>
+                                    <td>{{ $overtime->field?->name }}</td>
+                                    <td> GH&#x20B5; {{ number_format($overtime->overtime, 2) }} </td>
+                                    <td> GH&#x20B5; {{ number_format($overtime->paid, 2) }}</td>
+                                    <td> {{ $overtime->total_employees }} </td>
+                                    <td> 
+                                        <a href="/salariesOvertimeMonth/{{ $overtime->field?->id }}/{{ $month->format('F Y') }}" class="btn btn-dark btn-sm">
+                                            <i class="bx bx-show"></i> 
+                                        </a>    
+                                    </td>   
+                                </tr>
+                                    @endforeach 
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="navs-pills-justified-iou" role="tabpanel">
+                    <div class="table-responsive text-nowrap">
+                        <table id="myTableiIou" class="display">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Field</th>
+                                    <th>IOU</th>
+                                    <th>Net Salary</th>
+                                    <th>Employees</th>
+                                    <th> View Employees</th>
+                                </tr>
+                            </thead>
+                            <tbody class="table-border-bottom-0">
+                              @foreach ($salariesIOU as $key => $iou)
+                                   <tr>
+                                    <td> {{ $key + 1 }} </td>
+                                    <td>{{ $iou->field?->name }}</td>
+                                    <td> GH&#x20B5; {{ number_format($iou->iou, 2) }} </td>
+                                    <td> GH&#x20B5; {{ number_format($iou->paid, 2) }}</td>
+                                    <td> {{ $iou->total_employees }} </td>
+                                    <td> 
+                                        <a href="/salariesIouMonth/{{ $iou->field?->id }}/{{ $month->format('F Y') }}" class="btn btn-dark btn-sm">
+                                            <i class="bx bx-show"></i> 
+                                        </a>    
+                                    </td>   
+                                </tr>
+                                    @endforeach 
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+
+                <div class="tab-pane fade" id="navs-pills-justified-boot" role="tabpanel">
+                    <div class="table-responsive text-nowrap">
+                        <table id="myTableiboot" class="display">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Field</th>
+                                    <th>Boots</th>
+                                    <th>Net Salary</th>
+                                    <th>Employees</th>
+                                    <th> View Employees</th>
+                                </tr>
+                            </thead>
+                            <tbody class="table-border-bottom-0">
+                              @foreach ($salariesBoots as $key => $boots)
+                                   <tr>
+                                    <td> {{ $key + 1 }} </td>
+                                    <td>{{ $boots->field?->name }}</td>
+                                    <td> GH&#x20B5; {{ number_format($boots->boot, 2) }} </td>
+                                    <td> GH&#x20B5; {{ number_format($boots->paid, 2) }}</td>
+                                    <td> {{ $boots->total_employees }} </td>
+                                    <td> 
+                                        <a href="/salariesBootMonth/{{ $boots->field?->id }}/{{ $month->format('F Y') }}" class="btn btn-dark btn-sm">
+                                            <i class="bx bx-show"></i> 
+                                        </a>    
+                                    </td>   
+                                </tr>
+                                    @endforeach 
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="navs-pills-justified-absent" role="tabpanel">
+                    <div class="table-responsive text-nowrap">
+                        <table id="myTableiabsent" class="display">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Field</th>
+                                    <th>Absent</th>
+                                    <th>Net Salary</th>
+                                    <th>Employees</th>
+                                    <th> View Employees</th>
+                                </tr>
+                            </thead>
+                            <tbody class="table-border-bottom-0">
+                              @foreach ($salariesAbsent as $key => $absent)
+                                   <tr>
+                                    <td> {{ $key + 1 }} </td>
+                                    <td>{{ $absent->field?->name }}</td>
+                                    <td> GH&#x20B5; {{ number_format($absent->absent, 2) }} </td>
+                                    <td> GH&#x20B5; {{ number_format($absent->paid, 2) }}</td>
+                                    <td> {{ $absent->total_employees }} </td>
+                                    <td> 
+                                        <a href="/salariesAbsentMonth/{{ $absent->field?->id }}/{{ $month->format('F Y') }}" class="btn btn-dark btn-sm">
+                                            <i class="bx bx-show"></i> 
+                                        </a>    
+                                    </td>   
+                                </tr>
+                                    @endforeach 
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="navs-pills-justified-sDate_ded" role="tabpanel">
+                    <div class="table-responsive text-nowrap">
+                        <table id="myTableisDate_ded" class="display">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Field</th>
+                                    <th>Start Date Ded</th>
+                                    <th>Net Salary</th>
+                                    <th>Employees</th>
+                                    <th> View Employees</th>
+                                </tr>
+                            </thead>
+                            <tbody class="table-border-bottom-0">
+                              @foreach ($salariesAmtdedstart as $key => $sdate)
+                                   <tr>
+                                    <td> {{ $key + 1 }} </td>
+                                    <td>{{ $sdate->field?->name }}</td>
+                                    <td> GH&#x20B5; {{ number_format($sdate->sDate_ded, 2) }} </td>
+                                    <td> GH&#x20B5; {{ number_format($sdate->paid, 2) }}</td>
+                                    <td> {{ $sdate->total_employees }} </td>
+                                    <td> 
+                                        <a href="/salariessDateMonth/{{ $sdate->field?->id }}/{{ $month->format('F Y') }}" class="btn btn-dark btn-sm">
+                                            <i class="bx bx-show"></i> 
+                                        </a>    
+                                    </td>   
+                                </tr>
+                                    @endforeach 
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="navs-pills-justified-odeduct" role="tabpanel">
+                    <div class="table-responsive text-nowrap">
+                        <table id="myTableiodeduct" class="display">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Field</th>
+                                    <th>Other Ded</th>
+                                    <th>Net Salary</th>
+                                    <th>Employees</th>
+                                    <th> View Employees</th>
+                                </tr>
+                            </thead>
+                            <tbody class="table-border-bottom-0">
+                              @foreach ($salariesOtherDed as $key => $odeduct)
+                                   <tr>
+                                    <td> {{ $key + 1 }} </td>
+                                    <td>{{ $odeduct->field?->name }}</td>
+                                    <td> GH&#x20B5; {{ number_format($odeduct->odeduct, 2) }} </td>
+                                    <td> GH&#x20B5; {{ number_format($odeduct->paid, 2) }}</td>
+                                    <td> {{ $odeduct->total_employees }} </td>
+                                    <td> 
+                                        <a href="/salariesOdedMonth/{{ $odeduct->field?->id }}/{{ $month->format('F Y') }}" class="btn btn-dark btn-sm">
+                                            <i class="bx bx-show"></i> 
+                                        </a>    
+                                    </td>   
+                                </tr>
+                                    @endforeach 
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="navs-pills-justified-reprimand" role="tabpanel">
+                    <div class="table-responsive text-nowrap">
+                        <table id="myTableireprimand" class="display">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Field</th>
+                                    <th>Reprimand</th>
+                                    <th>Net Salary</th>
+                                    <th>Employees</th>
+                                    <th> View Employees</th>
+                                </tr>
+                            </thead>
+                            <tbody class="table-border-bottom-0">
+                              @foreach ($salariesReprimand as $key => $reprimand)
+                                   <tr>
+                                    <td> {{ $key + 1 }} </td>
+                                    <td>{{ $reprimand->field?->name }}</td>
+                                    <td> GH&#x20B5; {{ number_format($reprimand->reprimand, 2) }} </td>
+                                    <td> GH&#x20B5; {{ number_format($reprimand->paid, 2) }}</td>
+                                    <td> {{ $reprimand->total_employees }} </td>
+                                    <td> 
+                                        <a href="/salariesReprimandMonth/{{ $reprimand->field?->id }}/{{ $month->format('F Y') }}" class="btn btn-dark btn-sm">
+                                            <i class="bx bx-show"></i> 
+                                        </a>    
+                                    </td>   
+                                </tr>
+                                    @endforeach 
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="navs-pills-justified-loan" role="tabpanel">
+                    <div class="table-responsive text-nowrap">
+                        <table id="myTableiloan" class="display">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Field</th>
+                                    <th>Loan</th>
+                                    <th>Net Salary</th>
+                                    <th>Employees</th>
+                                    <th> View Employees</th>
+                                </tr>
+                            </thead>
+                            <tbody class="table-border-bottom-0">
+                              @foreach ($salariesLoan as $key => $loan)
+                                   <tr>
+                                    <td> {{ $key + 1 }} </td>
+                                    <td>{{ $loan->field?->name }}</td>
+                                    <td> GH&#x20B5; {{ number_format($loan->loan, 2) }} </td>
+                                    <td> GH&#x20B5; {{ number_format($loan->paid, 2) }}</td>
+                                    <td> {{ $loan->total_employees }} </td>
+                                    <td> 
+                                        <a href="/salariesLoanMonth/{{ $loan->field?->id }}/{{ $month->format('F Y') }}" class="btn btn-dark btn-sm">
+                                            <i class="bx bx-show"></i> 
+                                        </a>    
+                                    </td>   
+                                </tr>
+                                    @endforeach 
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+
+
+        <hr> <br> <br>
         <h4> Salary Summary</h4>
         <div class="row">
             <!-- FIELD OFFICES SUMMARY -->
@@ -2989,6 +3258,11 @@
         let myTableiOvertime = new DataTable('#myTableiOvertime');
         let myTableiIou = new DataTable('#myTableiIou');
         let myTableiboot = new DataTable('#myTableiboot');
+        let myTableiabsent = new DataTable('#myTableiabsent');
+        let myTableisDate_ded = new DataTable('#myTableisDate_ded');
+        let myTableiodeduct = new DataTable('#myTableiodeduct');
+        let myTableireprimand = new DataTable('#myTableireprimand');
+        let myTableiloan = new DataTable('#myTableiloan');
         let myTableiholdcash = new DataTable('#myTableiholdcash');
         let myTableiholdbank = new DataTable('#myTableiholdbank');
 

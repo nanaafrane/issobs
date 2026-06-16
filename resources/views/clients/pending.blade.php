@@ -5,12 +5,10 @@
     <link rel="stylesheet" href="https://cdn.datatables.net/buttons/3.2.4/css/buttons.dataTables.css">
 
     <link href="https://cdn.datatables.net/columncontrol/1.1.1/css/columnControl.dataTables.min.css" rel="stylesheet">
-
     @endsection
 
-
-  @section('side_nav')
-  <!-- Menu -->
+    @section('side_nav')
+    <!-- Menu -->
     <aside id="layout-menu" class="layout-menu menu-vertical menu bg-menu-theme">
         <div class="app-brand demo">
             <a href="#" class="app-brand-link">
@@ -83,29 +81,6 @@
                 <div class="text-truncate" data-i18n="Clients">Clients</div>
                 </a>
             </li>
-            <li class="menu-item">
-          <a href="javascript:void(0);" class="menu-link menu-toggle">
-          <i class="menu-icon tf-icons bx bxs-user-account"></i>
-          <div class="text-truncate" data-i18n="Staffs">Employees</div>
-          </a>
-          <ul class="menu-sub">
-          <li class="menu-item ">
-              <a href="{{url('employees/create')}}" class="menu-link">
-              <div class="text-truncate" data-i18n="SRegister">Register</div>
-              </a>
-          </li>
-          <li class="menu-item">
-              <a href="{{url('employees')}}" class="menu-link">
-              <div class="text-truncate" data-i18n="SList">List</div>
-              </a>
-          </li>
-          <li class="menu-item">
-              <a href="{{url('employeesBank')}}" class="menu-link">
-              <div class="text-truncate" data-i18n="SList">Employee Banks</div>
-              </a>
-          </li>
-          </ul>
-      </li>
                 @endif
         @endif
 
@@ -131,7 +106,7 @@
                     </ul>
             </li>
             @endif
-            <li class="menu-item  ">
+            <li class="menu-item ">
                 <a href="javascript:void(0);" class="menu-link menu-toggle">
                 <i class="menu-icon tf-icons bx bxs-user-account"></i>
                 <div class="text-truncate" data-i18n="Staffs">Employees</div>
@@ -147,15 +122,11 @@
                     <div class="text-truncate" data-i18n="SList">List</div>
                     </a>
                 </li>
-          <li class="menu-item">
-              <a href="{{url('employeesBank')}}" class="menu-link">
-              <div class="text-truncate" data-i18n="SList">Employee Banks</div>
-              </a>
-          </li>
+
                 </ul>
             </li>
         
-            <li class="menu-item active open ">
+            <li class="menu-item active open">
                 <a class="menu-link menu-toggle">
                     <i class="menu-icon tf-icons bx bx-bxs-user-detail"></i>
                     <div class="text-truncate" data-i18n="Clients"><strong>Clients</strong></div>
@@ -181,6 +152,7 @@
                             <div class="text-truncate" data-i18n="CList">Pending</div>
                         </a>
                     </li>
+
                 </ul>
             </li>
 
@@ -247,15 +219,14 @@
                     <div class="text-truncate" data-i18n="Payroll">Payroll</div>
                     </a>
                     <ul class="menu-sub">
-
                     <li class="menu-item">
                         <a href="{{ url('salaries') }}" class="menu-link">
                         <i class="menu-icon tf-icons bx bxs-user-account"></i>
                         <div class="text-truncate" data-i18n="Employees">Add to Salaries</div>
                         </a>
                     </li>
-                    
-                    @if(Auth::user()->hasPermission('Accounts') )
+
+                    @if(Auth::user()->hasPermission('Accounts'))
                     <li class="menu-item">
                         <a href="{{ url('salaries/create') }}" class="menu-link">
                         <i class="menu-icon tf-icons bx bx-money-withdraw"></i>
@@ -277,92 +248,306 @@
                         </a>
                     </li>
                     @endif
+
                     </ul>
                 </li>
             @endif
+
         </ul>
     </aside>
-  <!-- / Menu -->
-  @endsection
+    <!-- / Menu -->
+    @endsection
 
 
-  @section('content')
+    @section('content')
 
-  <!-- Content -->
     <div class="container-xxl flex-grow-1 container-p-y">
 
         <div class="row">
             <div class="col-12">
-                <h3 class="card-header"> <i class="icon-base bx bxs-user-account"></i>  Attach Guard </h3>
+                <h3 class="card-header text-danger"> <i class="icon-base bx bx-bxs-receipt"></i> All Clients </h3>
             </div>
         </div><br>
 
-
         <div class="row">
             <div class="col-xxl-12 mb-6 order-0">
-                <div class="card bg-dark">
+                <div style="background: crimson;" class="card">
                     <div class="d-flex align-items-start row">
                         <div class="col-sm-7">
                             <div class="card-body">
-                               <p class="mb-1 text-white"><strong>  </strong> </p>
-                                <h1 class="text-white">  </h1>
-                                <h6 class="card-title text-white mb-3">TOTAL NUMBER OF GUARDS </h6>
+                                <h1 class="text-white">
+                                    @if(Auth::user()->hasRole(['Invoice', 'Finance Manager', 'Manager']) )
+                                    {{$clientsCount}} / {{ $totalGuards }}
+                                    @elseif(Auth::user()->field?->name == 'Accra')
+                                    {{$accraCount}} / {{ $totalaccraGuards }}
+                                    @endif
+
+
+                                    @if(Auth::user()->field?->name == 'Botwe')
+                                    {{$botweCount}}  / {{ $totalbotweGuards }}
+                                    @endif
+
+                                    @if(Auth::user()->field?->name == 'Tema')
+                                    {{$temaCount}} + {{ $shyhillsCount }} / {{ $totaltemaGuards }} + {{ $totalshyhillsGuards }}
+                                    @endif
+
+                                    @if(Auth::user()->field?->name == 'Takoradi')
+                                    {{$takoradiCount}} / {{ $totaltakoradiGuards }}
+                                    @endif
+
+                                    @if(Auth::user()->field?->name == 'Koforidua')
+                                    {{$koforiduaCount}} / {{ $totalkoforiduaGuards }}
+                                    @endif
+
+                                    @if(Auth::user()->field?->name == 'Kumasi')
+                                    {{$kumasiCount}} / {{ $totalkumasiGuards }}
+                                    @endif
+                                </h1>
+                                <h6 class="card-title text-white mb-3">TOTAL NUMBER OF CLIENTS / OPERATIONS </h6>
+
+
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div> <br><br>
+        </div>
+
+
+        @if(Auth::user()->hasRole(['Invoice', 'Finance Manager', 'Manager']))
+        <div class="row">
+            <div class="col-lg-2">
+                <div class="card shadow-none bg-transparent border border-danger">
+                    <div class="card-body">
+                        <div class="card-title d-flex align-items-start justify-content-between mb-4">
+                            <div class="avatar flex-shrink-0">
+                                <img
+                                    src="img/icons/unicons/paypal.png"
+                                    alt="chart success"
+                                    class="rounded" />
+                            </div>
+                        </div>
+                        <p class="mb-1"><strong> ACCRA </strong> </p>
+                        <h4 class="card-title mb-3"><strong> {{$accraCount}} /  {{ $totalaccraGuards }} </strong> </h4>
+                        <small class="fw-medium">  CLIENTS / OPERATIONS </small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-2">
+                <div class="card shadow-none bg-transparent border border-secondary">
+                    <div class="card-body">
+                        <div class="card-title d-flex align-items-start justify-content-between mb-4">
+                            <div class="avatar flex-shrink-0">
+                                <img
+                                    src="img/icons/unicons/paypal.png"
+                                    alt="chart success"
+                                    class="rounded" />
+                            </div>
+                        </div>
+                        <p class="mb-1"><strong> BOTWE </strong></p>
+                        <h4 class="card-title mb-3"><strong> {{$botweCount}} / {{ $totalbotweGuards }} </strong> </h4>
+                        <small class="fw-medium"> CLIENTS / OPERATIONS </small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-2">
+                <div class="card shadow-none bg-transparent border border-info">
+                    <div class="card-body">
+                        <div class="card-title d-flex align-items-start justify-content-between mb-4">
+                            <div class="avatar flex-shrink-0">
+                                <img
+                                    src="img/icons/unicons/paypal.png"
+                                    alt="chart success"
+                                    class="rounded" />
+                            </div>
+                        </div>
+                        <p class="mb-1"><strong> SHAIHILLS </strong></p>
+                        <h4 class="card-title mb-3"><strong> {{$shyhillsCount}} / {{ $totalshyhillsGuards }}</strong> </h4>
+                        <small class="fw-medium"> CLIENTS / OPERATIONS </small>
+                    </div>
+                </div>
+            </div>
+
+
+            <div class="col-lg-2">
+                <div class="card shadow-none bg-transparent border border-info">
+                    <div class="card-body">
+                        <div class="card-title d-flex align-items-start justify-content-between mb-4">
+                            <div class="avatar flex-shrink-0">
+                                <img
+                                    src="img/icons/unicons/paypal.png"
+                                    alt="chart success"
+                                    class="rounded" />
+                            </div>
+
+                        </div>
+                        <p class="mb-1"><strong> TEMA </strong></p>
+                        <h4 class="card-title mb-3"><strong> {{$temaCount}} / {{ $totaltemaGuards }}</strong> </h4>
+                        <small class="fw-medium"> CLIENTS / OPERATIONS </small>
+                    </div>
+                </div>
+            </div>
+
+
+
+            <div class="col-lg-2">
+                <div class="card shadow-none bg-transparent border border-warning">
+                    <div class="card-body">
+                        <div class="card-title d-flex align-items-start justify-content-between mb-4">
+                            <div class="avatar flex-shrink-0">
+                                <img
+                                    src="img/icons/unicons/paypal.png"
+                                    class="rounded" />
+                            </div>
+
+                        </div>
+                        <p class="mb-1">TAKORADI</p>
+                        <h4 class="card-title mb-3"> {{$takoradiCount}} / {{ $totaltakoradiGuards }} </h4>
+                        <small class="fw-medium"> CLIENTS / OPERATIONS </small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-2">
+                <div class="card shadow-none bg-transparent border border-success">
+                    <div class="card-body">
+                        <div class="card-title d-flex align-items-start justify-content-between mb-4">
+                            <div class="avatar flex-shrink-0">
+                                <img
+                                    src="img/icons/unicons/paypal.png"
+                                    class="rounded" />
+                            </div>
+
+                        </div>
+                        <p class="mb-1"> <strong> KOFORIDUA </strong> </p>
+                        <h4 class="card-title mb-3"> {{$koforiduaCount}} / {{ $totalkoforiduaGuards }} </h4>
+                        <small class="fw-medium"> CLIENTS / OPERATIONS </small>
+                    </div>
+                </div>
+            </div>
+
+
+            <div class="col-lg-2 m-3">
+                <div class="card shadow-none bg-transparent border border-primary">
+                    <div class="card-body">
+                        <div class="card-title d-flex align-items-start justify-content-between mb-4">
+                            <div class="avatar flex-shrink-0">
+                                <img
+                                    src="img/icons/unicons/paypal.png"
+                                    class="rounded" />
+                            </div>
+
+                        </div>
+                        <p class="mb-1"><strong> KUMASI </strong> </p>
+                        <h4 class="card-title mb-3"> {{$kumasiCount}} /  {{ $totalkumasiGuards }}</h4>
+                        <small class="fw-medium"> CLIENTS / OPERATIONS </small>
+                    </div>
+                </div>
+            </div>
+
+        </div><br><br>
+        @endif
 
         <div class="card-header  ml-2  d-none d-lg-block">
             @include('flash-messages')
         </div>
 
+        <div class="row">
+            <div class="col">
+                <table id="myTable" class="display">
+                    <thead>
+                        <tr>
+                            <th> # ID.</th>
+                            <th> Name</th>
+                            <th>Phone No.</th>
+                            <th>Business Name </th>
+                            <th> Field Office </th>
+                            <th> Address </th>
+                            <th> Branch </th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
 
-          <div class="row">
+                        @foreach($clients as $client)
+                        <tr>
+                            <td> {{$client->id}} </td>
+                            <td> {{$client->name}}</td>
+                            <td> {{$client->phone_number}}, {{$client->phone_number1}} </td>
+                            <td> {{$client->business_name}} </td>
+                            <td>
+                                @if($client->field->name == 'Accra')
+                                <span class="badge bg-label-danger">{{$client->field->name}} </span>
+                                @endif
 
-            <form action="/employeesGuardReAassign"  method="POST">
-              @csrf
+                                @if($client->field->name == 'Botwe')
+                                <span class="badge bg-label-secondary">{{$client->field->name}} </span>
+                                @endif
 
-              <input class="form-check-input form-check-inline" type="checkbox" value="" id="options" />
+                                @if($client->field->name == 'Tema')
+                                <span class="badge bg-label-info">{{$client->field->name}} </span>
+                                @endif
 
-              <div class="form-check form-check-inline">
-                  <select name="employees" class="form-select">
-                      <option value=""> Select All </option>
-                  </select>
-              </div>
+                                @if($client->field->name == 'ShaiHills')
+                                <span class="badge bg-label-info">{{$client->field->name}} </span>
+                                @endif
 
-              <div class="form-check form-check-inline">
-                <button class="btn btn-dark" type="submit" onclick="return confirm('Kindly Confirm?')"> <i class="icon-base bx bx-arrow-from-left"> </i> {{ __('Re-Assign') }}</button>
-              </div>
+                                @if($client->field->name == 'Takoradi')
+                                <span class="badge bg-label-warning ">{{$client->field->name}} </span>
+                                @endif
 
-              <div class="col">
-                  <table id="myTable" class="display">
-                      <thead>
-                          <tr>
-                              <th> </th>
+                                @if($client->field->name == 'Koforidua')
+                                <span class="badge bg-label-success">{{$client->field->name}} </span>
+                                @endif
 
-                          </tr>
-                      </thead>
-                      <tbody>
+                                @if($client->field->name == 'Kumasi')
+                                <span class="badge bg-label-primary">{{$client->field->name}} </span>
+                                @endif
 
-                          <tr>
-                              <td> </td>
-                              
-                          </tr>
-                      </tbody>
-                  </table>
-              </form>
+                            </td>
 
-              </div>
-          </div>
+                            <td> {{$client->address}} </td>
+                            <td> {{$client->branch}} </td>
+
+                            <td>
+                                <div class="dropdown">
+                                    <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown">
+                                        <i class="icon-base bx bx-dots-vertical-rounded"></i>
+                                    </button>
+                                    <div class="dropdown-menu">
+                                        <a class="dropdown-item" href="{{url('client', $client->id)}}"><i class="icon-base bx bxs-bullseye"></i> view</a>
+                                        <a class="dropdown-item" href="client/{{$client->id}}/edit"><i class="icon-base bx bx-edit-alt me-1"></i> Edit</a>
+                                        @if(Auth::user()->hasPermission('HR') || Auth::user()->hasRole(['Invoice'])  )
+                                        <form action="client/{{$client->id}}" method="POST">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button class="dropdown-item" type="submit"><i class="icon-base bx bx-trash me-1"></i>Delete</button>
+                                        </form>
+                                        @endif
+                                        <hr>
+                                        <a class="dropdown-item" href="{{url('employeesGuardClient', $client->id)}}"><i class="icon-base bx bxs-user-account"></i> View Guards </a>
+                                        <!-- <a class="dropdown-item" href="{{url('clientAttachGuards', $client->id)}}"><i class="icon-base bx bxs-user-account"></i> Attach Guards </a> -->
+
+                                    </div>
+                                </div>
+                            </td>
+
+
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+
+            </div>
+        </div>
     </div>
-  <!-- / Content -->
-
-  @endsection
+    @endsection
 
 
     @section('scripts')
+
     <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
     <script src="https://cdn.datatables.net/2.3.3/js/dataTables.js"></script>
     <script src="https://cdn.datatables.net/buttons/3.2.4/js/dataTables.buttons.js"></script>
@@ -400,18 +585,20 @@
         });
     </script>
 
-    <script>
-        new DataTable('#myTable', { responsive: true, });
-    </script>
 
-      <script>
-        $(document).ready(function() {
-            $('#options').change(function() {
-                $('.checkBoxes').prop('checked', function(i, val) {
-                    return !val;
-                });
-            });
+    <script>
+        new DataTable('#myTable', {
+            responsive: true,
+
+            layout: {
+                topStart: {
+                    buttons: ['excelHtml5', 'pdfHtml5']
+                }
+            }
         });
     </script>
+
+
     @endsection
+
 </x-hr-dashboard>

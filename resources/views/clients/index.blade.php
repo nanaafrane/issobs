@@ -142,6 +142,17 @@
                             <div class="text-truncate" data-i18n="CList">List</div>
                         </a>
                     </li>
+                    <li class="menu-item ">
+                        <a href="{{url('clientTerminated')}}" class="menu-link">
+                            <div class="text-truncate" data-i18n="CList">Terminated</div>
+                        </a>
+                    </li>
+                    <li class="menu-item ">
+                        <a href="{{url('clientPending')}}" class="menu-link">
+                            <div class="text-truncate" data-i18n="CList">Pending</div>
+                        </a>
+                    </li>
+
                 </ul>
             </li>
 
@@ -252,49 +263,229 @@
 
     <div class="container-xxl flex-grow-1 container-p-y">
 
-        <div class="row">
+        <!-- Page Header -->
+        <div class="row mb-4">
             <div class="col-12">
-                <h3 class="card-header text-danger"> <i class="icon-base bx bx-bxs-receipt"></i> All Clients </h3>
+                <div class="d-flex justify-content-between align-items-center">
+                    <h3 class="mb-0"><i class="bx bx-bxs-user-detail me-2"></i>Active Client</h3>
+                </div>
             </div>
-        </div><br>
+        </div>
 
-        <div class="row">
-            <div class="col-xxl-12 mb-6 order-0">
-                <div style="background: crimson;" class="card">
-                    <div class="d-flex align-items-start row">
-                        <div class="col-sm-7">
-                            <div class="card-body">
-                                <h1 class="text-white">
-                                    @if(Auth::user()->hasRole(['Invoice', 'Finance Manager', 'Manager']) )
-                                    {{$clientsCount}} / {{ $totalGuards }}
-                                    @elseif(Auth::user()->field?->name == 'Accra')
-                                    {{$accraCount}} / {{ $totalaccraGuards }}
-                                    @endif
+        <!-- Summary Statistics Cards -->
+        @if(Auth::user()->hasRole(['Invoice', 'Finance Manager', 'Manager']))
+        <div class="row mb-4">
+                <div class="col-12">
+                     <div class="card border-left-dark bg-secondary h-100 py-2">
+                    <div class="card-body">
+                        <div class="text-dark text-uppercase mb-1"><small class="fw-bold">Total Clients / Guards</small></div>
+                        <div class="h3 mb-0 text-dark fw-bold">{{ $clientsCount }} <span class="text-muted fs-6">/ {{ 0 }} Guards</span></div>
+                        <small class="text-dark text-muted">Clients & Operations</small>
+                    </div>
+                </div>
+                </div>
+        </div>
 
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card border-left-dark h-100 py-2">
+                    <div class="card-body">
+                        <div class="text-dark text-uppercase mb-1"><small class="fw-bold">Standard Clients</small></div>
+                        <div class="h3 mb-0 text-dark fw-bold">{{ $standardClientsCount }} <span class="text-muted fs-6">/ {{ 0 }} Guards</span></div>
+                        <small class="text-muted">Clients & Operations</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card border-left-danger h-100 py-2">
+                    <div class="card-body">
+                        <div class="text-danger text-uppercase mb-1"><small class="fw-bold">State Institutions</small></div>
+                        <div class="h3 mb-0 text-danger fw-bold">{{ $stateClientsCount }} <span class="text-muted fs-6">/ {{ 0 }} Guards</span></div>
+                        <small class="text-muted">Clients & Operations</small>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-                                    @if(Auth::user()->field?->name == 'Botwe')
-                                    {{$botweCount}}  / {{ $totalbotweGuards }}
-                                    @endif
+        <div class="row mb-4">
+        <!-- Standard Clients by Field Office -->
 
-                                    @if(Auth::user()->field?->name == 'Tema')
-                                    {{$temaCount}} + {{ $shyhillsCount }} / {{ $totaltemaGuards }} + {{ $totalshyhillsGuards }}
-                                    @endif
+            <div class="col-6">
+                <h5 class="mb-3"><i class="bx bx-user-check me-2"></i>Standard </h5>
+                <div class="row">
+                    <div class="col-lg-4 col-md-4 col-sm-6 mb-3">
+                        <div class="card bg-dark shadow-sm">
+                            <div class="card-body text-center p-8">
+                                <h6 class="mb-2 text-white fw-bold">ACCRA</h6>
+                                <div class="mb-2">
+                                    <span class="badge bg-white text-dark">{{ $accraStandard }}</span>
+                                    <span class="badge bg-white text-dark">{{ 0 }}</span>
+                                </div>
+                                <small class="text-white text-muted d-block">CLIENTS - GUARDS</small>
+                            </div> 
+                        </div>
+                    </div>
+                    <div class="col-lg-4 col-md-4 col-sm-6 mb-3">
+                        <div class="card bg-dark shadow-sm ">
+                            <div class="card-body text-center p-8">
+                                <h6 class="mb-2 text-white fw-bold">BOTWE</h6>
+                                <div class="mb-2">
+                                    <span class="badge bg-white text-dark">{{ $botweStandard }}</span>
+                                    <span class="badge bg-white text-dark">{{ 0 }}</span>
+                                </div>
+                                <small class="text-white text-muted d-block">CLIENTS - GUARDS</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-4 col-md-4 col-sm-6 mb-3">
+                        <div class="card bg-dark shadow-sm ">
+                            <div class="card-body text-center p-8">
+                                <h6 class="mb-2 text-white fw-bold">TEMA</h6>
+                                <div class="mb-2">
+                                    <span class="badge bg-white text-dark">{{ $temaStandard }}</span>
+                                    <span class="badge bg-white text-dark">{{ 0 }}</span>
+                                </div>
+                                <small class="text-white text-muted d-block">CLIENTS - GUARDS</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-4 col-md-4 col-sm-6 mb-3">
+                        <div class="card bg-dark shadow-sm ">
+                            <div class="card-body text-center p-8">
+                                <h6 class="mb-2 text-white fw-bold">SHAIHILLS</h6>
+                                <div class="mb-2">
+                                    <span class="badge bg-white text-dark">{{ $shyhillsStandard }}</span>
+                                    <span class="badge bg-white text-dark">{{ 0 }}</span>
+                                </div>
+                                <small class="text-white text-muted d-block">CLIENTS - GUARDS </small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-4 col-md-4 col-sm-6 mb-3">
+                        <div class="card bg-dark shadow-sm ">
+                            <div class="card-body text-center p-8">
+                                <h6 class="mb-2 text-white fw-bold">TAKORADI</h6>
+                                <div class="mb-2">
+                                    <span class="badge bg-white text-dark">{{ $takoradiStandard }}</span>
+                                    <span class="badge bg-white text-dark">{{ 0 }}</span>
+                                </div>
+                                <small class="text-white text-muted d-block">CLIENTS - GUARDS</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-4 col-md-4 col-sm-6 mb-3">
+                        <div class="card bg-dark shadow-sm ">
+                            <div class="card-body text-center p-8">
+                                <h6 class="mb-2 text-white fw-bold">KOFORIDUA</h6>
+                                <div class="mb-2">
+                                    <span class="badge bg-white text-dark">{{ $koforiduaStandard }}</span>
+                                    <span class="badge bg-white text-dark">{{ 0 }}</span>
+                                </div>
+                                <small class="text-white text-muted d-block">CLIENTS - GUARDS</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-4 col-md-4 col-sm-6 mb-3">
+                        <div class="card bg-dark shadow-sm ">
+                            <div class="card-body text-center p-8">
+                                <h6 class="mb-2 text-white fw-bold">KUMASI</h6>
+                                <div class="mb-2">
+                                    <span class="badge bg-white text-dark">{{ $kumasiStandard }}</span>
+                                    <span class="badge bg-white text-dark">{{ 0 }}</span>
+                                </div>
+                                <small class="text-white text-muted d-block">CLIENTS - GUARDS</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-                                    @if(Auth::user()->field?->name == 'Takoradi')
-                                    {{$takoradiCount}} / {{ $totaltakoradiGuards }}
-                                    @endif
+        <!-- State Institution Clients by Field Office -->
 
-                                    @if(Auth::user()->field?->name == 'Koforidua')
-                                    {{$koforiduaCount}} / {{ $totalkoforiduaGuards }}
-                                    @endif
-
-                                    @if(Auth::user()->field?->name == 'Kumasi')
-                                    {{$kumasiCount}} / {{ $totalkumasiGuards }}
-                                    @endif
-                                </h1>
-                                <h6 class="card-title text-white mb-3">TOTAL NUMBER OF CLIENTS / OPERATIONS </h6>
-
-
+            <div class="col-6">
+                <h5 class="mb-3"><i class="bx bx-building me-2"></i>State Institution</h5>
+                <div class="row">
+                    <div class="col-lg-4 col-md-4 col-sm-6 mb-3">
+                        <div class="card bg-danger shadow-sm border-danger">
+                            <div class="card-body text-center p-8">
+                                <h6 class="mb-2 text-white fw-bold">ACCRA</h6>
+                                <div class="mb-2">
+                                    <span class="badge bg-white text-dark">{{ $accraState }}</span>
+                                    <span class="badge bg-white text-dark">{{ 0 }}</span>
+                                </div>
+                                <small class="text-white text-muted d-block">CLIENTS - GUARDS</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-4 col-md-4 col-sm-6 mb-3">
+                        <div class="card bg-danger shadow-sm border-danger">
+                            <div class="card-body text-center p-8">
+                                <h6 class="mb-2 text-white fw-bold">BOTWE</h6>
+                                <div class="mb-2">
+                                    <span class="badge bg-white text-dark">{{ $botweState }}</span>
+                                    <span class="badge bg-white text-dark">{{ 0 }}</span>
+                                </div>
+                                <small class="text-white text-muted d-block">CLIENTS - GUARDS</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-4 col-md-4 col-sm-6 mb-3">
+                        <div class="card bg-danger shadow-sm border-danger">
+                            <div class="card-body text-center p-8">
+                                <h6 class="mb-2 text-white fw-bold">TEMA</h6>
+                                <div class="mb-2">
+                                    <span class="badge bg-white text-dark">{{ $temaState }}</span>
+                                    <span class="badge bg-white text-dark">{{ 0 }}</span>
+                                </div>
+                                <small class="text-white text-muted d-block">CLIENTS - GUARDS</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-4 col-md-4 col-sm-6 mb-3">
+                        <div class="card bg-danger shadow-sm border-danger">
+                            <div class="card-body text-center p-8">
+                                <h6 class="mb-2 text-white fw-bold">SHAIHILLS</h6>
+                                <div class="mb-2">
+                                    <span class="badge bg-white text-dark">{{ $shyhillsState }}</span>
+                                    <span class="badge bg-white text-dark">{{ 0 }}</span>
+                                </div>
+                                <small class="text-white text-muted d-block">CLIENTS - GUARDS</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-4 col-md-4 col-sm-6 mb-3">
+                        <div class="card bg-danger shadow-sm border-danger">
+                            <div class="card-body text-center p-8">
+                                <h6 class="mb-2 text-white fw-bold">TAKORADI</h6>
+                                <div class="mb-2">
+                                    <span class="badge bg-white text-dark">{{ $takoradiState }}</span>
+                                    <span class="badge bg-white text-dark">{{ 0 }}</span>
+                                </div>
+                                <small class="text-white text-muted d-block">CLIENTS - GUARDS</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-4 col-md-4 col-sm-6 mb-3">
+                        <div class="card bg-danger shadow-sm border-danger">
+                            <div class="card-body text-center p-8">
+                                <h6 class="mb-2 text-white fw-bold">KOFORIDUA</h6>
+                                <div class="mb-2">
+                                    <span class="badge bg-white text-dark">{{ $koforiduaState }}</span>
+                                    <span class="badge bg-white text-dark">{{ 0 }}</span>
+                                </div>
+                                <small class="text-white text-muted d-block">CLIENTS - GUARDS</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-4 col-md-4 col-sm-6 mb-3">
+                        <div class="card bg-danger shadow-sm border-danger">
+                            <div class="card-body text-center p-8">
+                                <h6 class="mb-2 text-white fw-bold">KUMASI</h6>
+                                <div class="mb-2">
+                                    <span class="badge bg-white text-dark">{{ $kumasiState }}</span>
+                                    <span class="badge bg-white text-dark">{{ 0 }}</span>
+                                </div>
+                                <small class="text-white text-muted d-block">CLIENTS - GUARDS</small>
                             </div>
                         </div>
                     </div>
@@ -302,235 +493,238 @@
             </div>
         </div>
 
-
-        @if(Auth::user()->hasRole(['Invoice', 'Finance Manager', 'Manager']))
-        <div class="row">
-            <div class="col-lg-2">
-                <div class="card shadow-none bg-transparent border border-danger">
-                    <div class="card-body">
-                        <div class="card-title d-flex align-items-start justify-content-between mb-4">
-                            <div class="avatar flex-shrink-0">
-                                <img
-                                    src="img/icons/unicons/paypal.png"
-                                    alt="chart success"
-                                    class="rounded" />
-                            </div>
-                        </div>
-                        <p class="mb-1"><strong> ACCRA </strong> </p>
-                        <h4 class="card-title mb-3"><strong> {{$accraCount}} /  {{ $totalaccraGuards }} </strong> </h4>
-                        <small class="fw-medium">  CLIENTS / OPERATIONS </small>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-lg-2">
-                <div class="card shadow-none bg-transparent border border-secondary">
-                    <div class="card-body">
-                        <div class="card-title d-flex align-items-start justify-content-between mb-4">
-                            <div class="avatar flex-shrink-0">
-                                <img
-                                    src="img/icons/unicons/paypal.png"
-                                    alt="chart success"
-                                    class="rounded" />
-                            </div>
-                        </div>
-                        <p class="mb-1"><strong> BOTWE </strong></p>
-                        <h4 class="card-title mb-3"><strong> {{$botweCount}} / {{ $totalbotweGuards }} </strong> </h4>
-                        <small class="fw-medium"> CLIENTS / OPERATIONS </small>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-lg-2">
-                <div class="card shadow-none bg-transparent border border-info">
-                    <div class="card-body">
-                        <div class="card-title d-flex align-items-start justify-content-between mb-4">
-                            <div class="avatar flex-shrink-0">
-                                <img
-                                    src="img/icons/unicons/paypal.png"
-                                    alt="chart success"
-                                    class="rounded" />
-                            </div>
-                        </div>
-                        <p class="mb-1"><strong> SHAIHILLS </strong></p>
-                        <h4 class="card-title mb-3"><strong> {{$shyhillsCount}} / {{ $totalshyhillsGuards }}</strong> </h4>
-                        <small class="fw-medium"> CLIENTS / OPERATIONS </small>
-                    </div>
-                </div>
-            </div>
-
-
-            <div class="col-lg-2">
-                <div class="card shadow-none bg-transparent border border-info">
-                    <div class="card-body">
-                        <div class="card-title d-flex align-items-start justify-content-between mb-4">
-                            <div class="avatar flex-shrink-0">
-                                <img
-                                    src="img/icons/unicons/paypal.png"
-                                    alt="chart success"
-                                    class="rounded" />
-                            </div>
-
-                        </div>
-                        <p class="mb-1"><strong> TEMA </strong></p>
-                        <h4 class="card-title mb-3"><strong> {{$temaCount}} / {{ $totaltemaGuards }}</strong> </h4>
-                        <small class="fw-medium"> CLIENTS / OPERATIONS </small>
-                    </div>
-                </div>
-            </div>
-
-
-
-            <div class="col-lg-2">
-                <div class="card shadow-none bg-transparent border border-warning">
-                    <div class="card-body">
-                        <div class="card-title d-flex align-items-start justify-content-between mb-4">
-                            <div class="avatar flex-shrink-0">
-                                <img
-                                    src="img/icons/unicons/paypal.png"
-                                    class="rounded" />
-                            </div>
-
-                        </div>
-                        <p class="mb-1">TAKORADI</p>
-                        <h4 class="card-title mb-3"> {{$takoradiCount}} / {{ $totaltakoradiGuards }} </h4>
-                        <small class="fw-medium"> CLIENTS / OPERATIONS </small>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-lg-2">
-                <div class="card shadow-none bg-transparent border border-success">
-                    <div class="card-body">
-                        <div class="card-title d-flex align-items-start justify-content-between mb-4">
-                            <div class="avatar flex-shrink-0">
-                                <img
-                                    src="img/icons/unicons/paypal.png"
-                                    class="rounded" />
-                            </div>
-
-                        </div>
-                        <p class="mb-1"> <strong> KOFORIDUA </strong> </p>
-                        <h4 class="card-title mb-3"> {{$koforiduaCount}} / {{ $totalkoforiduaGuards }} </h4>
-                        <small class="fw-medium"> CLIENTS / OPERATIONS </small>
-                    </div>
-                </div>
-            </div>
-
-
-            <div class="col-lg-2 m-3">
-                <div class="card shadow-none bg-transparent border border-primary">
-                    <div class="card-body">
-                        <div class="card-title d-flex align-items-start justify-content-between mb-4">
-                            <div class="avatar flex-shrink-0">
-                                <img
-                                    src="img/icons/unicons/paypal.png"
-                                    class="rounded" />
-                            </div>
-
-                        </div>
-                        <p class="mb-1"><strong> KUMASI </strong> </p>
-                        <h4 class="card-title mb-3"> {{$kumasiCount}} /  {{ $totalkumasiGuards }}</h4>
-                        <small class="fw-medium"> CLIENTS / OPERATIONS </small>
-                    </div>
-                </div>
-            </div>
-
-        </div><br><br>
         @endif
 
-        <div class="card-header  ml-2  d-none d-lg-block">
+        <div class="card-header ml-2 d-none d-lg-block">
             @include('flash-messages')
         </div>
 
-        <div class="row">
-            <div class="col">
-                <table id="myTable" class="display">
-                    <thead>
-                        <tr>
-                            <th> # ID.</th>
-                            <th> Name</th>
-                            <th>Phone No.</th>
-                            <th>Business Name </th>
-                            <th> Field Office </th>
-                            <th> Address </th>
-                            <th> Branch </th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
+        <!-- Tab Navigation -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <ul class="nav nav-tabs" id="clientTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="standard-tab" data-bs-toggle="tab" data-bs-target="#standard-clients" type="button" role="tab" aria-controls="standard-clients" aria-selected="true">
+                            <i class="bx bx-bxs-group me-2"></i>Standard Clients <span class="badge bg-dark ms-2">{{ $standardClientsCount }}</span>
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="state-tab" data-bs-toggle="tab" data-bs-target="#state-clients" type="button" role="tab" aria-controls="state-clients" aria-selected="false">
+                            <i class="bx bx-building me-2"></i>State Institutions <span class="badge bg-danger ms-2">{{ $stateClientsCount }}</span>
+                        </button>
+                    </li>
+                </ul>
+            </div>
+        </div>
 
-                        @foreach($clients as $client)
-                        <tr>
-                            <td> {{$client->id}} </td>
-                            <td> {{$client->name}}</td>
-                            <td> {{$client->phone_number}}, {{$client->phone_number1}} </td>
-                            <td> {{$client->business_name}} </td>
-                            <td>
-                                @if($client->field->name == 'Accra')
-                                <span class="badge bg-label-danger">{{$client->field->name}} </span>
-                                @endif
+        <!-- Tab Content -->
+        <div class="tab-content" id="clientTabContent">
+            <!-- Standard Clients Tab -->
+            <div class="tab-pane fade show active" id="standard-clients" role="tabpanel" aria-labelledby="standard-tab">
+                
+                <div class="card">
+                    <div class="card-header pb-3">
+                        <h6 class="mb-0"><i class="bx bx-bxs-group text-dark me-2"></i>Standard Clients List</h6>
+                    </div>
 
-                                @if($client->field->name == 'Botwe')
-                                <span class="badge bg-label-secondary">{{$client->field->name}} </span>
-                                @endif
+                    <div class="table-responsive ">
+                        <table id="standardClientsTable" class="display">
+                            <thead>
+                                <tr>
+                                    <th style="width: 50px;"> # </th>
+                                    <th style="width: 60px;"> ID </th>
+                                    <th> Status </th>
+                                    <th> Business Name </th>
+                                    <th> Contact </th>
+                                    <th> Field Office </th>
+                                    <th> Address </th>
+                                    <th> Branch </th>
+                                    <th style="width: 80px;">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($standardClients as $key => $client)
+                                <tr class="table-light">
+                                    <td>  {{ $key + 1 }} </td>
 
-                                @if($client->field->name == 'Tema')
-                                <span class="badge bg-label-info">{{$client->field->name}} </span>
-                                @endif
-
-                                @if($client->field->name == 'ShaiHills')
-                                <span class="badge bg-label-info">{{$client->field->name}} </span>
-                                @endif
-
-                                @if($client->field->name == 'Takoradi')
-                                <span class="badge bg-label-warning ">{{$client->field->name}} </span>
-                                @endif
-
-                                @if($client->field->name == 'Koforidua')
-                                <span class="badge bg-label-success">{{$client->field->name}} </span>
-                                @endif
-
-                                @if($client->field->name == 'Kumasi')
-                                <span class="badge bg-label-primary">{{$client->field->name}} </span>
-                                @endif
-
-                            </td>
-
-                            <td> {{$client->address}} </td>
-                            <td> {{$client->branch}} </td>
-
-                            <td>
-                                <div class="dropdown">
-                                    <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown">
-                                        <i class="icon-base bx bx-dots-vertical-rounded"></i>
-                                    </button>
-                                    <div class="dropdown-menu">
-                                        <a class="dropdown-item" href="{{url('client', $client->id)}}"><i class="icon-base bx bxs-bullseye"></i> view</a>
-                                        <a class="dropdown-item" href="client/{{$client->id}}/edit"><i class="icon-base bx bx-edit-alt me-1"></i> Edit</a>
-                                        @if(Auth::user()->hasPermission('HR') || Auth::user()->hasRole(['Invoice'])  )
-                                        <form action="client/{{$client->id}}" method="POST">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button class="dropdown-item" type="submit"><i class="icon-base bx bx-trash me-1"></i>Delete</button>
-                                        </form>
+                                    <td><strong>{{ $client->id }}</strong></td>
+                                    <td>
+                                        @if($client->status == 'terminated')
+                                        <span class="badge bg-label-danger">{{ $client->status }}</span>
+                                        @else
+                                        <span class="badge bg-label-success">{{ $client->status }}</span>
                                         @endif
-                                        <hr>
-                                        <a class="dropdown-item" href="{{url('employeesGuardClient', $client->id)}}"><i class="icon-base bx bxs-user-account"></i> View Guards </a>
-                                        <!-- <a class="dropdown-item" href="{{url('clientAttachGuards', $client->id)}}"><i class="icon-base bx bxs-user-account"></i> Attach Guards </a> -->
+                                    </td>
+                                    <td>
+                                        <div>
+                                            <strong>{{ $client->business_name }}</strong>
+                                            <br><small class="text-muted">{{ $client->name }}</small>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div>
+                                            <strong> <small>{{ $client->phone_number }}</small> </strong> 
+                                            @if($client->phone_number1)
+                                            <br><small class="text-muted">{{ $client->phone_number1 }}</small>
+                                            @endif
+                                        </div>
+                                    </td>
+                                    <td>
+                                        @php
+                                            $fieldColors = [
+                                                'Accra' => 'danger',
+                                                'Botwe' => 'secondary',
+                                                'Tema' => 'info',
+                                                'ShaiHills' => 'info',
+                                                'Takoradi' => 'warning',
+                                                'Koforidua' => 'success',
+                                                'Kumasi' => 'primary'
+                                            ];
+                                            $color = $fieldColors[$client->field->name] ?? 'secondary';
+                                        @endphp
+                                        <span class="badge bg-label-{{ $color }}">{{ $client->field->name }}</span>
+                                    </td>
+                                    <td><small>{{ $client->address }}</small></td>
+                                    <td><small>{{ $client->branch }}</small></td>
+                                    <td>
+                                        <div class="dropdown">
+                                            <button type="button" class="btn btn-sm btn-icon p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown">
+                                                <i class="bx bx-dots-vertical-rounded"></i>
+                                            </button>
+                                            <div class="dropdown-menu">
+                                                <a class="dropdown-item" href="{{ url('client', $client->id) }}"><i class="bx bxs-bullseye me-1"></i> View</a>
+                                                <a class="dropdown-item" href="client/{{ $client->id }}/edit"><i class="bx bx-edit-alt me-1"></i> Edit</a>
+                                                @if(Auth::user()->hasPermission('HR') || Auth::user()->hasRole(['Invoice']))
+                                                <form action="client/{{ $client->id }}" method="POST" class="d-inline">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button class="dropdown-item" type="submit"><i class="bx bx-trash me-1"></i>Delete</button>
+                                                </form>
+                                                @endif
+                                                <hr class="dropdown-divider">
+                                                <a class="dropdown-item" href="{{ url('employeesGuardClient', $client->id) }}"><i class="bx bxs-user-account me-1"></i> View Guards</a>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                        @if($standardClients->isEmpty())
+                        <div class="text-center py-5">
+                            <p class="text-muted">No standard clients found</p>
+                        </div>
+                        @endif
+                    </div>
+                    
+                </div>
 
-                                    </div>
+            </div>
+
+            <!-- State Institution Clients Tab -->
+            <div class="tab-pane fade" id="state-clients" role="tabpanel" aria-labelledby="state-tab">
+                
+                <div class="row "> 
+                     <div class="col-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="mb-0"><i class="bx bx-building text-danger me-2"></i>State Institution</h6>
+                            </div>
+                            <div class="table-responsive text-normal-dark">
+                                <table id="stateClientsTable" class="display">
+                                    <thead>
+                                        <tr>
+                                            <th > # </th>
+                                            <th > ID </th>
+                                            <th> Status </th>
+                                            <th> Business Name </th>
+                                            <th> Contact </th>
+                                            <th> Field Office </th>
+                                            <th> Address </th>
+                                            <th> Branch </th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach($stateClients as $key => $client)
+                                        <tr >
+                                            <td>{{ $key + 1 }}</td>
+                                            <td><strong>{{ $client->id }}</strong></td>
+                                            <td>
+                                                @if($client->status == 'terminated')
+                                                <span class="badge bg-label-danger">{{ $client->status }}</span>
+                                                @else
+                                                <span class="badge bg-label-success">{{ $client->status }}</span>
+                                                @endif
+                                            </td>
+                                            <td>
+                                                <div>
+                                                    <strong>{{ $client->business_name }}</strong>
+                                                    <br><small class="text-muted">{{ $client->name }}</small>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div>
+                                                    <strong> <small>{{ $client->phone_number }}</small> </strong> 
+                                                    @if($client->phone_number1)
+                                                    <br><small class="text-muted">{{ $client->phone_number1 }}</small>
+                                                    @endif
+                                                </div>
+                                            </td>
+                                            <td>
+                                                @php
+                                                    $fieldColors = [
+                                                        'Accra' => 'danger',
+                                                        'Botwe' => 'secondary',
+                                                        'Tema' => 'info',
+                                                        'ShaiHills' => 'info',
+                                                        'Takoradi' => 'warning',
+                                                        'Koforidua' => 'success',
+                                                        'Kumasi' => 'primary'
+                                                    ];
+                                                    $color = $fieldColors[$client->field->name] ?? 'secondary';
+                                                @endphp
+                                                <span class="badge bg-label-{{ $color }}">{{ $client->field->name }}</span>
+                                            </td>
+                                            <td><small>{{ $client->address }}</small></td>
+                                            <td><small>{{ $client->branch }}</small></td>
+                                            <td>
+                                                <div class="dropdown">
+                                                    <button type="button" class="btn btn-sm btn-icon p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown">
+                                                        <i class="bx bx-dots-vertical-rounded"></i>
+                                                    </button>
+                                                    <div class="dropdown-menu">
+                                                        <a class="dropdown-item" href="{{ url('client', $client->id) }}"><i class="bx bxs-bullseye me-1"></i> View</a>
+                                                        <a class="dropdown-item" href="client/{{ $client->id }}/edit"><i class="bx bx-edit-alt me-1"></i> Edit</a>
+                                                        @if(Auth::user()->hasPermission('HR') || Auth::user()->hasRole(['Invoice']))
+                                                        <form action="client/{{ $client->id }}" method="POST" class="d-inline">
+                                                            @csrf
+                                                            @method('DELETE')
+                                                            <button class="dropdown-item" type="submit"><i class="bx bx-trash me-1"></i>Delete</button>
+                                                        </form>
+                                                        @endif
+                                                        <hr class="dropdown-divider">
+                                                        <a class="dropdown-item" href="{{ url('employeesGuardClient', $client->id) }}"><i class="bx bxs-user-account me-1"></i> View Guards</a>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                                @if($stateClients->isEmpty())
+                                <div class="text-center py-5">
+                                    <p class="text-muted">No state institution clients found</p>
                                 </div>
-                            </td>
-
-
-                        </tr>
-                        @endforeach
-                    </tbody>
-                </table>
+                                @endif
+                            </div>
+                        </div>
+                     </div>
+                </div>
 
             </div>
         </div>
+
     </div>
     @endsection
 
@@ -545,48 +739,61 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
     <script src="https://cdn.datatables.net/buttons/3.2.4/js/buttons.html5.min.js"></script>
-
     <script src="https://cdn.datatables.net/columncontrol/1.1.1/js/dataTables.columnControl.min.js"></script>
+
     <script>
-        new DataTable('#myTable', {
+        // Initialize Standard Clients Table
+        new DataTable('#standardClientsTable', {
             responsive: true,
-            columnControl: [ ['search'] ],
+            columnControl: [['search']],
             layout: {
                 topStart: {
-                    buttons: [ 
-                    {
-                        extend: 'pageLength',
-                        text: 'Show',
-                        className: 'btn btn-secondary',
-                        Options: [10, 25, 50, 100, 250, 500, 1000, 2000], 
-                    },
+                    buttons: [
+                        {
+                            extend: 'pageLength',
+                            text: 'Show',
+                            className: 'btn btn-secondary btn-sm',
+                            Options: [10, 25, 50, 100, 250, 500, 1000],
+                        },
                         {
                             extend: 'excelHtml5',
-                            title: 'Employees',
-                            className: 'btn btn-secondary',
+                            title: 'Standard Clients',
+                            className: 'btn btn-secondary btn-sm',
                             exportOptions: {
                                 columns: ':visible'
                             }
+                        }
+                    ]
+                }
+            },
+        });
+
+        // Initialize State Institution Clients Table
+        new DataTable('#stateClientsTable', {
+            responsive: true,
+            columnControl: [['search']],
+            layout: {
+                topStart: {
+                    buttons: [
+                        {
+                            extend: 'pageLength',
+                            text: 'Show',
+                            className: 'btn btn-secondary btn-sm',
+                            Options: [10, 25, 50, 100, 250, 500, 1000],
                         },
+                        {
+                            extend: 'excelHtml5',
+                            title: 'State Institution Clients',
+                            className: 'btn btn-secondary btn-sm',
+                            exportOptions: {
+                                columns: ':visible'
+                            }
+                        }
                     ]
                 }
             },
         });
     </script>
-
-
-    <script>
-        new DataTable('#myTable', {
-            responsive: true,
-
-            layout: {
-                topStart: {
-                    buttons: ['excelHtml5', 'pdfHtml5']
-                }
-            }
-        });
-    </script>
-
 
     @endsection
 

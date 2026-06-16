@@ -135,6 +135,16 @@
                             <div class="text-truncate" data-i18n="CList">List</div>
                         </a>
                     </li>
+                    <li class="menu-item ">
+                        <a href="{{url('clientTerminated')}}" class="menu-link">
+                            <div class="text-truncate" data-i18n="CList">Terminated</div>
+                        </a>
+                    </li>
+                    <li class="menu-item ">
+                        <a href="{{url('clientPending')}}" class="menu-link">
+                            <div class="text-truncate" data-i18n="CList">Pending</div>
+                        </a>
+                    </li>
                 </ul>
             </li>
 

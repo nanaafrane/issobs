@@ -47,6 +47,7 @@ Route::resource('departments', DepartmentController::class);
 Route::resource('role', RoleController::class);
 Route::resource('field', FieldController::class);
 Route::resource('client', ClientController::class);
+Route::get('clientPending', [ClientController::class, 'clientPending']);
 Route::get('clientStatement/{client}', [ClientController::class, 'statementOfAccount']);
 Route::get('clientAttachGuards/{id}', [ClientController::class, 'clientAttachGuards']);
 Route::post('client/{client}/attach-employees', [ClientController::class, 'attachEmployees'])->name('client.attachEmployees');
@@ -136,6 +137,11 @@ Route::get('salariesPensionMonth/{field_id}/{month}',  [SalaryController::class,
 Route::get('salariesOvertimeMonth/{field_id}/{month}',  [SalaryController::class, 'OvertimeMonth']);
 Route::get('salariesIouMonth/{field_id}/{month}',  [SalaryController::class, 'IouMonth']);
 Route::get('salariesBootMonth/{field_id}/{month}',  [SalaryController::class, 'BootMonth']);
+Route::get('salariesAbsentMonth/{field_id}/{month}',  [SalaryController::class, 'AbsentMonth']);
+Route::get('salariessDateMonth/{field_id}/{month}',  [SalaryController::class, 'sDateMonth']);
+Route::get('salariesOdedMonth/{field_id}/{month}',  [SalaryController::class, 'oDedMonth']);
+Route::get('salariesReprimandMonth/{field_id}/{month}',  [SalaryController::class, 'reprimandMonth']);
+Route::get('salariesLoanMonth/{field_id}/{month}',  [SalaryController::class, 'loanMonth']);
 Route::get('salariesClientMonth/{client_id}/{month}',  [SalaryController::class, 'ClientMonth']);
 Route::get('salariesClientHoldMonth/{client_id}/{month}',  [SalaryController::class, 'ClientHoldMonth']);
 

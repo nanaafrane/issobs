@@ -138,6 +138,16 @@ class SalaryController extends Controller
        
         $salariesBoots = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved'])->where('boot', '>', 0)->whereIn('field_id', $fields->pluck('id')->toArray())->groupBy('field_id')->get(['field_id', DB::raw('SUM(net_salary) as paid'), DB::raw('SUM(boot) as boot'),  DB::raw('COUNT(*) as total_employees')]);
 
+        $salariesAbsent = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved'])->where('absent', '>', 0)->whereIn('field_id', $fields->pluck('id')->toArray())->groupBy('field_id')->get(['field_id', DB::raw('SUM(net_salary) as paid'), DB::raw('SUM(absent) as absent'),  DB::raw('COUNT(*) as total_employees')]);
+
+        $salariesAmtdedstart = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved'])->where('amnt_ded_cof_start_date', '>', 0)->whereIn('field_id', $fields->pluck('id')->toArray())->groupBy('field_id')->get(['field_id', DB::raw('SUM(net_salary) as paid'), DB::raw('SUM(amnt_ded_cof_start_date) as sDate_ded'),  DB::raw('COUNT(*) as total_employees')]);
+
+        $salariesOtherDed = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved'])->where('other_deductions', '>', 0)->whereIn('field_id', $fields->pluck('id')->toArray())->groupBy('field_id')->get(['field_id', DB::raw('SUM(net_salary) as paid'), DB::raw('SUM(other_deductions) as odeduct'),  DB::raw('COUNT(*) as total_employees')]);
+
+        $salariesReprimand = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved'])->where('reprimand', '>', 0)->whereIn('field_id', $fields->pluck('id')->toArray())->groupBy('field_id')->get(['field_id', DB::raw('SUM(net_salary) as paid'), DB::raw('SUM(reprimand) as reprimand'),  DB::raw('COUNT(*) as total_employees')]);
+
+        $salariesLoan = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved'])->where('loan', '>', 0)->whereIn('field_id', $fields->pluck('id')->toArray())->groupBy('field_id')->get(['field_id', DB::raw('SUM(net_salary) as paid'), DB::raw('SUM(loan) as loan'),  DB::raw('COUNT(*) as total_employees')]);
+
         $salariesMaster = Salary::whereMonth('salary_month', $month->month)->get();
         
         $salariesClients  = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved'])->whereIn('client_id', $clients->pluck('id')->toArray())->groupBy('client_id')->get(['client_id', DB::raw('SUM(net_salary) as paid'), DB::raw('COUNT(*) as total_employees')]);
@@ -284,7 +294,7 @@ class SalaryController extends Controller
         $clientDHold = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['hold','rejected'])->whereIn('client_id', $CategoryDClient)->groupBy('client_id')->get(['client_id', DB::raw('SUM(net_salary) as net_salary'), DB::raw('COUNT(employee_id) as total_employees')]);
 
 
-        return view('salaries.salariesmonth', compact('clientA', 'clientAReceipts', 'clientAInvoices', 'clientAInvoicesGuards', 'clientACash', 'clientABank', 'clientB', 'clientBReceipts', 'clientBInvoices', 'clientBInvoicesGuards', 'clientBCash', 'clientBBank','clientC', 'clientCReceipts', 'clientCInvoices', 'clientCInvoicesGuards', 'clientCCash', 'clientCBank', 'clientD', 'clientDReceipts', 'clientDInvoices', 'clientDInvoicesGuards', 'clientDCash', 'clientDBank', 'clientAHold','clientBHold', 'clientCHold', 'clientDHold','salariesClients', 'salariesClientsHold','groupedBankSalaries','groupedCashkSalaries', 'salariesTaxes', 'salariesPensions', 'month', 'salariesMaster', 'salariesOvertime', 'salariesIOU', 'salariesBoots'));
+        return view('salaries.salariesmonth', compact('salariesAbsent', 'salariesAmtdedstart', 'salariesOtherDed', 'salariesReprimand', 'salariesLoan', 'clientA', 'clientAReceipts', 'clientAInvoices', 'clientAInvoicesGuards', 'clientACash', 'clientABank', 'clientB', 'clientBReceipts', 'clientBInvoices', 'clientBInvoicesGuards', 'clientBCash', 'clientBBank','clientC', 'clientCReceipts', 'clientCInvoices', 'clientCInvoicesGuards', 'clientCCash', 'clientCBank', 'clientD', 'clientDReceipts', 'clientDInvoices', 'clientDInvoicesGuards', 'clientDCash', 'clientDBank', 'clientAHold','clientBHold', 'clientCHold', 'clientDHold','salariesClients', 'salariesClientsHold','groupedBankSalaries','groupedCashkSalaries', 'salariesTaxes', 'salariesPensions', 'month', 'salariesMaster', 'salariesOvertime', 'salariesIOU', 'salariesBoots'));
     }
 
 
@@ -571,6 +581,79 @@ class SalaryController extends Controller
         $field = Field::findOrfail($field_id);
         $salariesBoots = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved'])->where('boot', '>', 0)->where('field_id', $field_id)->get();
         return view('salaries.bootmonth', compact('salariesBoots', 'field', 'month'));
+    }
+
+
+        /**
+     * Display salaries Boot for a month.
+     */
+    public function AbsentMonth($field_id, $month)
+    {
+         $month = Carbon::parse($month);
+        
+        // dd($field_id, $month);
+        $field = Field::findOrfail($field_id);
+        $salariesAbsent = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved'])->where('absent', '>', 0)->where('field_id', $field_id)->get();
+        return view('salaries.absentmonth', compact('salariesAbsent', 'field', 'month'));
+    }
+
+
+
+        /**
+     * Display salaries Boot for a month.
+     */
+    public function sDateMonth($field_id, $month)
+    {
+         $month = Carbon::parse($month);
+        
+        // dd($field_id, $month);
+        $field = Field::findOrfail($field_id);
+        $salariessDate = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved'])->where('amnt_ded_cof_start_date', '>', 0)->where('field_id', $field_id)->get();
+        return view('salaries.sDatemonth', compact('salariessDate', 'field', 'month'));
+    }
+
+
+
+        /**
+     * Display salaries Boot for a month.
+     */
+    public function oDedMonth($field_id, $month)
+    {
+         $month = Carbon::parse($month);
+        
+        // dd($field_id, $month);
+        $field = Field::findOrfail($field_id);
+        $salariesoDed = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved'])->where('other_deductions', '>', 0)->where('field_id', $field_id)->get();
+        return view('salaries.oDedmonth', compact('salariesoDed', 'field', 'month'));
+    }
+
+
+
+        /**
+     * Display salaries Boot for a month.
+     */
+    public function reprimandMonth($field_id, $month)
+    {
+         $month = Carbon::parse($month);
+        
+        // dd($field_id, $month);
+        $field = Field::findOrfail($field_id);
+        $salariesReprimand = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved'])->where('reprimand', '>', 0)->where('field_id', $field_id)->get();
+        return view('salaries.reprimandmonth', compact('salariesReprimand', 'field', 'month'));
+    }
+
+
+        /**
+     * Display salaries Boot for a month.
+     */
+    public function loanMonth($field_id, $month)
+    {
+         $month = Carbon::parse($month);
+        
+        // dd($field_id, $month);
+        $field = Field::findOrfail($field_id);
+        $salariesLoan = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved'])->where('loan', '>', 0)->where('field_id', $field_id)->get();
+        return view('salaries.loanmonth', compact('salariesLoan', 'field', 'month'));
     }
 
 
