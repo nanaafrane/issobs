@@ -142,12 +142,12 @@
                             <div class="text-truncate" data-i18n="CList">List</div>
                         </a>
                     </li>
-                    <li class="menu-item ">
+                    <li class="menu-item active">
                         <a href="{{url('clientTerminated')}}" class="menu-link">
                             <div class="text-truncate" data-i18n="CList">Terminated</div>
                         </a>
                     </li>
-                    <li class="menu-item active">
+                    <li class="menu-item ">
                         <a href="{{url('clientPending')}}" class="menu-link">
                             <div class="text-truncate" data-i18n="CList">Pending</div>
                         </a>
@@ -267,7 +267,7 @@
         <div class="row mb-4">
             <div class="col-12">
                 <div class="d-flex justify-content-between align-items-center">
-                    <h3 class="mb-0"><i class="bx bx-bxs-user-detail me-2"></i>Pending Clients</h3>
+                    <h3 class="mb-0"><i class="bx bx-bxs-user-detail me-2"></i>Terminated Clients</h3>
                 </div>
             </div>
         </div>
@@ -276,7 +276,7 @@
         @if(Auth::user()->hasRole(['Invoice', 'Finance Manager', 'Manager']))
         <div class="row mb-4">
                 <div class="col-12">
-                     <div class="card border-left-dark bg-warning text-white h-100 py-2">
+                     <div class="card border-left-dark bg-danger text-white h-100 py-2">
                     <div class="card-body">
                         <div class="text-uppercase mb-1"><small class="fw-bold">Total Clients / Guards</small></div>
                         <div class="h3 text-white mb-0 fw-bold">{{ $clientsCount }} <span class="text-muted fs-6">/ {{ 0 }} Guards</span></div>
@@ -390,31 +390,20 @@
 
         <!-- Tab Content -->
             <!-- Standard Clients Tab -->
-            <form action="/clientAproval" method="POST">
-                @csrf  
+                
                 <div class="card">
                     <div class="card-header pb-3">
-                        <h6 class="m-4"><i class="bx bx-bxs-group text-dark me-2"></i> Clients List</h6>
-                    
-                            @if(Auth::user()->hasRole(['Manager', 'Invoice']))
-                        <input class="form-check-input form-check-inline" type="checkbox" value="" id="options" />
-
-                        <div class="form-check form-check-inline">                            
-                            <button class="btn btn-success" type="submit" onclick="return confirm('Kindly Confirm?')"> <i class="icon-base bx bx-arrow-from-left"> </i> {{ __('Approve') }}</button>
-                        </div>
-                        @endif
-                    
+                        <h6 class="mb-0"><i class="bx bx-bxs-group text-dark me-2"></i>Standard Clients List</h6>
                     </div>
 
                     <div class="table-responsive ">
                         <table id="standardClientsTable" class="display">
                             <thead>
                                 <tr>
-                                    <th></th>
                                     <th style="width: 50px;"> # </th>
                                     <th style="width: 60px;"> ID </th>
-                                    <th>Status </th>
-                                    <th> Type  </th>
+                                    <th>Type</th>
+                                    <th> Status </th>
                                     <th> Business Name </th>
                                     <th> Contact </th>
                                     <th> Field Office </th>
@@ -426,13 +415,15 @@
                             <tbody>
                                 @foreach($clients as $key => $client)
                                 <tr class="table-light">
-                                    <td> <input class="checkBoxes form-check-input" type="checkbox" name="clients[]" value="{{ $client->id }}" /></td>
-
                                     <td>  {{ $key + 1 }} </td>
 
                                     <td><strong>{{ $client->id }}</strong></td>
                                     <td>
-                                        <span class="badge bg-label-warning">{{ $client->status }}</span>
+                                        @if($client->status == 'terminated')
+                                        <span class="badge bg-label-danger">{{ $client->status }}</span>
+                                        @else
+                                        <span class="badge bg-label-success">{{ $client->status }}</span>
+                                        @endif
                                     </td>
                                     <td>
                                         @if($client->state_institution == '1' )
@@ -480,6 +471,15 @@
                                             <div class="dropdown-menu">
                                                 <a class="dropdown-item" href="{{ url('client', $client->id) }}"><i class="bx bxs-bullseye me-1"></i> View</a>
                                                 <a class="dropdown-item" href="client/{{ $client->id }}/edit"><i class="bx bx-edit-alt me-1"></i> Edit</a>
+                                                @if(Auth::user()->hasPermission('HR') || Auth::user()->hasRole(['Invoice']))
+                                                <form action="client/{{ $client->id }}" method="POST" class="d-inline">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button class="dropdown-item" type="submit"><i class="bx bx-trash me-1"></i>Delete</button>
+                                                </form>
+                                                @endif
+                                                <hr class="dropdown-divider">
+                                                <a class="dropdown-item" href="{{ url('employeesGuardClient', $client->id) }}"><i class="bx bxs-user-account me-1"></i> View Guards</a>
                                             </div>
                                         </div>
                                     </td>
@@ -493,8 +493,8 @@
                         </div>
                         @endif
                     </div>
-                </div>
-            </form>
+                    
+        </div>
 
     </div>
     @endsection
@@ -563,16 +563,6 @@
                     ]
                 }
             },
-        });
-    </script>
-
-        <script>
-        $(document).ready(function() {
-            $('#options').change(function() {
-                $('.checkBoxes').prop('checked', function(i, val) {
-                    return !val;
-                });
-            });
         });
     </script>
 

@@ -1,5 +1,12 @@
 <x-hr-dashboard>
 
+    @section('css')
+    <link rel="stylesheet" href="https://cdn.datatables.net/2.3.3/css/dataTables.dataTables.css" />
+    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/3.2.4/css/buttons.dataTables.css">
+
+    <link href="https://cdn.datatables.net/columncontrol/1.1.1/css/columnControl.dataTables.min.css" rel="stylesheet">
+    @endsection
+
     @section('side_nav')
     <!-- Menu -->
     <aside id="layout-menu" class="layout-menu menu-vertical menu bg-menu-theme">
@@ -417,6 +424,104 @@
                         </div>
 
                     </div>
+
+                                        <br>
+                    <div class="row g-6">
+                        <div class="col mb-0">
+                            <label for="rate" class="form-label"> {{ __('Rate') }} </label>
+                            <input
+                                type="number"
+                                id="rate"
+                                name="rate"
+                                class="form-control @error('rate') is-invalid @enderror"
+                                value="{{ old('rate') ?? $client->rate }}"
+                                placeholder="GH&#x20B5;"
+
+                                autocomplete="rate"
+                                step="any"
+                                autofocus>
+
+                            @error('rate')
+                            <span class="invalid-feedback" role="alert">
+                                <strong>{{ $message }}</strong>
+                            </span>
+                            @enderror
+                        </div>
+
+                        <div class="col mb-0">
+                            <label for="guards" class="form-label"> {{ __('Guards') }} </label>
+                            <input
+                                type="text"
+                                id="guards"
+                                name="guards"
+                                class="form-control @error('guards') is-invalid @enderror"
+                                value="{{ old('guards') ?? $client->guards }}"
+                                placeholder="Number of guards"
+
+                                autocomplete="guards"
+                                autofocus>
+
+                            @error('guards')
+                            <span class="invalid-feedback" role="alert">
+                                <strong>{{ $message }}</strong>
+                            </span>
+                            @enderror
+
+                        </div>
+                    </div>
+
+                    <br>
+                    <div class="row g-6">
+                        <div class="col mb-0">
+                            <label for="start_date" class="form-label"> {{ __('Start Date') }} </label>
+                            <input
+                                type="date"
+                                id="start_date"
+                                name="start_date"
+                                class="form-control @error('start_date') is-invalid @enderror"
+                                value=" {{old('start_date') ?? $client->start_date?->format('d/m/Y')}} "
+                                required
+                                autocomplete="start_date"
+                                autofocus>
+
+                            @error('start_date')
+                            <span class="invalid-feedback" role="alert">
+                                <strong>{{ $message }}</strong>
+                            </span>
+                            @enderror
+                        </div>
+
+                        <div class="col mb-0">
+                            <label for="scope_of_work" class="form-label"> {{ __('Scope of Work') }} </label>
+                           <textarea name="scope_of_work" id="scope_of_work" class="form-control @error('scope_of_work') is-invalid @enderror">{{ old('scope_of_work') ?? $client->scope_of_work }}</textarea>
+
+                            @error('scope_of_work')
+                            <span class="invalid-feedback" role="alert">
+                                <strong>{{ $message }}</strong>
+                            </span>
+                            @enderror
+
+                        </div>
+                    </div>
+
+                    <br>
+                    <div class="row g-6">
+
+                        <div class="col mb-0">
+
+                                <input name="state_institution" class="form-check-input" type="checkbox" value="1" id="state_institution" @if(old('state_institution') || $client->state_institution) checked @endif />
+                                <label class="form-check-label" for="state_institution"> Tick For State Institution </label>
+
+                            @error('state_institution')
+                            <span class="invalid-feedback" role="alert">
+                                <strong>{{ $message }}</strong>
+                            </span>
+                            @enderror
+
+                        </div>
+                    </div>
+
+
                     <br>
                     <hr>
                     <br>
@@ -440,18 +545,6 @@
 
                         <div class="col mb-0">
                             <input type="text" name="user_id" id="user_id"  value="{{ Auth::id() }}" hidden>
-                            <div class="input-group">
-                                <input
-                                    type="text"
-                                    id="user_id"
-                                    class="form-control @error('user_id') is-invalid @enderror"
-                                    value="{{$client->user?->name}}"
-                                    placeholder="User Name"
-                                    autocomplete="user_id"
-                                    autofocus>
-
-                            </div>
-
                             @error('user_id')
                             <span class="invalid-feedback" role="alert">
                                 <strong>{{ $message }}</strong>
@@ -469,11 +562,69 @@
                 </form>
 
             </div>
-            <div class="col-2"></div>
+            <div class="col-2">
+                                    <button
+                        type="button"
+                        class="btn btn-danger btn-buy-now"
+                        data-bs-toggle="modal"
+                        data-bs-target="#basicModal">
+                        <i class="icon-base bx bx-bxs-user-plus"> </i>Terminate
+                    </button>
+
+                    <div class="modal fade" id="basicModal" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog" role="document">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="exampleModalLabel1">Choose Month To Terminate</h5>
+                                    <button
+                                        type="button"
+                                        class="btn-close"
+                                        data-bs-dismiss="modal"
+                                        aria-label="Close"></button>
+                                </div>
+
+                                <form method="GET" action="/terminateClient/{{ $client->id }}">
+                                    @csrf
+                                    <div class="modal-body">
+                                        <div class="row">
+                                            <div class="col mb-0">
+                                                <label for="name" class="form-label"> {{ __(' MONTH ') }}</label>
+                                                <input
+                                                    type="month"
+                                                    name="status_date"
+                                                    id="status_date"
+                                                    class="form-control @error('status_date') is-invalid @enderror"
+                                                    value="{{ old('status_date')}}"
+                                                    autocomplete="status_date"
+                                                    autofocus
+                                                    required>
+
+                                                @error('status_date')
+                                                <span class="invalid-feedback" role="alert">
+                                                    <strong>{{ $message }}</strong>
+                                                </span>
+                                                @enderror
+                                            </div>
+                                        </div>
+                                        <br>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="submit" class="btn btn-info d-grid w-100">{{ __('Terminate') }}</button>
+                                    </div>
+                                </form>
+
+                            </div>
+                        </div>
+                    </div>
+            </div>
+
+
+
 
         </div>
+        <br> <br>
 
-        <hr class="mt-5 mb-5" >
+        <hr class="m-5" >
 
         <!-- Add a ui to attach and detach employees -->
         <div class="row mt-5">
@@ -485,7 +636,7 @@
                             @csrf
                             @if(isset($attachedEmployees) && $attachedEmployees->isNotEmpty())
                             <div class="table-responsive">
-                                <table class="table">
+                                <table id="myTable1" class="display">
                                     <thead>
                                         <tr>
                                             <th></th>
@@ -521,11 +672,12 @@
                             @csrf
                             @if(isset($availableEmployees) && $availableEmployees->isNotEmpty())
                             <div class="table-responsive">
-                                <table class="table">
+                                <table id="myTable" class="display">
                                     <thead>
                                         <tr>
                                             <th></th>
                                             <th>Name</th>
+                                            <th>Client</th>
                                             <th>Phone</th>
                                         </tr>
                                     </thead>
@@ -534,6 +686,7 @@
                                         <tr>
                                             <td><input type="checkbox" name="employees[]" value="{{ $emp->id }}"></td>
                                             <td>{{ $emp->name }}</td>
+                                            <td>{{ $emp->client?->business_name ?? 'N/A' }} {{ $emp->client?->name ?? 'N/A' }}</td>
                                             <td>{{ $emp->phone_number }}</td>
                                         </tr>
                                         @endforeach
@@ -554,6 +707,78 @@
         <br><br><br><br><br><br><br><br>
         @endsection
 
+
+         @section('scripts')
+
+    <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
+    <script src="https://cdn.datatables.net/2.3.3/js/dataTables.js"></script>
+    <script src="https://cdn.datatables.net/buttons/3.2.4/js/dataTables.buttons.js"></script>
+    <script src="https://cdn.datatables.net/buttons/3.2.4/js/buttons.dataTables.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+    <script src="https://cdn.datatables.net/buttons/3.2.4/js/buttons.html5.min.js"></script>
+
+    <script src="https://cdn.datatables.net/columncontrol/1.1.1/js/dataTables.columnControl.min.js"></script>
+    <script>
+        new DataTable('#myTable', {
+            responsive: true,
+            columnControl: [ ['search'] ],
+            layout: {
+                topStart: {
+                    buttons: [ 
+                    {
+                        extend: 'pageLength',
+                        text: 'Show',
+                        className: 'btn btn-secondary',
+                        Options: [10, 25, 50, 100, 250, 500, 1000, 2000], 
+                    },
+                        {
+                            extend: 'excelHtml5',
+                            title: 'Employees',
+                            className: 'btn btn-secondary',
+                            exportOptions: {
+                                columns: ':visible'
+                            }
+                        },
+                    ]
+                }
+            },
+        });
+        
+    </script>
+
+
+    <script>
+        new DataTable('#myTable1', {
+            responsive: true,
+            columnControl: [ ['search'] ],
+            layout: {
+                topStart: {
+                    buttons: [ 
+                    {
+                        extend: 'pageLength',
+                        text: 'Show',
+                        className: 'btn btn-secondary',
+                        Options: [10, 25, 50, 100, 250, 500, 1000, 2000], 
+                    },
+                        {
+                            extend: 'excelHtml5',
+                            title: 'Employees',
+                            className: 'btn btn-secondary',
+                            exportOptions: {
+                                columns: ':visible'
+                            }
+                        },
+                    ]
+                }
+            },
+        });
+        
+    </script>
+
+
+    @endsection
 
 
         </x-sales-dashboard>

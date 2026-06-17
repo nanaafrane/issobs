@@ -47,11 +47,16 @@ Route::resource('departments', DepartmentController::class);
 Route::resource('role', RoleController::class);
 Route::resource('field', FieldController::class);
 Route::resource('client', ClientController::class);
+Route::post('clientAproval', [ClientController::class, 'clientAproval']);
 Route::get('clientPending', [ClientController::class, 'clientPending']);
+Route::get('clientTerminated', [ClientController::class, 'clientTerminated']);
+
+
 Route::get('clientStatement/{client}', [ClientController::class, 'statementOfAccount']);
 Route::get('clientAttachGuards/{id}', [ClientController::class, 'clientAttachGuards']);
 Route::post('client/{client}/attach-employees', [ClientController::class, 'attachEmployees'])->name('client.attachEmployees');
 Route::post('client/{client}/detach-employees', [ClientController::class, 'detachEmployees'])->name('client.detachEmployees');
+Route::get('terminateClient/{id}', [ClientController::class, 'terminateClient'])->name('clients.terminateClient');
 Route::resource('category', CategoryController::class); 
 Route::post('categoryAssign', [CategoryController::class, 'categoryAssign']); 
 Route::post('categoryReAssign', [CategoryController::class, 'categoryReAssign']); 

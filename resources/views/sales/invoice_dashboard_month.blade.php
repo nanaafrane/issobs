@@ -648,6 +648,7 @@
                             <th>Invoice No.</th>
                             <th>Invoice Month</th>
                             <th>Client Name</th>
+                            <th>Client Status</th>
                             <th>Phone No.</th>
                             <th> Field Office </th>
                             <th> Staff </th>
@@ -698,11 +699,18 @@
                                 @else
                                 <td> {{$invoice->client->name}} {{$invoice->client->business_name}} </td>
                                 @endif
-                                <td> {{$invoice->client->phone_number}} </td>
-                                <td> {{$invoice->client->field->name}} </td>
-                                <td> {{$invoice->user->name}} </td>
-                                <td> {{$invoice->created_at->format('F l d, Y, H:i A')}} </td>
-                                <td> {{$invoice->due_date->diffForHumans()}} </td>
+                                <td> 
+                                    @if($invoice->client?->status == 'terminated')
+                                    <span class="badge bg-label-danger">{{ $invoice->client?->status }}</span>
+                                    @else
+                                    <span class="badge bg-label-success">{{ $invoice->client?->status }}</span>
+                                    @endif
+                                </td>
+                                <td> {{$invoice->client?->phone_number}} </td>
+                                <td> {{$invoice->client?->field?->name}} </td>
+                                <td> {{$invoice->user?->name}} </td>
+                                <td> {{$invoice->created_at?->format('F l d, Y, H:i A')}} </td>
+                                <td> {{$invoice->due_date?->diffForHumans()}} </td>
                                
                                
                                 <td>

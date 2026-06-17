@@ -22,6 +22,7 @@ return new class extends Migration
             $table->string('map')->nullable();
             $table->integer('field_id')->nullable();
             $table->string('status')->nullable();
+            $table->date('status_date')->nullable();
             $table->date('start_date')->nullable();
             $table->decimal('rate')->nullable();
             $table->string('guards')->nullable();

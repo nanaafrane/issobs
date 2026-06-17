@@ -434,6 +434,7 @@ class InvoiceController extends Controller
     {
 
         $reportInvoices =  Invoice::whereIn('status', ['unpaid', 'uncompleted'])->get();
+        // dd($reportInvoices);
         $reportPinvoices = Invoice::where('balance', '>', 0.00)->where('status', 'uncompleted')->get();
         
 
