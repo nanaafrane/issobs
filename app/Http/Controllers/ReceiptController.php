@@ -17,6 +17,8 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+// use Illuminate\Support\Number;
+use Illuminate\Support\Str;
 
 use function Symfony\Component\Clock\now;
 
@@ -220,9 +222,10 @@ class ReceiptController extends Controller
         // end of if the payment has with holding turned on
 
         // dd( $wth_from_form, $vat_from_form, $wht_amount, $this->vat7_amount, $vat7_value); 
-       
-        $check1 =  $invoice_data->total + $invoice_data->balance;
-        $check2 = $invoice_data->balance - $total - $dAmount ;
+        $invoiceTotal = Str::of($invoice_data->total)->toFloat();
+        $invoiceBalance = Str::of($invoice_data->balance)->toFloat();
+        $check1 =  $invoiceTotal + $invoiceBalance;
+        $check2 = $invoiceBalance - $total - $dAmount ;
 
          //    $fields = Field::pluck('id');
         $client = Client::findOrFail($client_id);
@@ -239,7 +242,7 @@ class ReceiptController extends Controller
                $receipt_id = $this->createReceipt( $invoice_id, $dAmount, $description, $advance_payment, $receipt_date, $vat7_value, $this->vat7_amount, $client_id, $from, $mode, $cheque_reference, $cheque_amount, $cheque_bank, $transfer_reference, $transfer_amount, $transfer_bank, $momo_transactin_id, $momo_amount, $cash_amount, $other_payment_descri, $other_payment_amnt, $user_id, $status, $total, $this->wht_amount, $sum_of_amountPaid_minus_wht, $image);
 
             //     // get balance
-                $balance = $invoice_data->total - $total - $dAmount;
+                $balance =  $invoiceTotal - $total - $dAmount;
                 // dd($balance);
                 // update the invoice status to completed and update the balance to 0
                 $invoice_data->status = $status;
@@ -247,13 +250,13 @@ class ReceiptController extends Controller
                 $invoice_data->amount_received = $invoice_data->amount_received + $sum_of_amountPaid_minus_wht;
                 $invoice_data->vat7_value = $vat7_value;
                 $invoice_data->vat7_amount = $this->vat7_amount;
-                $invoice_data->balance = $balance;
+                $invoiceBalance = $balance;
                 $invoice_data->save();
 
                 $transaction = new Transaction();
                 $transaction->client_id = $client_id;
                 $transaction->invoice_id = $invoice_id;
-                $transaction->invoice_amount = $invoice_data->total;
+                $transaction->invoice_amount =  $invoiceTotal;
                 $transaction->receipt_id = $receipt_id;
                 $transaction->receipt_amount = $total + $dAmount;
                 $transaction->balance = $balance;
@@ -380,7 +383,7 @@ class ReceiptController extends Controller
             $receipt_id = $this->createReceipt($invoice_id, $dAmount, $description, $advance_payment, $receipt_date, $vat7_value, $this->vat7_amount, $client_id, $from, $mode, $cheque_reference, $cheque_amount, $cheque_bank, $transfer_reference, $transfer_amount, $transfer_bank, $momo_transactin_id, $momo_amount, $cash_amount, $other_payment_descri, $other_payment_amnt, $user_id, $status, $total, $this->wht_amount, $sum_of_amountPaid_minus_wht, $image);
 
             // get balance
-            $balance = $invoice_data->balance - ($total + $dAmount); 
+            $balance = $invoiceBalance - ($total + $dAmount); 
 
             // update the invoice status from partpayment(uncomplete) to complete and update the balance to 0
             $invoice_data->balance = $balance;
@@ -395,7 +398,7 @@ class ReceiptController extends Controller
             $transaction = new Transaction();
             $transaction->client_id = $client_id;
             $transaction->invoice_id = $invoice_id;
-            $transaction->invoice_amount = $invoice_data->total;
+            $transaction->invoice_amount =  $invoiceTotal;
             $transaction->receipt_id = $receipt_id;
             $transaction->receipt_amount = $total + $dAmount;
             $transaction->balance = $balance;
@@ -513,13 +516,13 @@ class ReceiptController extends Controller
             // return "you're here! part payment " . " - advance - ". $advance_payment. " - " . "deduction ". $dAmount;
 
             // // get the balance of the invoice
-            if($invoice_data->balance > 0.00)
+            if($invoiceBalance > 0.00)
             {
-                $balance = $invoice_data->balance - $total - $dAmount ;
+                $balance = $invoiceBalance - $total - $dAmount ;
             }
             else{
                 // get the balance of the invoice
-                $balance = $invoice_data->total - $total - $dAmount ;
+                $balance =  $invoiceTotal - $total - $dAmount ;
             }
 
 
@@ -542,7 +545,7 @@ class ReceiptController extends Controller
             $transaction = new Transaction();
             $transaction->client_id = $client_id;
             $transaction->invoice_id = $invoice_id;
-            $transaction->invoice_amount = $invoice_data->total;
+            $transaction->invoice_amount =  $invoiceTotal;
             $transaction->receipt_id = $receipt_id;
             $transaction->receipt_amount = $total + $dAmount;
             $transaction->balance = $balance;
@@ -849,15 +852,18 @@ class ReceiptController extends Controller
             return redirect()->back()->with('info', 'Invoice balances reset completed, update all receipt with #FWSSi'. $invoice->id);
         }
 
-        $check1 =  $invoice->total + $invoice->balance;
-        $check2 = $invoice->balance - $total - $dAmount ;
+        $invoiceTotal = Str::of($invoice->total)->toFloat();
+        $invoiceBalance = Str::of($invoice->balance)->toFloat();
+        $check1 =   $invoiceTotal  + $invoiceBalance;
+        $check2 = $invoiceBalance - $total - $dAmount ;
 
+        // dd( $invoiceTotal, $invoiceBalance, $check1, $check2, $total, $dAmount);
 
         if($receipt->status == "completed" &&  $check1 == $total + $dAmount )
         {
 
-            // get balance
-            $balance = $invoice->total - $total - $dAmount;
+            // // get balance
+            $balance = $invoiceTotal - $total - $dAmount;
 
 
             $invoice->balance = $balance;
@@ -879,11 +885,11 @@ class ReceiptController extends Controller
 
 
         }
-        elseif($receipt->status == "completed" && $check2 == 0 )
+        elseif($receipt->status == "completed" && $check2 <= 0 )
         {
 
             // get balance
-            $balance = $invoice->balance - ($total + $dAmount); 
+            $balance = $invoiceBalance - ($total + $dAmount); 
 
             $invoice->balance = $balance;
             $invoice->status = $request->input('status');
@@ -907,17 +913,17 @@ class ReceiptController extends Controller
 
             // // get the balance of the invoice
             $balance = 0;
-            if($invoice->balance > 0.00)
+            if($invoiceBalance > 0.00)
             {
-                $balance = $invoice->balance - $total - $dAmount ;
+                $balance = $invoiceBalance - $total - $dAmount ;
             }
             elseif($invoice->status == 'completed')
                 {
-                    $balance = $invoice->total - $total - $dAmount ;
+                    $balance = $invoiceTotal - $total - $dAmount ;
                 }
             else{
                 // get the balance of the invoice
-                $balance = $invoice->total - $total - $dAmount ;
+                $balance = $invoiceTotal - $total - $dAmount ;
             }
 
             $invoice->balance = $balance;
