@@ -296,24 +296,34 @@
                             <thead class="table-dark">
                                 <tr>
                                     <th>#</th>
+                                    <th> Month </th>
+                                    <th>EMP. ID</th>
                                     <th> EMPLOYEE NAME </th>
-                                    <th> FIELD OFFICE</th>
-                                    <th>TIER 1</th>
-                                    <th>TIER 2</th>
-                                    <th>CONTRIBUTION 13%</th>
-                                    <th>CONTRIBUTION 13.5%</th>
+                                    <th>ROLE</th>
+                                    <th> FIELD OFFICE </th>
+                                    <th> CLIENT </th>
+                                    <th>LOCATION</th>
+                                    <th>  GH&#x20B5; TIER 1</th>
+                                    <th>GH&#x20B5; TIER 2</th>
+                                    <th>GH&#x20B5; CONTRIBUTION 13%</th>
+                                    <th>GH&#x20B5; CONTRIBUTION 13.5%</th>
                                 </tr>
                             </thead>
                             <tbody class="table-border-bottom-0">
                                 @foreach($salariesPensions as $key => $pension)
                                 <tr>
                                     <td> {{ $key + 1 }} </td>
+                                    <td> {{ $pension->salary_month?->format('F, Y') }} </td>
+                                    <td> {{$pension->employee_id}} </td>
                                     <td> {{ strtoupper($pension->employee->name) }} </td>
+                                    <td> {{ $pension->role?->name }} </td>
                                     <td> {{ $pension->field->name }} </td>
-                                    <td> GH&#x20B5; {{ number_format($pension->ssnit_tier1_0_5, 2) }} </td>
-                                    <td> GH&#x20B5; {{ number_format($pension->ssnit_tier2_5, 2) }} </td>
-                                    <td> GH&#x20B5; {{ number_format($pension->ssnit_comp_cont_13, 2) }} </td>
-                                    <td> GH&#x20B5; {{ number_format($pension->ssnit_tobe_paid13_5, 2) }} </td>
+                                    <td> {{ $pension->client?->name }} {{ $pension->client?->business_name }} </td>
+                                    <td> {{ $pension->location }} </td>
+                                    <td> {{ number_format($pension->ssnit_tier1_0_5, 2) }} </td>
+                                    <td> {{ number_format($pension->ssnit_tier2_5, 2) }} </td>
+                                    <td> {{ number_format($pension->ssnit_comp_cont_13, 2) }} </td>
+                                    <td> {{ number_format($pension->ssnit_tobe_paid13_5, 2) }} </td>
                                 </tr>
                                 @endforeach
                             </tbody>

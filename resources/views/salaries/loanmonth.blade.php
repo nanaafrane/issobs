@@ -294,20 +294,30 @@
                             <thead class="table-dark">
                                 <tr>
                                     <th>#</th>
+                                    <th> MONTH </th>
+                                    <th>EMP. ID</th>
                                     <th> EMPLOYEE NAME </th>
-                                    <th> FIELD OFFICE</th>
-                                    <th>LOANS </th>
-                                    <th>NET SALARY</th>
+                                    <th>ROLE</th>
+                                    <th> FIELD OFFICE </th>
+                                    <th> CLIENT </th>
+                                    <th>LOCATION</th>
+                                    <th>GH&#x20B5; LOANS </th>
+                                    <th>GH&#x20B5; NET SALARY</th>
                                 </tr>
                             </thead>
                             <tbody class="table-border-bottom-0">
                                 @foreach($salariesLoan as $key => $loans)
                                 <tr>
                                     <td> {{ $key + 1 }} </td>
+                                    <td> {{ $loans->salary_month?->format('F, Y') }} </td>
+                                    <td> {{$loans->employee_id}} </td>
                                     <td> {{ strtoupper($loans->employee->name) }} </td>
+                                    <td> {{ $loans->role?->name }} </td>
                                     <td> {{ $loans->field->name }} </td>
-                                    <td> GH&#x20B5; {{ number_format($loans->loan, 2) }} </td>
-                                    <td> GH&#x20B5; {{ number_format($loans->net_salary, 2) }} </td>
+                                    <td> {{ $loans->client?->name }} {{ $loans->client?->business_name }} </td>
+                                    <td> {{ $loans->location }} </td>
+                                    <td> {{ number_format($loans->loan, 2) }} </td>
+                                    <td> {{ number_format($loans->net_salary, 2) }} </td>
                                 </tr>
                                 @endforeach
                             </tbody>
@@ -356,7 +366,7 @@
                 },
                     {
                         extend: 'excelHtml5',
-                        title:  "{{ $field->name . ' Boots ' . \Carbon\Carbon::parse($month)->format('F Y')}}",
+                        title:  "{{ $field->name . ' LOANS ' . \Carbon\Carbon::parse($month)->format('F Y')}}",
                         className: 'btn btn-secondary',
                         exportOptions: {
                             columns: ':visible'

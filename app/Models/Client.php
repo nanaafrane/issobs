@@ -36,6 +36,11 @@ class Client extends Model
         'category_month',
     ];
 
+    protected $casts = [
+        'start_date' => 'date',
+        'status_date' => 'date',
+    ];
+
 
     public function field(){
         return $this->belongsTo(Field::class);

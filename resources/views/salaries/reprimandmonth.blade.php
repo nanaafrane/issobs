@@ -294,20 +294,30 @@
                             <thead class="table-dark">
                                 <tr>
                                     <th>#</th>
+                                    <th> MONTH </th>
+                                    <th>EMP. ID</th>
                                     <th> EMPLOYEE NAME </th>
-                                    <th> FIELD OFFICE</th>
-                                    <th>REPRIMAND </th>
-                                    <th>NET SALARY</th>
+                                    <th>ROLE</th>
+                                    <th> FIELD OFFICE </th>
+                                    <th> CLIENT </th>
+                                    <th>LOCATION</th>
+                                    <th>GH&#x20B5; REPRIMAND </th>
+                                    <th>GH&#x20B5; NET SALARY</th>
                                 </tr>
                             </thead>
                             <tbody class="table-border-bottom-0">
                                 @foreach($salariesReprimand as $key => $reprimands)
                                 <tr>
                                     <td> {{ $key + 1 }} </td>
+                                    <td> {{ $reprimands->salary_month?->format('F, Y') }} </td>
+                                    <td> {{$reprimands->employee_id}} </td>
                                     <td> {{ strtoupper($reprimands->employee->name) }} </td>
+                                    <td> {{ $reprimands->role?->name }} </td>
                                     <td> {{ $reprimands->field->name }} </td>
-                                    <td> GH&#x20B5; {{ number_format($reprimands->reprimand, 2) }} </td>
-                                    <td> GH&#x20B5; {{ number_format($reprimands->net_salary, 2) }} </td>
+                                    <td> {{ $reprimands->client?->name }} {{ $reprimands->client?->business_name }} </td>
+                                    <td> {{ $reprimands->location }} </td>
+                                    <td> {{ number_format($reprimands->reprimand, 2) }} </td>
+                                    <td> {{ number_format($reprimands->net_salary, 2) }} </td>
                                 </tr>
                                 @endforeach
                             </tbody>
@@ -356,7 +366,7 @@
                 },
                     {
                         extend: 'excelHtml5',
-                        title:  "{{ $field->name . ' Boots ' . \Carbon\Carbon::parse($month)->format('F Y')}}",
+                        title:  "{{ $field->name . ' REPRIMANDS ' . \Carbon\Carbon::parse($month)->format('F Y')}}",
                         className: 'btn btn-secondary',
                         exportOptions: {
                             columns: ':visible'

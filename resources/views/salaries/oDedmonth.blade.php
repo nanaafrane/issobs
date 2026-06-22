@@ -294,20 +294,30 @@
                             <thead class="table-dark">
                                 <tr>
                                     <th>#</th>
+                                    <th> Month </th>
+                                    <th>EMP. ID</th>
                                     <th> EMPLOYEE NAME </th>
-                                    <th> FIELD OFFICE</th>
-                                    <th>OTHER DEDUCTIONS </th>
-                                    <th>NET SALARY</th>
+                                    <th>ROLE</th>
+                                    <th> FIELD OFFICE </th>
+                                    <th> CLIENT </th>
+                                    <th>LOCATION</th>
+                                    <th>GH&#x20B5; OTHER DEDUCTIONS </th>
+                                    <th>GH&#x20B5; NET SALARY</th>
                                 </tr>
                             </thead>
                             <tbody class="table-border-bottom-0">
                                 @foreach($salariesoDed as $key => $oDed)
                                 <tr>
                                     <td> {{ $key + 1 }} </td>
+                                    <td> {{ $oDed->salary_month?->format('F, Y') }} </td>
+                                    <td> {{$oDed->employee_id}} </td>
                                     <td> {{ strtoupper($oDed->employee->name) }} </td>
+                                    <td> {{ $oDed->role?->name }} </td>
                                     <td> {{ $oDed->field->name }} </td>
-                                    <td> GH&#x20B5; {{ number_format($oDed->other_deductions, 2) }} </td>
-                                    <td> GH&#x20B5; {{ number_format($oDed->net_salary, 2) }} </td>
+                                    <td> {{ $oDed->client?->name }} {{ $oDed->client?->business_name }} </td>
+                                    <td> {{ $oDed->location }} </td>
+                                    <td>  {{ number_format($oDed->other_deductions, 2) }} </td>
+                                    <td>  {{ number_format($oDed->net_salary, 2) }} </td>
                                 </tr>
                                 @endforeach
                             </tbody>
@@ -356,7 +366,7 @@
                 },
                     {
                         extend: 'excelHtml5',
-                        title:  "{{ $field->name . ' Boots ' . \Carbon\Carbon::parse($month)->format('F Y')}}",
+                        title:  "{{ $field->name . ' OTHER DEDUCTIONS ' . \Carbon\Carbon::parse($month)->format('F Y')}}",
                         className: 'btn btn-secondary',
                         exportOptions: {
                             columns: ':visible'

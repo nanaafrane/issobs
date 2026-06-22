@@ -510,11 +510,11 @@ class ClientController extends Controller
      */
     public function edit(Client $client)
     {
-        //dd($client);
+        // dd($client);
         $fields = Field::all();
         $categories = ['Category A', 'Category B', 'Category C', 'Category D']; 
         // Employees assigned to this client (based on employee.client_id)
-        $attachedEmployees = employee::where('client_id', $client->id)->get();
+        $attachedEmployees = employee::where('client_id', $client->id)->where('status', 'Active')->get();
 
         // Available employees (not assigned to this client) — limit to guards (department_id = 6) and active status
         $availableEmployees = employee::where(function($q) use ($client) {

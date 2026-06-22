@@ -393,13 +393,22 @@
                 
                 <div class="card">
                     <div class="card-header pb-3">
-                        <h6 class="mb-0"><i class="bx bx-bxs-group text-dark me-2"></i>Standard Clients List</h6>
+                        <h6 class="mb-4"><i class="bx bx-bxs-group text-dark me-2"></i>Standard Clients List</h6>
                     </div>
+
+                    @if(Auth::user()->hasRole(['Manager', 'Invoice']))
+                        <input class="form-check-input form-check-inline" type="checkbox" value="" id="options" />
+
+                        <div class="form-check form-check-inline">                            
+                            <button class="btn btn-success" type="submit" onclick="return confirm('Kindly Confirm?')"> <i class="icon-base bx bx-arrow-from-left"> </i> {{ __('Re-Instate') }}</button>
+                        </div>
+                    @endif
 
                     <div class="table-responsive ">
                         <table id="standardClientsTable" class="display">
                             <thead>
                                 <tr>
+                                    <th> </th>
                                     <th style="width: 50px;"> # </th>
                                     <th style="width: 60px;"> ID </th>
                                     <th>Type</th>
@@ -415,6 +424,8 @@
                             <tbody>
                                 @foreach($clients as $key => $client)
                                 <tr class="table-light">
+                                    <td> <input class="checkBoxes form-check-input" type="checkbox" name="clients[]" value="{{ $client->id }}" /></td>
+
                                     <td>  {{ $key + 1 }} </td>
 
                                     <td><strong>{{ $client->id }}</strong></td>
@@ -464,24 +475,8 @@
                                     <td><small>{{ $client->address }}</small></td>
                                     <td><small>{{ $client->branch }}</small></td>
                                     <td>
-                                        <div class="dropdown">
-                                            <button type="button" class="btn btn-sm btn-icon p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown">
-                                                <i class="bx bx-dots-vertical-rounded"></i>
-                                            </button>
-                                            <div class="dropdown-menu">
-                                                <a class="dropdown-item" href="{{ url('client', $client->id) }}"><i class="bx bxs-bullseye me-1"></i> View</a>
-                                                <a class="dropdown-item" href="client/{{ $client->id }}/edit"><i class="bx bx-edit-alt me-1"></i> Edit</a>
-                                                @if(Auth::user()->hasPermission('HR') || Auth::user()->hasRole(['Invoice']))
-                                                <form action="client/{{ $client->id }}" method="POST" class="d-inline">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button class="dropdown-item" type="submit"><i class="bx bx-trash me-1"></i>Delete</button>
-                                                </form>
-                                                @endif
-                                                <hr class="dropdown-divider">
-                                                <a class="dropdown-item" href="{{ url('employeesGuardClient', $client->id) }}"><i class="bx bxs-user-account me-1"></i> View Guards</a>
-                                            </div>
-                                        </div>
+                                                <a class="btn btn-danger btn-sm" href="{{ url('client', $client->id) }}"><i class="bx bxs-bullseye me-1"></i> View</a>
+
                                     </td>
                                 </tr>
                                 @endforeach
@@ -563,6 +558,15 @@
                     ]
                 }
             },
+        });
+    </script>
+    <script>
+        $(document).ready(function() {
+            $('#options').change(function() {
+                $('.checkBoxes').prop('checked', function(i, val) {
+                    return !val;
+                });
+            });
         });
     </script>
 

@@ -473,15 +473,8 @@
                                     <td><small>{{ $client->address }}</small></td>
                                     <td><small>{{ $client->branch }}</small></td>
                                     <td>
-                                        <div class="dropdown">
-                                            <button type="button" class="btn btn-sm btn-icon p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown">
-                                                <i class="bx bx-dots-vertical-rounded"></i>
-                                            </button>
-                                            <div class="dropdown-menu">
-                                                <a class="dropdown-item" href="{{ url('client', $client->id) }}"><i class="bx bxs-bullseye me-1"></i> View</a>
-                                                <a class="dropdown-item" href="client/{{ $client->id }}/edit"><i class="bx bx-edit-alt me-1"></i> Edit</a>
-                                            </div>
-                                        </div>
+                                                <a class="btn btn-warning btn-sm" href="client/{{ $client->id }}/edit"><i class="bx bx-edit-alt me-1"></i> Edit</a>
+
                                     </td>
                                 </tr>
                                 @endforeach

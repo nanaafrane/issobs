@@ -294,20 +294,30 @@
                             <thead class="table-dark">
                                 <tr>
                                     <th>#</th>
+                                    <th> Month </th>
+                                    <th>EMP. ID</th>
                                     <th> EMPLOYEE NAME </th>
-                                    <th> FIELD OFFICE</th>
-                                    <th>ABSENT </th>
-                                    <th>NET SALARY</th>
+                                    <th>ROLE</th>
+                                    <th> FIELD OFFICE </th>
+                                    <th> CLIENT </th>
+                                    <th>LOCATION</th>
+                                    <th> GH&#x20B5; ABSENT </th>
+                                    <th>GH&#x20B5; NET SALARY</th>
                                 </tr>
                             </thead>
                             <tbody class="table-border-bottom-0">
                                 @foreach($salariesAbsent as $key => $absents)
                                 <tr>
                                     <td> {{ $key + 1 }} </td>
+                                    <td> {{ $absents->salary_month?->format('F, Y') }} </td>
+                                    <td> {{$absents->employee_id}} </td>
                                     <td> {{ strtoupper($absents->employee->name) }} </td>
+                                    <td> {{ $absents->role?->name }} </td>
                                     <td> {{ $absents->field->name }} </td>
-                                    <td> GH&#x20B5; {{ number_format($absents->absent, 2) }} </td>
-                                    <td> GH&#x20B5; {{ number_format($absents->net_salary, 2) }} </td>
+                                    <td> {{ $absents->client?->name }} {{ $absents->client?->business_name }} </td>
+                                    <td> {{ $absents->location }} </td>
+                                    <td> {{ number_format($absents->absent, 2) }} </td>
+                                    <td> {{ number_format($absents->net_salary, 2) }} </td>
                                 </tr>
                                 @endforeach
                             </tbody>
@@ -356,7 +366,7 @@
                 },
                     {
                         extend: 'excelHtml5',
-                        title:  "{{ $field->name . ' Boots ' . \Carbon\Carbon::parse($month)->format('F Y')}}",
+                        title:  "{{ $field->name . ' ABSENT ' . \Carbon\Carbon::parse($month)->format('F Y')}}",
                         className: 'btn btn-secondary',
                         exportOptions: {
                             columns: ':visible'

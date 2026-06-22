@@ -294,20 +294,30 @@
                             <thead class="table-dark">
                                 <tr>
                                     <th>#</th>
+                                    <th> Month </th>
+                                    <th>EMP. ID</th>
                                     <th> EMPLOYEE NAME </th>
-                                    <th> FIELD OFFICE</th>
-                                    <th>OVERTIME </th>
-                                    <th>NET SALARY</th>
+                                    <th>ROLE</th>
+                                    <th> FIELD OFFICE </th>
+                                    <th> CLIENT </th>
+                                    <th>LOCATION</th>
+                                    <th> GH&#x20B5; OVERTIME </th>
+                                    <th> GH&#x20B5; NET SALARY</th>
                                 </tr>
                             </thead>
                             <tbody class="table-border-bottom-0">
                                 @foreach($salariesOvertime as $key => $overtime)
                                 <tr>
                                     <td> {{ $key + 1 }} </td>
+                                    <td> {{ $overtime->salary_month?->format('F, Y') }} </td>
+                                    <td> {{$overtime->employee_id}} </td>
                                     <td> {{ strtoupper($overtime->employee->name) }} </td>
+                                    <td> {{ $overtime->role?->name }} </td>
                                     <td> {{ $overtime->field->name }} </td>
-                                    <td> GH&#x20B5; {{ number_format($overtime->overtime, 2) }} </td>
-                                    <td> GH&#x20B5; {{ number_format($overtime->net_salary, 2) }} </td>
+                                    <td> {{ $overtime->client?->name }} {{ $overtime->client?->business_name }} </td>
+                                    <td> {{ $overtime->location }} </td>
+                                    <td> {{ number_format($overtime->overtime, 2) }} </td>
+                                    <td> {{ number_format($overtime->net_salary, 2) }} </td>
                                 </tr>
                                 @endforeach
                             </tbody>
