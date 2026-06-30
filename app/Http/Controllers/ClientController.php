@@ -12,6 +12,7 @@ use App\Models\Invoice;
 use App\Models\Receipt;
 use App\Models\Service;
 use App\Models\Transaction;
+use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -36,108 +37,93 @@ class ClientController extends Controller
     public function index()
     {
         $user = Auth::user();
+        $clients = null;
+        $fields = null;
+        $totalGuards = null;
 
-        $clients = Client::where('status', 'active')->get();
-        $standardClients = $clients->where('state_institution', null)->values();
-        $stateClients = $clients->where('state_institution', 1)->values();
-        $standardClientsCount = count($standardClients);
-        $stateClientsCount = count($stateClients);
-        $clientsCount = count($clients);
-        $fields = Field::all();
-
-        $totalGuards = employee::where('department_id', '6')->count();
-
-        // Separate standard and state institution clients by field
-        $accra = Client::where('field_id', 1)->where('status', 'active')->get();
-        $accraStandard = $accra->where('state_institution', null)->count();
-        $accraState = $accra->where('state_institution', 1)->count();
-        $accraCount = count($accra);
-        $totalaccraGuards = employee::where('department_id', '6')->where('field_id', 1)->count();
-
-        $botwe = Client::where('field_id', 2)->where('status', 'active')->get();
-        $botweStandard = $botwe->where('state_institution', null)->count();
-        $botweState = $botwe->where('state_institution', 1)->count();
-        $botweCount = count($botwe);
-        $totalbotweGuards = employee::where('department_id', '6')->where('field_id', 2)->count();
-
-        $tema = Client::where('field_id', 3)->where('status', 'active')->get();
-        $temaStandard = $tema->where('state_institution', null)->count();
-        $temaState = $tema->where('state_institution', 1)->count();
-        $temaCount = count($tema);
-        $totaltemaGuards = employee::where('department_id', '6')->where('field_id', 3)->count();
-
-        $takoradi = Client::where('field_id', 4)->where('status', 'active')->get();
-        $takoradiStandard = $takoradi->where('state_institution', null)->count();
-        $takoradiState = $takoradi->where('state_institution', 1)->count();
-        $takoradiCount = count($takoradi);
-        $totaltakoradiGuards = employee::where('department_id', '6')->where('field_id', 4)->count();
-
-        $koforidua = Client::where('field_id', 5)->where('status', 'active')->get();
-        $koforiduaStandard = $koforidua->where('state_institution', null)->count();
-        $koforiduaState = $koforidua->where('state_institution', 1)->count();
-        $koforiduaCount = count($koforidua);
-        $totalkoforiduaGuards = employee::where('department_id', '6')->where('field_id', 5)->count();
-
-        $kumasi = Client::where('field_id', 6)->where('status', 'active')->get();
-        $kumasiStandard = $kumasi->where('state_institution', null)->count();
-        $kumasiState = $kumasi->where('state_institution', 1)->count();
-        $kumasiCount = count($kumasi);
-        $totalkumasiGuards = employee::where('department_id', '6')->where('field_id', 6)->count();
-
-        $shyhills = Client::where('field_id', 7)->where('status', 'active')->get();
-        $shyhillsStandard = $shyhills->where('state_institution', null)->count();
-        $shyhillsState = $shyhills->where('state_institution', 1)->count();
-        $shyhillsCount = count($shyhills);
-        $totalshyhillsGuards = employee::where('department_id', '6')->where('field_id', 7)->count();
-
-        $compactData = compact(
-            'totalaccraGuards', 'totalbotweGuards', 'totaltemaGuards', 'totaltakoradiGuards', 
-            'totalkoforiduaGuards', 'totalkumasiGuards', 'totalshyhillsGuards', 
-            'clients', 'standardClients', 'stateClients', 'clientsCount', 'standardClientsCount', 
-            'stateClientsCount', 'fields', 'accraCount', 'accraStandard', 'accraState',
-            'botweCount', 'botweStandard', 'botweState', 'temaCount', 'temaStandard', 'temaState',
-            'takoradiCount', 'takoradiStandard', 'takoradiState', 'koforiduaCount', 'koforiduaStandard',
-            'koforiduaState', 'kumasiCount', 'kumasiStandard', 'kumasiState', 'shyhills', 'shyhillsCount',
-            'shyhillsStandard', 'shyhillsState', 'totalGuards'
-        );
-
-        if($user->role->name == 'Invoice' || $user->role->name == 'Finance Manager' || $user->role->name == 'Manager' )
+        if($user->role->name == 'Invoice' || $user->role->name == 'Finance Manager' || ($user->role->name == 'Manager' && $user->department->name == 'HR' ) )
         {
-            return view('clients.index', $compactData);
+                $clients = Client::where('status', 'active')->where('ho_status', 'approved')->get();
+                $standardClients = $clients->where('state_institution', null)->values();
+                $stateClients = $clients->where('state_institution', 1)->values();
+
+                $fields = Field::all();
+
+                $totalGuards = employee::where('department_id', '6')->count();
+            // return "You're the Manager";
+            return view('clients.index', compact('clients', 'stateClients' ,'standardClients','fields','totalGuards'));
+
+
         }elseif($user->field?->name == 'Accra')
         {
-            $clients = $accra;
-            return view('clients.index', compact('clients', 'clientsCount', 'fields', 'accraCount', 'standardClients', 'stateClients', 'standardClientsCount', 'stateClientsCount'));
+            $clients = Client::where('field_id', 1)->where('ho_status', 'approved')->where('status', 'active')->get();
+            $standardClients = $clients->where('state_institution', null)->values();
+            $stateClients = $clients->where('state_institution', 1)->values();
+            // $botweCount = count($clients);
+            $totalGuards = employee::where('department_id', '6')->where('field_id', 1)->count();
+            return view('clients.index', compact('clients', 'standardClients', 'stateClients'));
+            // return "You're in Accra";
+
         }
 
         if ($user->field?->name == 'Botwe')
         {
-            $clients = $botwe;
-            return view('clients.index', compact('clients', 'clientsCount', 'fields', 'botweCount', 'shyhills', 'shyhillsCount', 'standardClients', 'stateClients', 'standardClientsCount', 'stateClientsCount'));
+
+            $clients = Client::where('field_id', 2)->where('ho_status', 'approved')->where('status', 'active')->get();
+            $standardClients = $clients->where('state_institution', null)->values();
+            $stateClients = $clients->where('state_institution', 1)->values();
+            // $botweCount = count($clients);
+            $totalGuards = employee::where('department_id', '6')->where('field_id', 2)->count();
+            return view('clients.index', compact('clients', 'standardClients', 'stateClients'));
+
+            // return "You're in Botwe";
+
         }
 
         if ($user->field?->name == 'Tema')
         {
-            $clients = $tema;
-            return view('clients.index', compact('clients', 'clientsCount', 'fields', 'temaCount', 'standardClients', 'stateClients', 'standardClientsCount', 'stateClientsCount'));
+            $clients = Client::whereIn('field_id', [3,7])->where('ho_status', 'approved')->where('status', 'active')->get();
+            $standardClients = $clients->where('state_institution', null)->values();
+            $stateClients = $clients->where('state_institution', 1)->values();
+            // $botweCount = count($clients);
+            $totalGuards = employee::where('department_id', '6')->whereIn('field_id', [3,7])->count();
+            return view('clients.index', compact('clients', 'standardClients', 'stateClients'));
+            // return "You're in Tema";
+
         }
 
         if ($user->field?->name == 'Takoradi')
         {
-            $clients = $takoradi;
-            return view('clients.index', compact('clients', 'clientsCount', 'fields', 'takoradiCount', 'standardClients', 'stateClients', 'standardClientsCount', 'stateClientsCount'));
+            $clients = Client::where('field_id', 4)->where('ho_status', 'approved')->where('status', 'active')->get();
+            $standardClients = $clients->where('state_institution', null)->values();
+            $stateClients = $clients->where('state_institution', 1)->values();
+            // $botweCount = count($clients);
+            $totalGuards = employee::where('department_id', '6')->where('field_id', 4)->count();
+            return view('clients.index', compact('clients', 'standardClients', 'stateClients'));
+            // return "You're in Takoradi";
         }
 
         if ($user->field?->name == 'Koforidua')
         {
-            $clients = $koforidua;
-            return view('clients.index', compact('clients', 'clientsCount', 'fields', 'koforiduaCount', 'standardClients', 'stateClients', 'standardClientsCount', 'stateClientsCount'));
+            $clients = Client::where('field_id', 5)->where('ho_status', 'approved')->where('status', 'active')->get();
+            $standardClients = $clients->where('state_institution', null)->values();
+            $stateClients = $clients->where('state_institution', 1)->values();
+            // $botweCount = count($clients);
+            $totalGuards = employee::where('department_id', '6')->where('field_id', 5)->count();
+            return view('clients.index', compact('clients', 'standardClients', 'stateClients'));
+            // return "You're in Koforidua";
         }
 
         if ($user->field?->name == 'Kumasi')
         {
-            $clients = $kumasi;
-            return view('clients.index', compact('clients', 'clientsCount', 'fields', 'kumasiCount', 'standardClients', 'stateClients', 'standardClientsCount', 'stateClientsCount'));
+            $clients = Client::where('field_id', 6)->where('ho_status', 'approved')->where('status', 'active')->get();
+            $standardClients = $clients->where('state_institution', null)->values();
+            $stateClients = $clients->where('state_institution', 1)->values();
+            // $botweCount = count($clients);
+            $totalGuards = employee::where('department_id', '6')->where('field_id', 6)->count();
+            return view('clients.index', compact('clients', 'standardClients', 'stateClients'));
+            // return "You're in Kumasi";
+
         }
 
     }
@@ -148,8 +134,54 @@ class ClientController extends Controller
     public function create()
     {
         //
-        $fields = Field::all();
-        return view('clients.create', compact('fields'));
+        $fields = null;
+        $fieldsAll = Field::all();
+        $user =  Auth::user();
+
+        $staff =  User::all();
+        $manager = $staff->where('department_id', '7')->where('role_id', '3');
+        $invoice_manager = $staff->where('department_id', '1')->where('role_id', '1');
+        $assign_staff = [];
+
+        if($user->role->name == 'Admin Assistant')
+            {
+                $assign_staff = $manager;
+            }
+
+        if($user->role->name == 'Manager')
+            {
+                $assign_staff = $invoice_manager;
+            }
+
+        // dd($fieldsAll);
+        // if($user->role?->name == 'Finance Manager')
+        // {
+            
+        // }
+        foreach($fieldsAll as $field )
+        {
+            if( $user->role?->name == 'Finance Manager' || $user->role?->name == 'Invoice' || ($user->department?->name == 'HR' && $user->role?->name == 'Manager') )
+            {
+                $fields = $fieldsAll;
+                break;
+            }
+            if($user->field_id == '3')
+            {
+                $fields = $fieldsAll->whereIn('id', ['3','7'])->values();
+                break;
+            }
+            if($field->name == $user->field?->name)
+            {
+                $fields[] = $field;
+            }
+        }
+        // dd($fields);
+        // foreach($fields as $field)
+        //     {
+        //         echo $field->name . "<br>";
+        //     }
+
+        return view('clients.create', compact('fields', 'assign_staff'));
     }
 
     /**
@@ -159,24 +191,72 @@ class ClientController extends Controller
     {
         //
         // dd($request->all());
-        $client = new Client();
-        $client->create([
-            'name' => $request->name,
-            'phone_number' => $request->phone_number,
-            'phone_number1' => $request->phone_number1,
-            'business_name' => $request->business_name,
-            'address' => $request->address,
-            'field_id' => $request->field_id,
-            'branch' => $request->branch,
-            'rate' => $request->rate,
-            'guards' => $request->guards,
-            'start_date' => $request->start_date,
-            'scope_of_work' => $request->scope_of_work,
-            'state_institution' => $request->state_institution,
-            'status' => 'pending',
-            'user_id' => Auth::id(),    
-        ]);
-        return redirect('client')->with('info', $client->id. ' '.'Client Added Sucessfully');
+           $user_id = Auth::id();
+
+           $client = new Client();
+           $client->name = $request->name;
+           $client->phone_number = $request->phone_number;
+           $client->phone_number1 = $request->phone_number;
+           $client->business_name = $request->business_name;
+           $client->address = $request->address;
+           $client->field_id = $request->field_id;
+           $client->branch = $request->branch;
+           $client->rate = $request->rate;
+           $client->guards = $request->guards;
+           $client->start_date = $request->start_date;
+           $client->scope_of_work = $request->scope_of_work;
+           $client->state_institution = $request->state_institution;
+           $client->status = 'pending';
+           $client->user_id = $user_id;
+
+
+            if(Auth::user()->role?->id == '1')
+                {
+                    // return "You are at head office";
+
+                $client->ho_status = 'approved';
+                $client->user_id2 = $user_id;
+                }
+            if(Auth::user()->department?->id == '7' && Auth::user()->role?->id == '3')
+                {
+                    // return "You are a Manager";
+
+                $client->ho_status = 'pending';
+                $client->user_id2 = $request->staff;
+
+                $client->bran_status = 'approved';
+                $client->user_id1 = $user_id;
+                }
+            if(Auth::user()->department?->id == '7' && Auth::user()->role?->id == '27')
+                {
+                    // return "You are an Admin Assistance";
+                $client->bran_status = 'pending';
+                $client->user_id1 = $request->staff;
+                $client->coll_status = 'pending';
+
+                }
+            $client->save();
+        // $client->create([
+        //     'name' => $request->name,
+        //     'phone_number' => $request->phone_number,
+        //     'phone_number1' => $request->phone_number1,
+        //     'business_name' => $request->business_name,
+        //     'address' => $request->address,
+        //     'field_id' => $request->field_id,
+        //     'branch' => $request->branch,
+        //     'rate' => $request->rate,
+        //     'guards' => $request->guards,
+        //     'start_date' => $request->start_date,
+        //     'scope_of_work' => $request->scope_of_work,
+        //     'state_institution' => $request->state_institution,
+
+
+        //     'status' => 'pending',
+        //     'user_id' => Auth::id(),    
+        // ]);
+
+
+        return redirect('clientPending')->with('info', $client->id. ' '.'Client Added Sucessfully, awaiting approval !.');
     }
 
     /**
@@ -207,91 +287,86 @@ class ClientController extends Controller
      */
     public function clientPending()
     {
+  
         $user = Auth::user();
-
-        $clients = Client::where('status', 'pending')->get();
+        $clients = null;
+        $fields = null;
+        $totalGuards = null;
     
-        $clientsCount = count($clients);
-        $fields = Field::all();
-
-        $totalGuards = employee::where('department_id', '6')->count();
-
-        $accra = Client::where('field_id', 1)->where('status', 'pending')->get();
-        $accraCount = count($accra);
-        $totalaccraGuards = employee::where('department_id', '6')->where('field_id', 1)->count();
-
-        $botwe = Client::where('field_id', 2)->where('status', 'pending')->get();
-        $botweCount = count($botwe);
-        $totalbotweGuards = employee::where('department_id', '6')->where('field_id', 2)->count();
-
-        $tema = Client::where('field_id', 3)->where('status', 'pending')->get();
-        $temaCount = count($tema);
-        $totaltemaGuards = employee::where('department_id', '6')->where('field_id', 3)->count();
-
-        $takoradi = Client::where('field_id', 4)->where('status', 'pending')->get();
-        $takoradiCount = count($takoradi);
-        $totaltakoradiGuards = employee::where('department_id', '6')->where('field_id', 4)->count();
-
-        $koforidua = Client::where('field_id', 5)->where('status', 'pending')->get();
-        $koforiduaCount = count($koforidua);
-        $totalkoforiduaGuards = employee::where('department_id', '6')->where('field_id', 5)->count();
-
-        $kumasi = Client::where('field_id', 6)->where('status', 'pending')->get();
-        $kumasiCount = count($kumasi);
-        $totalkumasiGuards = employee::where('department_id', '6')->where('field_id', 6)->count();
-
-        $shyhills = Client::where('field_id', 7)->where('status', 'pending')->get();
-        $shyhillsCount = count($shyhills);
-        $totalshyhillsGuards = employee::where('department_id', '6')->where('field_id', 7)->count();
-
-        $compactData = compact(
-            'totalaccraGuards', 'totalbotweGuards', 'totaltemaGuards', 'totaltakoradiGuards', 
-            'totalkoforiduaGuards', 'totalkumasiGuards', 'totalshyhillsGuards', 
-            'clients', 'clientsCount', 'fields', 'accraCount', 
-            'botweCount', 'temaCount', 
-            'takoradiCount', 'koforiduaCount', 
-             'kumasiCount', 'shyhills', 'shyhillsCount',
-              'totalGuards'
-        );
-
-        if($user->role->name == 'Invoice' || $user->role->name == 'Finance Manager' || $user->role->name == 'Manager' )
+    
+         if($user->role->name == 'Invoice' || $user->role->name == 'Finance Manager' || ($user->role->name == 'Manager' && $user->department->name == 'HR' ) )
         {
-            return view('clients.pending', $compactData);
+                $clients = Client::where('status', '!=','active')->where('ho_status', 'pending')->orwhere('ho_status', null)->get();
+
+
+                $fields = Field::all();
+
+                $totalGuards = employee::where('department_id', '6')->count();
+            // return "You're the Manager";
+            return view('clients.pending', compact('clients','fields','totalGuards'));
+
+
         }elseif($user->field?->name == 'Accra')
         {
-            $clients = $accra;
-            return view('clients.pending', compact('clients', 'clientsCount', 'fields', 'accraCount', 'standardClients', 'stateClients', 'standardClientsCount', 'stateClientsCount'));
+            $clients = Client::where('field_id', 1)->where('status', '!=','active')->where('ho_status', 'pending')->orwhere('ho_status', null)->get();
+
+            $totalGuards = employee::where('department_id', '6')->where('field_id', 1)->count();
+            return view('clients.pending', compact('clients'));
+            // return "You're in Accra";
+
         }
 
         if ($user->field?->name == 'Botwe')
         {
-            $clients = $botwe;
-            return view('clients.pending', compact('clients', 'clientsCount', 'fields', 'botweCount', 'shyhills', 'shyhillsCount', 'standardClients', 'stateClients', 'standardClientsCount', 'stateClientsCount'));
+
+            $clients = Client::where('field_id', 2)->where('status', '!=','active')->where('ho_status', 'pending')->orwhere('ho_status', null)->get();
+
+            $totalGuards = employee::where('department_id', '6')->where('field_id', 2)->count();
+            return view('clients.pending', compact('clients'));
+
+            // return "You're in Botwe";
+
         }
 
         if ($user->field?->name == 'Tema')
         {
-            $clients = $tema;
-            return view('clients.pending', compact('clients', 'clientsCount', 'fields', 'temaCount', 'standardClients', 'stateClients', 'standardClientsCount', 'stateClientsCount'));
+            $clients = Client::whereIn('field_id', [3,7])->where('status', '!=','active')->where('ho_status', 'pending')->orwhere('ho_status', null)->get();
+
+            $totalGuards = employee::where('department_id', '6')->whereIn('field_id', [3,7])->count();
+            return view('clients.pending', compact('clients'));
+            // return "You're in Tema";
+
         }
 
         if ($user->field?->name == 'Takoradi')
         {
-            $clients = $takoradi;
-            return view('clients.pending', compact('clients', 'clientsCount', 'fields', 'takoradiCount', 'standardClients', 'stateClients', 'standardClientsCount', 'stateClientsCount'));
+            $clients = Client::where('field_id', 4)->where('status', '!=','active')->where('ho_status', 'pending')->orwhere('ho_status', null)->get();
+
+            $totalGuards = employee::where('department_id', '6')->where('field_id', 4)->count();
+            return view('clients.pending', compact('clients'));
+            // return "You're in Takoradi";
         }
 
         if ($user->field?->name == 'Koforidua')
         {
-            $clients = $koforidua;
-            return view('clients.pending', compact('clients', 'clientsCount', 'fields', 'koforiduaCount', 'standardClients', 'stateClients', 'standardClientsCount', 'stateClientsCount'));
+            $clients = Client::where('field_id', 5)->where('status', '!=','active')->where('ho_status', 'pending')->orwhere('ho_status', null)->get();
+
+            $totalGuards = employee::where('department_id', '6')->where('field_id', 5)->count();
+            return view('clients.pending', compact('clients'));
+            // return "You're in Koforidua";
         }
 
         if ($user->field?->name == 'Kumasi')
         {
-            $clients = $kumasi;
-            return view('clients.pending', compact('clients', 'clientsCount', 'fields', 'kumasiCount', 'standardClients', 'stateClients', 'standardClientsCount', 'stateClientsCount'));
+            $clients = Client::where('field_id', 6)->where('status', '!=','active')->where('ho_status', 'pending')->orwhere('ho_status', null)->get();
+
+            $totalGuards = employee::where('department_id', '6')->where('field_id', 6)->count();
+            return view('clients.pending', compact('clients'));
+            // return "You're in Kumasi";
+
         }
+
+ 
     }
 
 
@@ -300,91 +375,88 @@ class ClientController extends Controller
      */
     public function clientTerminated()
     {
+
         $user = Auth::user();
-
-        $clients = Client::where('status', 'terminated')->get();
+        $clients = null;
+        $fields = null;
+        $totalGuards = null;
     
-        $clientsCount = count($clients);
-        $fields = Field::all();
-
-        $totalGuards = employee::where('department_id', '6')->count();
-
-        $accra = Client::where('field_id', 1)->where('status', 'terminated')->get();
-        $accraCount = count($accra);
-        $totalaccraGuards = employee::where('department_id', '6')->where('field_id', 1)->count();
-
-        $botwe = Client::where('field_id', 2)->where('status', 'terminated')->get();
-        $botweCount = count($botwe);
-        $totalbotweGuards = employee::where('department_id', '6')->where('field_id', 2)->count();
-
-        $tema = Client::where('field_id', 3)->where('status', 'terminated')->get();
-        $temaCount = count($tema);
-        $totaltemaGuards = employee::where('department_id', '6')->where('field_id', 3)->count();
-
-        $takoradi = Client::where('field_id', 4)->where('status', 'terminated')->get();
-        $takoradiCount = count($takoradi);
-        $totaltakoradiGuards = employee::where('department_id', '6')->where('field_id', 4)->count();
-
-        $koforidua = Client::where('field_id', 5)->where('status', 'terminated')->get();
-        $koforiduaCount = count($koforidua);
-        $totalkoforiduaGuards = employee::where('department_id', '6')->where('field_id', 5)->count();
-
-        $kumasi = Client::where('field_id', 6)->where('status', 'terminated')->get();
-        $kumasiCount = count($kumasi);
-        $totalkumasiGuards = employee::where('department_id', '6')->where('field_id', 6)->count();
-
-        $shyhills = Client::where('field_id', 7)->where('status', 'terminated')->get();
-        $shyhillsCount = count($shyhills);
-        $totalshyhillsGuards = employee::where('department_id', '6')->where('field_id', 7)->count();
-
-        $compactData = compact(
-            'totalaccraGuards', 'totalbotweGuards', 'totaltemaGuards', 'totaltakoradiGuards', 
-            'totalkoforiduaGuards', 'totalkumasiGuards', 'totalshyhillsGuards', 
-            'clients', 'clientsCount', 'fields', 'accraCount', 
-            'botweCount', 'temaCount', 
-            'takoradiCount', 'koforiduaCount', 
-             'kumasiCount', 'shyhills', 'shyhillsCount',
-              'totalGuards'
-        );
-
-        if($user->role->name == 'Invoice' || $user->role->name == 'Finance Manager' || $user->role->name == 'Manager' )
+    
+         if($user->role->name == 'Invoice' || $user->role->name == 'Finance Manager' || ($user->role->name == 'Manager' && $user->department->name == 'HR' ) )
         {
-            return view('clients.terminate', $compactData);
+                $clients = Client::where('status', 'terminated')->where('ho_status', 'approved')->get();
+
+
+                $fields = Field::all();
+
+                $totalGuards = employee::where('department_id', '6')->count();
+            // return "You're the Manager";
+            return view('clients.terminate', compact('clients','fields','totalGuards'));
+
+
         }elseif($user->field?->name == 'Accra')
         {
-            $clients = $accra;
-            return view('clients.terminate', compact('clients', 'clientsCount', 'fields', 'accraCount', 'standardClients', 'stateClients', 'standardClientsCount', 'stateClientsCount'));
+            $clients = Client::where('field_id', 1)->where('status', 'terminated')->where('ho_status', 'approved')->get();
+
+            $totalGuards = employee::where('department_id', '6')->where('field_id', 1)->count();
+            return view('clients.terminate', compact('clients'));
+            // return "You're in Accra";
+
         }
 
         if ($user->field?->name == 'Botwe')
         {
-            $clients = $botwe;
-            return view('clients.terminate', compact('clients', 'clientsCount', 'fields', 'botweCount', 'shyhills', 'shyhillsCount', 'standardClients', 'stateClients', 'standardClientsCount', 'stateClientsCount'));
+
+            $clients = Client::where('field_id', 2)->where('status', 'terminated')->where('ho_status', 'approved')->get();
+
+            $totalGuards = employee::where('department_id', '6')->where('field_id', 2)->count();
+            return view('clients.terminate', compact('clients'));
+
+            // return "You're in Botwe";
+
         }
 
         if ($user->field?->name == 'Tema')
         {
-            $clients = $tema;
-            return view('clients.terminate', compact('clients', 'clientsCount', 'fields', 'temaCount', 'standardClients', 'stateClients', 'standardClientsCount', 'stateClientsCount'));
+            $clients = Client::whereIn('field_id', [3,7])->where('status', 'terminated')->where('ho_status', 'approved')->get();
+
+            $totalGuards = employee::where('department_id', '6')->whereIn('field_id', [3,7])->count();
+            return view('clients.terminate', compact('clients'));
+            // return "You're in Tema";
+
         }
 
         if ($user->field?->name == 'Takoradi')
         {
-            $clients = $takoradi;
-            return view('clients.terminate', compact('clients', 'clientsCount', 'fields', 'takoradiCount', 'standardClients', 'stateClients', 'standardClientsCount', 'stateClientsCount'));
+            $clients = Client::where('field_id', 4)->where('status', 'terminated')->where('ho_status', 'approved')->get();
+
+            $totalGuards = employee::where('department_id', '6')->where('field_id', 4)->count();
+            return view('clients.terminate', compact('clients'));
+            // return "You're in Takoradi";
         }
 
         if ($user->field?->name == 'Koforidua')
         {
-            $clients = $koforidua;
-            return view('clients.terminate', compact('clients', 'clientsCount', 'fields', 'koforiduaCount', 'standardClients', 'stateClients', 'standardClientsCount', 'stateClientsCount'));
+            $clients = Client::where('field_id', 5)->where('status', 'terminated')->where('ho_status', 'approved')->get();
+
+            $totalGuards = employee::where('department_id', '6')->where('field_id', 5)->count();
+            return view('clients.terminate', compact('clients'));
+            // return "You're in Koforidua";
         }
 
         if ($user->field?->name == 'Kumasi')
         {
-            $clients = $kumasi;
-            return view('clients.terminate', compact('clients', 'clientsCount', 'fields', 'kumasiCount', 'standardClients', 'stateClients', 'standardClientsCount', 'stateClientsCount'));
+            $clients = Client::where('field_id', 6)->where('status', 'terminated')->where('ho_status', 'approved')->get();
+
+            $totalGuards = employee::where('department_id', '6')->where('field_id', 6)->count();
+            return view('clients.terminate', compact('clients'));
+            // return "You're in Kumasi";
+
         }
+
+
+
+
 
     }
 
@@ -397,24 +469,142 @@ class ClientController extends Controller
     {
         // dd($request->all());
         
+        //  $clientIds = $request->input('clients', []);
+        // //  dd($clientIds);
+        // if (empty($clientIds)) {
+        //     return back()->with('error', 'No client selected !');
+        // }
+        
+        //  $clients =  Client::findOrFail($request->clients);
+        // //  dd($clients);
+
+        //  foreach ($clients as $client )
+        //     {
+        //         $client->status = 'active';
+        //         $client->user_id = Auth::id();
+        //         $client->save();
+
+        //     }
+
+    
+        $submitValue = $request->input('submit'); 
+        $declineValue = $request->input('decline'); 
+        // dd($submitValue);
          $clientIds = $request->input('clients', []);
-        //  dd($employeeIds);
+        //  dd($clientIds);
         if (empty($clientIds)) {
             return back()->with('error', 'No client selected !');
         }
         
          $clients =  Client::findOrFail($request->clients);
-        //  dd($employees);
+        //  dd($receipts);
+        $alreadyProcessed = [];
 
-         foreach ($clients as $client )
-            {
-                $client->status = 'Active';
-                $client->user_id2 = Auth::id();
-                $client->save();
+        $invoice_manager =  User::where('department_id', '1')->where('role_id', '1')->first();
+        $user = Auth::user();
 
-            }
+        // $invoice_manager = $staff->;
 
-               return back()->with('success', 'Selected Employees Has Been Approved !.');
+        foreach( $clients as $client)
+        {
+
+
+            if( $submitValue == 'branch' )
+                
+                {
+                    // dd($client);
+                    $exists = Client::where('id', $client->id)
+                        ->where('bran_status', 'approved')
+                        ->exists();
+                    if ($exists) {
+                        $alreadyProcessed[] =  " client: " . $client->id;
+                        continue;
+                    }
+                    // update branch to approved, collection to approved and dates.
+                    $client->bran_status = 'approved';
+                    $client->user_id1 = $user->id;
+                    $client->bran_date = now();
+
+                    $client->coll_status = 'approved';
+                    $client->ho_status = 'pending';
+                    $client->user_id2 =  $invoice_manager->id;
+
+                    $client->save();
+                    // return 'you are a Branch Manager';
+
+                }
+
+            if($submitValue == 'headOffice' )
+                {
+                    // // dd($client);
+                    $exists = Client::where('id', $client->id)
+                        ->where('ho_status', 'approved')
+                        ->exists();
+                    if ($exists) {
+                        $alreadyProcessed[] =  " client: " . $client->id;
+                        continue;
+                    }
+                    // update branch to approved, collection to approved and dates.
+                    // $client->bran_status = 'approved';
+                    // $client->user_id2 = Auth::id();
+                    // $client->bran_date = now();
+
+                    // $client->coll_status = 'approved';
+                    $client->ho_status = 'approved';
+                    $client->user_id2 = $user->id;
+                    $client->ho_date = now();
+
+                    if($client->status == 'pending' || $client->status == 're-instate')
+                    {
+                        $client->status = 'active';
+
+                    }
+
+                    if($client->status == 'terminated')
+                    {
+                        $client->status = 'terminated';
+
+                    }
+                    
+
+                    // $client->status = 'active';
+                    // $client->user_id = Auth::id();
+
+
+                    $client->save();
+
+                    // return 'you are at the head office';
+                    
+                }
+
+
+            if($declineValue == 'headOffice' )
+                {
+                    //                     // dd($client);
+                    // $exists = Client::where('id', $client->id)
+                    //     ->where('bran_status', 'approved')
+                    //     ->exists();
+                    // if ($exists) {
+                    //     $alreadyProcessed[] =  " client: " . $client->id;
+                    //     continue;
+                    // }
+                    // update branch to approved, collection to approved and dates.
+                    $client->bran_status = 'pending';
+                    // $client->user_id2 = Auth::id();
+                    $client->coll_status = 'pending';
+                    $client->coll_date = now();
+
+
+                    $client->save();
+                    // return 'you are at the head office Declining'; 
+
+                }
+
+
+
+        }
+
+               return back()->with('success', 'Selected Clients or Client Has Been Approved !.');
     }
 
     /**
@@ -514,14 +704,29 @@ class ClientController extends Controller
         $fields = Field::all();
         $categories = ['Category A', 'Category B', 'Category C', 'Category D']; 
         // Employees assigned to this client (based on employee.client_id)
-        $attachedEmployees = employee::where('client_id', $client->id)->where('status', 'Active')->get();
+        // $attachedEmployees = employee::where('client_id', $client->id)->where('status', 'Active')->get();
 
         // Available employees (not assigned to this client) — limit to guards (department_id = 6) and active status
-        $availableEmployees = employee::where(function($q) use ($client) {
-            $q->where('client_id', '!=', $client->id)->orWhereNull('client_id');
-        })->where('department_id', 6)->where('status', 'Active')->get();
+        // $availableEmployees = employee::where(function($q) use ($client) {
+        //     $q->where('client_id', '!=', $client->id)->orWhereNull('client_id');
+        // })->where('department_id', 6)->where('status', 'Active')->get();
+        $user = Auth::user();
+        $staff =  User::all();
+        $manager = $staff->where('department_id', '7')->where('role_id', '3');
+        $finance_manager = $staff->where('department_id', '1')->where('role_id', '1');
+        $assign_staff = [];
+        // dd($manager);
+        if($user->role->name == 'Admin Assistant')
+            {
+                $assign_staff = $manager;
+            }
 
-        return view('clients.edit', compact('client', 'fields', 'categories', 'attachedEmployees', 'availableEmployees'));
+        if($user->role->name == 'Manager')
+            {
+                $assign_staff = $finance_manager;
+            }
+
+        return view('clients.edit', compact('client', 'fields', 'categories', 'staff', 'assign_staff'));
     }
 
 
@@ -579,7 +784,7 @@ class ClientController extends Controller
         /**
      * Terminate the specified resource in storage.
      */
-    public function terminateClient(Request $request, $id)
+    public function terminateClient(Request $request, int $id)
     {
         // dd($request->all());
         $month = Carbon::parse($request->month)->format('Y-m-d');
@@ -587,9 +792,42 @@ class ClientController extends Controller
         $client = Client::findOrFail($id);
         $client->status = 'terminated';
         $client->status_date = $month;
-        $client->save();
+        $user_id = Auth::id();
 
-        return  back()->with('info', 'Client Terminated Successfully');
+        if(Auth::user()->role?->id == '1')
+            {
+                // return "You are at head office";
+            // $client->status = 'terminated';
+
+            $client->ho_status = 'approved';
+            $client->ho_date = $month;
+            $client->user_id2 = $user_id;
+            $client->save();
+
+            return redirect('clientTerminated')->with('info', $client->id. ' '.'Client Has Been Terminated !.');
+
+            }
+        if(Auth::user()->department?->id == '7' && Auth::user()->role?->id == '3')
+            {
+                // return "You are a Manager";
+            // $client->status = 'pending';
+
+            $client->ho_status = 'pending';
+            $client->user_id2 = $request->staff;
+
+            $client->bran_status = 'approved';
+            $client->bran_date = $month;
+            $client->user_id1 = $user_id;
+            $client->save();
+
+            return redirect('clientPending')->with('info', $client->id. ' '.'Client Has Been Re-Instated, now at pending Waiting for approval from head office!.');
+
+            }
+
+
+
+        // return  back()->with('info', 'Client Terminated Successfully');
+
     }
 
 
@@ -642,6 +880,45 @@ class ClientController extends Controller
 
         return view('clients.GuardView');
     
+    }
+
+    public function clientReinstate(Request $request, int $id)
+    {
+        // dd($request->all(), $id);
+        $month = Carbon::parse($request->status_date)->format('Y-m-d');
+        // dd($month);
+        $client = Client::findOrFail($id);
+        $client->status_date = $month;
+        $user_id = Auth::id();
+
+        if(Auth::user()->role?->id == '1')
+            {
+                // return "You are at head office";
+            $client->status = 'active';
+
+            $client->ho_status = 'approved';
+            $client->ho_date = $month;
+            $client->user_id2 = $user_id;
+            }
+        if(Auth::user()->department?->id == '7' && Auth::user()->role?->id == '3')
+            {
+                // return "You are a Manager";
+            $client->status = 're-instate';
+
+            $client->ho_status = 'pending';
+            $client->user_id2 = $request->staff;
+
+            $client->bran_status = 'approved';
+            $client->bran_date = $month;
+            $client->user_id1 = $user_id;
+            }
+
+
+        $client->save();
+
+        // return back()->with('success', 'Selected Client Has Been Re-Instated, now at pending !.');
+        return redirect('clientPending')->with('info', $client->id. ' '.'Client Has Been Re-Instated, now at pending !.');
+   
     }
 
 }

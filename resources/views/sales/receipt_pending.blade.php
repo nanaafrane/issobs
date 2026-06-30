@@ -105,12 +105,12 @@
           </a>
           <ul class="menu-sub">
 
-            <li class="menu-item active">
+            <li class="menu-item ">
                 <a href="{{url('receipt')}}" class="menu-link">
                 <div class="text-truncate" data-i18n="RList">List</div>
                 </a>
             </li>
-            <li class="menu-item">
+            <li class="menu-item active">
                 <a href="{{url('receiptPending')}}" class="menu-link">
                 <div class="text-truncate" data-i18n="RPending">Pending </div>
                 </a>
@@ -352,21 +352,18 @@
 
 
     @section('content')
-    <div class="content-wrapper">
-        <div class="container-xxl flex-grow-1 container-p-y">
-            <div class="row">
-                <div class="col-6">
-                    <h3 class="card-header text-primary"> <i class="icon-base bx bx-bxs-receipt"></i> Receipt <i class="icon-base bx bx-bxs-right-arrow-alt"></i> List </h3>
-                </div>
-                <div style="padding-left: 350px;" class="col-6">
-                    <a class="btn btn-danger" href="{{url('receipt/create')}}"> <i class="icon-base bx bx-bxs-user-plus"></i> Create </a>
-                </div>
+    <div class="container-xxl flex-grow-1 container-p-y">
+
+        <div class="row">
+            <div class="col-12">
+                <h3 class="card-header text-primary"> <i class="icon-base bx bx-bxs-receipt"></i> Pending Receipts </h3>
             </div>
-            <br>
+        </div><br>
 
             <div class="card-header  ml-2  d-none d-lg-block">
                 @include('flash-messages')
             </div>
+
         @if(Auth::user()->hasRole(['Invoice', 'Finance Manager']))
         <div class="row">
             <div class="col-lg-2">
@@ -635,10 +632,9 @@
             </div>
         </div>
         @endif
-        <br>
-
+        <br><br>
         <div class="row">
-            <form action="" method="GET">
+            <form action="/receiptSearch" method="GET">
                 @csrf
                 <div class="col">
 
@@ -652,125 +648,176 @@
                 </div>
             </form>
         </div>
-
          <hr> <br>  
 
-            <div class="row ">
-                <div class="col-12">
-                    <div class="card">
-                        <div class="card-header">
-                            <h4>RECEIPT</h4>
-                        </div>
-                        <div class="card-header">
-                            <div class="table-responsive text-normal-dark">
-                                <!-- <div class="card-body demo-vertical-spacing demo-only-element"> Clients </div> -->
-                                <table id="myTable" class="display">
-                                    <thead>
-                                        <tr>
-                            <th>id</th>
-                            <th>Receipt Date</th>
-                            <th>Invoice No.</th>
-                            <th>Inv. Month</th>
-                            <th>Client Name</th>
-                            <th>Phone No.</th>
-                            <th> Field Office </th>
-                            <th> Staff </th>
-                            <th>Date Created</th>
-                            <th>Inv Amount</th>
-                            <th>Paid</th>
 
-                            <th>Cheque Bank</th>
-                            <th>Cheque Ref</th>
-                            <th>Cheque Amnt</th>
+        <div class="row">
+            <form action="{{url('receiptChannels')}}" method="POST">
+                @csrf  
+                <div class="card-header pb-4">
+                    <input class="form-check-input form-check-inline" type="checkbox" value="" id="options" />
+                  
+                    @if(Auth::user()->hasRole(['Manager']))
+                    <div class="form-check form-check-inline">                            
+                        <button class="btn btn-dark" name="submit" value="branch" type="submit" onclick="return confirm('Kindly Confirm?')"> <i class="icon-base bx bx-arrow-from-left"> </i> {{ __('Approve') }}</button>
+                    </div>    
 
-                            <th>Transfer Bank</th>
-                            <th>Transfer Ref</th>
-                            <th>Transfer Amnt</th>
+                    @elseif(Auth::user()->hasRole(['Finance Manager']))
+                    <div class="form-check form-check-inline">                            
+                        <button class="btn btn-success" name="submit" value="headOffice" type="submit" onclick="return confirm('Kindly Confirm?')"> <i class="icon-base bx bx-arrow-from-left"> </i> {{ __('Approve') }}</button>
+                    </div>
+                    <div class="form-check form-check-inline">                            
+                        <button class="btn btn-danger" name="decline" value="headOffice" type="submit" onclick="return confirm('Kindly Confirm?')"> <i class="icon-base bx bx-arrow-from-left"> </i> {{ __('Decline') }}</button>
+                    </div>
+                    @endif
 
-                            <th>MoMo </th>
-                            <th>Cash </th>
+                </div>
 
-                            <th>Deductions</th>
-                            <th>Other Payment</th>
-                            <th>WHT</th>
-                            <th>VAT 7%</th>
+                <div class="col">
+                    <table id="myTable" class="display">
+                        <thead>
+                            <tr>
+                                <th></th>
+                                <th>Action</th>
+                                <th>#</th>
+                                <th>Status</th>
+                                <th>Collection</th>
+                                <th>Branch</th>
+                                <th>H/O</th>
+                                <th>id</th>
+                                <th>Receipt Date</th>
+                                <th>Invoice No.</th>
+                                <th>Inv. Month</th>
+                                <th>Client Name</th>
+                                <th>Phone No.</th>
+                                <th> Field Office </th>
+                                <th> Created </th>
+                                <th>Date Created</th>
+                                <th>Inv Amount</th>
+                                <th>Paid</th>
 
-                            <th>Balance</th>
-                            <th>Advance</th>
-                            <th>Status</th>
-                            <th>View</th>
+                                <th>Cheque Bank</th>
+                                <th>Cheque Ref</th>
+                                <th>Cheque Amnt</th>
+
+                                <th>Transfer Bank</th>
+                                <th>Transfer Ref</th>
+                                <th>Transfer Amnt</th>
+
+                                <th>MoMo </th>
+                                <th>Cash </th>
+
+                                <th>Deductions</th>
+                                <th>Other Payment</th>
+                                <th>WHT</th>
+                                <th>VAT 7%</th>
+
+                                <th>Balance</th>
+                                <th>Advance</th>
                             </tr>
                         </thead>
-                        <tbody class="table-border-bottom-0">
-                            @foreach($receipts as $receipt)
+
+                        <tbody>
+
+                            @foreach($receipts as $key => $receipt)
                             <tr>
-                            <td>FWSSR{{$receipt->id}}</td>
-                            <td> {{ $receipt->receipt_month?->format('l, F j, Y') }} </td>
-                            <td>FWSSi{{$receipt->invoice_id}} </td>
-                            <td> {{ $receipt->invoice?->invoice_month?->format('F, Y') }} </td>
-                            @if ($receipt->client->name === $receipt->client->business_name)
-                            <td> {{$receipt->client->business_name}} </td>
-                            @else
-                            <td> {{$receipt->client->name}} {{$receipt->client->business_name}} </td>
-                            @endif
-                            <td> {{$receipt->client->phone_number}} </td>
-                            <td> {{$receipt->client->field->name}} </td>
-                            <td> {{$receipt->user->name}} </td>
-                            <td> {{$receipt->created_at->diffForHumans()}} </td>
-                            <td>   {{ number_format($receipt->invoice->total, 2) }}</td>
-
-                            <td>  {{number_format($receipt->total,2) }} </td>
-
-                            <td> {{$receipt->cheque_bank}} </td>
-                            <td> {{$receipt->cheque_reference}} </td>
-                            <td>  {{number_format($receipt->cheque_amount, 2) }} </td>
-                            <td> {{$receipt->transfer_bank}} </td>
-                            <td> {{$receipt->transfer_reference}} </td>
-                            <td>  {{number_format($receipt->transfer_amount, 2) }} </td>
-                            <td>  {{number_format($receipt->momo_amount, 2) }} </td>
-                            <td>  {{number_format($receipt->cash_amount, 2) }} </td>
-
-
-                           <td>  {{number_format($receipt->dAmount, 2) }} </td>
-                           <td>  {{number_format($receipt->other_payment_amnt, 2) }} </td>
-                           <td>  {{number_format($receipt->wht_amount, 2) }} </td>
-                           <td>  {{number_format($receipt->vat7_value, 2) }} </td>
-
-                            <td>   {{number_format($receipt->invoice->total - $receipt->total - $receipt->dAmount ,2)  }} </td>
-                            <td> {{ $receipt->advance_payment }} </td>
-                            @if($receipt->status == 'completed')
-                            <td><span class="badge bg-label-success">{{$receipt->status}}</span></td>
-                            @else
-                            <td><span class="badge bg-label-danger">{{$receipt->status}}</span></td>
-                            @endif
-
-                            <td>
-                                <div class="dropdown">
-                                    <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown">
-                                        <i class="icon-base bx bx-dots-vertical-rounded"></i>
-                                    </button>
-                                    <div class="dropdown-menu">
-                                        <a class="dropdown-item" href="{{url('receipt', $receipt->id)}}"><i class="icon-base bx bxs-bullseye"></i> view</a>
-                                        @if( Auth::user()->hasRole(['Finance Manager']) )
-                                        <a class="dropdown-item" href="/receipt/{{$receipt->id}}/edit"><i class="icon-base bx bx-edit-alt me-1"></i> Edit</a>
-                                        <form action="receipt/{{$receipt->id}}" method="POST">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button class="dropdown-item" type="submit"><i class="icon-base bx bx-trash me-1"></i>Delete</button>
-                                        </form>
-                                        @endif
+                                <td> <input class="checkBoxes form-check-input" type="checkbox" name="receipts[{{$receipt->id}}]" value="{{ $receipt->id }}" /></td>
+                                <td>
+                                    <div class="dropdown">
+                                        <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown">
+                                            <i class="icon-base bx bx-dots-vertical-rounded"></i>
+                                        </button>
+                                        <div class="dropdown-menu">
+                                            <a class="dropdown-item" href="{{url('receipt', $receipt->id)}}"><i class="icon-base bx bxs-bullseye"></i> view</a>
+                                            @if($receipt->bran_status !== 'approved' || Auth::user()->hasRole(['Finance Manager']) )
+                                            <a class="dropdown-item" href="/receipt/{{$receipt->id}}/edit"><i class="icon-base bx bx-edit-alt me-1"></i> Edit</a>
+                                            @endif
+                                        </div>
                                     </div>
-                                </div>
-                            </td>
+                                </td>
+                                <td> {{$key + 1}} </td>
+                                @if($receipt->status == 'completed')
+                                <td><span class="badge bg-label-success">{{$receipt->status}}</span></td>
+                                @else
+                                <td><span class="badge bg-label-danger">{{$receipt->status}}</span></td>
+                                @endif
+                                <td>
+                                        @if($receipt->coll_status == 'approved')
+                                        {{$receipt->user?->name}}
+                                        {{ $receipt->coll_date?->format('l, F j, Y') }}
+                                        <span class="badge bg-label-success">{{$receipt->coll_status}}</span>
+                                        @else
+                                        {{$receipt->user?->name}}
+                                        {{ $receipt->coll_date?->format('l, F j, Y') }}
+                                        <span class="badge bg-label-danger">{{$receipt->coll_status}}</span>
+                                        @endif
+                                </td>
+
+                                <td>
+                                        @if($receipt->bran_status == 'approved')
+                                        {{$receipt->user1?->name}}
+                                        {{ $receipt->bran_date?->format('l, F j, Y') }}
+                                        <span class="badge bg-label-success">{{$receipt->bran_status}}</span>
+                                        @else
+                                        {{$receipt->user1?->name}}
+                                        {{ $receipt->bran_date?->format('l, F j, Y') }}
+                                        <span class="badge bg-label-danger">{{$receipt->bran_status}}</span>
+                                        @endif
+                                </td>
+
+                                <td>
+                                        {{$receipt->user2?->name}}
+                                        <span class="badge bg-label-danger">{{$receipt->ho_status}}</span>
+                                </td>
+
+                                <td>FWSSR{{$receipt->id}}</td>
+                                <td> {{ $receipt->receipt_month?->format('l, F j, Y') }} </td>
+                                <td>FWSSi{{$receipt->invoice_id}} </td>
+                                <td> {{ $receipt->invoice?->invoice_month?->format('F, Y') }} </td>
+                                @if ($receipt->client->name === $receipt->client->business_name)
+                                <td> {{$receipt->client->business_name}} </td>
+                                @else
+                                <td> {{$receipt->client->name}} {{$receipt->client->business_name}} </td>
+                                @endif
+                                <td> {{$receipt->client->phone_number}} </td>
+                                <td> {{$receipt->client->field->name}} </td>
+                                <td> {{$receipt->user->name}} </td>
+                                <td> {{$receipt->created_at->diffForHumans()}} </td>
+                                <!-- <td>GH&#x20B5; {{$receipt->invoice->total}} </td> -->
+                                <td>  GH&#x20B5; {{$receipt->invoice->total}}</td>
+
+                                <td> GH&#x20B5; {{$receipt->total}} </td>
+
+                                <td> {{$receipt->cheque_bank}} </td>
+                                <td> {{$receipt->cheque_reference}} </td>
+                                <td> GH&#x20B5; {{$receipt->cheque_amount}} </td>
+                                <td> {{$receipt->transfer_bank}} </td>
+                                <td> {{$receipt->transfer_reference}} </td>
+                                <td> GH&#x20B5; {{$receipt->transfer_amount}} </td>
+                                <td> GH&#x20B5; {{$receipt->momo_amount}} </td>
+                                <td> GH&#x20B5; {{$receipt->cash_amount}} </td>
+
+
+                            <td> GH&#x20B5; {{$receipt->dAmount}} </td>
+                            <td> GH&#x20B5; {{$receipt->other_payment_amnt}} </td>
+                            <td> GH&#x20B5; {{$receipt->wht_amount}} </td>
+                            <td> GH&#x20B5; {{$receipt->vat7_value}} </td>
+
+                                <td> GH&#x20B5;  {{ $receipt->invoice->total - $receipt->total - $receipt->dAmount }} </td>
+                                <td> {{ $receipt->advance_payment }} </td>
+
+
+
+
                             </tr>
                             @endforeach
+
                         </tbody>
+
                     </table>
-                            </div>
-                        </div>
-                    </div>
+
                 </div>
-            </div>
+            </form>
         </div>
     </div>
     @endsection
@@ -805,7 +852,7 @@
                 },
                     {
                         extend: 'excelHtml5',
-                        title:  "{{ $receipts[0]->client->field->name . ' Receipts '}}",
+                        title:  "Receipts",
                         className: 'btn btn-secondary',
                         exportOptions: {
                             columns: ':visible'
@@ -818,6 +865,15 @@
     });
     </script>
 
+        <script>
+        $(document).ready(function() {
+            $('#options').change(function() {
+                $('.checkBoxes').prop('checked', function(i, val) {
+                    return !val;
+                });
+            });
+        });
+    </script>
 
     @endsection
 

@@ -30,7 +30,19 @@ class Client extends Model
         'start_date',
         'scope_of_work',
         'state_institution',
+       
+        'coll_status',
+        'coll_date',
         'user_id',
+
+        'bran_status',
+        'bran_date',
+        'user_id1',
+
+        'ho_status',
+        'ho_date',
+        'user_id2',
+
         'category_id',
         'category_name',
         'category_month',
@@ -39,6 +51,9 @@ class Client extends Model
     protected $casts = [
         'start_date' => 'date',
         'status_date' => 'date',
+        'coll_date' => 'date',
+        'bran_date' => 'date',
+        'ho_date' => 'date',
     ];
 
 
@@ -65,6 +80,16 @@ class Client extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+        public function user1()
+    {
+        return $this->belongsTo(User::class, 'user_id1');
+    }
+
+    public function user2()
+    {
+        return $this->belongsTo(User::class, 'user_id2');
     }
 
     public function category()

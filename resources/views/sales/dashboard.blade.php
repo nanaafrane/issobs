@@ -81,15 +81,38 @@
       @endif
 
 
-      @if(Auth::user()->hasRole(['Finance Manager']))
+      @if(Auth::user()->hasRole(['Finance Manager', 'Manager','Admin Assistant' ]))
             
-     <li class="menu-item">
+     <!-- <li class="menu-item">
         <a href="{{url('receipt')}}" class="menu-link">
           <i class="menu-icon tf-icons bx bx-money-withdraw bg-primary"></i>
           <div class="text-truncate" data-i18n="Receipts">Receipts</div>
         </a>
-      </li>
+      </li> -->
 
+      <li class="menu-item ">
+          <a href="javascript:void(0);" class="menu-link menu-toggle">
+          <i class="menu-icon tf-icons bx bx-money-withdraw bg-primary"></i>
+          <div class="text-truncate" data-i18n="Receipts">Receipts</div>
+          </a>
+          <ul class="menu-sub">
+
+            <li class="menu-item">
+                <a href="{{url('receipt')}}" class="menu-link">
+                <div class="text-truncate" data-i18n="RList">List</div>
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="{{url('receiptPending')}}" class="menu-link">
+                <div class="text-truncate" data-i18n="RPending">Pending </div>
+                </a>
+            </li>
+
+          </ul>
+      </li>
+       @endif
+
+       @if(Auth::user()->hasRole(['Finance Manager' ]))
       <!-- Components -->
       <li class="menu-header small text-uppercase"><span class="menu-header-text text-info">Management</span></li>
       <li class="menu-item">
@@ -139,7 +162,7 @@
           <div class="text-truncate" data-i18n="Categories">Categories</div>
         </a>
       </li>
-      @elseif(Auth::user()->hasRole(['Invoice' ,'Director']))
+      @elseif(Auth::user()->hasRole(['Invoice' ,'Director', 'Manager', 'Admin Assistant']))
 
       <li class="menu-header small text-uppercase"><span class="menu-header-text text-info">Management</span></li>
         <li class="menu-item ">
@@ -212,7 +235,8 @@
 
           </ul>
       </li>
-      <li class="menu-item">
+
+      <!-- <li class="menu-item">
           <a href="{{url('departments')}}" class="menu-link">
           <i class="menu-icon tf-icons bx bxs-buildings"></i>
           <div class="text-truncate" data-i18n="depnroles">Department & Roles </div>
@@ -223,10 +247,10 @@
           <i class="menu-icon tf-icons bx bx-bxs-location-plus"></i>
           <div class="text-truncate" data-i18n="fOffices">Field Offices</div>
           </a>
-      </li>
+      </li> -->
       @endif
 
-      @if(Auth::user()->hasRole(['Manager','Officer','Finance Manager', 'Director']) )
+      @if(Auth::user()->hasRole(['Finance Manager', 'Director']) )
 
       <li class="menu-header small text-uppercase"> <span class="menu-header-text text-danger">Accounts</span></li>
 

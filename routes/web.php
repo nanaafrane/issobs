@@ -48,15 +48,15 @@ Route::resource('role', RoleController::class);
 Route::resource('field', FieldController::class);
 Route::resource('client', ClientController::class);
 Route::post('clientAproval', [ClientController::class, 'clientAproval']);
-Route::get('clientPending', [ClientController::class, 'clientPending']);
-Route::get('clientTerminated', [ClientController::class, 'clientTerminated']);
-
+Route::get('clientPending', [ClientController::class, 'clientPending'])->name('client.pending');
+Route::get('clientTerminated', [ClientController::class, 'clientTerminated'])->name('client.terminated');
 
 Route::get('clientStatement/{client}', [ClientController::class, 'statementOfAccount']);
 Route::get('clientAttachGuards/{id}', [ClientController::class, 'clientAttachGuards']);
 Route::post('client/{client}/attach-employees', [ClientController::class, 'attachEmployees'])->name('client.attachEmployees');
 Route::post('client/{client}/detach-employees', [ClientController::class, 'detachEmployees'])->name('client.detachEmployees');
 Route::get('terminateClient/{id}', [ClientController::class, 'terminateClient'])->name('clients.terminateClient');
+Route::get('reinstateClient/{id}', [ClientController::class, 'clientReinstate'])->name('clients.clientReinstate');
 Route::resource('category', CategoryController::class); 
 Route::post('categoryAssign', [CategoryController::class, 'categoryAssign']); 
 Route::post('categoryReAssign', [CategoryController::class, 'categoryReAssign']); 
@@ -82,6 +82,9 @@ Route::get('searchOutstandingInvoices', [InvoiceController::class, 'searchOutsta
 Route::get('searchPartPaymentOutstanding', [InvoiceController::class, 'searchPartPaymentOutstanding'])->name('invoice.searchPartPaymentOutstanding');
 
 Route::resource('receipt', ReceiptController::class);
+Route::get('receiptPending', [ReceiptController::class, 'PendingReceipts'])->name('receipt.pending');
+Route::post('receiptChannels', [ReceiptController::class, 'receiptChannels']);
+
 Route::get('receiptAllpayment', [ReceiptController::class, 'dashboardAllPayment']);
 Route::get('receiptCashPayment', [ReceiptController::class, 'dashboardCashPayment']);
 Route::get('receiptMoMoPayment', [ReceiptController::class, 'dashboardMoMoPayment']);

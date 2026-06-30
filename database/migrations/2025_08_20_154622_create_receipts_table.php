@@ -33,6 +33,14 @@ return new class extends Migration
             $table->decimal('other_payment_amnt')->nullable();
             $table->decimal('cash_amount')->nullable();
             $table->integer('user_id')->nullable();
+            $table->string('coll_status')->nullable();
+            $table->date('coll_date')->nullable();
+            $table->integer('user_id1')->nullable();
+            $table->string('bran_status')->nullable();
+            $table->string('bran_date')->nullable();
+            $table->integer('user_id2')->nullable();
+            $table->string('ho_status')->nullable();
+            $table->date('ho_date')->nullable();
             $table->string('status')->nullable();
             $table->decimal('total')->nullable();
             $table->decimal('wht_amount')->nullable();

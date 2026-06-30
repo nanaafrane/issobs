@@ -44,7 +44,7 @@
                 </ul>
             </li>
 
-        @if(Auth::user()->hasPermission('Accounts'))
+        @if( Auth::user()->hasPermission('Accounts') || Auth::user()->hasPermission('Administration'))
             <!-- Apps & Pages -->
             <li class="menu-header small text-uppercase ">
                 <span class="menu-header-text text-primary">Transactions</span>
@@ -57,29 +57,107 @@
                 </a>
             </li>
 
-                @if(Auth::user()->hasRole(['Invoice', 'Finance Manager']))
-                <li class="menu-item">
-                    <a href="{{ url('invoice') }}" class="menu-link">
-                        <i class="menu-icon tf-icons bx bx-bxs-receipt bg-primary"></i>
-                        <div class="text-truncate" data-i18n="Invoices">Invoices</div>
-                    </a>
-                </li>
-                @endif
+            @if(Auth::user()->hasRole(['Invoice', 'Finance Manager']))
+            <li class="menu-item">
+                <a href="{{ url('invoice') }}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-bxs-receipt bg-primary"></i>
+                    <div class="text-truncate" data-i18n="Invoices">Invoices</div>
+                </a>
+            </li>
+            @endif
 
-                @if(Auth::user()->hasRole(['Finance Manager']))
-                    <li class="menu-item">
+            @if(Auth::user()->hasRole(['Finance Manager', 'Manager', 'Admin Assistant']))
+            <li class="menu-item ">
+                <a href="javascript:void(0);" class="menu-link menu-toggle">
+                <i class="menu-icon tf-icons bx bx-money-withdraw bg-primary"></i>
+                <div class="text-truncate" data-i18n="Receipts">Receipts</div>
+                </a>
+                <ul class="menu-sub">
+
+                    <li class="menu-item ">
                         <a href="{{url('receipt')}}" class="menu-link">
-                            <i class="menu-icon tf-icons bx bx-money-withdraw bg-primary"></i>
-                            <div class="text-truncate" data-i18n="Receipts">Receipts</div>
+                        <div class="text-truncate" data-i18n="RList">List</div>
+                        </a>
+                    </li>
+                    <li class="menu-item">
+                        <a href="{{url('receiptPending')}}" class="menu-link">
+                        <div class="text-truncate" data-i18n="RPending">Pending </div>
                         </a>
                     </li>
 
+                </ul>
+            </li>
+
             <li class="menu-header small text-uppercase"><span class="menu-header-text text-info">Management</span></li>
-            <li class="menu-item">
-                <a href="{{url('client')}}" class="menu-link">
-                <i class="menu-icon tf-icons bx bx-bxs-user-detail bg-info"></i>
-                <div class="text-truncate" data-i18n="Clients">Clients</div>
+            <li class="menu-item active open">
+                <a class="menu-link menu-toggle">
+                    <i class="menu-icon tf-icons bx bx-bxs-user-detail"></i>
+                    <div class="text-truncate" data-i18n="Clients"><strong>Clients</strong></div>
                 </a>
+                <ul class="menu-sub">
+                    <li class="menu-item ">
+                        <a href="{{url('client/create')}}" class="menu-link">
+                            <div class="text-truncate" data-i18n="CRegister">Register</div>
+                        </a>
+                    </li>
+                    <li class="menu-item active">
+                        <a href="{{url('client')}}" class="menu-link">
+                            <div class="text-truncate" data-i18n="CList">List</div>
+                        </a>
+                    </li>
+                    <li class="menu-item ">
+                        <a href="{{url('clientTerminated')}}" class="menu-link">
+                            <div class="text-truncate" data-i18n="CList">Terminated</div>
+                        </a>
+                    </li>
+                    <li class="menu-item ">
+                        <a href="{{url('clientPending')}}" class="menu-link">
+                            <div class="text-truncate" data-i18n="CList">Pending</div>
+                        </a>
+                    </li>
+                </ul>
+            </li>
+
+            <li class="menu-item ">
+                <a href="javascript:void(0);" class="menu-link menu-toggle">
+                <i class="menu-icon tf-icons bx bxs-user-account"></i>
+                <div class="text-truncate" data-i18n="Staffs">Employees</div>
+                </a>
+                <ul class="menu-sub">
+                    <li class="menu-item ">
+                        <a href="{{url('employees/create')}}" class="menu-link">
+                        <div class="text-truncate" data-i18n="SRegister">Register</div>
+                        </a>
+                    </li>
+                    <li class="menu-item ">
+                        <a href="{{url('employees')}}" class="menu-link">
+                        <div class="text-truncate" data-i18n="SList">List</div>
+                        </a>
+                    </li>
+                    <li class="menu-item">
+                        <a href="{{url('employeesPending')}}" class="menu-link">
+                        <div class="text-truncate" data-i18n="SList">Pending</div>
+                        </a>
+                    </li>
+                    @if(Auth::user()->hasRole(['Manager', 'Invoice']))
+                    <li class="menu-item ">
+                        <a href="{{url('employeesnrrit')}}" class="menu-link">
+                        <div class="text-truncate" data-i18n="SList">Terminate / Recruit</div>
+                        </a>
+                    </li>
+                    <li class="menu-item">
+                        <a href="{{url('employeesBank')}}" class="menu-link">
+                        <div class="text-truncate" data-i18n="SList">Employee Banks</div>
+                        </a>
+                    </li>
+                    <li class="menu-item">
+                        <a href="{{url('employeesCash')}}" class="menu-link">
+                        <div class="text-truncate" data-i18n="SList">Employee Cash</div>
+                        </a>
+                    </li>
+                    @endif
+
+                </ul>
             </li>
                 @endif
         @endif
@@ -112,16 +190,38 @@
                 <div class="text-truncate" data-i18n="Staffs">Employees</div>
                 </a>
                 <ul class="menu-sub">
-                <li class="menu-item ">
-                    <a href="{{url('employees/create')}}" class="menu-link">
-                    <div class="text-truncate" data-i18n="SRegister">Register</div>
-                    </a>
-                </li>
-                <li class="menu-item">
-                    <a href="{{url('employees')}}" class="menu-link">
-                    <div class="text-truncate" data-i18n="SList">List</div>
-                    </a>
-                </li>
+                    <li class="menu-item ">
+                        <a href="{{url('employees/create')}}" class="menu-link">
+                        <div class="text-truncate" data-i18n="SRegister">Register</div>
+                        </a>
+                    </li>
+                    <li class="menu-item ">
+                        <a href="{{url('employees')}}" class="menu-link">
+                        <div class="text-truncate" data-i18n="SList">List</div>
+                        </a>
+                    </li>
+                    <li class="menu-item">
+                        <a href="{{url('employeesPending')}}" class="menu-link">
+                        <div class="text-truncate" data-i18n="SList">Pending</div>
+                        </a>
+                    </li>
+                    @if(Auth::user()->hasRole(['Manager', 'Invoice']))
+                    <li class="menu-item ">
+                        <a href="{{url('employeesnrrit')}}" class="menu-link">
+                        <div class="text-truncate" data-i18n="SList">Terminate / Recruit</div>
+                        </a>
+                    </li>
+                    <li class="menu-item">
+                        <a href="{{url('employeesBank')}}" class="menu-link">
+                        <div class="text-truncate" data-i18n="SList">Employee Banks</div>
+                        </a>
+                    </li>
+                    <li class="menu-item">
+                        <a href="{{url('employeesCash')}}" class="menu-link">
+                        <div class="text-truncate" data-i18n="SList">Employee Cash</div>
+                        </a>
+                    </li>
+                    @endif
 
                 </ul>
             </li>
@@ -152,7 +252,6 @@
                             <div class="text-truncate" data-i18n="CList">Pending</div>
                         </a>
                     </li>
-
                 </ul>
             </li>
 
@@ -208,10 +307,9 @@
                 <div class="text-truncate" data-i18n="Expense"> Expense </div>
                 </a>
             </li>
-
             @endif
 
-            @if(Auth::user()->hasRole(['Invoice', 'Finance Manager', 'Manager']))
+            @if(Auth::user()->hasRole(['Invoice', 'Finance Manager']))
             <li class="menu-header small text-uppercase"><span class="menu-header-text">PAYROLL</span></li>
             <li class="menu-item">
                     <a href="javascript:void(0);" class="menu-link menu-toggle">
@@ -225,7 +323,7 @@
                         <div class="text-truncate" data-i18n="Employees">Add to Salaries</div>
                         </a>
                     </li>
-
+                    
                     @if(Auth::user()->hasPermission('Accounts'))
                     <li class="menu-item">
                         <a href="{{ url('salaries/create') }}" class="menu-link">
@@ -252,7 +350,6 @@
                     </ul>
                 </li>
             @endif
-
         </ul>
     </aside>
     <!-- / Menu -->
@@ -273,13 +370,13 @@
         </div>
 
         <!-- Summary Statistics Cards -->
-        @if(Auth::user()->hasRole(['Invoice', 'Finance Manager', 'Manager']))
+        @if(Auth::user()->hasRole(['Invoice', 'Finance Manager']) || (Auth::user()->department?->name == 'HR' && Auth::user()->role?->name == 'Manager') )
         <div class="row mb-4">
                 <div class="col-12">
                      <div class="card border-left-dark bg-secondary h-100 py-2">
                     <div class="card-body">
                         <div class="text-dark text-uppercase mb-1"><small class="fw-bold">Total Clients / Guards</small></div>
-                        <div class="h3 mb-0 text-dark fw-bold">{{ $clientsCount }} <span class="text-muted fs-6">/ {{ 0 }} Guards</span></div>
+                        <div class="h3 mb-0 text-dark fw-bold">{{ $clients->count() }} <span class="text-muted fs-6">/ {{ 0 }} Guards</span></div>
                         <small class="text-dark text-muted">Clients & Operations</small>
                     </div>
                 </div>
@@ -291,7 +388,7 @@
                 <div class="card border-left-dark h-100 py-2">
                     <div class="card-body">
                         <div class="text-dark text-uppercase mb-1"><small class="fw-bold">Standard Clients</small></div>
-                        <div class="h3 mb-0 text-dark fw-bold">{{ $standardClientsCount }} <span class="text-muted fs-6">/ {{ 0 }} Guards</span></div>
+                        <div class="h3 mb-0 text-dark fw-bold">{{ $standardClients->count() }} <span class="text-muted fs-6">/ {{ 0 }} Guards</span></div>
                         <small class="text-muted">Clients & Operations</small>
                     </div>
                 </div>
@@ -300,7 +397,7 @@
                 <div class="card border-left-danger h-100 py-2">
                     <div class="card-body">
                         <div class="text-danger text-uppercase mb-1"><small class="fw-bold">State Institutions</small></div>
-                        <div class="h3 mb-0 text-danger fw-bold">{{ $stateClientsCount }} <span class="text-muted fs-6">/ {{ 0 }} Guards</span></div>
+                        <div class="h3 mb-0 text-danger fw-bold">{{ $stateClients->count() }} <span class="text-muted fs-6">/ {{ 0 }} Guards</span></div>
                         <small class="text-muted">Clients & Operations</small>
                     </div>
                 </div>
@@ -318,7 +415,7 @@
                             <div class="card-body text-center p-8">
                                 <h6 class="mb-2 text-white fw-bold">ACCRA</h6>
                                 <div class="mb-2">
-                                    <span class="badge bg-white text-dark">{{ $accraStandard }}</span>
+                                    <span class="badge bg-white text-dark">{{ $standardClients->where('field_id', '1')->count() }}</span>
                                     <span class="badge bg-white text-dark">{{ 0 }}</span>
                                 </div>
                                 <small class="text-white text-muted d-block">CLIENTS - GUARDS</small>
@@ -330,7 +427,7 @@
                             <div class="card-body text-center p-8">
                                 <h6 class="mb-2 text-white fw-bold">BOTWE</h6>
                                 <div class="mb-2">
-                                    <span class="badge bg-white text-dark">{{ $botweStandard }}</span>
+                                    <span class="badge bg-white text-dark">{{ $standardClients->where('field_id', '2')->count()  }}</span>
                                     <span class="badge bg-white text-dark">{{ 0 }}</span>
                                 </div>
                                 <small class="text-white text-muted d-block">CLIENTS - GUARDS</small>
@@ -342,7 +439,7 @@
                             <div class="card-body text-center p-8">
                                 <h6 class="mb-2 text-white fw-bold">TEMA</h6>
                                 <div class="mb-2">
-                                    <span class="badge bg-white text-dark">{{ $temaStandard }}</span>
+                                    <span class="badge bg-white text-dark">{{ $standardClients->where('field_id', '3')->count()  }}</span>
                                     <span class="badge bg-white text-dark">{{ 0 }}</span>
                                 </div>
                                 <small class="text-white text-muted d-block">CLIENTS - GUARDS</small>
@@ -354,7 +451,7 @@
                             <div class="card-body text-center p-8">
                                 <h6 class="mb-2 text-white fw-bold">SHAIHILLS</h6>
                                 <div class="mb-2">
-                                    <span class="badge bg-white text-dark">{{ $shyhillsStandard }}</span>
+                                    <span class="badge bg-white text-dark">{{ $standardClients->where('field_id', '7')->count()  }}</span>
                                     <span class="badge bg-white text-dark">{{ 0 }}</span>
                                 </div>
                                 <small class="text-white text-muted d-block">CLIENTS - GUARDS </small>
@@ -366,7 +463,7 @@
                             <div class="card-body text-center p-8">
                                 <h6 class="mb-2 text-white fw-bold">TAKORADI</h6>
                                 <div class="mb-2">
-                                    <span class="badge bg-white text-dark">{{ $takoradiStandard }}</span>
+                                    <span class="badge bg-white text-dark">{{ $standardClients->where('field_id', '4')->count()  }}</span>
                                     <span class="badge bg-white text-dark">{{ 0 }}</span>
                                 </div>
                                 <small class="text-white text-muted d-block">CLIENTS - GUARDS</small>
@@ -378,7 +475,7 @@
                             <div class="card-body text-center p-8">
                                 <h6 class="mb-2 text-white fw-bold">KOFORIDUA</h6>
                                 <div class="mb-2">
-                                    <span class="badge bg-white text-dark">{{ $koforiduaStandard }}</span>
+                                    <span class="badge bg-white text-dark">{{ $standardClients->where('field_id', '5')->count()  }}</span>
                                     <span class="badge bg-white text-dark">{{ 0 }}</span>
                                 </div>
                                 <small class="text-white text-muted d-block">CLIENTS - GUARDS</small>
@@ -390,7 +487,7 @@
                             <div class="card-body text-center p-8">
                                 <h6 class="mb-2 text-white fw-bold">KUMASI</h6>
                                 <div class="mb-2">
-                                    <span class="badge bg-white text-dark">{{ $kumasiStandard }}</span>
+                                    <span class="badge bg-white text-dark">{{ $standardClients->where('field_id', '6')->count()  }}</span>
                                     <span class="badge bg-white text-dark">{{ 0 }}</span>
                                 </div>
                                 <small class="text-white text-muted d-block">CLIENTS - GUARDS</small>
@@ -410,7 +507,7 @@
                             <div class="card-body text-center p-8">
                                 <h6 class="mb-2 text-white fw-bold">ACCRA</h6>
                                 <div class="mb-2">
-                                    <span class="badge bg-white text-dark">{{ $accraState }}</span>
+                                    <span class="badge bg-white text-dark">{{ $stateClients->where('field_id', '1')->count()  }}</span>
                                     <span class="badge bg-white text-dark">{{ 0 }}</span>
                                 </div>
                                 <small class="text-white text-muted d-block">CLIENTS - GUARDS</small>
@@ -422,7 +519,7 @@
                             <div class="card-body text-center p-8">
                                 <h6 class="mb-2 text-white fw-bold">BOTWE</h6>
                                 <div class="mb-2">
-                                    <span class="badge bg-white text-dark">{{ $botweState }}</span>
+                                    <span class="badge bg-white text-dark">{{ $stateClients->where('field_id', '2')->count() }}</span>
                                     <span class="badge bg-white text-dark">{{ 0 }}</span>
                                 </div>
                                 <small class="text-white text-muted d-block">CLIENTS - GUARDS</small>
@@ -434,7 +531,7 @@
                             <div class="card-body text-center p-8">
                                 <h6 class="mb-2 text-white fw-bold">TEMA</h6>
                                 <div class="mb-2">
-                                    <span class="badge bg-white text-dark">{{ $temaState }}</span>
+                                    <span class="badge bg-white text-dark">{{ $stateClients->where('field_id', '3')->count() }}</span>
                                     <span class="badge bg-white text-dark">{{ 0 }}</span>
                                 </div>
                                 <small class="text-white text-muted d-block">CLIENTS - GUARDS</small>
@@ -446,7 +543,7 @@
                             <div class="card-body text-center p-8">
                                 <h6 class="mb-2 text-white fw-bold">SHAIHILLS</h6>
                                 <div class="mb-2">
-                                    <span class="badge bg-white text-dark">{{ $shyhillsState }}</span>
+                                    <span class="badge bg-white text-dark">{{ $stateClients->where('field_id', '7')->count() }}</span>
                                     <span class="badge bg-white text-dark">{{ 0 }}</span>
                                 </div>
                                 <small class="text-white text-muted d-block">CLIENTS - GUARDS</small>
@@ -458,7 +555,7 @@
                             <div class="card-body text-center p-8">
                                 <h6 class="mb-2 text-white fw-bold">TAKORADI</h6>
                                 <div class="mb-2">
-                                    <span class="badge bg-white text-dark">{{ $takoradiState }}</span>
+                                    <span class="badge bg-white text-dark">{{ $stateClients->where('field_id', '4')->count() }}</span>
                                     <span class="badge bg-white text-dark">{{ 0 }}</span>
                                 </div>
                                 <small class="text-white text-muted d-block">CLIENTS - GUARDS</small>
@@ -470,7 +567,7 @@
                             <div class="card-body text-center p-8">
                                 <h6 class="mb-2 text-white fw-bold">KOFORIDUA</h6>
                                 <div class="mb-2">
-                                    <span class="badge bg-white text-dark">{{ $koforiduaState }}</span>
+                                    <span class="badge bg-white text-dark">{{ $stateClients->where('field_id', '5')->count() }}</span>
                                     <span class="badge bg-white text-dark">{{ 0 }}</span>
                                 </div>
                                 <small class="text-white text-muted d-block">CLIENTS - GUARDS</small>
@@ -482,7 +579,7 @@
                             <div class="card-body text-center p-8">
                                 <h6 class="mb-2 text-white fw-bold">KUMASI</h6>
                                 <div class="mb-2">
-                                    <span class="badge bg-white text-dark">{{ $kumasiState }}</span>
+                                    <span class="badge bg-white text-dark">{{ $stateClients->where('field_id', '6')->count() }}</span>
                                     <span class="badge bg-white text-dark">{{ 0 }}</span>
                                 </div>
                                 <small class="text-white text-muted d-block">CLIENTS - GUARDS</small>
@@ -493,7 +590,46 @@
             </div>
         </div>
 
+        @else
+
+        <div class="row mb-4">
+            <div class="col-4">
+                <div class="card border-left-dark bg-dark h-100 py-2">
+                    <div class="card-body">
+                        <div class="text-white text-uppercase mb-1"><small class="fw-bold">Total Clients / Guards</small></div>
+                        <div class="h3 mb-0 text-white fw-bold">{{ $clients->count() }} <span class="text-muted fs-6">/ {{ 0 }} Guards</span></div>
+                        <small class="text-white text-muted">Clients & Operations</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card border-left-dark h-100 py-2">
+                    <div class="card-body">
+                        <div class="text-dark text-uppercase mb-1"><small class="fw-bold">Standard Clients</small></div>
+                        <div class="h3 mb-0 text-dark fw-bold">{{ $standardClients->count() }} <span class="text-muted fs-6">/ {{ 0 }} Guards</span></div>
+                        <small class="text-muted">Clients & Operations</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-left-danger h-100 py-2">
+                    <div class="card-body">
+                        <div class="text-danger text-uppercase mb-1"><small class="fw-bold">State Institutions</small></div>
+                        <div class="h3 mb-0 text-danger fw-bold">{{ $stateClients->count() }} <span class="text-muted fs-6">/ {{ 0 }} Guards</span></div>
+                        <small class="text-muted">Clients & Operations</small>
+                    </div>
+                </div>
+            </div>
+
+
+        </div>
         @endif
+
+
+
+
+
 
         <div class="card-header ml-2 d-none d-lg-block">
             @include('flash-messages')
@@ -505,12 +641,12 @@
                 <ul class="nav nav-tabs" id="clientTabs" role="tablist">
                     <li class="nav-item" role="presentation">
                         <button class="nav-link active" id="standard-tab" data-bs-toggle="tab" data-bs-target="#standard-clients" type="button" role="tab" aria-controls="standard-clients" aria-selected="true">
-                            <i class="bx bx-bxs-group me-2"></i>Standard Clients <span class="badge bg-dark ms-2">{{ $standardClientsCount }}</span>
+                            <i class="bx bx-bxs-group me-2"></i>Standard Clients <span class="badge bg-dark ms-2">{{ $standardClients->count() }}</span>
                         </button>
                     </li>
                     <li class="nav-item" role="presentation">
                         <button class="nav-link" id="state-tab" data-bs-toggle="tab" data-bs-target="#state-clients" type="button" role="tab" aria-controls="state-clients" aria-selected="false">
-                            <i class="bx bx-building me-2"></i>State Institutions <span class="badge bg-danger ms-2">{{ $stateClientsCount }}</span>
+                            <i class="bx bx-building me-2"></i>State Institutions <span class="badge bg-danger ms-2">{{ $stateClients->count() }}</span>
                         </button>
                     </li>
                 </ul>
@@ -534,6 +670,7 @@
                                     <th style="width: 50px;"> # </th>
                                     <th style="width: 60px;"> ID </th>
                                     <th> Status </th>
+                                    <th> Contract Date </th>
                                     <th> Business Name </th>
                                     <th> Contact </th>
                                     <th> Field Office </th>
@@ -555,6 +692,7 @@
                                         <span class="badge bg-label-success">{{ $client->status }}</span>
                                         @endif
                                     </td>
+                                    <td>  {{ $client->start_date?->format('F l d, Y') }} </td>
                                     <td>
                                         <div>
                                             <strong>{{ $client->business_name }}</strong>
@@ -637,6 +775,7 @@
                                             <th > # </th>
                                             <th > ID </th>
                                             <th> Status </th>
+                                            <th>Month</th>
                                             <th> Business Name </th>
                                             <th> Contact </th>
                                             <th> Field Office </th>
@@ -657,6 +796,7 @@
                                                 <span class="badge bg-label-success">{{ $client->status }}</span>
                                                 @endif
                                             </td>
+                                            <td>  {{ $client->start_date?->format('F Y') }} </td>
                                             <td>
                                                 <div>
                                                     <strong>{{ $client->business_name }}</strong>

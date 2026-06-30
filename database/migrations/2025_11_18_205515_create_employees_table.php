@@ -37,6 +37,16 @@ return new class extends Migration
             $table->integer('user_id');
             $table->integer('user_id1');
             $table->integer('user_id2');
+
+            $table->string('coll_status')->nullable();
+            $table->date('coll_date')->nullable();
+            $table->string('bran_status')->nullable();
+            $table->date('bran_date')->nullable();
+            $table->integer('user_id1')->nullable();
+            $table->string('ho_status')->nullable();
+            $table->date('ho_date')->nullable();
+            $table->integer('user_id2')->nullable();
+
             $table->integer('payment_infos_id')->nullable();
             $table->integer('salary_id')->nullable();
             $table->string('gurantor_name')->nullable();

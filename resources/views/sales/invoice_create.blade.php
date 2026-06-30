@@ -468,6 +468,101 @@
 
                                         </div>
 
+                                                            <br>
+                    <div class="row g-6">
+                        <div class="col mb-0">
+                            <label for="rate" class="form-label"> {{ __('Rate') }} </label>
+                            <input
+                                type="number"
+                                id="rate"
+                                name="rate"
+                                class="form-control @error('rate') is-invalid @enderror"
+                                value="{{ old('rate')}}"
+                                placeholder="GH&#x20B5;"
+
+                                autocomplete="rate"
+                                step="any"
+                                autofocus>
+
+                            @error('rate')
+                            <span class="invalid-feedback" role="alert">
+                                <strong>{{ $message }}</strong>
+                            </span>
+                            @enderror
+                        </div>
+
+                        <div class="col mb-0">
+                            <label for="guards" class="form-label"> {{ __('Guards') }} </label>
+                            <input
+                                type="text"
+                                id="guards"
+                                name="guards"
+                                class="form-control @error('guards') is-invalid @enderror"
+                                value="{{ old('guards')}}"
+                                placeholder="Number of guards"
+
+                                autocomplete="guards"
+                                autofocus>
+
+                            @error('guards')
+                            <span class="invalid-feedback" role="alert">
+                                <strong>{{ $message }}</strong>
+                            </span>
+                            @enderror
+
+                        </div>
+                    </div>
+
+                    <br>
+                    <div class="row g-6">
+                        <div class="col mb-0">
+                            <label for="start_date" class="form-label"> {{ __('Start Date') }} </label>
+                            <input
+                                type="date"
+                                id="start_date"
+                                name="start_date"
+                                class="form-control @error('start_date') is-invalid @enderror"
+                                required
+                                autocomplete="start_date"
+                                autofocus>
+
+                            @error('start_date')
+                            <span class="invalid-feedback" role="alert">
+                                <strong>{{ $message }}</strong>
+                            </span>
+                            @enderror
+                        </div>
+
+                        <div class="col mb-0">
+                            <label for="scope_of_work" class="form-label"> {{ __('Scope of Work') }} </label>
+                           <textarea name="scope_of_work" id="scope_of_work" class="form-control @error('scope_of_work') is-invalid @enderror">{{ old('scope_of_work') }}</textarea>
+
+                            @error('scope_of_work')
+                            <span class="invalid-feedback" role="alert">
+                                <strong>{{ $message }}</strong>
+                            </span>
+                            @enderror
+
+                        </div>
+                    </div>
+
+                    <br>
+                    <div class="row g-6">
+
+                        <div class="col mb-0">
+
+                                <input name="state_institution" class="form-check-input" type="checkbox" value="1" id="state_institution" />
+                                <label class="form-check-label" for="state_institution"> Tick For State Institution </label>
+
+                            @error('state_institution')
+                            <span class="invalid-feedback" role="alert">
+                                <strong>{{ $message }}</strong>
+                            </span>
+                            @enderror
+
+                        </div>
+                    </div>
+
                                     </div>
                                     <div class="modal-footer">
                                         <button type="submit" class="btn btn-info d-grid w-100">{{ __('Add') }}</button>

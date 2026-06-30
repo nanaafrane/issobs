@@ -6,12 +6,14 @@ use App\Models\Receipt;
 use App\Http\Requests\StoreReceiptRequest;
 use App\Http\Requests\UpdateReceiptRequest;
 use App\Http\Requests\InvoiceToPayrollSearchRequest;
+use Illuminate\Http\Request;
 use App\Models\category;
 use App\Models\Client;
 use App\Models\Collection;
 use App\Models\Field;
 use App\Models\Invoice;
 use App\Models\Transaction;
+use App\Models\User;
 use App\Models\Wht;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -47,38 +49,45 @@ class ReceiptController extends Controller
 
         if($user->role->name == 'Finance Manager' || $user->role->name == 'Invoice' )
         {
-            $receipts = Receipt::all();
+            
+            $receipts = Receipt::where('ho_status', 'approved')->get();
             return view('sales.receipt_list', compact('receipts'));
         }
 
         if($user->field?->name == 'Accra' )
         {
-            $receipts = Receipt::whereRelation('client', 'field_id', '1')->get();
+            $receipts = Receipt::whereRelation('client', 'field_id', '1')->where('ho_status', 'approved')->get();
         }
 
         if ($user->field?->name == 'Botwe')
         {
-            $receipts = Receipt::whereRelation('client', 'field_id', '2')->get();
+            $receipts = Receipt::whereRelation('client', 'field_id', '2')->where('ho_status', 'approved')->get();
         }
 
         if ($user->field?->name == 'Tema')
         {
-            $receipts = Receipt::whereRelation('client', 'field_id', '3')->get();
+            // $receipts = [];
+            $receiptsTema = Receipt::whereRelation('client', 'field_id', '3')->where('ho_status', 'approved')->get();
+             $receipts1 =  collect($receiptsTema) ;
+            $receiptsShaihills = Receipt::whereRelation('client', 'field_id', '7')->where('ho_status', 'approved')->get();
+            $receipts2 = collect($receiptsShaihills) ;
+            $receipts = $receiptsTema->concat($receipts2);
+            // dd($receipts, $receipts1, $receipts2);
         }
 
         if ($user->field?->name == 'Takoradi')
         {
-            $receipts = Receipt::whereRelation('client', 'field_id', '4')->get();
+            $receipts = Receipt::whereRelation('client', 'field_id', '4')->where('ho_status', 'approved')->get();
         }
 
         if ($user->field?->name == 'Koforidua')
         {
-            $receipts = Receipt::whereRelation('client', 'field_id', '5')->get();
+            $receipts = Receipt::whereRelation('client', 'field_id', '5')->where('ho_status', 'approved')->get();
         }
 
         if ($user->field?->name == 'Kumasi')
         {
-            $receipts = Receipt::whereRelation('client', 'field_id', '6')->get();
+            $receipts = Receipt::whereRelation('client', 'field_id', '6')->where('ho_status', 'approved')->get();
         }
 
         return view('sales.receipt_list', compact('receipts'));
@@ -91,6 +100,7 @@ class ReceiptController extends Controller
     {
         //
         $user = Auth::user();
+        // dd($user->field?->name);
 
         if ($user->role->name == 'Finance Manager' || $user->role->name == 'Invoice')
         {
@@ -101,35 +111,133 @@ class ReceiptController extends Controller
 
         if ($user->field?->name == 'Accra')
         {
-            $invoices = Invoice::whereRelation('client', 'field_id', '1')->where('status', 'unpaid')->orwhere('status', 'uncompleted')->get();
+
+            $invoicesAccra = Invoice::whereRelation('client', 'field_id', '1')->where('status', 'unpaid')->orwhere('status', 'uncompleted')->get();
+            // dd($invoicesAccra);
+            $invoices = [];
+
+            foreach($invoicesAccra as $accra)
+                {
+                    if($accra->client->field_id == '1')
+                    {
+                        $invoices[] = $accra;
+                    }
+                }
+            // dd($invoices);
+
+            return view('sales.receipt_create', compact('invoices'));
+            
+            // return "Accra";
         }
 
         if ($user->field?->name == 'Botwe')
         {
-            $invoices = Invoice::whereRelation('client', 'field_id', '2')->where('status', 'unpaid')->orwhere('status', 'uncompleted')->get();
+            $invoicesBotwe = Invoice::whereRelation('client', 'field_id', '2')->where('status', 'unpaid')->orwhere('status', 'uncompleted')->get();
+            // dd($invoicesBotwe);
+            $invoices = [];
+
+            foreach($invoicesBotwe as $botwe)
+                {
+                    if($botwe->client->field_id == '2')
+                    {
+                        $invoices[] = $botwe;
+                    }
+                }
+
+            return view('sales.receipt_create', compact('invoices'));
+           
+            // return "Botwe";
+
         }
 
         if ($user->field?->name == 'Tema')
         {
-            $invoices = Invoice::whereRelation('client', 'field_id', '3')->where('status', 'unpaid')->orwhere('status', 'uncompleted')->get();
+            $invoicesTema = Invoice::whereRelation('client', 'field_id', '3')->where('status', 'unpaid')->orwhere('status', 'uncompleted')->get();
+            $invoicesShaihills = Invoice::whereRelation('client', 'field_id', '7')->where('status', 'unpaid')->orwhere('status', 'uncompleted')->get();
+            // dd($invoicesTema);
+            $invoices = [];
+
+            foreach($invoicesTema as $tema)
+                {
+                    if($tema->client->field_id == '3')
+                    {
+                        $invoices[] = $tema;
+                    }
+                }
+            foreach($invoicesShaihills as $shai)
+                {
+                    if($shai->client->field_id == '7')
+                    {
+                        $invoices[] = $shai;
+                    }
+                }
+            
+            return view('sales.receipt_create', compact('invoices'));
+       
         }
 
         if ($user->field?->name == 'Takoradi')
         {
-            $invoices = Invoice::whereRelation('client', 'field_id', '4')->where('status', 'unpaid')->orwhere('status', 'uncompleted')->get();
+            $invoicesTakoradi = Invoice::whereRelation('client', 'field_id', '4')->where('status', 'unpaid')->orwhere('status', 'uncompleted')->get();
+            // dd($invoicesTakoradi);
+           
+            $invoices = [];
+
+            foreach($invoicesTakoradi as $takoradi)
+                {
+                    if($takoradi->client->field_id == '4')
+                    {
+                        $invoices[] = $takoradi;
+                    }
+                }
+
+            return view('sales.receipt_create', compact('invoices'));
+       
+            // return "Takoradi";
+       
         }
 
         if ($user->field?->name == 'Koforidua')
         {
-            $invoices = Invoice::whereRelation('client', 'field_id', '5')->where('status', 'unpaid')->orwhere('status', 'uncompleted')->get();
+            $invoicesKoforidua = Invoice::whereRelation('client', 'field_id', '5')->where('status', 'unpaid')->orwhere('status', 'uncompleted')->get();
+            // dd($invoicesKoforidua);
+            
+            $invoices = [];
+
+            foreach($invoicesKoforidua as $koforidua)
+                {
+                    if($koforidua->client->field_id == '5')
+                    {
+                        $invoices[] = $koforidua;
+                    }
+                }
+
+            return view('sales.receipt_create', compact('invoices'));
+           
+            // return "Koforidua";
+        
         }
 
         if ($user->field?->name == 'Kumasi')
         {
-            $invoices = Invoice::whereRelation('client', 'field_id', '6')->where('status', 'unpaid')->orwhere('status', 'uncompleted')->get();
+            $invoicesKumasi = Invoice::whereRelation('client', 'field_id', '6')->where('status', 'unpaid')->orwhere('status', 'uncompleted')->get();
+            // dd($invoicesKumasi);
+            $invoices = [];
+
+            foreach($invoicesKumasi as $kumasi)
+                {
+                    if($kumasi->client->field_id == '6')
+                    {
+                        $invoices[] = $kumasi;
+                    }
+                }
+            return view('sales.receipt_create', compact('invoices'));
+           
+            // return "Kumasi";
+        
         }
 
-        return view('sales.receipt_create', compact('invoices'));
+        // return view('sales.receipt_create', compact('invoices'));
 
     }
 
@@ -146,6 +254,7 @@ class ReceiptController extends Controller
         $vat_from_form = $request->input('vat');
         $deductions_from_form = $request->input('deductions');
         $invoice_id = $request->input('invoice_id');
+        $staff = $request->input('staff');
         // dd($invoice_id);
         $invoice_data = Invoice::where('id',$invoice_id)->first();
         // dd($invoice_data);
@@ -239,7 +348,7 @@ class ReceiptController extends Controller
             // return "you're here! full payment one time payment" . " - advance - ". $advance_payment. " - " . "deduction ". $dAmount;
 
             // // create Receipt
-               $receipt_id = $this->createReceipt( $invoice_id, $dAmount, $description, $advance_payment, $receipt_date, $vat7_value, $this->vat7_amount, $client_id, $from, $mode, $cheque_reference, $cheque_amount, $cheque_bank, $transfer_reference, $transfer_amount, $transfer_bank, $momo_transactin_id, $momo_amount, $cash_amount, $other_payment_descri, $other_payment_amnt, $user_id, $status, $total, $this->wht_amount, $sum_of_amountPaid_minus_wht, $image);
+               $receipt_id = $this->createReceipt( $invoice_id, $dAmount, $description, $advance_payment, $receipt_date, $vat7_value, $this->vat7_amount, $client_id, $from, $mode, $cheque_reference, $cheque_amount, $cheque_bank, $transfer_reference, $transfer_amount, $transfer_bank, $momo_transactin_id, $momo_amount, $cash_amount, $other_payment_descri, $other_payment_amnt, $user_id, $status, $total, $this->wht_amount, $sum_of_amountPaid_minus_wht, $image, $staff);
 
             //     // get balance
                 $balance =  $invoiceTotal - $total - $dAmount;
@@ -349,7 +458,7 @@ class ReceiptController extends Controller
                 }
 
                 // 5. Condition: 16th to 20th of the following month
-                if ($rec->isSameMonth($inv->copy()->addMonth()) && $rec->day >= 16 && $rec->day <= 20) {
+                if ($rec->isSameMonth($inv->copy()->addMonth()) && $rec->day >= 16 && $rec->day <= 25) {
                 //    ASSIGN TO CATEGORY D
                     $category->name = 'Category D';
                     $category->client_id = $created_receipt->client_id;
@@ -376,11 +485,153 @@ class ReceiptController extends Controller
             return redirect()->route('receipt.show',['receipt' => $receipt_id])->with('primary', 'Receipt  Craeated Successfully');
 
         }
-        elseif($status == 'completed' && $check2 == 0 )
+        elseif($status == 'completed' && $total - $dAmount > $invoiceTotal &&  $invoiceBalance == 0 )
+        {
+            // return "you're here! full payment one time payment" . " - advance - ". $advance_payment. " - " . "deduction ". $dAmount;
+
+            // // create Receipt
+               $receipt_id = $this->createReceipt( $invoice_id, $dAmount, $description, $advance_payment, $receipt_date, $vat7_value, $this->vat7_amount, $client_id, $from, $mode, $cheque_reference, $cheque_amount, $cheque_bank, $transfer_reference, $transfer_amount, $transfer_bank, $momo_transactin_id, $momo_amount, $cash_amount, $other_payment_descri, $other_payment_amnt, $user_id, $status, $total, $this->wht_amount, $sum_of_amountPaid_minus_wht, $image, $staff);
+
+            //     // get balance
+                $balance =  $invoiceTotal - $total - $dAmount;
+                // dd($balance);
+                // update the invoice status to completed and update the balance to 0
+                $invoice_data->status = $status;
+                $invoice_data->wht_amount = $invoice_data->wht_amount + $this->wht_amount;
+                $invoice_data->amount_received = $invoice_data->amount_received + $sum_of_amountPaid_minus_wht;
+                $invoice_data->vat7_value = $vat7_value;
+                $invoice_data->vat7_amount = $this->vat7_amount;
+                $invoiceBalance = $balance;
+                $invoice_data->save();
+
+                $transaction = new Transaction();
+                $transaction->client_id = $client_id;
+                $transaction->invoice_id = $invoice_id;
+                $transaction->invoice_amount =  $invoiceTotal;
+                $transaction->receipt_id = $receipt_id;
+                $transaction->receipt_amount = $total + $dAmount;
+                $transaction->balance = $balance;
+                $transaction->status = $status;
+                $transaction->save();
+
+            // // CREATE A COLLECTION HERE.................
+            $this->create_collection($current_collection, $receipt_id, $cash_amount, $momo_amount, $cheque_amount, $transfer_amount, $total, $client->field->id);
+            // END OF CREATE COLLECTIONS //
+
+            //     // select all transactions with this current invoice iD and assign value d to the checks culumn
+            Transaction::where('invoice_id', $invoice_id)->update(['checks' => 'd']);
+
+
+
+            // // ASSIGN TO A CATEGORY
+            // return $invoice->invoice_month?->format('Y-m') . " / ". $receipt->receipt_month?->format('Y-m');
+            $inv  = Carbon::parse($invoice_data->invoice_month);
+            $created_receipt = Receipt::findOrfail($receipt_id);
+
+                        //  CHECK IF CLIENT CATEGORY ALREADY EXIST FOR THE SAME MONTH
+            $exists = category::where('client_id', $created_receipt->client_id)
+                            ->whereMonth('category_month', $inv->month)
+                            ->exists();
+
+            if ($exists) {
+                    return redirect()->route('receipt.show',['receipt' => $receipt_id])->with('warning', 'Receipt  Craeated Successfully, This Receipt Client Aleady Has an Assigned Category');
+
+                    // return back()->with('error', 'This Receipt Client Has Aleady been Assigned a Category, Kindly Remove existing one from Categories Model and Create the Receipt againg : '. $created_receipt->client_id) ;                      
+                }
+
+            $rec  = Carbon::parse($created_receipt->receipt_month);
+            // $client = Client::findOrFail($receipt->client_id);
+            $category = new category();
+            $client = Client::findOrfail($created_receipt->client_id);
+
+            // 2. Condition: Same Month
+            if ($rec->isSameMonth($inv) || $rec->lt($inv)) 
+                
+            {
+                // ASSIGN TO CATEGORY A
+                $category->name = 'Category A';
+                $category->client_id = $created_receipt->client_id;
+                $category->user_id = Auth::id();
+                $category->category_month = $invoice_data->invoice_month;
+                $category->save();
+
+                // UPDATE CLIENT AND MONTH
+                $client->category_id = $category->id;
+                $client->category_name = 'Category A';
+                $client->category_month = $invoice_data->invoice_month;
+                $client->user_id = Auth::id();
+                $client->save();
+            }
+
+            else
+            {
+
+                if ($rec->isSameMonth($inv->copy()->addMonth()) && $rec->day >= 1 && $rec->day <= 9) {
+                //    ASSIGN TO CATEGORY B
+                    $category->name = 'Category B';
+                    $category->client_id = $created_receipt->client_id;
+                    $category->user_id = Auth::id();
+                    $category->category_month = $invoice_data->invoice_month;
+                    $category->save();
+
+                    // UPDATE CLIENT AND MONTH
+                    $client->category_id = $category->id;
+                    $client->category_name = 'Category B';
+                    $client->category_month = $invoice_data->invoice_month;
+                    $client->user_id = Auth::id();
+                    $client->save();
+                }
+
+                // 4. Condition: 10th to 15th of the following month
+                if ($rec->isSameMonth($inv->copy()->addMonth()) && $rec->day >= 10 && $rec->day <= 15) {
+                //    ASSIGN TO CATEGORY C
+                    $category->name = 'Category C';
+                    $category->client_id = $created_receipt->client_id;
+                    $category->user_id = Auth::id();
+                    $category->category_month = $invoice_data->invoice_month;
+                    $category->save();  
+                    
+                    // UPDATE CLIENT AND MONTH
+                    $client->category_id = $category->id;
+                    $client->category_name = 'Category C';
+                    $client->category_month = $invoice_data->invoice_month;
+                    $client->user_id = Auth::id();
+                    $client->save();
+                }
+
+                // 5. Condition: 16th to 20th of the following month
+                if ($rec->isSameMonth($inv->copy()->addMonth()) && $rec->day >= 16 && $rec->day <= 25) {
+                //    ASSIGN TO CATEGORY D
+                    $category->name = 'Category D';
+                    $category->client_id = $created_receipt->client_id;
+                    $category->user_id = Auth::id();
+                    $category->category_month = $invoice_data->invoice_month;
+                    $category->save();   
+                    
+                    // UPDATE CLIENT AND MONTH
+                    $client->category_id = $category->id;
+                    $client->category_name = 'Category D';
+                    $client->category_month = $invoice_data->invoice_month;
+                    $client->user_id = Auth::id();
+                    $client->save();
+                }
+
+                // return false; 
+                
+            }
+              // // END ASSIGN TO A CATEGORY
+
+
+
+                // return redirect('receipt')->with('primary', 'Receipt created Successfully');
+            return redirect()->route('receipt.show',['receipt' => $receipt_id])->with('primary', 'Receipt  Craeated Successfully');
+
+        }
+        elseif($status == 'completed' && $check2 <= 0  &&  $invoiceBalance > 0 )
         {
 
             // return "you're here! full payment after part payment" . "- advance - ". $advance_payment. " - " . "deduction ". $dAmount;
-            $receipt_id = $this->createReceipt($invoice_id, $dAmount, $description, $advance_payment, $receipt_date, $vat7_value, $this->vat7_amount, $client_id, $from, $mode, $cheque_reference, $cheque_amount, $cheque_bank, $transfer_reference, $transfer_amount, $transfer_bank, $momo_transactin_id, $momo_amount, $cash_amount, $other_payment_descri, $other_payment_amnt, $user_id, $status, $total, $this->wht_amount, $sum_of_amountPaid_minus_wht, $image);
+            $receipt_id = $this->createReceipt($invoice_id, $dAmount, $description, $advance_payment, $receipt_date, $vat7_value, $this->vat7_amount, $client_id, $from, $mode, $cheque_reference, $cheque_amount, $cheque_bank, $transfer_reference, $transfer_amount, $transfer_bank, $momo_transactin_id, $momo_amount, $cash_amount, $other_payment_descri, $other_payment_amnt, $user_id, $status, $total, $this->wht_amount, $sum_of_amountPaid_minus_wht, $image, $staff);
 
             // get balance
             $balance = $invoiceBalance - ($total + $dAmount); 
@@ -489,7 +740,7 @@ class ReceiptController extends Controller
                 }
 
                 // 5. Condition: 16th to 20th of the following month
-                if ($rec->isSameMonth($inv->copy()->addMonth()) && $rec->day >= 16 && $rec->day <= 20) {
+                if ($rec->isSameMonth($inv->copy()->addMonth()) && $rec->day >= 16 && $rec->day <= 25) {
                 //    ASSIGN TO CATEGORY D
                     $category->name = 'Category D';
                     $category->client_id = $created_receipt->client_id;
@@ -530,7 +781,7 @@ class ReceiptController extends Controller
 
             // create a receipt
             // $sum_of_amountPaid_minus_wht = null;
-            $receipt_id = $this->createReceipt($invoice_id, $dAmount, $description, $advance_payment, $receipt_date, $vat7_value, $this->vat7_amount, $client_id, $from, $mode, $cheque_reference, $cheque_amount, $cheque_bank, $transfer_reference, $transfer_amount, $transfer_bank, $momo_transactin_id, $momo_amount, $cash_amount,$other_payment_descri, $other_payment_amnt, $user_id, $status, $total, $this->wht_amount, $sum_of_amountPaid_minus_wht, $image);
+            $receipt_id = $this->createReceipt($invoice_id, $dAmount, $description, $advance_payment, $receipt_date, $vat7_value, $this->vat7_amount, $client_id, $from, $mode, $cheque_reference, $cheque_amount, $cheque_bank, $transfer_reference, $transfer_amount, $transfer_bank, $momo_transactin_id, $momo_amount, $cash_amount,$other_payment_descri, $other_payment_amnt, $user_id, $status, $total, $this->wht_amount, $sum_of_amountPaid_minus_wht, $image, $staff);
 
             // update the invoice status to partpayment(uncomplete) and update the balance to current balance
             $invoice_data->balance = $balance;
@@ -630,7 +881,7 @@ class ReceiptController extends Controller
                 }
 
                 // 5. Condition: 16th to 20th of the following month
-                if ($rec->isSameMonth($inv->copy()->addMonth()) && $rec->day >= 16 && $rec->day <= 20) {
+                if ($rec->isSameMonth($inv->copy()->addMonth()) && $rec->day >= 16 && $rec->day <= 25) {
                 //    ASSIGN TO CATEGORY D
                     $category->name = 'Category D';
                     $category->client_id = $created_receipt->client_id;
@@ -736,7 +987,25 @@ class ReceiptController extends Controller
         $status = DB::table('receipt_status')->get();
          $wht = new Wht();
          $invoice = Invoice::findorFail($receipt->invoice_id);
-        return view('sales.receipt_edit', compact('receipt','wht','invoice','mode','status'));
+
+        $user = Auth::user();
+        $staff =  User::all();
+        $manager = $staff->where('department_id', '7')->where('role_id', '3');
+        $finance_manager = $staff->where('department_id', '1')->where('role_id', '2');
+        $assign_staff = [];
+        // dd($manager);
+        if($user->role->name == 'Admin Assistant')
+            {
+                $assign_staff = $manager;
+            }
+
+        if($user->role->name == 'Manager')
+            {
+                $assign_staff = $finance_manager;
+            }
+
+
+        return view('sales.receipt_edit', compact('receipt','wht','invoice','mode','status', 'assign_staff', 'user'));
     }
 
     /**
@@ -885,7 +1154,30 @@ class ReceiptController extends Controller
 
 
         }
-        elseif($receipt->status == "completed" && $check2 <= 0 )
+        elseif($receipt->status == "completed" &&  $total - $dAmount > $invoiceTotal &&  $invoiceBalance == 0 )
+        {
+                        // // get balance
+            $balance = $invoiceTotal - $total - $dAmount;
+
+
+            $invoice->balance = $balance;
+            $invoice->status = $request->input('status');
+            $invoice->wht_amount = $this->wht_amount;
+            $invoice->amount_received = $sum_of_amountPaid_minus_wht;
+            $invoice->vat7_value = $vat7_value;
+            $invoice->vat7_amount = $this->vat7_amount;
+            $invoice->save();
+
+
+            // update transaction
+            Transaction::where('receipt_id', $receipt->id)->update([ 
+                'receipt_amount' => $total + $dAmount,
+                'status' => $request->input('status'),
+                'balance' => $balance,
+                'checks' => 'd',
+            ]);
+        }
+        elseif($receipt->status == "completed" && $check2 <= 0  &&  $invoiceBalance > 0)
         {
 
             // get balance
@@ -1007,7 +1299,7 @@ class ReceiptController extends Controller
                         }
 
                         // 5. Condition: 16th to 20th of the following month
-                        if ($rec->isSameMonth($inv->copy()->addMonth()) && $rec->day >= 16 && $rec->day <= 20) {
+                        if ($rec->isSameMonth($inv->copy()->addMonth()) && $rec->day >= 16 && $rec->day <= 25) {
                         //    ASSIGN TO CATEGORY D
                             $category->name = 'Category D';
                             $category->client_id = $receipt->client_id;
@@ -1094,7 +1386,7 @@ class ReceiptController extends Controller
     }
 
 
-    public function receiptCreate($invoice_id)
+    public function receiptCreate(int $invoice_id)
     {
         $invoice = Invoice::findorFail($invoice_id);
 
@@ -1103,8 +1395,24 @@ class ReceiptController extends Controller
         $mode = DB::table('receipt_mode')->get();
         $status = DB::table('receipt_status')->get();
 
+        $user = Auth::user();
+        $staff =  User::all();
+        $manager = $staff->where('department_id', '7')->where('role_id', '3');
+        $finance_manager = $staff->where('department_id', '1')->where('role_id', '2');
+        $assign_staff = [];
+        // dd($manager);
+        if($user->role->name == 'Admin Assistant')
+            {
+                $assign_staff = $manager;
+            }
 
-        return view('sales.receiptCreate', compact('invoice', 'wht_rate', 'mode', 'status'));
+        if($user->role->name == 'Manager')
+            {
+                $assign_staff = $finance_manager;
+            }
+
+
+        return view('sales.receiptCreate', compact('invoice', 'wht_rate', 'mode', 'status', 'assign_staff'));
     }
 
 
@@ -1140,7 +1448,7 @@ class ReceiptController extends Controller
      * @param string|null $image
      * @return int
      */
-    public function createReceipt($invoice_id, $dAmount, $description, $advance_payment, $receipt_date, $vat7_value, $vat7_amount, $client_id, $from, $mode, $transfer_reference, $transfer_amount, $transfer_bank, $cheque_reference, $cheque_amount, $cheque_bank, $momo_transactin_id, $momo_amount, $cash_amount, $other_payment_descri, $other_payment_amnt, $user_id, $status, $total, $wht_amount, $sum_of_amountPaid_minus_wht, $image)
+    public function createReceipt($invoice_id, $dAmount, $description, $advance_payment, $receipt_date, $vat7_value, $vat7_amount, $client_id, $from, $mode, $transfer_reference, $transfer_amount, $transfer_bank, $cheque_reference, $cheque_amount, $cheque_bank, $momo_transactin_id, $momo_amount, $cash_amount, $other_payment_descri, $other_payment_amnt, $user_id, $status, $total, $wht_amount, $sum_of_amountPaid_minus_wht, $image, $staff)
     {
 
         // dd($other_payment_amnt, $other_payment_descri);
@@ -1181,6 +1489,29 @@ class ReceiptController extends Controller
         $newReceipt->wht_amount = $wht_amount;
         $newReceipt->amount_received = $sum_of_amountPaid_minus_wht;
         $newReceipt->image = $image;
+        
+        if(Auth::user()->role?->id == '2')
+            {
+               $newReceipt->ho_status = 'approved';
+               $newReceipt->user_id2 = $user_id;
+            }
+        if(Auth::user()->department?->id == '7' && Auth::user()->role?->id == '3')
+            {
+               $newReceipt->ho_status = 'pending';
+               $newReceipt->user_id2 = $staff;
+
+               $newReceipt->bran_status = 'approved';
+               $newReceipt->user_id1 = $user_id;
+            }
+        if(Auth::user()->department?->id == '7' && Auth::user()->role?->id == '27')
+            {
+               $newReceipt->bran_status = 'pending';
+               $newReceipt->user_id1 = $staff;
+
+               $newReceipt->coll_status = 'pending';
+
+            }
+
         $newReceipt->save();
 
         return $newReceipt->id;
@@ -1542,6 +1873,259 @@ class ReceiptController extends Controller
     //     return view('sales.receipt_whtDeducted', compact('whtDeductedReceipt', 'accra', 'botwe', 'tema', 'takoradi', 'koforidua', 'kumasi', 'accraTotal', 'accraCount', 'botweTotal', 'botweCount', 'temaTotal', 'temaCount', 'takoradiTotal', 'takoradiCount', 'koforiduaTotal', 'koforiduaCount', 'kumasiTotal', 'kumasiCount'));
     // }
 
+    public function PendingReceipts()
+    {
+        // dd($pendingReceipts);
 
+        // return view('sales.receipt_pending', compact('pendingReceipts'));   
+
+        $user = Auth::user();
+
+        if($user->role->name == 'Finance Manager' || $user->role->name == 'Invoice' )
+        {
+            // $receipts = Receipt::all();
+            $receipt = Receipt::where('ho_status', '!=' , 'approved')->orwhere('ho_status', null)->get();
+            $receipts = collect($receipt);
+            return view('sales.receipt_pending', compact('receipts'));
+        }
+
+        if($user->field?->name == 'Accra' )
+        {
+            $receiptsAccra = Receipt::whereRelation('client', 'field_id', '1')->where('ho_status', '!=' , 'approved')->orwhere('ho_status', null)->get();
+        
+            $receipt = [];
+
+            foreach($receiptsAccra as $accra)
+                {
+                    if($accra->client->field_id == '1')
+                    {
+                        $receipt[] = $accra;
+                    }
+                }
+            $receipts = collect($receipt);
+            
+            return view('sales.receipt_pending', compact('receipts'));
+
+        }
+
+        if ($user->field?->name == 'Botwe')
+        {
+            $receiptsBotwe = Receipt::whereRelation('client', 'field_id', '2')->where('ho_status', '!=' , 'approved')->orwhere('ho_status', null)->get();
+        
+            $receipt = [];
+
+            foreach($receiptsBotwe as $botwe)
+                {
+                    if($botwe->client->field_id == '2')
+                    {
+                        $receipt[] = $botwe;
+                    }
+                }
+            $receipts = collect($receipt);
+            
+            return view('sales.receipt_pending', compact('receipts'));
+
+        }
+
+        if ($user->field?->name == 'Tema')
+        {
+            $receipt = [];
+            $receiptsTema = Receipt::whereRelation('client', 'field_id', '3')->where('ho_status', '!=' , 'approved')->orwhere('ho_status', null)->get();
+            //  $receipts1 =  collect($receiptsTema) ;
+            foreach($receiptsTema as $tema)
+                {
+                    if($tema->client->field_id == '3')
+                    {
+                        $receipt[] = $tema;
+                    }
+                }
+
+            // dd($receipt);
+            
+            $receiptsShaihills = Receipt::whereRelation('client', 'field_id', '7')->where('ho_status', '!=' , 'approved')->orwhere('ho_status', null)->get();
+            // $receipts2 = collect($receiptsShaihills) ;
+            // $receipt = $receiptsTema->concat($receiptsShaihills);
+            // dd($receipt);
+
+            foreach($receiptsShaihills as $shai)
+                {
+                    if($shai->client->field_id == '7')
+                    {
+                        $receipt[] = $shai;
+                    }
+                }
+            $receipts = collect($receipt);
+            // dd($receipts);
+
+            return view('sales.receipt_pending', compact('receipts'));
+            
+
+        }
+
+        if ($user->field?->name == 'Takoradi')
+        {
+            $receiptsTakoradi = Receipt::whereRelation('client', 'field_id', '4')->where('ho_status', '!=' , 'approved')->orwhere('ho_status', null)->get();
+        
+            $receipt = [];
+
+            foreach($receiptsTakoradi as $takoradi)
+                {
+                    if($takoradi->client->field_id == '4')
+                    {
+                        $receipt[] = $takoradi;
+                    }
+                }
+            $receipts = collect($receipt);
+            
+            return view('sales.receipt_pending', compact('receipts'));
+
+        }
+
+        if ($user->field?->name == 'Koforidua')
+        {
+            $receiptsKoforidua = Receipt::whereRelation('client', 'field_id', '5')->where('ho_status', '!=' , 'approved')->orwhere('ho_status', null)->get();
+        
+            $receipt = [];
+
+            foreach($receiptsKoforidua as $koforidua)
+                {
+                    if($koforidua->client->field_id == '5')
+                    {
+                        $receipt[] = $koforidua;
+                    }
+                }
+            $receipts = collect($receipt);
+            
+            return view('sales.receipt_pending', compact('receipts'));
+
+        }
+
+        if ($user->field?->name == 'Kumasi')
+        {
+            $receiptsKumasi = Receipt::whereRelation('client', 'field_id', '6')->where('ho_status', '!=' , 'approved')->orwhere('ho_status', null)->get();
+       
+            $receipt = [];
+
+            foreach($receiptsKumasi as $kumasi)
+                {
+                    if($kumasi->client->field_id == '6')
+                    {
+                        $receipt[] = $kumasi;
+                    }
+                }
+            $receipts = collect($receipt);
+            
+            return view('sales.receipt_pending', compact('receipts'));
+        }
+
+        // return view('sales.receipt_pending', compact('receipts'));
+
+    }
+
+    public function receiptChannels(Request $request)
+    {
+        // dd($request->all());
+        $submitValue = $request->input('submit'); 
+        $declineValue = $request->input('decline'); 
+        // dd($submitValue);
+         $receiptsIDS = $request->input('receipts', []);
+        //  dd($receiptsIDS);
+        if (empty($receiptsIDS)) {
+            return back()->with('error', 'No Receipt selected !');
+        }
+        
+         $receipts =  Receipt::findOrFail($request->receipts);
+        //  dd($receipts);
+        $alreadyProcessed = [];
+
+        foreach( $receipts as $receipt)
+        {
+
+
+            if( $submitValue == 'branch' )
+                
+                {
+                    // dd($receipt);
+                    $exists = Receipt::where('id', $receipt->id)
+                        ->where('bran_status', 'approved')
+                        ->exists();
+                    if ($exists) {
+                        $alreadyProcessed[] =  " Receipt: " . $receipt->id;
+                        continue;
+                    }
+                    // update branch to approved, collection to approved and dates.
+                    $receipt->bran_status = 'approved';
+                    $receipt->user_id1 = Auth::id();
+                    $receipt->bran_date = now();
+
+                    $receipt->coll_status = 'approved';
+                    $receipt->ho_status = 'pending';
+
+                    $receipt->save();
+                    // return 'you are a Branch Manager';
+
+                }
+
+            if($submitValue == 'headOffice' )
+                {
+                    // // dd($receipt);
+                    $exists = Receipt::where('id', $receipt->id)
+                        ->where('ho_status', 'approved')
+                        ->exists();
+                    if ($exists) {
+                        $alreadyProcessed[] =  " Receipt: " . $receipt->id;
+                        continue;
+                    }
+                    // update branch to approved, collection to approved and dates.
+                    // $receipt->bran_status = 'approved';
+                    // $receipt->user_id2 = Auth::id();
+                    // $receipt->bran_date = now();
+
+                    // $receipt->coll_status = 'approved';
+                    $receipt->ho_status = 'approved';
+                    $receipt->user_id2 = Auth::id();
+                    $receipt->ho_date = now();
+
+                    $receipt->save();
+
+                    // return 'you are at the head office';
+                    
+                }
+
+
+            if($declineValue == 'headOffice' )
+                {
+                    //                     // dd($receipt);
+                    // $exists = Receipt::where('id', $receipt->id)
+                    //     ->where('bran_status', 'approved')
+                    //     ->exists();
+                    // if ($exists) {
+                    //     $alreadyProcessed[] =  " Receipt: " . $receipt->id;
+                    //     continue;
+                    // }
+                    // update branch to approved, collection to approved and dates.
+                    $receipt->bran_status = 'pending';
+                    // $receipt->user_id2 = Auth::id();
+                    $receipt->coll_status = 'pending';
+                    $receipt->coll_date = now();
+
+
+                    $receipt->save();
+                    // return 'you are at the head office Declining'; 
+
+                }
+
+
+
+        }
+    
+
+
+            return back()->with('primary', 'Receipts with the IDs have already been processed: '. implode(', ', $alreadyProcessed). ', - The remaining have been Processed ')  ;
+    
+
+
+
+    }
 
 }

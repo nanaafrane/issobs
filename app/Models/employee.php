@@ -43,6 +43,19 @@ class employee extends Model
         
         'status',
         'status_date', //terminiate and reinstate
+
+        'coll_status',
+        'coll_date',
+        'user_id',
+
+        'bran_status',
+        'bran_date',
+        'user_id1',
+
+        'ho_status',
+        'ho_date',
+        'user_id2',
+
         'payment_type',
         'payment_infos_id',
         'salary_id',
@@ -61,6 +74,9 @@ class employee extends Model
         'date_of_birth' => 'date',
         'date_of_joining' => 'date',  
         'status_date' => 'date',  
+        'coll_date' => 'date',  
+        'bran_date' => 'date',  
+        'ho_date' => 'date',  
     ];
 
     public function department()

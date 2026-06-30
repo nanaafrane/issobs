@@ -29,6 +29,14 @@ return new class extends Migration
             $table->string('scope_of_work')->nullable();
             $table->string('state_institution')->nullable();
             $table->integer('user_id')->nullable();
+            $table->string('coll_status')->nullable();
+            $table->date('coll_date')->nullable();
+            $table->string('bran_status')->nullable();
+            $table->date('bran_date')->nullable();
+            $table->integer('user_id1')->nullable();
+            $table->string('ho_status')->nullable();
+            $table->date('ho_date')->nullable();
+            $table->integer('user_id2')->nullable();
             $table->integer('category_id')->nullable();
             $table->string('category_name')->nullable();
             $table->date('category_month')->nullable();

@@ -23,6 +23,7 @@ class UpdateSalaryRequest extends FormRequest
     {
         return [
             //
+            'client_id' => 'required|exists:clients,id',
         ];
     }
 }

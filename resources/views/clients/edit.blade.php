@@ -44,7 +44,7 @@
                 </ul>
             </li>
 
-        @if(Auth::user()->hasPermission('Accounts'))
+        @if( Auth::user()->hasPermission('Accounts') || Auth::user()->hasPermission('Administration'))
             <!-- Apps & Pages -->
             <li class="menu-header small text-uppercase ">
                 <span class="menu-header-text text-primary">Transactions</span>
@@ -57,29 +57,107 @@
                 </a>
             </li>
 
-                @if(Auth::user()->hasRole(['Invoice', 'Finance Manager']))
-                <li class="menu-item">
-                    <a href="{{ url('invoice') }}" class="menu-link">
-                        <i class="menu-icon tf-icons bx bx-bxs-receipt bg-primary"></i>
-                        <div class="text-truncate" data-i18n="Invoices">Invoices</div>
-                    </a>
-                </li>
-                @endif
+            @if(Auth::user()->hasRole(['Invoice', 'Finance Manager']))
+            <li class="menu-item">
+                <a href="{{ url('invoice') }}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-bxs-receipt bg-primary"></i>
+                    <div class="text-truncate" data-i18n="Invoices">Invoices</div>
+                </a>
+            </li>
+            @endif
 
-                @if(Auth::user()->hasRole(['Finance Manager']))
-                    <li class="menu-item">
+            @if(Auth::user()->hasRole(['Finance Manager', 'Manager', 'Admin Assistant']))
+            <li class="menu-item ">
+                <a href="javascript:void(0);" class="menu-link menu-toggle">
+                <i class="menu-icon tf-icons bx bx-money-withdraw bg-primary"></i>
+                <div class="text-truncate" data-i18n="Receipts">Receipts</div>
+                </a>
+                <ul class="menu-sub">
+
+                    <li class="menu-item ">
                         <a href="{{url('receipt')}}" class="menu-link">
-                            <i class="menu-icon tf-icons bx bx-money-withdraw bg-primary"></i>
-                            <div class="text-truncate" data-i18n="Receipts">Receipts</div>
+                        <div class="text-truncate" data-i18n="RList">List</div>
+                        </a>
+                    </li>
+                    <li class="menu-item">
+                        <a href="{{url('receiptPending')}}" class="menu-link">
+                        <div class="text-truncate" data-i18n="RPending">Pending </div>
                         </a>
                     </li>
 
+                </ul>
+            </li>
+
             <li class="menu-header small text-uppercase"><span class="menu-header-text text-info">Management</span></li>
-            <li class="menu-item">
-                <a href="{{url('client')}}" class="menu-link">
-                <i class="menu-icon tf-icons bx bx-bxs-user-detail bg-info"></i>
-                <div class="text-truncate" data-i18n="Clients">Clients</div>
+            <li class="menu-item active open">
+                <a class="menu-link menu-toggle">
+                    <i class="menu-icon tf-icons bx bx-bxs-user-detail"></i>
+                    <div class="text-truncate" data-i18n="Clients"><strong>Clients</strong></div>
                 </a>
+                <ul class="menu-sub">
+                    <li class="menu-item ">
+                        <a href="{{url('client/create')}}" class="menu-link">
+                            <div class="text-truncate" data-i18n="CRegister">Register</div>
+                        </a>
+                    </li>
+                    <li class="menu-item active">
+                        <a href="{{url('client')}}" class="menu-link">
+                            <div class="text-truncate" data-i18n="CList">List</div>
+                        </a>
+                    </li>
+                    <li class="menu-item ">
+                        <a href="{{url('clientTerminated')}}" class="menu-link">
+                            <div class="text-truncate" data-i18n="CList">Terminated</div>
+                        </a>
+                    </li>
+                    <li class="menu-item ">
+                        <a href="{{url('clientPending')}}" class="menu-link">
+                            <div class="text-truncate" data-i18n="CList">Pending</div>
+                        </a>
+                    </li>
+                </ul>
+            </li>
+
+            <li class="menu-item ">
+                <a href="javascript:void(0);" class="menu-link menu-toggle">
+                <i class="menu-icon tf-icons bx bxs-user-account"></i>
+                <div class="text-truncate" data-i18n="Staffs">Employees</div>
+                </a>
+                <ul class="menu-sub">
+                    <li class="menu-item ">
+                        <a href="{{url('employees/create')}}" class="menu-link">
+                        <div class="text-truncate" data-i18n="SRegister">Register</div>
+                        </a>
+                    </li>
+                    <li class="menu-item ">
+                        <a href="{{url('employees')}}" class="menu-link">
+                        <div class="text-truncate" data-i18n="SList">List</div>
+                        </a>
+                    </li>
+                    <li class="menu-item">
+                        <a href="{{url('employeesPending')}}" class="menu-link">
+                        <div class="text-truncate" data-i18n="SList">Pending</div>
+                        </a>
+                    </li>
+                    @if(Auth::user()->hasRole(['Manager', 'Invoice']))
+                    <li class="menu-item ">
+                        <a href="{{url('employeesnrrit')}}" class="menu-link">
+                        <div class="text-truncate" data-i18n="SList">Terminate / Recruit</div>
+                        </a>
+                    </li>
+                    <li class="menu-item">
+                        <a href="{{url('employeesBank')}}" class="menu-link">
+                        <div class="text-truncate" data-i18n="SList">Employee Banks</div>
+                        </a>
+                    </li>
+                    <li class="menu-item">
+                        <a href="{{url('employeesCash')}}" class="menu-link">
+                        <div class="text-truncate" data-i18n="SList">Employee Cash</div>
+                        </a>
+                    </li>
+                    @endif
+
+                </ul>
             </li>
                 @endif
         @endif
@@ -106,22 +184,44 @@
                     </ul>
             </li>
             @endif
-            <li class="menu-item ">
+            <li class="menu-item  ">
                 <a href="javascript:void(0);" class="menu-link menu-toggle">
                 <i class="menu-icon tf-icons bx bxs-user-account"></i>
                 <div class="text-truncate" data-i18n="Staffs">Employees</div>
                 </a>
                 <ul class="menu-sub">
-                <li class="menu-item ">
-                    <a href="{{url('employees/create')}}" class="menu-link">
-                    <div class="text-truncate" data-i18n="SRegister">Register</div>
-                    </a>
-                </li>
-                <li class="menu-item">
-                    <a href="{{url('employees')}}" class="menu-link">
-                    <div class="text-truncate" data-i18n="SList">List</div>
-                    </a>
-                </li>
+                    <li class="menu-item ">
+                        <a href="{{url('employees/create')}}" class="menu-link">
+                        <div class="text-truncate" data-i18n="SRegister">Register</div>
+                        </a>
+                    </li>
+                    <li class="menu-item">
+                        <a href="{{url('employees')}}" class="menu-link">
+                        <div class="text-truncate" data-i18n="SList">List</div>
+                        </a>
+                    </li>
+                    <li class="menu-item">
+                        <a href="{{url('employeesPending')}}" class="menu-link">
+                        <div class="text-truncate" data-i18n="SList">Pending</div>
+                        </a>
+                    </li>
+                    @if(Auth::user()->hasRole(['Manager', 'Invoice']))
+                    <li class="menu-item ">
+                        <a href="{{url('employeesnrrit')}}" class="menu-link">
+                        <div class="text-truncate" data-i18n="SList">Terminate / Recruit</div>
+                        </a>
+                    </li>
+                    <li class="menu-item">
+                        <a href="{{url('employeesBank')}}" class="menu-link">
+                        <div class="text-truncate" data-i18n="SList">Employee Banks</div>
+                        </a>
+                    </li>
+                    <li class="menu-item">
+                        <a href="{{url('employeesCash')}}" class="menu-link">
+                        <div class="text-truncate" data-i18n="SList">Employee Cash</div>
+                        </a>
+                    </li>
+                    @endif
 
                 </ul>
             </li>
@@ -207,10 +307,9 @@
                 <div class="text-truncate" data-i18n="Expense"> Expense </div>
                 </a>
             </li>
-
             @endif
 
-            @if(Auth::user()->hasRole(['Invoice', 'Finance Manager', 'Manager']))
+            @if(Auth::user()->hasRole(['Invoice', 'Finance Manager']))
             <li class="menu-header small text-uppercase"><span class="menu-header-text">PAYROLL</span></li>
             <li class="menu-item">
                     <a href="javascript:void(0);" class="menu-link menu-toggle">
@@ -218,14 +317,13 @@
                     <div class="text-truncate" data-i18n="Payroll">Payroll</div>
                     </a>
                     <ul class="menu-sub">
-
                     <li class="menu-item">
                         <a href="{{ url('salaries') }}" class="menu-link">
                         <i class="menu-icon tf-icons bx bxs-user-account"></i>
                         <div class="text-truncate" data-i18n="Employees">Add to Salaries</div>
                         </a>
                     </li>
-
+                    
                     @if(Auth::user()->hasPermission('Accounts'))
                     <li class="menu-item">
                         <a href="{{ url('salaries/create') }}" class="menu-link">
@@ -251,7 +349,7 @@
 
                     </ul>
                 </li>
-                @endif
+            @endif
         </ul>
     </aside>
     <!-- / Menu -->
@@ -280,6 +378,7 @@
                 <form method="POST" action="/client/{{$client->id}}">
                     @csrf
                     @method('PUT')
+                <fieldset {{ $client->status == 'terminated' ? 'disabled' : '' }}>
                     <div class="row">
                         <div class="col mb-0">
                             <label for="name" class="form-label"> {{ __('Full Name') }}</label>
@@ -340,7 +439,7 @@
                             @enderror
                         </div>
                     </div>
-                    <div class="row g-6">
+                    <div class="row mt-4">
                         <div class="col mb-0">
                             <label for="business_name" class="form-label"> {{ __('Business Name') }} </label>
                             <input
@@ -425,8 +524,8 @@
 
                     </div>
 
-                                        <br>
-                    <div class="row g-6">
+                                    
+                    <div class="row mt-4">
                         <div class="col mb-0">
                             <label for="rate" class="form-label"> {{ __('Rate') }} </label>
                             <input
@@ -519,6 +618,7 @@
                             @enderror
 
                         </div>
+
                     </div>
 
 
@@ -543,6 +643,7 @@
                             @enderror
                         </div>
 
+
                         <div class="col mb-0">
                             <input type="text" name="user_id" id="user_id"  value="{{ Auth::id() }}" hidden>
                             @error('user_id')
@@ -559,12 +660,14 @@
                     <div class="modal-footer">
                         <button type="submit" class="btn btn-info d-grid w-100">{{ __('Update') }}</button>
                     </div>
-                </form>
+                </fieldset>
 
+                </form>
+            
             </div>
             <div class="col-2">
 
-                 @if ($client->status == 'terminated')
+                 @if ($client->status == 'terminated' && Auth::user()->hasRole(['Invoice', 'Manager']))
                     <button
                         type="button"
                         class="btn btn-success btn-buy-now"
@@ -585,14 +688,14 @@
                                         aria-label="Close"></button>
                                 </div>
 
-                                <form method="GET" action="/clientReinstate/{{ $client->id }}">
+                                <form method="GET" action="/reinstateClient/{{ $client->id }}">
                                     @csrf
                                     <div class="modal-body">
                                         <div class="row">
                                             <div class="col mb-0">
-                                                <label for="name" class="form-label"> {{ __(' MONTH ') }}</label>
+                                                <!-- <label for="name" class="form-label"> {{ __(' MONTH ') }}</label> -->
                                                 <input
-                                                    type="month"
+                                                    type="date"
                                                     name="status_date"
                                                     id="status_date"
                                                     class="form-control @error('status_date') is-invalid @enderror"
@@ -602,6 +705,28 @@
                                                     required>
 
                                                 @error('status_date')
+                                                <span class="invalid-feedback" role="alert">
+                                                    <strong>{{ $message }}</strong>
+                                                </span>
+                                                @enderror
+                                            </div>
+
+                                            <div class="col mb-0">
+                                                <div class="input-group">
+                                                    <label class="input-group-text" for="inputGroupSelect01">{{ __('ASSIGN TO') }}</label>
+                                                    <select name="staff" class="form-select @error('inputGroupSelect01') is-invalid @enderror" id="inputGroupSelect01" value="{{ old('staff')}}" >
+                                                        <option selected disabled>Choose...</option>
+                                                                @foreach($assign_staff as $user)
+                                                                    @if($user->field_id == Auth::user()->field_id)
+                                                                    <option value="{{$user->id}}"> {{$user->name}} </option>
+                                                                    @elseif(Auth::user()->hasRole(['Manager']))
+                                                                    <option value="{{$user->id}}"> {{$user->name}} </option>
+                                                                    @endif
+                                                                @endforeach
+                                                    </select>
+                                                </div>
+
+                                                @error('staff')
                                                 <span class="invalid-feedback" role="alert">
                                                     <strong>{{ $message }}</strong>
                                                 </span>
@@ -618,7 +743,7 @@
                             </div>
                         </div>
                     </div>
-                 @elseif($client->status == 'active')
+                 @elseif($client->status == 'active' && Auth::user()->hasRole(['Invoice', 'Manager']))
                     <button
                         type="button"
                         class="btn btn-danger btn-buy-now"
@@ -644,9 +769,9 @@
                                     <div class="modal-body">
                                         <div class="row">
                                             <div class="col mb-0">
-                                                <label for="name" class="form-label"> {{ __(' MONTH ') }}</label>
+                                                <!-- <label for="name" class="form-label"> {{ __(' MONTH ') }}</label> -->
                                                 <input
-                                                    type="month"
+                                                    type="date"
                                                     name="status_date"
                                                     id="status_date"
                                                     class="form-control @error('status_date') is-invalid @enderror"
@@ -661,6 +786,30 @@
                                                 </span>
                                                 @enderror
                                             </div>
+
+                                            <div class="col mb-0">
+                                                <div class="input-group">
+                                                    <label class="input-group-text" for="inputGroupSelect01">{{ __('ASSIGN TO') }}</label>
+                                                    <select name="staff" class="form-select @error('inputGroupSelect01') is-invalid @enderror" id="inputGroupSelect01" value="{{ old('staff')}}" >
+                                                        <option selected disabled>Choose...</option>
+                                                                @foreach($assign_staff as $user)
+                                                                    @if($user->field_id == Auth::user()->field_id)
+                                                                    <option value="{{$user->id}}"> {{$user->name}} </option>
+                                                                    @elseif(Auth::user()->hasRole(['Manager']))
+                                                                    <option value="{{$user->id}}"> {{$user->name}} </option>
+                                                                    @endif
+                                                                @endforeach
+                                                    </select>
+                                                </div>
+
+                                                @error('staff')
+                                                <span class="invalid-feedback" role="alert">
+                                                    <strong>{{ $message }}</strong>
+                                                </span>
+                                                @enderror
+                                            </div>
+
+
                                         </div>
                                         <br>
                                     </div>
@@ -684,10 +833,11 @@
         </div>
         <br> <br>
 
-        <hr class="m-5" >
 
         <!-- Add a ui to attach and detach employees -->
-        <div class="row mt-5">
+        <!-- <hr class="m-5" > -->
+
+        <!-- <div class="row mt-5">
             <div class="col-6">
                 <div class="card">
                     <div class="card-header">Attached Employees</div>
@@ -761,7 +911,7 @@
                     </div>
                 </div>
             </div>
-        </div>
+        </div> -->
 
         
         <br><br><br><br><br><br><br><br>
