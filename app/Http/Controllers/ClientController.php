@@ -836,7 +836,7 @@ class ClientController extends Controller
      */
     public function update(UpdateClientRequest $request, Client $client)
     {
-        dd($request->all());
+        // dd($request->all());
         $client->update($request->all());
         return redirect('client')->with('info', $client->id. ' '.'Client Updated Sucessfully');
 
