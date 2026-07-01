@@ -49,9 +49,33 @@ class ReceiptController extends Controller
 
         if($user->role->name == 'Finance Manager' || $user->role->name == 'Invoice' )
         {
-            
+            $accra = null;
+            $botwe = null;
+            $tema = null;
+            $shaihills = null;
+            $takoradi = null;
+            $koforidua = null;
+            $kumasi = null;
+
             $receipts = Receipt::where('ho_status', 'approved')->get();
-            return view('sales.receipt_list', compact('receipts'));
+            $accra = Receipt::whereRelation('client', 'field_id', '1')->where('ho_status', 'approved')->get();
+            $botwe = Receipt::whereRelation('client', 'field_id', '2')->where('ho_status', 'approved')->get();
+
+            $tema = Receipt::whereRelation('client', 'field_id', '3')->where('ho_status', 'approved')->get();
+            $shaihills = Receipt::whereRelation('client', 'field_id', '7')->where('ho_status', 'approved')->get();
+            // $temashai = $tema->concat($shaihills);
+            $takoradi = Receipt::whereRelation('client', 'field_id', '4')->where('ho_status', 'approved')->get();
+            $koforidua = Receipt::whereRelation('client', 'field_id', '5')->where('ho_status', 'approved')->get();
+            $kumasi = Receipt::whereRelation('client', 'field_id', '6')->where('ho_status', 'approved')->get();
+            // foreach
+            // if($user->feild->name == 'Accra')
+            // {
+
+            // }
+
+
+
+            return view('sales.receipt_list', compact('receipts', 'accra', 'botwe', 'tema', 'shaihills', 'takoradi', 'koforidua', 'kumasi'));
         }
 
         if($user->field?->name == 'Accra' )
@@ -1765,7 +1789,7 @@ class ReceiptController extends Controller
 
         // dd($accraTotal, $accraCount);
         $botwe = Receipt::whereRelation('client', 'field_id', 2)->where('amount_received', '>', 0.00)->get();
-        $botweAmountReceived = $botwe->sum('amount_received');
+        $botweRmountReceived = $botwe->sum('amount_received');
         $botweWHTAmount = $botwe->sum('wht_amount');
 
         $tema = Receipt::whereRelation('client', 'field_id', 3)->where('amount_received', '>', 0.00)->get();
@@ -1884,9 +1908,97 @@ class ReceiptController extends Controller
         if($user->role->name == 'Finance Manager' || $user->role->name == 'Invoice' )
         {
             // $receipts = Receipt::all();
+            $accra = null;
+            $botwe = null;
+            $tema = null;
+            $shaihills = null;
+            $takoradi = null;
+            $koforidua = null;
+            $kumasi = null;
+
+            $receiptsAccra = Receipt::whereRelation('client', 'field_id', '1')->where('ho_status', '!=' , 'approved')->orwhere('ho_status', null)->get();
+            $accraR = [];
+
+            foreach($receiptsAccra as $accra)
+                {
+                    if($accra->client->field_id == '1')
+                    {
+                        $accraR[] = $accra;
+                    }
+                }
+            $accra = collect($accraR);
+
+            $botweReceipt = Receipt::whereRelation('client', 'field_id', '2')->where('ho_status', '!=' , 'approved')->orwhere('ho_status', null)->get();
+            $botweR = [];
+            foreach($botweReceipt as $botwe)
+                {
+                    if($botwe->client->field_id == '2')
+                    {
+                        $botweR[] = $botwe;
+                    }
+                }
+            $botwe = collect($botweR);
+            
+            $temaReceipt = Receipt::whereRelation('client', 'field_id', '3')->where('ho_status', '!=' , 'approved')->orwhere('ho_status', null)->get();
+
+            $temaR = [];
+            foreach($temaReceipt as $tema)
+                {
+                    if($tema->client->field_id == '3')
+                    {
+                        $temaR[] = $tema;
+                    }
+                }
+            $tema = collect($temaR);
+
+            $shaihillsReceipt = Receipt::whereRelation('client', 'field_id', '7')->where('ho_status', '!=' , 'approved')->orwhere('ho_status', null)->get();
+               
+            $shaihillsR = [];
+            foreach($shaihillsReceipt as $shaihills)
+                {
+                    if($shaihills->client->field_id == '7')
+                    {
+                        $shaihillsR[] = $shaihills;
+                    }
+                }
+            $shaihills = collect($shaihillsR);
+
+            $takoradiReceipt = Receipt::whereRelation('client', 'field_id', '4')->where('ho_status', '!=' , 'approved')->orwhere('ho_status', null)->get();
+            $takoradiR = [];
+            foreach($takoradiReceipt as $takoradi)
+                {
+                    if($takoradi->client->field_id == '4')
+                    {
+                        $takoradiR[] = $takoradi;
+                    }
+                }
+            $takoradi = collect($takoradiR);
+            
+            $koforiduaReceipt = Receipt::whereRelation('client', 'field_id', '5')->where('ho_status', '!=' , 'approved')->orwhere('ho_status', null)->get();
+            $koforiduaR = [];
+            foreach($koforiduaReceipt as $koforidua)
+                {
+                    if($koforidua->client->field_id == '5')
+                    {
+                        $koforiduaR[] = $koforidua;
+                    }
+                }
+            $koforidua = collect($koforiduaR);
+
+            $kumasiReceipt = Receipt::whereRelation('client', 'field_id', '6')->where('ho_status', '!=' , 'approved')->orwhere('ho_status', null)->get();
+            $kumasiR = [];
+            foreach($kumasiReceipt as $kumasi)
+                {
+                    if($kumasi->client->field_id == '4')
+                    {
+                        $kumasiR[] = $kumasi;
+                    }
+                }
+            $kumasi = collect($kumasiR);
+
             $receipt = Receipt::where('ho_status', '!=' , 'approved')->orwhere('ho_status', null)->get();
             $receipts = collect($receipt);
-            return view('sales.receipt_pending', compact('receipts'));
+            return view('sales.receipt_pending', compact('receipts', 'accra', 'botwe', 'tema', 'shaihills', 'takoradi','koforidua', 'kumasi'));
         }
 
         if($user->field?->name == 'Accra' )

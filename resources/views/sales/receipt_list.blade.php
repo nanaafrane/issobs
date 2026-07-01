@@ -381,8 +381,8 @@
                             </div>
                         </div>
                         <p class="mb-1"><strong> ACCRA </strong> </p>
-                        <h4 class="card-title mb-3 text-white"><strong>&#x20B5;0 </strong> </h4>
-                        <small class="fw-medium"> TOTAL RECEIPTS : <strong> 0</strong> </small>
+                        <h4 class="card-title mb-3 text-white"><strong>&#x20B5;  {{ number_format( $accra->sum('total') - $accra->sum('dAmount') ,2)  }} </strong> </h4>
+                        <small class="fw-medium"> TOTAL RECEIPTS : <strong> {{$accra->count()}} </strong> </small>
                     </div>
                 </div>
             </div>
@@ -399,8 +399,8 @@
                             </div>
                         </div>
                         <p class="mb-1"><strong> BOTWE </strong></p>
-                        <h4 class="card-title mb-3 text-white"><strong>&#x20B5;0</strong> </h4>
-                        <small class="fw-medium"> TOTAL RECEIPTS : <strong> 0 </strong> </small>
+                        <h4 class="card-title mb-3 text-white"><strong>&#x20B5; {{ number_format( $botwe->sum('total') - $botwe->sum('dAmount') ,2)  }} </strong> </h4>
+                        <small class="fw-medium"> TOTAL RECEIPTS : <strong> {{$botwe->count()}} </strong> </small>
                     </div>
                 </div>
             </div>
@@ -419,8 +419,8 @@
 
                         </div>
                         <p class="mb-1"><strong> TEMA </strong></p>
-                        <h4 class="card-title mb-3 text-white"> <strong>&#x20B5;0 </strong> </h4>
-                        <small class="fw-medium"> TOTAL RECEIPTS : <strong> 0 </strong> </small>
+                        <h4 class="card-title mb-3 text-white"> <strong>&#x20B5;  {{ number_format( $tema->sum('total') - $tema->sum('dAmount') ,2)  }}  </strong> </h4>
+                        <small class="fw-medium"> TOTAL RECEIPTS : <strong> {{$tema->count()}}  </strong> </small>
                     </div>
                 </div>
             </div>
@@ -437,8 +437,8 @@
 
                         </div>
                         <p class="mb-1"><strong> SHAIHILLS </strong></p>
-                        <h4 class="card-title mb-3 text-white"> <strong>&#x20B5;0 </strong> </h4>
-                        <small class="fw-medium"> TOTAL RECEIPTS : <strong> 0 </strong> </small>
+                        <h4 class="card-title mb-3 text-white"> <strong>&#x20B5; {{ number_format( $shaihills->sum('total') - $shaihills->sum('dAmount') ,2)  }} </strong> </h4>
+                        <small class="fw-medium"> TOTAL RECEIPTS : <strong> {{$shaihills->count()}} </strong> </small>
                     </div>
                 </div>
             </div>
@@ -457,8 +457,8 @@
 
                         </div>
                         <p class="mb-1">TAKORADI</p>
-                        <h4 class="card-title mb-3 text-white"> <strong> &#x20B5; 0 </strong></h4>
-                        <small class="fw-medium"> TOTAL RECEIPTS : 0 </small>
+                        <h4 class="card-title mb-3 text-white"> <strong> &#x20B5; {{ number_format( $takoradi->sum('total') - $takoradi->sum('dAmount') ,2)  }} </strong></h4>
+                        <small class="fw-medium"> TOTAL RECEIPTS : {{$takoradi->count()}} </small>
                     </div>
                 </div>
             </div>
@@ -475,8 +475,8 @@
 
                         </div>
                         <p class="mb-1"> <strong> KOFORIDUA </strong> </p>
-                        <h4 class="card-title mb-3 text-white"><strong>&#x20B5;0</strong></h4>
-                        <small class="fw-medium"> TOTAL RECEIPTS : <strong> 0 </strong> </small>
+                        <h4 class="card-title mb-3 text-white"><strong>&#x20B5; {{ number_format( $koforidua->sum('total') - $koforidua->sum('dAmount') ,2)  }} </strong></h4>
+                        <small class="fw-medium"> TOTAL RECEIPTS : <strong> {{$koforidua->count()}}  </strong> </small>
                     </div>
                 </div>
             </div>
@@ -494,8 +494,8 @@
 
                         </div>
                         <p class="mb-1"><strong> KUMASI </strong> </p>
-                        <h4 class="card-title mb-3 text-white"><strong>&#x20B5;0</strong></h4>
-                        <small class="fw-medium"> TOTAL RECEIPTS : <strong> 0 </strong> </small>
+                        <h4 class="card-title mb-3 text-white"><strong>&#x20B5; {{ number_format( $kumasi->sum('total') - $kumasi->sum('dAmount') ,2)  }} </strong></h4>
+                        <small class="fw-medium"> TOTAL RECEIPTS : <strong> {{$kumasi->count()}} </strong> </small>
                     </div>
                 </div>
             </div>

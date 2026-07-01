@@ -546,7 +546,7 @@
                                     <th style="width: 60px;"> ID </th>
                                     <th>Status </th>
 
-                                    <th>Collection</th>
+                                    <th>Admin Assit.</th>
                                     <th>Branch</th>
                                     <th>H/O</th>
 
