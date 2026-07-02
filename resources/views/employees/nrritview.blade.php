@@ -703,7 +703,7 @@
                 },
                     {
                         extend: 'excelHtml5',
-                        title:  "Receipts",
+                        title:  "{{' New Recruit Employees For The Month Of ' . \Carbon\Carbon::parse($month)->format('F Y')}}",
                         className: 'btn btn-secondary',
                         exportOptions: {
                             columns: ':visible'
@@ -733,7 +733,7 @@
                 },
                     {
                         extend: 'excelHtml5',
-                        title:  "Receipts",
+                        title:  "{{' Re-Instate Employees For The Month Of ' . \Carbon\Carbon::parse($month)->format('F Y')}}",
                         className: 'btn btn-secondary',
                         exportOptions: {
                             columns: ':visible'
@@ -763,7 +763,7 @@
                 },
                     {
                         extend: 'excelHtml5',
-                        title:  "Receipts",
+                        title:  "{{' Terminated Employees For The Month Of ' . \Carbon\Carbon::parse($month)->format('F Y')}}",
                         className: 'btn btn-secondary',
                         exportOptions: {
                             columns: ':visible'
