@@ -95,6 +95,8 @@ Route::get('receiptWHTPayment', [ReceiptController::class, 'dashboardWHTPayment'
 Route::get('receiptCreate/{id}', [ReceiptController::class, 'receiptCreate']);
 Route::get('searchReceiptsWHTPayment', [ReceiptController::class, 'searchReceiptsWHTPayment'])->name('receipt.searchReceiptsWHTPayment');
 Route::get('receiptSearch', [ReceiptController::class, 'receiptSearch'])->name('receipt.receiptSearch');
+Route::get('receiptListSearch', [ReceiptController::class, 'receiptListSearch'])->name('receipt.receiptListSearch');
+// Route::get('receiptPendingSearch', [ReceiptController::class, 'receiptPendingSearch'])->name('receipt.receiptPendingSearch');
 
 Route::resource('collections', CollectionController::class);
 

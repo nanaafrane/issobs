@@ -686,9 +686,94 @@
 
 
     <script>
-        let myTableNR = new DataTable('#myTableNR');
-        let myTableRI = new DataTable('#myTableRI');
-        let myTableT = new DataTable('#myTableT');
+        // let myTableNR = new DataTable('#myTableNR');
+
+        new DataTable('#myTableNR', {
+        //  dom: 'Blfrtip',
+        //  stateSave: false,
+        columnControl: [ ['search'] ],
+        layout: {
+            topStart: {
+                buttons: [ 
+                {
+                     extend: 'pageLength',
+                    text: 'Show',
+                    className: 'btn btn-secondary',
+                    Options: [10, 25, 50, 100, 250, 500, 1000, 2000], 
+                },
+                    {
+                        extend: 'excelHtml5',
+                        title:  "Receipts",
+                        className: 'btn btn-secondary',
+                        exportOptions: {
+                            columns: ':visible'
+                        }
+                    },
+                ]
+            }
+        },
+                
+    });
+
+
+        // let myTableRI = new DataTable('#myTableRI');
+
+                new DataTable('#myTableRI', {
+        //  dom: 'Blfrtip',
+        //  stateSave: false,
+        columnControl: [ ['search'] ],
+        layout: {
+            topStart: {
+                buttons: [ 
+                {
+                     extend: 'pageLength',
+                    text: 'Show',
+                    className: 'btn btn-secondary',
+                    Options: [10, 25, 50, 100, 250, 500, 1000, 2000], 
+                },
+                    {
+                        extend: 'excelHtml5',
+                        title:  "Receipts",
+                        className: 'btn btn-secondary',
+                        exportOptions: {
+                            columns: ':visible'
+                        }
+                    },
+                ]
+            }
+        },
+                
+    });
+
+
+        // let myTableT = new DataTable('#myTableT');
+
+        new DataTable('#myTableT', {
+        //  dom: 'Blfrtip',
+        //  stateSave: false,
+        columnControl: [ ['search'] ],
+        layout: {
+            topStart: {
+                buttons: [ 
+                {
+                     extend: 'pageLength',
+                    text: 'Show',
+                    className: 'btn btn-secondary',
+                    Options: [10, 25, 50, 100, 250, 500, 1000, 2000], 
+                },
+                    {
+                        extend: 'excelHtml5',
+                        title:  "Receipts",
+                        className: 'btn btn-secondary',
+                        exportOptions: {
+                            columns: ':visible'
+                        }
+                    },
+                ]
+            }
+        },
+                
+    });
 
     </script>
 

@@ -638,7 +638,7 @@
         <br>
 
         <div class="row">
-            <form action="" method="GET">
+            <form action="/receiptListSearch" method="GET">
                 @csrf
                 <div class="col">
 

@@ -1619,6 +1619,148 @@ class ReceiptController extends Controller
         return view('sales.receipt_dashboard_search', compact('reportReceipt', 'reportReceiptCount', 'month','reportReceiptTotal','accra', 'botwe', 'tema', 'shyhills','takoradi', 'koforidua', 'kumasi' ,'accraTotal', 'accraCount', 'botweTotal', 'botweCount', 'temaTotal', 'temaCount', 'shyhillsTotal', 'shyhillsCount', 'takoradiTotal', 'takoradiCount', 'koforiduaTotal', 'koforiduaCount', 'kumasiTotal', 'kumasiCount'));
     }
 
+        // Search all receipts for a given month
+    public function receiptListSearch(InvoiceToPayrollSearchRequest $request)
+    {
+       $month = Carbon::parse($request->month);
+        // dd($month);
+         $receipts =  Receipt::whereMonth('receipt_month', $month->month)->where('ho_status', 'approved')->get();
+         $reportReceiptCount = count($receipts);
+         $reportReceiptTotal = $receipts->sum('total');
+        // dd($reportReceipt);
+
+        $accra = Receipt::whereRelation('client', 'field_id', 1)->whereMonth('receipt_month', $month->month)->where('ho_status', 'approved')->get();
+        $accraTotal = $accra->sum('total');
+        $accraCount = count($accra);
+
+        $botwe = Receipt::whereRelation('client', 'field_id', 2)->whereMonth('receipt_month', $month->month)->where('ho_status', 'approved')->get();
+        $botweTotal = $botwe->sum('total');
+        $botweCount = count($botwe);
+
+        $tema = Receipt::whereRelation('client', 'field_id', 3)->whereMonth('receipt_month', $month->month)->where('ho_status', 'approved')->get();
+        $temaTotal = $tema->sum('total');
+        $temaCount = count($tema);
+
+        $takoradi = Receipt::whereRelation('client', 'field_id', 4)->whereMonth('receipt_month', $month->month)->where('ho_status', 'approved')->get();
+        $takoradiTotal = $takoradi->sum('total');
+        $takoradiCount = count($takoradi);
+
+        $koforidua = Receipt::whereRelation('client', 'field_id', 5)->whereMonth('receipt_month', $month->month)->where('ho_status', 'approved')->get();
+        $koforiduaTotal = $koforidua->sum('total');
+        $koforiduaCount = count($koforidua);
+
+        $kumasi = Receipt::whereRelation('client', 'field_id', 6)->whereMonth('receipt_month', $month->month)->where('ho_status', 'approved')->get();
+        $kumasiTotal = $kumasi->sum('total');
+        $kumasiCount = count($kumasi);
+
+        $shaihills = Receipt::whereRelation('client', 'field_id', 7)->whereMonth('receipt_month', $month->month)->where('ho_status', 'approved')->get();
+        $shaihillsTotal = $shaihills->sum('total');
+        $shaihillsCount = count($shaihills);
+
+        return view('sales.receipt_list', compact('receipts', 'accra', 'botwe', 'tema', 'shaihills', 'takoradi', 'koforidua', 'kumasi'));
+
+    }
+
+
+            // Search all receipts for a given month
+    public function receiptPendingSearch(InvoiceToPayrollSearchRequest $request)
+    {
+
+        $accra = null;
+        $botwe = null;
+        $tema = null;
+        $shaihills = null;
+        $takoradi = null;
+        $koforidua = null;
+        $kumasi = null;
+
+       $month = Carbon::parse($request->month);
+        // dd($month);
+         $receipts =  Receipt::whereMonth('receipt_month', $month->month)->where('ho_status', '!=' , 'approved')->orwhere('ho_status', null)->get();
+
+        $receiptsAccra = Receipt::whereRelation('client', 'field_id', 1)->whereMonth('receipt_month', $month->month)->where('ho_status', '!=' , 'approved')->orwhere('ho_status', null)->get();
+        $accraR = [];
+
+            foreach($receiptsAccra as $accra)
+                {
+                    if($accra->client->field_id == '1')
+                    {
+                        $accraR[] = $accra;
+                    }
+                }
+            $accra = collect($accraR);
+
+        $botweReceipt = Receipt::where('receipt_month', $request->month)->where('ho_status', '!=' , 'approved')->orwhere('ho_status', null)->get();
+           dd($botweReceipt);
+        $botweR = [];
+            foreach($botweReceipt as $botwe)
+                {
+                    if($botwe->client->field_id == '2')
+                    {
+                        $botweR[] = $botwe;
+                    }
+                }
+            $botwe = collect($botweR);
+        // dd($botwe);
+        $temaReceipt = Receipt::whereRelation('client', 'field_id', 3)->whereMonth('receipt_month', $month->month)->where('ho_status', '!=' , 'approved')->orwhere('ho_status', null)->get();
+            $temaR = [];
+            foreach($temaReceipt as $tema)
+                {
+                    if($tema->client->field_id == '3')
+                    {
+                        $temaR[] = $tema;
+                    }
+                }
+            $tema = collect($temaR);
+
+        $takoradiReceipt = Receipt::whereRelation('client', 'field_id', 4)->whereMonth('receipt_month', $month->month)->where('ho_status', '!=' , 'approved')->orwhere('ho_status', null)->get();
+            $takoradiR = [];
+            foreach($takoradiReceipt as $takoradi)
+                {
+                    if($takoradi->client->field_id == '4')
+                    {
+                        $takoradiR[] = $takoradi;
+                    }
+                }
+            $takoradi = collect($takoradiR);
+
+        $koforiduaReceipt = Receipt::whereRelation('client', 'field_id', 5)->whereMonth('receipt_month', $month->month)->where('ho_status', '!=' , 'approved')->orwhere('ho_status', null)->get();
+            $koforiduaR = [];
+            foreach($koforiduaReceipt as $koforidua)
+                {
+                    if($koforidua->client->field_id == '5')
+                    {
+                        $koforiduaR[] = $koforidua;
+                    }
+                }
+            $koforidua = collect($koforiduaR);
+
+        $kumasiReceipt = Receipt::whereRelation('client', 'field_id', 6)->whereMonth('receipt_month', $month->month)->where('ho_status', '!=' , 'approved')->orwhere('ho_status', null)->get();
+            $kumasiR = [];
+            foreach($kumasiReceipt as $kumasi)
+                {
+                    if($kumasi->client->field_id == '6')
+                    {
+                        $kumasiR[] = $kumasi;
+                    }
+                }
+            $kumasi = collect($kumasiR);
+
+        $shaihillsReceipt = Receipt::whereRelation('client', 'field_id', 7)->whereMonth('receipt_month', $month->month)->where('ho_status', '!=' , 'approved')->orwhere('ho_status', null)->get();
+            $shaihillsR = [];
+            foreach($shaihillsReceipt as $shaihills)
+                {
+                    if($shaihills->client->field_id == '7')
+                    {
+                        $shaihillsR[] = $shaihills;
+                    }
+                }
+            $shaihills = collect($shaihillsR);
+
+        return view('sales.receipt_pending', compact('receipts', 'accra', 'botwe', 'tema', 'shaihills', 'takoradi', 'koforidua', 'kumasi', 'month'));
+
+    }
+
 
 
     public function dashboardCashPayment()
@@ -1989,7 +2131,7 @@ class ReceiptController extends Controller
             $kumasiR = [];
             foreach($kumasiReceipt as $kumasi)
                 {
-                    if($kumasi->client->field_id == '4')
+                    if($kumasi->client->field_id == '6')
                     {
                         $kumasiR[] = $kumasi;
                     }

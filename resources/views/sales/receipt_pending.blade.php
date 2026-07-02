@@ -633,8 +633,8 @@
         </div>
         @endif
         <br><br>
-        <div class="row">
-            <form action="/receiptSearch" method="GET">
+        <!-- <div class="row">
+            <form action="/receiptPendingSearch" method="GET">
                 @csrf
                 <div class="col">
 
@@ -647,7 +647,7 @@
                     </div>
                 </div>
             </form>
-        </div>
+        </div> -->
          <hr> <br>  
 
 
