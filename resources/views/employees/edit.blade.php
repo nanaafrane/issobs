@@ -348,512 +348,232 @@
 
   @section('content')
 
-  <!-- Content -->
-            <div class="container-xxl flex-grow-1 container-p-y">
-              <h4 class="fw-bold py-3 mb-4"><span class="text-muted fw-light"><i class="bx bxs-user-account"></i> Employee /</span> Edit</h4>
-       
-              <div class="card-header  ml-2  d-none d-lg-block">
-                  @include('flash-messages')
-              </div>
-              
-              <div class="row">
-                <div class="col-md-12">
-                  <ul class="nav nav-pills flex-column flex-md-row mb-3">
-                    <li class="nav-item">
-                      <a class="nav-link active" href="javascript:void(0);"><i class="bx bx-user me-1"></i> Employee Details</a>
-                    </li>
+  <div class="container-xxl flex-grow-1 container-p-y">
+    <div class="card mb-4">
+      <div class="card-body d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
+        <div>
+          <h4 class="fw-bold mb-1">Edit employee</h4>
+          <p class="text-muted mb-0">Update profile and payroll settings for {{ $employee->name }}.</p>
+        </div>
+        <div class="text-md-end">
+          <a href="{{ url('employees', $employee->id) }}" class="btn btn-outline-secondary btn-sm mb-2">
+            <i class="bx bx-user me-1"></i> Employee Details
+          </a>
+          <a href="{{ url('employeesPayInfo', $employee->id) }}" class="btn btn-outline-secondary btn-sm mb-2">
+            <i class="bx bxs-comment-detail me-1"></i> Payment Info
+          </a>
+        </div>
+      </div>
+    </div>
 
-                    <li class="nav-item ">
-                      <a class="nav-link" href=" {{url('employeesPayInfo', $employee->id)}}" ><i class="bx bxs-comment-detail"></i> Payment Info </a>
-                    </li>
-                    
-                  </ul>
+    <!-- <div class="row mb-3">
+      <div class="col-12">
+        <ul class="nav nav-pills flex-column flex-md-row gap-2">
+          <li class="nav-item">
+            <a class="nav-link active" href="javascript:void(0);"><i class="bx bx-user me-1"></i> Employee Details</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url('employeesPayInfo', $employee->id) }}"><i class="bx bxs-comment-detail me-1"></i> Payment Info</a>
+          </li>
+        </ul>
+      </div>
+    </div> -->
 
+    <div class="card mb-4">
+      <div class="card-header"><strong>Basic information for {{ $employee->name }}</strong></div>
+      <div class="card-body">
+        <div class="row g-4">
 
-                  <form  action="/employees/{{$employee->id}}" method="POST" enctype="multipart/form-data">
-                    @csrf
-                    @method('PUT')
-                    <div class="card mb-4">
-                      <h5 class="card-header"><strong> Basic Infomation</strong> For : {{ $employee->name }}</h5>
-
-                      <!-- Account -->
-                      <div class="card-body">
-                    
-                            <div class="col-md-6 form-check form-switch ">
-                                <input name="tax_button" class="form-check-input" type="checkbox"  @if ($employee->tax_button == "on") checked @endif id="tax_button">
-                                <label class="form-check-label" for="tax_button"> TAX EMPLOYEE </label>
-                            </div> 
-                            
-                            <div class="col-md-6 form-check form-switch ">
-                                <input name="ssnit_button" class="form-check-input" type="checkbox"  @if ($employee->ssnit_button == "on") checked @endif id="ssnit_button">
-                                <label class="form-check-label" for="ssnit_button"> DEDUCT SSNIT FOR EMPLOYEE </label>
-                            </div> 
-                        <br>
-
-                        <div class="d-flex align-items-start align-items-sm-center gap-4">
-                           <img
-                                        src="@if($employee->image) {{asset($employee->image)}} @else {{asset('img/user.png')}} @endif"
-                                        alt="user-avatar"
-                                        class="d-block w-px-100 h-px-100 rounded"
-                                        id="uploadedAvatar" />
-                                        
-                            <div class="button-wrapper">
-                                <label for="image" class="btn btn-dark  me-3 mb-4" tabindex="0">
-                                    <!-- <span class="d-none d-sm-block"> Attach   </span> -->
-                                    <input
-                                        type="file"
-                                        id="image"
-                                        name="image"
-                                        class="account-file-input  @error('image') is-invalid @enderror"
-                                        accept="image/png, image/jpeg" />
-                                    @error('image')
-                                    <span class="invalid-feedback" role="alert">
-                                        <strong>{{ $message }}</strong>
-                                    </span>
-                                    @enderror
-                                </label>
-                                <div>Kindly attach Employee Image, Max size of 2MB </div>
-
-                            </div>
-
-                        </div>
-                      </div>
-                      <hr class="my-0" />
-
-                      <div class="card-body">
-                          <div class="row">
-                            <div class="mb-3 col-md-4">
-                              <label for="name" class="form-label"> <strong>Full Name * </strong> </label>
-                              <input  class="form-control @error('name') is-invalid @enderror" type="text" id="name" placeholder="Full Name" name="name" value="{{$employee->name}}" autofocus />
-                                @error('name')
-                                <span class="invalid-feedback" role="alert">
-                                    <strong>{{ $message }}</strong>
-                                </span>
-                                @enderror
-                            </div>
-                           
-                           
-                            <div class="mb-3 col-md-4">
-                              <label for="gender" class="form-label"> <strong>Gender * </strong> </label>
-                             <select name="gender" class="form-select @error('gender') is-invalid @enderror" id="gender"  >
-                                   
-                                    <option @if ($employee->gender == 'male') selected @endif  value="male">Male</option>
-
-                                    <option @if ($employee->gender == 'female') selected @endif value="female">Female</option>
-                                </select>
-                                @error('gender')
-                                <span class="invalid-feedback" role="alert">
-                                    <strong>{{ $message }}</strong>
-                                </span>
-                                @enderror
-                            </div>
-                           
-                           
-                            <div class="mb-3 col-md-2">
-                            <label for="phone_number" class="form-label"> <strong>{{ __('Phone Number *') }} </strong> </label>
-                            <input
-                                type="number"
-                                id="phone_number"
-                                name="phone_number"
-                                class="form-control @error('phone_number') is-invalid @enderror"
-                                value="{{ $employee->phone_number}}"
-                                placeholder="Phone Number "
-                                autocomplete=" phone_number"
-                                autofocus
-                                >
-
-                            @error('phone_number')
-                            <span class="invalid-feedback" role="alert">
-                                <strong>{{ $message }}</strong>
-                            </span>
-                            @enderror
-                            </div>
-
-                            <div class="mb-3 col-md-2">
-                              <label for="channel" class="form-label"><strong>Channel</strong> </label>
-                                <select name="channel" class="form-select @error('channel') is-invalid @enderror" id="channel" value="{{ old('channel')}}" >
-                                    <option disabled selected value="">Choose...</option>
-                                    @foreach($channels as $channel)
-                                    <option @if($employee?->channel == $channel->channel) selected @endif value="{{$channel->channel}}">{{$channel->name}}</option>
-                                    @endforeach
-                                    <!-- <option value="mtn-gh">MTN</option>
-                                    <option value="vodafone-gh">TELECEL</option>
-                                    <option value="tigo-gh">AIRTELTIGO</option>   -->
-
-                                </select>
-                                @error('channel')
-                                <span class="invalid-feedback" role="alert">
-                                    <strong>{{ $message }}</strong>
-                                </span>
-                                @enderror
-                            </div>
-                            
-                            <div class="mb-3 col-md-4">
-                              <label for="date_of_birth" class="form-label"> <strong>Date Of Birth *</strong> </label>
-                              <input  class="form-control @error('date_of_birth') is-invalid @enderror" type="date" id="date_of_birth" name="date_of_birth"  value="{{$employee->date_of_birth?->format('Y-m-d')}}" autofocus />
-                                @error('date_of_birth')
-                                <span class="invalid-feedback" role="alert">
-                                    <strong>{{ $message }}</strong>
-                                </span>
-                                @enderror
-                            </div>
-
-                            <div class="mb-3 col-md-4">
-                              <label for="nia_number" class="form-label"> <strong>NIA Number * </strong> </label>
-                              <input  class="form-control @error('nia_number') is-invalid @enderror" type="text" id="nia_number" name="nia_number" placeholder="GHAXXXXXXXXX-X" value="{{$employee->nia_number}}" autofocus />
-                                @error('nia_number')
-                                <span class="invalid-feedback" role="alert">
-                                    <strong>{{ $message }}</strong>
-                                </span>
-                                @enderror
-                            </div>
-
-                            <div class="mb-3 col-md-4">
-                              <label for="address" class="form-label"> <strong> Digital Address / Residence </strong> </label>
-                              <input  class="form-control @error('address') is-invalid @enderror" type="text" id="address" name="address" placeholder="GC-XXX-X" value="{{$employee->address}}" autofocus />
-                                @error('address')
-                                <span class="invalid-feedback" role="alert">
-                                    <strong>{{ $message }}</strong>
-                                </span>
-                                @enderror
-                            </div>
-
-                            <div class="mb-3 col-md-4">
-                              <label for="marital_status" class="form-label"><strong>Marital Status *</strong> </label>
-                                <select name="marital_status" class="form-select @error('marital_status') is-invalid @enderror" id="marital_status" value="{{ old('marital_status')}}" >
-                                    <option @if ($employee->gender == 'single') selected @endif value="single">Single</option>
-                                    <option @if ($employee->gender == 'married') selected @endif value="married">Married</option>
-                                    <option @if ($employee->gender == 'divorced') selected @endif value="divorced">Divorced</option>  
-                                    <option @if ($employee->gender == 'widowed') selected @endif value="widowed">Widowed</option>
-
-                                </select>
-                                @error('marital_status')
-                                <span class="invalid-feedback" role="alert">
-                                    <strong>{{ $message }}</strong>
-                                </span>
-                                @enderror
-                            </div>
-
-                            <div class="mb-3 col-md-4">
-                              <label for="worker_type" class="form-label"><strong>Worker Type *</strong> </label>
-                                <select name="worker_type" class="form-select @error('worker_type') is-invalid @enderror" id="worker_type" value="{{ old('worker_type')}}" >
-                                    <option @if ($employee->worker_type == 'employee') selected @endif  value="employee">Employee</option>
-                                    <option @if ($employee->worker_type == 'contractor') selected @endif value="contractor">Contractor</option>
-
-                                </select>
-                                @error('worker_type')
-                                <span class="invalid-feedback" role="alert">
-                                    <strong>{{ $message }}</strong>
-                                </span>
-                                @enderror
-                            </div>
-
-                            <div class="mb-3 col-md-4">
-                              <label for="date_of_joining" class="form-label"> <strong>  Date Of Joining * </strong> </label>
-                              <input  class="form-control @error('date_of_joining') is-invalid @enderror" type="date" id="date_of_joining" name="date_of_joining"  value="{{$employee->date_of_joining?->format('Y-m-d') }}" autofocus />
-                                @error('date_of_joining')
-                                <span class="invalid-feedback" role="alert">
-                                    <strong>{{ $message }}</strong>
-                                </span>
-                                @enderror
-                            </div>
-
-                            <div class="mb-3 col-md-4">
-                              <label for="department_id" class="form-label"> <strong> {{ __('Department') }} * </strong>  </label>
-                                <select name="department_id" class="form-select @error('department_id') is-invalid @enderror" id="department_id" >
-                                    @foreach($Departments as $department)
-                                    <option @if($department->name == $employee->department?->name) selected @endif value="{{$department->id}}">{{$department->name}}</option>
-                                    @endforeach
-                                </select>
-                                @error('department_id')
-                                  <span class="invalid-feedback" role="alert">
-                                      <strong>{{ $message }}</strong>
-                                  </span>
-                                @enderror
-                            </div>
-
-                            <div class="mb-3 col-md-4">
-                              <label for="role_id" class="form-label"> <strong> {{ __('Role') }} * </strong>  </label>
-                                <select name="role_id" class="form-select @error('role_id') is-invalid @enderror" id="role_id" >
-                                  @foreach($Roles as $role)
-                                  <option @if($role->name == $employee->role?->name) selected @endif value="{{$role->id}}">{{$role->name}}</option>
-                                  @endforeach
-                                </select>
-                                @error('role_id')
-                                  <span class="invalid-feedback" role="alert">
-                                      <strong>{{ $message }}</strong>
-                                  </span>
-                                @enderror
-                            </div>
-
-
-                            <div class="mb-3 col-md-4">
-                              <label for="field_id" class="form-label"> <strong> {{ __('Field Office') }} * </strong>  </label>
-                                <select name="field_id" class="form-select @error('field_id') is-invalid @enderror" id="field_id" >
-                                  @foreach($Fields as $field)
-                                  <option @if($field?->name == $employee->field?->name) selected @endif value="{{$field?->id}}">{{$field?->name}}</option>
-                                  @endforeach
-                                </select>
-                                @error('field_id')
-                                  <span class="invalid-feedback" role="alert">
-                                      <strong>{{ $message }}</strong>
-                                  </span>
-                                @enderror
-                            </div>
-
-                            <div class="mb-3 col-md-4">
-                              <label for="client_id" class="form-label"> <strong> {{ __('Client') }} </strong>  </label>
-                                <select name="client_id" class="form-select @error('client_id') is-invalid @enderror" id="client_id">
-                                  <option  value=""> Choose... </option>
-                                    @foreach($clients as $client)
-                                    <option  @if($client->id == $employee->client?->id) selected @endif  value="{{$client->id}}">{{$client->name}} {{$client->business_name}}</option>
-                                    @endforeach
-                                </select>
-                                @error('client_id')
-                                  <span class="invalid-feedback" role="alert">
-                                      <strong>{{ $message }}</strong>
-                                  </span>
-                                @enderror
-                            </div>
-
-
-                            <div class="mb-3 col-md-4">
-                              <label for="location" class="form-label"> <strong>  {{ __('Location') }} * </strong> </label>
-                              <textarea  class="form-control @error('location') is-invalid @enderror" type="text" id="location" name="location"  placeholder="Address Name or Location Name" autofocus >{{$employee->location}}</textarea>
-                                @error('location')
-                                <span class="invalid-feedback" role="alert">
-                                    <strong>{{ $message }}</strong>
-                                </span>
-                                @enderror
-                            </div>
-                            <div class="mb-3 col-md-4">
-                              <label for="payment_type" class="form-label"> <strong> {{ __('Payment Type') }} *</strong>  </label>
-                                <select name="payment_type" class="form-select @error('payment_type') is-invalid @enderror" id="payment_type" >
-                                    <option @if ($employee->payment_type == 'Bank') selected @endif value="Bank">Bank</option>
-                                    <option  @if ($employee->payment_type == 'Cash') selected @endif value="Cash">Cash</option>
-                                </select>
-                                @error('payment_type')
-                                  <span class="invalid-feedback" role="alert">
-                                      <strong>{{ $message }}</strong>
-                                  </span>
-                                @enderror
-                            </div>                       
-
-                            <div class="row"> 
-                                <div class="col-md-2"></div>
-                              <div class="mb-3 col-md-4">
-                                <label for="basic_salary" class="form-label"> <strong>  Basic Salary  </strong> </label>
-                                <input  class="form-control @error('basic_salary') is-invalid @enderror" type="number" id="basic_salary" name="basic_salary" placeholder="GH&#x20B5;" value="{{$employee->basic_salary}}" autofocus  step="any"/>
-                                  @error('basic_salary')
-                                  <span class="invalid-feedback" role="alert">
-                                      <strong>{{ $message }}</strong>
-                                  </span>
-                                  @enderror
-                              </div>
-
-                              <div class="mb-3 col-md-4">
-                                <label for="allowances" class="form-label"> <strong>  Allowances  </strong> </label>
-                                <input  class="form-control @error('allowances') is-invalid @enderror" type="number" id="allowances" name="allowances" placeholder="GH&#x20B5;" value="{{$employee->allowances}}" autofocus  step="any"/>
-                                  @error('allowances')
-                                  <span class="invalid-feedback" role="alert">
-                                      <strong>{{ $message }}</strong>
-                                  </span>
-                                  @enderror
-                              </div> 
-                                <div class="col-md-2"></div>
-                            </div>
-
-
-                            <h5 class="card-header"> <strong>Gurantor Infomation</strong> </h5> 
-                            <hr class="mb-3" />
-
-                            <div class="mb-3 col-md-4">
-                              <label for="gurantor_name" class="form-label"> <strong>   Gurantor Name  </strong> </label>
-                              <input  class="form-control @error('gurantor_name') is-invalid @enderror" type="text" id="gurantor_name" name="gurantor_name" placeholder="Gurantor Full Name" value="{{$employee->gurantor_name}}" autofocus />
-                                @error('gurantor_name')
-                                <span class="invalid-feedback" role="alert">
-                                    <strong>{{ $message }}</strong>
-                                </span>
-                                @enderror
-                            </div>
-
-                              <div class="mb-3 col-md-4">
-                              <label for="gurantor_number" class="form-label"> <strong>   Gurantor Number  </strong> </label>
-                              <input  class="form-control @error('gurantor_number') is-invalid @enderror" type="number" id="gurantor_number" name="gurantor_number" placeholder="Gurantor Number" value="{{$employee->gurantor_number}}" autofocus />
-                                @error('gurantor_number')
-                                <span class="invalid-feedback" role="alert">
-                                    <strong>{{ $message }}</strong>
-                                </span>
-                                @enderror
-                            </div>
-
-
-                              <div class="mb-3 col-md-4">
-                              <label for="gurantor_address" class="form-label"> <strong>   Gurantor Address </strong> </label>
-                              <input  class="form-control @error('gurantor_address') is-invalid @enderror" type="text" id="gurantor_address" name="gurantor_address" placeholder="Gurantor Address" value="{{$employee->gurantor_address}}" autofocus />
-                                @error('gurantor_address')
-                                <span class="invalid-feedback" role="alert">
-                                    <strong>{{ $message }}</strong>
-                                </span>
-                                @enderror
-                            </div>
-
-                              <div class="mb-3 col-md-4">
-                              <label for="gurantor_nia_number" class="form-label"> <strong>   Gurantor NIA Number  </strong> </label>
-                              <input  class="form-control @error('gurantor_nia_number') is-invalid @enderror" type="text" id="gurantor_nia_number" name="gurantor_nia_number" placeholder="Gurantor NIA Number" value="{{$employee->gurantor_nia_number}}" autofocus />
-                                @error('gurantor_nia_number')
-                                <span class="invalid-feedback" role="alert">
-                                    <strong>{{ $message }}</strong>
-                                </span>
-                                @enderror
-                              </div>
-
-                            <div class="mb-3 col-md-4">
-                              <label for="relationship" class="form-label"> <strong>  Relationship with Gurantor  </strong> </label>
-                              <input  class="form-control @error('relationship') is-invalid @enderror" type="text" id="relationship" name="relationship" placeholder="Mother or Father..." value="{{$employee->relationship}}" autofocus />
-                                @error('relationship')
-                                <span class="invalid-feedback" role="alert">
-                                    <strong>{{ $message }}</strong>
-                                </span>
-                                @enderror
-                            </div>
-
-
-
-
-                          </div>
-                          <div class="mt-2">
-                            <button type="submit" class="btn btn-primary me-2">Update </button>
-                          </div>
-                      </div>
-                      <!-- /Account -->
-                    </div>
-                  </form>
-              
-                  
+          <div class="col-lg-4">
+            <div class="card bg-dark text-white h-50">
+              <div class="card-body text-center">
+                <img src="@if($employee->image) {{ asset($employee->image) }} @else {{ asset('img/user.png') }} @endif" alt="user-avatar" class="rounded-circle mb-3 w-px-120 h-px-120 object-fit-cover" />
+                <h5 class="card-title text-white mb-1">{{ $employee->name }}</h5>
+                <p class="text-muted mb-2">{{ $employee->role?->name ?? 'Employee' }}</p>
+                <span class="badge {{ $employee->status === 'Active' ? 'bg-success' : 'bg-danger' }} mb-3">{{ $employee->status }}</span>
+                <div class="text-start">
+                  <small class="text-muted">Client Name</small>
+                  <p class="mb-1">{{ $employee->client->business_name ?: '-' }}</p>
+                  <small class="text-muted">Location</small>
+                  <p class="mb-0">{{ $employee->location ?: '-' }}</p>
                 </div>
               </div>
             </div>
-  <!-- / Content -->
-        @if(Auth::user()->hasRole(['Manager', 'Invoice']))
-          <div class="buy-now">
-            @if ($employee->status !== 'Active')
-            <!-- <a style="margin-bottom: 70px;" href="{{url('employeeReinstate', $employee->id )}}" class="btn btn-danger btn-buy-now"> <i class="icon-base bx bx-edit-alt me-1"></i> Re-Instate </a> -->
-                                  <button
-                        type="button"
-                        class="btn btn-danger btn-buy-now"
-                        data-bs-toggle="modal"
-                        data-bs-target="#basicModal">
-                        <i class="icon-base bx bx-bxs-user-plus"> </i>Re-Instate
-                    </button>
-
-                    <div class="modal fade" id="basicModal" tabindex="-1" aria-hidden="true">
-                        <div class="modal-dialog" role="document">
-                            <div class="modal-content">
-                                <div class="modal-header">
-                                    <h5 class="modal-title" id="exampleModalLabel1">Choose Month To Re-Instate</h5>
-                                    <button
-                                        type="button"
-                                        class="btn-close"
-                                        data-bs-dismiss="modal"
-                                        aria-label="Close"></button>
-                                </div>
-
-                                <form method="GET" action="/employeeReinstate/{{ $employee->id }}">
-                                    @csrf
-                                    <div class="modal-body">
-                                        <div class="row">
-                                            <div class="col mb-0">
-                                                <label for="name" class="form-label"> {{ __(' MONTH ') }}</label>
-                                                <input
-                                                    type="month"
-                                                    name="status_date"
-                                                    id="status_date"
-                                                    class="form-control @error('status_date') is-invalid @enderror"
-                                                    value="{{ old('status_date')}}"
-                                                    autocomplete="status_date"
-                                                    autofocus
-                                                    required>
-
-                                                @error('status_date')
-                                                <span class="invalid-feedback" role="alert">
-                                                    <strong>{{ $message }}</strong>
-                                                </span>
-                                                @enderror
-                                            </div>
-                                        </div>
-                                        <br>
-                                    </div>
-                                    <div class="modal-footer">
-                                        <button type="submit" class="btn btn-info d-grid w-100">{{ __('Re-Instate') }}</button>
-                                    </div>
-                                </form>
-
-                            </div>
-                        </div>
-                    </div>
-
-            @else
-            <!-- <a  href="{{url('terminateEmployee', $employee->id )}}" class="btn btn-danger btn-buy-now"> <i class="icon-base bx bx-trash me-1"></i> Terminate </a>   -->
-              
-                    <button
-                        type="button"
-                        class="btn btn-danger btn-buy-now"
-                        data-bs-toggle="modal"
-                        data-bs-target="#basicModal">
-                        <i class="icon-base bx bx-bxs-user-plus"> </i>Terminate
-                    </button>
-
-                    <div class="modal fade" id="basicModal" tabindex="-1" aria-hidden="true">
-                        <div class="modal-dialog" role="document">
-                            <div class="modal-content">
-                                <div class="modal-header">
-                                    <h5 class="modal-title" id="exampleModalLabel1">Choose Month To Terminate</h5>
-                                    <button
-                                        type="button"
-                                        class="btn-close"
-                                        data-bs-dismiss="modal"
-                                        aria-label="Close"></button>
-                                </div>
-
-                                <form method="GET" action="/terminateEmployee/{{ $employee->id }}">
-                                    @csrf
-                                    <div class="modal-body">
-                                        <div class="row">
-                                            <div class="col mb-0">
-                                                <label for="name" class="form-label"> {{ __(' MONTH ') }}</label>
-                                                <input
-                                                    type="month"
-                                                    name="status_date"
-                                                    id="status_date"
-                                                    class="form-control @error('status_date') is-invalid @enderror"
-                                                    value="{{ old('status_date')}}"
-                                                    autocomplete="status_date"
-                                                    autofocus
-                                                    required>
-
-                                                @error('status_date')
-                                                <span class="invalid-feedback" role="alert">
-                                                    <strong>{{ $message }}</strong>
-                                                </span>
-                                                @enderror
-                                            </div>
-                                        </div>
-                                        <br>
-                                    </div>
-                                    <div class="modal-footer">
-                                        <button type="submit" class="btn btn-info d-grid w-100">{{ __('Terminate') }}</button>
-                                    </div>
-                                </form>
-
-                            </div>
-                        </div>
-                    </div>
-
-            @endif
           </div>
-        @endif
+
+          <div class="col-lg-8">
+            <form action="/employees/{{ $employee->id }}" method="POST" enctype="multipart/form-data">
+              @csrf
+              @method('PUT')
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label for="name" class="form-label"><strong>Full Name *</strong></label>
+                  <input class="form-control @error('name') is-invalid @enderror" type="text" id="name" name="name" value="{{ $employee->name }}" autofocus />
+                  @error('name')<span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>@enderror
+                </div>
+                <div class="col-md-6">
+                  <label for="gender" class="form-label"><strong>Gender *</strong></label>
+                  <select name="gender" id="gender" class="form-select @error('gender') is-invalid @enderror">
+                    <option @if ($employee->gender == 'male') selected @endif value="male">Male</option>
+                    <option @if ($employee->gender == 'female') selected @endif value="female">Female</option>
+                  </select>
+                  @error('gender')<span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>@enderror
+                </div>
+                <div class="col-md-6">
+                  <label for="phone_number" class="form-label"><strong>Phone Number *</strong></label>
+                  <input type="number" id="phone_number" name="phone_number" class="form-control @error('phone_number') is-invalid @enderror" value="{{ $employee->phone_number }}" />
+                  @error('phone_number')<span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>@enderror
+                </div>
+                <div class="col-md-6">
+                  <label for="channel" class="form-label"><strong>Channel</strong></label>
+                  <select name="channel" id="channel" class="form-select @error('channel') is-invalid @enderror">
+                    <option disabled selected value="">Choose...</option>
+                    @foreach($channels as $channel)
+                      <option @if($employee?->channel == $channel->channel) selected @endif value="{{ $channel->channel }}">{{ $channel->name }}</option>
+                    @endforeach
+                  </select>
+                  @error('channel')<span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>@enderror
+                </div>
+                <div class="col-md-4">
+                  <label for="date_of_birth" class="form-label"><strong>Date Of Birth *</strong></label>
+                  <input class="form-control @error('date_of_birth') is-invalid @enderror" type="date" id="date_of_birth" name="date_of_birth" value="{{ $employee->date_of_birth?->format('Y-m-d') }}" />
+                  @error('date_of_birth')<span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>@enderror
+                </div>
+                <div class="col-md-4">
+                  <label for="nia_number" class="form-label"><strong>NIA Number *</strong></label>
+                  <input class="form-control @error('nia_number') is-invalid @enderror" type="text" id="nia_number" name="nia_number" value="{{ $employee->nia_number }}" />
+                  @error('nia_number')<span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>@enderror
+                </div>
+                <div class="col-md-4">
+                  <label for="address" class="form-label"><strong>Digital Address / Residence</strong></label>
+                  <input class="form-control @error('address') is-invalid @enderror" type="text" id="address" name="address" value="{{ $employee->address }}" />
+                  @error('address')<span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>@enderror
+                </div>
+                <div class="col-md-4">
+                  <label for="marital_status" class="form-label"><strong>Marital Status *</strong></label>
+                  <select name="marital_status" id="marital_status" class="form-select @error('marital_status') is-invalid @enderror">
+                    <option @if ($employee->marital_status == 'single') selected @endif value="single">Single</option>
+                    <option @if ($employee->marital_status == 'married') selected @endif value="married">Married</option>
+                    <option @if ($employee->marital_status == 'divorced') selected @endif value="divorced">Divorced</option>
+                    <option @if ($employee->marital_status == 'widowed') selected @endif value="widowed">Widowed</option>
+                  </select>
+                  @error('marital_status')<span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>@enderror
+                </div>
+                <div class="col-md-4">
+                  <label for="worker_type" class="form-label"><strong>Worker Type *</strong></label>
+                  <select name="worker_type" id="worker_type" class="form-select @error('worker_type') is-invalid @enderror">
+                    <option @if($employee->worker_type == 'employee') selected @endif value="employee">Employee</option>
+                    <option @if($employee->worker_type == 'contractor') selected @endif value="contractor">Contractor</option>
+                  </select>
+                  @error('worker_type')<span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>@enderror
+                </div>
+                <div class="col-md-4">
+                  <label for="date_of_joining" class="form-label"><strong>Date Of Joining *</strong></label>
+                  <input class="form-control @error('date_of_joining') is-invalid @enderror" type="date" id="date_of_joining" name="date_of_joining" value="{{ $employee->date_of_joining?->format('Y-m-d') }}" />
+                  @error('date_of_joining')<span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>@enderror
+                </div>
+                <div class="col-md-4">
+                  <label for="department_id" class="form-label"><strong>Department *</strong></label>
+                  <select name="department_id" id="department_id" class="form-select @error('department_id') is-invalid @enderror">
+                    @foreach($Departments as $department)
+                      <option @if($department->name == $employee->department?->name) selected @endif value="{{ $department->id }}">{{ $department->name }}</option>
+                    @endforeach
+                  </select>
+                  @error('department_id')<span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>@enderror
+                </div>
+                <div class="col-md-4">
+                  <label for="role_id" class="form-label"><strong>Role *</strong></label>
+                  <select name="role_id" id="role_id" class="form-select @error('role_id') is-invalid @enderror">
+                    @foreach($Roles as $role)
+                      <option @if($role->name == $employee->role?->name) selected @endif value="{{ $role->id }}">{{ $role->name }}</option>
+                    @endforeach
+                  </select>
+                  @error('role_id')<span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>@enderror
+                </div>
+                <div class="col-md-4">
+                  <label for="field_id" class="form-label"><strong>Field Office *</strong></label>
+                  <select name="field_id" id="field_id" class="form-select @error('field_id') is-invalid @enderror">
+                    @foreach($Fields as $field)
+                      <option @if($field?->name == $employee->field?->name) selected @endif value="{{ $field?->id }}">{{ $field?->name }}</option>
+                    @endforeach
+                  </select>
+                  @error('field_id')<span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>@enderror
+                </div>
+                <div class="col-md-4">
+                  <label for="client_id" class="form-label"><strong>Client</strong></label>
+                  <select name="client_id" id="client_id" class="form-select @error('client_id') is-invalid @enderror">
+                    <option value="">Choose...</option>
+                    @foreach($clients as $client)
+                      <option @if($client->id == $employee->client?->id) selected @endif value="{{ $client->id }}">{{ $client->name }} {{ $client->business_name }}</option>
+                    @endforeach
+                  </select>
+                  @error('client_id')<span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>@enderror
+                </div>
+                <div class="col-md-4">
+                  <label for="location" class="form-label"><strong>Location *</strong></label>
+                  <textarea id="location" name="location" class="form-control @error('location') is-invalid @enderror" placeholder="Address Name or Location Name">{{ $employee->location }}</textarea>
+                  @error('location')<span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>@enderror
+                </div>
+                <div class="col-md-4">
+                  <label for="payment_type" class="form-label"><strong>Payment Type *</strong></label>
+                  <select name="payment_type" id="payment_type" class="form-select @error('payment_type') is-invalid @enderror">
+                    <option @if ($employee->payment_type == 'Bank') selected @endif value="Bank">Bank</option>
+                    <option @if ($employee->payment_type == 'Cash') selected @endif value="Cash">Cash</option>
+                  </select>
+                  @error('payment_type')<span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>@enderror
+                </div>
+                <div class="col-md-4">
+                  <label for="basic_salary" class="form-label"><strong>Basic Salary</strong></label>
+                  <input type="number" step="any" id="basic_salary" name="basic_salary" class="form-control @error('basic_salary') is-invalid @enderror" value="{{ $employee->basic_salary }}" />
+                  @error('basic_salary')<span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>@enderror
+                </div>
+                <div class="col-md-4">
+                  <label for="allowances" class="form-label"><strong>Allowances</strong></label>
+                  <input type="number" step="any" id="allowances" name="allowances" class="form-control @error('allowances') is-invalid @enderror" value="{{ $employee->allowances }}" />
+                  @error('allowances')<span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>@enderror
+                </div>
+                <div class="col-12">
+                  <h5 class="card-header mt-4"><strong>Guarantor information</strong></h5>
+                </div>
+                <div class="col-md-4">
+                  <label for="gurantor_name" class="form-label"><strong>Guarantor Name</strong></label>
+                  <input class="form-control @error('gurantor_name') is-invalid @enderror" type="text" id="gurantor_name" name="gurantor_name" value="{{ $employee->gurantor_name }}" />
+                  @error('gurantor_name')<span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>@enderror
+                </div>
+                <div class="col-md-4">
+                  <label for="gurantor_number" class="form-label"><strong>Guarantor Number</strong></label>
+                  <input class="form-control @error('gurantor_number') is-invalid @enderror" type="number" id="gurantor_number" name="gurantor_number" value="{{ $employee->gurantor_number }}" />
+                  @error('gurantor_number')<span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>@enderror
+                </div>
+                <div class="col-md-4">
+                  <label for="gurantor_address" class="form-label"><strong>Guarantor Address</strong></label>
+                  <input class="form-control @error('gurantor_address') is-invalid @enderror" type="text" id="gurantor_address" name="gurantor_address" value="{{ $employee->gurantor_address }}" />
+                  @error('gurantor_address')<span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>@enderror
+                </div>
+                <div class="col-md-4">
+                  <label for="gurantor_nia_number" class="form-label"><strong>Guarantor NIA Number</strong></label>
+                  <input class="form-control @error('gurantor_nia_number') is-invalid @enderror" type="text" id="gurantor_nia_number" name="gurantor_nia_number" value="{{ $employee->gurantor_nia_number }}" />
+                  @error('gurantor_nia_number')<span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>@enderror
+                </div>
+                <div class="col-md-4">
+                  <label for="relationship" class="form-label"><strong>Relationship with Guarantor</strong></label>
+                  <input class="form-control @error('relationship') is-invalid @enderror" type="text" id="relationship" name="relationship" value="{{ $employee->relationship }}" />
+                  @error('relationship')<span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>@enderror
+                </div>
+              </div>
+
+              <div class="mt-4 text-end">
+                <button type="submit" class="btn btn-primary">Update</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   @endsection
+
 
 
 </x-hr-dashboard>

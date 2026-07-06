@@ -423,7 +423,7 @@
                             <div style="padding-top: 30px;" class="row">
                                 <div class="col-12">
                                     <center>
-                                        <button type="submit" id="submit" class="btn btn-danger btn-lg btn-block" onclick="return confirm('Kindly Confirm?')"> Generate </button>
+                                        <button type="submit" id="submit" class="btn btn-danger btn-lg btn-block" data-loading onclick="return confirm('Kindly Confirm?')"> Generate </button>
                                     </center>
                                 </div>
                             </div>

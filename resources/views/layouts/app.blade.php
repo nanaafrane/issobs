@@ -40,6 +40,39 @@
     <!-- Page -->
     <link rel="stylesheet" href="{{ asset('vendor/css/pages/page-auth.css')}}" />
 
+    <style>
+        .btn.loading,
+        button.loading,
+        input.loading,
+        a.loading {
+            pointer-events: none;
+            opacity: 0.75;
+            cursor: progress;
+        }
+
+        .btn.loading .spinner-border,
+        button.loading .spinner-border,
+        a.loading .spinner-border {
+            margin-right: 0.4rem;
+            vertical-align: text-bottom;
+        }
+
+        .btn.loading .btn-loading-text,
+        a.loading .btn-loading-text {
+            display: inline-block;
+            margin-left: 0.25rem;
+        }
+
+        a.loading {
+            text-decoration: none;
+        }
+
+        .loading-progress {
+            display: inline-flex;
+            align-items: center;
+        }
+    </style>
+
     <!-- Helpers -->
     <script src="{{ asset('vendor/js/helpers.js')}}"></script>
     <!--! Template customizer & Theme config files MUST be included after core stylesheets and helpers.js in the <head> section -->

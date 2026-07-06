@@ -346,348 +346,278 @@
   @endsection
 
 
-  @section('content')
+    @section('content')
 
-  <!-- Content -->
-            <div class="container-xxl flex-grow-1 container-p-y">
+  <div class="container-xxl flex-grow-1 container-p-y">
+    <div class="card mb-4">
+      <div class="card-body">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
+          <div>
+            <h4 class="fw-bold mb-1">Employee profile</h4>
+            <p class="text-muted mb-0">Comprehensive profile for {{ $employee->name }}.</p>
+          </div>
 
-              <div class="card-header  ml-2  d-none d-lg-block">
-                  @include('flash-messages')
-              </div>
+          <div class="text-md-end">
+            @php
+              $channelName = collect($channels)->firstWhere('channel', $employee->channel)?->name ?? '-';
+              $statusBadgeClass = $employee->status === 'Active' ? 'bg-success' : 'bg-danger';
+              $taxBadgeClass = $employee->tax_button === 'on' ? 'bg-success' : 'bg-secondary';
+              $ssnitBadgeClass = $employee->ssnit_button === 'on' ? 'bg-success' : 'bg-secondary';
+            @endphp
 
-
-              <div class="row"> 
-                <div class="col-md-6">
-                <h5 class="fw-bold mb-4"><span class="text-muted fw-light"><i class="bx bxs-user-account"></i> Employee /</span> Show</h5>
-
-                </div>
-                @if ($employee->status == 'Active')
-                  <div class="col-md-6 text-end">
-                    <a href="{{url('employees/'.$employee->id.'/edit')}}" class="btn btn-dark mb-3"><i class="bx bx-edit-alt"></i> Edit Employee</a>  
-                </div>
-                @endif
-
-
-              </div>
-
-
-              <div class="row">
-                <div class="col-md-12">
-                  <ul class="nav nav-pills flex-column flex-md-row mb-3">
-                    <li class="nav-item">
-                      <a class="nav-link active" href="javascript:void(0);"><i class="bx bx-user me-1"></i> Employee Details</a>
-                    </li>
-
-                    <li class="nav-item ">
-                      <a class="nav-link" href=" {{url('employeesViewPayInfo', $employee->id)}}" ><i class="bx bxs-comment-detail"></i> Payment Info </a>
-                    </li>
-
-                     @if(Auth::user()->hasRole(['Finance Manager', 'Manager']))
-                    <li class="nav-item">
-                      <a class="nav-link" href="{{url('employeesSalary', $employee->id)}}" ><i class="bx bx-money-withdraw"></i> Salaries </a>
-                    </li>
-                    @endif
-                  </ul>
-
-
-                    <div class="card mb-4">
-                      <h5 class="card-header"><strong> Basic Infomation For {{ $employee->name }} </strong> </h5>
-
-                       <hr class="my-0" />
-                      <!-- Account -->
-                      <div class="card-body">
-                        <div class="d-flex align-items-start align-items-sm-center gap-4">
-                           <img
-                                src="@if($employee->image) {{asset($employee->image)}} @else {{asset('img/user.png')}} @endif"
-                                alt="user-avatar"
-                                class="d-block w-px-100 h-px-100 rounded"
-                                id="uploadedAvatar" />
-                        </div>
-                      </div>
-                      <hr class="my-0" />
-                      <div class="card-body">
-                            <div class="col-md-6 form-check form-switch ">
-                                <input name="tax_button" class="form-check-input" type="checkbox"  @if ($employee->tax_button == "on") checked @endif  id="tax_button">
-                                <label class="form-check-label" for="tax_button"> TAX EMPLOYEE </label>
-                            </div> 
-                            
-                            <div class="col-md-6 form-check form-switch ">
-                                <input name="ssnit_button" class="form-check-input" type="checkbox"  @if ($employee->ssnit_button == "on") checked @endif  id="ssnit_button">
-                                <label class="form-check-label" for="ssnit_button"> DEDUCT SSNIT FOR EMPLOYEE </label>
-                            </div> 
-                        <br>
-
-                          <div class="row">
-                            <div class="mb-3 col-md-4">
-                              <label for="name" class="form-label"> <strong>Full Name  </strong> </label>
-                                <h4> <strong> {{$employee->name}} </strong> </h4> 
-                            
-                            </div>
-                           
-                           
-                            <div class="mb-3 col-md-4">
-                              <label for="gender" class="form-label"> <strong>Gender  </strong> </label>
-                                    <h4> <strong> {{$employee->gender}} </strong> </h4> 
-                            </div>
-                           
-                           
-                            <div class="mb-3 col-md-2">
-                                <label for="phone_number" class="form-label"> <strong>{{ __('Phone Number') }} </strong> </label>
-                                <h4> <strong> {{$employee->phone_number}} </strong> </h4> 
-                            </div>                           
-                             <div class="mb-3 col-md-2">
-                                <label for="channel" class="form-label"> <strong>{{ __('Channel') }} </strong> </label>
-                                    @foreach ($channels as $channel)
-                                <h4> <strong>@if ($channel->channel == $employee->channel) {{ $channel->name }}  @endif </strong> </h4> 
-                                    @endforeach
-                          
-                            </div>
-                            
-                            <div class="mb-3 col-md-4">
-                              <label for="date_of_birth" class="form-label"> <strong>Date Of Birth </strong> </label>
-                              <h4> <strong> {{$employee->date_of_birth?->format('l F d, Y')}} </strong> </h4> 
-
-                            </div>
-
-                            <div class="mb-3 col-md-4">
-                              <label for="nia_number" class="form-label"> <strong>NIA Number  </strong> </label>
-                                <h4> <strong> {{$employee->nia_number}} </strong> </h4> 
-                            </div>
-
-                            <div class="mb-3 col-md-4">
-                              <label for="address" class="form-label"> <strong> Digital Address  </strong> </label>
-                                <h4> <strong> {{$employee->address}} </strong> </h4> 
-                            </div>
-
-                            <div class="mb-3 col-md-4">
-                              <label for="marital_status" class="form-label"><strong>Marital Status </strong> </label>
-                                <h4> <strong> {{$employee->marital_status}} </strong> </h4> 
-                            </div>
-
-                            <div class="mb-3 col-md-4">
-                              <label for="worker_type" class="form-label"><strong>Worker Type </strong> </label>
-                                <h4> <strong> {{$employee->worker_type}} </strong> </h4> 
-                            </div>
-
-                            <div class="mb-3 col-md-4">
-                              <label for="date_of_joining" class="form-label"> <strong>  Date Of Joining  </strong> </label>
-                                <h4> <strong> {{$employee->date_of_joining?->format('l F d, Y')}} </strong> </h4> 
-                            </div>
-
-                            <div class="mb-3 col-md-4">
-                              <label for="department_id" class="form-label"> <strong> {{ __('Department') }}  </strong>  </label>
-                                <h4> <strong> {{$employee->department?->name}} </strong> </h4> 
-                            </div>
-
-                            <div class="mb-3 col-md-4">
-                              <label for="role_id" class="form-label"> <strong> {{ __('Role') }}  </strong>  </label>
-                                <h4> <strong> {{$employee->role?->name}} </strong> </h4> 
-                                
-                            </div>
-
-
-                            <div class="mb-3 col-md-4">
-                              <label for="field_id" class="form-label"> <strong> {{ __('Field Office') }}  </strong>  </label>
-                                <h4> <strong> {{$employee->field?->name}} </strong> </h4> 
-                            </div>
-
-                            <div class="mb-3 col-md-4">
-                              <label for="client_id" class="form-label"> <strong> {{ __('Client') }} </strong>  </label>
-                                <h4> <strong> {{$employee->client?->name}}  {{$employee->client?->business_name}}</strong> </h4> 
-                            </div>
-
-
-                            <div class="mb-3 col-md-4">
-                              <label for="location" class="form-label"> <strong>  {{ __('Location') }}  </strong> </label>
-                                <h4> <strong> {{$employee->location}} </strong> </h4> 
-                            </div>
-                           
-                            <div class="mb-3 col-md-4">
-                              <label for="payment_type" class="form-label"> <strong> {{ __('Payment Type') }} </strong>  </label>
-                                <h4> <strong> {{$employee->payment_type}} </strong> </h4> 
-                            </div>                       
-
-                            <div class="row"> 
-                              <div class="col-md-2"></div>
-                            <div class="mb-3 col-md-4">
-                              <label for="basic_salary" class="form-label"> <strong>  Basic Salary  </strong> </label>
-                                <h4> <strong> {{$employee->basic_salary}} </strong> </h4> 
-                            </div>
-
-                            <div class="mb-3 col-md-4">
-                              <label for="allowances" class="form-label"> <strong>  Allowances  </strong> </label>
-                                <h4> <strong> {{$employee->allowances}} </strong> </h4> 
-                            </div>
-                            <div class="col-md-2"></div>
-                            </div> 
-
-                            <hr class="mb-3" />
-                            <h5 class="card-header"> <strong>Gurantor Infomation</strong> </h5> 
-                            <hr class="mb-3" />
-
-                            <div class="mb-3 col-md-4">
-                              <label for="gurantor_name" class="form-label"> <strong>   Gurantor Name  </strong> </label>
-                                <h4> <strong> {{$employee->gurantor_name}} </strong> </h4> 
-                            </div>
-
-                              <div class="mb-3 col-md-4">
-                              <label for="gurantor_number" class="form-label"> <strong>   Gurantor Number  </strong> </label>
-                                <h4> <strong> {{$employee->gurantor_number}} </strong> </h4> 
-                            </div>
-
-
-                              <div class="mb-3 col-md-4">
-                              <label for="gurantor_address" class="form-label"> <strong>   Gurantor Address  </strong> </label>
-                                <h4> <strong> {{$employee->gurantor_address}} </strong> </h4> 
-                            </div>
-
-                              <div class="mb-3 col-md-4">
-                              <label for="gurantor_nia_number" class="form-label"> <strong>   Gurantor NIA Number  </strong> </label>
-                                <h4> <strong> {{$employee->gurantor_nia_number}} </strong> </h4> 
-                              </div>
-
-                            <div class="mb-3 col-md-4">
-                              <label for="relationship" class="form-label"> <strong>  Relationship with Gurantor  </strong> </label>
-                                <h4> <strong> {{$employee->relationship}} </strong> </h4> 
-                            </div>
-
-
-
-
-                          </div>
-
-                      </div>
-                      <!-- /Account -->
-                    </div>
-              
-                  
-                </div>
-              </div>
-              CREATED BY : {{ $employee->user?->name }} AT {{ $employee->created_at?->format('l F d, Y h:i A')  }}  AND APPROVED BY : {{ $employee->user2?->name }} ,  UPDATED BY : {{ $employee->user1?->name }} AT {{ $employee->updated_at?->format('l F d, Y h:i A')  }}
-
+            <span class="badge {{ $statusBadgeClass }} mb-2">{{ ucfirst($employee->status) }}</span>
+            <div class="btn-toolbar justify-content-end flex-wrap gap-2">
+              @if ($employee->status == 'Active')
+                <a href="{{ url('employees/'.$employee->id.'/edit') }}" class="btn btn-dark btn-sm">
+                  <i class="bx bx-edit-alt me-1"></i> Edit
+                </a>
+              @endif
+              <a href="{{ url('employeesViewPayInfo', $employee->id) }}" class="btn btn-outline-primary btn-sm">
+                <i class="bx bxs-comment-detail me-1"></i> Payment Info
+              </a>
+              @if(Auth::user()->hasRole(['Finance Manager', 'Manager']))
+                <a href="{{ url('employeesSalary', $employee->id) }}" class="btn btn-outline-secondary btn-sm">
+                  <i class="bx bx-money-withdraw me-1"></i> Salaries
+                </a>
+              @endif
             </div>
-  <!-- / Content -->
-         @if(Auth::user()->hasRole(['Manager', 'Invoice']))
-          <div class="buy-now">
-            @if ($employee->status !== 'Active')
+          </div>
+        </div>
+      </div>
+    </div>
 
-            <!-- <a style="margin-bottom: 70px;" href="{{url('employeeReinstate', $employee->id )}}" class="btn btn-danger btn-buy-now" onclick="return confirm('Kindly Confirm?')"> <i class="icon-base bx bx-edit-alt me-1"></i> Re-Instate </a> -->
-           
-                    <button
-                        type="button"
-                        class="btn btn-danger btn-buy-now"
-                        data-bs-toggle="modal"
-                        data-bs-target="#basicModal">
-                        <i class="icon-base bx bx-bxs-user-plus"> </i>Re-Instate
-                    </button>
+    <div class="row g-4">
 
-                    <div class="modal fade" id="basicModal" tabindex="-1" aria-hidden="true">
-                        <div class="modal-dialog" role="document">
-                            <div class="modal-content">
-                                <div class="modal-header">
-                                    <h5 class="modal-title" id="exampleModalLabel1">Choose Month To Re-Instate</h5>
-                                    <button
-                                        type="button"
-                                        class="btn-close"
-                                        data-bs-dismiss="modal"
-                                        aria-label="Close"></button>
-                                </div>
+      <div class="col-lg-4">
 
-                                <form method="GET" action="/employeeReinstate/{{ $employee->id }}">
-                                    @csrf
-                                    <div class="modal-body">
-                                        <div class="row">
-                                            <div class="col mb-0">
-                                                <label for="name" class="form-label"> {{ __(' MONTH ') }}</label>
-                                                <input
-                                                    type="month"
-                                                    name="status_date"
-                                                    id="status_date"
-                                                    class="form-control @error('status_date') is-invalid @enderror"
-                                                    value="{{ old('status_date')}}"
-                                                    autocomplete="status_date"
-                                                    autofocus
-                                                    required>
+        <div class="card h-80">
+          <div class="card-body text-center">
+            <img
+              src="@if($employee->image) {{ asset($employee->image) }} @else {{ asset('img/user.png') }} @endif"
+              alt="Employee avatar"
+              class="rounded-circle mb-3 w-px-120 h-px-120 object-fit-cover" />
+            <h5 class="card-title mb-1"> <strong> {{ $employee->name }} </strong> </h5>
+            <p class="text-muted mb-2"> <strong> {{ $employee->role?->name ?? 'No role assigned' }} </strong> </p>
+            <div class="d-flex justify-content-center flex-wrap gap-2">
+              <span class="badge {{ $taxBadgeClass }}">Tax Employee</span>
+              <span class="badge {{ $ssnitBadgeClass }}">SSNIT Deduction</span>
+            </div>
+          </div>
+          <div class="card-body border-top">
+            <div class="mb-3">
+              <small class="text-muted">Phone</small>
+              <p class="mb-0"><strong>{{ $employee->phone_number ?: 'Not provided' }}</strong></p>
+            </div>
+            <div class="mb-3">
+              <small class="text-muted">Location</small>
+              <p class="mb-0"><strong>{{ $employee->location ?: 'Not provided' }}</strong></p>
+            </div>
+            <div class="mb-3">
+              <small class="text-muted">Channel</small>
+              <p class="mb-0"><strong>{{ $channelName }}</strong></p>
+            </div>
+          </div>
+        </div>
 
-                                                @error('status_date')
-                                                <span class="invalid-feedback" role="alert">
-                                                    <strong>{{ $message }}</strong>
-                                                </span>
-                                                @enderror
-                                            </div>
-                                        </div>
-                                        <br>
-                                    </div>
-                                    <div class="modal-footer">
-                                        <button type="submit" class="btn btn-info d-grid w-100">{{ __('Re-Instate') }}</button>
-                                    </div>
-                                </form>
+        <div class="card h-20 mt-4">
+          <div class="card-header">
+            <strong>Compensation</strong>
+          </div>
+          <div class="card-body">
+            <dl class="row mb-0">
+              <dt class="col-sm-6 text-muted">Payment Type</dt>
+              <dd class="col-sm-6 mb-3"><strong>{{ $employee->payment_type ?: '-' }}</strong></dd>
 
-                            </div>
-                        </div>
+              <dt class="col-sm-6 text-muted">Basic Salary</dt>
+              <dd class="col-sm-6 mb-3"><strong>{{ $employee->basic_salary ?: '-' }}</strong></dd>
+
+              <dt class="col-sm-6 text-muted">Allowances</dt>
+              <dd class="col-sm-6 mb-0"><strong>{{ $employee->allowances ?: '-' }}</strong></dd>
+            </dl>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="col-lg-8">
+        <div class="card mb-4">
+          <div class="card-header">
+            <strong>Personal & employment information</strong>
+          </div>
+          <div class="card-body">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label text-muted mb-1">Gender</label>
+                <p class="fw-semibold mb-0"><strong>{{ $employee->gender ?: '-' }}</strong></p>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label text-muted mb-1">Date of birth</label>
+                <p class="fw-semibold mb-0"><strong>{{ $employee->date_of_birth?->format('l F d, Y') ?: '-' }}</strong></p>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label text-muted mb-1">NIA Number</label>
+                <p class="fw-semibold mb-0"><strong>{{ $employee->nia_number ?: '-' }}</strong></p>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label text-muted mb-1">Digital Address</label>
+                <p class="fw-semibold mb-0"><strong>{{ $employee->address ?: '-' }}</strong></p>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label text-muted mb-1">Marital Status</label>
+                <p class="fw-semibold mb-0"><strong>{{ $employee->marital_status ?: '-' }}</strong></p>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label text-muted mb-1">Worker Type</label>
+                <p class="fw-semibold mb-0"><strong>{{ $employee->worker_type ?: '-' }}</strong></p>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label text-muted mb-1">Date of joining</label>
+                <p class="fw-semibold mb-0"><strong>{{ $employee->date_of_joining?->format('l F d, Y') ?: '-' }}</strong></p>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label text-muted mb-1">Department</label>
+                <p class="fw-semibold mb-0"><strong>{{ $employee->department?->name ?: '-' }}</strong></p>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label text-muted mb-1">Role</label>
+                <p class="fw-semibold mb-0"><strong>{{ $employee->role?->name ?: '-' }}</strong></p>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label text-muted mb-1">Field Office</label>
+                <p class="fw-semibold mb-0"><strong>{{ $employee->field?->name ?: '-' }}</strong></p>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label text-muted mb-1">Client</label>
+                <p class="fw-semibold mb-0"><strong>{{ $employee->client?->name ? $employee->client->name . ' / ' . $employee->client->business_name : '-' }}</strong></p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card mb-4">
+          <div class="card-header">
+            <strong>Guarantor information</strong>
+          </div>
+          <div class="card-body">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label text-muted mb-1">Guarantor name</label>
+                <p class="fw-semibold mb-0"><strong>{{ $employee->gurantor_name ?: '-' }}</strong></p>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label text-muted mb-1">Guarantor number</label>
+                <p class="fw-semibold mb-0"><strong>{{ $employee->gurantor_number ?: '-' }}</strong></p>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label text-muted mb-1">Guarantor address</label>
+                <p class="fw-semibold mb-0"><strong>{{ $employee->gurantor_address ?: '-' }}</strong></p>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label text-muted mb-1">Guarantor NIA number</label>
+                <p class="fw-semibold mb-0"><strong>{{ $employee->gurantor_nia_number ?: '-' }}</strong></p>
+              </div>
+              <div class="col-md-12">
+                <label class="form-label text-muted mb-1">Relationship</label>
+                <p class="fw-semibold mb-0"><strong>{{ $employee->relationship ?: '-' }}</strong></p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-body py-3">
+            <div class="row g-3">
+              <div class="col-md-4">
+                <small class="text-muted">Created by</small>
+                <p class="mb-0">{{ $employee->user?->name ?: 'Unknown' }}</p>
+              </div>
+              <div class="col-md-4">
+                <small class="text-muted">Approved by</small>
+                <p class="mb-0">{{ $employee->user2?->name ?: 'Not available' }}</p>
+              </div>
+              <div class="col-md-4">
+                <small class="text-muted">Updated by</small>
+                <p class="mb-0">{{ $employee->user1?->name ?: 'Not available' }}</p>
+              </div>
+              <div class="col-md-6">
+                <small class="text-muted">Created at</small>
+                <p class="mb-0">{{ $employee->created_at?->format('l F d, Y h:i A') ?: 'Unknown' }}</p>
+              </div>
+              <div class="col-md-6">
+                <small class="text-muted">Last updated</small>
+                <p class="mb-0">{{ $employee->updated_at?->format('l F d, Y h:i A') ?: 'Unknown' }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        @if(Auth::user()->hasRole(['Manager', 'Invoice']))
+          <div class="card mt-4">
+            <div class="card-body text-end">
+              <button
+                type="button"
+                class="btn btn-danger btn-sm"
+                data-bs-toggle="modal"
+                data-bs-target="#statusModal">
+                <i class="icon-base bx bx-bxs-user-plus me-1"></i>
+                {{ $employee->status !== 'Active' ? 'Re-Instate' : 'Terminate' }}
+              </button>
+            </div>
+          </div>
+
+          <div class="modal fade" id="statusModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title" id="statusModalLabel">
+                    {{ $employee->status !== 'Active' ? 'Choose Month To Re-Instate' : 'Choose Month To Terminate' }}
+                  </h5>
+                  <button
+                    type="button"
+                    class="btn-close"
+                    data-bs-dismiss="modal"
+                    aria-label="Close"></button>
+                </div>
+
+                <form method="GET" action="{{ $employee->status !== 'Active' ? url('employeeReinstate', $employee->id) : url('terminateEmployee', $employee->id) }}">
+                  @csrf
+                  <div class="modal-body">
+                    <div class="row">
+                      <div class="col mb-0">
+                        <label for="status_date" class="form-label">{{ __('MONTH') }}</label>
+                        <input
+                          type="month"
+                          name="status_date"
+                          id="status_date"
+                          class="form-control @error('status_date') is-invalid @enderror"
+                          value="{{ old('status_date') }}"
+                          autocomplete="status_date"
+                          required>
+
+                        @error('status_date')
+                          <span class="invalid-feedback" role="alert">
+                            <strong>{{ $message }}</strong>
+                          </span>
+                        @enderror
+                      </div>
                     </div>
-            
-
-            @else
-            <!-- <a  href="{{url('terminateEmployee', $employee->id )}}" class="btn btn-danger btn-buy-now" onclick="return confirm('Kindly Confirm?')"> <i class="icon-base bx bx-trash me-1"></i> Terminate </a>   -->
-                    <button
-                        type="button"
-                        class="btn btn-danger btn-buy-now"
-                        data-bs-toggle="modal"
-                        data-bs-target="#basicModal">
-                        <i class="icon-base bx bx-bxs-user-plus"> </i>Terminate
+                  </div>
+                  <div class="modal-footer">
+                    <button type="submit" class="btn btn-info d-grid w-100">
+                      {{ $employee->status !== 'Active' ? __('Re-Instate') : __('Terminate') }}
                     </button>
-
-                    <div class="modal fade" id="basicModal" tabindex="-1" aria-hidden="true">
-                        <div class="modal-dialog" role="document">
-                            <div class="modal-content">
-                                <div class="modal-header">
-                                    <h5 class="modal-title" id="exampleModalLabel1">Choose Month To Terminate</h5>
-                                    <button
-                                        type="button"
-                                        class="btn-close"
-                                        data-bs-dismiss="modal"
-                                        aria-label="Close"></button>
-                                </div>
-
-                                <form method="GET" action="/terminateEmployee/{{ $employee->id }}">
-                                    @csrf
-                                    <div class="modal-body">
-                                        <div class="row">
-                                            <div class="col mb-0">
-                                                <label for="name" class="form-label"> {{ __(' MONTH ') }}</label>
-                                                <input
-                                                    type="month"
-                                                    name="status_date"
-                                                    id="status_date"
-                                                    class="form-control @error('status_date') is-invalid @enderror"
-                                                    value="{{ old('status_date')}}"
-                                                    autocomplete="status_date"
-                                                    autofocus
-                                                    required>
-
-                                                @error('status_date')
-                                                <span class="invalid-feedback" role="alert">
-                                                    <strong>{{ $message }}</strong>
-                                                </span>
-                                                @enderror
-                                            </div>
-                                        </div>
-                                        <br>
-                                    </div>
-                                    <div class="modal-footer">
-                                        <button type="submit" class="btn btn-info d-grid w-100">{{ __('Terminate') }}</button>
-                                    </div>
-                                </form>
-
-                            </div>
-                        </div>
-                    </div>
-            @endif
+                  </div>
+                </form>
+              </div>
+            </div>
           </div>
         @endif
+      </div>
+    </div>
+  </div>
 
   @endsection
+
 
 
 </x-hr-dashboard>

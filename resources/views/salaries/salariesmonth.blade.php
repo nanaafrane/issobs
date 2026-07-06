@@ -176,7 +176,7 @@
             </li>
             @endif
 
-            @if((Auth::user()->hasRole(['Manager', 'Officer', 'Finance Manager']) && Auth::user()->hasPermission('Accounts')) )
+            @if((Auth::user()->hasRole(['Manager', 'Finance Manager']) && Auth::user()->hasPermission('Accounts')) )
 
             <li class="menu-header small text-uppercase"> <span class="menu-header-text text-danger">Accounts</span></li>
 
@@ -246,7 +246,7 @@
                         </a>
                     </li>
 
-                                                        <li class="menu-item">
+                                                        <!-- <li class="menu-item">
                     <a href="{{ url('salariesBulkCash') }}" class="menu-link">
                     <i class="menu-icon tf-icons bx bxs-group"></i>
                     <div class="text-truncate" data-i18n="Transaction">Bulk MoMo Salaries</div>
@@ -259,7 +259,7 @@
                         <i class="menu-icon tf-icons bx bx-git-compare"></i>
                         <div class="text-truncate" data-i18n="InvtoPayroll">Invoice to Payroll</div>
                         </a>
-                    </li>
+                    </li> -->
                     </ul>
                 </li>
         </ul>
@@ -280,7 +280,7 @@
             </div>
         </div><br>
 
-         @if(Auth::user()->hasRole(['Invoice','Manager', 'Finance Manager' ]))
+         @if(Auth::user()->hasRole(['Invoice','Manager',  'Internal Auditor', 'Officer', 'Finance Manager' ]))
         <div class="row">
 
         <div class="col-lg-3">
@@ -414,7 +414,7 @@
         <div class="nav-align-top">
             <ul class="nav nav-pills mb-4 nav-fill" role="tablist">
 
-                @if(Auth::user()->hasRole(['Finance Manager', 'Invoice', 'Manager']) )
+                @if(Auth::user()->hasRole(['Finance Manager', 'Officer',  'Internal Auditor', 'Invoice', 'Manager']) )
                 <li class="nav-item mb-1 mb-sm-0">
                     <button
                         type="button"
@@ -1109,7 +1109,7 @@
                                 
                                 <button class="btn btn-danger m-4" name="submit" value="hold" onclick="return confirm('Kindly Confirm?')" type="submit"> <i class="icon-base bx bx-bxs-file-plus"> </i> {{ __(' Hold') }}</button>                   
                                 
-                                <a href="{{ url('/exportMaster', $salariesMaster[0]->salary_month?->format('F, Y'))}} " class="btn btn-success m-4" > <i class="icon-base bx bx-bxs-file-plus"> </i> {{ __(' Excel Download Master') }}</a>                   
+                                <!-- <a href="{{ url('/exportMaster', $salariesMaster[0]->salary_month?->format('F, Y'))}} " class="btn btn-success m-4" > <i class="icon-base bx bx-bxs-file-plus"> </i> {{ __(' Excel Download Master') }}</a>                    -->
                           
                           
                             </div>
@@ -1192,10 +1192,16 @@
                                                     <td> <span class="badge bg-label-success"> {{ $salary->payment_status }} </span> </td>
                                                     @endif
                                                     <td> <textarea type="text" name="hold_reason[{{ $salary->id }}]" class="form-control"> {{ $salary?->hold_reason }} </textarea> </td>
-                                                    <td> @if ( $salary->client?->category_month == \Carbon\Carbon::parse($month)->format('Y-m-d') ) {{ $salary->client?->category_name }} @endif </td>
+                                                    <td> 
+                                                        @foreach($categories as $category)
+                                                            @if($salary->client_id == $category->client_id)
+                                                                {{ $category->name }}
+                                                            @endif
+                                                        @endforeach
+                                                    </td>
                                                     <td> {{ $salary->id }} </td>
                                                     <td> {{$salary->salary_month?->format('F, Y')}} </td>
-                                                    <td> {{ $salary?->employee_id }} </td>
+                                                    <td> FWSS {{ $salary?->employee_id }} </td>
                                                     <td> {{ strtoupper($salary->employee?->name) }} </td>
                                                     <td> {{ $salary->department?->name }} </td>
                                                     <td> {{ $salary->role?->name }} </td>
@@ -1711,7 +1717,7 @@
         <div class="nav-align-top">
             <ul class="nav nav-pills mb-4 nav-fill" role="tablist">
 
-                @if(Auth::user()->hasRole(['Finance Manager', 'Invoice', 'Manager']) )
+                @if(Auth::user()->hasRole(['Finance Manager', 'Invoice', 'Officer',  'Internal Auditor', 'Manager']) )
 
 
                 <li class="nav-item mb-1 mb-sm-0">
@@ -2436,13 +2442,22 @@
                                                         </div>
 
                                                         <div class="d-flex justify-content-between">
-                                                                <div>  <h4 class="card-title text-danger"><strong> {{ number_format($salariesMaster->where('field_id', 1)->where('payment_type', 'Bank')->whereIn('payment_status', ['hold', 'pending', 'rejected'])->sum('net_salary'), 2) }}  </strong> </h4>   </div> 
-                                                                <div>  <h4 class="card-title text-danger"><strong>  {{ number_format($salariesMaster->where('field_id', 1)->where('payment_type', 'Cash')->whereIn('payment_status', ['hold', 'pending', 'rejected'])->sum('net_salary'), 2) }} </strong> </h4>  </div>   
+                                                                <div>  <h4 class="card-title text-danger"><strong> {{ number_format($salariesMaster->where('field_id', 1)->where('payment_type', 'Bank')->whereIn('payment_status', ['hold', 'pending', 'rejected'])->sum('net_salary'), 2) }}  </strong> </h4> <p> PENDING <br>{{ number_format($salariesMaster->where('field_id', 1)->where('payment_type', 'Bank')->where('payment_status', 'pending')->sum('net_salary'), 2) }}  </p> 
+                                                                    <p>  HOLD <br> {{ number_format($salariesMaster->where('field_id', 1)->where('payment_type', 'Bank')->whereIn('payment_status', ['hold', 'rejected'])->sum('net_salary'), 2) }} </p>
+                                                                </div> 
+                                                                <div>  
+                                                                    <h4 class="card-title text-danger"><strong>  {{ number_format($salariesMaster->where('field_id', 1)->where('payment_type', 'Cash')->whereIn('payment_status', ['hold', 'pending', 'rejected'])->sum('net_salary'), 2) }} </strong> </h4> <p>  PENDING <br>{{ number_format($salariesMaster->where('field_id', 1)->where('payment_type', 'Cash')->where('payment_status', 'pending')->sum('net_salary'), 2) }}    </p> 
+                                                                    <p>   HOLD <br> {{ number_format($salariesMaster->where('field_id', 1)->where('payment_type', 'Cash')->whereIn('payment_status', ['hold', 'rejected'])->sum('net_salary'), 2) }} </p>  
+                                                                </div>   
                                                         </div>
                                                     
                                                         <div class="d-flex justify-content-between">
-                                                                <div> <h6 class="card-title text-danger"><strong>  N0 of Emp' : {{ $salariesMaster->where('field_id', 1)->where('payment_type', 'Bank')->whereIn('payment_status', ['hold', 'pending', 'rejected'])->count() }} </strong> </h6>   </div>  
-                                                                <div> <h6 class="card-title text-danger"><strong>  N0 of Emp' : {{ $salariesMaster->where('field_id', 1)->where('payment_type', 'Cash')->whereIn('payment_status', ['hold', 'pending', 'rejected'])->count() }} </strong> </h6>   </div>  
+                                                                <div> <h6 class="card-title text-danger"><strong>  N0 of Emp' : {{ $salariesMaster->where('field_id', 1)->where('payment_type', 'Bank')->whereIn('payment_status', ['pending','hold','reejcted'])->count() }} </strong> </h6>  PENDING  <br>  {{ $salariesMaster->where('field_id', 1)->where('payment_type', 'Bank')->where('payment_status', 'pending')->count() }}
+                                                                    <p>HOLD <br> {{ $salariesMaster->where('field_id', 1)->where('payment_type', 'Bank')->whereIn('payment_status', ['hold', 'rejected'])->count() }} </p>
+                                                                </div>  
+                                                                <div> <h6 class="card-title text-danger"><strong>  N0 of Emp' : {{ $salariesMaster->where('field_id', 1)->where('payment_type', 'Cash')->whereIn('payment_status', ['hold', 'pending', 'rejected'])->count() }} </strong> </h6>  PENDING <br>  {{ $salariesMaster->where('field_id', 1)->where('payment_type', 'Cash')->where('payment_status', 'pending')->count() }}
+                                                                    <p> HOLD <br> {{ $salariesMaster->where('field_id', 1)->where('payment_type', 'Cash')->whereIn('payment_status', ['hold', 'rejected'])->count() }} </p>
+                                                                </div>  
                                                         </div> 
                                                         <!-- <hr> <br>  -->
                                                     
@@ -2540,13 +2555,22 @@
                                                         </div>
 
                                                         <div class="d-flex justify-content-between">
-                                                                <div>  <h4 class="card-title text-danger"><strong> {{ number_format($salariesMaster->where('field_id', 2)->where('payment_type', 'Bank')->whereIn('payment_status', ['hold', 'pending', 'rejected'])->sum('net_salary'), 2) }}  </strong> </h4>   </div> 
-                                                                <div>  <h4 class="card-title text-danger"><strong>  {{ number_format($salariesMaster->where('field_id', 2)->where('payment_type', 'Cash')->whereIn('payment_status', ['hold', 'pending', 'rejected'])->sum('net_salary'), 2) }} </strong> </h4>  </div>   
+                                                                <div>  <h4 class="card-title text-danger"><strong> {{ number_format($salariesMaster->where('field_id', 2)->where('payment_type', 'Bank')->whereIn('payment_status', ['hold', 'pending', 'rejected'])->sum('net_salary'), 2) }}  </strong> </h4> <p> PENDING <br>{{ number_format($salariesMaster->where('field_id', 2)->where('payment_type', 'Bank')->where('payment_status', 'pending')->sum('net_salary'), 2) }}  </p> 
+                                                                    <p>  HOLD <br> {{ number_format($salariesMaster->where('field_id', 2)->where('payment_type', 'Bank')->whereIn('payment_status', ['hold', 'rejected'])->sum('net_salary'), 2) }} </p>
+                                                                </div> 
+                                                                <div>  
+                                                                    <h4 class="card-title text-danger"><strong>  {{ number_format($salariesMaster->where('field_id', 2)->where('payment_type', 'Cash')->whereIn('payment_status', ['hold', 'pending', 'rejected'])->sum('net_salary'), 2) }} </strong> </h4> <p>  PENDING <br>{{ number_format($salariesMaster->where('field_id', 2)->where('payment_type', 'Cash')->where('payment_status', 'pending')->sum('net_salary'), 2) }}    </p> 
+                                                                    <p>   HOLD <br> {{ number_format($salariesMaster->where('field_id', 2)->where('payment_type', 'Cash')->whereIn('payment_status', ['hold', 'rejected'])->sum('net_salary'), 2) }} </p>  
+                                                                </div>   
                                                         </div>
                                                     
                                                         <div class="d-flex justify-content-between">
-                                                                <div> <h6 class="card-title text-danger"><strong>  N0 of Emp' : {{ $salariesMaster->where('field_id', 2)->where('payment_type', 'Bank')->whereIn('payment_status', ['hold', 'pending', 'rejected'])->count() }} </strong> </h6>   </div>  
-                                                                <div> <h6 class="card-title text-danger"><strong>  N0 of Emp' : {{ $salariesMaster->where('field_id', 2)->where('payment_type', 'Cash')->whereIn('payment_status', ['hold', 'pending', 'rejected'])->count() }} </strong> </h6>   </div>  
+                                                                <div> <h6 class="card-title text-danger"><strong>  N0 of Emp' : {{ $salariesMaster->where('field_id', 2)->where('payment_type', 'Bank')->whereIn('payment_status', ['pending','hold','reejcted'])->count() }} </strong> </h6>  PENDING  <br>  {{ $salariesMaster->where('field_id', 2)->where('payment_type', 'Bank')->where('payment_status', 'pending')->count() }}
+                                                                    <p>HOLD <br> {{ $salariesMaster->where('field_id', 2)->where('payment_type', 'Bank')->whereIn('payment_status', ['hold', 'rejected'])->count() }} </p>
+                                                                </div>  
+                                                                <div> <h6 class="card-title text-danger"><strong>  N0 of Emp' : {{ $salariesMaster->where('field_id', 2)->where('payment_type', 'Cash')->whereIn('payment_status', ['hold', 'pending', 'rejected'])->count() }} </strong> </h6>  PENDING <br>  {{ $salariesMaster->where('field_id', 2)->where('payment_type', 'Cash')->where('payment_status', 'pending')->count() }}
+                                                                    <p> HOLD <br> {{ $salariesMaster->where('field_id', 2)->where('payment_type', 'Cash')->whereIn('payment_status', ['hold', 'rejected'])->count() }} </p>
+                                                                </div>  
                                                         </div> 
                                                         <!-- <hr> <br>  -->
                                                     
@@ -2640,13 +2664,22 @@
                                                         </div>
 
                                                         <div class="d-flex justify-content-between">
-                                                                <div>  <h4 class="card-title text-danger"><strong> {{ number_format($salariesMaster->where('field_id', 3)->where('payment_type', 'Bank')->whereIn('payment_status', ['hold', 'pending', 'rejected'])->sum('net_salary'), 2) }}  </strong> </h4>   </div> 
-                                                                <div>  <h4 class="card-title text-danger"><strong>  {{ number_format($salariesMaster->where('field_id', 3)->where('payment_type', 'Cash')->whereIn('payment_status', ['hold', 'pending', 'rejected'])->sum('net_salary'), 2) }} </strong> </h4>  </div>   
+                                                                <div>  <h4 class="card-title text-danger"><strong> {{ number_format($salariesMaster->where('field_id', 3)->where('payment_type', 'Bank')->whereIn('payment_status', ['hold', 'pending', 'rejected'])->sum('net_salary'), 2) }}  </strong> </h4> <p> PENDING <br>{{ number_format($salariesMaster->where('field_id', 3)->where('payment_type', 'Bank')->where('payment_status', 'pending')->sum('net_salary'), 2) }}  </p> 
+                                                                    <p>  HOLD <br> {{ number_format($salariesMaster->where('field_id', 3)->where('payment_type', 'Bank')->whereIn('payment_status', ['hold', 'rejected'])->sum('net_salary'), 2) }} </p>
+                                                                </div> 
+                                                                <div>  
+                                                                    <h4 class="card-title text-danger"><strong>  {{ number_format($salariesMaster->where('field_id', 3)->where('payment_type', 'Cash')->whereIn('payment_status', ['hold', 'pending', 'rejected'])->sum('net_salary'), 2) }} </strong> </h4> <p>  PENDING <br>{{ number_format($salariesMaster->where('field_id', 3)->where('payment_type', 'Cash')->where('payment_status', 'pending')->sum('net_salary'), 2) }}    </p> 
+                                                                    <p>   HOLD <br> {{ number_format($salariesMaster->where('field_id', 3)->where('payment_type', 'Cash')->whereIn('payment_status', ['hold', 'rejected'])->sum('net_salary'), 2) }} </p>  
+                                                                </div>   
                                                         </div>
                                                     
                                                         <div class="d-flex justify-content-between">
-                                                                <div> <h6 class="card-title text-danger"><strong>  N0 of Emp' : {{ $salariesMaster->where('field_id', 3)->where('payment_type', 'Bank')->whereIn('payment_status', ['hold', 'pending', 'rejected'])->count() }} </strong> </h6>   </div>  
-                                                                <div> <h6 class="card-title text-danger"><strong>  N0 of Emp' : {{ $salariesMaster->where('field_id', 3)->where('payment_type', 'Cash')->whereIn('payment_status', ['hold', 'pending', 'rejected'])->count() }} </strong> </h6>   </div>  
+                                                                <div> <h6 class="card-title text-danger"><strong>  N0 of Emp' : {{ $salariesMaster->where('field_id', 3)->where('payment_type', 'Bank')->whereIn('payment_status', ['pending','hold','reejcted'])->count() }} </strong> </h6>  PENDING  <br>  {{ $salariesMaster->where('field_id', 3)->where('payment_type', 'Bank')->where('payment_status', 'pending')->count() }}
+                                                                    <p>HOLD <br> {{ $salariesMaster->where('field_id', 3)->where('payment_type', 'Bank')->whereIn('payment_status', ['hold', 'rejected'])->count() }} </p>
+                                                                </div>  
+                                                                <div> <h6 class="card-title text-danger"><strong>  N0 of Emp' : {{ $salariesMaster->where('field_id', 3)->where('payment_type', 'Cash')->whereIn('payment_status', ['hold', 'pending', 'rejected'])->count() }} </strong> </h6>  PENDING <br>  {{ $salariesMaster->where('field_id', 3)->where('payment_type', 'Cash')->where('payment_status', 'pending')->count() }}
+                                                                    <p> HOLD <br> {{ $salariesMaster->where('field_id', 3)->where('payment_type', 'Cash')->whereIn('payment_status', ['hold', 'rejected'])->count() }} </p>
+                                                                </div>  
                                                         </div> 
                                                         <!-- <hr> <br>  -->
                                                     
@@ -2741,13 +2774,22 @@
                                                         </div>
 
                                                         <div class="d-flex justify-content-between">
-                                                                <div>  <h4 class="card-title text-danger"><strong> {{ number_format($salariesMaster->where('field_id', 7)->where('payment_type', 'Bank')->whereIn('payment_status', ['hold', 'pending', 'rejected'])->sum('net_salary'), 2) }}  </strong> </h4>   </div> 
-                                                                <div>  <h4 class="card-title text-danger"><strong>  {{ number_format($salariesMaster->where('field_id', 7)->where('payment_type', 'Cash')->whereIn('payment_status', ['hold', 'pending', 'rejected'])->sum('net_salary'), 2) }} </strong> </h4>  </div>   
+                                                                <div>  <h4 class="card-title text-danger"><strong> {{ number_format($salariesMaster->where('field_id', 7)->where('payment_type', 'Bank')->whereIn('payment_status', ['hold', 'pending', 'rejected'])->sum('net_salary'), 2) }}  </strong> </h4> <p> PENDING <br>{{ number_format($salariesMaster->where('field_id', 7)->where('payment_type', 'Bank')->where('payment_status', 'pending')->sum('net_salary'), 2) }}  </p> 
+                                                                    <p>  HOLD <br> {{ number_format($salariesMaster->where('field_id', 7)->where('payment_type', 'Bank')->whereIn('payment_status', ['hold', 'rejected'])->sum('net_salary'), 2) }} </p>
+                                                                </div> 
+                                                                <div>  
+                                                                    <h4 class="card-title text-danger"><strong>  {{ number_format($salariesMaster->where('field_id', 7)->where('payment_type', 'Cash')->whereIn('payment_status', ['hold', 'pending', 'rejected'])->sum('net_salary'), 2) }} </strong> </h4> <p>  PENDING <br>{{ number_format($salariesMaster->where('field_id', 7)->where('payment_type', 'Cash')->where('payment_status', 'pending')->sum('net_salary'), 2) }}    </p> 
+                                                                    <p>   HOLD <br> {{ number_format($salariesMaster->where('field_id', 7)->where('payment_type', 'Cash')->whereIn('payment_status', ['hold', 'rejected'])->sum('net_salary'), 2) }} </p>  
+                                                                </div>   
                                                         </div>
                                                     
                                                         <div class="d-flex justify-content-between">
-                                                                <div> <h6 class="card-title text-danger"><strong>  N0 of Emp' : {{ $salariesMaster->where('field_id', 7)->where('payment_type', 'Bank')->whereIn('payment_status', ['hold', 'pending', 'rejected'])->count() }} </strong> </h6>   </div>  
-                                                                <div> <h6 class="card-title text-danger"><strong>  N0 of Emp' : {{ $salariesMaster->where('field_id', 7)->where('payment_type', 'Cash')->whereIn('payment_status', ['hold', 'pending', 'rejected'])->count() }} </strong> </h6>   </div>  
+                                                                <div> <h6 class="card-title text-danger"><strong>  N0 of Emp' : {{ $salariesMaster->where('field_id', 7)->where('payment_type', 'Bank')->whereIn('payment_status', ['pending','hold','reejcted'])->count() }} </strong> </h6>  PENDING  <br>  {{ $salariesMaster->where('field_id', 7)->where('payment_type', 'Bank')->where('payment_status', 'pending')->count() }}
+                                                                    <p>HOLD <br> {{ $salariesMaster->where('field_id', 7)->where('payment_type', 'Bank')->whereIn('payment_status', ['hold', 'rejected'])->count() }} </p>
+                                                                </div>  
+                                                                <div> <h6 class="card-title text-danger"><strong>  N0 of Emp' : {{ $salariesMaster->where('field_id', 7)->where('payment_type', 'Cash')->whereIn('payment_status', ['hold', 'pending', 'rejected'])->count() }} </strong> </h6>  PENDING <br>  {{ $salariesMaster->where('field_id', 7)->where('payment_type', 'Cash')->where('payment_status', 'pending')->count() }}
+                                                                    <p> HOLD <br> {{ $salariesMaster->where('field_id', 7)->where('payment_type', 'Cash')->whereIn('payment_status', ['hold', 'rejected'])->count() }} </p>
+                                                                </div>  
                                                         </div> 
                                                         <!-- <hr> <br>  -->
                                                     
@@ -2842,13 +2884,22 @@
                                                         </div>
 
                                                         <div class="d-flex justify-content-between">
-                                                                <div>  <h4 class="card-title text-danger"><strong> {{ number_format($salariesMaster->where('field_id', 4)->where('payment_type', 'Bank')->whereIn('payment_status', ['hold', 'pending', 'rejected'])->sum('net_salary'), 2) }}  </strong> </h4>   </div> 
-                                                                <div>  <h4 class="card-title text-danger"><strong>  {{ number_format($salariesMaster->where('field_id', 4)->where('payment_type', 'Cash')->whereIn('payment_status', ['hold', 'pending', 'rejected'])->sum('net_salary'), 2) }} </strong> </h4>  </div>   
+                                                                <div>  <h4 class="card-title text-danger"><strong> {{ number_format($salariesMaster->where('field_id', 4)->where('payment_type', 'Bank')->whereIn('payment_status', ['hold', 'pending', 'rejected'])->sum('net_salary'), 2) }}  </strong> </h4> <p> PENDING <br>{{ number_format($salariesMaster->where('field_id', 4)->where('payment_type', 'Bank')->where('payment_status', 'pending')->sum('net_salary'), 2) }}  </p> 
+                                                                    <p>  HOLD <br> {{ number_format($salariesMaster->where('field_id', 4)->where('payment_type', 'Bank')->whereIn('payment_status', ['hold', 'rejected'])->sum('net_salary'), 2) }} </p>
+                                                                </div> 
+                                                                <div>  
+                                                                    <h4 class="card-title text-danger"><strong>  {{ number_format($salariesMaster->where('field_id', 4)->where('payment_type', 'Cash')->whereIn('payment_status', ['hold', 'pending', 'rejected'])->sum('net_salary'), 2) }} </strong> </h4> <p>  PENDING <br>{{ number_format($salariesMaster->where('field_id', 4)->where('payment_type', 'Cash')->where('payment_status', 'pending')->sum('net_salary'), 2) }}    </p> 
+                                                                    <p>   HOLD <br> {{ number_format($salariesMaster->where('field_id', 4)->where('payment_type', 'Cash')->whereIn('payment_status', ['hold', 'rejected'])->sum('net_salary'), 2) }} </p>  
+                                                                </div>   
                                                         </div>
                                                     
                                                         <div class="d-flex justify-content-between">
-                                                                <div> <h6 class="card-title text-danger"><strong>  N0 of Emp' : {{ $salariesMaster->where('field_id', 4)->where('payment_type', 'Bank')->whereIn('payment_status', ['hold', 'pending', 'rejected'])->count() }} </strong> </h6>   </div>  
-                                                                <div> <h6 class="card-title text-danger"><strong>  N0 of Emp' : {{ $salariesMaster->where('field_id', 4)->where('payment_type', 'Cash')->whereIn('payment_status', ['hold', 'pending', 'rejected'])->count() }} </strong> </h6>   </div>  
+                                                                <div> <h6 class="card-title text-danger"><strong>  N0 of Emp' : {{ $salariesMaster->where('field_id', 4)->where('payment_type', 'Bank')->whereIn('payment_status', ['pending','hold','reejcted'])->count() }} </strong> </h6>  PENDING  <br>  {{ $salariesMaster->where('field_id', 4)->where('payment_type', 'Bank')->where('payment_status', 'pending')->count() }}
+                                                                    <p>HOLD <br> {{ $salariesMaster->where('field_id', 4)->where('payment_type', 'Bank')->whereIn('payment_status', ['hold', 'rejected'])->count() }} </p>
+                                                                </div>  
+                                                                <div> <h6 class="card-title text-danger"><strong>  N0 of Emp' : {{ $salariesMaster->where('field_id', 4)->where('payment_type', 'Cash')->whereIn('payment_status', ['hold', 'pending', 'rejected'])->count() }} </strong> </h6>  PENDING <br>  {{ $salariesMaster->where('field_id', 4)->where('payment_type', 'Cash')->where('payment_status', 'pending')->count() }}
+                                                                    <p> HOLD <br> {{ $salariesMaster->where('field_id', 4)->where('payment_type', 'Cash')->whereIn('payment_status', ['hold', 'rejected'])->count() }} </p>
+                                                                </div>  
                                                         </div> 
                                                         <!-- <hr> <br>  -->
                                                     
@@ -2943,13 +2994,22 @@
                                                         </div>
 
                                                         <div class="d-flex justify-content-between">
-                                                                <div>  <h4 class="card-title text-danger"><strong> {{ number_format($salariesMaster->where('field_id', 5)->where('payment_type', 'Bank')->whereIn('payment_status', ['hold', 'pending', 'rejected'])->sum('net_salary'), 2) }}  </strong> </h4>   </div> 
-                                                                <div>  <h4 class="card-title text-danger"><strong>  {{ number_format($salariesMaster->where('field_id', 5)->where('payment_type', 'Cash')->whereIn('payment_status', ['hold', 'pending', 'rejected'])->sum('net_salary'), 2) }} </strong> </h4>  </div>   
+                                                                <div>  <h4 class="card-title text-danger"><strong> {{ number_format($salariesMaster->where('field_id', 5)->where('payment_type', 'Bank')->whereIn('payment_status', ['hold', 'pending', 'rejected'])->sum('net_salary'), 2) }}  </strong> </h4> <p> PENDING <br>{{ number_format($salariesMaster->where('field_id', 5)->where('payment_type', 'Bank')->where('payment_status', 'pending')->sum('net_salary'), 2) }}  </p> 
+                                                                    <p>  HOLD <br> {{ number_format($salariesMaster->where('field_id', 5)->where('payment_type', 'Bank')->whereIn('payment_status', ['hold', 'rejected'])->sum('net_salary'), 2) }} </p>
+                                                                </div> 
+                                                                <div>  
+                                                                    <h4 class="card-title text-danger"><strong>  {{ number_format($salariesMaster->where('field_id', 5)->where('payment_type', 'Cash')->whereIn('payment_status', ['hold', 'pending', 'rejected'])->sum('net_salary'), 2) }} </strong> </h4> <p>  PENDING <br>{{ number_format($salariesMaster->where('field_id', 5)->where('payment_type', 'Cash')->where('payment_status', 'pending')->sum('net_salary'), 2) }}    </p> 
+                                                                    <p>   HOLD <br> {{ number_format($salariesMaster->where('field_id', 5)->where('payment_type', 'Cash')->whereIn('payment_status', ['hold', 'rejected'])->sum('net_salary'), 2) }} </p>  
+                                                                </div>   
                                                         </div>
                                                     
                                                         <div class="d-flex justify-content-between">
-                                                                <div> <h6 class="card-title text-danger"><strong>  N0 of Emp' : {{ $salariesMaster->where('field_id', 5)->where('payment_type', 'Bank')->whereIn('payment_status', ['hold', 'pending', 'rejected'])->count() }} </strong> </h6>   </div>  
-                                                                <div> <h6 class="card-title text-danger"><strong>  N0 of Emp' : {{ $salariesMaster->where('field_id', 5)->where('payment_type', 'Cash')->whereIn('payment_status', ['hold', 'pending', 'rejected'])->count() }} </strong> </h6>   </div>  
+                                                                <div> <h6 class="card-title text-danger"><strong>  N0 of Emp' : {{ $salariesMaster->where('field_id', 5)->where('payment_type', 'Bank')->whereIn('payment_status', ['pending','hold','reejcted'])->count() }} </strong> </h6>  PENDING  <br>  {{ $salariesMaster->where('field_id', 5)->where('payment_type', 'Bank')->where('payment_status', 'pending')->count() }}
+                                                                    <p>HOLD <br> {{ $salariesMaster->where('field_id', 5)->where('payment_type', 'Bank')->whereIn('payment_status', ['hold', 'rejected'])->count() }} </p>
+                                                                </div>  
+                                                                <div> <h6 class="card-title text-danger"><strong>  N0 of Emp' : {{ $salariesMaster->where('field_id', 5)->where('payment_type', 'Cash')->whereIn('payment_status', ['hold', 'pending', 'rejected'])->count() }} </strong> </h6>  PENDING <br>  {{ $salariesMaster->where('field_id', 5)->where('payment_type', 'Cash')->where('payment_status', 'pending')->count() }}
+                                                                    <p> HOLD <br> {{ $salariesMaster->where('field_id', 5)->where('payment_type', 'Cash')->whereIn('payment_status', ['hold', 'rejected'])->count() }} </p>
+                                                                </div>  
                                                         </div> 
                                                         <!-- <hr> <br>  -->
                                                     
@@ -3044,13 +3104,22 @@
                                                         </div>
 
                                                         <div class="d-flex justify-content-between">
-                                                                <div>  <h4 class="card-title text-danger"><strong> {{ number_format($salariesMaster->where('field_id', 6)->where('payment_type', 'Bank')->whereIn('payment_status', ['hold', 'pending', 'rejected'])->sum('net_salary'), 2) }}  </strong> </h4>   </div> 
-                                                                <div>  <h4 class="card-title text-danger"><strong>  {{ number_format($salariesMaster->where('field_id', 6)->where('payment_type', 'Cash')->whereIn('payment_status', ['hold', 'pending', 'rejected'])->sum('net_salary'), 2) }} </strong> </h4>  </div>   
+                                                                <div>  <h4 class="card-title text-danger"><strong> {{ number_format($salariesMaster->where('field_id', 6)->where('payment_type', 'Bank')->whereIn('payment_status', ['hold', 'pending', 'rejected'])->sum('net_salary'), 2) }}  </strong> </h4> <p> PENDING <br>{{ number_format($salariesMaster->where('field_id', 6)->where('payment_type', 'Bank')->where('payment_status', 'pending')->sum('net_salary'), 2) }}  </p> 
+                                                                    <p>  HOLD <br> {{ number_format($salariesMaster->where('field_id', 6)->where('payment_type', 'Bank')->whereIn('payment_status', ['hold', 'rejected'])->sum('net_salary'), 2) }} </p>
+                                                                </div> 
+                                                                <div>  
+                                                                    <h4 class="card-title text-danger"><strong>  {{ number_format($salariesMaster->where('field_id', 6)->where('payment_type', 'Cash')->whereIn('payment_status', ['hold', 'pending', 'rejected'])->sum('net_salary'), 2) }} </strong> </h4> <p>  PENDING <br>{{ number_format($salariesMaster->where('field_id', 6)->where('payment_type', 'Cash')->where('payment_status', 'pending')->sum('net_salary'), 2) }}    </p> 
+                                                                    <p>   HOLD <br> {{ number_format($salariesMaster->where('field_id', 6)->where('payment_type', 'Cash')->whereIn('payment_status', ['hold', 'rejected'])->sum('net_salary'), 2) }} </p>  
+                                                                </div>   
                                                         </div>
                                                     
                                                         <div class="d-flex justify-content-between">
-                                                                <div> <h6 class="card-title text-danger"><strong>  N0 of Emp' : {{ $salariesMaster->where('field_id', 6)->where('payment_type', 'Bank')->whereIn('payment_status', ['hold', 'pending', 'rejected'])->count() }} </strong> </h6>   </div>  
-                                                                <div> <h6 class="card-title text-danger"><strong>  N0 of Emp' : {{ $salariesMaster->where('field_id', 6)->where('payment_type', 'Cash')->whereIn('payment_status', ['hold', 'pending', 'rejected'])->count() }} </strong> </h6>   </div>  
+                                                                <div> <h6 class="card-title text-danger"><strong>  N0 of Emp' : {{ $salariesMaster->where('field_id', 6)->where('payment_type', 'Bank')->whereIn('payment_status', ['pending','hold','reejcted'])->count() }} </strong> </h6>  PENDING  <br>  {{ $salariesMaster->where('field_id', 6)->where('payment_type', 'Bank')->where('payment_status', 'pending')->count() }}
+                                                                    <p>HOLD <br> {{ $salariesMaster->where('field_id', 6)->where('payment_type', 'Bank')->whereIn('payment_status', ['hold', 'rejected'])->count() }} </p>
+                                                                </div>  
+                                                                <div> <h6 class="card-title text-danger"><strong>  N0 of Emp' : {{ $salariesMaster->where('field_id', 6)->where('payment_type', 'Cash')->whereIn('payment_status', ['hold', 'pending', 'rejected'])->count() }} </strong> </h6>  PENDING <br>  {{ $salariesMaster->where('field_id', 6)->where('payment_type', 'Cash')->where('payment_status', 'pending')->count() }}
+                                                                    <p> HOLD <br> {{ $salariesMaster->where('field_id', 6)->where('payment_type', 'Cash')->whereIn('payment_status', ['hold', 'rejected'])->count() }} </p>
+                                                                </div>  
                                                         </div> 
                                                         <!-- <hr> <br>  -->
                                                     
@@ -3077,14 +3146,7 @@
                     <div class="col h-100" >
                         <div  class="card h-100 bg-dark text-white">
                             <div class="card-body">
-                                <div class="card-title d-flex align-items-start justify-content-between mb-4">
-                                    <div class="avatar flex-shrink-0">
-                                        <img
-                                            src="{{ asset('img/icons/unicons/paypal.png') }}"
-                                            alt="chart success"
-                                            class="rounded" />
-                                    </div>
-                                </div>
+
                                 <div class="row">
 
                                     <div class="col">
@@ -3094,25 +3156,32 @@
                                         <h4 class="card-title text-white"><strong> &#x20B5;  {{ number_format($salariesMaster->sum('net_salary'), 2) }} </strong> </h4> 
                                         <h6 class="card-title text-white"><strong> &#x20B5; NUMBER OF EMPLOYEES : {{ $salariesMaster->count() }} </strong> </h6> 
                                         
+                                        <div class="mt-6"> <strong>PAID   </strong>  </div>   
+                                        <div>  <h4 class="card-title text-info"><strong> {{ number_format($salariesMaster->where('payment_status', 'approved')->sum('net_salary'), 2) }}  </strong> </h4>   </div> 
+                                        <div> <h6 class="card-title text-info"><strong>  N0 of Emp' : {{ $salariesMaster->where('payment_status', 'approved')->count() }} </strong> </h6>   </div>  
+                                   
                                     </div>
 
                                     <div class="col">
 
                                         <!-- TOTAL -->
                                         <div class="d-flex justify-content-between">
-                                                <div> <strong>PAID   </strong>  </div>   | 
                                                 <div> <strong>OUTSTANDINGS   </strong> </div>
+                                                <div> <strong>N0 OF EMP'   </strong> </div>
+
                                         </div>
 
                                         <div class="d-flex justify-content-between">
-                                                <div>  <h4 class="card-title text-info"><strong> {{ number_format($salariesMaster->where('payment_status', 'approved')->sum('net_salary'), 2) }}  </strong> </h4>   </div> 
-                                                <div>  <h4 class="card-title text-danger"><strong>  {{ number_format( $salariesMaster->whereIn('payment_status', ['pending', 'hold'])->sum('net_salary'), 2)  }} </strong> </h4>  </div>   
+                                                <div>  <h4 class="card-title text-danger"><strong>  {{ number_format( $salariesMaster->whereIn('payment_status', ['pending', 'hold', 'rejected'])->sum('net_salary'), 2)  }} </strong> </h4> <p> PENDING <br> {{ number_format( $salariesMaster->where('payment_status', 'pending')->sum('net_salary'), 2)  }} </p> 
+                                               <p> HOLD  <br>{{ number_format( $salariesMaster->whereIn('payment_status', ['rejected', 'hold'])->sum('net_salary'), 2)  }} </p>
+                                            </div>   
+                                      
+                                            <div> <h4 class="card-title text-danger"><strong>   {{ $salariesMaster->whereIn('payment_status', ['pending', 'hold', 'rejected'])->count() }} </strong> </h4> <p> PENDING <br> {{ $salariesMaster->where('payment_status', 'pending')->count() }} </p> 
+                                                <p>HOLD <br> {{ $salariesMaster->whereIn('payment_status', ['hold', 'rejected'])->count() }} </p>
+                                            </div>  
+                                       
                                         </div>
                                       
-                                        <div class="d-flex justify-content-between">
-                                                <div> <h6 class="card-title text-info"><strong>  N0 of Emp' : {{ $salariesMaster->where('payment_status', 'approved')->count() }} </strong> </h6>   </div>  
-                                                <div> <h6 class="card-title text-danger"><strong>  N0 of Emp' : {{ $salariesMaster->whereIn('payment_status', ['pending', 'hold'])->count() }} </strong> </h6>   </div>  
-                                        </div> 
                                    </div>
                                 </div>
 
@@ -3125,14 +3194,7 @@
                     <div class="col h-100">
                         <div  class="card h-100 bg-dark text-white">
                             <div class="card-body">
-                                <div class="card-title d-flex align-items-start justify-content-between mb-4">
-                                    <div class="avatar flex-shrink-0">
-                                        <img
-                                            src="{{ asset('img/icons/unicons/paypal.png') }}"
-                                            alt="chart success"
-                                            class="rounded" />
-                                    </div>
-                                </div>
+
                                 <div class="row">
 
                                     <div class="col">
@@ -3140,27 +3202,33 @@
                                         <!-- TOTAL -->
                                         <p class="mb-1"><strong class="text-success">  TOTAL BANKS </strong> </p>
                                         <h4 class="card-title text-white"><strong> &#x20B5;  {{ number_format($salariesMaster->where('payment_type', 'Bank')->sum('net_salary'), 2) }} </strong> </h4> 
-                                        <h6 class="card-title text-white"><strong> &#x20B5; NUMBER OF EMPLOYEES : {{ $salariesMaster->where('payment_type', 'Bank')->count() }} </strong> </h6> 
+                                        <h6 class="card-title text-white"><strong>  NUMBER OF EMPLOYEES : {{ $salariesMaster->where('payment_type', 'Bank')->count() }} </strong> </h6> 
                                         
+                                        <div class="mt-6"> <strong>PAID   </strong>  </div>  
+                                        <div>  <h4 class="card-title text-info"><strong> {{ number_format($salariesMaster->where('payment_type', 'Bank')->where('payment_status', 'approved')->sum('net_salary'), 2) }}  </strong> </h4>   </div> 
+                                        <div> <h6 class="card-title text-info"><strong>  N0 of Emp' : {{ $salariesMaster->where('payment_type', 'Bank')->where('payment_status', 'approved')->count() }} </strong> </h6>   </div>  
+
                                     </div>
 
                                     <div class="col">
 
                                         <!-- TOTAL -->
                                         <div class="d-flex justify-content-between">
-                                                <div> <strong>PAID   </strong>  </div>   | 
+                                                
                                                 <div> <strong>OUTSTANDINGS   </strong> </div>
+                                                <div> <strong>N0 OF EMP'   </strong> </div>
                                         </div>
 
                                         <div class="d-flex justify-content-between">
-                                                <div>  <h4 class="card-title text-info"><strong> {{ number_format($salariesMaster->where('payment_type', 'Bank')->where('payment_status', 'approved')->sum('net_salary'), 2) }}  </strong> </h4>   </div> 
-                                                <div>  <h4 class="card-title text-danger"><strong>  {{ number_format($salariesMaster->where('payment_type','Bank')->whereIn('payment_status', ['pending', 'hold'])->sum('net_salary'))  }} </strong> </h4>  </div>   
+                                                <div>  <h4 class="card-title text-danger"><strong>  {{ number_format($salariesMaster->where('payment_type','Bank')->whereIn('payment_status', ['pending', 'hold', 'rejected'])->sum('net_salary'))  }} </strong> </h4> <p> PENDIND <br> {{ number_format($salariesMaster->where('payment_type','Bank')->where('payment_status', 'pending')->sum('net_salary'))  }}  </p>
+                                                <p> HOLD <br> {{ number_format($salariesMaster->where('payment_type','Bank')->whereIn('payment_status', [ 'hold', 'rejected'])->sum('net_salary'))  }} </p>
+                                                </div>  
+                                                
+                                                <div> <h4 class="card-title text-danger"><strong> {{ $salariesMaster->where('payment_type', 'Bank')->whereIn('payment_status', ['pending', 'hold', 'rejected'])->count() }} </strong> </h4> <p> PENDING <br> {{ $salariesMaster->where('payment_type', 'Bank')->where('payment_status', 'pending')->count() }} </p> 
+                                                 <p> HOLD <br> {{ $salariesMaster->where('payment_type', 'Bank')->whereIn('payment_status', ['rejected', 'hold'])->count() }} </p>
+                                                 </div>  
                                         </div>
                                       
-                                        <div class="d-flex justify-content-between">
-                                                <div> <h6 class="card-title text-info"><strong>  N0 of Emp' : {{ $salariesMaster->where('payment_type', 'Bank')->where('payment_status', 'approved')->count() }} </strong> </h6>   </div>  
-                                                <div> <h6 class="card-title text-danger"><strong>  N0 of Emp' : {{ $salariesMaster->where('payment_type', 'Bank')->whereIn('payment_status', ['pending', 'hold'])->count() }} </strong> </h6>   </div>  
-                                        </div> 
                                    </div>
                                 </div>
 
@@ -3174,15 +3242,6 @@
                     <div class="col h-100">
                         <div  class="card h-100 bg-dark text-white">
                             <div class="card-body">
-                                <div class="card-title d-flex align-items-start justify-content-between mb-4">
-                                    <div class="avatar flex-shrink-0">
-                                        <img
-                                            src="{{ asset('img/icons/unicons/paypal.png') }}"
-                                            alt="chart success"
-                                            class="rounded" />
-                                    </div>
-                                </div>
-
                                 <div class="row">
 
                                     <div class="col">
@@ -3192,25 +3251,36 @@
                                         <h4 class="card-title text-white"><strong> &#x20B5;  {{ number_format(       $salariesMaster->where('payment_type', 'Cash')->sum('net_salary')    + $salariesMaster->where('payment_type', 'cash')->sum('net_salary'), 2) }} </strong> </h4> 
                                         <h6 class="card-title text-white"><strong> &#x20B5; NUMBER OF EMPLOYEES : {{ $salariesMaster->where('payment_type', 'Cash')->count()       + $salariesMaster->where('payment_type', 'cash')->count() }} </strong> </h6> 
                                         
+                                        <div class="mt-6"> <strong>PAID   </strong>  </div>   
+                                        <div>  <h4 class="card-title text-info"><strong> {{ number_format($salariesMaster->where('payment_type', 'Cash')->where('payment_status', 'approved')->sum('net_salary')  + $salariesMaster->where('payment_type', 'cash')->where('payment_status', 'approved')->sum('net_salary'), 2) }}  </strong> </h4>   </div> 
+                                        <div> <h6 class="card-title text-info"><strong>  N0 of Emp' : {{ $salariesMaster->where('payment_type', 'Cash')->where('payment_status', 'approved')->count()  + $salariesMaster->where('payment_type', 'cash')->where('payment_status', 'approved')->count() }} </strong> </h6>   </div>  
+
                                     </div>
 
                                     <div class="col">
 
                                         <!-- TOTAL -->
                                         <div class="d-flex justify-content-between">
-                                                <div> <strong>PAID   </strong>  </div>   | 
                                                 <div> <strong>OUTSTANDINGS   </strong> </div>
+                                                <div> <strong>N0 OF EMP'   </strong> </div>
                                         </div>
 
                                         <div class="d-flex justify-content-between">
-                                                <div>  <h4 class="card-title text-info"><strong> {{ number_format($salariesMaster->where('payment_type', 'Cash')->where('payment_status', 'approved')->sum('net_salary')  + $salariesMaster->where('payment_type', 'cash')->where('payment_status', 'approved')->sum('net_salary'), 2) }}  </strong> </h4>   </div> 
-                                                <div>  <h4 class="card-title text-danger"><strong>  {{ number_format($salariesMaster->where('payment_type', 'Cash')->whereIn('payment_status', ['pending', 'rejected', 'hold'])->sum('net_salary')  + $salariesMaster->where('payment_type', 'cash')->whereIn('payment_status', ['pending', 'rejected', 'hold'])->sum('net_salary'), 2)  }} </strong> </h4>  </div>   
+                                                <div>  <h4 class="card-title text-danger"><strong>  {{ number_format($salariesMaster->where('payment_type', 'Cash')->whereIn('payment_status', ['pending', 'rejected', 'hold'])->sum('net_salary')  + $salariesMaster->where('payment_type', 'cash')->whereIn('payment_status', ['pending', 'rejected', 'hold'])->sum('net_salary'), 2)  }} </strong> </h4>  
+                                            
+                                                    <P> PENDING <br> {{ number_format($salariesMaster->where('payment_type', 'Cash')->where('payment_status', 'pending')->sum('net_salary')  + $salariesMaster->where('payment_type', 'cash')->where('payment_status', 'pending')->sum('net_salary'), 2)  }} </P>
+                                                    
+                                                    <P>HOLD <br> {{ number_format($salariesMaster->where('payment_type', 'Cash')->whereIn('payment_status', [ 'rejected', 'hold'])->sum('net_salary')  + $salariesMaster->where('payment_type', 'cash')->whereIn('payment_status', ['rejected', 'hold'])->sum('net_salary'), 2)  }} </P>
+                                                </div>   
+                                        
+                                                <div> <h4 class="card-title text-danger"><strong> {{ $salariesMaster->where('payment_type', 'Cash')->whereIn('payment_status', ['pending', 'rejected', 'hold'])->count()  + $salariesMaster->where('payment_type', 'cash')->whereIn('payment_status', ['pending', 'rejected', 'hold'])->count() }} </strong> </h4>  
+                                                    <p> PENDING <br>  {{ $salariesMaster->where('payment_type', 'Cash')->where('payment_status', 'pending')->count()  + $salariesMaster->where('payment_type', 'cash')->where('payment_status', 'pending')->count() }}</p>
+                                                    <p> HOLD <br>  {{ $salariesMaster->where('payment_type', 'Cash')->whereIn('payment_status', ['rejected', 'hold'])->count()  + $salariesMaster->where('payment_type', 'cash')->whereIn('payment_status', [ 'rejected', 'hold'])->count() }} </p>
+                                                </div>  
+                                        
                                         </div>
                                       
-                                        <div class="d-flex justify-content-between">
-                                                <div> <h6 class="card-title text-info"><strong>  N0 of Emp' : {{ $salariesMaster->where('payment_type', 'Cash')->where('payment_status', 'approved')->count()  + $salariesMaster->where('payment_type', 'cash')->where('payment_status', 'approved')->count() }} </strong> </h6>   </div>  
-                                                <div> <h6 class="card-title text-danger"><strong> N0 of Emp' : {{ $salariesMaster->where('payment_type', 'Cash')->whereIn('payment_status', ['pending', 'rejected', 'hold'])->count()  + $salariesMaster->where('payment_type', 'cash')->whereIn('payment_status', ['pending', 'rejected', 'hold'])->count() }} </strong> </h6>   </div>  
-                                        </div> 
+
                                    </div>
                                 </div>
 

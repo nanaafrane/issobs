@@ -197,7 +197,7 @@
             </li>
             @endif
 
-            @if((Auth::user()->hasRole(['Manager', 'Officer', 'Finance Manager']) && Auth::user()->hasPermission('Accounts')) )
+            @if((Auth::user()->hasRole(['Manager', 'Finance Manager']) && Auth::user()->hasPermission('Accounts')) )
 
             <li class="menu-header small text-uppercase"> <span class="menu-header-text text-danger">Accounts</span></li>
 
@@ -267,7 +267,7 @@
                         </a>
                     </li>
 
-                                      <li class="menu-item">
+                                      <!-- <li class="menu-item">
                     <a href="{{ url('salariesBulkCash') }}" class="menu-link">
                     <i class="menu-icon tf-icons bx bxs-group"></i>
                     <div class="text-truncate" data-i18n="Transaction">Bulk Cash Salaries</div>
@@ -279,7 +279,7 @@
                         <i class="menu-icon tf-icons bx bx-git-compare"></i>
                         <div class="text-truncate" data-i18n="InvtoPayroll">Invoice to Payroll</div>
                         </a>
-                    </li>
+                    </li> -->
                     </ul>
                 </li>
         </ul>
@@ -299,7 +299,7 @@
             </div>
         </div><br>
 
-         @if(Auth::user()->hasRole(['Invoice','Manager', 'Finance Manager' ]))
+         @if(Auth::user()->hasRole(['Invoice','Manager', 'Officer', 'Internal Auditor','Finance Manager' ]))
         <div class="row">
             <div class="col-lg-2">
                 <div  class="card h-100 bg-dark text-white">

@@ -674,7 +674,7 @@
                                             <td> {{$client->field->name}} </td>
                                             <!-- <td><span class="btn bg-danger text-white btn-block">Unpaid</span></td> -->
                                             <td>
-                                                <a href="{{url('generate', $client->id )}}" class="btn btn-info">
+                                                <a href="{{url('generate', $client->id )}}" class="btn btn-info" data-loading>
                                                     <i class="icon-base bx bx-bxs-receipt"></i>
                                                 </a>
                                             </td>

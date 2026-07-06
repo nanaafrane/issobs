@@ -111,7 +111,19 @@ class Salary extends Model
     {
         return $this->hasOneThrough(PaymentInfo::class, Employee::class, 'id', 'employee_id', 'employee_id', 'id');
     }
- 
+
+
+    public function category($categories, $salary)
+    {
+
+        foreach ($categories as $category) {
+
+            if ($salary->client_id == $category->client_id) 
+            {
+                return $category->name;
+            }
+        }
+    }
 
 
 }

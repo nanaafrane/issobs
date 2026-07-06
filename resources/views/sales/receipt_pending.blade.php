@@ -729,7 +729,7 @@
                                         </button>
                                         <div class="dropdown-menu">
                                             <a class="dropdown-item" href="{{url('receipt', $receipt->id)}}"><i class="icon-base bx bxs-bullseye"></i> view</a>
-                                            @if($receipt->bran_status !== 'approved' || Auth::user()->hasRole(['Finance Manager']) )
+                                            @if($receipt->ho_status !== 'approved' || Auth::user()->hasRole(['Finance Manager']) )
                                             <a class="dropdown-item" href="/receipt/{{$receipt->id}}/edit"><i class="icon-base bx bx-edit-alt me-1"></i> Edit</a>
                                             @endif
                                         </div>

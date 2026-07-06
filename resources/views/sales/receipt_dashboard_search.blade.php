@@ -591,6 +591,7 @@
                             <th>Inv. Amount</th>
                             <th>Inv. Month</th>
                             <th>Client Name</th>
+                            <th>Client Status</th>
                             <th>Phone No.</th>
                             <th> Field Office </th>
                             <th> Staff </th>
@@ -636,6 +637,13 @@
                             @else
                             <td> {{$receipt->client->name}} {{$receipt->client->business_name}} </td>
                             @endif
+                            <td> 
+                                @if($receipt->client?->status == 'terminated')
+                                <span class="badge bg-label-danger">{{ $receipt->client?->status }}</span>
+                                @else
+                                <span class="badge bg-label-success">{{ $receipt->client?->status }}</span>
+                                @endif
+                            </td>
                             <td> {{$receipt->client->phone_number}} </td>
                             <td> {{$receipt->client->field->name}} </td>
                             <td> {{$receipt->user->name}} </td>

@@ -240,7 +240,7 @@
                         </a>
                     </li>
 
-                    <li class="menu-item active">
+                    <!-- <li class="menu-item active">
                         <a href="{{ url('salariesBulkCash') }}" class="menu-link">
                         <i class="menu-icon tf-icons bx bxs-group"></i>
                         <div class="text-truncate" data-i18n="Transaction">Bulk Cash Salaries</div>
@@ -252,7 +252,7 @@
                         <i class="menu-icon tf-icons bx bx-git-compare"></i>
                         <div class="text-truncate" data-i18n="InvtoPayroll">Invoice to Payroll</div>
                         </a>
-                    </li>
+                    </li> -->
                     </ul>
                 </li>
         </ul>

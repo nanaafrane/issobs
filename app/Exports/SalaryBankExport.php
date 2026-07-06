@@ -2,6 +2,7 @@
 
 namespace App\Exports;
 
+use App\Models\category;
 use App\Models\Salary;
 use Carbon\Carbon;
 // use Maatwebsite\Excel\Concerns\FromCollection;
@@ -70,13 +71,15 @@ class SalaryBankExport implements FromQuery, WithMapping , WithHeadings, WithDra
     */
     public function map($salary): array
     {
+        $categories = category::whereMonth('category_month', $this->month)->get();
+
         return [
              ++$this->rowNumber,
             "FWSS ". $salary->employee_id,
             $salary->payment_status,
             $salary->updated_at->format('F l d, Y, H:i A'),
             $salary->employee?->name,
-            $category = $salary->client?->category_month == Carbon::parse($this->month)->format('Y-m-d') ? $salary->client?->category_name : null,
+            $salary->category($categories, $salary),
             $salary->field?->name,
             $salary->role?->name,
             $salary->client?->name . " " .$salary->client?->business_name,

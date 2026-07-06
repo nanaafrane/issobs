@@ -348,90 +348,105 @@
 
   @section('content')
 
-  <!-- Content -->
-            <!-- Content -->
+  <div class="container-xxl flex-grow-1 container-p-y">
+    <div class="card mb-4">
+      <div class="card-body d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
+        <div>
+          <h4 class="fw-bold mb-1">Payment info</h4>
+          <p class="text-muted mb-0">View payroll payment details for {{ $employee_pay_info->employee?->name }}.</p>
+        </div>
+        <div class="text-md-end">
+          <a href="{{ url('employees', $employee_pay_info->employee_id) }}" class="btn btn-outline-secondary btn-sm mb-2">
+            <i class="bx bx-user me-1"></i> Employee Details
+          </a>
+          @if(Auth::user()->hasRole(['Finance Manager', 'Manager']))
+            <a href="{{ url('employeesSalary', $employee_pay_info->employee_id) }}" class="btn btn-outline-secondary btn-sm mb-2">
+              <i class="bx bx-money-withdraw me-1"></i> Salaries
+            </a>
+          @endif
+          @if ($employee_pay_info->employee?->status == 'Active')
+            <a href="{{ url('employeesPayInfo/'.$employee_pay_info->employee_id) }}" class="btn btn-dark btn-sm mb-2">
+              <i class="bx bx-edit-alt me-1"></i> Edit Payment Info
+            </a>
+          @endif
+        </div>
+      </div>
+    </div>
 
-            <div class="container-xxl flex-grow-1 container-p-y">
-              <div class="card-header  ml-2  d-none d-lg-block">
-                  @include('flash-messages')
+    <!-- <div class="row mb-3">
+      <div class="col-12">
+        <ul class="nav nav-pills flex-column flex-md-row gap-2">
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url('employees', $employee_pay_info->employee_id) }}"><i class="bx bx-user me-1"></i> Employee Details</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link active" href="javascript:void(0);"><i class="bx bxs-comment-detail me-1"></i> Payment Info</a>
+          </li>
+          @if(Auth::user()->hasRole(['Finance Manager', 'Manager']))
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url('employeesSalary', $employee_pay_info->employee_id) }}"><i class="bx bx-money-withdraw me-1"></i> Salaries</a>
+            </li>
+          @endif
+        </ul>
+      </div>
+    </div> -->
+
+    <div class="row g-4">
+      <div class="col-lg-4">
+        <div class="card h-100">
+          <div class="card-body text-center">
+            <h5 class="card-title mb-1">{{ $employee_pay_info->employee?->name }}</h5>
+            <p class="text-muted mb-3">{{ $employee_pay_info->employee?->role?->name ?? 'Employee' }}</p>
+            <span class="badge bg-primary mb-3">{{ $employee_pay_info->employee?->payment_type ?? 'Payment' }}</span>
+            <dl class="row text-start">
+              <dt class="col-sm-5 text-muted">Status</dt>
+              <dd class="col-sm-7 mb-3">{{ $employee_pay_info->employee?->status ?? 'Unknown' }}</dd>
+              <dt class="col-sm-5 text-muted">Bank</dt>
+              <dd class="col-sm-7 mb-3">{{ $employee_pay_info->bank?->name ?? '-' }}</dd>
+              <dt class="col-sm-5 text-muted">Account</dt>
+              <dd class="col-sm-7 mb-0">{{ $employee_pay_info->acc_number ?? '-' }}</dd>
+            </dl>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-8">
+        <div class="card mb-4">
+          <div class="card-header">
+            <strong>Payment details</strong>
+          </div>
+          <div class="card-body">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <small class="text-muted">Bank</small>
+                <p class="fw-semibold mb-0">{{ $employee_pay_info->bank?->name ?? '-' }}</p>
               </div>
-              <div class="row"> 
-                <div class="col-md-6">
-                <h5 class="fw-bold mb-4"><span class="text-muted fw-light"><i class="bx bxs-user-account"></i> Employee /</span> Show</h5>
-                </div>
-                @if ($employee_pay_info->employee?->status == 'Active')
-                  <div class="col-md-6 text-end">
-                    <a href="{{url('employeesPayInfo/'.$employee_pay_info->employee_id)}}" class="btn btn-dark mb-3"><i class="bx bx-edit-alt"></i> Edit Payment Info</a>  
-                </div>
-                @endif
+              <div class="col-md-6">
+                <small class="text-muted">Account number</small>
+                <p class="fw-semibold mb-0">{{ $employee_pay_info->acc_number ?? '-' }}</p>
               </div>
-
-              <div class="row">
-                <div class="col-md-12">
-                  <ul class="nav nav-pills flex-column flex-md-row mb-3">
-                    <li class="nav-item">
-                      <a class="nav-link" href="{{url('employees', $employee_pay_info->employee_id)}}"><i class="bx bx-user me-1"></i> Employee Details</a>
-                    </li>
-                    <li class="nav-item ">
-                      <a class="nav-link active" href=" javascript:void(0);" ><i class="bx bxs-comment-detail"></i> Payment Info </a>
-                    </li>
-                     @if(Auth::user()->hasRole(['Finance Manager', 'Manager']))
-                    <li class="nav-item">
-                      <a class="nav-link" href="{{url('employeesSalary', $employee_pay_info->employee_id)}}" ><i class="bx bx-money-withdraw"></i> Salaries </a>
-                    </li>
-                    @endif
-                  </ul>
-                  <div class="card mb-4">
-                    <div class="card-body">
-
-                            <div class="row" id="payment_field"> 
-                                <h5 class="card-header"> <strong> Payment Infomation For {{  $employee_pay_info->employee?->name }} </strong> </h5> 
-                                <hr class="mb-3" />
-                            
-                                <div class="mb-3 col-md-4">
-                                  <label for="bank_id" class="form-label"> <strong> {{ __('Bank') }} * </strong>  </label>
-                                    <h4> <strong> {{$employee_pay_info->bank?->name}} </strong> </h4> 
-                                </div>
-
-                                  <div class="mb-3 col-md-4">
-                                  <label for="acc_number" class="form-label"> <strong>   Account Number * </strong> </label>
-                                    <h4> <strong> {{$employee_pay_info->acc_number}} </strong> </h4> 
-                                </div>
-
-
-                                  <div class="mb-3 col-md-4">
-                                  <label for="branch" class="form-label"> <strong>    Branch * </strong> </label>
-                                    <h4> <strong> {{$employee_pay_info->branch}} </strong> </h4> 
-                                </div>
-
-
-                                  <div class="mb-3 col-md-4">
-                                  <label for="branch" class="form-label"> <strong>    Branch Code * </strong> </label>
-                                    <h4> <strong> {{$employee_pay_info->branch_code}} </strong> </h4> 
-                                </div>
-
-                                  <div class="mb-3 col-md-4">
-                                  <label for="tin_number" class="form-label"> <strong>    TIN Number  </strong> </label>
-                                    <h4> <strong> {{$employee_pay_info->tin_number}} </strong> </h4> 
-                                  </div>
-
-                                <div class="mb-3 col-md-4">
-                                  <label for="ssnit_number" class="form-label"> <strong>  SSNIT Number </strong> </label>
-                                    <h4> <strong> {{$employee_pay_info->ssnit_number}} </strong> </h4> 
-                                </div>
-                            </div>
-                    </div>
-                    <!-- /Account -->
-                  </div>
-
-                </div>
+              <div class="col-md-6">
+                <small class="text-muted">Branch</small>
+                <p class="fw-semibold mb-0">{{ $employee_pay_info->branch ?? '-' }}</p>
+              </div>
+              <div class="col-md-6">
+                <small class="text-muted">Branch code</small>
+                <p class="fw-semibold mb-0">{{ $employee_pay_info->branch_code ?? '-' }}</p>
+              </div>
+              <div class="col-md-6">
+                <small class="text-muted">TIN number</small>
+                <p class="fw-semibold mb-0">{{ $employee_pay_info->tin_number ?? '-' }}</p>
+              </div>
+              <div class="col-md-6">
+                <small class="text-muted">SSNIT number</small>
+                <p class="fw-semibold mb-0">{{ $employee_pay_info->ssnit_number ?? '-' }}</p>
               </div>
             </div>
-            <!-- / Content -->
-
-
-
-  <!-- / Content -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
   @endsection
 

@@ -267,7 +267,7 @@
                         </a>
                     </li>
 
-                                    <li class="menu-item">
+                                    <!-- <li class="menu-item">
                     <a href="{{ url('salariesBulkCash') }}" class="menu-link">
                     <i class="menu-icon tf-icons bx bxs-group"></i>
                     <div class="text-truncate" data-i18n="Transaction">Bulk Cash Salaries</div>
@@ -279,7 +279,7 @@
                         <i class="menu-icon tf-icons bx bx-git-compare"></i>
                         <div class="text-truncate" data-i18n="InvtoPayroll">Invoice to Payroll</div>
                         </a>
-                    </li>
+                    </li> -->
                     </ul>
                 </li>
         </ul>
@@ -376,7 +376,13 @@
                                                             @else 
                                                                 <td> <span class="badge bg-label-success">  {{ $salary->payment_status }} </span> </td>
                                                             @endif
-                                            <td> @if ( $salary->client?->category_month == \Carbon\Carbon::parse($month)->format('Y-m-d') ) {{ $salary->client?->category_name }} @endif </td>
+                                            <td> 
+                                                @foreach($categories as $category)
+                                                    @if($salary->client_id == $category->client_id)
+                                                        {{ $category->name }}
+                                                    @endif
+                                                @endforeach
+                                            </td>
                                             <td> {{ strtoupper($salary->employee?->name) }} </td>
                                             <td> {{ strtoupper($salary->field?->name) }} </td>
                                             <td> {{ $salary->employee?->role?->name }} </td>

@@ -759,7 +759,7 @@
                             </div>
                             <br>
                             <div class="modal-footer">
-                                <button type="submit" class="btn btn-info d-grid w-100" onclick="return confirm('Kindly Confirm?')">{{ __('Generate') }}</button>
+                                <button type="submit" class="btn btn-info d-grid w-100" data-loading onclick="return confirm('Kindly Confirm?')">{{ __('Generate') }}</button>
                             </div>
                     </form>
 
