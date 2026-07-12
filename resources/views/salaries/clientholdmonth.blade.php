@@ -354,9 +354,10 @@
             <form action="/salariesDeleteMultiple" method="POST">
                 @csrf
                     <div class="col-lg-12 mb-4">
+                        <input type="hidden" name="action_type" id="salary_action_type" value="" />
                         <input class="form-check-input form-check-inline" type="checkbox" value="" id="options" />
                         <div class="form-check form-check-inline">
-                            <button class="btn btn-success" name="submit" value="main" onclick="return confirm('Kindly Confirm?')" type="submit"> <i class="icon-base bx bx-recycle"> </i> {{ __('Move To Main') }}</button>                   
+                            <button class="btn btn-success" data-action="main" onclick="document.getElementById('salary_action_type').value='main'; return confirm('Kindly Confirm?')" type="submit"> <i class="icon-base bx bx-recycle"> </i> {{ __('Move To Main') }}</button>                   
                         </div>
 
                         <div class="card">
@@ -449,8 +450,8 @@
                                                     <td> {{ $salary->location }} </td>
                                                     <td> {{ $salary->client?->invoices()->whereMonth('invoice_month', $month->month)->pluck('status') }} </td>
                                                     <td>  {{ number_format( $salary->net_salary,2) }} </td>  
-                                                    <td> {{$salary->paymentInfo?->ssnit_number}}</td>
-                                                    <td> {{$salary->paymentInfo?->tin_number}}</td>
+                                                    <td> {{$salary->employee?->ssnit_number}}</td>
+                                                    <td> {{$salary->employee?->tin_number}}</td>
                                                     <td> {{$salary->payment_type}}</td>
                                                     <td> {{$salary->bank?->name}}</td>
                                                     <td> {{$salary->branch}}</td>

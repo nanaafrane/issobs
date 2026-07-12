@@ -388,6 +388,44 @@
                             </div>
 
                         </div>
+
+                        <div class="row mt-8">
+                            <div class="col-md-6 form-check form-switch">
+                                <input name="tin" class="form-check-input" type="checkbox" id="tin">
+                                <label class="form-check-label" for="tin">  TIN  </label>
+                            </div>
+
+                            <div class="mb-3 col-md-4" id="tin_number" style="display: none;">
+                              <label for="tin_number" class="form-label"> <strong>    TIN Number  </strong> </label>
+                              <input  class="form-control @error('tin_number') is-invalid @enderror" type="text"  name="tin_number" placeholder="TIN Number" value="{{old('tin_number')}}" autofocus />
+                                @error('tin_number')
+                                <span class="invalid-feedback" role="alert">
+                                    <strong>{{ $message }}</strong>
+                                </span>
+                                @enderror
+                              </div>
+
+                        </div>
+
+
+                        <div class="row mt-3">
+                            <div class="col-md-6 form-check form-switch">
+                                <input name="ssnit" class="form-check-input" type="checkbox" id="ssnit">
+                                <label class="form-check-label" for="ssnit">  SSNIT  </label>
+                            </div>
+
+                            <div class="mb-3 col-md-4" id="ssnit_number" style="display: none;">
+                              <label for="ssnit_number" class="form-label"> <strong>  SSNIT Number </strong> </label>
+                              <input  class="form-control @error('ssnit_number') is-invalid @enderror" type="text" id="ssnit_number" name="ssnit_number" placeholder="SSNIT Number " value="{{old('ssnit_number')}}" autofocus />
+                                @error('ssnit_number')
+                                <span class="invalid-feedback" role="alert">
+                                    <strong>{{ $message }}</strong>
+                                </span>
+                                @enderror
+                            </div>
+
+                        </div>
+
                       </div>
                       <hr class="my-0" />
                       <div class="card-body">
@@ -561,7 +599,7 @@
                               <label for="field_id" class="form-label"> <strong> {{ __('Field Office') }} * </strong>  </label>
                                 <select name="field_id" class="form-select @error('field_id') is-invalid @enderror" id="field_id" required>
                                     <option selected disabled>Assign Field Office </option>
-                                    @foreach($Fields as $field)
+                                    @foreach($fields as $field)
                                     <option value="{{$field->id}}">{{$field->name}}</option>
                                     @endforeach
                                 </select>
@@ -589,7 +627,7 @@
 
 
                             <div class="mb-3 col-md-4">
-                              <label for="location" class="form-label"> <strong>  {{ __('Location') }}  </strong> </label>
+                              <label for="location" class="form-label"> <strong>  {{ __('Location') }}*  </strong> </label>
                               <input  class="form-control @error('location') is-invalid @enderror" type="text" id="location" name="location"  placeholder="Address Name or Location Name" value="{{old('location')}}" autofocus required/>
                                 @error('location')
                                 <span class="invalid-feedback" role="alert">
@@ -664,7 +702,7 @@
                             </div>
 
 
-                              <div class="mb-3 col-md-4">
+                              <div class="mb-3 col-md-2">
                               <label for="branch" class="form-label"> <strong>    Branch * </strong> </label>
                               <input  class="form-control @error('branch') is-invalid @enderror" type="text" id="branch" name="branch" placeholder=" Branch " value="{{old('branch')}}" autofocus />
                                 @error('branch')
@@ -674,7 +712,7 @@
                                 @enderror
                             </div>
 
-                            <div class="mb-3 col-md-4">
+                            <div class="mb-3 col-md-2">
                               <label for="branch_code" class="form-label"> <strong>    Branch Code </strong> </label>
                               <input  class="form-control @error('branch_code') is-invalid @enderror" type="text" id="branch_code" name="branch_code" placeholder=" branch_code " value="{{old('branch_code')}}" autofocus />
                                 @error('branch_code')
@@ -684,25 +722,7 @@
                                 @enderror
                             </div>
 
-                              <div class="mb-3 col-md-4">
-                              <label for="tin_number" class="form-label"> <strong>    TIN Number  </strong> </label>
-                              <input  class="form-control @error('tin_number') is-invalid @enderror" type="text" id="tin_number" name="tin_number" placeholder="TIN Number" value="{{old('tin_number')}}" autofocus />
-                                @error('tin_number')
-                                <span class="invalid-feedback" role="alert">
-                                    <strong>{{ $message }}</strong>
-                                </span>
-                                @enderror
-                              </div>
 
-                            <div class="mb-3 col-md-4">
-                              <label for="ssnit_number" class="form-label"> <strong>  SSNIT Number </strong> </label>
-                              <input  class="form-control @error('ssnit_number') is-invalid @enderror" type="text" id="ssnit_number" name="ssnit_number" placeholder="SSNIT Number " value="{{old('ssnit_number')}}" autofocus />
-                                @error('ssnit_number')
-                                <span class="invalid-feedback" role="alert">
-                                    <strong>{{ $message }}</strong>
-                                </span>
-                                @enderror
-                            </div>
                         </div>
 
                             <h5 class="card-header"> <strong>Gurantor Infomation</strong> </h5> 
@@ -759,6 +779,28 @@
                                 @enderror
                             </div>
 
+                            <hr>
+                            <div class="mb-3 col-md-4">
+                                <div class="input-group">
+                                    <label class="input-group-text" for="inputGroupSelect01">{{ __('ASSIGN TO') }}</label>
+                                    <select name="staff" class="form-select @error('inputGroupSelect01') is-invalid @enderror" id="inputGroupSelect01" value="{{ old('staff')}}" >
+                                        <option selected disabled>Choose...</option>
+                                                @foreach($assign_staff as $user)
+                                                    @if($user->field_id == Auth::user()->field_id)
+                                                    <option value="{{$user->id}}"> {{$user->name}} </option>
+                                                    @elseif(Auth::user()->hasRole(['Manager']))
+                                                    <option value="{{$user->id}}"> {{$user->name}} </option>
+                                                    @endif
+                                                @endforeach
+                                    </select>
+                                </div>
+
+                                @error('staff')
+                                <span class="invalid-feedback" role="alert">
+                                    <strong>{{ $message }}</strong>
+                                </span>
+                                @enderror
+                            </div>
 
 
 
@@ -799,6 +841,33 @@
             });
         });
 </script>
+
+
+    <script>
+        $(document).ready(function() {
+
+            $('#tin').change(function() {
+                 if ($(this).is(':checked')) {
+                    $('#tin_number').toggle();
+                    // console.log("Checkbox checked! Value: " + value);
+                } else {
+                    $('#tin_number').toggle();
+                }
+            });
+        });
+
+            $(document).ready(function() {
+            $('#ssnit').change(function() {
+                 if ($(this).is(':checked')) {
+                    $('#ssnit_number').toggle();
+                    // console.log("Checkbox checked! Value: " + value);
+                } else {
+                    $('#ssnit_number').toggle();
+                }
+            });
+        });
+
+    </script>
 
 
   @endsection

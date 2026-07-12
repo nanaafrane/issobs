@@ -279,17 +279,18 @@
             <div class="row">
                 <form action="/payCashSalary" method="POST">
                     @csrf
+                    <input type="hidden" name="action_type" id="paycash_action_type" value="" />
                     <div class="col">
                         @if ( !isset($data))
                             
                         <input class="form-check-input form-check-inline" type="checkbox" value="" id="options" />
                     
                         <div class="form-check form-check-inline">                            
-                            <button class="btn btn-success" type="submit" name="submit" value="pay" onclick="return confirm('Kindly Confirm?')"> <i class="icon-base bx bx-arrow-from-left"> </i> {{ __('PAY SALARIES') }}</button>
+                            <button class="btn btn-success" type="submit" data-action="pay" onclick="document.getElementById('paycash_action_type').value='pay'; return confirm('Kindly Confirm?')"> <i class="icon-base bx bx-arrow-from-left"> </i> {{ __('PAY SALARIES') }}</button>
                         </div>
 
                         <div class="form-check form-check-inline">                            
-                            <button class="btn btn-dark" type="submit" name="submit" value="confirm" onclick="return confirm('Kindly Confirm?')"> <i class="icon-base bx bx-arrow-from-left"> </i> {{ __('CONFIRM') }}</button>
+                            <button class="btn btn-dark" type="submit" data-action="confirm" onclick="document.getElementById('paycash_action_type').value='confirm'; return confirm('Kindly Confirm?')"> <i class="icon-base bx bx-arrow-from-left"> </i> {{ __('CONFIRM') }}</button>
                         </div>
                         <hr>
                         @endif

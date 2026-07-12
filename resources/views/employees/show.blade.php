@@ -361,20 +361,24 @@
             @php
               $channelName = collect($channels)->firstWhere('channel', $employee->channel)?->name ?? '-';
               $statusBadgeClass = $employee->status === 'Active' ? 'bg-success' : 'bg-danger';
-              $taxBadgeClass = $employee->tax_button === 'on' ? 'bg-success' : 'bg-secondary';
-              $ssnitBadgeClass = $employee->ssnit_button === 'on' ? 'bg-success' : 'bg-secondary';
+              $taxBadgeClass = $employee->tax_button === 'on' ? 'bg-success' : 'bg-dark';
+              $ssnitBadgeClass = $employee->ssnit_button === 'on' ? 'bg-success' : 'bg-dark';
             @endphp
 
             <span class="badge {{ $statusBadgeClass }} mb-2">{{ ucfirst($employee->status) }}</span>
             <div class="btn-toolbar justify-content-end flex-wrap gap-2">
-              @if ($employee->status == 'Active')
+              @if ($employee->ho_status == 'approved')
                 <a href="{{ url('employees/'.$employee->id.'/edit') }}" class="btn btn-dark btn-sm">
                   <i class="bx bx-edit-alt me-1"></i> Edit
                 </a>
               @endif
+
+              @if ($employee->payment_type == 'Bank')
               <a href="{{ url('employeesViewPayInfo', $employee->id) }}" class="btn btn-outline-primary btn-sm">
-                <i class="bx bxs-comment-detail me-1"></i> Payment Info
+                <i class="bx bxs-comment-detail me-1"></i> Bank Details
               </a>
+              @endif
+
               @if(Auth::user()->hasRole(['Finance Manager', 'Manager']))
                 <a href="{{ url('employeesSalary', $employee->id) }}" class="btn btn-outline-secondary btn-sm">
                   <i class="bx bx-money-withdraw me-1"></i> Salaries
@@ -390,31 +394,35 @@
 
       <div class="col-lg-4">
 
-        <div class="card h-80">
+        <div class="card h-80 bg-info text-white">
           <div class="card-body text-center">
             <img
               src="@if($employee->image) {{ asset($employee->image) }} @else {{ asset('img/user.png') }} @endif"
               alt="Employee avatar"
               class="rounded-circle mb-3 w-px-120 h-px-120 object-fit-cover" />
-            <h5 class="card-title mb-1"> <strong> {{ $employee->name }} </strong> </h5>
-            <p class="text-muted mb-2"> <strong> {{ $employee->role?->name ?? 'No role assigned' }} </strong> </p>
+            <h4 class="card-title text-white mb-1"> <strong> {{ strtoupper($employee->name) }} </strong> </h4>
+            <p class="text-muted mb-2"> <strong> {{ strtoupper($employee->role?->name)  ?? 'No role assigned' }} </strong> </p>
             <div class="d-flex justify-content-center flex-wrap gap-2">
-              <span class="badge {{ $taxBadgeClass }}">Tax Employee</span>
+              <span class="badge {{ $taxBadgeClass }}">TAX Deduction</span>
               <span class="badge {{ $ssnitBadgeClass }}">SSNIT Deduction</span>
             </div>
           </div>
           <div class="card-body border-top">
-            <div class="mb-3">
+            <div class="mb-2">
               <small class="text-muted">Phone</small>
-              <p class="mb-0"><strong>{{ $employee->phone_number ?: 'Not provided' }}</strong></p>
+              <h5 class="mb-0 text-white"><strong>{{ $employee->phone_number ?: 'Not provided' }}</strong></h5>
             </div>
-            <div class="mb-3">
+            <div class="mb-2">
+              <small class="text-muted">Client Name</small>
+              <h5 class="mb-0 text-white"><strong>{{ strtoupper($employee->client?->name) }} {{ strtoupper($employee->client?->business_name) ?: 'Not provided' }}</strong></h5>
+            </div>
+            <div class="mb-2">
               <small class="text-muted">Location</small>
-              <p class="mb-0"><strong>{{ $employee->location ?: 'Not provided' }}</strong></p>
+              <h5 class="mb-0 text-white"><strong>{{ strtoupper($employee->location) ?: 'Not provided' }}</strong></h5>
             </div>
-            <div class="mb-3">
-              <small class="text-muted">Channel</small>
-              <p class="mb-0"><strong>{{ $channelName }}</strong></p>
+            <div class="mb-2">
+              <small class="text-muted">Field</small>
+              <h5 class="mb-0 text-white"><strong>{{ strtoupper($employee->field?->name) ?: 'Not provided' }}</strong></h5>
             </div>
           </div>
         </div>
@@ -426,13 +434,13 @@
           <div class="card-body">
             <dl class="row mb-0">
               <dt class="col-sm-6 text-muted">Payment Type</dt>
-              <dd class="col-sm-6 mb-3"><strong>{{ $employee->payment_type ?: '-' }}</strong></dd>
+              <dd class="col-sm-6 mb-3"><strong>{{ strtoupper($employee->payment_type) ?: '-' }}</strong></dd>
 
               <dt class="col-sm-6 text-muted">Basic Salary</dt>
-              <dd class="col-sm-6 mb-3"><strong>{{ $employee->basic_salary ?: '-' }}</strong></dd>
+              <dd class="col-sm-6 mb-3"><strong> GH&#x20B5; {{ $employee->basic_salary ?: '-' }}</strong></dd>
 
               <dt class="col-sm-6 text-muted">Allowances</dt>
-              <dd class="col-sm-6 mb-0"><strong>{{ $employee->allowances ?: '-' }}</strong></dd>
+              <dd class="col-sm-6 mb-0"><strong>GH&#x20B5; {{ $employee->allowances ?: '-' }}</strong></dd>
             </dl>
           </div>
         </div>
@@ -448,48 +456,39 @@
             <div class="row g-3">
               <div class="col-md-6">
                 <label class="form-label text-muted mb-1">Gender</label>
-                <p class="fw-semibold mb-0"><strong>{{ $employee->gender ?: '-' }}</strong></p>
+                <p class="fw-semibold mb-0"><strong>{{ strtoupper($employee->gender)  ?: '-' }}</strong></p>
               </div>
               <div class="col-md-6">
                 <label class="form-label text-muted mb-1">Date of birth</label>
-                <p class="fw-semibold mb-0"><strong>{{ $employee->date_of_birth?->format('l F d, Y') ?: '-' }}</strong></p>
+                <p class="fw-semibold mb-0"><strong>{{ strtoupper($employee->date_of_birth?->format('l F d, Y'))  ?: '-' }}</strong></p>
               </div>
               <div class="col-md-6">
                 <label class="form-label text-muted mb-1">NIA Number</label>
-                <p class="fw-semibold mb-0"><strong>{{ $employee->nia_number ?: '-' }}</strong></p>
+                <p class="fw-semibold mb-0"><strong>{{ strtoupper($employee->nia_number ) ?: '-' }}</strong></p>
               </div>
               <div class="col-md-6">
                 <label class="form-label text-muted mb-1">Digital Address</label>
-                <p class="fw-semibold mb-0"><strong>{{ $employee->address ?: '-' }}</strong></p>
+                <p class="fw-semibold mb-0"><strong>{{ strtoupper($employee->address) ?: '-' }}</strong></p>
               </div>
               <div class="col-md-6">
                 <label class="form-label text-muted mb-1">Marital Status</label>
-                <p class="fw-semibold mb-0"><strong>{{ $employee->marital_status ?: '-' }}</strong></p>
+                <p class="fw-semibold mb-0"><strong>{{ strtoupper($employee->marital_status)  ?: '-' }}</strong></p>
               </div>
               <div class="col-md-6">
                 <label class="form-label text-muted mb-1">Worker Type</label>
-                <p class="fw-semibold mb-0"><strong>{{ $employee->worker_type ?: '-' }}</strong></p>
+                <p class="fw-semibold mb-0"><strong>{{ strtoupper($employee->worker_type)  ?: '-' }}</strong></p>
               </div>
               <div class="col-md-6">
                 <label class="form-label text-muted mb-1">Date of joining</label>
-                <p class="fw-semibold mb-0"><strong>{{ $employee->date_of_joining?->format('l F d, Y') ?: '-' }}</strong></p>
+                <p class="fw-semibold mb-0"><strong>{{ strtoupper($employee->date_of_joining?->format('l F d, Y'))  ?: '-' }}</strong></p>
               </div>
               <div class="col-md-6">
                 <label class="form-label text-muted mb-1">Department</label>
-                <p class="fw-semibold mb-0"><strong>{{ $employee->department?->name ?: '-' }}</strong></p>
+                <p class="fw-semibold mb-0"><strong>{{ strtoupper($employee->department?->name) ?: '-' }}</strong></p>
               </div>
-              <div class="col-md-6">
-                <label class="form-label text-muted mb-1">Role</label>
-                <p class="fw-semibold mb-0"><strong>{{ $employee->role?->name ?: '-' }}</strong></p>
-              </div>
-              <div class="col-md-6">
-                <label class="form-label text-muted mb-1">Field Office</label>
-                <p class="fw-semibold mb-0"><strong>{{ $employee->field?->name ?: '-' }}</strong></p>
-              </div>
-              <div class="col-md-6">
-                <label class="form-label text-muted mb-1">Client</label>
-                <p class="fw-semibold mb-0"><strong>{{ $employee->client?->name ? $employee->client->name . ' / ' . $employee->client->business_name : '-' }}</strong></p>
-              </div>
+
+
+
             </div>
           </div>
         </div>
@@ -502,23 +501,23 @@
             <div class="row g-3">
               <div class="col-md-6">
                 <label class="form-label text-muted mb-1">Guarantor name</label>
-                <p class="fw-semibold mb-0"><strong>{{ $employee->gurantor_name ?: '-' }}</strong></p>
+                <p class="fw-semibold mb-0"><strong>{{ strtoupper( $employee->gurantor_name) ?: '-' }}</strong></p>
               </div>
               <div class="col-md-6">
                 <label class="form-label text-muted mb-1">Guarantor number</label>
-                <p class="fw-semibold mb-0"><strong>{{ $employee->gurantor_number ?: '-' }}</strong></p>
+                <p class="fw-semibold mb-0"><strong>{{ strtoupper($employee->gurantor_number)  ?: '-' }}</strong></p>
               </div>
               <div class="col-md-6">
                 <label class="form-label text-muted mb-1">Guarantor address</label>
-                <p class="fw-semibold mb-0"><strong>{{ $employee->gurantor_address ?: '-' }}</strong></p>
+                <p class="fw-semibold mb-0"><strong>{{ strtoupper($employee->gurantor_address)  ?: '-' }}</strong></p>
               </div>
               <div class="col-md-6">
                 <label class="form-label text-muted mb-1">Guarantor NIA number</label>
-                <p class="fw-semibold mb-0"><strong>{{ $employee->gurantor_nia_number ?: '-' }}</strong></p>
+                <p class="fw-semibold mb-0"><strong>{{ strtoupper($employee->gurantor_nia_number)  ?: '-' }}</strong></p>
               </div>
               <div class="col-md-12">
                 <label class="form-label text-muted mb-1">Relationship</label>
-                <p class="fw-semibold mb-0"><strong>{{ $employee->relationship ?: '-' }}</strong></p>
+                <p class="fw-semibold mb-0"><strong>{{ strtoupper($employee->relationship ) ?: '-' }}</strong></p>
               </div>
             </div>
           </div>
@@ -552,7 +551,7 @@
         </div>
 
         @if(Auth::user()->hasRole(['Manager', 'Invoice']))
-          <div class="card mt-4">
+          <div class="card bg-info mt-4">
             <div class="card-body text-end">
               <button
                 type="button"
@@ -600,6 +599,28 @@
                           </span>
                         @enderror
                       </div>
+
+                              <div class="mt-6 col mb-0">
+                                <div class="input-group">
+                                    <label class="input-group-text" for="inputGroupSelect01">{{ __('ASSIGN TO') }}</label>
+                                    <select name="staff" class="form-select @error('inputGroupSelect01') is-invalid @enderror" id="inputGroupSelect01" value="{{ old('staff')}}" >
+                                        <option selected disabled>Choose...</option>
+                                                @foreach($assign_staff as $user)
+                                                    @if($user->field_id == Auth::user()->field_id)
+                                                    <option value="{{$user->id}}"> {{$user->name}} </option>
+                                                    @elseif(Auth::user()->hasRole(['Manager']))
+                                                    <option value="{{$user->id}}"> {{$user->name}} </option>
+                                                    @endif
+                                                @endforeach
+                                    </select>
+                                </div>
+
+                                @error('staff')
+                                <span class="invalid-feedback" role="alert">
+                                    <strong>{{ $message }}</strong>
+                                </span>
+                                @enderror
+                            </div>
                     </div>
                   </div>
                   <div class="modal-footer">

@@ -321,8 +321,8 @@
                                 <td> {{ strtoupper($salary->employee?->name) }} </td>
                                 <td> {{ $salary->field?->name }} </td>
                                 <td> {{ $salary->client?->name }} {{ $salary->client?->business_name }} </td>
-                                <td> {{$salary->paymentInfo?->ssnit_number}}</td>
-                                <td> {{$salary->paymentInfo?->tin_number}}</td>
+                                <td> {{$salary->employee?->ssnit_number}}</td>
+                                <td> {{$salary->employee?->tin_number}}</td>
                                 <td> {{$salary->payment_type}}</td>
                                 <td> {{$salary->bank?->name}}</td>
                                 <td> {{$salary->branch}}</td>   

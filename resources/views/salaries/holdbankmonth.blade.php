@@ -315,11 +315,12 @@
             <form action="/salariesDeleteMultiple" method="POST">
                 @csrf
                     <div class="col-lg-12 mb-4">
+                            <input type="hidden" name="action_type" id="salary_action_type" value="" />
                             <input class="form-check-input form-check-inline" type="checkbox" value="" id="options" />
 
                                 <div class="form-check form-check-inline">
                                     
-                                    <button class="btn btn-success" name="submit" value="hold" onclick="return confirm('Kindly Confirm?')" type="submit"> <i class="icon-base bx bx-recycle"> </i> {{ __('Move to Main') }}</button>                   
+                                    <button class="btn btn-success" data-action="hold" onclick="document.getElementById('salary_action_type').value='hold'; return confirm('Kindly Confirm?')" type="submit"> <i class="icon-base bx bx-recycle"> </i> {{ __('Move to Main') }}</button>                   
                             
                                 </div>
 

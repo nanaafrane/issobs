@@ -13,8 +13,6 @@ class PaymentInfo extends Model
         'branch',
         'branch_code',
         'employee_id',
-        'tin_number',
-        'ssnit_number',
     ];
 
     public function bank()

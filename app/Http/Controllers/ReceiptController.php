@@ -2279,8 +2279,7 @@ class ReceiptController extends Controller
     public function receiptChannels(Request $request)
     {
         // dd($request->all());
-        $submitValue = $request->input('submit'); 
-        $declineValue = $request->input('decline'); 
+        $action = $request->input('action_type') ?? $request->input('submit') ?? $request->input('decline');
         // dd($submitValue);
          $receiptsIDS = $request->input('receipts', []);
         //  dd($receiptsIDS);
@@ -2296,7 +2295,7 @@ class ReceiptController extends Controller
         {
 
 
-            if( $submitValue == 'branch' )
+            if( $action == 'branch' )
                 
                 {
                     // dd($receipt);
@@ -2320,7 +2319,7 @@ class ReceiptController extends Controller
 
                 }
 
-            if($submitValue == 'headOffice' )
+            if($action == 'headOffice' )
                 {
                     // // dd($receipt);
                     $exists = Receipt::where('id', $receipt->id)
@@ -2347,7 +2346,7 @@ class ReceiptController extends Controller
                 }
 
 
-            if($declineValue == 'headOffice' )
+            if($action == 'decline' )
                 {
                     //                     // dd($receipt);
                     // $exists = Receipt::where('id', $receipt->id)

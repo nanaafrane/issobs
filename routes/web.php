@@ -129,6 +129,7 @@ Route::get('employeeReinstate/{id}', [EmployeeController::class, 'employeeReinst
 Route::post('employeesGuardReAassign', [EmployeeController::class, 'GuardReAassign'])->name('employees.GuardReAassign');
 
 Route::resource('salaries', SalaryController::class);
+Route::get('salariesCreate', [SalaryController::class, 'CreateSalaries']);
 Route::get('printPayslip/{id}', [SalaryController::class, 'printPayslip']);
 Route::post('salariesDeleteMultiple', [SalaryController::class, 'deleteMultiple'])->name('salaries.deletMultiple');
 Route::get('salariesTransaction', [SalaryController::class, 'transactionSalary']);

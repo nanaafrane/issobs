@@ -236,24 +236,6 @@ class ClientController extends Controller
 
                 }
             $client->save();
-        // $client->create([
-        //     'name' => $request->name,
-        //     'phone_number' => $request->phone_number,
-        //     'phone_number1' => $request->phone_number1,
-        //     'business_name' => $request->business_name,
-        //     'address' => $request->address,
-        //     'field_id' => $request->field_id,
-        //     'branch' => $request->branch,
-        //     'rate' => $request->rate,
-        //     'guards' => $request->guards,
-        //     'start_date' => $request->start_date,
-        //     'scope_of_work' => $request->scope_of_work,
-        //     'state_institution' => $request->state_institution,
-
-
-        //     'status' => 'pending',
-        //     'user_id' => Auth::id(),    
-        // ]);
 
 
         return redirect('clientPending')->with('info', $client->id. ' '.'Client Added Sucessfully, awaiting approval !.');
@@ -487,8 +469,7 @@ class ClientController extends Controller
         //     }
 
     
-        $submitValue = $request->input('submit'); 
-        $declineValue = $request->input('decline'); 
+        $action = $request->input('action_type') ?? $request->input('submit') ?? $request->input('decline');
         // dd($submitValue);
          $clientIds = $request->input('clients', []);
         //  dd($clientIds);
@@ -509,7 +490,7 @@ class ClientController extends Controller
         {
 
 
-            if( $submitValue == 'branch' )
+            if( $action == 'branch' )
                 
                 {
                     // dd($client);
@@ -534,7 +515,7 @@ class ClientController extends Controller
 
                 }
 
-            if($submitValue == 'headOffice' )
+            if($action == 'headOffice' )
                 {
                     // // dd($client);
                     $exists = Client::where('id', $client->id)
@@ -578,7 +559,7 @@ class ClientController extends Controller
                 }
 
 
-            if($declineValue == 'headOffice' )
+            if($action == 'decline' )
                 {
                     //                     // dd($client);
                     // $exists = Client::where('id', $client->id)

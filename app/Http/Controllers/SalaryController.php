@@ -43,14 +43,14 @@ class SalaryController extends Controller
     public function index()
     {
         // Pass only active employees to the salaries index view, as it displays salary data for currently active staff.
-        $employees =  employee::where('status', 'Active')->get();
-        $employeeAccra =  employee::where('field_id', 1)->where('status', 'Active')->count();
-        $employeeBotwe =  employee::where('field_id', 2)->where('status', 'Active')->count();
-        $employeeTema =  employee::where('field_id', 3)->where('status', 'Active')->count();
-        $employeeTakoradi =  employee::where('field_id', 4)->where('status', 'Active')->count();
-        $employeeKoforidua =  employee::where('field_id', 5)->where('status', 'Active')->count();
-        $employeeKumasi =  employee::where('field_id', 6)->where('status', 'Active')->count();
-        $employeeShyhills =  employee::where('field_id', 7)->where('status', 'Active')->count();
+        $employees =  employee::where('status', 'Active')->where('ho_status', 'approved')->get();
+        $employeeAccra =  employee::where('field_id', 1)->where('status', 'Active')->where('ho_status', 'approved')->count();
+        $employeeBotwe =  employee::where('field_id', 2)->where('status', 'Active')->where('ho_status', 'approved')->count();
+        $employeeTema =  employee::where('field_id', 3)->where('status', 'Active')->where('ho_status', 'approved')->count();
+        $employeeTakoradi =  employee::where('field_id', 4)->where('status', 'Active')->where('ho_status', 'approved')->count();
+        $employeeKoforidua =  employee::where('field_id', 5)->where('status', 'Active')->where('ho_status', 'approved')->count();
+        $employeeKumasi =  employee::where('field_id', 6)->where('status', 'Active')->where('ho_status', 'approved')->count();
+        $employeeShyhills =  employee::where('field_id', 7)->where('status', 'Active')->where('ho_status', 'approved')->count();
 
 
         // $Departments = Department::all(); 
@@ -67,42 +67,56 @@ class SalaryController extends Controller
     public function create()
     {
         //
-        $salaries =  Salary::whereIn('payment_status', ['pending', 'rejected'])->get();
-        $salariesAccra =  Salary::where('field_id', 1)->whereIn('payment_status',  ['pending', 'rejected'])->get();
+
+        // foreach ($salaries as $salary) {
+        //     echo $salary->paymentInfo ? $salary->paymentInfo->ssnit_number .'<br>' : 'No Payment Info';
+        // }
+        return view('salaries.create_view');
+    }
+
+
+    /**
+     * Show the view for creating a new resource.
+     */
+    public function CreateSalaries (Request $request)
+    {
+        // dd($request->all());
+         $month = Carbon::parse($request->month);
+        // dd($month);
+
+        $salaries =  Salary::whereIn('payment_status', ['pending', 'rejected'])->whereMonth('salary_month', $month->month)->get();
+        $salariesAccra =  Salary::where('field_id', 1)->whereIn('payment_status',  ['pending', 'rejected'])->whereMonth('salary_month', $month->month)->get();
         $salariesAccraSum = $salariesAccra->sum('cost_to_company');
         $salariesAccraCount = $salariesAccra->count();
         // dd( $salariesAccra->sum('cost_to_company'));
 
-        $salariesBotwe =  Salary::where('field_id', 2)->whereIn('payment_status',  ['pending', 'rejected'])->get();
+        $salariesBotwe =  Salary::where('field_id', 2)->whereIn('payment_status',  ['pending', 'rejected'])->whereMonth('salary_month', $month->month)->get();
         $salariesBotweSum = $salariesBotwe->sum('cost_to_company');
         $salariesBotweCount = $salariesBotwe->count();
 
-        $salariesTema =  Salary::where('field_id', 3)->whereIn('payment_status',  ['pending', 'rejected'])->get();
+        $salariesTema =  Salary::where('field_id', 3)->whereIn('payment_status',  ['pending', 'rejected'])->whereMonth('salary_month', $month->month)->get();
         $salariesTemaSum = $salariesTema->sum('cost_to_company');
         $salariesTemaCount = $salariesTema->count();
 
-        $salariesTakoradi =  Salary::where('field_id', 4)->whereIn('payment_status',  ['pending', 'rejected'])->get();
+        $salariesTakoradi =  Salary::where('field_id', 4)->whereIn('payment_status',  ['pending', 'rejected'])->whereMonth('salary_month', $month->month)->get();
         $salariesTakoradiSum = $salariesTakoradi->sum('cost_to_company');
         $salariesTakoradiCount = $salariesTakoradi->count();
 
-        $salariesKoforidua =  Salary::where('field_id', 5)->whereIn('payment_status',  ['pending', 'rejected'])->get();
+        $salariesKoforidua =  Salary::where('field_id', 5)->whereIn('payment_status',  ['pending', 'rejected'])->whereMonth('salary_month', $month->month)->get();
         $salariesKoforiduaSum = $salariesKoforidua->sum('cost_to_company');
         $salariesKoforiduaCount = $salariesKoforidua->count();  
 
-        $salariesKumasi =  Salary::where('field_id', 6)->whereIn('payment_status',  ['pending', 'rejected'])->get();
+        $salariesKumasi =  Salary::where('field_id', 6)->whereIn('payment_status',  ['pending', 'rejected'])->whereMonth('salary_month', $month->month)->get();
         $salariesKumasiSum = $salariesKumasi->sum('cost_to_company');
         $salariesKumasiCount = $salariesKumasi->count();    
 
-        $salariesShyhills =  Salary::where('field_id', 7)->whereIn('payment_status',  ['pending', 'rejected'])->get();
+        $salariesShyhills =  Salary::where('field_id', 7)->whereIn('payment_status',  ['pending', 'rejected'])->whereMonth('salary_month', $month->month)->get();
         $salariesShyhillsSum = $salariesShyhills->sum('cost_to_company');
         $salariesShyhillsCount = $salariesShyhills->count();    
         // // dd($salaries->paymentInfo());
-        // foreach ($salaries as $salary) {
-        //     echo $salary->paymentInfo ? $salary->paymentInfo->ssnit_number .'<br>' : 'No Payment Info';
-        // }
-        return view('salaries.create', compact('salaries', 'salariesAccraSum', 'salariesAccraCount', 'salariesBotweSum', 'salariesBotweCount', 'salariesTemaSum', 'salariesTemaCount', 'salariesTakoradiSum', 'salariesTakoradiCount', 'salariesKoforiduaSum', 'salariesKoforiduaCount', 'salariesKumasiSum', 'salariesKumasiCount', 'salariesShyhillsSum', 'salariesShyhillsCount'));
-    }
+        return view('salaries.create', compact('salaries', 'salariesAccraSum', 'salariesAccraCount', 'salariesBotweSum', 'salariesBotweCount', 'salariesTemaSum', 'salariesTemaCount', 'salariesTakoradiSum', 'salariesTakoradiCount', 'salariesKoforiduaSum', 'salariesKoforiduaCount', 'salariesKumasiSum', 'salariesKumasiCount', 'salariesShyhillsSum', 'salariesShyhillsCount', 'month'));
 
+    }
 
     /**
      * Display salaries transaction view.
@@ -872,25 +886,6 @@ class SalaryController extends Controller
        
         // dd($employees, $date->format('Y-m-d'));
 
-        // // get all employees Security Guards whose clients has invoice for this month
-        // foreach($employees as $employee)
-        //     {
-        //         if($employee->role?->id == 7)
-        //             {
-                            
-        //                 // $employeeInvoices[] = $employee->client?->invoices()->whereMonth('invoice_month', $date->month)->first();
-        //                 if($employee->client?->invoices()->whereMonth('invoice_month', $date->month)->first() == null)
-        //                 {
-        //                         echo $employee->name . " No Invoice Found". "<br> <br>";
-        //                 }
-        //                 else
-        //                     {
-        //                         echo $employee->name . " Has Invoice". "<br> <br>";
-        //                     }
-
-        //             }
-
-        //     }
 
         if ($request->has('employees')) 
             {
@@ -1160,7 +1155,7 @@ class SalaryController extends Controller
                 // CHECK IF THE PERSON HAS SSNIT BUTTON TURNED ON
                 if(isset($salary->employee->ssnit_button) == "on")
                 {
-                    if($salary->paymentInfo?->ssnit_number !== '' && $salary->paymentInfo?->ssnit_number !== null)
+                    if($salary->employee?->ssnit_number !== '' && $salary->employee?->ssnit_number !== null)
                         {
                             // echo "Processing salary for Employee SSNIT ID: " . $employee->paymentInfo->ssnit_number . "<br><br>";
 
@@ -1184,7 +1179,7 @@ class SalaryController extends Controller
                     {
                         // TAX CALCULATIONS
                             // echo "Employee Basic salary = "  .$row['basic_salary'] ." ----/ TAX === ".  $this->taxEmployee($employee_basic_taxAmount_minus_ssnt)  ."<br>";
-                        if($salary->paymentInfo?->ssnit_number !== '' && $salary->paymentInfo?->ssnit_number !== null && $employee_basic_taxAmount_minus_ssnt >= 0)
+                        if($salary->employee?->ssnit_number !== '' && $salary->employee?->ssnit_number !== null && $employee_basic_taxAmount_minus_ssnt >= 0)
                             {
                             $tax = $this->taxEmployee($employee_basic_taxAmount_minus_ssnt) ;
                             // echo "Employee SSNIT Basic salary ---------------" .  " - " . " - "  .$row['basic_salary'] ."-------------- TAX = ".  $tax  ."<br>";
@@ -1276,7 +1271,7 @@ class SalaryController extends Controller
                 // CHECK IF THE PERSON HAS SSNIT BUTTON TURNED ON
                 if(isset($salary->employee->ssnit_button) == "on")
                 {
-                    if($salary->paymentInfo?->ssnit_number !== '' && $salary->paymentInfo?->ssnit_number !== null)
+                    if($salary->employee?->ssnit_number !== '' && $salary->employee?->ssnit_number !== null)
                         {
                             // echo "Processing salary for Employee SSNIT ID: " . $employee->paymentInfo->ssnit_number . "<br><br>";
 
@@ -1300,7 +1295,7 @@ class SalaryController extends Controller
                     {
                         // TAX CALCULATIONS
                             // echo "Employee Basic salary = "  .$request['basic_salary'] ." ----/ TAX === ".  $this->taxEmployee($employee_basic_taxAmount_minus_ssnt)  ."<br>";
-                        if($salary->paymentInfo?->ssnit_number !== '' && $salary->paymentInfo?->ssnit_number !== null && $employee_basic_taxAmount_minus_ssnt >= 0)
+                        if($salary->employee?->ssnit_number !== '' && $salary->employee?->ssnit_number !== null && $employee_basic_taxAmount_minus_ssnt >= 0)
                             {
                             $tax = $this->taxEmployee($employee_basic_taxAmount_minus_ssnt) ;
                             // echo "Employee with SSNIT Basic salary = ".$request['employee_id'] . " / "  .$request['basic_salary'] ." TAX = ".  $tax  ."<br>";
@@ -1397,25 +1392,23 @@ class SalaryController extends Controller
     public function deleteMultiple(StoreSalaryRequest $request)
     {
 
-        // dd($request->submit);
-        
+        $action = $request->input('action_type') ?? $request->input('submit');
         $salaryIds = $request->input('salary', []);
-        // dd($salaryIds);
         if (empty($salaryIds)) {
             return back()->with('error', 'No salaries selected');
         }
 
-        if(isset($request->submit) && $request->submit == 'delete')
+        if ($action === 'delete')
         {
-            // echo 'Deleting';
             Salary::whereIn('id', $salaryIds)->delete();
             return back()->with('danger', 'Deleted salaries with IDs: ' . implode(', ', $salaryIds));
         }
 
-       elseif(isset($request->submit) && $request->submit == 'approve')
+       elseif ($action === 'approve')
         {
             // echo 'Approving';
                 $salaries = Salary::findOrFail($salaryIds);
+                // dd($salaries);
                 foreach ($salaries as $salary) 
                 {
                     $exists = Salary::where('id', $salary->id)
@@ -1435,55 +1428,54 @@ class SalaryController extends Controller
                 }
             return back()->with('success', 'Approved salaries with IDs: ' . implode(', ', $salaryIds));
         }
-        elseif(isset($request->submit) && $request->submit == 'hold')
+        elseif ($action === 'hold')
             {
-                    // return "you are moving from main to hold";
-                $salaries = Salary::findOrFail($salaryIds);
-                foreach ($salaries as $salary) 
-                {
-                    $exists = Salary::where('id', $salary->id)
-                                    ->where('payment_status', 'hold')
-                                    ->exists();
-                    if ($exists) {
-                        $alreadyProcessed[] = $salary->employee?->name . " with Salary ID: " . $salary->id;
-                        continue;
-                    }
+                        $salaries = Salary::findOrFail($salaryIds);
+                    foreach ($salaries as $salary) 
+                    {
+                        $exists = Salary::where('id', $salary->id)
+                                        ->where('payment_status', 'hold')
+                                        ->exists();
+                        if ($exists) {
+                            $alreadyProcessed[] = $salary->employee?->name . " with Salary ID: " . $salary->id;
+                            continue;
+                        }
 
-                    $salary->payment_status = 'hold';
-                    $salary->user_id1 = Auth::id();
-                    $salary->hold_reason = $request->hold_reason[$salary->id] ?? 'No reason provided';
-                    $salary->save();
-                    // Salary::where('id', $salary->id)->update(['payment_status' => 'hold', 'user_id1' => Auth::id()]);
-                }
-            //  dd(count($alreadyProcessed));
-            if (!empty($alreadyProcessed))
-                 {
-                    return back()->with('error', 'Salaries with the IDs have already been Held : '. implode(', ', $alreadyProcessed). ' The remaining have been Appoved ')  ;
-                }
-            return back()->with('success', 'Moved salaries with IDs: ' . implode(', ', $salaryIds));
+                        $salary->payment_status = 'hold';
+                        $salary->user_id1 = Auth::id();
+                        $salary->hold_reason = $request->hold_reason[$salary->id] ?? 'No reason provided';
+                        $salary->save();
+                        // Salary::where('id', $salary->id)->update(['payment_status' => 'hold', 'user_id1' => Auth::id()]);
+                    }
+                //  dd(count($alreadyProcessed));
+                if (!empty($alreadyProcessed))
+                    {
+                        return back()->with('error', 'Salaries with the IDs have already been Held : '. implode(', ', $alreadyProcessed). ' The remaining have been Appoved ')  ;
+                    }
+                return back()->with('success', 'Moved salaries with IDs: ' . implode(', ', $salaryIds));
             }
-            elseif(isset($request->submit) && $request->submit == 'main')
+        elseif ($action === 'main')
             {
-                    // return "you are moving from hold to main";
-                $salaries = Salary::findOrFail($salaryIds);
-                foreach ($salaries as $salary) 
-                {
-                    $exists = Salary::where('id', $salary->id)
-                                    ->where('payment_status', 'pending')
-                                    ->exists();
-                    if ($exists) {
-                        $alreadyProcessed[] = $salary->employee?->name . " with Salary ID: " . $salary->id;
-                        continue;
-                    }
+                        // return "you are moving from hold to main";
+                    $salaries = Salary::findOrFail($salaryIds);
+                    foreach ($salaries as $salary) 
+                    {
+                        $exists = Salary::where('id', $salary->id)
+                                        ->where('payment_status', 'pending')
+                                        ->exists();
+                        if ($exists) {
+                            $alreadyProcessed[] = $salary->employee?->name . " with Salary ID: " . $salary->id;
+                            continue;
+                        }
 
-                    Salary::where('id', $salary->id)->update(['payment_status' => 'pending', 'user_id1' => Auth::id()]);
-                }
-            //  dd(count($alreadyProcessed));
-            if (!empty($alreadyProcessed))
-                 {
-                    return back()->with('error', 'Salaries with the IDs have already been Moved to Main: '. implode(', ', $alreadyProcessed). ' The remaining have been Appoved ')  ;
-                }
-            return back()->with('success', 'Moved salaries with IDs: ' . implode(', ', $salaryIds));
+                        Salary::where('id', $salary->id)->update(['payment_status' => 'pending', 'user_id1' => Auth::id()]);
+                    }
+                //  dd(count($alreadyProcessed));
+                if (!empty($alreadyProcessed))
+                    {
+                        return back()->with('error', 'Salaries with the IDs have already been Moved to Main: '. implode(', ', $alreadyProcessed). ' The remaining have been Appoved ')  ;
+                    }
+                return back()->with('success', 'Moved salaries with IDs: ' . implode(', ', $salaryIds));
             }
 
 

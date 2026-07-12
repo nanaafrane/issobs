@@ -654,20 +654,21 @@
         <div class="row">
             <form action="{{url('receiptChannels')}}" method="POST">
                 @csrf  
+                <input type="hidden" name="action_type" id="receipt_action_type" value="" />
                 <div class="card-header pb-4">
                     <input class="form-check-input form-check-inline" type="checkbox" value="" id="options" />
                   
                     @if(Auth::user()->hasRole(['Manager']))
                     <div class="form-check form-check-inline">                            
-                        <button class="btn btn-dark" name="submit" value="branch" type="submit" onclick="return confirm('Kindly Confirm?')"> <i class="icon-base bx bx-arrow-from-left"> </i> {{ __('Approve') }}</button>
+                        <button class="btn btn-dark" type="submit" onclick="document.getElementById('receipt_action_type').value='branch'; return confirm('Kindly Confirm?')"> <i class="icon-base bx bx-arrow-from-left"> </i> {{ __('Approve') }}</button>
                     </div>    
 
                     @elseif(Auth::user()->hasRole(['Finance Manager']))
                     <div class="form-check form-check-inline">                            
-                        <button class="btn btn-success" name="submit" value="headOffice" type="submit" onclick="return confirm('Kindly Confirm?')"> <i class="icon-base bx bx-arrow-from-left"> </i> {{ __('Approve') }}</button>
+                        <button class="btn btn-success" type="submit" onclick="document.getElementById('receipt_action_type').value='headOffice'; return confirm('Kindly Confirm?')"> <i class="icon-base bx bx-arrow-from-left"> </i> {{ __('Approve') }}</button>
                     </div>
                     <div class="form-check form-check-inline">                            
-                        <button class="btn btn-danger" name="decline" value="headOffice" type="submit" onclick="return confirm('Kindly Confirm?')"> <i class="icon-base bx bx-arrow-from-left"> </i> {{ __('Decline') }}</button>
+                        <button class="btn btn-danger" type="submit" onclick="document.getElementById('receipt_action_type').value='decline'; return confirm('Kindly Confirm?')"> <i class="icon-base bx bx-arrow-from-left"> </i> {{ __('Decline') }}</button>
                     </div>
                     @endif
 

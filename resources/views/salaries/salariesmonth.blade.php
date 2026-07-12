@@ -1100,6 +1100,7 @@
                  <div class="tab-pane fade show active" id="navs-pills-justified-master" role="tabpanel">
                     <form action="/salariesBulkCash" method="POST">
                         @csrf
+                        <input type="hidden" name="action_type" id="salaries_bulk_action_type" value="" />
                         <div class="table-responsive text-nowrap">
 
                             <input class="form-check-input form-check-inline" type="checkbox" value="" id="options" />
@@ -1107,7 +1108,7 @@
                             <div class="form-check form-check-inline">
                                 <!-- <button class="btn btn-dark" name="submit" value="bulk" onclick="return confirm('Kindly Confirm?')" type="submit"> <i class="icon-base bx bx-bxs-file-plus"> </i> {{ __(' Add To Bulk Cash Salaries') }}</button>                    -->
                                 
-                                <button class="btn btn-danger m-4" name="submit" value="hold" onclick="return confirm('Kindly Confirm?')" type="submit"> <i class="icon-base bx bx-bxs-file-plus"> </i> {{ __(' Hold') }}</button>                   
+                                <button class="btn btn-danger m-4" data-action="hold" onclick="document.getElementById('salaries_bulk_action_type').value='hold'; return confirm('Kindly Confirm?')" type="submit"> <i class="icon-base bx bx-bxs-file-plus"> </i> {{ __(' Hold') }}</button>                   
                                 
                                 <!-- <a href="{{ url('/exportMaster', $salariesMaster[0]->salary_month?->format('F, Y'))}} " class="btn btn-success m-4" > <i class="icon-base bx bx-bxs-file-plus"> </i> {{ __(' Excel Download Master') }}</a>                    -->
                           
@@ -1210,8 +1211,8 @@
                                                     <td> {{ $salary->client?->name }} {{ $salary->client?->business_name }}</td>
                                                     <td> {{ $salary->location }} </td>
                                                     <td> {{ $salary->client?->invoices()->whereMonth('invoice_month', $month->month)->pluck('status') }} </td>
-                                                    <td> {{$salary->paymentInfo?->ssnit_number}}</td>
-                                                    <td> {{$salary->paymentInfo?->tin_number}}</td>
+                                                    <td> {{$salary->employee?->ssnit_number}}</td>
+                                                    <td> {{$salary->employee?->tin_number}}</td>
                                                     <td> {{$salary->payment_type}}</td>
                                                     <td> {{$salary->bank?->name}}</td>
                                                     <td> {{$salary->branch}}</td>

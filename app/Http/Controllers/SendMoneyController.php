@@ -107,7 +107,9 @@ class SendMoneyController extends Controller
         $salaries =  Salary::findOrFail($request->salary);
         // dd($salaries);
 
-        if(isset($request->submit) && $request->submit == 'pay')
+        $action = $request->input('action_type') ?? $request->input('submit');
+
+        if($action == 'pay')
             {
                 // return " You are about to Pay ";
 
@@ -140,7 +142,7 @@ class SendMoneyController extends Controller
                     return back()->with('success', ' Payments has been made, Wait for up to 5 mins to check confirmation');
 
             }
-        elseif(isset($request->submit) && $request->submit == 'confirm')
+        elseif($action == 'confirm')
             {
                 // return " You are about to run status check";
 

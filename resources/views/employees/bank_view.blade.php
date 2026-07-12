@@ -447,20 +447,7 @@
                                     <div class="dropdown-menu">
                                         <a class="dropdown-item" href="{{url('employees', $data->employee->id)}}"><i class="icon-base bx bxs-bullseye"></i> view</a>
                                         <a class="dropdown-item" href="{{url('employees', $data->employee->id)}}/edit"><i class="icon-base bx bx-edit-alt me-1"></i> Edit</a>
-                                        <hr>
-                                        <a class="dropdown-item" href="{{url('employeesSalary', $data->employee->id)}}"><i class="icon-base bx bx-money-withdraw"></i> Salaries</a>
-                                        <hr>
-                                        @if ($data->employee->status == 'Active')
-                                            <a class="dropdown-item" href="{{url('terminateEmployee', $data->employee->id )}}"><i class="icon-base bx bx-user-x me-1" onclick="return confirm('Kindly Confirm?')"></i> Terminate</a>
-                                        @else
-                                        <a class="dropdown-item" href="{{url('employeeReinstate', $data->employee->id )}}" onclick="return confirm('Kindly Confirm?')"><i class="icon-base bx bx-edit-alt me-1"></i>Re-Instate </a>
-                                            @endif
 
-                                        <form action="employees/{{$data->employee->id}}" method="POST">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button class="dropdown-item" type="submit"><i class="icon-base bx bx-trash me-1"></i>Delete</button>
-                                        </form>
                                     </div>
                                 </div>
                             </td>

@@ -366,7 +366,7 @@
           @endif
           @if ($employee_pay_info->employee?->status == 'Active')
             <a href="{{ url('employeesPayInfo/'.$employee_pay_info->employee_id) }}" class="btn btn-dark btn-sm mb-2">
-              <i class="bx bx-edit-alt me-1"></i> Edit Payment Info
+              <i class="bx bx-edit-alt me-1"></i> Edit Bank Details
             </a>
           @endif
         </div>
@@ -392,28 +392,13 @@
     </div> -->
 
     <div class="row g-4">
-      <div class="col-lg-4">
-        <div class="card h-100">
-          <div class="card-body text-center">
-            <h5 class="card-title mb-1">{{ $employee_pay_info->employee?->name }}</h5>
-            <p class="text-muted mb-3">{{ $employee_pay_info->employee?->role?->name ?? 'Employee' }}</p>
-            <span class="badge bg-primary mb-3">{{ $employee_pay_info->employee?->payment_type ?? 'Payment' }}</span>
-            <dl class="row text-start">
-              <dt class="col-sm-5 text-muted">Status</dt>
-              <dd class="col-sm-7 mb-3">{{ $employee_pay_info->employee?->status ?? 'Unknown' }}</dd>
-              <dt class="col-sm-5 text-muted">Bank</dt>
-              <dd class="col-sm-7 mb-3">{{ $employee_pay_info->bank?->name ?? '-' }}</dd>
-              <dt class="col-sm-5 text-muted">Account</dt>
-              <dd class="col-sm-7 mb-0">{{ $employee_pay_info->acc_number ?? '-' }}</dd>
-            </dl>
-          </div>
-        </div>
-      </div>
 
-      <div class="col-lg-8">
-        <div class="card mb-4">
-          <div class="card-header">
-            <strong>Payment details</strong>
+
+        @if($employee_pay_info->employee?->payment_type == 'Bank')
+      <div class="col-lg-12">
+        <div class="card mb-4 bg-info text-white">
+          <div class="card-header text-white">
+            <strong>Bank details</strong>
           </div>
           <div class="card-body">
             <div class="row g-3">
@@ -445,6 +430,19 @@
           </div>
         </div>
       </div>
+      @else
+
+        <div class="row p-5">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title text-danger"> <i class="icon-base bx bx-error-alt"></i> Payment Type is Cash  </h5>
+                    </div>      
+                </div>
+            </div>
+        </div>
+      @endif
+
     </div>
   </div>
 

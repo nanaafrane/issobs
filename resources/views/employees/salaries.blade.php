@@ -366,48 +366,17 @@
             <i class="bx bx-user me-1"></i> Employee Details
           </a>
           <a href="{{ url('employeesViewPayInfo', $employee->id) }}" class="btn btn-outline-secondary btn-sm mb-2">
-            <i class="bx bxs-comment-detail me-1"></i> Payment Info
+            <i class="bx bxs-comment-detail me-1"></i> Bank Details
           </a>
         </div>
       </div>
     </div>
 
-    <!-- <div class="row mb-3">
-      <div class="col-12">
-        <ul class="nav nav-pills flex-column flex-md-row gap-2">
-          <li class="nav-item">
-            <a class="nav-link" href="{{ url('employees', $employee->id) }}"><i class="bx bx-user me-1"></i> Employee Details</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="{{ url('employeesViewPayInfo', $employee->id) }}"><i class="bx bxs-comment-detail me-1"></i> Payment Info</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link active" href="javascript:void(0);"><i class="bx bx-money-withdraw me-1"></i> Salaries</a>
-          </li>
-        </ul>
-      </div>
-    </div> -->
 
     <div class="row g-4">
-      <div class="col-lg-4">
-        <div class="card h-100">
-          <div class="card-body text-center">
-            <h5 class="card-title mb-1">{{ $employee->name }}</h5>
-            <p class="text-muted mb-3">{{ $employee->role?->name ?? 'Employee' }}</p>
-            <span class="badge {{ $employee->status === 'Active' ? 'bg-success' : 'bg-danger' }} mb-3">{{ $employee->status }}</span>
-            <dl class="row text-start">
-              <dt class="col-sm-5 text-muted">Location</dt>
-              <dd class="col-sm-7 mb-3">{{ $employee->location ?: '-' }}</dd>
-              <dt class="col-sm-5 text-muted">Payment type</dt>
-              <dd class="col-sm-7 mb-3">{{ $employee->payment_type ?: '-' }}</dd>
-              <dt class="col-sm-5 text-muted">Basic salary</dt>
-              <dd class="col-sm-7 mb-0">{{ $employee->basic_salary ?: '-' }}</dd>
-            </dl>
-          </div>
-        </div>
-      </div>
 
-      <div class="col-lg-8">
+
+      <div class="col-lg-12">
         <div class="card mb-4">
           <div class="card-header">
             <strong>Employee salaries</strong>

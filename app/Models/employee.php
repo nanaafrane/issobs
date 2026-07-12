@@ -31,10 +31,11 @@ class employee extends Model
         'basic_salary',
         'allowances',
         'user_id',
-        'user_id1',
-        'user_id2',
+
         'tax_button',
         'ssnit_button',
+        'tin_number',
+        'ssnit_number',
        
         'message',
         'responseCode',
@@ -44,8 +45,8 @@ class employee extends Model
         'status',
         'status_date', //terminiate and reinstate
 
-        'coll_status',
-        'coll_date',
+        'assit_status',
+        'assit_date',
         'user_id',
 
         'bran_status',
@@ -74,7 +75,7 @@ class employee extends Model
         'date_of_birth' => 'date',
         'date_of_joining' => 'date',  
         'status_date' => 'date',  
-        'coll_date' => 'date',  
+        'assit_date' => 'date',  
         'bran_date' => 'date',  
         'ho_date' => 'date',  
     ];

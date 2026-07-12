@@ -17,6 +17,7 @@ use App\Models\Field;
 use App\Models\PaymentInfo;
 use App\Models\Role;
 use App\Models\Salary;
+use App\Models\User;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -36,40 +37,40 @@ class EmployeeController extends Controller
     public function index()
     {
         //
-        $employees = employee::where('status', 'Active')->orwhere('status', 'Terminated')->get();
-        $activeEmployees = employee::where('status', 'Active')->count();
-        $terminatedEmployees = employee::where('status', 'Terminated')->count();  
+        $employees = employee::where('ho_status', 'approved')->where('status', 'Active')->orwhere('status', 'Terminated')->get();
+        $activeEmployees = employee::where('ho_status', 'approved')->where('status', 'Active')->count();
+        $terminatedEmployees = employee::where('ho_status', 'approved')->where('status', 'Terminated')->count();  
 
 
-        $employeeAccra = employee::where('field_id', 1)->get();
-        $employeeAccraTerminated = employee::where('field_id', 1)->where('status', 'Terminated')->count();  
-        $employeeAccraActive = employee::where('field_id', 1)->where('status', 'Active')->count();
+        $employeeAccra = employee::where('ho_status', 'approved')->where('field_id', 1)->where('status', 'Active')->orwhere('status', 'Terminated')->get();
+        $employeeAccraTerminated = employee::where('ho_status', 'approved')->where('field_id', 1)->where('status', 'Terminated')->count();  
+        $employeeAccraActive = employee::where('ho_status', 'approved')->where('field_id', 1)->where('status', 'Active')->count();
 
-        $employeeBotwe = employee::where('field_id', 2)->get();
-        $employeeBotweTerminated = employee::where('field_id', 2)->where('status', 'Terminated')->count();  
-        $employeeBotweActive = employee::where('field_id', 2)->where('status', 'Active')->count();
+        $employeeBotwe = employee::where('ho_status', 'approved')->where('field_id', 2)->where('status', 'Active')->orwhere('status', 'Terminated')->get();
+        $employeeBotweTerminated = employee::where('ho_status', 'approved')->where('field_id', 2)->where('status', 'Terminated')->count();  
+        $employeeBotweActive = employee::where('ho_status', 'approved')->where('field_id', 2)->where('status', 'Active')->count();
 
-        $employeeTema = employee::where('field_id', 3)->count();
-        $employeeTemaTerminated = employee::where('field_id', 3)->where('status', 'Terminated')->count();  
-        $employeeTemaActive = employee::where('field_id', 3)->where('status', 'Active')->count();  
-        $Tema = employee::whereIn('field_id', [3,7])->get();
+        $employeeTema = employee::where('ho_status', 'approved')->where('field_id', 3)->where('status', 'Active')->orwhere('status', 'Terminated')->count();
+        $employeeTemaTerminated = employee::where('ho_status', 'approved')->where('field_id', 3)->where('status', 'Terminated')->count();  
+        $employeeTemaActive = employee::where('ho_status', 'approved')->where('field_id', 3)->where('status', 'Active')->count();  
+        $Tema = employee::where('ho_status', 'approved')->whereIn('field_id', [3,7])->where('status', 'Active')->orwhere('status', 'Terminated')->get();
 
 
-        $employeeTakoradi = employee::where('field_id', 4)->get();
-        $employeeTakoradiTerminated = employee::where('field_id', 4)->where('status', 'Terminated')->count();  
-        $employeeTakoradiActive = employee::where('field_id', 4)->where('status', 'Active')->count();
+        $employeeTakoradi = employee::where('ho_status', 'approved')->where('field_id', 4)->where('status', 'Active')->orwhere('status', 'Terminated')->get();
+        $employeeTakoradiTerminated = employee::where('ho_status', 'approved')->where('field_id', 4)->where('status', 'Terminated')->count();  
+        $employeeTakoradiActive = employee::where('ho_status', 'approved')->where('field_id', 4)->where('status', 'Active')->count();
 
-        $employeeKoforidua = employee::where('field_id', 5)->get();
-        $employeeKoforiduaTerminated = employee::where('field_id', 5)->where('status', 'Terminated')->count();  
-        $employeeKoforiduaActive = employee::where('field_id', 5)->where('status', 'Active')->count();  
+        $employeeKoforidua = employee::where('ho_status', 'approved')->where('field_id', 5)->where('status', 'Active')->orwhere('status', 'Terminated')->get();
+        $employeeKoforiduaTerminated = employee::where('ho_status', 'approved')->where('field_id', 5)->where('status', 'Terminated')->count();  
+        $employeeKoforiduaActive = employee::where('ho_status', 'approved')->where('field_id', 5)->where('status', 'Active')->count();  
 
-        $employeeKumasi = employee::where('field_id', 6)->get();
-        $employeeKumasiTerminated = employee::where('field_id', 6)->where('status', 'Terminated')->count();  
-        $employeeKumasiActive = employee::where('field_id', 6)->where('status', 'Active')->count();
+        $employeeKumasi = employee::where('ho_status', 'approved')->where('field_id', 6)->where('status', 'Active')->orwhere('status', 'Terminated')->get();
+        $employeeKumasiTerminated = employee::where('ho_status', 'approved')->where('field_id', 6)->where('status', 'Terminated')->count();  
+        $employeeKumasiActive = employee::where('ho_status', 'approved')->where('field_id', 6)->where('status', 'Active')->count();
 
-        $employeeShyhills = employee::where('field_id', 7)->count();
-        $employeeShyhillsTerminated = employee::where('field_id', 7)->where('status', 'Terminated')->count();  
-        $employeeShyhillsActive = employee::where('field_id', 7)->where('status', 'Active')->count();
+        $employeeShyhills = employee::where('ho_status', 'approved')->where('field_id', 7)->where('status', 'Active')->orwhere('status', 'Terminated')->count();
+        $employeeShyhillsTerminated = employee::where('ho_status', 'approved')->where('field_id', 7)->where('status', 'Terminated')->count();  
+        $employeeShyhillsActive = employee::where('ho_status', 'approved')->where('field_id', 7)->where('status', 'Active')->count();
 
         // $Departments = Department::all();
         // $Roles = Role::all();
@@ -88,10 +89,51 @@ class EmployeeController extends Controller
         //
         $Departments = Department::all();
         $Roles = Role::all();
-        $Fields = Field::all();
-        $clients = Client::all();
+        $fieldsAll = Field::all();
+        $fields = null;
+        $clients = null;
         $banks = Bank::all();
-        return view('employees.create', compact('Departments', 'Roles', 'Fields', 'clients', 'banks'));
+        $staff =  User::all();
+        $user =  Auth::user();
+
+        $manager = $staff->where('department_id', '7')->where('role_id', '3');
+        $headOfficemanager = $staff->whereIn('department_id', ['1','4'])->whereIn('role_id', ['1','3']);
+        $assign_staff = [];
+
+        if($user->role->name == 'Admin Assistant')
+            {
+                $assign_staff = $manager;
+            }
+
+        if($user->role->name == 'Manager')
+            {
+                $assign_staff = $headOfficemanager;
+            }
+
+
+        foreach($fieldsAll as $field )
+        {
+            if( $user->role?->name == 'Finance Manager' || $user->role?->name == 'Invoice' || ($user->department?->name == 'HR' && $user->role?->name == 'Manager') )
+            {
+                $clients = Client::where('status', 'Active')->where('ho_status', 'approved')->get();
+                $fields = $fieldsAll;
+                break;
+            }
+            if($user->field_id == '3')
+            {
+                $clients = Client::whereIn('id', ['3','7'])->where('status', 'Active')->where('ho_status', 'approved')->get();
+                $fields = $fieldsAll->whereIn('id', ['3','7'])->values();
+                break;
+            }
+            if($field->name == $user->field?->name)
+            {
+                $clients = Client::where('field_id', $field->id)->where('status', 'Active')->where('ho_status', 'approved')->get();
+                $fields[] = $field;
+            }
+        }
+
+
+        return view('employees.create', compact('Departments', 'Roles', 'clients', 'banks', 'fields', 'assign_staff'));
     }
 
     public function EmpPayInfo($id)
@@ -112,8 +154,8 @@ class EmployeeController extends Controller
         $employee_pay_info->acc_number = $request->input('acc_number');
         $employee_pay_info->branch = $request->input('branch');
         $employee_pay_info->branch_code = $request->input('branch_code');
-        $employee_pay_info->tin_number = $request->input('tin_number');
-        $employee_pay_info->ssnit_number = $request->input('ssnit_number');
+        // $employee_pay_info->tin_number = $request->input('tin_number');
+        // $employee_pay_info->ssnit_number = $request->input('ssnit_number');
         $employee_pay_info->user_id = Auth::id();
         $employee_pay_info->save();
 
@@ -164,16 +206,30 @@ class EmployeeController extends Controller
         //
         // dd($request->all());
         // dd(Auth::id());
-
+        $user_id = Auth::id();
         $image = null;
+        $tin_number = null;
+        $ssnit_number = null;
+
         if($request->file('image'))
         {
            $image = ($request->file('image'))->store('images', 'public_html_disk');
         }
 
+        if($request->input('tin'))
+        {
+            $tin_number = $request->input('tin_number');
+        }
+        if( $request->input('ssnit'))
+        {
+            $ssnit_number = $request->input('ssnit_number');
+        }
+
+        // dd($request->input('tin'), $tin_number, $request->input('ssnit'), $ssnit_number);
+        $staff = $request->input('staff');
         $employee = new employee();
         $employee->name = $request->input('name');
-        $employee->user_id = Auth::id();
+        $employee->user_id = $user_id;
         $employee->status = 'Pending';
         $employee->gender = $request->input('gender');
         $employee->phone_number = $request->input('phone_number');
@@ -189,6 +245,10 @@ class EmployeeController extends Controller
         $employee->field_id = $request->input('field_id');
         $employee->client_id = $request->input('client_id');
         $employee->location = $request->input('location');
+        $employee->tax_button = $request->input('tin');
+        $employee->tin_number = $tin_number;
+        $employee->ssnit_button = $request->input('ssnit');
+        $employee->ssnit_number = $ssnit_number;
         $employee->basic_salary = $request->input('basic_salary');
         $employee->allowances = $request->input('allowances');
         $employee->payment_type = $request->input('payment_type');
@@ -198,16 +258,29 @@ class EmployeeController extends Controller
         $employee->gurantor_nia_number = $request->input('gurantor_nia_number');
         $employee->relationship = $request->input('relationship');
         $employee->image = $image;
+
+        if(Auth::user()->role?->id == '1')
+            {
+               $employee->ho_status = 'approved';
+               $employee->user_id2 = $user_id;
+            }
+        if(Auth::user()->department?->id == '7' && Auth::user()->role?->id == '3')
+            {
+               $employee->ho_status = 'pending';
+               $employee->user_id2 = $staff;
+
+               $employee->bran_status = 'approved';
+               $employee->user_id1 = $user_id;
+            }
+        if(Auth::user()->department?->id == '7' && Auth::user()->role?->id == '27')
+            {
+               $employee->bran_status = 'pending';
+               $employee->user_id1 = $staff;
+
+               $employee->assit_status = 'pending';
+
+            }
         $employee->save();
-
-
-        // DB::table('nrrit')->insert([
-        //                     'employee_id' =>  $employee->id,
-        //                     'name' => $request->input('name'),
-        //                     'status_month' =>  $request->input('date_of_joining'),
-        //                     'status' => 'Active',
-        //                     'status1' => 'New Recruit',
-        //                 ]);
 
         $employee_pay_info = new PaymentInfo();
         $employee_pay_info->employee_id = $employee->id;
@@ -215,9 +288,9 @@ class EmployeeController extends Controller
         $employee_pay_info->acc_number = $payRequest->input('acc_number');
         $employee_pay_info->branch = $payRequest->input('branch');
         $employee_pay_info->branch_code = $payRequest->input('branch_code');
-        $employee_pay_info->tin_number = $payRequest->input('tin_number');
-        $employee_pay_info->ssnit_number = $payRequest->input('ssnit_number');
-        $employee_pay_info->user_id = Auth::id();
+        // $employee_pay_info->tin_number = $payRequest->input('tin_number');
+        // $employee_pay_info->ssnit_number = $payRequest->input('ssnit_number');
+        $employee_pay_info->user_id = $user_id;
         $employee_pay_info->save();
 
 
@@ -242,7 +315,25 @@ class EmployeeController extends Controller
         $Fields = Field::all();
         $clients = Client::all();
         $banks = Bank::all();
-        return view('employees.show', compact('employee', 'Departments', 'Roles', 'Fields', 'clients', 'banks', 'channels')); 
+
+        $user = Auth::user();
+        $staff =  User::all();
+        $manager = $staff->where('department_id', '7')->where('role_id', '3');
+        $finance_manager = $staff->where('department_id', '1')->where('role_id', '1');
+        $assign_staff = [];
+        // dd($manager);
+        if($user->role->name == 'Admin Assistant')
+            {
+                $assign_staff = $manager;
+            }
+
+        if($user->role->name == 'Manager')
+            {
+                $assign_staff = $finance_manager;
+            }
+
+
+        return view('employees.show', compact('employee', 'Departments', 'Roles', 'Fields', 'clients', 'banks', 'channels', 'assign_staff')); 
     }
 
     /**
@@ -255,10 +346,51 @@ class EmployeeController extends Controller
         $channels = DB::table('hubtel_channel')->get();
         $Departments = Department::all();
         $Roles = Role::all();
-        $Fields = Field::all();
-        $clients = Client::all();
+        $fieldsAll = Field::all();
+        $Fields= null;
+        $clients = null;
         $banks = Bank::all();
-        return view('employees.edit', compact('employee', 'Departments', 'Roles', 'Fields', 'clients', 'banks', 'channels'));
+
+        $user = Auth::user();
+        $staff =  User::all();
+        $manager = $staff->where('department_id', '7')->where('role_id', '3');
+        $finance_manager = $staff->where('department_id', '1')->where('role_id', '1');
+        $assign_staff = [];
+        // dd($manager);
+        if($user->role->name == 'Admin Assistant')
+            {
+                $assign_staff = $manager;
+            }
+
+        if($user->role->name == 'Manager')
+            {
+                $assign_staff = $finance_manager;
+            }
+
+
+
+        foreach($fieldsAll as $field )
+        {
+            if( $user->role?->name == 'Finance Manager' || $user->role?->name == 'Invoice' || ($user->department?->name == 'HR' && $user->role?->name == 'Manager') )
+            {
+                $clients = Client::where('status', 'Active')->where('ho_status', 'approved')->get();
+                $Fields = $fieldsAll;
+                break;
+            }
+            if($user->field_id == '3')
+            {
+                $clients = Client::whereIn('id', ['3','7'])->where('status', 'Active')->where('ho_status', 'approved')->get();
+                $Fields = $fieldsAll->whereIn('id', ['3','7'])->values();
+                break;
+            }
+            if($field->name == $user->field?->name)
+            {
+                $clients = Client::where('field_id', $field->id)->where('status', 'Active')->where('ho_status', 'approved')->get();
+                $Fields[] = $field;
+            }
+        }
+
+        return view('employees.edit', compact('employee', 'Departments', 'Roles', 'Fields', 'clients', 'banks', 'channels', 'assign_staff'));
     }
 
     /**
@@ -286,9 +418,22 @@ class EmployeeController extends Controller
             // dd($path);
         }
 
-        $tax_button = null ;
-        $ssnit_button = null ;
+        // $tax_button = null ;
+        $tin_number = null;
+        // $ssnit_button = null;
+        $ssnit_number = null;
+        $staff = $request->input('staff');
 
+        if($request->input('tin'))
+        {
+            $tin_number = $request->input('tin_number');
+        }
+        if( $request->input('ssnit'))
+        {
+            $ssnit_number = $request->input('ssnit_number');
+        }
+
+        $user_id = Auth::id();
         $employee->image = $path ?? $employee->image;
         $employee->name = $request->input('name');
         $employee->gender = $request->input('gender');
@@ -307,8 +452,12 @@ class EmployeeController extends Controller
         $employee->location = $request->input('location');
         $employee->payment_type = $request->input('payment_type');
         $employee->basic_salary = $request->input('basic_salary');
-        $employee->tax_button = $request->input('tax_button');
-        $employee->ssnit_button = $request->input('ssnit_button');
+
+        $employee->tax_button = $request->input('tin');
+        $employee->ssnit_button = $request->input('ssnit');
+
+        $employee->tin_number = $tin_number;
+        $employee->ssnit_number = $ssnit_number;
 
         $employee->allowances = $request->input('allowances');
         $employee->gurantor_name = $request->input('gurantor_name');
@@ -316,7 +465,36 @@ class EmployeeController extends Controller
         $employee->gurantor_address = $request->input('gurantor_address');
         $employee->gurantor_nia_number = $request->input('gurantor_nia_number');
         $employee->relationship = $request->input('relationship');
-        $employee->user_id1 = Auth::id();
+
+
+        if(Auth::user()->role?->id == '1')
+            {
+                $employee->status = 'Active';
+               $employee->ho_status = 'approved';
+               $employee->user_id2 = $user_id;
+            }
+        if(Auth::user()->department?->id == '7' && Auth::user()->role?->id == '3')
+            {
+               $employee->ho_status = 'pending';
+               $employee->user_id2 = $staff;
+               $employee->status = 'Pending';
+
+               $employee->bran_status = 'approved';
+               $employee->user_id1 = $user_id;
+            }
+        if(Auth::user()->department?->id == '7' && Auth::user()->role?->id == '27')
+            {
+               $employee->ho_status = null;
+               $employee->bran_status = 'pending';
+               $employee->user_id1 = $staff;
+               $employee->status = 'Pending';
+
+               $employee->assit_status = 'pending';
+
+            }
+
+        // $employee->user_id1 = Auth::id();
+
         $employee->save();
 
         return redirect()->route('employees.show',['employee' => $employee])->with('success', 'Employee updated successfully.');
@@ -423,14 +601,50 @@ class EmployeeController extends Controller
                     'status' => 'Terminated',
                 ]);
 
+        $user_id = Auth::id();
+
+
+        if(Auth::user()->role?->id == '1')
+            {
+                // return "You are at head office";
+            // $client->status = 'terminated';
+
+            $employee->ho_status = 'approved';
+            $employee->ho_date = $parsedDate;
+            $employee->user_id2 = $user_id;
+            $employee->save();
+
         return redirect()->route('employees.index')->with('error', 'Employee successfully Terminated!, ID No: and Name '. implode(', ', [$employee->id, $employee->name]));
+
+
+            }
+        if(Auth::user()->department?->id == '7' && Auth::user()->role?->id == '3')
+            {
+                // return "You are a Manager";
+            // $client->status = 'pending';
+
+            $employee->ho_status = 'pending';
+            $employee->user_id2 = $request->staff;
+
+            $employee->bran_status = 'approved';
+            $employee->bran_date = $parsedDate;
+            $employee->user_id1 = $user_id;
+            $employee->save();
+
+        return redirect()->route('employees.index')->with('error', 'Employee successfully Terminated!, ID No: and Name '. implode(', ', [$employee->id, $employee->name]));
+
+
+            }
+
+
+        // return redirect()->route('employees.index')->with('error', 'Employee successfully Terminated!, ID No: and Name '. implode(', ', [$employee->id, $employee->name]));
 
     }
 
     public function employeeReinstate(Request $request, $id)
     {
         $employee = employee::findOrFail($id);
-        $employee->update(['status' => 'Active', 'status_date' =>  $request->status_date , 'user_id1' => Auth::id()]);
+        $employee->update(['status' => 'Re-Instate', 'status_date' =>  $request->status_date , 'user_id1' => Auth::id()]);
        
         // dd($request->status_date) ;
       
@@ -445,7 +659,42 @@ class EmployeeController extends Controller
                     'status1' => 'Re-Instate',
                 ]);
 
-        return redirect()->route('employees.index')->with('success', 'Employee successfully Re-instated! ID No: and Name '. implode(', ', [$employee->id, $employee->name]));
+        $user_id = Auth::id();
+
+
+        if(Auth::user()->role?->id == '1')
+            {
+                // return "You are at head office";
+            // $client->status = 'terminated';
+
+            $employee->ho_status = 'approved';
+            $employee->ho_date = $parsedDate;
+            $employee->user_id2 = $user_id;
+            $employee->save();
+
+        return redirect()->route('employees.index')->with('error', 'Employee successfully Re-instated!, ID No: and Name '. implode(', ', [$employee->id, $employee->name]));
+
+
+            }
+        if(Auth::user()->department?->id == '7' && Auth::user()->role?->id == '3')
+            {
+                // return "You are a Manager";
+            // $client->status = 'pending';
+
+            $employee->ho_status = 'pending';
+            $employee->user_id2 = $request->staff;
+
+            $employee->bran_status = 'approved';
+            $employee->bran_date = $parsedDate;
+            $employee->user_id1 = $user_id;
+            $employee->save();
+
+        return redirect()->route('employees.index')->with('error', 'Employee successfully Re-instated!, ID No: and Name '. implode(', ', [$employee->id, $employee->name]));
+
+
+            }
+
+        // return redirect()->route('employees.index')->with('success', 'Employee successfully Re-instated! ID No: and Name '. implode(', ', [$employee->id, $employee->name]));
     }
 
     public function employeesBank()
@@ -604,23 +853,23 @@ class EmployeeController extends Controller
     public function employeesPending()
     {
 
-            //
-        $pendingEmployees = employee::where('status', 'Pending')->get();
+            //where('status', '!=','active')->where('ho_status', 'pending')->orwhere('ho_status', null)
+        $pendingEmployees = employee::whereIn('status', ['Pending','Terminated','Re-Instate'])->where('ho_status', 'pending')->orwhere('ho_status', null)->get();
 
-        $employeeAccra = employee::where('field_id', 1)->where('status', 'Pending')->get();
+        $employeeAccra = employee::where('field_id', 1)->whereIn('status', ['Pending','Terminated','Re-Instate'])->where('ho_status', 'pending')->orwhere('ho_status', null)->get();
 
-        $employeeBotwe = employee::where('field_id', 2)->where('status', 'Pending')->get();
+        $employeeBotwe = employee::where('field_id', 2)->whereIn('status', ['Pending','Terminated','Re-Instate'])->where('ho_status', 'pending')->orwhere('ho_status', null)->get();
 
-        $employeeTema = employee::where('field_id', 3)->where('status', 'Pending')->count();
-        $Tema = employee::whereIn('field_id', [3,7])->where('status', 'Pending')->get();
-        $employeeShyhills = employee::where('field_id', 7)->where('status', 'Pending')->count();
+        $employeeTema = employee::where('field_id', 3)->whereIn('status', ['Pending','Terminated','Re-Instate'])->where('ho_status', 'pending')->orwhere('ho_status', null)->count();
+        $Tema = employee::whereIn('field_id', [3,7])->whereIn('status', ['Pending','Terminated','Re-Instate'])->where('ho_status', 'pending')->orwhere('ho_status', null)->get();
+        $employeeShyhills = employee::where('field_id', 7)->whereIn('status', ['Pending','Terminated','Re-Instate'])->where('ho_status', 'pending')->orwhere('ho_status', null)->count();
 
 
-        $employeeTakoradi = employee::where('field_id', 4)->where('status', 'Pending')->get();
+        $employeeTakoradi = employee::where('field_id', 4)->whereIn('status', ['Pending','Terminated','Re-Instate'])->where('ho_status', 'pending')->orwhere('ho_status', null)->get();
 
-        $employeeKoforidua = employee::where('field_id', 5)->where('status', 'Pending')->get();
+        $employeeKoforidua = employee::where('field_id', 5)->whereIn('status', ['Pending','Terminated','Re-Instate'])->where('ho_status', 'pending')->orwhere('ho_status', null)->get();
 
-        $employeeKumasi = employee::where('field_id', 6)->where('status', 'Pending')->get();
+        $employeeKumasi = employee::where('field_id', 6)->whereIn('status', ['Pending','Terminated','Re-Instate'])->where('ho_status', 'pending')->orwhere('ho_status', null)->get();
 
 
         return view('employees.pending', compact( 'Tema', 'pendingEmployees',  'employeeAccra', 'employeeBotwe', 'employeeTema', 'employeeTakoradi',  'employeeKoforidua', 'employeeKumasi', 'employeeShyhills'));
@@ -640,21 +889,118 @@ class EmployeeController extends Controller
          $employees =  employee::findOrFail($request->employees);
         //  dd($employees);
 
-         foreach ($employees as $employee )
-            {
-                $employee->status = 'Active';
-                $employee->user_id2 = Auth::id();
-                $employee->save();
+        //  foreach ($employees as $employee )
+        //     {
+        //         $employee->status = 'Active';
+        //         $employee->user_id2 = Auth::id();
+        //         $employee->save();
+
+        //         DB::table('nrrit')->insert([
+        //             'employee_id' =>  $employee->id,
+        //             'name' => $employee->name,
+        //             'status_month' =>  $employee->date_of_joining,
+        //             'status' => 'Active',
+        //             'status1' => 'New Recruit',
+        //         ]);
+        //     }
+
+        $action = $request->input('action_type') ?? $request->input('submit') ?? $request->input('decline'); 
+
+        $alreadyProcessed = [];
+
+        $invoice_manager =  User::where('department_id', '1')->where('role_id', '1')->first();
+        $user = Auth::user();
+
+        // $invoice_manager = $staff->;
+
+        foreach( $employees as $employee)
+        {
+
+            if( $action == 'branch' )
+                
+                {
+                    // dd($employee);
+                    $exists = employee::where('id', $employee->id)
+                        ->where('bran_status', 'approved')
+                        ->exists();
+                    if ($exists) {
+                        $alreadyProcessed[] =  " employee: " . $employee->id;
+                        continue;
+                    }
+                    // update branch to approved, collection to approved and dates.
+                    $employee->bran_status = 'approved';
+                    $employee->user_id1 = $user->id;
+                    $employee->bran_date = now();
+
+                    $employee->assit_status = 'approved';
+                    $employee->ho_status = 'pending';
+                    $employee->user_id2 =  $invoice_manager->id;
+
+                    $employee->save();
+                    // return 'you are a Branch Manager';
+
+                }
+
+            if($action == 'headOffice' )
+                {
+                    // // dd($client);
+                    $exists = employee::where('id', $employee->id)
+                        ->where('ho_status', 'approved')
+                        ->exists();
+                    if ($exists) {
+                        $alreadyProcessed[] =  " employee: " . $employee->id;
+                        continue;
+                    }
+
+                    $employee->ho_status = 'approved';
+                    $employee->user_id2 = $user->id;
+                    $employee->ho_date = now();
+
+                    if($employee->status == 'Pending' || $employee->status == 'Re-Instate')
+                    {
+                        $employee->status = 'Active';
+
+                            DB::table('nrrit')->insert([
+                                'employee_id' =>  $employee->id,
+                                'name' => $employee->name,
+                                'status_month' =>  $employee->date_of_joining,
+                                'status' => 'Active',
+                                'status1' => 'New Recruit',
+                            ]);
+                    }
+
+                    if($employee->status == 'Terminated')
+                    {
+                        $employee->status = 'Terminated';
+
+                    }
+                    
+                    $employee->save();
+
+                    // return 'you are at the head office';
+                    
+                }
 
 
-                DB::table('nrrit')->insert([
-                    'employee_id' =>  $employee->id,
-                    'name' => $employee->name,
-                    'status_month' =>  $employee->date_of_joining,
-                    'status' => 'Active',
-                    'status1' => 'New Recruit',
-                ]);
-            }
+            if($action == 'decline' )
+                {
+
+                    $employee->bran_status = 'pending';
+                    // $employee->user_id2 = Auth::id();
+                    $employee->assit_status = 'pending';
+                    $employee->assit_date = now();
+
+
+                    $employee->save();
+                    // return 'you are at the head office Declining'; 
+
+                }
+
+
+
+        }
+
+
 
                return back()->with('success', 'Selected Employees Has Been Approved !.');
 

@@ -460,10 +460,6 @@
                                         <div class="dropdown-menu">
                                             <a class="dropdown-item" href="{{url('employees', $data->id)}}"><i class="icon-base bx bxs-bullseye"></i> view</a>
                                             <a class="dropdown-item" href="{{url('employees', $data->id)}}/edit"><i class="icon-base bx bx-edit-alt me-1"></i> Edit</a>
-                                            <hr>
-                                            <a class="dropdown-item" href="{{url('employeesSalary', $data->id)}}"><i class="icon-base bx bx-money-withdraw"></i> Salaries</a>
-                                            <hr>
-                                            <a class="dropdown-item" href="{{url('terminateEmployee', $data->id )}}"><i class="icon-base bx bx-user-x me-1" onclick="return confirm('Kindly Confirm?')"></i> Terminate</a>
 
                                         </div>
                                     </div>

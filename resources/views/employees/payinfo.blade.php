@@ -352,8 +352,8 @@
     <div class="card mb-4">
       <div class="card-body d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
         <div>
-          <h4 class="fw-bold mb-1">Edit payment info</h4>
-          <p class="text-muted mb-0">Update payment details for {{ $employee_pay_info->employee->name }}.</p>
+          <h4 class="fw-bold mb-1">Edit Bank Details</h4>
+          <p class="text-muted mb-0">Update bank details for {{ $employee_pay_info->employee->name }}.</p>
         </div>
         <div class="text-md-end">
           <a href="{{ url('employees', $employee_pay_info->employee_id) }}" class="btn btn-outline-secondary btn-sm mb-2">
@@ -383,9 +383,9 @@
 
     <div class="row g-4">
       <div class="col-lg-4">
-        <div class="card h-100">
+        <div class="card h-80 bg-info text-white">
           <div class="card-body text-center">
-            <h5 class="card-title mb-1">{{ $employee_pay_info->employee->name }}</h5>
+            <h5 class="card-title mb-1 text-white">{{ $employee_pay_info->employee->name }}</h5>
             <p class="text-muted mb-3">{{ $employee_pay_info->employee->role?->name ?? 'Employee' }}</p>
             <span class="badge bg-primary mb-3">{{ $employee_pay_info->employee->payment_type ?? 'Payment type' }}</span>
             <dl class="row text-start">
@@ -403,7 +403,7 @@
       <div class="col-lg-8">
         <div class="card mb-4">
           <div class="card-header">
-            <strong>Payment information</strong>
+            <strong>Bank  Details</strong>
           </div>
           <div class="card-body">
             <form action="/employeesPayInfoUpdate/{{ $employee_pay_info->id }}" method="POST">
@@ -448,17 +448,17 @@
                   @error('branch_code')<span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>@enderror
                 </div>
 
-                <div class="col-md-6">
+                <!-- <div class="col-md-6">
                   <label for="tin_number" class="form-label"><strong>TIN Number</strong></label>
                   <input type="text" id="tin_number" name="tin_number" class="form-control @error('tin_number') is-invalid @enderror" placeholder="TIN Number" value="{{ $employee_pay_info->tin_number }}" />
                   @error('tin_number')<span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>@enderror
-                </div>
+                </div> -->
 
-                <div class="col-md-6">
+                <!-- <div class="col-md-6">
                   <label for="ssnit_number" class="form-label"><strong>SSNIT Number</strong></label>
                   <input type="text" id="ssnit_number" name="ssnit_number" class="form-control @error('ssnit_number') is-invalid @enderror" placeholder="SSNIT Number" value="{{ $employee_pay_info->ssnit_number }}" />
                   @error('ssnit_number')<span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>@enderror
-                </div>
+                </div> -->
               </div>
 
               <div class="mt-4 text-end">

@@ -295,7 +295,7 @@
 
         <div class="row">
             <div class="col-12">
-                <h3 class="card-header"> <i class="icon-base bx bx-bxs-user-detail"></i> Payroll / Salaries </h3>
+                <h3 class="card-header"> <i class="icon-base bx bx-bxs-user-detail"></i> Payroll / Salaries For : {{$month->format('F, Y')}} </h3>
             </div>
         </div><br>
 
@@ -451,7 +451,7 @@
                       accept=".xls, .xlsx"
                       required/>
 
-                <button class="btn btn-dark" onclick="return confirm('Kindly Confirm?')" type="submit"> <i class="icon-base bx bx-recycle"> </i> {{ __('Upload') }}</button>
+                <button class="btn btn-dark ml-5" onclick="return confirm('Kindly Confirm?')" type="submit"> <i class="icon-base bx bx-recycle"> </i> {{ __('Upload') }}</button>
             </div>
           </form>
         </div> <br> <br>
@@ -460,6 +460,7 @@
             <form action="/salariesDeleteMultiple" method="POST">
                 @csrf
                 <div class="col">
+                    <input type="hidden" name="action_type" id="salary_action_type" value="" />
                     <input class="form-check-input form-check-inline" type="checkbox" value="" id="options" />
 
                     <div class="form-check form-check-inline">
@@ -469,11 +470,11 @@
                     </div>
 
                     <div class="form-check form-check-inline">
-                        <button class="btn btn-danger" name="submit" value="delete" onclick="return confirm('Kindly Confirm?')" type="submit"> <i class="icon-base bx bx-recycle"> </i> {{ __('Delete') }}</button>                   
+                        <button class="btn btn-danger" data-action="delete" onclick="document.getElementById('salary_action_type').value='delete'; return confirm('Kindly Confirm?')" type="submit"> <i class="icon-base bx bx-recycle"> </i> {{ __('Delete') }}</button>                   
                     </div>
-                    <div class="form-check form-check-inline">
-                        <button class="btn btn-success" name="submit" value="approve" onclick="return confirm('Kindly Confirm?')" type="submit"> <i class="icon-base bx bx-recycle"> </i> {{ __('Approve') }}</button>                   
-                    </div>
+                    <!-- <div class="form-check form-check-inline">
+                        <button class="btn btn-success" data-action="approve" onclick="document.getElementById('salary_action_type').value='approve'; return confirm('Kindly Confirm?')" type="submit"> <i class="icon-base bx bx-recycle"> </i> {{ __('Approve') }}</button>                   
+                    </div> -->
                 
                         <div class="card"> 
                             <div class="card-body"> 

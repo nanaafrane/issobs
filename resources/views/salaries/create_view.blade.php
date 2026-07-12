@@ -2,12 +2,8 @@
 
     @section('css')
     <link rel="stylesheet" href="https://cdn.datatables.net/2.3.5/css/dataTables.dataTables.css" />
-    <!-- <link rel="stylesheet" href="https://cdn.datatables.net/buttons/3.2.5/css/buttons.dataTables.css">     -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/3.2.5/css/buttons.dataTables.css">    
     <link href="https://cdn.datatables.net/columncontrol/1.1.1/css/columnControl.dataTables.min.css" rel="stylesheet">
-
-    <link rel="stylesheet" href="https://cdn.datatables.net/fixedheader/4.0.5/css/fixedHeader.dataTables.css">
-    <link rel="stylesheet" href="https://cdn.datatables.net/fixedcolumns/5.0.5/css/fixedColumns.dataTables.css">
-
     @endsection
 
 
@@ -85,7 +81,7 @@
                 <div class="text-truncate" data-i18n="Clients">Clients</div>
                 </a>
             </li>
-            <li class="menu-item">
+                        <li class="menu-item">
           <a href="javascript:void(0);" class="menu-link menu-toggle">
           <i class="menu-icon tf-icons bx bxs-user-account"></i>
           <div class="text-truncate" data-i18n="Staffs">Employees</div>
@@ -104,6 +100,11 @@
           <li class="menu-item">
               <a href="{{url('employeesBank')}}" class="menu-link">
               <div class="text-truncate" data-i18n="SList">Employee Banks</div>
+              </a>
+          </li>
+                                <li class="menu-item">
+              <a href="{{url('employeesCash')}}" class="menu-link">
+              <div class="text-truncate" data-i18n="SList">Employee Cash</div>
               </a>
           </li>
           </ul>
@@ -149,9 +150,14 @@
                     <div class="text-truncate" data-i18n="SList">List</div>
                     </a>
                 </li>
-                          <li class="menu-item">
+          <li class="menu-item">
               <a href="{{url('employeesBank')}}" class="menu-link">
               <div class="text-truncate" data-i18n="SList">Employee Banks</div>
+              </a>
+          </li>
+                                <li class="menu-item">
+              <a href="{{url('employeesCash')}}" class="menu-link">
+              <div class="text-truncate" data-i18n="SList">Employee Cash</div>
               </a>
           </li>
                 </ul>
@@ -191,7 +197,7 @@
             </li>
             @endif
 
-            @if((Auth::user()->hasRole(['Manager', 'Officer', 'Finance Manager']) && Auth::user()->hasPermission('Accounts')) )
+            @if((Auth::user()->hasRole(['Manager', 'Finance Manager']) && Auth::user()->hasPermission('Accounts')) )
 
             <li class="menu-header small text-uppercase"> <span class="menu-header-text text-danger">Accounts</span></li>
 
@@ -238,7 +244,7 @@
                     <div class="text-truncate" data-i18n="Payroll">Payroll</div>
                     </a>
                     <ul class="menu-sub">
-                    @if(Auth::user()->hasPermission('HR') || Auth::user()->hasRole(['Invoice' , 'Finance Manager']))
+                    @if(Auth::user()->hasPermission('HR') || Auth::user()->hasRole(['Invoice', 'Finance Manager']))
                     <li class="menu-item ">
                         <a href="{{ url('salaries') }}" class="menu-link">
                         <i class="menu-icon tf-icons bx bxs-user-account"></i>
@@ -247,21 +253,28 @@
                     </li>
                     @endif
 
-                    <li class="menu-item ">
+                    <li class="menu-item active">
                         <a href="{{ url('salaries/create') }}" class="menu-link">
                         <i class="menu-icon tf-icons bx bx-money-withdraw"></i>
                         <div class="text-truncate" data-i18n="Salaries">Salaries</div>
                         </a>
                     </li>
 
-                    <li class="menu-item active">
+                    <li class="menu-item">
                         <a href="{{ url('salariesTransaction') }}" class="menu-link">
                         <i class="menu-icon tf-icons bx bx-transfer-alt"></i>
                         <div class="text-truncate" data-i18n="Transaction">Transactions</div>
                         </a>
                     </li>
 
-                    <!-- <li class="menu-item">
+                                      <!-- <li class="menu-item">
+                    <a href="{{ url('salariesBulkCash') }}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bxs-group"></i>
+                    <div class="text-truncate" data-i18n="Transaction">Bulk Cash Salaries</div>
+                    </a>
+                </li>
+
+                    <li class="menu-item">
                         <a href="{{ url('salariesInvPayroll') }}" class="menu-link">
                         <i class="menu-icon tf-icons bx bx-git-compare"></i>
                         <div class="text-truncate" data-i18n="InvtoPayroll">Invoice to Payroll</div>
@@ -282,140 +295,29 @@
 
         <div class="row">
             <div class="col-12">
-                <h3 class="card-header"> <i class="icon-base bx bx-transfer-alt"></i> {{ $bank->name }}   @if (isset($month)) <strong> / For Month: {{  \Carbon\Carbon::parse($month)->format('F Y') }}</strong> @endif </h3>
-
+                <h3 class="card-header"> <i class="icon-base bx bx-bxs-user-detail"></i> Payroll / Salaries </h3>
             </div>
         </div><br>
 
-         @if(Auth::user()->hasRole(['Invoice','Manager', 'Finance Manager' ]))
+                <hr />
+
         <div class="row">
-            <div class="col-lg-12 mb-4">
-                <div  class="card h-100 bg-dark text-white">
-                    <div class="card-body">
-                        <div class="card-title d-flex align-items-start justify-content-between mb-4">
-                            <div class="avatar flex-shrink-0">
-                                <img
-                                    src="{{ asset('img/icons/unicons/paypal.png') }}"
-                                    alt="chart success"
-                                    class="rounded" />
-                            </div>
-                        </div>
-                        <p class="mb-1"><strong> BANK NAME :  {{ strtoupper($bank->name) }}  </strong> </p> <br>
-                        <h4 class="card-title mb-3 text-white"><strong> GH&#x20B5;  {{ number_format($BankSalaries->sum('net_salary'), 2) }} </strong> </h4> <br>
-                        <h6  class="card-title mb-3 text-white">TOTAL PENDING : GH&#x20B5;  {{ number_format($BankSalariespending->sum('net_salary'), 2) }}   |   PENDING EMPLOYEES :  {{ $BankSalariespending->count() }}  </h6> 
-                        <h6  class="card-title mb-3 text-white"> TOTAL APPROVED : GH&#x20B5; {{ number_format($BankSalariesapproved->sum('net_salary'), 2) }} |   APPROVED EMPLOYEES :  {{ $BankSalariesapproved->count() }} </h6> 
-                        <h6  class="card-title mb-3 text-white"> TOTAL HOLD : GH&#x20B5; {{ number_format($BankSalarieshold->sum('net_salary'), 2) }}  |   HOLD EMPLOYEES :  {{ $BankSalarieshold->count() }} </h6> <hr>
-                        <h6  class="card-title mb-3 text-white"> OVERALL TOTAL  : GH&#x20B5; {{ number_format($BankSalariesAll->sum('net_salary'), 2) }} |   OVERALL EMPLOYEES :  {{ $BankSalariesAll->count() }} </h6>
+                <form action="/salariesCreate" method="GET">
+                    @csrf
+                    <div class="col">
 
-                    </div>
-                </div>
-            </div>
-        </div> <br>
-        @endif
-       
-        <div class="card-header  ml-2  d-none d-lg-block">
-                  @include('flash-messages')
-        </div> <br>
-      
-        <!-- Table -->  
-        <hr> <br>
-        <div class="row">
-            <form action="/salariesDeleteMultiple" method="POST">
-                @csrf
-                    <div class="col-lg-12 mb-4">
-                            <input type="hidden" name="action_type" id="action_type" value="" />
-                            <input class="form-check-input form-check-inline" type="checkbox" value="" id="options" />
+                        <label for="month" class="form-label"> <strong>   CHOOSE A MONTH TO SEARCH </strong> </label> <br>
 
-                            <div class="form-check form-check-inline">
-                                
-                                <button class="btn btn-success" data-loading="true" onclick="document.getElementById('action_type').value='approve'; return confirm('Kindly Confirm?')" type="submit"> <i class="icon-base bx bx-recycle"> </i> {{ __('Approve') }}</button>                   
-                        
-                                <a href="/exportBank/{{ $month }}/{{ $bank->id }}" class="btn btn-dark m-4" > <i class="icon-base bx bx-bxs-file-plus"> </i> {{ __(' Excel Bank Download') }}</a>                   
-                            </div>
-
+                        <div class="form-check form-check-inline">
+                            <input type="month" class="form-control" name="month" required/> <br>
                             
-                        <div class="card">
-                            <h5 class="card-header"> Salaries Paid via Banks  </h5>
-                            <div class="card-body"> 
-                            <div class="table-responsive text-nowrap">
-                                <table class="display" id="myTable">
-                                    <thead class="table-border-bottom-0">
-                                        <tr>
-                                            <th></th>
-                                            <th>#</th>
-                                            <th>STAFF ID</th>
-                                            <th>STATUS</th>
-                                            <th>CATEGORY</th>
-                                            <th> NAME </th>
-                                            <th>FIELD</th>
-                                            <th> ROLE</th>
-                                            <th>CLIENT</th>
-                                            <th>LOCATION</th>
-                                            <th>BRANCH CODE</th>
-                                            <th>BRANCH</th>
-                                            <th>ACCOUNT NUMBER</th>
-                                            <th>  GH&#x20B5; NET SALARY</th>
-                                            <th>CREATED BY</th>
-                                            <th>UPDATED</th>
-                                            <th>UPDATED BY</th>
-                                            <th>PERIOD</th>
-                                            <th>Action</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody class="table-border-bottom-0">
-                                        @foreach($BankSalaries as $key => $salary)
-                                        <tr>
-                                            <td> <input class="checkBoxes form-check-input" type="checkbox" name="salary[]" value="{{ $salary->id }}" /> </td>
-                                            <td> {{ $key + 1 }} </td>
-                                            <td> FWSS{{ $salary->employee?->id }} </td>
-                                                                                                                                        
-                                                    @if($salary->payment_status == 'pending')
-                                                        <td> <span class="badge bg-label-info"> {{ $salary->payment_status }} </span> </td>
-                                                    @else 
-                                                        <td> <span class="badge bg-label-success">  {{ $salary->payment_status }} </span> </td>
-                                                    @endif
-                                            <td>
-                                                @foreach($categories as $category)
-                                                    @if($salary->client_id == $category->client_id)
-                                                        {{ $category->name }}
-                                                    @endif
-                                                @endforeach
-                                            </td>
-                                            <td> {{ strtoupper($salary->employee?->name) }} </td>
-                                            <td> {{ strtoupper($salary->field?->name) }} </td>
-                                            <td> {{ strtoupper( $salary->employee?->role?->name) }} </td>
-                                            <td> {{ $salary->client?->name || $salary->client?->business_name ? strtoupper($salary->client?->name) . strtoupper($salary->client?->business_name) :  strtoupper($salary->location) }} </td>
-                                            <td> {{ strtoupper($salary?->location) }} </td>
-                                            <td> {{ $salary->paymentInfo?->branch_code }} </td>
-                                            <td> {{ strtoupper($salary->branch)}} </td>
-                                            <td> {{ $salary->account_number }} </td>
-                                            <td> {{ number_format($salary->net_salary, 2) }} </td>
-                                            <td> {{  $salary->user?->name }} </td>
-                                            <td> {{$salary->updated_at->format('F l d, Y, H:i A')}} </td>
-                                            <td> {{ $salary->user1?->name }} </td>
-                                            <td> {{$salary->updated_at->diffForHumans()}} </td>
-                                            <td>
-                                                <div class="dropdown">
-                                                    <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown">
-                                                        <i class="icon-base bx bx-dots-vertical-rounded"></i>
-                                                    </button>
-                                                    <div class="dropdown-menu">
-                                                        <a class="dropdown-item" href="{{url('salaries', $salary->id)}}"><i class="icon-base bx bxs-bullseye"></i> view</a>
-                                                        <a class="dropdown-item" href="/salaries/{{$salary->id}}/edit"><i class="icon-base bx bx-edit-alt me-1"></i> Edit</a>
-
-                                                    </div>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        @endforeach
-                                    </tbody>
-                                </table>
-                            </div>
-                            </div>
+                            <button class="btn btn-dark" type="submit"> <i class="icon-base bx bx-arrow-from-left"> </i> {{ __('') }}</button>
                         </div>
                     </div>
-            </form>
+                </form>
         </div>
+
+
 
 
 
@@ -426,80 +328,53 @@
 
 
     @section('scripts')
-
     <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
     <script src="https://cdn.datatables.net/2.3.5/js/dataTables.js"></script>
-    <script src="https://cdn.datatables.net/fixedcolumns/5.0.5/js/dataTables.fixedColumns.js"> </script>           
-    <script src="https://cdn.datatables.net/fixedcolumns/5.0.5/js/fixedColumns.dataTables.js"></script>     
-    <script src="https://cdn.datatables.net/fixedheader/4.0.5/js/dataTables.fixedHeader.js"></script>      
-    <script src="https://cdn.datatables.net/fixedheader/4.0.5/js/fixedHeader.dataTables.js"></script>  
-    <script src="https://cdn.datatables.net/columncontrol/1.1.1/js/dataTables.columnControl.min.js"></script>
-
-    <!-- <script src="https://cdn.datatables.net/buttons/3.2.5/js/dataTables.buttons.js"></script>
+    <script src="https://cdn.datatables.net/buttons/3.2.5/js/dataTables.buttons.js"></script>
     <script src="https://cdn.datatables.net/buttons/3.2.5/js/buttons.dataTables.js"></script>
     <script src="https://cdn.datatables.net/buttons/3.2.5/js/buttons.html5.min.js"></script>
     <script src="https://cdn.datatables.net/buttons/3.2.5/js/buttons.colVis.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script> -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
 
-
+    <script src="https://cdn.datatables.net/columncontrol/1.1.1/js/dataTables.columnControl.min.js"></script>
     <script>
-       
-    //   new DataTable('#myTable', {
-    //     //  dom: 'Blfrtip',
-    //     //  stateSave: false,
-    //     columnControl: [ ['search'] ],
-    //     layout: {
-    //         topStart: {
-    //             buttons: [ 
-    //             {
-    //                  extend: 'pageLength',
-    //                 text: 'Show',
-    //                 className: 'btn btn-secondary',
-    //                 Options: [10, 25, 50, 100, 250, 500, 1000, 2000], 
-    //             },
-    //                 {
-    //                     extend: 'excelHtml5',
-    //                     title: 'Salaries',
-    //                     className: 'btn btn-secondary',
-    //                     exportOptions: {
-    //                         columns: ':visible'
-    //                     }
-    //                 },
-    //             ]
-    //         }
-    //     },
-                
-    // });
 
-
-        //     new DataTable('#myTable', {
-        //     responsive: true,
-        //       dom: 'flip',
-        //       lengthMenu: [[10, 25, 50, 100, 500], [10, 25, 50, 100, 500]],
-        //       columnControl: [ ['search'] ]
-
-              
-        // });
-
-        new DataTable('#myTable', {
-              columnControl: [ ['search'] ],
-                    fixedColumns: {
-                    start: 0,
-                    end: 0
+      new DataTable('#myTable', {
+        //  dom: 'Blfrtip',
+        //  stateSave: false,
+        columnControl: [ ['search'] ],
+        layout: {
+            topStart: {
+                buttons: [ 
+                {
+                     extend: 'pageLength',
+                    text: 'Show',
+                    className: 'btn btn-secondary',
+                    Options: [10, 25, 50, 100, 250, 500, 1000, 2000], 
                 },
-                fixedHeader: {
-                    header: true,
-                    footer: true
-                },
-                paging: false,
-                scrollCollapse: true,
-                scrollX: true,
-                scrollY: 500
-        });
-
+                    {
+                        extend: 'excelHtml5',
+                        title: 'Salaries',
+                        className: 'btn btn-secondary',
+                        exportOptions: {
+                            columns: ':visible'
+                        }
+                    },
+                    'colvis'
+                ]
+            }
+        },
+                  columnDefs: [
+              {
+                  targets: [0,1],
+                  visible: false
+              }
+          ]
+    });
     </script>
+
 
     <script>
         $(document).ready(function() {

@@ -366,7 +366,7 @@
 
 
 
-        @if(Auth::user()->hasRole(['Invoice','Manager', 'Finance Manager']))
+        @if(Auth::user()->hasRole(['Invoice', 'Finance Manager']) || (Auth::user()->hasRole(['Manager']) && Auth::user()->hasPermission('HR')))
         <div class="row mb-4">
             <div class="col-lg-12 col-md-6 mb-4 mb-md-0">
                 <div  class="card h-100 bg-dark text-white">
@@ -665,14 +665,31 @@
         <div class="row">
         <form action="/employeesAproval" method="POST">
             @csrf
+            <input type="hidden" name="action_type" id="employee_action_type" value="" />
             <div class="col">
-                         @if(Auth::user()->hasRole(['Manager', 'Invoice']))
+                         <!-- @if(Auth::user()->hasRole(['Manager', 'Invoice']))
                         <input class="form-check-input form-check-inline" type="checkbox" value="" id="options" />
 
                         <div class="form-check form-check-inline">                            
                             <button class="btn btn-success" type="submit" onclick="return confirm('Kindly Confirm?')"> <i class="icon-base bx bx-arrow-from-left"> </i> {{ __('Approve') }}</button>
                         </div>
-                        @endif
+                        @endif -->
+                    <input class="form-check-input form-check-inline" type="checkbox" value="" id="options" />
+
+                    @if(Auth::user()->hasRole(['Manager']) && Auth::user()->hasPermission('Administration') )
+                    <div class="form-check form-check-inline">                            
+                        <button class="btn btn-dark" type="submit" onclick="document.getElementById('employee_action_type').value='branch'; return confirm('Kindly Confirm?')"> <i class="icon-base bx bx-arrow-from-left"> </i> {{ __('Approve') }}</button>
+                    </div>    
+
+                    @elseif(Auth::user()->hasRole(['Invoice']))
+                    <div class="form-check form-check-inline">                            
+                        <button class="btn btn-success" type="submit" onclick="document.getElementById('employee_action_type').value='headOffice'; return confirm('Kindly Confirm?')"> <i class="icon-base bx bx-arrow-from-left"> </i> {{ __('Approve') }}</button>
+                    </div>
+                    <div class="form-check form-check-inline">                            
+                        <button class="btn btn-danger" type="submit" onclick="document.getElementById('employee_action_type').value='decline'; return confirm('Kindly Confirm?')"> <i class="icon-base bx bx-arrow-from-left"> </i> {{ __('Decline') }}</button>
+                    </div>
+                    @endif
+
                 <div class="card"> 
                     <div class="card-body"> 
                     <div class="table-responsive text-normal-dark"> 
@@ -681,6 +698,12 @@
                             <tr>
                                 <th> </th>
                                 <th>#</th>
+                                <th>Status</th>
+
+                                <th>Admin Assit.</th>
+                                <th>Branch</th>
+                                <th>H/O</th>
+
                                 <th> Employee ID </th>
                                 <th>Name</th>
                                 <th>Gender</th>
@@ -694,8 +717,7 @@
                                 <th>Payment Type</th>
                                 <th> Bank </th>
                                 <th>Account No.</th>
-                                <th>Status</th>
-                                <th>Status Date</th>
+                                <!-- <th>Status Date</th> -->
                                 <th>TAX</th>
                                 <th>TIN</th>
                                 <th>SSNIT</th>
@@ -703,20 +725,56 @@
                                 <th>Basic</th>
                                 <th>Allowance</th>
                                 <th> Created </th>
-                                <th> Period </th>
-                                <th> Updated</th>
-                                <th> Period </th>
-                                <th>Staff</th>
+                                <!-- <th> Period </th> -->
+                                <!-- <th> Updated</th> -->
+                                <!-- <th> Period </th> -->
+                                <!-- <th>Staff</th> -->
                                 <th>Action</th>
                             </tr>
                         </thead>
                         <tbody>
 
-                         @if(Auth::user()->hasRole(['Invoice','Manager', 'Finance Manager']))
+                         @if(Auth::user()->hasRole(['Invoice']) ||  (Auth::user()->hasRole(['Manager']) && Auth::user()->hasPermission('HR')) )
                             @foreach ($pendingEmployees as $key => $employee )
                             <tr>
                                 <td> <input class="checkBoxes form-check-input" type="checkbox" name="employees[]" value="{{ $employee->id }}" /></td>
                                 <td> {{ $key + 1 }} </td>
+
+                                @if($employee->status == 'Active')
+                                <td><span class="badge bg-label-success">{{$employee->status}}</span></td>
+                                @else
+                                <td><span class="badge bg-label-danger">{{$employee->status}}</span></td>
+                                @endif
+
+                                    <td> 
+                                        @if($employee->assit_status == 'approved')
+                                        {{$employee->user?->name}}
+                                        {{ $employee->assit_date?->format('l, F j, Y') }}
+                                        <span class="badge bg-label-success">{{$employee->assit_status}}</span>
+                                        @else
+                                        {{$employee->user?->name}}
+                                        {{ $employee->assit_date?->format('l, F j, Y') }}
+                                        <span class="badge bg-label-danger">{{$employee->assit_status}}</span>
+                                        @endif
+                                    </td>
+
+                                    <td>
+                                        @if($employee->bran_status == 'approved')
+                                        {{$employee->user1?->name}}
+                                        {{ $employee->bran_date?->format('l, F j, Y') }}
+                                        <span class="badge bg-label-success">{{$employee->bran_status}}</span>
+                                        @else
+                                        {{$employee->user1?->name}}
+                                        {{ $employee->bran_date?->format('l, F j, Y') }}
+                                        <span class="badge bg-label-danger">{{$employee->bran_status}}</span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        {{$employee->user2?->name}}
+                                        <span class="badge bg-label-danger">{{$employee->ho_status}}</span>
+                                    </td>
+
+
                                 <td> FWSS {{ $employee->id }}  </td>
                                 <td>{{$employee->name}}  </td>
                                 <td>{{ $employee->gender }}  </td>
@@ -730,12 +788,8 @@
                                 <td> {{ $employee->payment_type }}  </td>
                                 <td> {{  $employee->paymentInfo?->bank?->name  }} </td>
                                 <td> {{  $employee->paymentInfo?->acc_number  }} </td>
-                                @if($employee->status == 'Active')
-                                <td><span class="badge bg-label-success">{{$employee->status}}</span></td>
-                                @else
-                                <td><span class="badge bg-label-danger">{{$employee->status}}</span></td>
-                                @endif
-                                <td> {{ $employee->status_date?->format('F, Y') }} </td>
+
+                                <!-- <td> {{ $employee->status_date?->format('F, Y') }} </td> -->
                                  @if($employee->tax_button == 'on')
                                 <td> <span class="badge bg-label-dark"> {{  $employee->tax_button }} </span> </td>
                                 @else
@@ -752,10 +806,10 @@
                                 <td> {{$employee->basic_salary}} </td>
                                 <td> {{$employee->allowances}} </td>
                                 <td> {{ $employee->created_at?->format('F, Y') }} </td>
-                                <td> {{ $employee->created_at?->diffForHumans() }} </td>
+                                <!-- <td> {{ $employee->created_at?->diffForHumans() }} </td>
                                 <td>{{ $employee->updated_at?->format('F, Y') }} </td>
-                                <td>{{ $employee->updated_at?->diffForHumans() }} </td>
-                                <td>{{  $employee->user?->name }}</td>
+                                <td>{{ $employee->updated_at?->diffForHumans() }} </td> -->
+                                <!-- <td>{{  $employee->user?->name }}</td> -->
                                <td>
                                 <div class="dropdown">
                                     <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown">
@@ -763,8 +817,10 @@
                                     </button>
                                     <div class="dropdown-menu">
                                         <a class="dropdown-item" href="{{url('employees', $employee->id)}}"><i class="icon-base bx bxs-bullseye"></i> view</a>
+                                      @if($employee->status == 'Pending')
                                         <a class="dropdown-item" href="{{url('employees', $employee->id)}}/edit"><i class="icon-base bx bx-edit-alt me-1"></i> Edit</a>
-                                      @if(Auth::user()->hasNotRole(['Manager']))
+                                      @endif
+                                        @if(Auth::user()->hasNotRole(['Manager']))
                                         <hr>
                                         <a class="dropdown-item" href="{{url('employeesSalary', $employee->id)}}"><i class="icon-base bx bx-money-withdraw"></i> Salaries</a>
                                        @endif
@@ -790,8 +846,44 @@
                         @elseif(Auth::user()->field?->name == 'Accra')
                             @foreach ($employeeAccra as $key => $employee )
                             <tr>
-                                <td></td>
+                                <td> <input class="checkBoxes form-check-input" type="checkbox" name="employees[]" value="{{ $employee->id }}" /></td>
+
                                 <td> {{ $key + 1 }} </td>
+                                @if($employee->status == 'Active')
+                                <td><span class="badge bg-label-success">{{$employee->status}}</span></td>
+                                @else
+                                <td><span class="badge bg-label-danger">{{$employee->status}}</span></td>
+                                @endif
+
+                                    <td> 
+                                        @if($employee->assit_status == 'approved')
+                                        {{$employee->user?->name}}
+                                        {{ $employee->assit_date?->format('l, F j, Y') }}
+                                        <span class="badge bg-label-success">{{$employee->assit_status}}</span>
+                                        @else
+                                        {{$employee->user?->name}}
+                                        {{ $employee->assit_date?->format('l, F j, Y') }}
+                                        <span class="badge bg-label-danger">{{$employee->assit_status}}</span>
+                                        @endif
+                                    </td>
+
+                                    <td>
+                                        @if($employee->bran_status == 'approved')
+                                        {{$employee->user1?->name}}
+                                        {{ $employee->bran_date?->format('l, F j, Y') }}
+                                        <span class="badge bg-label-success">{{$employee->bran_status}}</span>
+                                        @else
+                                        {{$employee->user1?->name}}
+                                        {{ $employee->bran_date?->format('l, F j, Y') }}
+                                        <span class="badge bg-label-danger">{{$employee->bran_status}}</span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        {{$employee->user2?->name}}
+                                        <span class="badge bg-label-danger">{{$employee->ho_status}}</span>
+                                    </td>
+
+
                                 <td> FWSS {{ $employee->id }}  </td>
                                 <td>{{$employee->name}}  </td>
                                 <td>{{ $employee->gender }}  </td>
@@ -805,12 +897,8 @@
                                 <td> {{ $employee->payment_type }}  </td>
                                 <td> {{  $employee->paymentInfo?->bank?->name  }} </td>
                                 <td> {{  $employee->paymentInfo?->acc_number  }} </td>
-                                @if($employee->status == 'Active')
-                                <td><span class="badge bg-label-success">{{$employee->status}}</span></td>
-                                @else
-                                <td><span class="badge bg-label-danger">{{$employee->status}}</span></td>
-                                @endif
-                                <td> {{ $employee->status_date?->format('F, Y') }} </td>
+
+                                <!-- <td> {{ $employee->status_date?->format('F, Y') }} </td> -->
                                  @if($employee->tax_button == 'on')
                                 <td> <span class="badge bg-label-dark"> {{  $employee->tax_button }} </span> </td>
                                 @else
@@ -827,10 +915,10 @@
                                 <td> {{$employee->basic_salary}} </td>
                                 <td> {{$employee->allowances}} </td>
                                 <td> {{ $employee->created_at?->format('F, Y') }} </td>
-                                <td> {{ $employee->created_at?->diffForHumans() }} </td>
+                                <!-- <td> {{ $employee->created_at?->diffForHumans() }} </td>
                                 <td>{{ $employee->updated_at?->format('F, Y') }} </td>
-                                <td>{{ $employee->updated_at?->diffForHumans() }} </td>
-                                <td>{{  $employee->user?->name }}</td>
+                                <td>{{ $employee->updated_at?->diffForHumans() }} </td> -->
+                                <!-- <td>{{  $employee->user?->name }}</td> -->
                                <td>
                                 <div class="dropdown">
                                     <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown">
@@ -838,8 +926,10 @@
                                     </button>
                                     <div class="dropdown-menu">
                                         <a class="dropdown-item" href="{{url('employees', $employee->id)}}"><i class="icon-base bx bxs-bullseye"></i> view</a>
+                                      @if($employee->status == 'Pending')
                                         <a class="dropdown-item" href="{{url('employees', $employee->id)}}/edit"><i class="icon-base bx bx-edit-alt me-1"></i> Edit</a>
-                                      @if(Auth::user()->hasNotRole(['Manager']))
+                                        @endif
+                                        @if(Auth::user()->hasNotRole(['Manager']))
                                         <hr>
                                         <a class="dropdown-item" href="{{url('employeesSalary', $employee->id)}}"><i class="icon-base bx bx-money-withdraw"></i> Salaries</a>
                                        @endif
@@ -854,8 +944,45 @@
                        @if(Auth::user()->field?->name == 'Botwe')
                             @foreach ($employeeBotwe as $key => $employee )
                             <tr>
-                                <td></td>
+                                <td> <input class="checkBoxes form-check-input" type="checkbox" name="employees[]" value="{{ $employee->id }}" /></td>
+
                                 <td> {{ $key + 1 }} </td>
+
+                                @if($employee->status == 'Active')
+                                <td><span class="badge bg-label-success">{{$employee->status}}</span></td>
+                                @else
+                                <td><span class="badge bg-label-danger">{{$employee->status}}</span></td>
+                                @endif
+
+                                    <td> 
+                                        @if($employee->assit_status == 'approved')
+                                        {{$employee->user?->name}}
+                                        {{ $employee->assit_date?->format('l, F j, Y') }}
+                                        <span class="badge bg-label-success">{{$employee->assit_status}}</span>
+                                        @else
+                                        {{$employee->user?->name}}
+                                        {{ $employee->assit_date?->format('l, F j, Y') }}
+                                        <span class="badge bg-label-danger">{{$employee->assit_status}}</span>
+                                        @endif
+                                    </td>
+
+                                    <td>
+                                        @if($employee->bran_status == 'approved')
+                                        {{$employee->user1?->name}}
+                                        {{ $employee->bran_date?->format('l, F j, Y') }}
+                                        <span class="badge bg-label-success">{{$employee->bran_status}}</span>
+                                        @else
+                                        {{$employee->user1?->name}}
+                                        {{ $employee->bran_date?->format('l, F j, Y') }}
+                                        <span class="badge bg-label-danger">{{$employee->bran_status}}</span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        {{$employee->user2?->name}}
+                                        <span class="badge bg-label-danger">{{$employee->ho_status}}</span>
+                                    </td>
+
+
                                 <td> FWSS {{ $employee->id }}  </td>
                                 <td>{{$employee->name}}  </td>
                                 <td>{{ $employee->gender }}  </td>
@@ -869,12 +996,8 @@
                                 <td> {{ $employee->payment_type }}  </td>
                                 <td> {{  $employee->paymentInfo?->bank?->name  }} </td>
                                 <td> {{  $employee->paymentInfo?->acc_number  }} </td>
-                                @if($employee->status == 'Active')
-                                <td><span class="badge bg-label-success">{{$employee->status}}</span></td>
-                                @else
-                                <td><span class="badge bg-label-danger">{{$employee->status}}</span></td>
-                                @endif
-                                <td> {{ $employee->status_date?->format('F, Y') }} </td>
+
+                                <!-- <td> {{ $employee->status_date?->format('F, Y') }} </td> -->
                                  @if($employee->tax_button == 'on')
                                 <td> <span class="badge bg-label-dark"> {{  $employee->tax_button }} </span> </td>
                                 @else
@@ -891,10 +1014,10 @@
                                 <td> {{$employee->basic_salary}} </td>
                                 <td> {{$employee->allowances}} </td>
                                 <td> {{ $employee->created_at?->format('F, Y') }} </td>
-                                <td> {{ $employee->created_at?->diffForHumans() }} </td>
+                                <!-- <td> {{ $employee->created_at?->diffForHumans() }} </td>
                                 <td>{{ $employee->updated_at?->format('F, Y') }} </td>
-                                <td>{{ $employee->updated_at?->diffForHumans() }} </td>
-                                <td>{{  $employee->user?->name }}</td>
+                                <td>{{ $employee->updated_at?->diffForHumans() }} </td> -->
+                                <!-- <td>{{  $employee->user?->name }}</td> -->
                                <td>
                                 <div class="dropdown">
                                     <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown">
@@ -902,8 +1025,10 @@
                                     </button>
                                     <div class="dropdown-menu">
                                         <a class="dropdown-item" href="{{url('employees', $employee->id)}}"><i class="icon-base bx bxs-bullseye"></i> view</a>
+                                      @if($employee->status == 'Pending')
                                         <a class="dropdown-item" href="{{url('employees', $employee->id)}}/edit"><i class="icon-base bx bx-edit-alt me-1"></i> Edit</a>
-                                      @if(Auth::user()->hasNotRole(['Manager']))
+                                     @endif
+                                        @if(Auth::user()->hasNotRole(['Manager']))
                                         <hr>
                                         <a class="dropdown-item" href="{{url('employeesSalary', $employee->id)}}"><i class="icon-base bx bx-money-withdraw"></i> Salaries</a>
                                        @endif
@@ -918,8 +1043,45 @@
                        @if(Auth::user()->field?->name == 'Tema')
                         @foreach ($Tema as $key => $employee )
                             <tr>
-                                <td></td>
+                                <td> <input class="checkBoxes form-check-input" type="checkbox" name="employees[]" value="{{ $employee->id }}" /></td>
+
                                 <td> {{ $key + 1 }} </td>
+
+                                @if($employee->status == 'Active')
+                                <td><span class="badge bg-label-success">{{$employee->status}}</span></td>
+                                @else
+                                <td><span class="badge bg-label-danger">{{$employee->status}}</span></td>
+                                @endif
+
+                                    <td> 
+                                        @if($employee->assit_status == 'approved')
+                                        {{$employee->user?->name}}
+                                        {{ $employee->assit_date?->format('l, F j, Y') }}
+                                        <span class="badge bg-label-success">{{$employee->assit_status}}</span>
+                                        @else
+                                        {{$employee->user?->name}}
+                                        {{ $employee->assit_date?->format('l, F j, Y') }}
+                                        <span class="badge bg-label-danger">{{$employee->assit_status}}</span>
+                                        @endif
+                                    </td>
+
+                                    <td>
+                                        @if($employee->bran_status == 'approved')
+                                        {{$employee->user1?->name}}
+                                        {{ $employee->bran_date?->format('l, F j, Y') }}
+                                        <span class="badge bg-label-success">{{$employee->bran_status}}</span>
+                                        @else
+                                        {{$employee->user1?->name}}
+                                        {{ $employee->bran_date?->format('l, F j, Y') }}
+                                        <span class="badge bg-label-danger">{{$employee->bran_status}}</span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        {{$employee->user2?->name}}
+                                        <span class="badge bg-label-danger">{{$employee->ho_status}}</span>
+                                    </td>
+
+
                                 <td> FWSS {{ $employee->id }}  </td>
                                 <td>{{$employee->name}}  </td>
                                 <td>{{ $employee->gender }}  </td>
@@ -933,12 +1095,8 @@
                                 <td> {{ $employee->payment_type }}  </td>
                                 <td> {{  $employee->paymentInfo?->bank?->name  }} </td>
                                 <td> {{  $employee->paymentInfo?->acc_number  }} </td>
-                                @if($employee->status == 'Active')
-                                <td><span class="badge bg-label-success">{{$employee->status}}</span></td>
-                                @else
-                                <td><span class="badge bg-label-danger">{{$employee->status}}</span></td>
-                                @endif
-                                <td> {{ $employee->status_date?->format('F, Y') }} </td>
+
+                                <!-- <td> {{ $employee->status_date?->format('F, Y') }} </td> -->
                                  @if($employee->tax_button == 'on')
                                 <td> <span class="badge bg-label-dark"> {{  $employee->tax_button }} </span> </td>
                                 @else
@@ -955,10 +1113,10 @@
                                 <td> {{$employee->basic_salary}} </td>
                                 <td> {{$employee->allowances}} </td>
                                 <td> {{ $employee->created_at?->format('F, Y') }} </td>
-                                <td> {{ $employee->created_at?->diffForHumans() }} </td>
+                                <!-- <td> {{ $employee->created_at?->diffForHumans() }} </td>
                                 <td>{{ $employee->updated_at?->format('F, Y') }} </td>
-                                <td>{{ $employee->updated_at?->diffForHumans() }} </td>
-                                <td>{{  $employee->user?->name }}</td>
+                                <td>{{ $employee->updated_at?->diffForHumans() }} </td> -->
+                                <!-- <td>{{  $employee->user?->name }}</td> -->
                                <td>
                                 <div class="dropdown">
                                     <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown">
@@ -966,8 +1124,10 @@
                                     </button>
                                     <div class="dropdown-menu">
                                         <a class="dropdown-item" href="{{url('employees', $employee->id)}}"><i class="icon-base bx bxs-bullseye"></i> view</a>
+                                      @if($employee->status == 'Pending')
                                         <a class="dropdown-item" href="{{url('employees', $employee->id)}}/edit"><i class="icon-base bx bx-edit-alt me-1"></i> Edit</a>
-                                      @if(Auth::user()->hasNotRole(['Manager']))
+                                      @endif
+                                        @if(Auth::user()->hasNotRole(['Manager']))
                                         <hr>
                                         <a class="dropdown-item" href="{{url('employeesSalary', $employee->id)}}"><i class="icon-base bx bx-money-withdraw"></i> Salaries</a>
                                        @endif
@@ -982,8 +1142,43 @@
                       @if(Auth::user()->field?->name == 'Takoradi')
                         @foreach ($employeeTakoradi as $key => $employee )
                             <tr>
-                                <td></td>
+                                <td> <input class="checkBoxes form-check-input" type="checkbox" name="employees[]" value="{{ $employee->id }}" /></td>
+
                                 <td> {{ $key + 1 }} </td>
+                                @if($employee->status == 'Active')
+                                <td><span class="badge bg-label-success">{{$employee->status}}</span></td>
+                                @else
+                                <td><span class="badge bg-label-danger">{{$employee->status}}</span></td>
+                                @endif
+                                    <td> 
+                                        @if($employee->assit_status == 'approved')
+                                        {{$employee->user?->name}}
+                                        {{ $employee->assit_date?->format('l, F j, Y') }}
+                                        <span class="badge bg-label-success">{{$employee->assit_status}}</span>
+                                        @else
+                                        {{$employee->user?->name}}
+                                        {{ $employee->assit_date?->format('l, F j, Y') }}
+                                        <span class="badge bg-label-danger">{{$employee->assit_status}}</span>
+                                        @endif
+                                    </td>
+
+                                    <td>
+                                        @if($employee->bran_status == 'approved')
+                                        {{$employee->user1?->name}}
+                                        {{ $employee->bran_date?->format('l, F j, Y') }}
+                                        <span class="badge bg-label-success">{{$employee->bran_status}}</span>
+                                        @else
+                                        {{$employee->user1?->name}}
+                                        {{ $employee->bran_date?->format('l, F j, Y') }}
+                                        <span class="badge bg-label-danger">{{$employee->bran_status}}</span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        {{$employee->user2?->name}}
+                                        <span class="badge bg-label-danger">{{$employee->ho_status}}</span>
+                                    </td>
+
+
                                 <td> FWSS {{ $employee->id }}  </td>
                                 <td>{{$employee->name}}  </td>
                                 <td>{{ $employee->gender }}  </td>
@@ -997,12 +1192,8 @@
                                 <td> {{ $employee->payment_type }}  </td>
                                 <td> {{  $employee->paymentInfo?->bank?->name  }} </td>
                                 <td> {{  $employee->paymentInfo?->acc_number  }} </td>
-                                @if($employee->status == 'Active')
-                                <td><span class="badge bg-label-success">{{$employee->status}}</span></td>
-                                @else
-                                <td><span class="badge bg-label-danger">{{$employee->status}}</span></td>
-                                @endif
-                                <td> {{ $employee->status_date?->format('F, Y') }} </td>
+
+                                <!-- <td> {{ $employee->status_date?->format('F, Y') }} </td> -->
                                  @if($employee->tax_button == 'on')
                                 <td> <span class="badge bg-label-dark"> {{  $employee->tax_button }} </span> </td>
                                 @else
@@ -1019,10 +1210,10 @@
                                 <td> {{$employee->basic_salary}} </td>
                                 <td> {{$employee->allowances}} </td>
                                 <td> {{ $employee->created_at?->format('F, Y') }} </td>
-                                <td> {{ $employee->created_at?->diffForHumans() }} </td>
+                                <!-- <td> {{ $employee->created_at?->diffForHumans() }} </td>
                                 <td>{{ $employee->updated_at?->format('F, Y') }} </td>
-                                <td>{{ $employee->updated_at?->diffForHumans() }} </td>
-                                <td>{{  $employee->user?->name }}</td>
+                                <td>{{ $employee->updated_at?->diffForHumans() }} </td> -->
+                                <!-- <td>{{  $employee->user?->name }}</td> -->
                                <td>
                                 <div class="dropdown">
                                     <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown">
@@ -1030,8 +1221,10 @@
                                     </button>
                                     <div class="dropdown-menu">
                                         <a class="dropdown-item" href="{{url('employees', $employee->id)}}"><i class="icon-base bx bxs-bullseye"></i> view</a>
+                                      @if($employee->status == 'Pending')
                                         <a class="dropdown-item" href="{{url('employees', $employee->id)}}/edit"><i class="icon-base bx bx-edit-alt me-1"></i> Edit</a>
-                                      @if(Auth::user()->hasNotRole(['Manager']))
+                                      @endif
+                                        @if(Auth::user()->hasNotRole(['Manager']))
                                         <hr>
                                         <a class="dropdown-item" href="{{url('employeesSalary', $employee->id)}}"><i class="icon-base bx bx-money-withdraw"></i> Salaries</a>
                                        @endif
@@ -1047,8 +1240,44 @@
                       @if(Auth::user()->field?->name == 'Koforidua')
                         @foreach ($employeeKoforidua as $key => $employee )
                             <tr>
-                                <td></td>
+                                <td> <input class="checkBoxes form-check-input" type="checkbox" name="employees[]" value="{{ $employee->id }}" /></td>
+
                                 <td> {{ $key + 1 }} </td>
+
+                                @if($employee->status == 'Active')
+                                <td><span class="badge bg-label-success">{{$employee->status}}</span></td>
+                                @else
+                                <td><span class="badge bg-label-danger">{{$employee->status}}</span></td>
+                                @endif
+                                    <td> 
+                                        @if($employee->assit_status == 'approved')
+                                        {{$employee->user?->name}}
+                                        {{ $employee->assit_date?->format('l, F j, Y') }}
+                                        <span class="badge bg-label-success">{{$employee->assit_status}}</span>
+                                        @else
+                                        {{$employee->user?->name}}
+                                        {{ $employee->assit_date?->format('l, F j, Y') }}
+                                        <span class="badge bg-label-danger">{{$employee->assit_status}}</span>
+                                        @endif
+                                    </td>
+
+                                    <td>
+                                        @if($employee->bran_status == 'approved')
+                                        {{$employee->user1?->name}}
+                                        {{ $employee->bran_date?->format('l, F j, Y') }}
+                                        <span class="badge bg-label-success">{{$employee->bran_status}}</span>
+                                        @else
+                                        {{$employee->user1?->name}}
+                                        {{ $employee->bran_date?->format('l, F j, Y') }}
+                                        <span class="badge bg-label-danger">{{$employee->bran_status}}</span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        {{$employee->user2?->name}}
+                                        <span class="badge bg-label-danger">{{$employee->ho_status}}</span>
+                                    </td>
+
+
                                 <td> FWSS {{ $employee->id }}  </td>
                                 <td>{{$employee->name}}  </td>
                                 <td>{{ $employee->gender }}  </td>
@@ -1062,12 +1291,8 @@
                                 <td> {{ $employee->payment_type }}  </td>
                                 <td> {{  $employee->paymentInfo?->bank?->name  }} </td>
                                 <td> {{  $employee->paymentInfo?->acc_number  }} </td>
-                                @if($employee->status == 'Active')
-                                <td><span class="badge bg-label-success">{{$employee->status}}</span></td>
-                                @else
-                                <td><span class="badge bg-label-danger">{{$employee->status}}</span></td>
-                                @endif
-                                <td> {{ $employee->status_date?->format('F, Y') }} </td>
+
+                                <!-- <td> {{ $employee->status_date?->format('F, Y') }} </td> -->
                                  @if($employee->tax_button == 'on')
                                 <td> <span class="badge bg-label-dark"> {{  $employee->tax_button }} </span> </td>
                                 @else
@@ -1084,10 +1309,10 @@
                                 <td> {{$employee->basic_salary}} </td>
                                 <td> {{$employee->allowances}} </td>
                                 <td> {{ $employee->created_at?->format('F, Y') }} </td>
-                                <td> {{ $employee->created_at?->diffForHumans() }} </td>
+                                <!-- <td> {{ $employee->created_at?->diffForHumans() }} </td>
                                 <td>{{ $employee->updated_at?->format('F, Y') }} </td>
-                                <td>{{ $employee->updated_at?->diffForHumans() }} </td>
-                                <td>{{  $employee->user?->name }}</td>
+                                <td>{{ $employee->updated_at?->diffForHumans() }} </td> -->
+                                <!-- <td>{{  $employee->user?->name }}</td> -->
                                <td>
                                 <div class="dropdown">
                                     <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown">
@@ -1095,8 +1320,10 @@
                                     </button>
                                     <div class="dropdown-menu">
                                         <a class="dropdown-item" href="{{url('employees', $employee->id)}}"><i class="icon-base bx bxs-bullseye"></i> view</a>
+                                      @if($employee->status == 'Pending')
                                         <a class="dropdown-item" href="{{url('employees', $employee->id)}}/edit"><i class="icon-base bx bx-edit-alt me-1"></i> Edit</a>
-                                      @if(Auth::user()->hasNotRole(['Manager']))
+                                     @endif
+                                        @if(Auth::user()->hasNotRole(['Manager']))
                                         <hr>
                                         <a class="dropdown-item" href="{{url('employeesSalary', $employee->id)}}"><i class="icon-base bx bx-money-withdraw"></i> Salaries</a>
                                        @endif
@@ -1111,8 +1338,43 @@
                       @if(Auth::user()->field?->name == 'Kumasi')
                         @foreach ($employeeKumasi as $key => $employee )
                             <tr>
-                                <td></td>
+                                <td> <input class="checkBoxes form-check-input" type="checkbox" name="employees[]" value="{{ $employee->id }}" /></td>
+
                                 <td> {{ $key + 1 }} </td>
+                                @if($employee->status == 'Active')
+                                <td><span class="badge bg-label-success">{{$employee->status}}</span></td>
+                                @else
+                                <td><span class="badge bg-label-danger">{{$employee->status}}</span></td>
+                                @endif
+                                    <td> 
+                                        @if($employee->assit_status == 'approved')
+                                        {{$employee->user?->name}}
+                                        {{ $employee->assit_date?->format('l, F j, Y') }}
+                                        <span class="badge bg-label-success">{{$employee->assit_status}}</span>
+                                        @else
+                                        {{$employee->user?->name}}
+                                        {{ $employee->assit_date?->format('l, F j, Y') }}
+                                        <span class="badge bg-label-danger">{{$employee->assit_status}}</span>
+                                        @endif
+                                    </td>
+
+                                    <td>
+                                        @if($employee->bran_status == 'approved')
+                                        {{$employee->user1?->name}}
+                                        {{ $employee->bran_date?->format('l, F j, Y') }}
+                                        <span class="badge bg-label-success">{{$employee->bran_status}}</span>
+                                        @else
+                                        {{$employee->user1?->name}}
+                                        {{ $employee->bran_date?->format('l, F j, Y') }}
+                                        <span class="badge bg-label-danger">{{$employee->bran_status}}</span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        {{$employee->user2?->name}}
+                                        <span class="badge bg-label-danger">{{$employee->ho_status}}</span>
+                                    </td>
+
+
                                 <td> FWSS {{ $employee->id }}  </td>
                                 <td>{{$employee->name}}  </td>
                                 <td>{{ $employee->gender }}  </td>
@@ -1126,12 +1388,8 @@
                                 <td> {{ $employee->payment_type }}  </td>
                                 <td> {{  $employee->paymentInfo?->bank?->name  }} </td>
                                 <td> {{  $employee->paymentInfo?->acc_number  }} </td>
-                                @if($employee->status == 'Active')
-                                <td><span class="badge bg-label-success">{{$employee->status}}</span></td>
-                                @else
-                                <td><span class="badge bg-label-danger">{{$employee->status}}</span></td>
-                                @endif
-                                <td> {{ $employee->status_date?->format('F, Y') }} </td>
+
+                                <!-- <td> {{ $employee->status_date?->format('F, Y') }} </td> -->
                                  @if($employee->tax_button == 'on')
                                 <td> <span class="badge bg-label-dark"> {{  $employee->tax_button }} </span> </td>
                                 @else
@@ -1148,10 +1406,10 @@
                                 <td> {{$employee->basic_salary}} </td>
                                 <td> {{$employee->allowances}} </td>
                                 <td> {{ $employee->created_at?->format('F, Y') }} </td>
-                                <td> {{ $employee->created_at?->diffForHumans() }} </td>
+                                <!-- <td> {{ $employee->created_at?->diffForHumans() }} </td>
                                 <td>{{ $employee->updated_at?->format('F, Y') }} </td>
-                                <td>{{ $employee->updated_at?->diffForHumans() }} </td>
-                                <td>{{  $employee->user?->name }}</td>
+                                <td>{{ $employee->updated_at?->diffForHumans() }} </td> -->
+                                <!-- <td>{{  $employee->user?->name }}</td> -->
                                <td>
                                 <div class="dropdown">
                                     <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown">
@@ -1159,8 +1417,10 @@
                                     </button>
                                     <div class="dropdown-menu">
                                         <a class="dropdown-item" href="{{url('employees', $employee->id)}}"><i class="icon-base bx bxs-bullseye"></i> view</a>
+                                      @if($employee->status == 'Pending')
                                         <a class="dropdown-item" href="{{url('employees', $employee->id)}}/edit"><i class="icon-base bx bx-edit-alt me-1"></i> Edit</a>
-                                      @if(Auth::user()->hasNotRole(['Manager']))
+                                      @endif
+                                        @if(Auth::user()->hasNotRole(['Manager']))
                                         <hr>
                                         <a class="dropdown-item" href="{{url('employeesSalary', $employee->id)}}"><i class="icon-base bx bx-money-withdraw"></i> Salaries</a>
                                        @endif
