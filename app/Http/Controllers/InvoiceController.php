@@ -213,6 +213,7 @@ class InvoiceController extends Controller
         $tema = Invoice::whereRelation('client', 'field_id', 3)->where('invoice_month', $month)->get();
         $temaTotal = $tema->sum('total');
         $temaCount = count($tema);
+
         $temaGuards = $this->totalInvoiceGuards($tema);
 
 
@@ -236,11 +237,12 @@ class InvoiceController extends Controller
         $shyhills = Invoice::whereRelation('client', 'field_id', 7)->where('invoice_month', $month)->get();
         $shyhillsTotal = $shyhills->sum('total');
         $shyhillsCount = count($shyhills);
+        $temashai = $tema->concat($shyhills);
         $shyhillsGuards = $this->totalInvoiceGuards($shyhills);
 
 
         // dd($invoicemonth);
-        return view('sales.invoice_dashboard_month', compact('reportInvoicesGuards', 'accraGuards', 'botweGuards', 'temaGuards', 'takoradiGuards', 'koforiduaGuards', 'kumasiGuards', 'shyhillsGuards', 'invoiceTotal', 'month','invoiceCount', 'reportInvoices', 'accraTotal', 'accraCount', 'botweTotal', 'botweCount', 'temaTotal', 'temaCount', 'takoradiTotal', 'takoradiCount', 'koforiduaTotal', 'koforiduaCount', 'kumasiTotal', 'kumasiCount', 'shyhillsTotal', 'shyhillsCount'));
+        return view('sales.invoice_dashboard_month', compact('temashai', 'reportInvoicesGuards', 'accraGuards', 'botwe','botweGuards', 'temaGuards', 'takoradiGuards', 'koforiduaGuards', 'kumasiGuards', 'shyhillsGuards', 'invoiceTotal', 'month','invoiceCount', 'reportInvoices', 'accra','accraTotal', 'accraCount', 'botweTotal', 'botweCount', 'tema','temaTotal', 'temaCount', 'takoradi','takoradiTotal', 'takoradiCount', 'koforidua','koforiduaTotal', 'koforiduaCount', 'kumasi','kumasiTotal', 'kumasiCount', 'shyhillsTotal', 'shyhillsCount'));
          
     }   
 
@@ -251,6 +253,8 @@ class InvoiceController extends Controller
 
         public function totalInvoiceGuards($invoices)
         {
+            $guards = [];
+
             foreach($invoices as $invoice)
             {
                 foreach($invoice->invoice_data as $data)
@@ -261,6 +265,38 @@ class InvoiceController extends Controller
             }
         return collect($guards)->sum() ;
 
+        }
+
+        protected function groupInvoicesByAging($invoices)
+        {
+            $groupedInvoices = collect($invoices)->groupBy(function ($invoice) {
+                $dueDate = $invoice->due_date ? Carbon::parse($invoice->due_date) : Carbon::now();
+                $now = Carbon::now();
+                $diffInDays = $dueDate->diffInDays($now);
+
+                if ($diffInDays <= 30) {
+                    return '0-30 days';
+                } elseif ($diffInDays <= 60) {
+                    return '31-60 days';
+                } elseif ($diffInDays <= 90) {
+                    return '61-90 days';
+                }
+
+                return '90+ days';
+            });
+
+            $agingBuckets = collect([
+                '0-30 days' => collect(),
+                '31-60 days' => collect(),
+                '61-90 days' => collect(),
+                '90+ days' => collect(),
+            ]);
+
+            foreach ($agingBuckets->keys() as $bucket) {
+                $agingBuckets[$bucket] = $groupedInvoices->has($bucket) ? $groupedInvoices->get($bucket) : collect();
+            }
+
+            return $agingBuckets;
         }
 
 
@@ -440,68 +476,67 @@ class InvoiceController extends Controller
 
         // Get invoices Group each invoice by aging periods (0-30 days, 31-60 days, 61-90 days, 90+ days) 
 
-        $reportInvoicesAging = Invoice::whereIn('status', ['unpaid', 'uncompleted'])->get()->groupBy(function($invoice) {
-          
-            $dueDate = Carbon::parse($invoice->due_date);
-            $now = Carbon::now();
-            $diffInDays = $dueDate->diffInDays($now);
-
-            if ($diffInDays <= 30) {
-                return '0-30 days';
-            } elseif ($diffInDays <= 60) {
-                return '31-60 days';
-            } elseif ($diffInDays <= 90) {
-                return '61-90 days';
-            } else {
-                return '90+ days';
-            }
-
-        });
+        $reportInvoicesAging = $this->groupInvoicesByAging(
+            Invoice::whereIn('status', ['unpaid', 'uncompleted'])->get()
+        );
 
         $accra = Invoice::whereRelation('client', 'field_id', 1)->whereIn('status', ['unpaid', 'uncompleted'])->get();
+        $accraAging = $this->groupInvoicesByAging($accra);
+        // dd($accraAging);
+        // foreach($accraAging['0-30 days'] as $key => $invoice)
+        //     {
+        //         echo $key +1 . " ". $invoice . "<br>".  "<br>";
+        //     }
+        
         $accraPcount = Invoice::whereRelation('client', 'field_id', 1)->where('balance', '>', 0.00)->where('status', 'uncompleted')->get();
 
         $accraTotal = $accra->sum('total');
         $accraCount = count($accra);
 
         $botwe = Invoice::whereRelation('client', 'field_id', 2)->whereIn('status', ['unpaid', 'uncompleted'])->get();
+        $botweAging = $this->groupInvoicesByAging($botwe);
         $botwePcount = Invoice::whereRelation('client', 'field_id', 2)->where('balance', '>', 0.00)->where('status', 'uncompleted')->get();
 
         $botweTotal = $botwe->sum('total');
         $botweCount = count($botwe);
 
         $tema = Invoice::whereRelation('client', 'field_id', 3)->whereIn('status', ['unpaid', 'uncompleted'])->get();
+        $temaAging = $this->groupInvoicesByAging($tema);
         $temaPcount = Invoice::whereRelation('client', 'field_id', 3)->where('balance', '>', 0.00)->where('status', 'uncompleted')->get();
 
         $temaTotal = $tema->sum('total');
         $temaCount = count($tema);
 
         $takoradi = Invoice::whereRelation('client', 'field_id', 4)->whereIn('status', ['unpaid', 'uncompleted'])->get();
+        $takoradiAging = $this->groupInvoicesByAging($takoradi);
         $takoradiPcount = Invoice::whereRelation('client', 'field_id', 4)->where('balance', '>', 0.00)->where('status', 'uncompleted')->get();
 
         $takoradiTotal = $takoradi->sum('total');
         $takoradiCount = count($takoradi);
 
         $koforidua = Invoice::whereRelation('client', 'field_id', 5)->whereIn('status', ['unpaid', 'uncompleted'])->get();
+        $koforiduaAging = $this->groupInvoicesByAging($koforidua);
         $koforiduaPcount = Invoice::whereRelation('client', 'field_id', 5)->where('balance', '>', 0.00)->where('status', 'uncompleted')->get();
 
         $koforiduaTotal = $koforidua->sum('total');
         $koforiduaCount = count($koforidua);
 
         $kumasi = Invoice::whereRelation('client', 'field_id', 6)->whereIn('status', ['unpaid', 'uncompleted'])->get();
+        $kumasiAging = $this->groupInvoicesByAging($kumasi);
         $kumasiPcount = Invoice::whereRelation('client', 'field_id', 6)->where('balance', '>', 0.00)->where('status', 'uncompleted')->get();
 
         $kumasiTotal = $kumasi->sum('total');
         $kumasiCount = count($kumasi);
 
         $shyhills = Invoice::whereRelation('client', 'field_id', 7)->whereIn('status', ['unpaid', 'uncompleted'])->get();
+        $shyhillsAging = $this->groupInvoicesByAging($shyhills);
         $shyhillsPcount = Invoice::whereRelation('client', 'field_id', 7)->where('balance', '>', 0.00)->where('status', 'uncompleted')->get();
 
         $shyhillsTotal = $shyhills->sum('total');
         $shyhillsCount = count($shyhills);
 
 
-        return view('sales.invoice_outstanding', compact( 'reportInvoicesAging', 'reportPinvoices', 'accraPcount','botwePcount', 'temaPcount', 'takoradiPcount', 'koforiduaPcount', 'kumasiPcount', 'shyhillsPcount','reportInvoices', 'accra', 'botwe', 'tema', 'shyhills','takoradi', 'koforidua', 'kumasi','accraTotal', 'accraCount', 'botweTotal', 'botweCount', 'temaTotal', 'shyhillsTotal', 'shyhillsCount','temaCount', 'takoradiTotal', 'takoradiCount', 'koforiduaTotal', 'koforiduaCount', 'kumasiTotal', 'kumasiCount'));
+        return view('sales.invoice_outstanding', compact( 'reportInvoicesAging', 'reportPinvoices', 'accraAging', 'botweAging', 'temaAging', 'takoradiAging', 'koforiduaAging', 'kumasiAging', 'shyhillsAging', 'accraPcount','botwePcount', 'temaPcount', 'takoradiPcount', 'koforiduaPcount', 'kumasiPcount', 'shyhillsPcount','reportInvoices', 'accra', 'botwe', 'tema', 'shyhills','takoradi', 'koforidua', 'kumasi','accraTotal', 'accraCount', 'botweTotal', 'botweCount', 'temaTotal', 'shyhillsTotal', 'shyhillsCount','temaCount', 'takoradiTotal', 'takoradiCount', 'koforiduaTotal', 'koforiduaCount', 'kumasiTotal', 'kumasiCount'));
     }
 
     // Search invoices with part payment outstanding   

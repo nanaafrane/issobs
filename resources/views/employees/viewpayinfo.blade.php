@@ -292,7 +292,8 @@
 
             @endif
 
-            @if(Auth::user()->hasRole(['Invoice', 'Finance Manager']))
+        @if(Auth::user()->hasPermission('Accounts') && Auth::user()->hasRole(['Invoice', 'Officer', 'Director', 'Finance Manager']) )
+
             <li class="menu-header small text-uppercase"><span class="menu-header-text">PAYROLL</span></li>
             <li class="menu-item">
                     <a href="javascript:void(0);" class="menu-link menu-toggle">
@@ -300,6 +301,8 @@
                     <div class="text-truncate" data-i18n="Payroll">Payroll</div>
                     </a>
                     <ul class="menu-sub">
+                @if(Auth::user()->hasRole([ 'Finance Manager']))
+
                     <li class="menu-item">
                         <a href="{{ url('salaries') }}" class="menu-link">
                         <i class="menu-icon tf-icons bx bxs-user-account"></i>
@@ -307,13 +310,13 @@
                         </a>
                     </li>
 
-                    @if(Auth::user()->hasPermission('Accounts'))
                     <li class="menu-item">
                         <a href="{{ url('salaries/create') }}" class="menu-link">
                         <i class="menu-icon tf-icons bx bx-money-withdraw"></i>
                         <div class="text-truncate" data-i18n="Salaries">Salaries</div>
                         </a>
                     </li>
+                     @endif
 
                     <li class="menu-item">
                         <a href="{{ url('salariesTransaction') }}" class="menu-link">
@@ -322,20 +325,7 @@
                         </a>
                     </li>
 
-                                    <!-- <li class="menu-item">
-                    <a href="{{ url('salariesBulkCash') }}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bxs-group"></i>
-                    <div class="text-truncate" data-i18n="Transaction">Bulk Cash Salaries</div>
-                    </a>
-                </li> -->
 
-                    <!-- <li class="menu-item">
-                        <a href="{{ url('salariesInvPayroll') }}" class="menu-link">
-                        <i class="menu-icon tf-icons bx bx-git-compare"></i>
-                        <div class="text-truncate" data-i18n="InvtoPayroll">Invoice to Payroll</div>
-                        </a>
-                    </li> -->
-                     @endif
                     </ul>
                 </li>
             @endif
@@ -364,7 +354,7 @@
               <i class="bx bx-money-withdraw me-1"></i> Salaries
             </a>
           @endif
-          @if ($employee_pay_info->employee?->status == 'Active')
+           @if($employee_pay_info->employee?->ho_status !== 'approved'  || (Auth::user()->department?->name == 'HR' && Auth::user()->role?->name == 'Manager') || Auth::user()->hasRole(['Finance Manager']) )
             <a href="{{ url('employeesPayInfo/'.$employee_pay_info->employee_id) }}" class="btn btn-dark btn-sm mb-2">
               <i class="bx bx-edit-alt me-1"></i> Edit Bank Details
             </a>
@@ -372,24 +362,6 @@
         </div>
       </div>
     </div>
-
-    <!-- <div class="row mb-3">
-      <div class="col-12">
-        <ul class="nav nav-pills flex-column flex-md-row gap-2">
-          <li class="nav-item">
-            <a class="nav-link" href="{{ url('employees', $employee_pay_info->employee_id) }}"><i class="bx bx-user me-1"></i> Employee Details</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link active" href="javascript:void(0);"><i class="bx bxs-comment-detail me-1"></i> Payment Info</a>
-          </li>
-          @if(Auth::user()->hasRole(['Finance Manager', 'Manager']))
-            <li class="nav-item">
-              <a class="nav-link" href="{{ url('employeesSalary', $employee_pay_info->employee_id) }}"><i class="bx bx-money-withdraw me-1"></i> Salaries</a>
-            </li>
-          @endif
-        </ul>
-      </div>
-    </div> -->
 
     <div class="row g-4">
 

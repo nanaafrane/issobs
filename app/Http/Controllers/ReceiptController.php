@@ -1931,7 +1931,7 @@ class ReceiptController extends Controller
 
         // dd($accraTotal, $accraCount);
         $botwe = Receipt::whereRelation('client', 'field_id', 2)->where('amount_received', '>', 0.00)->get();
-        $botweRmountReceived = $botwe->sum('amount_received');
+        $botweAmountReceived = $botwe->sum('amount_received');
         $botweWHTAmount = $botwe->sum('wht_amount');
 
         $tema = Receipt::whereRelation('client', 'field_id', 3)->where('amount_received', '>', 0.00)->get();

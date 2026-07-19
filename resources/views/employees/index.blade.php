@@ -299,7 +299,8 @@
 
             @endif
 
-            @if(Auth::user()->hasRole(['Invoice', 'Finance Manager']))
+        @if(Auth::user()->hasPermission('Accounts') && Auth::user()->hasRole(['Invoice', 'Officer', 'Director', 'Finance Manager']) )
+
             <li class="menu-header small text-uppercase"><span class="menu-header-text">PAYROLL</span></li>
             <li class="menu-item">
                     <a href="javascript:void(0);" class="menu-link menu-toggle">
@@ -307,6 +308,8 @@
                     <div class="text-truncate" data-i18n="Payroll">Payroll</div>
                     </a>
                     <ul class="menu-sub">
+                @if(Auth::user()->hasRole([ 'Finance Manager']))
+
                     <li class="menu-item">
                         <a href="{{ url('salaries') }}" class="menu-link">
                         <i class="menu-icon tf-icons bx bxs-user-account"></i>
@@ -314,13 +317,13 @@
                         </a>
                     </li>
 
-                    @if(Auth::user()->hasPermission('Accounts'))
                     <li class="menu-item">
                         <a href="{{ url('salaries/create') }}" class="menu-link">
                         <i class="menu-icon tf-icons bx bx-money-withdraw"></i>
                         <div class="text-truncate" data-i18n="Salaries">Salaries</div>
                         </a>
                     </li>
+                     @endif
 
                     <li class="menu-item">
                         <a href="{{ url('salariesTransaction') }}" class="menu-link">
@@ -329,20 +332,7 @@
                         </a>
                     </li>
 
-                                    <!-- <li class="menu-item">
-                    <a href="{{ url('salariesBulkCash') }}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bxs-group"></i>
-                    <div class="text-truncate" data-i18n="Transaction">Bulk Cash Salaries</div>
-                    </a>
-                </li> -->
 
-                    <!-- <li class="menu-item">
-                        <a href="{{ url('salariesInvPayroll') }}" class="menu-link">
-                        <i class="menu-icon tf-icons bx bx-git-compare"></i>
-                        <div class="text-truncate" data-i18n="InvtoPayroll">Invoice to Payroll</div>
-                        </a>
-                    </li> -->
-                     @endif
                     </ul>
                 </li>
             @endif
@@ -788,20 +778,7 @@
                                         <hr>
                                         <a class="dropdown-item" href="{{url('employeesSalary', $employee->id)}}"><i class="icon-base bx bx-money-withdraw"></i> Salaries</a>
                                        @endif
-                                        <!-- <hr>
-                                        @if ($employee->status == 'Active')
-                                            <a class="dropdown-item" href="{{url('terminateEmployee', $employee->id )}}"><i class="icon-base bx bx-user-x me-1" onclick="return confirm('Kindly Confirm?')"></i> Terminate</a>
 
-                                       
-                                            @else
-                                        <a class="dropdown-item" href="{{url('employeeReinstate', $employee->id )}}" onclick="return confirm('Kindly Confirm?')"><i class="icon-base bx bx-edit-alt me-1"></i>Re-Instate </a>
-                                            @endif -->
-
-                                        <!-- <form action="employees/{{$employee->id}}" method="POST">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button class="dropdown-item" type="submit"><i class="icon-base bx bx-trash me-1"></i>Delete</button>
-                                        </form> -->
                                     </div>
                                 </div>
                             </td>
@@ -857,10 +834,11 @@
                                     </button>
                                     <div class="dropdown-menu">
                                         <a class="dropdown-item" href="{{url('employees', $employee->id)}}"><i class="icon-base bx bxs-bullseye"></i> view</a>
-                                      @if($employee->status == 'Active')
+                                    @if($employee->ho_status !== 'approved' || Auth::user()->hasRole(['Finance Manager'])  )
+
                                         <a class="dropdown-item" href="{{url('employees', $employee->id)}}/edit"><i class="icon-base bx bx-edit-alt me-1"></i> Edit</a>
                                       @endif
-                                        @if(Auth::user()->hasNotRole(['Manager']))
+                                        @if(Auth::user()->hasRole(['Manager']))
                                         <hr>
                                         <a class="dropdown-item" href="{{url('employeesSalary', $employee->id)}}"><i class="icon-base bx bx-money-withdraw"></i> Salaries</a>
                                        @endif
@@ -922,10 +900,11 @@
                                     </button>
                                     <div class="dropdown-menu">
                                         <a class="dropdown-item" href="{{url('employees', $employee->id)}}"><i class="icon-base bx bxs-bullseye"></i> view</a>
-                                      @if($employee->status == 'Active')
+                                      @if($employee->ho_status !== 'approved' || Auth::user()->hasRole(['Finance Manager'])  )
                                         <a class="dropdown-item" href="{{url('employees', $employee->id)}}/edit"><i class="icon-base bx bx-edit-alt me-1"></i> Edit</a>
-                                     @endif
-                                        @if(Auth::user()->hasNotRole(['Manager']))
+                                      @endif
+
+                                        @if(Auth::user()->hasRole(['Manager']))
                                         <hr>
                                         <a class="dropdown-item" href="{{url('employeesSalary', $employee->id)}}"><i class="icon-base bx bx-money-withdraw"></i> Salaries</a>
                                        @endif
@@ -987,10 +966,10 @@
                                     </button>
                                     <div class="dropdown-menu">
                                         <a class="dropdown-item" href="{{url('employees', $employee->id)}}"><i class="icon-base bx bxs-bullseye"></i> view</a>
-                                      @if($employee->status == 'Active')
+                                      @if($employee->ho_status !== 'approved' || Auth::user()->hasRole(['Finance Manager'])  )
                                         <a class="dropdown-item" href="{{url('employees', $employee->id)}}/edit"><i class="icon-base bx bx-edit-alt me-1"></i> Edit</a>
                                      @endif
-                                        @if(Auth::user()->hasNotRole(['Manager']))
+                                        @if(Auth::user()->hasRole(['Manager']))
                                         <hr>
                                         <a class="dropdown-item" href="{{url('employeesSalary', $employee->id)}}"><i class="icon-base bx bx-money-withdraw"></i> Salaries</a>
                                        @endif
@@ -1052,10 +1031,10 @@
                                     </button>
                                     <div class="dropdown-menu">
                                         <a class="dropdown-item" href="{{url('employees', $employee->id)}}"><i class="icon-base bx bxs-bullseye"></i> view</a>
-                                      @if($employee->status == 'Active')
+                                     @if($employee->ho_status !== 'approved' || Auth::user()->hasRole(['Finance Manager'])  )
                                         <a class="dropdown-item" href="{{url('employees', $employee->id)}}/edit"><i class="icon-base bx bx-edit-alt me-1"></i> Edit</a>
                                       @endif
-                                        @if(Auth::user()->hasNotRole(['Manager']))
+                                        @if(Auth::user()->hasRole(['Manager']))
                                         <hr>
                                         <a class="dropdown-item" href="{{url('employeesSalary', $employee->id)}}"><i class="icon-base bx bx-money-withdraw"></i> Salaries</a>
                                        @endif
@@ -1118,10 +1097,10 @@
                                     </button>
                                     <div class="dropdown-menu">
                                         <a class="dropdown-item" href="{{url('employees', $employee->id)}}"><i class="icon-base bx bxs-bullseye"></i> view</a>
-                                      @if($employee->status == 'Active')
+                                     @if($employee->ho_status !== 'approved' || Auth::user()->hasRole(['Finance Manager'])  )
                                         <a class="dropdown-item" href="{{url('employees', $employee->id)}}/edit"><i class="icon-base bx bx-edit-alt me-1"></i> Edit</a>
                                       @endif
-                                        @if(Auth::user()->hasNotRole(['Manager']))
+                                        @if(Auth::user()->hasRole(['Manager']))
                                         <hr>
                                         <a class="dropdown-item" href="{{url('employeesSalary', $employee->id)}}"><i class="icon-base bx bx-money-withdraw"></i> Salaries</a>
                                        @endif
@@ -1183,10 +1162,10 @@
                                     </button>
                                     <div class="dropdown-menu">
                                         <a class="dropdown-item" href="{{url('employees', $employee->id)}}"><i class="icon-base bx bxs-bullseye"></i> view</a>
-                                      @if($employee->status == 'Active')
+                                     @if($employee->ho_status !== 'approved' || Auth::user()->hasRole(['Finance Manager'])  )
                                         <a class="dropdown-item" href="{{url('employees', $employee->id)}}/edit"><i class="icon-base bx bx-edit-alt me-1"></i> Edit</a>
                                         @endif
-                                        @if(Auth::user()->hasNotRole(['Manager']))
+                                        @if(Auth::user()->hasRole(['Manager']))
                                         <hr>
                                         <a class="dropdown-item" href="{{url('employeesSalary', $employee->id)}}"><i class="icon-base bx bx-money-withdraw"></i> Salaries</a>
                                        @endif

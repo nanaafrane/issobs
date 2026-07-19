@@ -11,59 +11,59 @@
 
     @section('side_nav')
     <!-- Menu -->
-    <aside id="layout-menu" class="layout-menu menu-vertical menu bg-menu-theme">
-        <div class="app-brand demo">
-            <a href="#" class="app-brand-link">
-                <span class="app-brand-logo demo">
-                    <img width="70px" src="{{asset('img/icons/brands/issobs.png')}}" alt="">
-                    <!-- Logo -->
-                </span>
-                <span class="app-brand-text demo menu-text fw-bold ms-2">ISSOBS</span>
+  <aside id="layout-menu" class="layout-menu menu-vertical menu bg-menu-theme">
+    <div class="app-brand demo">
+      <a href="#" class="app-brand-link">
+        <span class="app-brand-logo demo">
+          <img width="70px" src="{{asset('img/icons/brands/issobs.png')}}" alt="">
+          <!-- Logo -->
+        </span>
+        <span class="app-brand-text demo menu-text fw-bold ms-2">ISSOBS</span>
+      </a>
+
+      <a href="javascript:void(0);" class="layout-menu-toggle menu-link text-large ms-auto">
+        <i class="bx bx-chevron-left d-block d-xl-none align-middle"></i>
+      </a>
+    </div>
+
+    <div class="menu-divider mt-0"></div>
+
+    <div class="menu-inner-shadow"></div>
+
+    <ul class="menu-inner py-1">
+      <!-- Dashboards -->
+      <li class="menu-item active open">
+        <a href="javascript:void(0);" class="menu-link menu-toggle">
+          <i class="menu-icon tf-icons bx bx-home-smile"></i>
+          <div class="text-truncate" data-i18n="Dashboards"><strong>Dashboard</strong></div>
+        </a>
+        <ul class="menu-sub">
+          <li class="menu-item active">
+            <a href="{{url('home')}}" class="menu-link">
+              <div class="text-truncate" data-i18n="Dashboard">Dashboard</div>
             </a>
+          </li>
+        </ul>
+      </li>
+      <!-- Apps & Pages -->
+      <li class="menu-header small text-uppercase ">
+        <span class="menu-header-text text-primary">Transactions</span>
+      </li>
+      <!-- Pages -->
+      <li class="menu-item">
+        <a href="{{url('transaction')}}" class="menu-link">
+          <i class="menu-icon tf-icons bx bx-transfer-alt bg-primary"></i>
+          <div class="text-truncate" data-i18n="Transaction">Transactions</div>
+        </a>
+      </li>
 
-            <a href="javascript:void(0);" class="layout-menu-toggle menu-link text-large ms-auto">
-                <i class="bx bx-chevron-left d-block d-xl-none align-middle"></i>
-            </a>
-        </div>
-
-        <div class="menu-divider mt-0"></div>
-
-        <div class="menu-inner-shadow"></div>
-
-        <ul class="menu-inner py-1">
-            <!-- Dashboards -->
-            <li class="menu-item active open">
-                <a href="javascript:void(0);" class="menu-link menu-toggle">
-                    <i class="menu-icon tf-icons bx bx-home-smile"></i>
-                    <div class="text-truncate" data-i18n="Dashboards"><strong>Dashboard</strong></div>
-                </a>
-                <ul class="menu-sub">
-                    <li class="menu-item active">
-                        <a href="{{url('home')}}" class="menu-link">
-                            <div class="text-truncate" data-i18n="Dashboard">Dashboard</div>
-                        </a>
-                    </li>
-                </ul>
-            </li>
-            <!-- Apps & Pages -->
-            <li class="menu-header small text-uppercase ">
-                <span class="menu-header-text text-primary">Transactions</span>
-            </li>
-            <!-- Pages -->
-            <li class="menu-item">
-                <a href="{{url('transaction')}}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-transfer-alt bg-primary"></i>
-                    <div class="text-truncate" data-i18n="Transaction">Transactions</div>
-                </a>
-            </li>
-
-            @if(Auth::user()->hasRole(['Invoice', 'Finance Manager']))
-            <li class="menu-item">
-                <a href="{{ url('invoice') }}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-bxs-receipt bg-primary"></i>
-                    <div class="text-truncate" data-i18n="Invoices">Invoices</div>
-                </a>
-            </li>
+      @if(Auth::user()->hasRole(['Invoice','Finance Manager', 'Director']))
+      <li class="menu-item">
+        <a href="{{ url('invoice') }}" class="menu-link">
+          <i class="menu-icon tf-icons bx bx-bxs-receipt bg-primary"></i>
+          <div class="text-truncate" data-i18n="Invoices">Invoices</div>
+        </a>
+      </li>
       <li class="menu-item ">
           <a href="javascript:void(0);" class="menu-link menu-toggle">
           <i class="menu-icon tf-icons bx bx-bxs-receipt bg-primary"></i>
@@ -87,16 +87,41 @@
           </li>
           </ul>
       </li>
-            @endif
+      @endif
 
 
-      @if(Auth::user()->hasRole(['Finance Manager']))
-                  <li class="menu-item">
+      @if(Auth::user()->hasRole(['Finance Manager', 'Manager','Admin Assistant' ]))
+            
+     <!-- <li class="menu-item">
+        <a href="{{url('receipt')}}" class="menu-link">
+          <i class="menu-icon tf-icons bx bx-money-withdraw bg-primary"></i>
+          <div class="text-truncate" data-i18n="Receipts">Receipts</div>
+        </a>
+      </li> -->
+
+      <li class="menu-item ">
+          <a href="javascript:void(0);" class="menu-link menu-toggle">
+          <i class="menu-icon tf-icons bx bx-money-withdraw bg-primary"></i>
+          <div class="text-truncate" data-i18n="Receipts">Receipts</div>
+          </a>
+          <ul class="menu-sub">
+
+            <li class="menu-item">
                 <a href="{{url('receipt')}}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-money-withdraw bg-primary"></i>
-                    <div class="text-truncate" data-i18n="Receipts">Receipts</div>
+                <div class="text-truncate" data-i18n="RList">List</div>
                 </a>
             </li>
+            <li class="menu-item">
+                <a href="{{url('receiptPending')}}" class="menu-link">
+                <div class="text-truncate" data-i18n="RPending">Pending </div>
+                </a>
+            </li>
+
+          </ul>
+      </li>
+       @endif
+
+       @if(Auth::user()->hasRole(['Finance Manager' ]))
       <!-- Components -->
       <li class="menu-header small text-uppercase"><span class="menu-header-text text-info">Management</span></li>
       <li class="menu-item">
@@ -105,9 +130,9 @@
           <div class="text-truncate" data-i18n="Clients">Clients</div>
         </a>
       </li>
-              <li class="menu-item ">
+      <li class="menu-item ">
           <a href="javascript:void(0);" class="menu-link menu-toggle">
-          <i class="menu-icon tf-icons bx bxs-user-account"></i>
+          <i class="menu-icon tf-icons bx bxs-user-account bg-info"></i>
           <div class="text-truncate" data-i18n="Staffs">Employees</div>
           </a>
           <ul class="menu-sub">
@@ -122,24 +147,31 @@
               </a>
           </li>
           <li class="menu-item">
+              <a href="{{url('employeesnrrit')}}" class="menu-link">
+              <div class="text-truncate" data-i18n="SList">Terminate / Recruit</div>
+              </a>
+          </li>
+          <li class="menu-item">
               <a href="{{url('employeesBank')}}" class="menu-link">
               <div class="text-truncate" data-i18n="SList">Employee Banks</div>
               </a>
           </li>
-            <li class="menu-item">
+          <li class="menu-item">
               <a href="{{url('employeesCash')}}" class="menu-link">
               <div class="text-truncate" data-i18n="SList">Employee Cash</div>
               </a>
           </li>
+
           </ul>
-                <li class="menu-item">
+      </li>
+
+      <li class="menu-item">
         <a href="{{url('category')}}" class="menu-link">
           <i class="menu-icon tf-icons bx bxs-category bg-info"></i>
           <div class="text-truncate" data-i18n="Categories">Categories</div>
         </a>
       </li>
-      </li>
-      @elseif(Auth::user()->hasRole(['Invoice']))
+      @elseif(Auth::user()->hasRole(['Invoice' ,'Director', 'Manager', 'Admin Assistant']))
 
       <li class="menu-header small text-uppercase"><span class="menu-header-text text-info">Management</span></li>
         <li class="menu-item ">
@@ -158,11 +190,23 @@
                         <div class="text-truncate" data-i18n="CList">List</div>
                     </a>
                 </li>
+
+                <li class="menu-item ">
+                    <a href="{{url('clientTerminated')}}" class="menu-link">
+                        <div class="text-truncate" data-i18n="CList">Terminated</div>
+                    </a>
+                </li>
+
+                <li class="menu-item ">
+                    <a href="{{url('clientPending')}}" class="menu-link">
+                        <div class="text-truncate" data-i18n="CList">Pending</div>
+                    </a>
+                </li>
             </ul>
         </li>
         <li class="menu-item ">
           <a href="javascript:void(0);" class="menu-link menu-toggle">
-          <i class="menu-icon tf-icons bx bxs-user-account"></i>
+          <i class="menu-icon tf-icons bx bxs-category bg-info"></i>
           <div class="text-truncate" data-i18n="Staffs">Employees</div>
           </a>
           <ul class="menu-sub">
@@ -176,19 +220,32 @@
               <div class="text-truncate" data-i18n="SList">List</div>
               </a>
           </li>
-                    <li class="menu-item">
+          <li class="menu-item">
+                <a href="{{url('employeesPending')}}" class="menu-link">
+                <div class="text-truncate" data-i18n="SList">Pending</div>
+                </a>
+            </li>
+          <li class="menu-item">
+              <a href="{{url('employeesnrrit')}}" class="menu-link">
+              <div class="text-truncate" data-i18n="SList">Terminate / Recruit </div>
+              </a>
+          </li>
+          <li class="menu-item">
               <a href="{{url('employeesBank')}}" class="menu-link">
               <div class="text-truncate" data-i18n="SList">Employee Banks</div>
               </a>
           </li>
-                      <li class="menu-item">
+
+          <li class="menu-item">
               <a href="{{url('employeesCash')}}" class="menu-link">
               <div class="text-truncate" data-i18n="SList">Employee Cash</div>
               </a>
           </li>
+
           </ul>
       </li>
-      <li class="menu-item">
+
+      <!-- <li class="menu-item">
           <a href="{{url('departments')}}" class="menu-link">
           <i class="menu-icon tf-icons bx bxs-buildings"></i>
           <div class="text-truncate" data-i18n="depnroles">Department & Roles </div>
@@ -199,10 +256,10 @@
           <i class="menu-icon tf-icons bx bx-bxs-location-plus"></i>
           <div class="text-truncate" data-i18n="fOffices">Field Offices</div>
           </a>
-      </li>
+      </li> -->
       @endif
 
-      @if(Auth::user()->hasRole(['Manager','Officer','Finance Manager']) )
+      @if(Auth::user()->hasRole(['Finance Manager', 'Director']) )
 
       <li class="menu-header small text-uppercase"> <span class="menu-header-text text-danger">Accounts</span></li>
 
@@ -240,7 +297,7 @@
        </li>
       @endif
 
-      @if(Auth::user()->hasPermission('Accounts') )
+      @if(Auth::user()->hasPermission('Accounts') && Auth::user()->hasRole(['Invoice', 'Officer', 'Director', 'Finance Manager']) )
       <li class="menu-header small text-uppercase"><span class="menu-header-text">PAYROLL</span></li>
         <li class="menu-item">
                 <a href="javascript:void(0);" class="menu-link menu-toggle">
@@ -248,14 +305,14 @@
                 <div class="text-truncate" data-i18n="Payroll">Payroll</div>
                 </a>
                 <ul class="menu-sub">
-            @if(Auth::user()->hasRole(['Invoice', 'Finance Manager']))
+                @if(Auth::user()->hasRole([ 'Finance Manager']))
+
                 <li class="menu-item">
                     <a href="{{ url('salaries') }}" class="menu-link">
                     <i class="menu-icon tf-icons bx bxs-user-account"></i>
                     <div class="text-truncate" data-i18n="Employees">Add to Salaries</div>
                     </a>
                 </li>
-                @endif
 
                 <li class="menu-item">
                     <a href="{{ url('salaries/create') }}" class="menu-link">
@@ -263,6 +320,8 @@
                     <div class="text-truncate" data-i18n="Salaries">Salaries</div>
                     </a>
                 </li>
+                @endif
+
 
                 <li class="menu-item">
                     <a href="{{ url('salariesTransaction') }}" class="menu-link">
@@ -271,24 +330,12 @@
                     </a>
                 </li>
 
-                <li class="menu-item">
-                    <a href="{{ url('salariesBulkCash') }}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bxs-group"></i>
-                    <div class="text-truncate" data-i18n="Transaction">Bulk Cash Salaries</div>
-                    </a>
-                </li>
-
-                <li class="menu-item">
-                    <a href="{{ url('salariesInvPayroll') }}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-git-compare"></i>
-                    <div class="text-truncate" data-i18n="InvtoPayroll">Invoice to Payroll</div>
-                    </a>
-                </li>
                 </ul>
             </li>
-        @endif
-        </ul>
-    </aside>
+      @endif
+
+    </ul>
+  </aside>
     <!-- / Menu -->
     @endsection
 
@@ -305,7 +352,7 @@
             </div>
         </div><br>
 
-        @if(isset($invoiceTotal) && isset($invoiceCount))
+        @if(isset($invoiceTotal) && isset($invoiceCount) && Auth::user()->hasRole(['Invoice', 'Finance Manager']))
             <div class="row mb-4">
             <div class="col-lg-12 col-md-6 mb-4 mb-md-0">
                 <div  class="card h-100 bg-danger text-white">
@@ -481,8 +528,10 @@
                             </div>
                         </div>
                         <p class="mb-1"><strong> ACCRA </strong> </p>
-                        <h4 class="card-title mb-3 text-white"><strong>&#x20B5;{{$accraTotal}} </strong> </h4>
+                        <h4 class="card-title mb-3 text-white"><strong>&#x20B5;{{number_format($accraTotal,2)}} </strong> </h4>
                         <small class="fw-medium"> TOTAL INVOICES : <strong> {{$accraCount}}</strong> </small>
+                        <hr>
+                        <small class="fw-medium"> INVOICE GUARDS : <strong>  {{ $accraGuards }}</strong> </small>
                     </div>
                 </div>
             </div>
@@ -503,8 +552,10 @@
                             </div>
                         </div>
                         <p class="mb-1"><strong> BOTWE </strong> </p>
-                        <h4 class="card-title mb-3 text-white"><strong>&#x20B5;{{$botweTotal}} </strong> </h4>
+                        <h4 class="card-title mb-3 text-white"><strong>&#x20B5;{{number_format($botweTotal,2) }} </strong> </h4>
                         <small class="fw-medium"> TOTAL INVOICES : <strong> {{$botweCount}}</strong> </small>
+                        <hr>
+                        <small class="fw-medium"> INVOICE GUARDS : <strong> {{$botweGuards}} </strong> </small>
                     </div>
                 </div>
             </div>
@@ -525,8 +576,10 @@
                             </div>
                         </div>
                         <p class="mb-1"><strong> SHAIILLS </strong> </p>
-                        <h4 class="card-title mb-3 text-white"><strong>&#x20B5;{{$shyhillsTotal}} </strong> </h4>
+                        <h4 class="card-title mb-3 text-white"><strong>&#x20B5;{{number_format($shyhillsTotal) }} </strong> </h4>
                         <small class="fw-medium"> TOTAL INVOICES : <strong> {{$shyhillsCount}}</strong> </small>
+                         <hr>
+                        <small class="fw-medium"> INVOICE GUARDS : <strong> {{$shyhillsGuards}} </strong> </small>
                     </div>
                 </div>
             </div>
@@ -543,8 +596,10 @@
                             </div>
                         </div>
                         <p class="mb-1"><strong> TEMA </strong> </p>
-                        <h4 class="card-title mb-3 text-white"><strong>&#x20B5;{{$temaTotal}} </strong> </h4>
+                        <h4 class="card-title mb-3 text-white"><strong>&#x20B5;{{ number_format($temaTotal,2) }} </strong> </h4>
                         <small class="fw-medium"> TOTAL INVOICES : <strong> {{$temaCount}}</strong> </small>
+                        <hr>
+                        <small class="fw-medium"> INVOICE GUARDS : <strong> {{$temaGuards}} </strong> </small>
                     </div>
                 </div>
             </div>
@@ -566,8 +621,10 @@
                             </div>
                         </div>
                         <p class="mb-1"><strong> TAKORADI </strong> </p>
-                        <h4 class="card-title mb-3 text-white"><strong>&#x20B5;{{$takoradiTotal}} </strong> </h4>
+                        <h4 class="card-title mb-3 text-white"><strong>&#x20B5;{{number_format($takoradiTotal,2) }} </strong> </h4>
                         <small class="fw-medium"> TOTAL INVOICES : <strong> {{$takoradiCount}}</strong> </small>
+                        <hr>
+                        <small class="fw-medium"> INVOICE GUARDS : {{$takoradiGuards}} </small>
                     </div>
                 </div>
             </div>
@@ -589,8 +646,10 @@
                             </div>
                         </div>
                         <p class="mb-1"><strong> KOFORIDUA </strong> </p>
-                        <h4 class="card-title mb-3 text-white"><strong>&#x20B5;{{$koforiduaTotal}} </strong> </h4>
+                        <h4 class="card-title mb-3 text-white"><strong>&#x20B5;{{number_format($koforiduaTotal,2)}} </strong> </h4>
                         <small class="fw-medium"> TOTAL INVOICES : <strong> {{$koforiduaCount}}</strong> </small>
+                                                <hr>
+                        <small class="fw-medium"> INVOICE GUARDS : <strong> {{$koforiduaGuards}} </strong> </small>
                     </div>
                 </div>
             </div>
@@ -612,8 +671,10 @@
                             </div>
                         </div>
                         <p class="mb-1"><strong> KUMASI </strong> </p>
-                        <h4 class="card-title mb-3 text-white"><strong>&#x20B5;{{$kumasiTotal}} </strong> </h4>
+                        <h4 class="card-title mb-3 text-white"><strong>&#x20B5;{{ number_format($kumasiTotal,2) }} </strong> </h4>
                         <small class="fw-medium"> TOTAL INVOICES : <strong> {{$kumasiCount}}</strong> </small>
+                                                <hr>
+                        <small class="fw-medium"> INVOICE GUARDS : <strong> {{$kumasiGuards}} </strong> </small>
                     </div>
                 </div>
             </div>
@@ -936,165 +997,1482 @@
 
 
                         @elseif(Auth::user()->field?->name == 'Accra')
-                        @foreach($accra as $invoice)
+                        @foreach($accra as $key => $invoice)
                         <tr>
-                            <td> #FWSSi{{$invoice->id}} </td>
-                            <td> {{$invoice->client->name}}</td>
-                            <td> {{$invoice->client->phone_number}} </td>
-                            <td> {{$invoice->client->business_name}} </td>
-                            <td> {{$invoice->client->field->name}} </td>
-                            <td> {{$invoice->user->name}} </td>
-                            <td> {{$invoice->created_at}} </td>
-                            <td> {{$invoice->due_date}} </td>
-                            <td> </td>
-                            <td> </td>
-                            <td> </td>
-                            <td> GH&#x20B5; {{number_format($invoice->total,2)}} </td>
-                            @if($invoice->status == 'completed')
-                            <td><span class="badge bg-label-success">{{$invoice->status}}</span></td>
-                            @else
-                            <td><span class="badge bg-label-danger">{{$invoice->status}}</span></td>
-                            @endif
-                            <td>
-                                <a href="{{url('invoice', $invoice->id)}}" class="btn btn-danger">
-                                    <i class="icon-base bx bxs-bullseye"></i>
-                                </a>
-                            </td>
+                             <td>{{$key +1 }}</td>
+                                <td> FWSSi{{$invoice->id}} </td>
+                                <td> {{ $invoice->invoice_month?->format('F, Y') }}</td>
+                                @if ($invoice->client->name === $invoice->client->business_name)
+                                <td> {{$invoice->client->business_name}} </td>
+                                @else
+                                <td> {{$invoice->client->name}} {{$invoice->client->business_name}} </td>
+                                @endif
+                                <td> 
+                                    @if($invoice->client?->status == 'terminated')
+                                    <span class="badge bg-label-danger">{{ $invoice->client?->status }}</span>
+                                    @else
+                                    <span class="badge bg-label-success">{{ $invoice->client?->status }}</span>
+                                    @endif
+                                </td>
+                                <td> {{$invoice->client?->phone_number}} </td>
+                                <td> {{$invoice->client?->field?->name}} </td>
+                                <td> {{$invoice->user?->name}} </td>
+                                <td> {{$invoice->created_at?->format('F l d, Y, H:i A')}} </td>
+                                <td> {{$invoice->due_date?->diffForHumans()}} </td>
+                               
+                               
+                                <td>
+                                    @if (count($invoice->invoice_data) > 1)
+                                        @foreach ( $invoice->invoice_data as $num => $service )
+                                            {{  $num +1  }}.  {{ $service->service_name }} <br> <br>
+                                        @endforeach
+                                    @else
+                                        @foreach ( $invoice->invoice_data as $service )
+                                             {{ $service->service_name }} 
+                                        @endforeach
+                                    @endif
+
+                                </td>
+                               
+                            
+                                <td>
+                                    @if (count($invoice->invoice_data) > 1)
+                                       @foreach ( $invoice->invoice_data as $des => $description )
+                                      
+                                         {{  $des +1  }}. {{ $description->description }} <br> <br>
+                                           
+                                       @endforeach
+                                   
+                                    @else
+                                       @foreach ( $invoice->invoice_data as $description )
+                                      
+                                         {{ $description->description }}
+                                           
+                                       @endforeach
+                                   
+                                    @endif
+                                </td>
+
+                                <td>
+                                    @if (count($invoice->invoice_data) > 1)
+                                       @foreach ( $invoice->invoice_data as $guad => $guards )
+                                      
+                                          {{  $guad +1  }}.  {{ $guards->quantity }} <br> <br>
+                                           
+                                       @endforeach
+                                   
+                                    </ol>
+                                    @else
+                                       @foreach ( $invoice->invoice_data as $guards )
+                                      
+                                          {{ $guards->quantity }} 
+                                           
+                                       @endforeach
+                                   
+                                    </ol>
+                                    @endif
+
+
+                                </td>
+
+                                <td>
+                                    @if (count($invoice->invoice_data) > 1)
+                                       @foreach ( $invoice->invoice_data as $rat => $rate )
+                                      
+                                         {{  $rat +1  }}. GH&#x20B5; {{number_format($rate->unit_price, 2) }} <br> <br>
+                                           
+                                       @endforeach
+                                   
+                                    @else
+                                       @foreach ( $invoice->invoice_data as $rate )
+                                      
+                                          GH&#x20B5; {{number_format($rate->unit_price, 2) }}
+                                           
+                                       @endforeach
+                                   
+                                    @endif
+
+                                </td>
+
+                                <td> GH&#x20B5; {{number_format($invoice->total,2)}} </td>
+                                @if ($invoice->status == 'completed')
+                                <td> GH&#x20B5;{{ number_format($invoice->total, 2)}} </td>
+                                @elseif($invoice->status == 'uncompleted')
+                                <td> GH&#x20B5;{{ number_format($invoice->total - $invoice->balance, 2)}} </td>
+                                @else
+                                <td> GH&#x20B5; 0.00 </td>
+                                @endif
+
+                                @if ($invoice->status == 'unpaid')
+                                <td> GH&#x20B5; {{number_format($invoice?->total,2)}} </td> 
+                                @else
+                                <td> GH&#x20B5; {{number_format($invoice?->balance,2)}} </td> 
+                                @endif
+
+
+                                @if($invoice->status == 'completed')
+                                <td><span class="badge bg-label-success">{{$invoice->status}}</span></td>
+                                @else
+                                <td><span class="badge bg-label-danger">{{$invoice->status}}</span></td>
+                                @endif
+                                <td>
+                                    @foreach ( $invoice->receipt as $adva => $advance )
+                                      
+                                            {{ $advance?->advance_payment }}  <br> <br>
+                                           
+                                       @endforeach
+
+                                </td>
+                                <td>
+                                    <a href="{{url('invoice', $invoice->id)}}" class="btn btn-danger">
+                                        <i class="icon-base bx bxs-bullseye"></i>
+                                    </a>
+                                </td>
+
+                                <td>
+                                    @foreach ( $invoice->receipt as $dedate => $ddate )
+                                      
+                                        {{ $ddate->receipt_month?->format('F l d, Y') }} <br> <br>
+                                           
+                                       @endforeach
+                                </td>
+
+                                <td>
+                                        @foreach ( $invoice->receipt as $deda => $dama )
+                                      
+                                        {{ $dama->dAmount }} <br> <br>
+                                           
+                                       @endforeach
+                                </td>
+
+                                <td>
+                                        @foreach ( $invoice->receipt as $dedesc => $dedescript )
+                                      
+                                        {{ $dedescript->description }} <br> <br>
+                                           
+                                       @endforeach
+                                </td>
+
+                                <td>
+                                        @foreach ( $invoice->receipt as $other => $otherpay )
+                                      
+                                        {{ $otherpay->other_payment_amnt }} <br> <br>
+                                           
+                                       @endforeach
+                                </td>
+                                <td>
+                                        @foreach ( $invoice->receipt as $wht => $whtamnt )
+                                      
+                                        {{ $whtamnt->wht_amount }} <br> <br>
+                                           
+                                       @endforeach
+                                </td>
+                                <td>
+                                        @foreach ( $invoice->receipt as $vat => $vat7 )
+                                      
+                                        {{ $vat7->vat7_value }} <br> <br>
+                                           
+                                       @endforeach
+                                </td>
+
+                                <td>
+                                    @foreach ( $invoice->receipt as $cheq => $chequ )
+                                      
+                                        {{ $chequ->cheque_bank }} <br> <br>
+                                           
+                                       @endforeach
+                                </td>
+                                <td>
+                                      @foreach ( $invoice->receipt as $cheqre => $chequref )
+                                      
+                                        {{ $chequref->cheque_reference }} <br> <br>
+                                           
+                                       @endforeach
+                                </td>
+                                <td>
+                                        @foreach ( $invoice->receipt as $cheqama => $cheqamnt )
+                                      
+                                       GH&#x20B5; {{ number_format($cheqamnt->cheque_amount, 2) }} <br> <br>
+                                           
+                                       @endforeach
+                                </td>
+                                <td>
+                                        @foreach ( $invoice->receipt as $trans => $tansfer )
+                                      
+                                        {{ $tansfer->transfer_bank }} <br> <br>
+                                           
+                                       @endforeach
+                                </td>
+                                <td> 
+                                      @foreach ( $invoice->receipt as $transref => $tansferref )
+                                      
+                                        {{ $tansferref->transfer_reference }} <br> <br>
+                                           
+                                       @endforeach
+                                </td>
+                                <td>
+                                        @foreach ( $invoice->receipt as $transama => $transamnt )
+                                      
+                                        {{ $transamnt->transfer_amount }} <br> <br>
+                                           
+                                       @endforeach
+                                </td>
+                                <td>
+                                        @foreach ( $invoice->receipt as $mo => $momo )
+                                      
+                                        GH&#x20B5;{{ number_format($momo->momo_amount,2) }} <br> <br>
+                                           
+                                       @endforeach
+                                </td>
+                                <td>
+                                        @foreach ( $invoice->receipt as $ca => $cash )
+                                      
+                                        GH&#x20B5;{{ number_format($cash->cash_amount,2) }} <br> <br>
+                                           
+                                       @endforeach
+                                </td>
+                                <td>
+                                         @foreach ( $invoice->receipt as $tot => $total )
+                                      
+                                        GH&#x20B5;{{ number_format($total->total,2) }} <br> <br>
+                                           
+                                       @endforeach  
+                                </td>
                         </tr>
                         @endforeach
                         @endif
 
 
                         @if(Auth::user()->field?->name == 'Botwe')
-                        @foreach($botwe as $invoice)
+                        @foreach($botwe as $key => $invoice)
                         <tr>
-                            <td> #FWSSi{{$invoice->id}} </td>
-                            <td> {{$invoice->client->name}}</td>
-                            <td> {{$invoice->client->phone_number}} </td>
-                            <td> {{$invoice->client->business_name}} </td>
-                            <td> {{$invoice->client->field->name}} </td>
-                            <td> {{$invoice->user->name}} </td>
-                            <td> {{$invoice->created_at}} </td>
-                            <td> {{$invoice->due_date}} </td>
-                            <td> GH&#x20B5; {{number_format($invoice->total,2)}} </td>
-                            @if($invoice->status == 'completed')
-                            <td><span class="badge bg-label-success">{{$invoice->status}}</span></td>
-                            @else
-                            <td><span class="badge bg-label-danger">{{$invoice->status}}</span></td>
-                            @endif
-                            <td>
-                                <a href="{{url('invoice', $invoice->id)}}" class="btn btn-danger">
-                                    <i class="icon-base bx bxs-bullseye"></i>
-                                </a>
-                            </td>
+                             <td>{{$key +1 }}</td>
+                                <td> FWSSi{{$invoice->id}} </td>
+                                <td> {{ $invoice->invoice_month?->format('F, Y') }}</td>
+                                @if ($invoice->client->name === $invoice->client->business_name)
+                                <td> {{$invoice->client->business_name}} </td>
+                                @else
+                                <td> {{$invoice->client->name}} {{$invoice->client->business_name}} </td>
+                                @endif
+                                <td> 
+                                    @if($invoice->client?->status == 'terminated')
+                                    <span class="badge bg-label-danger">{{ $invoice->client?->status }}</span>
+                                    @else
+                                    <span class="badge bg-label-success">{{ $invoice->client?->status }}</span>
+                                    @endif
+                                </td>
+                                <td> {{$invoice->client?->phone_number}} </td>
+                                <td> {{$invoice->client?->field?->name}} </td>
+                                <td> {{$invoice->user?->name}} </td>
+                                <td> {{$invoice->created_at?->format('F l d, Y, H:i A')}} </td>
+                                <td> {{$invoice->due_date?->diffForHumans()}} </td>
+                               
+                               
+                                <td>
+                                    @if (count($invoice->invoice_data) > 1)
+                                        @foreach ( $invoice->invoice_data as $num => $service )
+                                            {{  $num +1  }}.  {{ $service->service_name }} <br> <br>
+                                        @endforeach
+                                    @else
+                                        @foreach ( $invoice->invoice_data as $service )
+                                             {{ $service->service_name }} 
+                                        @endforeach
+                                    @endif
+
+                                </td>
+                               
+                            
+                                <td>
+                                    @if (count($invoice->invoice_data) > 1)
+                                       @foreach ( $invoice->invoice_data as $des => $description )
+                                      
+                                         {{  $des +1  }}. {{ $description->description }} <br> <br>
+                                           
+                                       @endforeach
+                                   
+                                    @else
+                                       @foreach ( $invoice->invoice_data as $description )
+                                      
+                                         {{ $description->description }}
+                                           
+                                       @endforeach
+                                   
+                                    @endif
+                                </td>
+
+                                <td>
+                                    @if (count($invoice->invoice_data) > 1)
+                                       @foreach ( $invoice->invoice_data as $guad => $guards )
+                                      
+                                          {{  $guad +1  }}.  {{ $guards->quantity }} <br> <br>
+                                           
+                                       @endforeach
+                                   
+                                    </ol>
+                                    @else
+                                       @foreach ( $invoice->invoice_data as $guards )
+                                      
+                                          {{ $guards->quantity }} 
+                                           
+                                       @endforeach
+                                   
+                                    </ol>
+                                    @endif
+
+
+                                </td>
+
+                                <td>
+                                    @if (count($invoice->invoice_data) > 1)
+                                       @foreach ( $invoice->invoice_data as $rat => $rate )
+                                      
+                                         {{  $rat +1  }}. GH&#x20B5; {{number_format($rate->unit_price, 2) }} <br> <br>
+                                           
+                                       @endforeach
+                                   
+                                    @else
+                                       @foreach ( $invoice->invoice_data as $rate )
+                                      
+                                          GH&#x20B5; {{number_format($rate->unit_price, 2) }}
+                                           
+                                       @endforeach
+                                   
+                                    @endif
+
+                                </td>
+
+                                <td> GH&#x20B5; {{number_format($invoice->total,2)}} </td>
+                                @if ($invoice->status == 'completed')
+                                <td> GH&#x20B5;{{ number_format($invoice->total, 2)}} </td>
+                                @elseif($invoice->status == 'uncompleted')
+                                <td> GH&#x20B5;{{ number_format($invoice->total - $invoice->balance, 2)}} </td>
+                                @else
+                                <td> GH&#x20B5; 0.00 </td>
+                                @endif
+
+                                @if ($invoice->status == 'unpaid')
+                                <td> GH&#x20B5; {{number_format($invoice?->total,2)}} </td> 
+                                @else
+                                <td> GH&#x20B5; {{number_format($invoice?->balance,2)}} </td> 
+                                @endif
+
+
+                                @if($invoice->status == 'completed')
+                                <td><span class="badge bg-label-success">{{$invoice->status}}</span></td>
+                                @else
+                                <td><span class="badge bg-label-danger">{{$invoice->status}}</span></td>
+                                @endif
+                                <td>
+                                    @foreach ( $invoice->receipt as $adva => $advance )
+                                      
+                                            {{ $advance?->advance_payment }}  <br> <br>
+                                           
+                                       @endforeach
+
+                                </td>
+                                <td>
+                                    <a href="{{url('invoice', $invoice->id)}}" class="btn btn-danger">
+                                        <i class="icon-base bx bxs-bullseye"></i>
+                                    </a>
+                                </td>
+
+                                <td>
+                                    @foreach ( $invoice->receipt as $dedate => $ddate )
+                                      
+                                        {{ $ddate->receipt_month?->format('F l d, Y') }} <br> <br>
+                                           
+                                       @endforeach
+                                </td>
+
+                                <td>
+                                        @foreach ( $invoice->receipt as $deda => $dama )
+                                      
+                                        {{ $dama->dAmount }} <br> <br>
+                                           
+                                       @endforeach
+                                </td>
+
+                                <td>
+                                        @foreach ( $invoice->receipt as $dedesc => $dedescript )
+                                      
+                                        {{ $dedescript->description }} <br> <br>
+                                           
+                                       @endforeach
+                                </td>
+
+                                <td>
+                                        @foreach ( $invoice->receipt as $other => $otherpay )
+                                      
+                                        {{ $otherpay->other_payment_amnt }} <br> <br>
+                                           
+                                       @endforeach
+                                </td>
+                                <td>
+                                        @foreach ( $invoice->receipt as $wht => $whtamnt )
+                                      
+                                        {{ $whtamnt->wht_amount }} <br> <br>
+                                           
+                                       @endforeach
+                                </td>
+                                <td>
+                                        @foreach ( $invoice->receipt as $vat => $vat7 )
+                                      
+                                        {{ $vat7->vat7_value }} <br> <br>
+                                           
+                                       @endforeach
+                                </td>
+
+                                <td>
+                                    @foreach ( $invoice->receipt as $cheq => $chequ )
+                                      
+                                        {{ $chequ->cheque_bank }} <br> <br>
+                                           
+                                       @endforeach
+                                </td>
+                                <td>
+                                      @foreach ( $invoice->receipt as $cheqre => $chequref )
+                                      
+                                        {{ $chequref->cheque_reference }} <br> <br>
+                                           
+                                       @endforeach
+                                </td>
+                                <td>
+                                        @foreach ( $invoice->receipt as $cheqama => $cheqamnt )
+                                      
+                                       GH&#x20B5; {{ number_format($cheqamnt->cheque_amount, 2) }} <br> <br>
+                                           
+                                       @endforeach
+                                </td>
+                                <td>
+                                        @foreach ( $invoice->receipt as $trans => $tansfer )
+                                      
+                                        {{ $tansfer->transfer_bank }} <br> <br>
+                                           
+                                       @endforeach
+                                </td>
+                                <td> 
+                                      @foreach ( $invoice->receipt as $transref => $tansferref )
+                                      
+                                        {{ $tansferref->transfer_reference }} <br> <br>
+                                           
+                                       @endforeach
+                                </td>
+                                <td>
+                                        @foreach ( $invoice->receipt as $transama => $transamnt )
+                                      
+                                        {{ $transamnt->transfer_amount }} <br> <br>
+                                           
+                                       @endforeach
+                                </td>
+                                <td>
+                                        @foreach ( $invoice->receipt as $mo => $momo )
+                                      
+                                        GH&#x20B5;{{ number_format($momo->momo_amount,2) }} <br> <br>
+                                           
+                                       @endforeach
+                                </td>
+                                <td>
+                                        @foreach ( $invoice->receipt as $ca => $cash )
+                                      
+                                        GH&#x20B5;{{ number_format($cash->cash_amount,2) }} <br> <br>
+                                           
+                                       @endforeach
+                                </td>
+                                <td>
+                                         @foreach ( $invoice->receipt as $tot => $total )
+                                      
+                                        GH&#x20B5;{{ number_format($total->total,2) }} <br> <br>
+                                           
+                                       @endforeach  
+                                </td>
                         </tr>
                         @endforeach
                         @endif
 
 
                         @if(Auth::user()->field?->name == 'Tema')
-                        @foreach($tema as $invoice)
+                        @foreach($temashai as $key => $invoice)
                         <tr>
-                            <td> #FWSSi{{$invoice->id}} </td>
-                            <td> {{$invoice->client->name}}</td>
-                            <td> {{$invoice->client->phone_number}} </td>
-                            <td> {{$invoice->client->business_name}} </td>
-                            <td> {{$invoice->client->field->name}} </td>
-                            <td> {{$invoice->user->name}} </td>
-                            <td> {{$invoice->created_at}} </td>
-                            <td> {{$invoice->due_date}} </td>
-                            <td> GH&#x20B5; {{number_format($invoice->total,2)}} </td>
-                            @if($invoice->status == 'completed')
-                            <td><span class="badge bg-label-success">{{$invoice->status}}</span></td>
-                            @else
-                            <td><span class="badge bg-label-danger">{{$invoice->status}}</span></td>
-                            @endif
-                            <td>
-                                <a href="{{url('invoice', $invoice->id)}}" class="btn btn-danger">
-                                    <i class="icon-base bx bxs-bullseye"></i>
-                                </a>
-                            </td>
+                             <td>{{$key +1 }}</td>
+                                <td> FWSSi{{$invoice->id}} </td>
+                                <td> {{ $invoice->invoice_month?->format('F, Y') }}</td>
+                                @if ($invoice->client->name === $invoice->client->business_name)
+                                <td> {{$invoice->client->business_name}} </td>
+                                @else
+                                <td> {{$invoice->client->name}} {{$invoice->client->business_name}} </td>
+                                @endif
+                                <td> 
+                                    @if($invoice->client?->status == 'terminated')
+                                    <span class="badge bg-label-danger">{{ $invoice->client?->status }}</span>
+                                    @else
+                                    <span class="badge bg-label-success">{{ $invoice->client?->status }}</span>
+                                    @endif
+                                </td>
+                                <td> {{$invoice->client?->phone_number}} </td>
+                                <td> {{$invoice->client?->field?->name}} </td>
+                                <td> {{$invoice->user?->name}} </td>
+                                <td> {{$invoice->created_at?->format('F l d, Y, H:i A')}} </td>
+                                <td> {{$invoice->due_date?->diffForHumans()}} </td>
+                               
+                               
+                                <td>
+                                    @if (count($invoice->invoice_data) > 1)
+                                        @foreach ( $invoice->invoice_data as $num => $service )
+                                            {{  $num +1  }}.  {{ $service->service_name }} <br> <br>
+                                        @endforeach
+                                    @else
+                                        @foreach ( $invoice->invoice_data as $service )
+                                             {{ $service->service_name }} 
+                                        @endforeach
+                                    @endif
+
+                                </td>
+                               
+                            
+                                <td>
+                                    @if (count($invoice->invoice_data) > 1)
+                                       @foreach ( $invoice->invoice_data as $des => $description )
+                                      
+                                         {{  $des +1  }}. {{ $description->description }} <br> <br>
+                                           
+                                       @endforeach
+                                   
+                                    @else
+                                       @foreach ( $invoice->invoice_data as $description )
+                                      
+                                         {{ $description->description }}
+                                           
+                                       @endforeach
+                                   
+                                    @endif
+                                </td>
+
+                                <td>
+                                    @if (count($invoice->invoice_data) > 1)
+                                       @foreach ( $invoice->invoice_data as $guad => $guards )
+                                      
+                                          {{  $guad +1  }}.  {{ $guards->quantity }} <br> <br>
+                                           
+                                       @endforeach
+                                   
+                                    </ol>
+                                    @else
+                                       @foreach ( $invoice->invoice_data as $guards )
+                                      
+                                          {{ $guards->quantity }} 
+                                           
+                                       @endforeach
+                                   
+                                    </ol>
+                                    @endif
+
+
+                                </td>
+
+                                <td>
+                                    @if (count($invoice->invoice_data) > 1)
+                                       @foreach ( $invoice->invoice_data as $rat => $rate )
+                                      
+                                         {{  $rat +1  }}. GH&#x20B5; {{number_format($rate->unit_price, 2) }} <br> <br>
+                                           
+                                       @endforeach
+                                   
+                                    @else
+                                       @foreach ( $invoice->invoice_data as $rate )
+                                      
+                                          GH&#x20B5; {{number_format($rate->unit_price, 2) }}
+                                           
+                                       @endforeach
+                                   
+                                    @endif
+
+                                </td>
+
+                                <td> GH&#x20B5; {{number_format($invoice->total,2)}} </td>
+                                @if ($invoice->status == 'completed')
+                                <td> GH&#x20B5;{{ number_format($invoice->total, 2)}} </td>
+                                @elseif($invoice->status == 'uncompleted')
+                                <td> GH&#x20B5;{{ number_format($invoice->total - $invoice->balance, 2)}} </td>
+                                @else
+                                <td> GH&#x20B5; 0.00 </td>
+                                @endif
+
+                                @if ($invoice->status == 'unpaid')
+                                <td> GH&#x20B5; {{number_format($invoice?->total,2)}} </td> 
+                                @else
+                                <td> GH&#x20B5; {{number_format($invoice?->balance,2)}} </td> 
+                                @endif
+
+
+                                @if($invoice->status == 'completed')
+                                <td><span class="badge bg-label-success">{{$invoice->status}}</span></td>
+                                @else
+                                <td><span class="badge bg-label-danger">{{$invoice->status}}</span></td>
+                                @endif
+                                <td>
+                                    @foreach ( $invoice->receipt as $adva => $advance )
+                                      
+                                            {{ $advance?->advance_payment }}  <br> <br>
+                                           
+                                       @endforeach
+
+                                </td>
+                                <td>
+                                    <a href="{{url('invoice', $invoice->id)}}" class="btn btn-danger">
+                                        <i class="icon-base bx bxs-bullseye"></i>
+                                    </a>
+                                </td>
+
+                                <td>
+                                    @foreach ( $invoice->receipt as $dedate => $ddate )
+                                      
+                                        {{ $ddate->receipt_month?->format('F l d, Y') }} <br> <br>
+                                           
+                                       @endforeach
+                                </td>
+
+                                <td>
+                                        @foreach ( $invoice->receipt as $deda => $dama )
+                                      
+                                        {{ $dama->dAmount }} <br> <br>
+                                           
+                                       @endforeach
+                                </td>
+
+                                <td>
+                                        @foreach ( $invoice->receipt as $dedesc => $dedescript )
+                                      
+                                        {{ $dedescript->description }} <br> <br>
+                                           
+                                       @endforeach
+                                </td>
+
+                                <td>
+                                        @foreach ( $invoice->receipt as $other => $otherpay )
+                                      
+                                        {{ $otherpay->other_payment_amnt }} <br> <br>
+                                           
+                                       @endforeach
+                                </td>
+                                <td>
+                                        @foreach ( $invoice->receipt as $wht => $whtamnt )
+                                      
+                                        {{ $whtamnt->wht_amount }} <br> <br>
+                                           
+                                       @endforeach
+                                </td>
+                                <td>
+                                        @foreach ( $invoice->receipt as $vat => $vat7 )
+                                      
+                                        {{ $vat7->vat7_value }} <br> <br>
+                                           
+                                       @endforeach
+                                </td>
+
+                                <td>
+                                    @foreach ( $invoice->receipt as $cheq => $chequ )
+                                      
+                                        {{ $chequ->cheque_bank }} <br> <br>
+                                           
+                                       @endforeach
+                                </td>
+                                <td>
+                                      @foreach ( $invoice->receipt as $cheqre => $chequref )
+                                      
+                                        {{ $chequref->cheque_reference }} <br> <br>
+                                           
+                                       @endforeach
+                                </td>
+                                <td>
+                                        @foreach ( $invoice->receipt as $cheqama => $cheqamnt )
+                                      
+                                       GH&#x20B5; {{ number_format($cheqamnt->cheque_amount, 2) }} <br> <br>
+                                           
+                                       @endforeach
+                                </td>
+                                <td>
+                                        @foreach ( $invoice->receipt as $trans => $tansfer )
+                                      
+                                        {{ $tansfer->transfer_bank }} <br> <br>
+                                           
+                                       @endforeach
+                                </td>
+                                <td> 
+                                      @foreach ( $invoice->receipt as $transref => $tansferref )
+                                      
+                                        {{ $tansferref->transfer_reference }} <br> <br>
+                                           
+                                       @endforeach
+                                </td>
+                                <td>
+                                        @foreach ( $invoice->receipt as $transama => $transamnt )
+                                      
+                                        {{ $transamnt->transfer_amount }} <br> <br>
+                                           
+                                       @endforeach
+                                </td>
+                                <td>
+                                        @foreach ( $invoice->receipt as $mo => $momo )
+                                      
+                                        GH&#x20B5;{{ number_format($momo->momo_amount,2) }} <br> <br>
+                                           
+                                       @endforeach
+                                </td>
+                                <td>
+                                        @foreach ( $invoice->receipt as $ca => $cash )
+                                      
+                                        GH&#x20B5;{{ number_format($cash->cash_amount,2) }} <br> <br>
+                                           
+                                       @endforeach
+                                </td>
+                                <td>
+                                         @foreach ( $invoice->receipt as $tot => $total )
+                                      
+                                        GH&#x20B5;{{ number_format($total->total,2) }} <br> <br>
+                                           
+                                       @endforeach  
+                                </td>
                         </tr>
                         @endforeach
                         @endif
 
 
                         @if(Auth::user()->field?->name == 'Takoradi')
-                        @foreach($takoradi as $invoice)
+                        @foreach($takoradi as $key => $invoice)
                         <tr>
-                            <td> #FWSSi{{$invoice->id}} </td>
-                            <td> {{$invoice->client->name}}</td>
-                            <td> {{$invoice->client->phone_number}} </td>
-                            <td> {{$invoice->client->business_name}} </td>
-                            <td> {{$invoice->client->field->name}} </td>
-                            <td> {{$invoice->user->name}} </td>
-                            <td> {{$invoice->created_at}} </td>
-                            <td> {{$invoice->due_date}} </td>
-                            <td> GH&#x20B5; {{number_format($invoice->total,2)}} </td>
-                            @if($invoice->status == 'completed')
-                            <td><span class="badge bg-label-success">{{$invoice->status}}</span></td>
-                            @else
-                            <td><span class="badge bg-label-danger">{{$invoice->status}}</span></td>
-                            @endif
-                            <td>
-                                <a href="{{url('invoice', $invoice->id)}}" class="btn btn-danger">
-                                    <i class="icon-base bx bxs-bullseye"></i>
-                                </a>
-                            </td>
+                             <td>{{$key +1 }}</td>
+                                <td> FWSSi{{$invoice->id}} </td>
+                                <td> {{ $invoice->invoice_month?->format('F, Y') }}</td>
+                                @if ($invoice->client->name === $invoice->client->business_name)
+                                <td> {{$invoice->client->business_name}} </td>
+                                @else
+                                <td> {{$invoice->client->name}} {{$invoice->client->business_name}} </td>
+                                @endif
+                                <td> 
+                                    @if($invoice->client?->status == 'terminated')
+                                    <span class="badge bg-label-danger">{{ $invoice->client?->status }}</span>
+                                    @else
+                                    <span class="badge bg-label-success">{{ $invoice->client?->status }}</span>
+                                    @endif
+                                </td>
+                                <td> {{$invoice->client?->phone_number}} </td>
+                                <td> {{$invoice->client?->field?->name}} </td>
+                                <td> {{$invoice->user?->name}} </td>
+                                <td> {{$invoice->created_at?->format('F l d, Y, H:i A')}} </td>
+                                <td> {{$invoice->due_date?->diffForHumans()}} </td>
+                               
+                               
+                                <td>
+                                    @if (count($invoice->invoice_data) > 1)
+                                        @foreach ( $invoice->invoice_data as $num => $service )
+                                            {{  $num +1  }}.  {{ $service->service_name }} <br> <br>
+                                        @endforeach
+                                    @else
+                                        @foreach ( $invoice->invoice_data as $service )
+                                             {{ $service->service_name }} 
+                                        @endforeach
+                                    @endif
+
+                                </td>
+                               
+                            
+                                <td>
+                                    @if (count($invoice->invoice_data) > 1)
+                                       @foreach ( $invoice->invoice_data as $des => $description )
+                                      
+                                         {{  $des +1  }}. {{ $description->description }} <br> <br>
+                                           
+                                       @endforeach
+                                   
+                                    @else
+                                       @foreach ( $invoice->invoice_data as $description )
+                                      
+                                         {{ $description->description }}
+                                           
+                                       @endforeach
+                                   
+                                    @endif
+                                </td>
+
+                                <td>
+                                    @if (count($invoice->invoice_data) > 1)
+                                       @foreach ( $invoice->invoice_data as $guad => $guards )
+                                      
+                                          {{  $guad +1  }}.  {{ $guards->quantity }} <br> <br>
+                                           
+                                       @endforeach
+                                   
+                                    </ol>
+                                    @else
+                                       @foreach ( $invoice->invoice_data as $guards )
+                                      
+                                          {{ $guards->quantity }} 
+                                           
+                                       @endforeach
+                                   
+                                    </ol>
+                                    @endif
+
+
+                                </td>
+
+                                <td>
+                                    @if (count($invoice->invoice_data) > 1)
+                                       @foreach ( $invoice->invoice_data as $rat => $rate )
+                                      
+                                         {{  $rat +1  }}. GH&#x20B5; {{number_format($rate->unit_price, 2) }} <br> <br>
+                                           
+                                       @endforeach
+                                   
+                                    @else
+                                       @foreach ( $invoice->invoice_data as $rate )
+                                      
+                                          GH&#x20B5; {{number_format($rate->unit_price, 2) }}
+                                           
+                                       @endforeach
+                                   
+                                    @endif
+
+                                </td>
+
+                                <td> GH&#x20B5; {{number_format($invoice->total,2)}} </td>
+                                @if ($invoice->status == 'completed')
+                                <td> GH&#x20B5;{{ number_format($invoice->total, 2)}} </td>
+                                @elseif($invoice->status == 'uncompleted')
+                                <td> GH&#x20B5;{{ number_format($invoice->total - $invoice->balance, 2)}} </td>
+                                @else
+                                <td> GH&#x20B5; 0.00 </td>
+                                @endif
+
+                                @if ($invoice->status == 'unpaid')
+                                <td> GH&#x20B5; {{number_format($invoice?->total,2)}} </td> 
+                                @else
+                                <td> GH&#x20B5; {{number_format($invoice?->balance,2)}} </td> 
+                                @endif
+
+
+                                @if($invoice->status == 'completed')
+                                <td><span class="badge bg-label-success">{{$invoice->status}}</span></td>
+                                @else
+                                <td><span class="badge bg-label-danger">{{$invoice->status}}</span></td>
+                                @endif
+                                <td>
+                                    @foreach ( $invoice->receipt as $adva => $advance )
+                                      
+                                            {{ $advance?->advance_payment }}  <br> <br>
+                                           
+                                       @endforeach
+
+                                </td>
+                                <td>
+                                    <a href="{{url('invoice', $invoice->id)}}" class="btn btn-danger">
+                                        <i class="icon-base bx bxs-bullseye"></i>
+                                    </a>
+                                </td>
+
+                                <td>
+                                    @foreach ( $invoice->receipt as $dedate => $ddate )
+                                      
+                                        {{ $ddate->receipt_month?->format('F l d, Y') }} <br> <br>
+                                           
+                                       @endforeach
+                                </td>
+
+                                <td>
+                                        @foreach ( $invoice->receipt as $deda => $dama )
+                                      
+                                        {{ $dama->dAmount }} <br> <br>
+                                           
+                                       @endforeach
+                                </td>
+
+                                <td>
+                                        @foreach ( $invoice->receipt as $dedesc => $dedescript )
+                                      
+                                        {{ $dedescript->description }} <br> <br>
+                                           
+                                       @endforeach
+                                </td>
+
+                                <td>
+                                        @foreach ( $invoice->receipt as $other => $otherpay )
+                                      
+                                        {{ $otherpay->other_payment_amnt }} <br> <br>
+                                           
+                                       @endforeach
+                                </td>
+                                <td>
+                                        @foreach ( $invoice->receipt as $wht => $whtamnt )
+                                      
+                                        {{ $whtamnt->wht_amount }} <br> <br>
+                                           
+                                       @endforeach
+                                </td>
+                                <td>
+                                        @foreach ( $invoice->receipt as $vat => $vat7 )
+                                      
+                                        {{ $vat7->vat7_value }} <br> <br>
+                                           
+                                       @endforeach
+                                </td>
+
+                                <td>
+                                    @foreach ( $invoice->receipt as $cheq => $chequ )
+                                      
+                                        {{ $chequ->cheque_bank }} <br> <br>
+                                           
+                                       @endforeach
+                                </td>
+                                <td>
+                                      @foreach ( $invoice->receipt as $cheqre => $chequref )
+                                      
+                                        {{ $chequref->cheque_reference }} <br> <br>
+                                           
+                                       @endforeach
+                                </td>
+                                <td>
+                                        @foreach ( $invoice->receipt as $cheqama => $cheqamnt )
+                                      
+                                       GH&#x20B5; {{ number_format($cheqamnt->cheque_amount, 2) }} <br> <br>
+                                           
+                                       @endforeach
+                                </td>
+                                <td>
+                                        @foreach ( $invoice->receipt as $trans => $tansfer )
+                                      
+                                        {{ $tansfer->transfer_bank }} <br> <br>
+                                           
+                                       @endforeach
+                                </td>
+                                <td> 
+                                      @foreach ( $invoice->receipt as $transref => $tansferref )
+                                      
+                                        {{ $tansferref->transfer_reference }} <br> <br>
+                                           
+                                       @endforeach
+                                </td>
+                                <td>
+                                        @foreach ( $invoice->receipt as $transama => $transamnt )
+                                      
+                                        {{ $transamnt->transfer_amount }} <br> <br>
+                                           
+                                       @endforeach
+                                </td>
+                                <td>
+                                        @foreach ( $invoice->receipt as $mo => $momo )
+                                      
+                                        GH&#x20B5;{{ number_format($momo->momo_amount,2) }} <br> <br>
+                                           
+                                       @endforeach
+                                </td>
+                                <td>
+                                        @foreach ( $invoice->receipt as $ca => $cash )
+                                      
+                                        GH&#x20B5;{{ number_format($cash->cash_amount,2) }} <br> <br>
+                                           
+                                       @endforeach
+                                </td>
+                                <td>
+                                         @foreach ( $invoice->receipt as $tot => $total )
+                                      
+                                        GH&#x20B5;{{ number_format($total->total,2) }} <br> <br>
+                                           
+                                       @endforeach  
+                                </td>
                         </tr>
                         @endforeach
                         @endif
 
 
                         @if(Auth::user()->field?->name == 'Koforidua')
-                        @foreach($koforidua as $invoice)
+                        @foreach($koforidua as $key => $invoice)
                         <tr>
-                            <td> #FWSSi{{$invoice->id}} </td>
-                            <td> {{$invoice->client->name}}</td>
-                            <td> {{$invoice->client->phone_number}} </td>
-                            <td> {{$invoice->client->business_name}} </td>
-                            <td> {{$invoice->client->field->name}} </td>
-                            <td> {{$invoice->user->name}} </td>
-                            <td> {{$invoice->created_at}} </td>
-                            <td> {{$invoice->due_date}} </td>
-                            <td> GH&#x20B5; {{number_format($invoice->total,2)}} </td>
-                            @if($invoice->status == 'completed')
-                            <td><span class="badge bg-label-success">{{$invoice->status}}</span></td>
-                            @else
-                            <td><span class="badge bg-label-danger">{{$invoice->status}}</span></td>
-                            @endif
-                            <td>
-                                <a href="{{url('invoice', $invoice->id)}}" class="btn btn-danger">
-                                    <i class="icon-base bx bxs-bullseye"></i>
-                                </a>
-                            </td>
+                             <td>{{$key +1 }}</td>
+                                <td> FWSSi{{$invoice->id}} </td>
+                                <td> {{ $invoice->invoice_month?->format('F, Y') }}</td>
+                                @if ($invoice->client->name === $invoice->client->business_name)
+                                <td> {{$invoice->client->business_name}} </td>
+                                @else
+                                <td> {{$invoice->client->name}} {{$invoice->client->business_name}} </td>
+                                @endif
+                                <td> 
+                                    @if($invoice->client?->status == 'terminated')
+                                    <span class="badge bg-label-danger">{{ $invoice->client?->status }}</span>
+                                    @else
+                                    <span class="badge bg-label-success">{{ $invoice->client?->status }}</span>
+                                    @endif
+                                </td>
+                                <td> {{$invoice->client?->phone_number}} </td>
+                                <td> {{$invoice->client?->field?->name}} </td>
+                                <td> {{$invoice->user?->name}} </td>
+                                <td> {{$invoice->created_at?->format('F l d, Y, H:i A')}} </td>
+                                <td> {{$invoice->due_date?->diffForHumans()}} </td>
+                               
+                               
+                                <td>
+                                    @if (count($invoice->invoice_data) > 1)
+                                        @foreach ( $invoice->invoice_data as $num => $service )
+                                            {{  $num +1  }}.  {{ $service->service_name }} <br> <br>
+                                        @endforeach
+                                    @else
+                                        @foreach ( $invoice->invoice_data as $service )
+                                             {{ $service->service_name }} 
+                                        @endforeach
+                                    @endif
+
+                                </td>
+                               
+                            
+                                <td>
+                                    @if (count($invoice->invoice_data) > 1)
+                                       @foreach ( $invoice->invoice_data as $des => $description )
+                                      
+                                         {{  $des +1  }}. {{ $description->description }} <br> <br>
+                                           
+                                       @endforeach
+                                   
+                                    @else
+                                       @foreach ( $invoice->invoice_data as $description )
+                                      
+                                         {{ $description->description }}
+                                           
+                                       @endforeach
+                                   
+                                    @endif
+                                </td>
+
+                                <td>
+                                    @if (count($invoice->invoice_data) > 1)
+                                       @foreach ( $invoice->invoice_data as $guad => $guards )
+                                      
+                                          {{  $guad +1  }}.  {{ $guards->quantity }} <br> <br>
+                                           
+                                       @endforeach
+                                   
+                                    </ol>
+                                    @else
+                                       @foreach ( $invoice->invoice_data as $guards )
+                                      
+                                          {{ $guards->quantity }} 
+                                           
+                                       @endforeach
+                                   
+                                    </ol>
+                                    @endif
+
+
+                                </td>
+
+                                <td>
+                                    @if (count($invoice->invoice_data) > 1)
+                                       @foreach ( $invoice->invoice_data as $rat => $rate )
+                                      
+                                         {{  $rat +1  }}. GH&#x20B5; {{number_format($rate->unit_price, 2) }} <br> <br>
+                                           
+                                       @endforeach
+                                   
+                                    @else
+                                       @foreach ( $invoice->invoice_data as $rate )
+                                      
+                                          GH&#x20B5; {{number_format($rate->unit_price, 2) }}
+                                           
+                                       @endforeach
+                                   
+                                    @endif
+
+                                </td>
+
+                                <td> GH&#x20B5; {{number_format($invoice->total,2)}} </td>
+                                @if ($invoice->status == 'completed')
+                                <td> GH&#x20B5;{{ number_format($invoice->total, 2)}} </td>
+                                @elseif($invoice->status == 'uncompleted')
+                                <td> GH&#x20B5;{{ number_format($invoice->total - $invoice->balance, 2)}} </td>
+                                @else
+                                <td> GH&#x20B5; 0.00 </td>
+                                @endif
+
+                                @if ($invoice->status == 'unpaid')
+                                <td> GH&#x20B5; {{number_format($invoice?->total,2)}} </td> 
+                                @else
+                                <td> GH&#x20B5; {{number_format($invoice?->balance,2)}} </td> 
+                                @endif
+
+
+                                @if($invoice->status == 'completed')
+                                <td><span class="badge bg-label-success">{{$invoice->status}}</span></td>
+                                @else
+                                <td><span class="badge bg-label-danger">{{$invoice->status}}</span></td>
+                                @endif
+                                <td>
+                                    @foreach ( $invoice->receipt as $adva => $advance )
+                                      
+                                            {{ $advance?->advance_payment }}  <br> <br>
+                                           
+                                       @endforeach
+
+                                </td>
+                                <td>
+                                    <a href="{{url('invoice', $invoice->id)}}" class="btn btn-danger">
+                                        <i class="icon-base bx bxs-bullseye"></i>
+                                    </a>
+                                </td>
+
+                                <td>
+                                    @foreach ( $invoice->receipt as $dedate => $ddate )
+                                      
+                                        {{ $ddate->receipt_month?->format('F l d, Y') }} <br> <br>
+                                           
+                                       @endforeach
+                                </td>
+
+                                <td>
+                                        @foreach ( $invoice->receipt as $deda => $dama )
+                                      
+                                        {{ $dama->dAmount }} <br> <br>
+                                           
+                                       @endforeach
+                                </td>
+
+                                <td>
+                                        @foreach ( $invoice->receipt as $dedesc => $dedescript )
+                                      
+                                        {{ $dedescript->description }} <br> <br>
+                                           
+                                       @endforeach
+                                </td>
+
+                                <td>
+                                        @foreach ( $invoice->receipt as $other => $otherpay )
+                                      
+                                        {{ $otherpay->other_payment_amnt }} <br> <br>
+                                           
+                                       @endforeach
+                                </td>
+                                <td>
+                                        @foreach ( $invoice->receipt as $wht => $whtamnt )
+                                      
+                                        {{ $whtamnt->wht_amount }} <br> <br>
+                                           
+                                       @endforeach
+                                </td>
+                                <td>
+                                        @foreach ( $invoice->receipt as $vat => $vat7 )
+                                      
+                                        {{ $vat7->vat7_value }} <br> <br>
+                                           
+                                       @endforeach
+                                </td>
+
+                                <td>
+                                    @foreach ( $invoice->receipt as $cheq => $chequ )
+                                      
+                                        {{ $chequ->cheque_bank }} <br> <br>
+                                           
+                                       @endforeach
+                                </td>
+                                <td>
+                                      @foreach ( $invoice->receipt as $cheqre => $chequref )
+                                      
+                                        {{ $chequref->cheque_reference }} <br> <br>
+                                           
+                                       @endforeach
+                                </td>
+                                <td>
+                                        @foreach ( $invoice->receipt as $cheqama => $cheqamnt )
+                                      
+                                       GH&#x20B5; {{ number_format($cheqamnt->cheque_amount, 2) }} <br> <br>
+                                           
+                                       @endforeach
+                                </td>
+                                <td>
+                                        @foreach ( $invoice->receipt as $trans => $tansfer )
+                                      
+                                        {{ $tansfer->transfer_bank }} <br> <br>
+                                           
+                                       @endforeach
+                                </td>
+                                <td> 
+                                      @foreach ( $invoice->receipt as $transref => $tansferref )
+                                      
+                                        {{ $tansferref->transfer_reference }} <br> <br>
+                                           
+                                       @endforeach
+                                </td>
+                                <td>
+                                        @foreach ( $invoice->receipt as $transama => $transamnt )
+                                      
+                                        {{ $transamnt->transfer_amount }} <br> <br>
+                                           
+                                       @endforeach
+                                </td>
+                                <td>
+                                        @foreach ( $invoice->receipt as $mo => $momo )
+                                      
+                                        GH&#x20B5;{{ number_format($momo->momo_amount,2) }} <br> <br>
+                                           
+                                       @endforeach
+                                </td>
+                                <td>
+                                        @foreach ( $invoice->receipt as $ca => $cash )
+                                      
+                                        GH&#x20B5;{{ number_format($cash->cash_amount,2) }} <br> <br>
+                                           
+                                       @endforeach
+                                </td>
+                                <td>
+                                         @foreach ( $invoice->receipt as $tot => $total )
+                                      
+                                        GH&#x20B5;{{ number_format($total->total,2) }} <br> <br>
+                                           
+                                       @endforeach  
+                                </td>
                         </tr>
                         @endforeach
                         @endif
 
 
                         @if(Auth::user()->field?->name == 'Kumasi')
-                        @foreach($kumasi as $invoice)
+                        @foreach($kumasi as $key => $invoice)
                         <tr>
-                            <td> #FWSSi{{$invoice->id}} </td>
-                            <td> {{$invoice->client->name}}</td>
-                            <td> {{$invoice->client->phone_number}} </td>
-                            <td> {{$invoice->client->business_name}} </td>
-                            <td> {{$invoice->client->field->name}} </td>
-                            <td> {{$invoice->user->name}} </td>
-                            <td> {{$invoice->created_at}} </td>
-                            <td> {{$invoice->due_date}} </td>
-                            <td> GH&#x20B5; {{number_format($invoice->total,2)}} </td>
-                            @if($invoice->status == 'completed')
-                            <td><span class="badge bg-label-success">{{$invoice->status}}</span></td>
-                            @else
-                            <td><span class="badge bg-label-danger">{{$invoice->status}}</span></td>
-                            @endif
-                            <td>
-                                <a href="{{url('invoice', $invoice->id)}}" class="btn btn-danger">
-                                    <i class="icon-base bx bxs-bullseye"></i>
-                                </a>
-                            </td>
+                             <td>{{$key +1 }}</td>
+                                <td> FWSSi{{$invoice->id}} </td>
+                                <td> {{ $invoice->invoice_month?->format('F, Y') }}</td>
+                                @if ($invoice->client->name === $invoice->client->business_name)
+                                <td> {{$invoice->client->business_name}} </td>
+                                @else
+                                <td> {{$invoice->client->name}} {{$invoice->client->business_name}} </td>
+                                @endif
+                                <td> 
+                                    @if($invoice->client?->status == 'terminated')
+                                    <span class="badge bg-label-danger">{{ $invoice->client?->status }}</span>
+                                    @else
+                                    <span class="badge bg-label-success">{{ $invoice->client?->status }}</span>
+                                    @endif
+                                </td>
+                                <td> {{$invoice->client?->phone_number}} </td>
+                                <td> {{$invoice->client?->field?->name}} </td>
+                                <td> {{$invoice->user?->name}} </td>
+                                <td> {{$invoice->created_at?->format('F l d, Y, H:i A')}} </td>
+                                <td> {{$invoice->due_date?->diffForHumans()}} </td>
+                               
+                               
+                                <td>
+                                    @if (count($invoice->invoice_data) > 1)
+                                        @foreach ( $invoice->invoice_data as $num => $service )
+                                            {{  $num +1  }}.  {{ $service->service_name }} <br> <br>
+                                        @endforeach
+                                    @else
+                                        @foreach ( $invoice->invoice_data as $service )
+                                             {{ $service->service_name }} 
+                                        @endforeach
+                                    @endif
+
+                                </td>
+                               
+                            
+                                <td>
+                                    @if (count($invoice->invoice_data) > 1)
+                                       @foreach ( $invoice->invoice_data as $des => $description )
+                                      
+                                         {{  $des +1  }}. {{ $description->description }} <br> <br>
+                                           
+                                       @endforeach
+                                   
+                                    @else
+                                       @foreach ( $invoice->invoice_data as $description )
+                                      
+                                         {{ $description->description }}
+                                           
+                                       @endforeach
+                                   
+                                    @endif
+                                </td>
+
+                                <td>
+                                    @if (count($invoice->invoice_data) > 1)
+                                       @foreach ( $invoice->invoice_data as $guad => $guards )
+                                      
+                                          {{  $guad +1  }}.  {{ $guards->quantity }} <br> <br>
+                                           
+                                       @endforeach
+                                   
+                                    </ol>
+                                    @else
+                                       @foreach ( $invoice->invoice_data as $guards )
+                                      
+                                          {{ $guards->quantity }} 
+                                           
+                                       @endforeach
+                                   
+                                    </ol>
+                                    @endif
+
+
+                                </td>
+
+                                <td>
+                                    @if (count($invoice->invoice_data) > 1)
+                                       @foreach ( $invoice->invoice_data as $rat => $rate )
+                                      
+                                         {{  $rat +1  }}. GH&#x20B5; {{number_format($rate->unit_price, 2) }} <br> <br>
+                                           
+                                       @endforeach
+                                   
+                                    @else
+                                       @foreach ( $invoice->invoice_data as $rate )
+                                      
+                                          GH&#x20B5; {{number_format($rate->unit_price, 2) }}
+                                           
+                                       @endforeach
+                                   
+                                    @endif
+
+                                </td>
+
+                                <td> GH&#x20B5; {{number_format($invoice->total,2)}} </td>
+                                @if ($invoice->status == 'completed')
+                                <td> GH&#x20B5;{{ number_format($invoice->total, 2)}} </td>
+                                @elseif($invoice->status == 'uncompleted')
+                                <td> GH&#x20B5;{{ number_format($invoice->total - $invoice->balance, 2)}} </td>
+                                @else
+                                <td> GH&#x20B5; 0.00 </td>
+                                @endif
+
+                                @if ($invoice->status == 'unpaid')
+                                <td> GH&#x20B5; {{number_format($invoice?->total,2)}} </td> 
+                                @else
+                                <td> GH&#x20B5; {{number_format($invoice?->balance,2)}} </td> 
+                                @endif
+
+
+                                @if($invoice->status == 'completed')
+                                <td><span class="badge bg-label-success">{{$invoice->status}}</span></td>
+                                @else
+                                <td><span class="badge bg-label-danger">{{$invoice->status}}</span></td>
+                                @endif
+                                <td>
+                                    @foreach ( $invoice->receipt as $adva => $advance )
+                                      
+                                            {{ $advance?->advance_payment }}  <br> <br>
+                                           
+                                       @endforeach
+
+                                </td>
+                                <td>
+                                    <a href="{{url('invoice', $invoice->id)}}" class="btn btn-danger">
+                                        <i class="icon-base bx bxs-bullseye"></i>
+                                    </a>
+                                </td>
+
+                                <td>
+                                    @foreach ( $invoice->receipt as $dedate => $ddate )
+                                      
+                                        {{ $ddate->receipt_month?->format('F l d, Y') }} <br> <br>
+                                           
+                                       @endforeach
+                                </td>
+
+                                <td>
+                                        @foreach ( $invoice->receipt as $deda => $dama )
+                                      
+                                        {{ $dama->dAmount }} <br> <br>
+                                           
+                                       @endforeach
+                                </td>
+
+                                <td>
+                                        @foreach ( $invoice->receipt as $dedesc => $dedescript )
+                                      
+                                        {{ $dedescript->description }} <br> <br>
+                                           
+                                       @endforeach
+                                </td>
+
+                                <td>
+                                        @foreach ( $invoice->receipt as $other => $otherpay )
+                                      
+                                        {{ $otherpay->other_payment_amnt }} <br> <br>
+                                           
+                                       @endforeach
+                                </td>
+                                <td>
+                                        @foreach ( $invoice->receipt as $wht => $whtamnt )
+                                      
+                                        {{ $whtamnt->wht_amount }} <br> <br>
+                                           
+                                       @endforeach
+                                </td>
+                                <td>
+                                        @foreach ( $invoice->receipt as $vat => $vat7 )
+                                      
+                                        {{ $vat7->vat7_value }} <br> <br>
+                                           
+                                       @endforeach
+                                </td>
+
+                                <td>
+                                    @foreach ( $invoice->receipt as $cheq => $chequ )
+                                      
+                                        {{ $chequ->cheque_bank }} <br> <br>
+                                           
+                                       @endforeach
+                                </td>
+                                <td>
+                                      @foreach ( $invoice->receipt as $cheqre => $chequref )
+                                      
+                                        {{ $chequref->cheque_reference }} <br> <br>
+                                           
+                                       @endforeach
+                                </td>
+                                <td>
+                                        @foreach ( $invoice->receipt as $cheqama => $cheqamnt )
+                                      
+                                       GH&#x20B5; {{ number_format($cheqamnt->cheque_amount, 2) }} <br> <br>
+                                           
+                                       @endforeach
+                                </td>
+                                <td>
+                                        @foreach ( $invoice->receipt as $trans => $tansfer )
+                                      
+                                        {{ $tansfer->transfer_bank }} <br> <br>
+                                           
+                                       @endforeach
+                                </td>
+                                <td> 
+                                      @foreach ( $invoice->receipt as $transref => $tansferref )
+                                      
+                                        {{ $tansferref->transfer_reference }} <br> <br>
+                                           
+                                       @endforeach
+                                </td>
+                                <td>
+                                        @foreach ( $invoice->receipt as $transama => $transamnt )
+                                      
+                                        {{ $transamnt->transfer_amount }} <br> <br>
+                                           
+                                       @endforeach
+                                </td>
+                                <td>
+                                        @foreach ( $invoice->receipt as $mo => $momo )
+                                      
+                                        GH&#x20B5;{{ number_format($momo->momo_amount,2) }} <br> <br>
+                                           
+                                       @endforeach
+                                </td>
+                                <td>
+                                        @foreach ( $invoice->receipt as $ca => $cash )
+                                      
+                                        GH&#x20B5;{{ number_format($cash->cash_amount,2) }} <br> <br>
+                                           
+                                       @endforeach
+                                </td>
+                                <td>
+                                         @foreach ( $invoice->receipt as $tot => $total )
+                                      
+                                        GH&#x20B5;{{ number_format($total->total,2) }} <br> <br>
+                                           
+                                       @endforeach  
+                                </td>
                         </tr>
                         @endforeach
                         @endif

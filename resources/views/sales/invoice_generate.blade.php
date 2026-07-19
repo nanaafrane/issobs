@@ -215,7 +215,8 @@
        </li>
       @endif
 
-      @if(Auth::user()->hasPermission('Accounts') )
+            @if(Auth::user()->hasPermission('Accounts') && Auth::user()->hasRole(['Invoice', 'Officer', 'Director', 'Finance Manager']) )
+
       <li class="menu-header small text-uppercase"><span class="menu-header-text">PAYROLL</span></li>
         <li class="menu-item">
                 <a href="javascript:void(0);" class="menu-link menu-toggle">
@@ -223,14 +224,14 @@
                 <div class="text-truncate" data-i18n="Payroll">Payroll</div>
                 </a>
                 <ul class="menu-sub">
-            @if(Auth::user()->hasRole(['Invoice', 'Finance Manager']))
+                @if(Auth::user()->hasRole([ 'Finance Manager']))
+
                 <li class="menu-item">
                     <a href="{{ url('salaries') }}" class="menu-link">
                     <i class="menu-icon tf-icons bx bxs-user-account"></i>
                     <div class="text-truncate" data-i18n="Employees">Add to Salaries</div>
                     </a>
                 </li>
-                @endif
 
                 <li class="menu-item">
                     <a href="{{ url('salaries/create') }}" class="menu-link">
@@ -238,20 +239,8 @@
                     <div class="text-truncate" data-i18n="Salaries">Salaries</div>
                     </a>
                 </li>
+                @endif
 
-                <li class="menu-item">
-                    <a href="{{ url('salariesTransaction') }}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-transfer-alt"></i>
-                    <div class="text-truncate" data-i18n="Transaction">Transactions</div>
-                    </a>
-                </li>
-
-                <li class="menu-item">
-                    <a href="{{ url('salariesInvPayroll') }}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-git-compare"></i>
-                    <div class="text-truncate" data-i18n="InvtoPayroll">Invoice to Payroll</div>
-                    </a>
-                </li>
                 </ul>
             </li>
       @endif
@@ -350,17 +339,17 @@
                                 </div>
 
                                 <div class="col-md-6" style="padding-left: 250px;">
-                                    <button id="add" type="button" class="btn btn-danger">+</button>
+                                    <a id="add" href="javascript:void(0);" class="btn btn-danger text-white" role="button">+</a>
                                 </div>
                             </div>
                             <br>
 
 
                             <div id="product_form">
-                                <div class="row">
+                                <div class="row invoice-row">
                                     <div class="col-2">
-                                        <h5 class="card-header" for="service" class="form-label"> Services </h5>
-                                        <select name="service[]" class="form-select @error('service') is-invalid @enderror" id="service" required>
+                                        <h5 class="card-header"> Services </h5>
+                                        <select name="service[]" class="form-select @error('service') is-invalid @enderror service" required>
                                             <option selected disabled> Select </option>
                                             @foreach($services as $service)
                                             <option value="{{$service->name}}">{{$service->name}}</option>
@@ -373,50 +362,77 @@
                                         @enderror
                                     </div>
                                     <div class="col-3">
-                                        <h5 class="card-header" for="description" class="form-label">Description</h5>
-                                        <textarea name="description[]"
-                                            id="description"
-                                            class="form-control"
-                                            placeholder="Description" class="form-control" rows="1" required></textarea>
+                                        <h5 class="card-header">Description</h5>
+                                        <textarea name="description[]" class="form-control description" placeholder="Description" rows="1" required></textarea>
                                     </div>
 
                                     <div class="col-2">
                                         <h5 class="card-header">Quantity</h5>
                                         <div class="input-group">
-                                            <input
-                                                type="number"
-                                                name="quantity[]"
-                                                id="quantity"
-                                                class="form-control"
-                                                placeholder="Quantity" step="any" required>
+                                            <input type="number" name="quantity[]" class="form-control quantity" placeholder="Quantity" step="any" required>
                                         </div>
                                     </div>
 
                                     <div class="col-2">
                                         <h5 class="card-header">Unit Price</h5>
                                         <div class="input-group">
-                                            <input
-                                                type="number"
-                                                name="unit_price[]"
-                                                id="unit_price"
-                                                oninput="unitPrice()"
-                                                class="form-control"
-                                                placeholder="GH&#8373;" step="any" required>
+                                            <input type="number" name="unit_price[]" class="form-control unit_price" placeholder="GH&#8373;" step="any" required>
                                         </div>
                                     </div>
 
-                                    <div class="col-3">
+                                    <div class="col-2">
                                         <h5 class="card-header">Amount</h5>
                                         <div class="input-group">
-                                            <input
-                                                type="number"
-                                                name="amount[]"
-                                                id="amount"
-                                                class="form-control"
-                                                placeholder="GH&#8373;" step="any" required>
+                                            <input type="number" name="amount[]" class="form-control amount" placeholder="GH&#8373;" step="any" readonly>
                                         </div>
                                     </div>
 
+                                    <div class="col-1 d-flex align-items-end">
+                                        <a href="javascript:void(0);" class="btn btn-danger btn_remove w-100 text-white" style="display:none;" role="button">-</a>
+                                    </div>
+
+                                </div>
+                                <div id="invoice_row_template" class="d-none">
+                                    <div class="row invoice-row">
+                                        <div class="col-2">
+                                            <h5 class="card-header"> Services </h5>
+                                            <select name="service[]" class="form-select service" required disabled>
+                                                <option selected disabled> Select </option>
+                                                @foreach($services as $service)
+                                                <option value="{{$service->name}}">{{$service->name}}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                        <div class="col-3">
+                                            <h5 class="card-header">Description</h5>
+                                            <textarea name="description[]" class="form-control description" placeholder="Description" rows="1" required disabled></textarea>
+                                        </div>
+
+                                        <div class="col-2">
+                                            <h5 class="card-header">Quantity</h5>
+                                            <div class="input-group">
+                                                <input type="number" name="quantity[]" class="form-control quantity" placeholder="Quantity" step="any" required disabled>
+                                            </div>
+                                        </div>
+
+                                        <div class="col-2">
+                                            <h5 class="card-header">Unit Price</h5>
+                                            <div class="input-group">
+                                                <input type="number" name="unit_price[]" class="form-control unit_price" placeholder="GH&#8373;" step="any" required disabled>
+                                            </div>
+                                        </div>
+
+                                        <div class="col-2">
+                                            <h5 class="card-header">Amount</h5>
+                                            <div class="input-group">
+                                                <input type="number" name="amount[]" class="form-control amount" placeholder="GH&#8373;" step="any" readonly disabled>
+                                            </div>
+                                        </div>
+
+                                        <div class="col-1 d-flex align-items-end">
+                                            <a href="javascript:void(0);" class="btn btn-danger btn_remove w-100 text-white" role="button">-</a>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
@@ -444,36 +460,42 @@
 
     @section('scripts')
     <script>
-        function unitPrice() {
-            let amount;
-            let quantity = document.getElementById("quantity").value;
-
-            let unit_price = document.getElementById("unit_price").value;
-            // console.log(unit_price);
-            amount = quantity * unit_price;
-
-            document.getElementById("amount").value = amount;
-            // // console.log(amount);
+        function updateRowAmount(row) {
+            var quantity = parseFloat(row.find('.quantity').val()) || 0;
+            var unitPrice = parseFloat(row.find('.unit_price').val()) || 0;
+            row.find('.amount').val((quantity * unitPrice).toFixed(2));
         }
-    </script>
 
-    <script>
         $(document).ready(function() {
-            var i = 1;
-            $('#add').click(function() {
-                i++;
-                $('#product_form').prepend('<div class="row" id="row' + i + '"><div class="col-2"><h5 class="card-header" for="service" class="form-label"> Services </h5><select name="service[]" class="form-select" id="service" required><option selected disabled> Select </option>@foreach($services as $service)<option value="{{$service->name}}">{{$service->name}}</option>@endforeach</select></div><div class="col-3"><h5 class="card-header" for="description" class="form-label">Description</h5><textarea name="description[] "id="description" class="form-control" placeholder="Description" class="form-control" rows="1" required></textarea></div> <div class="col-2"><h5 class="card-header">Quantity</h5><div class="input-group"><input type="number" name="quantity[]" id="quantity" class="form-control" placeholder="Quantity" step="any" required></div></div> <div class="col-2"><h5 class="card-header">Unit Price</h5><div class="input-group"><input type="number" name="unit_price[] "id="unit_price" oninput="unitPrice()" class="form-control" placeholder="GH&#8373;" step="any" required></div></div> <div class="col-2"><h5 class="card-header">Amount</h5><div class="input-group"><input type="number" name="amount[]" id="amount" step="any" class="form-control" placeholder="GH&#8373;" required></div><button type="button" name="remove" id="' + i + '" class="btn btn-danger btn_remove" style="margin-left: 130px;margin-top: -65px;">-</button></div></div>');
-            });
-            $(document).on('click', '.btn_remove', function() {
-                var button_id = $(this).attr("id");
-                // console.log(button_id);
-                $('#row' + button_id + '').remove();
+            $('#add').click(function(event) {
+                event.preventDefault();
+                var newRow = $('#invoice_row_template .invoice-row').clone();
+                newRow.find('input, select, textarea').prop('disabled', false);
+                $('#product_form').prepend(newRow);
+                toggleRemoveButtons();
             });
 
+            $(document).on('input', '.quantity, .unit_price', function() {
+                var row = $(this).closest('.invoice-row');
+                updateRowAmount(row);
+            });
+
+            $(document).on('click', '.btn_remove', function() {
+                $(this).closest('.invoice-row').remove();
+                toggleRemoveButtons();
+            });
+
+            function toggleRemoveButtons() {
+                var rowCount = $('#product_form .invoice-row').length;
+                $('#product_form .btn_remove').each(function() {
+                    $(this).toggle(rowCount > 1);
+                });
+            }
+
+            toggleRemoveButtons();
         });
     </script>
     @endsection
-
 
 
 </x-sales-dashboard>

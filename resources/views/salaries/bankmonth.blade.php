@@ -327,9 +327,9 @@
                             <input class="form-check-input form-check-inline" type="checkbox" value="" id="options" />
 
                             <div class="form-check form-check-inline">
-                                
+                                 @if(Auth::user()->hasRole(['Finance Manager']))
                                 <button class="btn btn-success" data-loading="true" onclick="document.getElementById('action_type').value='approve'; return confirm('Kindly Confirm?')" type="submit"> <i class="icon-base bx bx-recycle"> </i> {{ __('Approve') }}</button>                   
-                        
+                                @endif
                                 <a href="/exportBank/{{ $month }}/{{ $bank->id }}" class="btn btn-dark m-4" > <i class="icon-base bx bx-bxs-file-plus"> </i> {{ __(' Excel Bank Download') }}</a>                   
                             </div>
 

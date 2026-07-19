@@ -337,10 +337,11 @@
                     <div class="col-lg-12 mb-4">
                         <input type="hidden" name="action_type" id="salary_action_type" value="" />
                         <input class="form-check-input form-check-inline" type="checkbox" value="" id="options" />
+                        @if(Auth::user()->hasRole(['Finance Manager']))
                         <div class="form-check form-check-inline">
                             <button class="btn btn-success" data-action="approve" onclick="document.getElementById('salary_action_type').value='approve'; return confirm('Kindly Confirm?')" type="submit"> <i class="icon-base bx bx-recycle"> </i> {{ __('Approve') }}</button>                   
                         </div>
-
+                        @endif
                         <div class="card">
                             <h5 class="card-header"> Salaries Paid via Cash  </h5>
                             <div class="card-body"> 

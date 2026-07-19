@@ -604,8 +604,9 @@
                                         <input class="form-check-input form-check-inline" type="checkbox" value="" id="options" />
                                     
                                         <div class="form-check form-check-inline">
+                                             @if(Auth::user()->hasRole(['Finance Manager']))
                                             <button class="btn btn-dark" name="submit" value="" onclick="return confirm('Kindly Confirm?')" type="submit"> <i class="icon-base bx bx-recycle"> </i> {{ __('ReAssign Category') }}</button>                   
-                                       
+                                            @endif
                                             <a href="/exportCategory/{{ $month }}/Category A" class="btn btn-success m-4" > <i class="icon-base bx bx-bxs-file-plus"> </i> {{ __(' Excel Download Category') }}</a>                   
 
                                         </div>
@@ -690,7 +691,9 @@
                                         <input class="form-check-input form-check-inline" type="checkbox" value="" id="options" />
                                     
                                         <div class="form-check form-check-inline">
+                                             @if(Auth::user()->hasRole(['Finance Manager']))
                                             <button class="btn btn-dark" name="submit" value="" onclick="return confirm('Kindly Confirm?')" type="submit"> <i class="icon-base bx bx-recycle"> </i> {{ __('ReAssign Category') }}</button>                   
+                                            @endif
                                             <a href="/exportCategory/{{ $month }}/Category B" class="btn btn-success m-4" > <i class="icon-base bx bx-bxs-file-plus"> </i> {{ __(' Excel Download Category') }}</a>                   
                                        
                                         </div>
@@ -773,7 +776,9 @@
                                         <input class="form-check-input form-check-inline" type="checkbox" value="" id="options" />
                                     
                                         <div class="form-check form-check-inline">
+                                             @if(Auth::user()->hasRole(['Finance Manager']))
                                             <button class="btn btn-dark" name="submit" value="" onclick="return confirm('Kindly Confirm?')" type="submit"> <i class="icon-base bx bx-recycle"> </i> {{ __('ReAssign Category') }}</button>                   
+                                            @endif
                                             <a href="/exportCategory/{{ $month }}/Category C" class="btn btn-success m-4" > <i class="icon-base bx bx-bxs-file-plus"> </i> {{ __(' Excel Download Category') }}</a>                   
                                        
                                         </div>
@@ -857,7 +862,9 @@
                                         <input class="form-check-input form-check-inline" type="checkbox" value="" id="options" />
                                     
                                         <div class="form-check form-check-inline">
+                                             @if(Auth::user()->hasRole(['Finance Manager']))
                                             <button class="btn btn-dark" name="submit" value="" onclick="return confirm('Kindly Confirm?')" type="submit"> <i class="icon-base bx bx-recycle"> </i> {{ __('ReAssign Category') }}</button>                   
+                                           @endif
                                             <a href="/exportCategory/{{ $month }}/Category D" class="btn btn-success m-4" > <i class="icon-base bx bx-bxs-file-plus"> </i> {{ __(' Excel Download Category') }}</a>                   
                                        
                                         </div>
@@ -941,7 +948,9 @@
                                         <input class="form-check-input form-check-inline" type="checkbox" value="" id="options" />
                                     
                                         <div class="form-check form-check-inline">
+                                             @if(Auth::user()->hasRole(['Finance Manager']))
                                             <button class="btn btn-dark" name="submit" value="" onclick="return confirm('Kindly Confirm?')" type="submit"> <i class="icon-base bx bx-recycle"> </i> {{ __('Assign Category') }}</button>                   
+                                            @endif
                                         </div>
                                         
                                         <div class="table-responsive">
@@ -1102,7 +1111,7 @@
                         @csrf
                         <input type="hidden" name="action_type" id="salaries_bulk_action_type" value="" />
                         <div class="table-responsive text-nowrap">
-
+                            @if(Auth::user()->hasRole(['Finance Manager']))
                             <input class="form-check-input form-check-inline" type="checkbox" value="" id="options" />
 
                             <div class="form-check form-check-inline">
@@ -1111,7 +1120,7 @@
                                 <button class="btn btn-danger m-4" data-action="hold" onclick="document.getElementById('salaries_bulk_action_type').value='hold'; return confirm('Kindly Confirm?')" type="submit"> <i class="icon-base bx bx-bxs-file-plus"> </i> {{ __(' Hold') }}</button>                   
                                 
                                 <!-- <a href="{{ url('/exportMaster', $salariesMaster[0]->salary_month?->format('F, Y'))}} " class="btn btn-success m-4" > <i class="icon-base bx bx-bxs-file-plus"> </i> {{ __(' Excel Download Master') }}</a>                    -->
-                          
+                            @endif
                           
                             </div>
 
@@ -3221,8 +3230,8 @@
                                         </div>
 
                                         <div class="d-flex justify-content-between">
-                                                <div>  <h4 class="card-title text-danger"><strong>  {{ number_format($salariesMaster->where('payment_type','Bank')->whereIn('payment_status', ['pending', 'hold', 'rejected'])->sum('net_salary'))  }} </strong> </h4> <p> PENDIND <br> {{ number_format($salariesMaster->where('payment_type','Bank')->where('payment_status', 'pending')->sum('net_salary'))  }}  </p>
-                                                <p> HOLD <br> {{ number_format($salariesMaster->where('payment_type','Bank')->whereIn('payment_status', [ 'hold', 'rejected'])->sum('net_salary'))  }} </p>
+                                                <div>  <h4 class="card-title text-danger"><strong>  {{ number_format($salariesMaster->where('payment_type','Bank')->whereIn('payment_status', ['pending', 'hold', 'rejected'])->sum('net_salary'), 2)  }} </strong> </h4> <p> PENDIND <br> {{ number_format($salariesMaster->where('payment_type','Bank')->where('payment_status', 'pending')->sum('net_salary'), 2)  }}  </p>
+                                                <p> HOLD <br> {{ number_format($salariesMaster->where('payment_type','Bank')->whereIn('payment_status', [ 'hold', 'rejected'])->sum('net_salary'), 2)  }} </p>
                                                 </div>  
                                                 
                                                 <div> <h4 class="card-title text-danger"><strong> {{ $salariesMaster->where('payment_type', 'Bank')->whereIn('payment_status', ['pending', 'hold', 'rejected'])->count() }} </strong> </h4> <p> PENDING <br> {{ $salariesMaster->where('payment_type', 'Bank')->where('payment_status', 'pending')->count() }} </p> 
