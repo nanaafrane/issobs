@@ -23,6 +23,27 @@ class UpdateReceiptRequest extends FormRequest
     {
         return [
             //
+                        // Mode is now an array of one or more values.
+            'mode'           => ['required', 'array', 'min:1'],
+            'mode.*'         => ['string', 'in:cheque,transfer,momo,cash,other payments'],
+
+            // Each detail field is only required if its matching mode
+            // was actually selected. Rule::requiredIf covers this cleanly.
+            'cheque_reference'   => [\Illuminate\Validation\Rule::requiredIf(fn () => in_array('cheque', $this->input('mode', [])))],
+            'cheque_amount'      => [\Illuminate\Validation\Rule::requiredIf(fn () => in_array('cheque', $this->input('mode', []))), 'nullable', 'numeric'],
+            'cheque_bank'        => [\Illuminate\Validation\Rule::requiredIf(fn () => in_array('cheque', $this->input('mode', [])))],
+
+            'transfer_reference' => [\Illuminate\Validation\Rule::requiredIf(fn () => in_array('transfer', $this->input('mode', [])))],
+            'transfer_amount'    => [\Illuminate\Validation\Rule::requiredIf(fn () => in_array('transfer', $this->input('mode', []))), 'nullable', 'numeric'],
+            'transfer_bank'      => [\Illuminate\Validation\Rule::requiredIf(fn () => in_array('transfer', $this->input('mode', [])))],
+
+            'momo_transactin_id' => [\Illuminate\Validation\Rule::requiredIf(fn () => in_array('momo', $this->input('mode', [])))],
+            'momo_amount'        => [\Illuminate\Validation\Rule::requiredIf(fn () => in_array('momo', $this->input('mode', []))), 'nullable', 'numeric'],
+
+            'other_payment_descri' => [\Illuminate\Validation\Rule::requiredIf(fn () => in_array('other payments', $this->input('mode', [])))],
+            'other_payment_amnt'   => [\Illuminate\Validation\Rule::requiredIf(fn () => in_array('other payments', $this->input('mode', []))), 'nullable', 'numeric'],
+
+            'cash_amount'        => [\Illuminate\Validation\Rule::requiredIf(fn () => in_array('cash', $this->input('mode', []))), 'nullable', 'numeric'],
         ];
     }
 }

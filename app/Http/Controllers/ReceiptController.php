@@ -265,6 +265,48 @@ class ReceiptController extends Controller
 
     }
 
+
+
+        /* -----------------------------------------------------------------------
+        * 2b. Shared helper — explicitly nulls out the detail fields for any
+        *     payment mode that is NOT in the submitted mode[] array.
+        *
+        *     This does NOT rely on the client clearing fields via JS before
+        *     submit. Even if JS never ran (disabled, blocked, form submitted
+        *     programmatically, browser back/forward cache, etc.), whatever
+        *     the request happens to contain for a mode the user didn't select
+        *     is discarded here — so a receipt can never end up storing cheque
+        *     details from a mode that was switched away from three edits ago.
+        * ---------------------------------------------------------------------*/
+
+        function buildModeAwarePayload(\Illuminate\Http\Request $request, array $selectedModes): array
+        {
+            // Every field that belongs to a specific payment mode, grouped by
+            // the mode value that "owns" it.
+            $modeFields = [
+                'cheque' => ['cheque_reference', 'cheque_amount', 'cheque_bank'],
+                'transfer' => ['transfer_reference', 'transfer_amount', 'transfer_bank'],
+                'momo' => ['momo_transactin_id', 'momo_amount'],
+                'other payments' => ['other_payment_descri', 'other_payment_amnt'],
+                'cash' => ['cash_amount'],
+            ];
+
+            $payload = [];
+
+            foreach ($modeFields as $mode => $fields) {
+                $isSelected = in_array($mode, $selectedModes, true);
+                foreach ($fields as $field) {
+                    // Selected mode -> take whatever was submitted (or null if empty).
+                    // Unselected mode -> force null, ignoring the request entirely.
+                    $payload[$field] = $isSelected ? $request->input($field) : null;
+                }
+            }
+
+            return $payload;
+        }
+
+
+
     /**
      * Store a newly created resource in storage.
      */
@@ -1055,6 +1097,12 @@ class ReceiptController extends Controller
            $image = ($request->file('image'))->store('images', 'public_html_disk');
         }
 
+             
+        $validated = $request->validated();
+
+
+
+
         $cheque_amount = $request->float('cheque_amount');
         $momo_amount = $request->float('momo_amount');
         $cash_amount = $request->float('cash_amount');
@@ -1104,10 +1152,17 @@ class ReceiptController extends Controller
          }
 
 
+        $receipt->update(array_merge([
+            // 'from'   => $validated['from'],
+            'mode'   => $validated['mode'],
+            // 'status' => $validated['status'],
+            // 'staff'  => $validated['staff'],
+        ], $this->buildModeAwarePayload($request, $validated['mode'])));
+
         $receipt->invoice_id = $request->input('invoice_id');
         $receipt->client_id = $request->input('client_id');
         $receipt->from = $request->input('from');
-        $receipt->mode = $request->input('mode');
+        // $receipt->mode = $request->input('mode');
         $receipt->advance_payment = $advance_payment;
         $receipt->dAmount = $dAmount;
         $receipt->description = $description;
@@ -1115,14 +1170,14 @@ class ReceiptController extends Controller
         $receipt->vat7_value = $vat7_value;
         $receipt->vat7_amount = $this->vat7_amount;
 
-        $receipt->transfer_reference = $request->input('transfer_reference');
-        $receipt->transfer_bank = $request->input('transfer_bank');
+        // $receipt->transfer_reference = $request->input('transfer_reference');
+        // $receipt->transfer_bank = $request->input('transfer_bank');
 
-        $receipt->cheque_reference = $request->input('cheque_reference');
-        $receipt->cheque_bank = $request->input('cheque_bank');
+        // $receipt->cheque_reference = $request->input('cheque_reference');
+        // $receipt->cheque_bank = $request->input('cheque_bank');
 
-        $receipt->momo_transactin_id = $request->input('momo_transactin_id');
-        $receipt->other_payment_descri = $request->input('other_payment_descri');
+        // $receipt->momo_transactin_id = $request->input('momo_transactin_id');
+        // $receipt->other_payment_descri = $request->input('other_payment_descri');
         $receipt->user_id = Auth::user()->id;
         $receipt->status = $request->input('status');
         $receipt->total = $total;
@@ -1515,6 +1570,20 @@ class ReceiptController extends Controller
         $newReceipt->amount_received = $sum_of_amountPaid_minus_wht;
         $newReceipt->image = $image;
         
+
+        // $validated = $request->validated();
+
+        // $receipt = Receipt::create(array_merge([
+        //     // 'invoice_id'    => $request->input('invoice_id'),
+        //     // 'client_id'     => $request->input('client_id'),
+        //     // 'from'          => $validated['from'],
+        //     'mode'          => $validated['mode'],       // array — cast handles JSON encode
+        //     // 'status'        => $validated['status'],
+        //     // 'staff'         => $validated['staff'],       // adjust to your actual assignee column, e.g. user2_id2
+        //     // 'receipt_month' => $validated['receipt_month'],
+        // ], $this->buildModeAwarePayload($request, $validated['mode'])));
+
+
         if(Auth::user()->role?->id == '2')
             {
                $newReceipt->ho_status = 'approved';

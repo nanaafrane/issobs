@@ -51,7 +51,13 @@ class Receipt extends Model
         'coll_date' => 'date',
         'bran_date' => 'date',
         'ho_date' => 'date',
+        'mode' => 'array',
     ];
+
+    public function hasMode(string $mode): bool
+    {
+        return in_array($mode, $this->mode ?? [], true);
+    }
 
 
     public function invoice()

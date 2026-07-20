@@ -473,21 +473,36 @@
                                     </div>
 
                                     <div class="col mt-6">
-                                        <div class="input-group">
-                                            <label class="input-group-text" for="inputGroupSelect01">{{ __('MODE') }}</label>
-                                            <select name="mode" class="form-select @error('mode') is-invalid @enderror" id="mode" required>
-                                                <option disabled {{ old('mode') ? '' : 'selected' }}>Choose...</option>
-                                                @foreach ($mode as $modes )
-                                                <option value="{{ $modes->name }}" {{ old('mode') == $modes->name ? 'selected' : '' }}> {{ $modes->name }}</option>
-                                               @endforeach
-
-                                            </select>
-                                            @error('mode')
-                                            <span class="invalid-feedback" role="alert">
-                                                <strong>{{ $message }}</strong>
-                                            </span>
-                                            @enderror
+                                        <label class="form-label d-block">{{ __('MODE') }} <small class="text-muted">(select one or more)</small></label>
+                                        <div id="mode" class="d-flex flex-wrap gap-4 @error('mode') is-invalid @enderror">
+                                            @php
+                                                // Machine-readable id per mode, e.g. "other payments" -> "mode_other_payments"
+                                                $modeInputId = fn ($name) => 'mode_' . str_replace(' ', '_', strtolower($name));
+                                                $selectedModes = old('mode', []);
+                                            @endphp
+                                            @foreach ($mode as $modes)
+                                            <div class="form-check">
+                                                <input
+                                                    type="checkbox"
+                                                    name="mode[]"
+                                                    id="{{ $modeInputId($modes->name) }}"
+                                                    class="form-check-input"
+                                                    value="{{ $modes->name }}"
+                                                    {{ in_array($modes->name, $selectedModes) ? 'checked' : '' }}>
+                                                <label class="form-check-label" for="{{ $modeInputId($modes->name) }}">{{ $modes->name }}</label>
+                                            </div>
+                                            @endforeach
                                         </div>
+                                        @error('mode')
+                                        <span class="invalid-feedback d-block" role="alert">
+                                            <strong>{{ $message }}</strong>
+                                        </span>
+                                        @enderror
+                                        @error('mode.*')
+                                        <span class="invalid-feedback d-block" role="alert">
+                                            <strong>{{ $message }}</strong>
+                                        </span>
+                                        @enderror
                                     </div>
                                 </div>
                                 <br>
@@ -787,76 +802,96 @@
     @section('scripts')
 
     <script >
-        /**
- * Payment mode handler for the Receipt form (#mode select).
+  /**
+ * Payment mode handler for the Receipt form.
  *
- * Fixes vs. original:
- *  - Only ONE payment-detail row is ever visible at a time (no stacking).
- *  - Hidden rows have their inputs cleared and un-required so stale/empty
- *    data never gets submitted.
- *  - The visible row's inputs become required, so the browser validates
- *    before submit instead of relying only on server-side checks.
- *  - One data map + one handler instead of 5 near-duplicate if-blocks —
- *    adding a new payment mode is a 1-line change, not a new if-block.
- *  - Smooth slideDown/slideUp instead of an instant toggle, for a less
- *    jarring UX when switching between modes.
+ * `#mode` is now a group of checkboxes (name="mode[]"), one per payment
+ * mode, instead of a single <select>. A receipt can be paid across
+ * multiple modes at once — e.g. part cash, part cheque — so each mode's
+ * detail row is shown/hidden independently based on its own checkbox,
+ * not exclusively of the others.
+ *
+ * Behavior:
+ *  - Checking a mode's checkbox reveals its detail row and makes that
+ *    row's fields required.
+ *  - Unchecking it hides the row, clears its fields, and removes the
+ *    `required` attribute — so unchecked modes never submit stale or
+ *    empty required data.
+ *  - Any number of modes can be checked simultaneously.
+ *  - State is resynced on page load so a validation-error round-trip
+ *    (old('mode', ...) re-checking boxes) shows the right rows without
+ *    the user re-clicking anything.
  */
 $(document).ready(function () {
-    // Map each <option value="..."> on #mode to its corresponding row,
-    // and the fields inside that row that should become required.
+    // Maps each mode checkbox to its detail row and the fields inside
+    // that row which should be required only while the mode is checked.
     const paymentModes = {
         'cheque': {
+            checkbox: '#mode_cheque',
             row: '#chequerow',
             required: ['#cheque_reference', '#cheque_amount', '#cheque_bank']
         },
         'transfer': {
+            checkbox: '#mode_transfer',
             row: '#transferrow',
             required: ['#transfer_reference', '#transfer_amount', '#transfer_bank']
         },
         'momo': {
+            checkbox: '#mode_momo',
             row: '#momorow',
             required: ['#momo_transactin_id', '#momo_amount']
         },
         'other payments': {
+            checkbox: '#mode_other_payments',
             row: '#otherpayrow',
             required: ['#other_payment_descri', '#other_payment_amnt']
         },
         'cash': {
+            checkbox: '#mode_cash',
             row: '#cashrow',
             required: ['#cash_amount']
         }
     };
-
-    function showPaymentMode(selectedValue) {
-        Object.entries(paymentModes).forEach(([mode, config]) => {
-            const $row = $(config.row);
-            const isMatch = mode === selectedValue;
-
-            if (isMatch) {
-                $row.slideDown(150);
-            } else {
-                $row.slideUp(150);
+ 
+    function syncModeRow(config) {
+        const isChecked = $(config.checkbox).is(':checked');
+        const $row = $(config.row);
+ 
+        if (isChecked) {
+            $row.slideDown(150);
+        } else {
+            $row.slideUp(150);
+        }
+ 
+        config.required.forEach((selector) => {
+            $(selector).prop('required', isChecked);
+            if (!isChecked) {
+                $(selector).val('');
             }
-
-            // Toggle `required` and clear stale values on non-active rows
-            config.required.forEach((selector) => {
-                $(selector).prop('required', isMatch);
-                if (!isMatch) {
-                    $(selector).val('');
-                }
-            });
         });
     }
-
-    $('#mode').on('change', function () {
-        showPaymentMode(this.value);
+ 
+    Object.values(paymentModes).forEach((config) => {
+        // Sync once on load (handles old('mode', ...) pre-checked boxes
+        // after a validation error, or an existing receipt being edited).
+        syncModeRow(config);
+ 
+        $(config.checkbox).on('change', function () {
+            syncModeRow(config);
+        });
     });
-
-    // If the form re-renders with an old value already selected
-    // (e.g. validation error round-trip), restore the correct row on load.
-    if ($('#mode').val()) {
-        showPaymentMode($('#mode').val());
-    }
+ 
+    // At least one mode must be checked before submit — the browser's
+    // native `required` on a checkbox group doesn't work across multiple
+    // checkboxes, so this is a light client-side backstop (server-side
+    // validation via `mode.*` rules is still the source of truth).
+    $('form').on('submit', function (e) {
+        const anyChecked = Object.values(paymentModes).some((config) => $(config.checkbox).is(':checked'));
+        if (!anyChecked) {
+            e.preventDefault();
+            alert('Please select at least one payment mode.');
+        }
+    });
 });
 
 /**
