@@ -1129,8 +1129,8 @@ class ReceiptController extends Controller
         $receipt->wht_amount = $this->wht_amount;
         $receipt->amount_received = $sum_of_amountPaid_minus_wht;
         $receipt->image = $image;
-        // $receipt->save();
-        dd($receipt);
+        $receipt->save();
+        // dd($receipt);
 
 
         // // update the invoice 
