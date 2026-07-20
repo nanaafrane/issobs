@@ -362,11 +362,13 @@
             <form action="/employeesCashVerify" method="POST">
             @csrf
                 <div class="col">
+                     @if(Auth::user()->hasRole([ 'Invoice']))
                     <input class="form-check-input form-check-inline" type="checkbox" value="" id="options" />
 
                     <div class="form-check form-check-inline">                            
                         <button class="btn btn-dark" type="submit" name="submit" value="confirm" onclick="return confirm('Kindly Confirm?')"> <i class="icon-base bx bx-arrow-from-left"> </i> {{ __('VERIFY') }}</button>
                     </div>
+                    @endif
                     <hr>
 
                     <div class="card"> 

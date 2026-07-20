@@ -392,11 +392,11 @@
 
                             <div class="row">
                                 <div class="col-md-6 form-check form-switch">
-                                    <input name="wth" class="form-check-input" type="checkbox" id="wth">
+                                    <input name="wth" class="form-check-input" type="checkbox" id="wth" {{ old('wth') ? 'checked' : '' }}>
                                     <label class="form-check-label" for="wth"> {{$wht_rate->wht_rate * 100}} % WITHHOLDING TAX </label>
                                 </div>
 
-                                <div id="wht_value" style="display: none;" class="col-md-6">
+                                <div id="wht_value" style="display: {{ old('wth') ? 'block' : 'none' }};" class="col-md-6">
                                     <input name="wht_amount" type="number" class="form-control" value="{{$invoice->sub_amount * 0.075}}" step="any">
                                 </div>
                             </div>
@@ -404,30 +404,30 @@
                             <div class="row">
                                 @if ($invoice->sub_total > 0.00)
                                 <div class="col-md-6 form-check form-switch">
-                                    <input name="vat" class="form-check-input" type="checkbox" id="vat" >
+                                    <input name="vat" class="form-check-input" type="checkbox" id="vat" {{ old('vat') ? 'checked' : '' }}>
                                     <label class="form-check-label" for="vat"> 7 % VAT </label>
                                 </div>
 
-                                <div id="vat7_value" style="display: none;" class="col-md-6">
+                                <div id="vat7_value" style="display: {{ old('vat') ? 'block' : 'none' }};" class="col-md-6">
                                     <input name="vat7_value" type="number" class="form-control" value="{{$invoice->sub_total * 0.07 }}" step="any">
                                 </div>
                                @else
                                     <div class="col-md-6 form-check form-switch">
-                                        <input name="vat" class="form-check-input" type="checkbox" id="vat" >
+                                        <input name="vat" class="form-check-input" type="checkbox" id="vat" {{ old('vat') ? 'checked' : '' }}>
                                         <label class="form-check-label" for="vat"> 7 % VAT </label>
                                     </div>
 
-                                    <div id="vat7_value" style="display: none;" class="col-md-6">
+                                    <div id="vat7_value" style="display: {{ old('vat') ? 'block' : 'none' }};" class="col-md-6">
                                         <input name="vat7_value" type="number" class="form-control" value="{{$invoice->sub_amount * 0.07 }}" step="any">
                                     </div>
-                               
+
                                 @endif
                             </div>
 
                             <br>
                             <div class="row">
                                 <div class="col-md-6 form-check form-switch">
-                                    <input name="deductions" class="form-check-input" type="checkbox" id="deductions" >
+                                    <input name="deductions" class="form-check-input" type="checkbox" id="deductions" {{ old('deductions') ? 'checked' : '' }}>
                                     <label class="form-check-label" for="deductions"> OTHER DEDUCTIONS </label>
                                 </div>
 
@@ -436,6 +436,7 @@
                                         <input
                                            name="receipt_month" type="date"
                                            class="form-control @error('receipt_month') is-invalid @enderror"
+                                           value="{{ old('receipt_month') }}"
                                             required>
 
                                         @error('receipt_month')
@@ -458,7 +459,7 @@
                                             name="from"
                                             id="from"
                                             class="form-control @error('from') is-invalid @enderror"
-
+                                            value="{{ old('from') }}"
                                             placeholder="Full Name"
                                             required
                                             autocomplete="from"
@@ -475,10 +476,10 @@
                                         <div class="input-group">
                                             <label class="input-group-text" for="inputGroupSelect01">{{ __('MODE') }}</label>
                                             <select name="mode" class="form-select @error('mode') is-invalid @enderror" id="mode" required>
-                                                <option disabled selected>Choose...</option>
-                                                @foreach ($mode as $modes )      
-                                                <option value="{{ $modes->name }}"> {{ $modes->name }}</option>                                                  
-                                               @endforeach   
+                                                <option disabled {{ old('mode') ? '' : 'selected' }}>Choose...</option>
+                                                @foreach ($mode as $modes )
+                                                <option value="{{ $modes->name }}" {{ old('mode') == $modes->name ? 'selected' : '' }}> {{ $modes->name }}</option>
+                                               @endforeach
 
                                             </select>
                                             @error('mode')
@@ -490,7 +491,7 @@
                                     </div>
                                 </div>
                                 <br>
-                                <div class="row"  id="deduction_field"  style="display: none;">
+                                <div class="row"  id="deduction_field"  style="display: {{ old('deductions') ? 'flex' : 'none' }};">
                                     <div class="col mb-0">
                                         <label for="dAmount" class="form-label"> {{ __('DEDUCTED AMOUNT') }}</label>
                                         <input
@@ -498,11 +499,9 @@
                                             name="dAmount"
                                             id="dAmount"
                                             class="form-control @error('dAmount') is-invalid @enderror"
-
+                                            value="{{ old('dAmount') }}"
                                             placeholder="Deducted Amount"
-                                            
                                             autocomplete="dAmount"
-                                            autofocus
                                             step="any">
 
                                         @error('dAmount')
@@ -519,9 +518,9 @@
                                             name="description"
                                             id="description"
                                             class="form-control @error('description') is-invalid @enderror"
+                                            value="{{ old('description') }}"
                                             placeholder="Description"
-                                            autocomplete="description"
-                                            autofocus>
+                                            autocomplete="description">
 
                                         @error('description')
                                         <span class="invalid-feedback" role="alert">
@@ -533,7 +532,7 @@
                                 </div> <br>
 
                                 <!-- show if cheque value is selected -->
-                                <div id="chequerow" style="display: none;" class="row g-6">
+                                <div id="chequerow" style="display: {{ old('mode') == 'cheque' ? 'flex' : 'none' }};" class="row g-6">
                                     <div class="col mb-0">
                                         <label for="cheque_reference" class="form-label"> {{ __('CHEQUE REFERENCE #') }} </label>
                                         <input
@@ -541,9 +540,9 @@
                                             id="cheque_reference"
                                             name="cheque_reference"
                                             class="form-control"
+                                            value="{{ old('cheque_reference') }}"
                                             placeholder="Cheque Reference"
-                                            autocomplete="cheque_reference"
-                                            autofocus>
+                                            autocomplete="cheque_reference">
                                     </div>
 
                                     <div class="col mb-0">
@@ -553,10 +552,10 @@
                                             id="cheque_amount"
                                             name="cheque_amount"
                                             class="form-control"
+                                            value="{{ old('cheque_amount') }}"
                                             placeholder="GH&#8373;"
                                             autocomplete="cheque_amount"
-                                            step="any"
-                                            autofocus>
+                                            step="any">
                                     </div>
 
                                     <div class="col mb-0">
@@ -566,9 +565,9 @@
                                             id="cheque_bank"
                                             name="cheque_bank"
                                             class="form-control"
+                                            value="{{ old('cheque_bank') }}"
                                             placeholder="Cheque Bank"
-                                            autocomplete="cheque_bank"
-                                            autofocus>
+                                            autocomplete="cheque_bank">
                                     </div>
 
                                 </div>
@@ -576,7 +575,7 @@
                                 <br>
 
                                 <!-- show if Bank Transfer value is selected -->
-                                <div id="transferrow" style="display: none;" class="row g-6">
+                                <div id="transferrow" style="display: {{ old('mode') == 'transfer' ? 'flex' : 'none' }};" class="row g-6">
                                     <div class="col mb-0">
                                         <label for="transfer_reference" class="form-label"> {{ __('TRANSFER REFERENCE #') }} </label>
                                         <input
@@ -584,9 +583,9 @@
                                             id="transfer_reference"
                                             name="transfer_reference"
                                             class="form-control"
+                                            value="{{ old('transfer_reference') }}"
                                             placeholder="Transfer Reference"
-                                            autocomplete="transfer_reference"
-                                            autofocus>
+                                            autocomplete="transfer_reference">
                                     </div>
 
                                     <div class="col mb-0">
@@ -596,10 +595,10 @@
                                             id="transfer_amount"
                                             name="transfer_amount"
                                             class="form-control"
+                                            value="{{ old('transfer_amount') }}"
                                             placeholder="GH&#8373;"
                                             autocomplete="transfer_amount"
-                                            step="any"
-                                            autofocus>
+                                            step="any">
                                     </div>
 
                                     <div class="col mb-0">
@@ -609,9 +608,9 @@
                                             id="transfer_bank"
                                             name="transfer_bank"
                                             class="form-control"
+                                            value="{{ old('transfer_bank') }}"
                                             placeholder="Cheque Bank"
-                                            autocomplete="transfer_bank"
-                                            autofocus>
+                                            autocomplete="transfer_bank">
                                     </div>
 
                                 </div>
@@ -619,7 +618,7 @@
                                 <br>
 
                                 <!-- show if Momo value is selected -->
-                                <div id="momorow" style="display: none;" class="row g-6">
+                                <div id="momorow" style="display: {{ old('mode') == 'momo' ? 'flex' : 'none' }};" class="row g-6">
                                     <div class="col mb-0">
                                         <label for="momo_transactin_id" class="form-label"> {{ __('MOMO TRANSACTION ID') }} </label>
                                         <input
@@ -627,9 +626,9 @@
                                             id="momo_transactin_id"
                                             name="momo_transactin_id"
                                             class="form-control"
+                                            value="{{ old('momo_transactin_id') }}"
                                             placeholder="MoMo Transaction ID"
-                                            autocomplete="momo_transactin_id"
-                                            autofocus>
+                                            autocomplete="momo_transactin_id">
                                     </div>
 
                                     <div class="col mb-0">
@@ -639,10 +638,10 @@
                                             id="momo_amount"
                                             name="momo_amount"
                                             class="form-control"
+                                            value="{{ old('momo_amount') }}"
                                             placeholder="GH&#8373;"
                                             autocomplete="momo_amount"
-                                            step="any"
-                                            autofocus>
+                                            step="any">
                                     </div>
 
                                 </div>
@@ -650,7 +649,7 @@
                                 <br>
 
                                 <!-- show if otherpayment value is selected -->
-                                <div id="otherpayrow" style="display: none;" class="row g-6">
+                                <div id="otherpayrow" style="display: {{ old('mode') == 'other payments' ? 'flex' : 'none' }};" class="row g-6">
                                     <div class="col mb-0">
                                         <label for="other_payment_descri" class="form-label"> {{ __('OTHER PAYMENT DESCRIPTION') }} </label>
                                         <input
@@ -658,9 +657,9 @@
                                             id="other_payment_descri"
                                             name="other_payment_descri"
                                             class="form-control"
+                                            value="{{ old('other_payment_descri') }}"
                                             placeholder="Other Payment Description"
-                                            autocomplete="other_payment_descri"
-                                            autofocus>
+                                            autocomplete="other_payment_descri">
                                     </div>
 
                                     <div class="col mb-0">
@@ -670,10 +669,10 @@
                                             id="other_payment_amnt"
                                             name="other_payment_amnt"
                                             class="form-control"
+                                            value="{{ old('other_payment_amnt') }}"
                                             placeholder="GH&#8373;"
                                             autocomplete="other_payment_amnt"
-                                            step="any"
-                                            autofocus>
+                                            step="any">
                                     </div>
 
                                 </div>
@@ -683,17 +682,17 @@
 
                                 <div class="row">
                                     <!-- show if cash value is selected -->
-                                    <div id="cashrow" style="display: none;" class="col mb-0">
+                                    <div id="cashrow" style="display: {{ old('mode') == 'cash' ? 'block' : 'none' }};" class="col mb-0">
                                         <label for="cash_amount" class="form-label"> {{ __('CASH AMOUNT') }}</label>
                                         <input
                                             type="number"
                                             name="cash_amount"
                                             id="cash_amount"
                                             class="form-control"
+                                            value="{{ old('cash_amount') }}"
                                             placeholder="GH&#8373;"
                                             autocomplete="cash_amount"
-                                            step="any"
-                                            autofocus>
+                                            step="any">
                                     </div>
                                     <!-- end of cash value -->
 
@@ -701,9 +700,9 @@
                                         <div class="input-group">
                                             <label class="input-group-text" for="status">{{ __('STATUS') }}</label>
                                             <select name="status" class="form-select @error('status') is-invalid @enderror" id="status" required>
-                                                <option selected disabled>Choose...</option>
-                                               @foreach ( $status as $stat )      
-                                                <option value="{{ $stat->name }}"> {{ $stat->name }}</option>
+                                                <option disabled {{ old('status') ? '' : 'selected' }}>Choose...</option>
+                                               @foreach ( $status as $stat )
+                                                <option value="{{ $stat->name }}" {{ old('status') == $stat->name ? 'selected' : '' }}> {{ $stat->name }}</option>
                                                 @endforeach
                                             </select>
                                             @error('status')
@@ -718,17 +717,17 @@
 
 
                                 <div class="row text-center">
-                                    
+
                                     <div class="col-6 mt-6">
                                         <div class="input-group">
                                             <label class="input-group-text" for="staff">{{ __('ASSIGN TO') }}</label>
                                             <select name="staff" class="form-select @error('staff') is-invalid @enderror" id="staff" required>
-                                                <option selected disabled>Choose...</option>
+                                                <option disabled {{ old('staff') ? '' : 'selected' }}>Choose...</option>
                                             @foreach($assign_staff as $user)
                                                 @if($user->field_id == Auth::user()->field_id)
-                                                <option value="{{$user->id}}"> {{$user->name}} </option>
+                                                <option value="{{$user->id}}" {{ old('staff') == $user->id ? 'selected' : '' }}> {{$user->name}} </option>
                                                 @elseif(Auth::user()->hasRole(['Manager']))
-                                                <option value="{{$user->id}}"> {{$user->name}} </option>
+                                                <option value="{{$user->id}}" {{ old('staff') == $user->id ? 'selected' : '' }}> {{$user->name}} </option>
                                                 @endif
                                             @endforeach
                                             </select>
@@ -740,7 +739,7 @@
                                         </div>
 
                                     </div>
-                                  
+
 
                                 </div>
 
@@ -780,79 +779,136 @@
         </div>
 
     </div>
-    </div>
+
+
     @endsection
 
 
     @section('scripts')
-    <script>
-        const mySelect = document.getElementById('mode');
 
-        mySelect.addEventListener('change', function() {
-            // Get the selected value
-            const selectedValue = this.value;
+    <script >
+        /**
+ * Payment mode handler for the Receipt form (#mode select).
+ *
+ * Fixes vs. original:
+ *  - Only ONE payment-detail row is ever visible at a time (no stacking).
+ *  - Hidden rows have their inputs cleared and un-required so stale/empty
+ *    data never gets submitted.
+ *  - The visible row's inputs become required, so the browser validates
+ *    before submit instead of relying only on server-side checks.
+ *  - One data map + one handler instead of 5 near-duplicate if-blocks —
+ *    adding a new payment mode is a 1-line change, not a new if-block.
+ *  - Smooth slideDown/slideUp instead of an instant toggle, for a less
+ *    jarring UX when switching between modes.
+ */
+$(document).ready(function () {
+    // Map each <option value="..."> on #mode to its corresponding row,
+    // and the fields inside that row that should become required.
+    const paymentModes = {
+        'cheque': {
+            row: '#chequerow',
+            required: ['#cheque_reference', '#cheque_amount', '#cheque_bank']
+        },
+        'transfer': {
+            row: '#transferrow',
+            required: ['#transfer_reference', '#transfer_amount', '#transfer_bank']
+        },
+        'momo': {
+            row: '#momorow',
+            required: ['#momo_transactin_id', '#momo_amount']
+        },
+        'other payments': {
+            row: '#otherpayrow',
+            required: ['#other_payment_descri', '#other_payment_amnt']
+        },
+        'cash': {
+            row: '#cashrow',
+            required: ['#cash_amount']
+        }
+    };
 
-            if (selectedValue == 'cheque') {
+    function showPaymentMode(selectedValue) {
+        Object.entries(paymentModes).forEach(([mode, config]) => {
+            const $row = $(config.row);
+            const isMatch = mode === selectedValue;
 
-                $("#chequerow").toggle();
-            }
-            if (selectedValue == 'transfer') {
-
-                $("#transferrow").toggle();
-            }
-            if (selectedValue == 'momo') {
-                $("#momorow").toggle();
-            }
-            if (selectedValue == 'other payments') {
-                $("#otherpayrow").toggle();
-            }
-            if (selectedValue == 'cash') {
-                $("#cashrow").toggle();
-            }
-        });
-    </script>
-
-    <script>
-        $(document).ready(function() {
-
-            $('#wth').change(function() {
-                if ($(this).is(':checked')) {
-                    var value = $(this).val();
-                    $('#amount_payable').toggle();
-                    $('#wht_value').toggle();
-                    // console.log("Checkbox checked! Value: " + value);
-                } else {
-                    $('#amount_payable').toggle();
-                    $('#wht_value').toggle();
-                }
-            });
-        });
-    </script>
-
-    <script>
-        $(document).ready(function() {
-            $('#vat').change(function() {
-                if ($(this).is(':checked')) {
-                    $('#vat7_value').toggle();
-                    // console.log("Checkbox checked! Value: " + value);
-                } else {
-                    $('#vat7_value').toggle();
-                }
-            });
-        });
-    </script>
-
-    <script>
-    $(document).ready(function() {
-        $('#deductions').change(function() {
-            if ($(this).is(':checked')) {
-                $('#deduction_field').toggle();
-                // console.log("Checkbox checked! Value: " + value);
+            if (isMatch) {
+                $row.slideDown(150);
             } else {
-                $('#deduction_field').toggle();
+                $row.slideUp(150);
             }
+
+            // Toggle `required` and clear stale values on non-active rows
+            config.required.forEach((selector) => {
+                $(selector).prop('required', isMatch);
+                if (!isMatch) {
+                    $(selector).val('');
+                }
+            });
+        });
+    }
+
+    $('#mode').on('change', function () {
+        showPaymentMode(this.value);
+    });
+
+    // If the form re-renders with an old value already selected
+    // (e.g. validation error round-trip), restore the correct row on load.
+    if ($('#mode').val()) {
+        showPaymentMode($('#mode').val());
+    }
+});
+
+/**
+ * WHT / VAT / Deductions checkbox handlers.
+ *
+ * Fixes vs. original:
+ *  - Original used `.toggle()` on both the checkbox `change` handler AND
+ *    relied on the row starting hidden via inline `style="display:none;"`.
+ *    That works for a fresh page load, but if the form re-renders after a
+ *    validation error and Blade re-checks the box with old('wth') / etc.,
+ *    the JS never re-syncs — the checkbox shows checked but its field
+ *    stays hidden, because `.toggle()` only flips state on `change`
+ *    events, not on page load.
+ *  - Each handler now derives visibility directly from `.is(':checked')`
+ *    (show if checked, hide if not) instead of blindly toggling, and the
+ *    same function runs once on page load to sync state — so a
+ *    pre-checked box (validation round-trip, browser back button, etc.)
+ *    always shows its matching field.
+ *  - Consolidated into one small config-driven block instead of three
+ *    separate near-identical `$(...).change(...)` handlers.
+ */
+$(document).ready(function () {
+    const conditionalFields = [
+        { checkbox: '#wth', targets: ['#amount_payable', '#wht_value'] },
+        { checkbox: '#vat', targets: ['#vat7_value'] },
+        { checkbox: '#deductions', targets: ['#deduction_field'] }
+    ];
+
+    function syncField(checkboxSelector, targetSelectors) {
+        const isChecked = $(checkboxSelector).is(':checked');
+        targetSelectors.forEach((selector) => {
+            const $target = $(selector);
+            if (isChecked) {
+                $target.show();
+            } else {
+                $target.hide();
+            }
+        });
+    }
+
+    conditionalFields.forEach(({ checkbox, targets }) => {
+        // Sync once on load, in case the checkbox is pre-checked
+        // (e.g. Blade `old('wth')` after a validation error).
+        syncField(checkbox, targets);
+
+        // Sync on every change instead of blindly toggling.
+        $(checkbox).on('change', function () {
+            syncField(checkbox, targets);
         });
     });
-</script>
+});
+    </script>
+    
     @endsection
 </x-sales-dashboard>

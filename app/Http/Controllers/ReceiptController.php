@@ -271,7 +271,7 @@ class ReceiptController extends Controller
     public function store(StoreReceiptRequest $request)
     {
 
-        // dd($request->all());
+        // // dd($request->all());
         // Get all values from receipt form
         $status = $request->input('status');
         $wth_from_form = $request->input('wth');
@@ -323,7 +323,7 @@ class ReceiptController extends Controller
         $sum_of_amountPaid_minus_wht = null;
         $wht_amount = null;
         $vat7_value = null;
-
+        // dd($mode, $cheque_amount, $transfer_amount);
 
         // if the payment has with holding turned on;
         if($wth_from_form == "on")
@@ -372,7 +372,7 @@ class ReceiptController extends Controller
             // return "you're here! full payment one time payment" . " - advance - ". $advance_payment. " - " . "deduction ". $dAmount;
 
             // // create Receipt
-               $receipt_id = $this->createReceipt( $invoice_id, $dAmount, $description, $advance_payment, $receipt_date, $vat7_value, $this->vat7_amount, $client_id, $from, $mode, $cheque_reference, $cheque_amount, $cheque_bank, $transfer_reference, $transfer_amount, $transfer_bank, $momo_transactin_id, $momo_amount, $cash_amount, $other_payment_descri, $other_payment_amnt, $user_id, $status, $total, $this->wht_amount, $sum_of_amountPaid_minus_wht, $image, $staff);
+               $receipt_id = $this->createReceipt( $invoice_id, $dAmount, $description, $advance_payment, $receipt_date, $vat7_value, $this->vat7_amount, $client_id, $from, $mode, $transfer_reference, $transfer_amount, $transfer_bank, $cheque_reference, $cheque_amount, $cheque_bank, $momo_transactin_id, $momo_amount, $cash_amount, $other_payment_descri, $other_payment_amnt, $user_id, $status, $total, $wht_amount, $sum_of_amountPaid_minus_wht, $image, $staff);
 
             //     // get balance
                 $balance =  $invoiceTotal - $total - $dAmount;
@@ -514,7 +514,7 @@ class ReceiptController extends Controller
             // return "you're here! full payment one time payment" . " - advance - ". $advance_payment. " - " . "deduction ". $dAmount;
 
             // // create Receipt
-               $receipt_id = $this->createReceipt( $invoice_id, $dAmount, $description, $advance_payment, $receipt_date, $vat7_value, $this->vat7_amount, $client_id, $from, $mode, $cheque_reference, $cheque_amount, $cheque_bank, $transfer_reference, $transfer_amount, $transfer_bank, $momo_transactin_id, $momo_amount, $cash_amount, $other_payment_descri, $other_payment_amnt, $user_id, $status, $total, $this->wht_amount, $sum_of_amountPaid_minus_wht, $image, $staff);
+               $receipt_id = $this->createReceipt( $invoice_id, $dAmount, $description, $advance_payment, $receipt_date, $vat7_value, $this->vat7_amount, $client_id, $from, $mode, $transfer_reference, $transfer_amount, $transfer_bank, $cheque_reference, $cheque_amount, $cheque_bank, $momo_transactin_id, $momo_amount, $cash_amount, $other_payment_descri, $other_payment_amnt, $user_id, $status, $total, $wht_amount, $sum_of_amountPaid_minus_wht, $image, $staff);
 
             //     // get balance
                 $balance =  $invoiceTotal - $total - $dAmount;
@@ -655,7 +655,7 @@ class ReceiptController extends Controller
         {
 
             // return "you're here! full payment after part payment" . "- advance - ". $advance_payment. " - " . "deduction ". $dAmount;
-            $receipt_id = $this->createReceipt($invoice_id, $dAmount, $description, $advance_payment, $receipt_date, $vat7_value, $this->vat7_amount, $client_id, $from, $mode, $cheque_reference, $cheque_amount, $cheque_bank, $transfer_reference, $transfer_amount, $transfer_bank, $momo_transactin_id, $momo_amount, $cash_amount, $other_payment_descri, $other_payment_amnt, $user_id, $status, $total, $this->wht_amount, $sum_of_amountPaid_minus_wht, $image, $staff);
+            $receipt_id = $this->createReceipt($invoice_id, $dAmount, $description, $advance_payment, $receipt_date, $vat7_value, $this->vat7_amount, $client_id, $from, $mode, $transfer_reference, $transfer_amount, $transfer_bank, $cheque_reference, $cheque_amount, $cheque_bank, $momo_transactin_id, $momo_amount, $cash_amount, $other_payment_descri, $other_payment_amnt, $user_id, $status, $total, $wht_amount, $sum_of_amountPaid_minus_wht, $image, $staff);
 
             // get balance
             $balance = $invoiceBalance - ($total + $dAmount); 
@@ -1129,7 +1129,8 @@ class ReceiptController extends Controller
         $receipt->wht_amount = $this->wht_amount;
         $receipt->amount_received = $sum_of_amountPaid_minus_wht;
         $receipt->image = $image;
-        $receipt->save();
+        // $receipt->save();
+        dd($receipt);
 
 
         // // update the invoice 
@@ -1475,7 +1476,7 @@ class ReceiptController extends Controller
     public function createReceipt($invoice_id, $dAmount, $description, $advance_payment, $receipt_date, $vat7_value, $vat7_amount, $client_id, $from, $mode, $transfer_reference, $transfer_amount, $transfer_bank, $cheque_reference, $cheque_amount, $cheque_bank, $momo_transactin_id, $momo_amount, $cash_amount, $other_payment_descri, $other_payment_amnt, $user_id, $status, $total, $wht_amount, $sum_of_amountPaid_minus_wht, $image, $staff)
     {
 
-        // dd($other_payment_amnt, $other_payment_descri);
+        // dd($mode, $transfer_amount, $transfer_reference, $transfer_bank, $cheque_amount, $cheque_reference, $cheque_bank);
         $newReceipt = new Receipt();
 
         $newReceipt->invoice_id = $invoice_id;
