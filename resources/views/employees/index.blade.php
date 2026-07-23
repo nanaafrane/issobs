@@ -529,7 +529,7 @@
                         <p class="mb-1"><strong> ACCRA </strong> </p>
                         <h4 class="card-title mb-3 text-white"><strong> {{ $employeeAccraActive }}  </strong> </h4>
                         <small class="fw-medium"> TERMINATED : {{ $employeeAccraTerminated }} </small>  <br> <hr>
-                        <small class="fw-medium"> TOTAL EMPLOYEES : {{ $employeeAccra->count() }} </small> 
+                        <small class="fw-medium"> TOTAL EMPLOYEES : {{ count($employeeAccra) }} </small> 
                     </div>
                 </div>
             </div>
@@ -552,7 +552,7 @@
                         <p class="mb-1"><strong> BOTWE </strong> </p>
                         <h4 class="card-title mb-3 text-white"><strong> {{ $employeeBotweActive }} </strong> </h4>
                         <small class="fw-medium"> TERMINATED : {{ $employeeBotweTerminated }} </small>  <br> <hr>
-                        <small class="fw-medium"> TOTAL EMPLOYEES : {{ $employeeBotwe->count() }} </small>
+                        <small class="fw-medium"> TOTAL EMPLOYEES : {{ count($employeeBotwe) }} </small>
                     </div>
                 </div>
             </div>
@@ -576,7 +576,7 @@
                         <p class="mb-1"><strong> SHAIHILLS </strong></p>
                         <h4 class="card-title mb-3 text-white"><strong> {{ $employeeShyhillsActive }} </strong> </h4>
                         <small class="fw-medium"> TERMINATED : {{ $employeeShyhillsTerminated }} </small> <br> <hr>
-                        <small class="fw-medium"> TOTAL EMPLOYEES : {{ $employeeShyhills }} </small> 
+                        <small class="fw-medium"> TOTAL EMPLOYEES : {{ $employeeShyhills->where('field_id', '7')->count() }} </small> 
                     </div>
                 </div>
             </div>
@@ -596,7 +596,7 @@
                         <p class="mb-1"><strong> TEMA </strong></p>
                         <h4 class="card-title mb-3 text-white"><strong> {{ $employeeTemaActive }} </strong> </h4>
                         <small class="fw-medium"> TERMINATED : {{ $employeeTemaTerminated }} </small> <br> <hr>
-                        <small class="fw-medium"> TOTAL EMPLOYEES : {{ $employeeTema }} </small> 
+                        <small class="fw-medium"> TOTAL EMPLOYEES : {{ $employeeTema->where('field_id', '3')->count() }} </small> 
                     </div>
                 </div>
             </div>
@@ -620,7 +620,7 @@
                         <p class="mb-1">TAKORADI</p>
                         <h4 class="card-title mb-3 text-white"> {{ $employeeTakoradiActive }} </h4>
                         <small class="fw-medium"> TERMINATED : {{ $employeeTakoradiTerminated }} </small> <br> <hr>
-                        <small class="fw-medium"> TOTAL EMPLOYEES : {{ $employeeTakoradi->count() }} </small> 
+                        <small class="fw-medium"> TOTAL EMPLOYEES : {{ count($employeeTakoradi)}} </small> 
                     </div>
                 </div>
             </div>
@@ -644,7 +644,7 @@
                         <p class="mb-1"> <strong> KOFORIDUA </strong> </p>
                         <h4 class="card-title mb-3 text-white"> {{ $employeeKoforiduaActive }} </h4>
                         <small class="fw-medium"> TERMINATED : {{ $employeeKoforiduaTerminated }} </small> <br> <hr>
-                        <small class="fw-medium"> TOTAL EMPLOYEES : {{ $employeeKoforidua->count() }} </small> 
+                        <small class="fw-medium"> TOTAL EMPLOYEES : {{ count($employeeKoforidua) }} </small> 
                     </div>
                 </div>
             </div>
@@ -668,7 +668,7 @@
                         <p class="mb-1"><strong> KUMASI </strong> </p>
                         <h4 class="card-title mb-3 text-white"> {{ $employeeKumasiActive }} </h4>
                         <small class="fw-medium"> TERMINATED : {{ $employeeKumasiTerminated }} </small> <br> <hr>
-                        <small class="fw-medium"> TOTAL EMPLOYEES : {{ $employeeKumasi->count() }} </small> 
+                        <small class="fw-medium"> TOTAL EMPLOYEES : {{ count($employeeKumasi) }} </small> 
                     </div>
                 </div>
             </div>
@@ -917,7 +917,7 @@
 
 
                        @if(Auth::user()->field?->name == 'Tema')
-                        @foreach ($Tema as $key => $employee )
+                        @foreach ($employeeTema as $key => $employee )
                             <tr>
                                 <td> {{ $key + 1 }} </td>
                                 <td> FWSS {{ $employee->id }}  </td>

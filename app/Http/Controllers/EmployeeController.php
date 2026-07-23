@@ -42,42 +42,115 @@ class EmployeeController extends Controller
         $terminatedEmployees = employee::where('ho_status', 'approved')->where('status', 'Terminated')->count();  
 
 
-        $employeeAccra = employee::where('ho_status', 'approved')->where('field_id', 1)->where('status', 'Active')->orwhere('status', 'Terminated')->get();
+        $Accra = employee::where('ho_status', 'approved')->where('field_id', 1)->where('status', 'Active')->orwhere('status', 'Terminated')->get();
+        $employeeAccra=[];
+        foreach($Accra as $accra)
+            {
+                if($accra->field_id == 1)
+                    {
+                        $employeeAccra[] = $accra;
+                    }
+                // echo $data->field_id . " ". "<br>";
+            }
         $employeeAccraTerminated = employee::where('ho_status', 'approved')->where('field_id', 1)->where('status', 'Terminated')->count();  
         $employeeAccraActive = employee::where('ho_status', 'approved')->where('field_id', 1)->where('status', 'Active')->count();
 
-        $employeeBotwe = employee::where('ho_status', 'approved')->where('field_id', 2)->where('status', 'Active')->orwhere('status', 'Terminated')->get();
+        $Botwe = employee::where('ho_status', 'approved')->where('field_id', 2)->where('status', 'Active')->orwhere('status', 'Terminated')->get();
+        $employeeBotwe=[];
+        foreach($Botwe as $botw)
+            {
+                if($botw->field_id == 2)
+                    {
+                        $employeeBotwe[] = $botw;
+                    }
+                // echo $data->field_id . " ". "<br>";
+            }
         $employeeBotweTerminated = employee::where('ho_status', 'approved')->where('field_id', 2)->where('status', 'Terminated')->count();  
         $employeeBotweActive = employee::where('ho_status', 'approved')->where('field_id', 2)->where('status', 'Active')->count();
 
-        $employeeTema = employee::where('ho_status', 'approved')->where('field_id', 3)->where('status', 'Active')->orwhere('status', 'Terminated')->count();
+        $Tema = employee::where('ho_status', 'approved')->where('field_id', 3)->where('status', 'Active')->orwhere('status', 'Terminated')->get();
+        $employeeTema1= collect();
+        // $employeeTema=[];
+        foreach($Tema as $tem)
+            {
+                if($tem->field_id == 3)
+                    {
+                         $employeeTema1->push($tem);
+                    }
+                // echo $data->field_id . " ". "<br>";
+            }
+        // dd($employeeTema1);
         $employeeTemaTerminated = employee::where('ho_status', 'approved')->where('field_id', 3)->where('status', 'Terminated')->count();  
         $employeeTemaActive = employee::where('ho_status', 'approved')->where('field_id', 3)->where('status', 'Active')->count();  
-        $Tema = employee::where('ho_status', 'approved')->whereIn('field_id', [3,7])->where('status', 'Active')->orwhere('status', 'Terminated')->get();
+        
+        $Shyhills = employee::where('ho_status', 'approved')->where('field_id', 7)->where('status', 'Active')->orwhere('status', 'Terminated')->get();
+       
+        $employeeShyhills=collect();
+        foreach($Shyhills as $shai)
+            {
+                if($shai->field_id == 7)
+                    {
+                        $employeeShyhills->push($shai);
+                    }
+                // echo $data->field_id . " ". "<br>";
+            }
+        // dd($employeeShyhills);
+        $employeeTema = $employeeTema1->concat( $employeeShyhills);
+
+        $employeeShyhillsTerminated = employee::where('ho_status', 'approved')->where('field_id', 7)->where('status', 'Terminated')->count();  
+        $employeeShyhillsActive = employee::where('ho_status', 'approved')->where('field_id', 7)->where('status', 'Active')->count();
+        
+        // $employeeTema = employee::where('ho_status', 'approved')->whereIn('field_id', [3,7])->where('status', 'Active')->orwhere('status', 'Terminated')->get();
 
 
-        $employeeTakoradi = employee::where('ho_status', 'approved')->where('field_id', 4)->where('status', 'Active')->orwhere('status', 'Terminated')->get();
+        $Takoradi = employee::where('field_id', 4)->where('ho_status', 'approved')->where('status', 'Active')->orwhere('status', 'Terminated')->get();
+        $employeeTakoradi=[];
+        foreach($Takoradi as $tako)
+            {
+                if($tako->field_id == 4)
+                    {
+                        $employeeTakoradi[] = $tako;
+                    }
+                // echo $data->field_id . " ". "<br>";
+            }
+        // dd($employeeTakoradi);
+
         $employeeTakoradiTerminated = employee::where('ho_status', 'approved')->where('field_id', 4)->where('status', 'Terminated')->count();  
         $employeeTakoradiActive = employee::where('ho_status', 'approved')->where('field_id', 4)->where('status', 'Active')->count();
 
-        $employeeKoforidua = employee::where('ho_status', 'approved')->where('field_id', 5)->where('status', 'Active')->orwhere('status', 'Terminated')->get();
+        $Koforidua = employee::where('ho_status', 'approved')->where('field_id', 5)->where('status', 'Active')->orwhere('status', 'Terminated')->get();
+        
+        $employeeKoforidua=[];
+        foreach($Koforidua as $kofo)
+            {
+                if($kofo->field_id == 5)
+                    {
+                        $employeeKoforidua[] = $kofo;
+                    }
+                // echo $data->field_id . " ". "<br>";
+            }
+        // dd($employeeKoforidua);
+
         $employeeKoforiduaTerminated = employee::where('ho_status', 'approved')->where('field_id', 5)->where('status', 'Terminated')->count();  
         $employeeKoforiduaActive = employee::where('ho_status', 'approved')->where('field_id', 5)->where('status', 'Active')->count();  
 
-        $employeeKumasi = employee::where('ho_status', 'approved')->where('field_id', 6)->where('status', 'Active')->orwhere('status', 'Terminated')->get();
+        $Kumasi = employee::where('ho_status', 'approved')->where('field_id', 6)->where('status', 'Active')->orwhere('status', 'Terminated')->get();
+        $employeeKumasi=[];
+        foreach($Kumasi as $kuma)
+            {
+                if($kuma->field_id == 6)
+                    {
+                        $employeeKumasi[] = $kuma;
+                    }
+                // echo $data->field_id . " ". "<br>";
+            }
+        // dd($employeeKumasi);
+       
         $employeeKumasiTerminated = employee::where('ho_status', 'approved')->where('field_id', 6)->where('status', 'Terminated')->count();  
         $employeeKumasiActive = employee::where('ho_status', 'approved')->where('field_id', 6)->where('status', 'Active')->count();
 
-        $employeeShyhills = employee::where('ho_status', 'approved')->where('field_id', 7)->where('status', 'Active')->orwhere('status', 'Terminated')->count();
-        $employeeShyhillsTerminated = employee::where('ho_status', 'approved')->where('field_id', 7)->where('status', 'Terminated')->count();  
-        $employeeShyhillsActive = employee::where('ho_status', 'approved')->where('field_id', 7)->where('status', 'Active')->count();
 
-        // $Departments = Department::all();
-        // $Roles = Role::all();
-        // $Fields = Field::all();
-        // $clients = Client::all();
-        // $banks = Bank::all();
-        return view('employees.index', compact( 'Tema', 'employees', 'activeEmployees', 'terminatedEmployees', 'employeeAccra', 'employeeAccraTerminated', 'employeeAccraActive', 'employeeBotwe', 'employeeBotweTerminated', 'employeeBotweActive', 'employeeTema', 'employeeTemaTerminated', 'employeeTemaActive', 'employeeTakoradiActive', 'employeeTakoradiTerminated','employeeTakoradi', 'employeeKoforiduaActive', 'employeeKoforiduaTerminated','employeeKoforidua', 'employeeKumasiActive', 'employeeKumasiTerminated','employeeKumasi', 'employeeShyhills', 'employeeShyhillsTerminated', 'employeeShyhillsActive'));
+        return view('employees.index', compact( 'employees', 'activeEmployees', 'terminatedEmployees', 'employeeAccra', 'employeeAccraTerminated', 'employeeAccraActive', 'employeeBotwe', 'employeeBotweTerminated', 'employeeBotweActive', 'employeeTema', 'employeeTemaTerminated', 'employeeTemaActive', 'employeeTakoradiActive', 'employeeTakoradiTerminated','employeeTakoradi', 'employeeKoforiduaActive', 'employeeKoforiduaTerminated','employeeKoforidua', 'employeeKumasiActive', 'employeeKumasiTerminated','employeeKumasi', 'employeeShyhills', 'employeeShyhillsTerminated', 'employeeShyhillsActive'));
    
         }
 

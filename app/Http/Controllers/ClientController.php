@@ -206,21 +206,20 @@ class ClientController extends Controller
            $client->start_date = $request->start_date;
            $client->scope_of_work = $request->scope_of_work;
            $client->state_institution = $request->state_institution;
-           $client->status = 'pending';
            $client->user_id = $user_id;
 
 
             if(Auth::user()->role?->id == '1')
                 {
                     // return "You are at head office";
-
+                $client->status = 'active';
                 $client->ho_status = 'approved';
                 $client->user_id2 = $user_id;
                 }
             if(Auth::user()->department?->id == '7' && Auth::user()->role?->id == '3')
                 {
                     // return "You are a Manager";
-
+                $client->status = 'pending';
                 $client->ho_status = 'pending';
                 $client->user_id2 = $request->staff;
 
@@ -230,6 +229,7 @@ class ClientController extends Controller
             if(Auth::user()->department?->id == '7' && Auth::user()->role?->id == '27')
                 {
                     // return "You are an Admin Assistance";
+                $client->status = 'pending';
                 $client->bran_status = 'pending';
                 $client->user_id1 = $request->staff;
                 $client->coll_status = 'pending';
