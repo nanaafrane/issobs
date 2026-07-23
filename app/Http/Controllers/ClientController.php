@@ -196,7 +196,7 @@ class ClientController extends Controller
            $client = new Client();
            $client->name = $request->name;
            $client->phone_number = $request->phone_number;
-           $client->phone_number1 = $request->phone_number;
+           $client->phone_number1 = $request->phone_number1;
            $client->business_name = $request->business_name;
            $client->address = $request->address;
            $client->field_id = $request->field_id;
@@ -767,12 +767,11 @@ class ClientController extends Controller
      */
     public function terminateClient(Request $request, int $id)
     {
-        // dd($request->all());
-        $month = Carbon::parse($request->month)->format('Y-m-d');
-        // dd($month);
+        // dd($request->status_date);
+        $month = Carbon::parse($request->status_date);
         $client = Client::findOrFail($id);
         $client->status = 'terminated';
-        $client->status_date = $month;
+        $client->status_date = $month->format('Y-m-d');
         $user_id = Auth::id();
 
         if(Auth::user()->role?->id == '1')
@@ -781,7 +780,7 @@ class ClientController extends Controller
             // $client->status = 'terminated';
 
             $client->ho_status = 'approved';
-            $client->ho_date = $month;
+            $client->ho_date = $month->format('Y-m-d');
             $client->user_id2 = $user_id;
             $client->save();
 
@@ -797,7 +796,7 @@ class ClientController extends Controller
             $client->user_id2 = $request->staff;
 
             $client->bran_status = 'approved';
-            $client->bran_date = $month;
+            $client->bran_date = $month->format('Y-m-d');
             $client->user_id1 = $user_id;
             $client->save();
 

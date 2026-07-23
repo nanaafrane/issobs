@@ -10,6 +10,7 @@ class Salary extends Model
     //
     protected $fillable = [
         'salary_month',
+        'approval_date',
         'employee_id',
         'field_id',
         'department_id',
@@ -64,6 +65,7 @@ class Salary extends Model
 
     protected $casts = [
         'salary_month' => 'date',
+        'approval_date' => 'date',
     ];
 
     public function employee()
