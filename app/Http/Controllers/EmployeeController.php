@@ -303,7 +303,6 @@ class EmployeeController extends Controller
         $employee = new employee();
         $employee->name = $request->input('name');
         $employee->user_id = $user_id;
-        $employee->status = 'Pending';
         $employee->gender = $request->input('gender');
         $employee->phone_number = $request->input('phone_number');
         $employee->channel = $request->input('channel');
@@ -334,6 +333,7 @@ class EmployeeController extends Controller
 
         if(Auth::user()->role?->id == '1')
             {
+               $employee->status = 'Active';
                $employee->ho_status = 'approved';
                $employee->user_id2 = $user_id;
             }
@@ -341,6 +341,7 @@ class EmployeeController extends Controller
             {
                $employee->ho_status = 'pending';
                $employee->user_id2 = $staff;
+               $employee->status = 'Pending';
 
                $employee->bran_status = 'approved';
                $employee->user_id1 = $user_id;
@@ -349,6 +350,7 @@ class EmployeeController extends Controller
             {
                $employee->bran_status = 'pending';
                $employee->user_id1 = $staff;
+               $employee->status = 'Pending';
 
                $employee->assit_status = 'pending';
 
@@ -793,7 +795,7 @@ class EmployeeController extends Controller
         // dd($bank_id);
         // $bank = Bank::findOrfail($bank_id);
         // $groupedBankEmployees = employee::where('bank_id', $bank_id)->get();
-        $groupedBankEmployees = PaymentInfo::with('employee')->where('bank_id', $bank_id)->get();
+        $groupedBankEmployees = PaymentInfo::with('employee')->where('status', 'Active')->where('bank_id', $bank_id)->get();
 
         // dd($groupedBankEmployees);
 
@@ -929,20 +931,90 @@ class EmployeeController extends Controller
             //where('status', '!=','active')->where('ho_status', 'pending')->orwhere('ho_status', null)
         $pendingEmployees = employee::whereIn('status', ['Pending','Terminated','Re-Instate'])->where('ho_status', 'pending')->orwhere('ho_status', null)->get();
 
-        $employeeAccra = employee::where('field_id', 1)->whereIn('status', ['Pending','Terminated','Re-Instate'])->where('ho_status', 'pending')->orwhere('ho_status', null)->get();
+        $Accra = employee::where('field_id', 1)->whereIn('status', ['Pending','Terminated','Re-Instate'])->where('ho_status', 'pending')->orwhere('ho_status', null)->get();
+        // dd($Accra);
+        $employeeAccra = collect();
+        foreach($Accra as $employee)
+            {
+                if($employee->field_id == 1)
+                {
+                    $employeeAccra[] = $employee;
+                }
+            }
+        $Botwe = employee::where('field_id', 2)->whereIn('status', ['Pending','Terminated','Re-Instate'])->where('ho_status', 'pending')->orwhere('ho_status', null)->get();
+        // dd($employeeBotwe);
+        $employeeBotwe = collect();
+        foreach($Botwe as $employee)
+            {
+                if($employee->field_id == 2)
+                    
+                    {
+                        $employeeBotwe[] = $employee;
+                    }
+            }
 
-        $employeeBotwe = employee::where('field_id', 2)->whereIn('status', ['Pending','Terminated','Re-Instate'])->where('ho_status', 'pending')->orwhere('ho_status', null)->get();
+        $employeesTema = employee::where('field_id', 3)->whereIn('status', ['Pending','Terminated','Re-Instate'])->where('ho_status', 'pending')->orwhere('ho_status', null)->get();
+         $employeeTema = collect();
+        foreach($employeesTema as $employee)
+            {
+                if($employee->field_id == 3)
+                {
+                    $employeeTema[] = $employee;
+                }
+            } 
+         $employeeTema = $employeeTema->count();
 
-        $employeeTema = employee::where('field_id', 3)->whereIn('status', ['Pending','Terminated','Re-Instate'])->where('ho_status', 'pending')->orwhere('ho_status', null)->count();
-        $Tema = employee::whereIn('field_id', [3,7])->whereIn('status', ['Pending','Terminated','Re-Instate'])->where('ho_status', 'pending')->orwhere('ho_status', null)->get();
-        $employeeShyhills = employee::where('field_id', 7)->whereIn('status', ['Pending','Terminated','Re-Instate'])->where('ho_status', 'pending')->orwhere('ho_status', null)->count();
+        $temashia = employee::whereIn('field_id', [3,7])->whereIn('status', ['Pending','Terminated','Re-Instate'])->where('ho_status', 'pending')->orwhere('ho_status', null)->get();
+        $Tema = collect();
+        foreach($temashia as $employee)
+            {
+                if($employee->field_id == 3 || $employee->field_id == 7 )
+                {
+                    $Tema[] = $employee;
+                }
+            }
+        
+        $employeesShyhills = employee::where('field_id', 7)->whereIn('status', ['Pending','Terminated','Re-Instate'])->where('ho_status', 'pending')->orwhere('ho_status', null)->get();
+        $employeeShyhills = collect();
+        foreach($employeesShyhills as $employee)
+            {
+                if($employee->field_id == 7)
+                {
+                    $employeeShyhills[] = $employee;
+                }
+            } 
+         $employeeShyhills = $employeeShyhills->count();
+
+        $Takoradi = employee::where('field_id', 4)->whereIn('status', ['Pending','Terminated','Re-Instate'])->where('ho_status', 'pending')->orwhere('ho_status', null)->get();
+         $employeeTakoradi = collect();
+         foreach($Takoradi as $employee)
+            {
+                if($employee->field_id == 4)
+                {
+                    $employeeTakoradi[] = $employee;
+                }
+            }
+
+        $Koforidua = employee::where('field_id', 5)->whereIn('status', ['Pending','Terminated','Re-Instate'])->where('ho_status', 'pending')->orwhere('ho_status', null)->get();
+        $employeeKoforidua = collect();
+        foreach($Koforidua as $employee)
+            {   
+                if($employee->field_id == 5)
+                {
+                    $employeeKoforidua[] = $employee;
+                }
+            }
 
 
-        $employeeTakoradi = employee::where('field_id', 4)->whereIn('status', ['Pending','Terminated','Re-Instate'])->where('ho_status', 'pending')->orwhere('ho_status', null)->get();
-
-        $employeeKoforidua = employee::where('field_id', 5)->whereIn('status', ['Pending','Terminated','Re-Instate'])->where('ho_status', 'pending')->orwhere('ho_status', null)->get();
-
-        $employeeKumasi = employee::where('field_id', 6)->whereIn('status', ['Pending','Terminated','Re-Instate'])->where('ho_status', 'pending')->orwhere('ho_status', null)->get();
+        $Kumasi = employee::where('field_id', 6)->whereIn('status', ['Pending','Terminated','Re-Instate'])->where('ho_status', 'pending')->orwhere('ho_status', null)->get();
+        $employeeKumasi = collect();
+        foreach($Kumasi as $employee)
+            {
+                if($employee->field_id == 6)
+                {
+                    $employeeKumasi[] = $employee;  
+                }
+            }
 
 
         return view('employees.pending', compact( 'Tema', 'pendingEmployees',  'employeeAccra', 'employeeBotwe', 'employeeTema', 'employeeTakoradi',  'employeeKoforidua', 'employeeKumasi', 'employeeShyhills'));

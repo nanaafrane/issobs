@@ -36,7 +36,7 @@ class UpdateemployeeRequest extends FormRequest
             'date_of_joining'=> 'nullable|date',
             'department_id'=> 'nullable|exists:departments,id',
             'role_id'=> 'nullable|exists:roles,id',
-            'field_id'=> 'nullable|exists:fields,id',
+            'field_id'=> 'required|exists:fields,id',
             'client_id'=> 'nullable|exists:clients,id',
             'location'=> 'nullable|string|max:255',
             'basic_salary'=> 'nullable|numeric|min:0',
