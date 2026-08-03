@@ -618,7 +618,7 @@
 
                     <br>
                     <hr>
-                    <br>
+                    <!-- <br>
                     <div class="row g-6">
                         <div class="col mb-0">
                             <div class="input-group">
@@ -647,7 +647,7 @@
                             @enderror
                         </div>
 
-                    </div>
+                    </div> -->
 
 
                     <br>
