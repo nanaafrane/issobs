@@ -362,7 +362,9 @@
                         <div class="form-check form-check-inline">
                             <button class="btn btn-danger m-4" data-action="hold" onclick="document.getElementById('salary_action_type').value='hold'; return confirm('Kindly Confirm?')" type="submit"> <i class="icon-base bx bx-bxs-file-plus"> </i> {{ __(' Hold') }}</button>                   
 
-                            <button class="btn btn-success" data-action="approve" onclick="document.getElementById('salary_action_type').value='approve'; return confirm('Kindly Confirm?')" type="submit"> <i class="icon-base bx bx-recycle"> </i> {{ __('Approve') }}</button>                   
+                            <button class="btn btn-success" data-action="approve" onclick="document.getElementById('salary_action_type').value='approve'; return confirm('Kindly Confirm?')" type="submit"> <i class="icon-base bx bx-recycle"> </i> {{ __('Approve') }}</button>      
+
+                            <button class="btn btn-primary" data-action="unapprove" onclick="document.getElementById('salary_action_type').value='unapprove'; return confirm('Kindly Confirm?')" type="submit"> <i class="icon-base bx bx-recycle"> </i> {{ __('UnApprove') }}</button>                   
                         </div>
                         @endif
                         <div class="card">
@@ -436,13 +438,13 @@
                                             <td> FWSS{{ $salary->employee?->id }} </td>
 
                                                     @if ($salary->payment_status == 'pending')
-                                                    <td>  <span class="badge bg-label-info"> {{ $salary->payment_status }} </span> </td>
+                                                    <td>{{ $salary->status2 }} <br>   <span class="badge bg-label-info"> {{ $salary->payment_status }} </span> <br> {{$salary->approval_date?->format('F l d, Y')}} <br> {{  $salary->user2?->name }}  </td>
                                                     @elseif($salary->payment_status == 'hold')
                                                     <td> <span class="badge bg-label-warning"> {{ $salary->payment_status }} </span> </td>
                                                     @elseif($salary->payment_status == 'rejected')
                                                     <td> <span class="badge bg-label-danger"> {{ $salary->payment_status }} </span> </td>
                                                     @else
-                                                    <td> <span class="badge bg-label-success"> {{ $salary->payment_status }} </span> </td>
+                                                    <td> {{ $salary->status2 }} <br>  <span class="badge bg-label-success"> {{ $salary->payment_status }} </span> <br> {{$salary->approval_date?->format('F l d, Y')}} <br> {{  $salary->user2?->name }}  </td>
                                                     @endif
                                                     <td> <textarea type="text" name="hold_reason[{{ $salary->id }}]" class="form-control"> {{ $salary?->hold_reason }} </textarea> </td>
                                                     <td> {{$salary->salary_month?->format('F, Y')}} </td>

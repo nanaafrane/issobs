@@ -127,18 +127,71 @@
     <!-- / Menu -->
     @endsection
 
-@section('content')
+
+
+
+    @section('content')
     <div class="content-wrapper">
         <div class="container-xxl flex-grow-1 container-p-y">
 
-            <!-- <div class="container py-4"> -->
-                <h4 class="mb-4">New Expense</h4>
+            <div class="container py-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h4>Expense Entries</h4>
+                    <a href="{{ route('expense.create') }}" class="btn btn-success btn-sm">+ New Expense</a>
+                </div>
             
-                <form action="{{ route('expense.store') }}" method="POST" enctype="multipart/form-data">
-                    @csrf
-                    @include('expenses._form')
-                </form>
-            <!-- </div> -->
+                @if(session('success'))
+                    <div class="alert alert-success">{{ session('success') }}</div>
+                @endif
+            
+                <table class="table table-striped align-middle">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Office</th>
+                            <th>Type</th>
+                            <th>Description</th>
+                            <th class="text-end">Amount</th>
+                            <th>Status</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($expenses as $expense)
+                            <tr>
+                                <td>{{ optional($expense->date_1)->format('d M Y') }}</td>
+                                <td>{{ $expense->field?->name }}</td>
+                                <td>{{ $expense->type?->name }}</td>
+                                <td>{{ Str::limit($expense->description, 40) }}</td>
+                                <td class="text-end">{{ number_format($expense->amount, 2) }}</td>
+                                <td>
+                                    <span class="badge bg-{{ $expense->status_1 === 'approved' ? 'success' : 'secondary' }}">
+                                        {{ ucfirst($expense->status_1 ?? 'pending') }}
+                                    </span>
+                                </td>
+                                <td class="text-end">
+                                    @if($expense->isEditableBy(Auth::user()))
+                                        <a href="{{ route('expense.edit', $expense) }}" class="btn btn-sm btn-outline-primary">Edit</a>
+                                        <form action="{{ route('expense.destroy', $expense) }}" method="POST" class="d-inline"
+                                            onsubmit="return confirm('Delete this expense?');">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                                        </form>
+                                    @else
+                                        <span class="text-muted small">Locked (approved)</span>
+                                    @endif
+                                </td>
+                            </tr>
+                        @empty
+                            <tr><td colspan="7" class="text-center text-muted py-4">No expenses found.</td></tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            
+                {{ $expenses->links() }}
+            </div>
+
 
         </div>
     </div>

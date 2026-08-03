@@ -59,6 +59,7 @@ class Salary extends Model
         'cost_to_company',
         'user_id',
         'user_id1',
+        'user_id2',
 
         
     ];
@@ -81,6 +82,11 @@ class Salary extends Model
     public function user1()
     {
         return $this->belongsTo(User::class, 'user_id1');
+    }
+
+    public function user2()
+    {
+        return $this->belongsTo(User::class, 'user_id2');
     }
 
     public function field()

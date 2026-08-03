@@ -1110,26 +1110,26 @@
                     <form action="/salariesBulkCash" method="POST">
                         @csrf
                         <input type="hidden" name="action_type" id="salaries_bulk_action_type" value="" />
+                        
                         <div class="table-responsive text-nowrap">
                             @if(Auth::user()->hasRole(['Finance Manager']))
                             <input class="form-check-input form-check-inline" type="checkbox" value="" id="options" />
 
                             <div class="form-check form-check-inline">
-                                <!-- <button class="btn btn-dark" name="submit" value="bulk" onclick="return confirm('Kindly Confirm?')" type="submit"> <i class="icon-base bx bx-bxs-file-plus"> </i> {{ __(' Add To Bulk Cash Salaries') }}</button>                    -->
-                                
-                                <button class="btn btn-danger m-4" data-action="hold" onclick="document.getElementById('salaries_bulk_action_type').value='hold'; return confirm('Kindly Confirm?')" type="submit"> <i class="icon-base bx bx-bxs-file-plus"> </i> {{ __(' Hold') }}</button>                   
-                                
+                                <button class="btn btn-danger m-4"  onclick="document.getElementById('salaries_bulk_action_type').value='hold'; return confirm('Kindly Confirm?')" type="submit"> <i class="icon-base bx bx-bxs-file-plus"> </i> {{ __(' Hold') }}</button>                   
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <button class="btn btn-dark m-4"  onclick="document.getElementById('salaries_bulk_action_type').value='topup'; return confirm('Kindly Confirm?')" type="submit"> <i class="icon-base bx bx-bxs-file-plus"> </i> {{ __('Add Salary Top Ups ') }}</button>                   
+                            </div>
                                 <!-- <a href="{{ url('/exportMaster', $salariesMaster[0]->salary_month?->format('F, Y'))}} " class="btn btn-success m-4" > <i class="icon-base bx bx-bxs-file-plus"> </i> {{ __(' Excel Download Master') }}</a>                    -->
                             @endif
-                          
-                            </div>
 
                             <table id="myTableimaster" class="display">
                                 <thead>
                                     <tr>
                                         <th> </th>
-                                        <th> Edit </th>
-                                        <th> View </th>
+                                        <th> Action </th>
+                                        <!-- <th> Approval Date </th> -->
                                         <!-- <th> Bulk Cash</th> -->
                                         <th> Payment Status</th>
                                         <th> Hold Reason</th>
@@ -1189,17 +1189,28 @@
 
                                     <tr>
                                                     <td> <input class="checkBoxes form-check-input" type="checkbox" name="salary[]" value="{{ $salary->id }}" /> </td>
-                                                    <td><a class="dropdown-item" href="/salaries/{{$salary->id}}/edit"><i class="icon-base bx bx-edit-alt me-1"></i></a> </td>
-                                                    <td><a class="dropdown-item" href="/salaries/{{$salary->id}}"><i class="icon-base bx bxs-bullseye"></i></a> </td>
+                                                    <td>
+                                                        <div class="dropdown">
+                                                            <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown">
+                                                                <i class="icon-base bx bx-dots-vertical-rounded"></i>
+                                                            </button>
+                                                            <div class="dropdown-menu">
+                                                                
+                                                                <a class="dropdown-item" href="/salaries/{{$salary->id}}"><i class="icon-base bx bxs-bullseye"></i>view</a> 
+                                                                <a class="dropdown-item" href="/salaries/{{$salary->id}}/edit"><i class="icon-base bx bx-edit-alt me-1"></i> Edit</a> 
+
+                                                            </div>
+                                                        </div>
+                                                    </td>
 
                                                     @if ($salary->payment_status == 'pending')
-                                                    <td>  <span class="badge bg-label-info"> {{ $salary->payment_status }} </span> </td>
+                                                    <td>{{ $salary->status2 }} <br>  <span class="badge bg-label-info"> {{ $salary->payment_status }} </span> <br> {{$salary->approval_date?->format('F l d, Y')}} <br> {{  $salary->user2?->name }} </td>
                                                     @elseif($salary->payment_status == 'hold')
                                                     <td> <span class="badge bg-label-warning"> {{ $salary->payment_status }} </span> </td>
                                                     @elseif($salary->payment_status == 'rejected')
                                                     <td> <span class="badge bg-label-danger"> {{ $salary->payment_status }} </span> </td>
                                                     @else
-                                                    <td> <span class="badge bg-label-success"> {{ $salary->payment_status }} </span> </td>
+                                                    <td> {{ $salary->status2 }} <br>  <span class="badge bg-label-success"> {{ $salary->payment_status }} </span> <br> {{$salary->approval_date?->format('F l d, Y')}} <br> {{  $salary->user2?->name }}  </td>
                                                     @endif
                                                     <td> <textarea type="text" name="hold_reason[{{ $salary->id }}]" class="form-control"> {{ $salary?->hold_reason }} </textarea> </td>
                                                     <td> 

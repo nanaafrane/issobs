@@ -741,7 +741,7 @@ class EmployeeController extends Controller
             {
                 // return "You are at head office";
             // $client->status = 'terminated';
-
+            $employee->status = 'Active';
             $employee->ho_status = 'approved';
             $employee->ho_date = $parsedDate;
             $employee->user_id2 = $user_id;

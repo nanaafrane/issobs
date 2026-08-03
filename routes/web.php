@@ -105,6 +105,8 @@ Route::resource('deposit', BankDepositController::class);
 Route::resource('banks', BankController::class);
 
 Route::resource('expense', ExpenseController::class);
+Route::get('/expenses/list', [ExpenseController::class, 'list'])->name('expenses.list');
+// Route::get('expenseCreate/{field_id}', [ExpenseController::class, 'CreateExpense'])->name('expense.CreateExpense');
 
 Route::resource('employees', EmployeeController::class); 
 Route::get('employeesBank', [EmployeeController::class, 'employeesBank'])->name('employees.Bank');
@@ -176,20 +178,20 @@ Route::get('exportMaster/{month}', [SalaryController::class, 'exportMaster']);
 Route::get('exportBank/{month}/{bank_id}', [SalaryController::class, 'exportBank']);
 Route::get('exportCategory/{month}/{category}', [SalaryController::class, 'exportCategory']);
 
-Route::get('clientAttachGuards', function(){
-//    ATTACHING CLIENTS
-    $clientId = 111;
-    $employee = employee::findOrFail(2238);
-    $response = $employee->clients()->attach($clientId);
-    dd($response);
-    return "You are Testing MANY TO MANY / " . $response;
+// Route::get('clientAttachGuards', function(){
+// //    ATTACHING CLIENTS
+//     $clientId = 111;
+//     $employee = employee::findOrFail(2238);
+//     $response = $employee->clients()->attach($clientId);
+//     dd($response);
+//     return "You are Testing MANY TO MANY / " . $response;
 
-// RETRIEVING CLIENTS 
-    $employee = employee::findOrFail(2238);
-    $response = $employee->clients;
-    dd($response);
-    // foreach ($response as $key => $value) {
-    //     # code...
-    //     echo $value->name. " / ". $value->business_name ;
-    // }
-}); 
+// // RETRIEVING CLIENTS 
+//     $employee = employee::findOrFail(2238);
+//     $response = $employee->clients;
+//     dd($response);
+//     // foreach ($response as $key => $value) {
+//     //     # code...
+//     //     echo $value->name. " / ". $value->business_name ;
+//     // }
+// }); 

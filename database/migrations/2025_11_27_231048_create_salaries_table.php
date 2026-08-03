@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('salaries', function (Blueprint $table) {
             $table->id();
             $table->date('salary_month')->nullable();
+            $table->date('approval_date')->nullable();
             $table->integer('employee_id')->nullable();
             $table->integer('department_id')->nullable();
             $table->integer('field_id')->nullable();
@@ -62,6 +63,7 @@ return new class extends Migration
             $table->decimal('cost_to_company', 15, 2)->nullable();
             $table->integer('user_id')->nullable();
             $table->integer('user_id1')->nullable();
+            $table->integer('user_id2')->nullable();
             $table->timestamps();
         });
     }

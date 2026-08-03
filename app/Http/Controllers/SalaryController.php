@@ -379,19 +379,61 @@ class SalaryController extends Controller
     public function BulkCashStore (Request $request)
     {
         // dd($request->hold_reason);
-                
+        $action = $request->input('action_type'); 
+        // dd($action);
         $salaryIds = $request->input('salary', []);
         // dd($salaryIds);
         if (empty($salaryIds)) {
             return back()->with('error', 'No Employee salary selected.');
         }
-       elseif(isset($request->submit) && $request->submit == 'bulk')
-        {
-            // echo 'Approving';
+    //    elseif( $action == 'bulk')
+    //     {
+    //         // echo 'Approving';
             
-            Salary::whereIn('id', $salaryIds)->update(['status1' => 'Bulk Cash' , 'user_id1' => Auth::id() ]);
-            return back()->with('success', 'Salaries added for BULK CASH PAYMENT: ' . implode(', ', $salaryIds));
-        }
+    //         Salary::whereIn('id', $salaryIds)->update(['status1' => 'Bulk Cash' , 'user_id1' => Auth::id() ]);
+    //         return back()->with('success', 'Salaries added for BULK CASH PAYMENT: ' . implode(', ', $salaryIds));
+    //     }
+        elseif( $action == 'topup')
+            {
+                // dd($salaryIds);
+                $salaries = Salary::whereIn('id', $salaryIds)->get();
+
+                foreach($salaries as $salary)
+                    {
+                        $exists = Salary::where('id', $salary->id)
+                                ->where('payment_status', '!=' ,'approved')
+                                ->exists();
+                            if ($exists) {
+                                $alreadyProcessed[] =  " salary: " . $salary->id;
+                                continue;
+                            }
+
+
+                        DB::table('salaries_addups')->insert([
+                            'salary_id' =>  $salary->id,
+                            'salary_month' =>  $salary->salary_month,
+                            'field_id' =>   $salary->field_id,
+                            'user_id' => Auth::id(),
+                            'status' => 'pending',
+                        ]);
+
+                        Salary::where('id', $salary->id)->update(['status2' => 'Topup Added']);
+
+
+                    }
+
+                // dd($salaries);
+                if(!empty($alreadyProcessed))
+                    {
+                        return back()->with('primary', 'Cant add topup for this salary unless after approval : ' . implode(', ', $alreadyProcessed). ' out of the selected salaries : ' . implode(', ', $salaryIds) );
+
+                    }
+                else {
+                        return back()->with('success', 'Employees salaries have been added for Top Ups : ' . implode(', ', $salaryIds));
+
+                }
+
+            }
         else{
 
             $salaries = Salary::whereIn('id', $salaryIds)->get();
@@ -1412,14 +1454,38 @@ class SalaryController extends Controller
                 foreach ($salaries as $salary) 
                 {
                     $exists = Salary::where('id', $salary->id)
-                                    ->where('payment_status', 'approved')
+                                    ->where('payment_status', '!=', 'pending')
                                     ->exists();
                     if ($exists) {
                         $alreadyProcessed[] = $salary->employee?->name . " with Salary ID: " . $salary->id;
                         continue;
                     }
 
-                    Salary::where('id', $salary->id)->update(['payment_status' => 'approved', 'user_id1' => Auth::id()]);
+                    Salary::where('id', $salary->id)->update(['payment_status' => 'approved', 'approval_date' => now() ,'user_id2' => Auth::id()]);
+                }
+            //  dd(count($alreadyProcessed));
+            if (!empty($alreadyProcessed))
+                 {
+                    return back()->with('error', 'Salaries with the IDs have already been Approved: '. implode(', ', $alreadyProcessed). ' The remaining have been Appoved ')  ;
+                }
+            return back()->with('success', 'Approved salaries with IDs: ' . implode(', ', $salaryIds));
+        }
+        elseif ($action === 'unapprove')
+        {
+            // echo 'Approving';
+                $salaries = Salary::findOrFail($salaryIds);
+                // dd($salaries);
+                foreach ($salaries as $salary) 
+                {
+                    $exists = Salary::where('id', $salary->id)
+                                    ->where('payment_status', '!=', 'approved')
+                                    ->exists();
+                    if ($exists) {
+                        $alreadyProcessed[] = $salary->employee?->name . " with Salary ID: " . $salary->id;
+                        continue;
+                    }
+
+                    Salary::where('id', $salary->id)->update(['payment_status' => 'pending', 'approval_date' => now() ,'user_id2' => Auth::id()]);
                 }
             //  dd(count($alreadyProcessed));
             if (!empty($alreadyProcessed))

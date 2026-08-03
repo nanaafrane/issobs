@@ -116,7 +116,7 @@
             <li class="menu-item active">
                 <a href="{{url('expense')}}" class="menu-link">
                     <i class="menu-icon tf-icons bx bx-bxs-credit-card bg-secondary"></i>
-                    <div class="text-truncate" data-i18n="Expense"> Expense </div>
+                    <div class="text-truncate" data-i18n="Expense"> Expenses </div>
                 </a>
             </li>
 
@@ -133,237 +133,142 @@
     @section('content')
     <div class="content-wrapper">
         <div class="container-xxl flex-grow-1 container-p-y">
-            <div class="row">
-                <div class="col-6">
-                    <h3 class="card-header text-secondary"> <i class="icon-base bx bx-bxs-credit-card bg-secondary"></i> Expense <i class="icon-base bx bx-bxs-right-arrow-alt"></i> Claims </h3>
-                </div>
-                <div style="padding-left: 350px;" class="col-6">
 
-                    <button
-                        type="button"
-                        class="btn btn-secondary"
-                        data-bs-toggle="modal"
-                        data-bs-target="#basicModal">
-                        <i class="icon-base bx bx-bxs-credit-card"> </i>Add Expense
-                    </button>
-
-                    <div class="modal fade" id="basicModal" tabindex="-1" aria-hidden="true">
-                        <div class="modal-dialog" role="document">
-                            <div class="modal-content">
-                                <div class="modal-header">
-                                    <h5 class="modal-title" id="exampleModalLabel1">ADD EXPENSE</h5>
-                                    <button
-                                        type="button"
-                                        class="btn-close"
-                                        data-bs-dismiss="modal"
-                                        aria-label="Close"></button>
+            <div class="container-fluid py-4">
+            
+                <ul class="nav nav-tabs mb-4" id="expenseScopeTabs">
+                    <li class="nav-item">
+                        <a class="nav-link active" data-scope="field" href="#">Field Offices</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-scope="corporate" href="#">Head Office (Corporate)</a>
+                    </li>
+                </ul>
+            
+                {{-- ===================== FIELD OFFICES VIEW ===================== --}}
+                <div id="fieldScopeView">
+            
+                    <div class="card mb-4 border-primary">
+                        <div class="card-header bg-primary text-white m-5">
+                            <strong>Master Expense Types</strong>
+                            <span class="small ms-2 opacity-75">— click a type to filter the field-office cards below</span>
+                        </div>
+                        <div class="card-body d-flex flex-wrap gap-6" id="masterTypeChips">
+                            @foreach($fieldTypes as $type)
+                                <a type="button"
+                                        class="btn btn-outline-primary btn-md type-chip"
+                                        data-type-id="{{ $type->id }}">
+                                    {{ $type->name }}
+                                    <span class="badge bg-primary ms-1">
+                                        {{ number_format($masterTotals[$type->id]['total'] ?? 0, 2) }}
+                                    </span>
+                                </a>
+                            @endforeach
+                        </div>
+                    </div>
+            
+                    <div class="row" id="fieldOfficeCards">
+                        @foreach($fieldOffices as $office)
+                            <div class="col-md-4 mb-4">
+                                <div class="card h-100">
+                                    <div class="card-header d-flex justify-content-between align-items-center">
+                                        <strong>{{ $office->name }}</strong>
+                                        <div>
+                                            <a href="{{ route('expenses.list', ['field_id' => $office->id]) }}"
+                                            class="btn btn-sm btn-outline-secondary">View entries</a>
+                                            <a href="{{ route('expense.create', ['field_id' => $office->id]) }}"
+                                            class="btn btn-sm btn-success">+ New Expense</a>
+                                        </div>
+                                    </div>
+                                    <div class="card-body field-card-body" data-field-id="{{ $office->id }}">
+                                        <p class="text-muted small mb-0" data-placeholder>
+                                            Select a type above to see this office's total.
+                                        </p>
+                                    </div>
                                 </div>
-                                <hr>
-                                <form method="POST" action="expense" enctype="multipart/form-data">
-                                    @csrf
-                                    <div class="modal-body">
-                                        <div class="row">
-                                            <div class="button-wrapper">
-                                                <div>Kindly attach copy of Invoice, Max size of 2MB </div> <br>
-
-                                                <label for="image" class="btn btn-dark  me-3 mb-4" tabindex="0">
-                                                    <!-- <span class="d-none d-sm-block"> Attach   </span> -->
-                                                    <input
-                                                        type="file"
-                                                        id="image"
-                                                        name="image"
-                                                        class="account-file-input  @error('image') is-invalid @enderror"
-                                                        accept="image/png, image/jpeg" />
-                                                    @error('image')
-                                                    <span class="invalid-feedback" role="alert">
-                                                        <strong>{{ $message }}</strong>
-                                                    </span>
-                                                    @enderror
-                                                </label>
-
-                                            </div>
-                                        </div>
-
-                                        <div class="row g-6">
-                                            <div class="col mb-0">
-                                                <label for="description" class="form-label"> {{ __(' Description') }}</label>
-                                                <input
-                                                    type="text"
-                                                    name="description"
-                                                    id="description"
-                                                    class="form-control @error('description') is-invalid @enderror"
-                                                    value="{{ old('description')}}"
-                                                    placeholder="Description"
-
-                                                    autocomplete="description"
-                                                    autofocus>
-
-                                                @error('description')
-                                                <span class="invalid-feedback" role="alert">
-                                                    <strong>{{ $message }}</strong>
-                                                </span>
-                                                @enderror
-                                            </div>
-                                        </div>
-
-                                        <br>
-                                        <div class="row g-6">
-                                            <div class="col mb-0">
-                                                <label for="amount" class="form-label"> {{ __('Amount') }} </label>
-                                                <input
-                                                    type="number"
-                                                    id="amount"
-                                                    name="amount"
-                                                    class="form-control @error('amount') is-invalid @enderror"
-                                                    value="{{ old('amount')}}"
-                                                    placeholder="GH&#x20B5;"
-                                                    autocomplete=" amount"
-                                                    step="any"
-                                                    autofocus>
-
-                                                @error('amount')
-                                                <span class="invalid-feedback" role="alert">
-                                                    <strong>{{ $message }}</strong>
-                                                </span>
-                                                @enderror
-                                            </div>
-
-                                        </div>
-
-                                        <div class="row g-6">
-
-                                            <label for="" class="form-label"> {{ __('Assign') }} </label>
-                                            <div class="input-group">
-                                                <label class="input-group-text" for="user_2">{{ __('Assign To') }}</label>
-                                                <select name="user_2" class="form-select @error('user_2') is-invalid @enderror" id="user_2" value="{{ old('user_2')}}" required>
-                                                    <option selected disabled>Choose...</option>
-                                                    @foreach($assigning_users as $staff)
-                                                    <option value="{{$staff->id}}">{{$staff->name}}</option>
-                                                    @endforeach
-                                                </select>
-                                            </div>
-
-                                            @error('user_2')
-                                            <span class="invalid-feedback" role="alert">
-                                                <strong>{{ $message }}</strong>
-                                            </span>
-                                            @enderror
-
-                                        </div>
-                                    </div>
-                                    <div class="modal-footer">
-                                        <button type="submit" class="btn btn-secondary d-grid w-100">{{ __('Add') }}</button>
-                                    </div>
-                                </form>
-
                             </div>
-                        </div>
+                        @endforeach
                     </div>
-
                 </div>
-
-
-            </div>
-            <br>
-
-            <div class="card-header  ml-2  d-none d-lg-block">
-                @include('flash-messages')
-            </div>
-
-            <div class="row ">
-                <div class="col-12">
-                    <div class="card">
-                        <div class="card-header">
-                            <h4>Expense Claims</h4>
+            
+                {{-- ===================== HEAD OFFICE / CORPORATE VIEW ===================== --}}
+                <div id="corporateScopeView" class="d-none">
+                    <div class="card border-secondary">
+                        <div class="card-header bg-secondary text-white">
+                            <strong>Head Office (Accra) — Expense Types</strong>
                         </div>
-                        <div class="card-header">
-                            <div class="table-responsive text-normal-dark">
-                                <!-- <div class="card-body demo-vertical-spacing demo-only-element"> Clients </div> -->
-                                <table id="myTable" class="display">
-                                    <thead>
-                                        <tr>
-                                            <th> #</th>
-                                            <th> Description </th>
-                                            <th> Created by</th>
-                                            <th> Date </th>
-                                            <th> Amount </th>
-                                            <th> Branch </th>
-                                            <th>Branch Manager </th>
-                                            <th>Account Manager</th>
-                                            <th>Action</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody class="table-border-bottom-0">
-                                        @foreach($expenses as $expense)
-                                        <tr>
-                                            <td> {{$expense->id}} </td>
-                                            <td> {{$expense->description}} </td>
-                                            <td> {{$expense->user_1}} </td>
-                                            <td> {{$expense->created_at}} </td>
-                                            <td> {{number_format($expense->amount, 2 )}} </td>
-                                            <td> </td>
-                                            <td> {{$expense->user_2}} </td>
-                                            <td> {{$expense->user_3}} <span class="badge bg-label-success"></span></td>
-                                            <td>
-                                                <div class="dropdown">
-                                                    <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown">
-                                                        <i class="icon-base bx bx-dots-vertical-rounded"></i>
-                                                    </button>
-                                                    <div class="dropdown-menu">
-                                                        <a class="dropdown-item" href=""><i class="icon-base bx bxs-bullseye"></i> view</a>
-                                                        <a class="dropdown-item" href=""><i class="icon-base bx bx-edit-alt me-1"></i> Edit</a>
-
-                                                        <!-- <a class="dropdown-item" href=""><i class="icon-base bx bx-trash me-1"></i> Delete</a> -->
-                                                        <form action="" method="POST">
-                                                            @csrf
-                                                            @method('DELETE')
-                                                            <button class="dropdown-item" type="submit"><i class="icon-base bx bx-trash me-1"></i>Delete</button>
-                                                        </form>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        @endforeach
-                                    </tbody>
-                                </table>
+                        <div class="card-body">
+                            <div class="row">
+                                @foreach($corporateTypes as $type)
+                                    @php $t = $masterTotals[$type->id] ?? ['total' => 0, 'cnt' => 0]; @endphp
+                                    <div class="col-md-3 col-sm-6 mb-3">
+                                        <div class="border rounded p-2 h-100">
+                                            <div class="small fw-bold">{{ $type->name }}</div>
+                                            <div class="text-muted small">
+                                                {{ $t['cnt'] }} entr{{ $t['cnt'] === 1 ? 'y' : 'ies' }}
+                                                &middot; {{ number_format($t['total'], 2) }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endforeach
                             </div>
                         </div>
                     </div>
                 </div>
+            
             </div>
+            
+            {{-- matrix[type_id][field_id] = {total, cnt} -- embedded once, filtered client-side on click --}}
+            <script>
+                const expenseMatrix = @json($matrix);
+                
+                document.querySelectorAll('#expenseScopeTabs .nav-link').forEach(tab => {
+                    tab.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        document.querySelectorAll('#expenseScopeTabs .nav-link').forEach(t => t.classList.remove('active'));
+                        tab.classList.add('active');
+                        const scope = tab.dataset.scope;
+                        document.getElementById('fieldScopeView').classList.toggle('d-none', scope !== 'field');
+                        document.getElementById('corporateScopeView').classList.toggle('d-none', scope !== 'corporate');
+                    });
+                });
+                
+                document.querySelectorAll('.type-chip').forEach(chip => {
+                    chip.addEventListener('click', () => {
+                        document.querySelectorAll('.type-chip').forEach(c => c.classList.remove('active', 'btn-primary'));
+                        document.querySelectorAll('.type-chip').forEach(c => c.classList.add('btn-outline-primary'));
+                        chip.classList.add('active', 'btn-primary');
+                        chip.classList.remove('btn-outline-primary');
+                
+                        const typeId = chip.dataset.typeId;
+                        const typeName = chip.textContent.trim();
+                        const perField = expenseMatrix[typeId] || {};
+                
+                        document.querySelectorAll('.field-card-body').forEach(body => {
+                            const fieldId = body.dataset.fieldId;
+                            const data = perField[fieldId];
+                
+                            if (data) {
+                                body.innerHTML = `
+                                    <div class="fw-bold">${typeName}</div>
+                                    <div class="fs-4">${Number(data.total).toLocaleString(undefined, {minimumFractionDigits: 2})}</div>
+                                    <div class="text-muted small">${data.cnt} entr${data.cnt === 1 ? 'y' : 'ies'}</div>
+                                `;
+                            } else {
+                                body.innerHTML = `
+                                    <div class="fw-bold">${typeName}</div>
+                                    <div class="fs-4 text-muted">0.00</div>
+                                    <div class="text-muted small">Not used at this office yet</div>
+                                `;
+                            }
+                        });
+                    });
+                });
+            </script>
+
         </div>
     </div>
     @endsection
 
-
-    @section('scripts')
-
-    <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
-    <script src="https://cdn.datatables.net/2.3.3/js/dataTables.js"></script>
-    <script src="https://cdn.datatables.net/buttons/3.2.4/js/dataTables.buttons.js"></script>
-    <script src="https://cdn.datatables.net/buttons/3.2.4/js/buttons.dataTables.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
-    <script src="https://cdn.datatables.net/buttons/3.2.4/js/buttons.html5.min.js"></script>
-
-    <script src="https://cdn.datatables.net/columncontrol/1.1.1/js/dataTables.columnControl.min.js"></script>
-
-    <script>
-        new DataTable('#myTable', {
-            responsive: true,
-
-            layout: {
-                topStart: {
-                    buttons: ['excelHtml5', 'pdfHtml5']
-                }
-            },
-            columnControl: [
-                ['search']
-            ]
-        });
-    </script>
-
-    @endsection
 
 </x-sales-dashboard>

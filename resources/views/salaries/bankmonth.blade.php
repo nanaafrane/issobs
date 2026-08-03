@@ -329,6 +329,7 @@
                             <div class="form-check form-check-inline">
                                  @if(Auth::user()->hasRole(['Finance Manager']))
                                 <button class="btn btn-success" data-loading="true" onclick="document.getElementById('action_type').value='approve'; return confirm('Kindly Confirm?')" type="submit"> <i class="icon-base bx bx-recycle"> </i> {{ __('Approve') }}</button>                   
+                                <button class="btn btn-primary" data-loading="true" onclick="document.getElementById('action_type').value='unapprove'; return confirm('Kindly Confirm?')" type="submit"> <i class="icon-base bx bx-recycle"> </i> {{ __('UnApprove') }}</button>                   
                                 @endif
                                 <a href="/exportBank/{{ $month }}/{{ $bank->id }}" class="btn btn-dark m-4" > <i class="icon-base bx bx-bxs-file-plus"> </i> {{ __(' Excel Bank Download') }}</a>                   
                             </div>
@@ -370,9 +371,9 @@
                                             <td> FWSS{{ $salary->employee?->id }} </td>
                                                                                                                                         
                                                     @if($salary->payment_status == 'pending')
-                                                        <td> <span class="badge bg-label-info"> {{ $salary->payment_status }} </span> </td>
+                                                        <td>{{ $salary->status2 }} <br> <span class="badge bg-label-info"> {{ $salary->payment_status }} </span>  <br> {{$salary->approval_date?->format('F l d, Y')}} <br> {{  $salary->user2?->name }} </td>
                                                     @else 
-                                                        <td> <span class="badge bg-label-success">  {{ $salary->payment_status }} </span> </td>
+                                                        <td> {{ $salary->status2 }} <br>  <span class="badge bg-label-success"> {{ $salary->payment_status }} </span> <br> {{$salary->approval_date?->format('F l d, Y')}} <br> {{  $salary->user2?->name }}  </td>
                                                     @endif
                                             <td>
                                                 @foreach($categories as $category)

@@ -132,10 +132,11 @@
         <div class="container-xxl flex-grow-1 container-p-y">
 
             <!-- <div class="container py-4"> -->
-                <h4 class="mb-4">New Expense</h4>
+                <h4 class="mb-4">Edit Expense</h4>
             
-                <form action="{{ route('expense.store') }}" method="POST" enctype="multipart/form-data">
+                <form action="{{ route('expense.update', $expense) }}" method="POST" enctype="multipart/form-data">
                     @csrf
+                    @method('PUT')
                     @include('expenses._form')
                 </form>
             <!-- </div> -->

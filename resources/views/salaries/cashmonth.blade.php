@@ -341,6 +341,10 @@
                         <div class="form-check form-check-inline">
                             <button class="btn btn-success" data-action="approve" onclick="document.getElementById('salary_action_type').value='approve'; return confirm('Kindly Confirm?')" type="submit"> <i class="icon-base bx bx-recycle"> </i> {{ __('Approve') }}</button>                   
                         </div>
+
+                        <div class="form-check form-check-inline">
+                            <button class="btn btn-primary" data-action="unapprove" onclick="document.getElementById('salary_action_type').value='unapprove'; return confirm('Kindly Confirm?')" type="submit"> <i class="icon-base bx bx-recycle"> </i> {{ __('UnApprove') }}</button>                   
+                        </div>
                         @endif
                         <div class="card">
                             <h5 class="card-header"> Salaries Paid via Cash  </h5>
@@ -352,6 +356,7 @@
                                             <th></th>
                                             <th>#</th>
                                             <th>STAFF ID</th>
+                                            <!-- <th>APPROVED BY</th> -->
                                             <th>STATUS</th>
                                             <th>CATEGORY</th>
                                             <th> NAME </th>
@@ -373,10 +378,11 @@
                                             <td> <input class="checkBoxes form-check-input" type="checkbox" name="salary[]" value="{{ $salary->id }}" /> </td>
                                             <td> {{ $key + 1 }} </td>
                                             <td> FWSS{{ $salary->employee?->id }} </td>
+                                            <!-- <td>  </td> -->
                                                             @if($salary->payment_status == 'pending')
-                                                                <td> <span class="badge bg-label-info"> {{ $salary->payment_status }} </span> </td>
+                                                                <td> {{ $salary->status2 }} <br> <span class="badge bg-label-info"> {{ $salary->payment_status }} </span> <br> {{$salary->approval_date?->format('F l d, Y')}} <br> {{  $salary->user2?->name }} </td>
                                                             @else 
-                                                                <td> <span class="badge bg-label-success">  {{ $salary->payment_status }} </span> </td>
+                                                                <td> {{ $salary->status2 }} <br> <span class="badge bg-label-success"> {{ $salary->payment_status }} </span> <br> {{$salary->approval_date?->format('F l d, Y')}} <br> {{  $salary->user2?->name }}  </td>
                                                             @endif
                                             <td> 
                                                 @foreach($categories as $category)
