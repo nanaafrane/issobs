@@ -16,6 +16,7 @@ use App\Http\Controllers\ProformaController;
 use App\Http\Controllers\ReceiptController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SalaryController;
+use App\Http\Controllers\SalaryTopUpsController;
 use App\Http\Controllers\SendMoneyController;
 use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\TransactionController;
@@ -131,6 +132,7 @@ Route::get('employeeReinstate/{id}', [EmployeeController::class, 'employeeReinst
 Route::post('employeesGuardReAassign', [EmployeeController::class, 'GuardReAassign'])->name('employees.GuardReAassign');
 
 Route::resource('salaries', SalaryController::class);
+Route::resource('salariestopups', SalaryTopUpsController::class);
 Route::get('salariesCreate', [SalaryController::class, 'CreateSalaries']);
 Route::get('printPayslip/{id}', [SalaryController::class, 'printPayslip']);
 Route::post('salariesDeleteMultiple', [SalaryController::class, 'deleteMultiple'])->name('salaries.deletMultiple');

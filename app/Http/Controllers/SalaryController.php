@@ -25,6 +25,7 @@ use Maatwebsite\Excel\Facades\Excel;
 use App\Imports\SalaryImport;
 use App\Models\category;
 use App\Models\PaymentInfo;
+use App\Models\SalaryTopUps;
 use Maatwebsite\Excel\Excel as MaatwebsiteExcel;
 use PhpOffice\PhpSpreadsheet\Calculation\MathTrig\Sum;
 use Illuminate\Database\Eloquent\Builder;
@@ -310,7 +311,16 @@ class SalaryController extends Controller
         $clientDHold = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['hold','rejected'])->whereIn('client_id', $CategoryDClient)->groupBy('client_id')->get(['client_id', DB::raw('SUM(net_salary) as net_salary'), DB::raw('COUNT(employee_id) as total_employees')]);
 
 
-        return view('salaries.salariesmonth', compact('salariesAbsent', 'salariesAmtdedstart', 'salariesOtherDed', 'salariesReprimand', 'salariesLoan', 'clientA', 'clientAReceipts', 'clientAInvoices', 'clientAInvoicesGuards', 'clientACash', 'clientABank', 'clientB', 'clientBReceipts', 'clientBInvoices', 'clientBInvoicesGuards', 'clientBCash', 'clientBBank','clientC', 'clientCReceipts', 'clientCInvoices', 'clientCInvoicesGuards', 'clientCCash', 'clientCBank', 'clientD', 'clientDReceipts', 'clientDInvoices', 'clientDInvoicesGuards', 'clientDCash', 'clientDBank', 'clientAHold','clientBHold', 'clientCHold', 'clientDHold','salariesClients', 'salariesClientsHold','groupedBankSalaries','groupedCashkSalaries', 'salariesTaxes', 'salariesPensions', 'month', 'salariesMaster', 'salariesOvertime', 'salariesIOU', 'salariesBoots', 'categories'));
+        // GET TOP UP SALARIES FOR THE MONTH
+        $topUpSalaries = SalaryTopUps::whereMonth('salary_month', $month->month)->get();
+        // $topUpSalaries = DB::table('salaries_addups')
+        //     ->join('salaries', 'salaries_addups.salary_id', '=', 'salaries.id')
+        //     ->whereMonth('salaries_addups.salary_month', $month->month)
+        //     // ->select('salaries.*', 'salaries_addups.status as topup_status', 'salaries_addups.user_id as topup_user_id', 'salaries_addups.created_at as topup_created_at')
+        //     ->get();
+        // // dd($topUpSalaries);
+
+        return view('salaries.salariesmonth', compact('topUpSalaries', 'salariesAbsent', 'salariesAmtdedstart', 'salariesOtherDed', 'salariesReprimand', 'salariesLoan', 'clientA', 'clientAReceipts', 'clientAInvoices', 'clientAInvoicesGuards', 'clientACash', 'clientABank', 'clientB', 'clientBReceipts', 'clientBInvoices', 'clientBInvoicesGuards', 'clientBCash', 'clientBBank','clientC', 'clientCReceipts', 'clientCInvoices', 'clientCInvoicesGuards', 'clientCCash', 'clientCBank', 'clientD', 'clientDReceipts', 'clientDInvoices', 'clientDInvoicesGuards', 'clientDCash', 'clientDBank', 'clientAHold','clientBHold', 'clientCHold', 'clientDHold','salariesClients', 'salariesClientsHold','groupedBankSalaries','groupedCashkSalaries', 'salariesTaxes', 'salariesPensions', 'month', 'salariesMaster', 'salariesOvertime', 'salariesIOU', 'salariesBoots', 'categories'));
     }
 
 
@@ -408,8 +418,7 @@ class SalaryController extends Controller
                                 continue;
                             }
 
-
-                        DB::table('salaries_addups')->insert([
+                        SalaryTopUps::create([
                             'salary_id' =>  $salary->id,
                             'salary_month' =>  $salary->salary_month,
                             'field_id' =>   $salary->field_id,
