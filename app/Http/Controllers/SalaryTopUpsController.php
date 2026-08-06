@@ -118,6 +118,28 @@ class SalaryTopUpsController extends Controller
                     }
                 return back()->with('success', 'Selected salaries reversed for Top Ups : ' . implode(', ', $salaryIds));
             }
+        if ($action === 'delete_topup')
+            {
+                    $alreadyProcessed = [];
+                    $salaries = SalaryTopUps::findOrFail($salaryIds);
+                    foreach ($salaries as $salarytopup) 
+                    {
+                        $exists = SalaryTopUps::where('id', $salarytopup->id)->where('status', 'approved')
+                                        ->exists();
+                        if ($exists) {
+                            $alreadyProcessed[] = $salarytopup->salary?->employee?->name . " with Salary ID: " . $salarytopup->salary_id;
+                            continue;
+                        }
+                        
+                        $salarytopup->delete();
+                    }
+                //  dd(count($alreadyProcessed));
+                if (!empty($alreadyProcessed))
+                    {
+                        return back()->with('error', 'Salaries have already been Approved : '. implode(', ', $alreadyProcessed))  ;
+                    }
+                return back()->with('error', 'Selected salaries deleted from Top Ups : ' . implode(', ', $salaryIds));
+            }
 
     }
 

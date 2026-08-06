@@ -2269,11 +2269,15 @@
                                 <input class="form-check-input form-check-inline" type="checkbox" value="" id="topups" />
 
                                 <div class="form-check form-check-inline">
-                                    <button class="btn btn-primary m-4"  onclick="document.getElementById('topups_action_type').value='topup'; return confirm('Kindly Confirm?')" type="submit"> <i class="icon-base bx bx-bxs-file-plus"> </i> {{ __('Approve Top Up') }}</button>                   
+                                    <button class="btn btn-primary m-2"  onclick="document.getElementById('topups_action_type').value='topup'; return confirm('Kindly Confirm?')" type="submit"> <i class="icon-base bx bx-bxs-file-plus"> </i> {{ __('Approve Top Up') }}</button>                   
                                 </div>
 
                                 <div class="form-check form-check-inline">
-                                    <button class="btn btn-danger m-4"  onclick="document.getElementById('topups_action_type').value='reverse_topup'; return confirm('Kindly Confirm?')" type="submit"> <i class="icon-base bx bx-bxs-file-plus"> </i> {{ __('Reverse Top Up') }}</button>                   
+                                    <button class="btn btn-dark m-2"  onclick="document.getElementById('topups_action_type').value='reverse_topup'; return confirm('Kindly Confirm?')" type="submit"> <i class="icon-base bx bx-bxs-file-plus"> </i> {{ __('Reverse Top Up') }}</button>                   
+                                </div>
+
+                                <div class="form-check form-check-inline">
+                                    <button class="btn btn-danger m-2"  onclick="document.getElementById('topups_action_type').value='delete_topup'; return confirm('Kindly Confirm?')" type="submit"> <i class="icon-base bx bx-bxs-file-plus"> </i> {{ __('Delete') }}</button>                   
                                 </div>
                                 @endif
                                 <table id="topupsTT" class="display">
