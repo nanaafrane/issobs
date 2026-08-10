@@ -2269,15 +2269,18 @@
                                 <input class="form-check-input form-check-inline" type="checkbox" value="" id="topups" />
 
                                 <div class="form-check form-check-inline">
-                                    <button class="btn btn-primary m-2"  onclick="document.getElementById('topups_action_type').value='topup'; return confirm('Kindly Confirm?')" type="submit"> <i class="icon-base bx bx-bxs-file-plus"> </i> {{ __('Approve Top Up') }}</button>                   
+                                    <button class="btn btn-success"  onclick="document.getElementById('topups_action_type').value='topup'; return confirm('Kindly Confirm?')" type="submit"> <i class="icon-base bx bx-bxs-file-plus"> </i> {{ __('Approve Top Up') }}</button>                   
                                 </div>
 
                                 <div class="form-check form-check-inline">
-                                    <button class="btn btn-dark m-2"  onclick="document.getElementById('topups_action_type').value='reverse_topup'; return confirm('Kindly Confirm?')" type="submit"> <i class="icon-base bx bx-bxs-file-plus"> </i> {{ __('Reverse Top Up') }}</button>                   
+                                    <button class="btn btn-dark "  onclick="document.getElementById('topups_action_type').value='reverse_topup'; return confirm('Kindly Confirm?')" type="submit"> <i class="icon-base bx bx-bxs-file-plus"> </i> {{ __('Reverse Top Up') }}</button>                   
                                 </div>
 
                                 <div class="form-check form-check-inline">
-                                    <button class="btn btn-danger m-2"  onclick="document.getElementById('topups_action_type').value='delete_topup'; return confirm('Kindly Confirm?')" type="submit"> <i class="icon-base bx bx-bxs-file-plus"> </i> {{ __('Delete') }}</button>                   
+                                    <button class="btn btn-primary"  onclick="document.getElementById('topups_action_type').value='save'; return confirm('Kindly Confirm?')" type="submit"> <i class="icon-base bx bx-bxs-file-plus"> </i> {{ __('Save') }}</button>                   
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <button class="btn btn-danger m-15"  onclick="document.getElementById('topups_action_type').value='delete_topup'; return confirm('Kindly Confirm?')" type="submit"> <i class="icon-base bx bx-bxs-file-plus"> </i> {{ __('Delete') }}</button>                   
                                 </div>
                                 @endif
                                 <table id="topupsTT" class="display">
@@ -2300,15 +2303,23 @@
                                     </thead>
                                     <tbody class="table-border-bottom-0">
                                     @foreach($topUpSalaries as $key => $topup)
-                                        <tr>
-                                            <td> <input class="checkBoxestopups form-check-input" type="checkbox" name="salary[{{ $topup->id }}]" value="{{  $topup->id }}" /> </td>
+                                        <tr class="{{ $topup->status === 'approved' ? 'table-secondary text-muted' : '' }}">
+                                            <td> <input class="checkBoxestopups form-check-input" type="checkbox" name="salary[{{ $topup->id }}]" value="{{  $topup->id }}"  @disabled($topup->status === 'approved' ?? 'saved' )/> </td>
                                             <td> {{$key + 1}} </td>
                                             <td> FWSS {{ $topup->salary?->employee_id }} </td>
                                             <td> 
-                                                @if($topup->status == 'pending' || $topup->status == 'reversed')
+                                                @if($topup->status == 'pending' )
                                                     {{ $topup->status_date2?->format('F l d, Y') }} <br>
                                                     By {{  $topup->user2?->name }} <br>
                                                    <span class="badge bg-label-info">{{ $topup->status }} </span>
+                                                @elseif( $topup->status == 'reversed')
+                                                    {{ $topup->status_date2?->format('F l d, Y') }} <br>
+                                                    By {{  $topup->user2?->name }} <br>
+                                                   <span class="badge bg-label-dark">{{ $topup->status }} </span>
+                                                @elseif($topup->status == 'saved')
+                                                    {{ $topup->status_date?->format('F l d, Y') }} <br>
+                                                    By {{  $topup->user1?->name }} <br>
+                                                   <span class="badge bg-label-primary">{{ $topup->status }} </span>
                                                 @else
                                                     {{ $topup->status_date?->format('F l d, Y') }} <br>
                                                     By {{  $topup->user1?->name }} <br>
@@ -2321,7 +2332,11 @@
                                             <td> {{ $topup->salary_month?->format('F, Y') }} </td>
                                             <td> {{ $topup->salary?->employee?->name }} </td>
                                             <td> 
-                                                <textarea name="reason[{{ $topup->id }}]" id="reason" class="form-control @error('reason') is-invalid @enderror"> {{$topup->reason}} </textarea> 
+                                                @if($topup->status == 'approved' || $topup->status == 'saved')
+                                                {{ $topup->reason }}
+                                                @else
+                                                <textarea name="reason[{{ $topup->id }}]" id="reason" class="form-control @error('reason') is-invalid @enderror" > {{$topup->reason}} </textarea> 
+                                               @endif
                                                 @error('reason')
                                                 <span class="invalid-feedback" role="alert">
                                                 <strong>{{ $message }}</strong>
@@ -2329,13 +2344,17 @@
                                                 @enderror
                                             </td>
                                             <td> 
-                                                <select name="payment_type[{{ $topup->id }}]" class="form-select @error('payment_type') is-invalid @enderror" id="payment_type" >
+                                                @if($topup->status == 'approved' || $topup->status == 'saved')
+                                                    MoMo
+                                                @else
+                                                <select name="payment_type[{{ $topup->id }}]" class="form-select @error('payment_type') is-invalid @enderror" id="payment_type">
                                                 
                                                     <!-- <option default selected disabled>Choose...</option> -->
                                                     <!-- <option @if($topup->payment_type == "Bank") selected @endif value="Bank">Bank</option> -->
                                                     <option  selected default value="Cash">MoMo</option>
                                                 
                                                 </select>  
+                                                @endif
                                                 @error('payment_type')
                                                 <span class="invalid-feedback" role="alert">
                                                 <strong>{{ $message }}</strong>
@@ -2343,7 +2362,11 @@
                                                 @enderror
                                             </td>
                                             <td> 
-                                                <input type="number" name="top_up_amount[{{ $topup->id }}]" class="form-control @error('top_up_amount') is-invalid @enderror" id="top_up_amount" step="any" placeholder=" GH&#x20B5; " value="{{ $topup->top_up_amount}}"> 
+                                                @if($topup->status == 'approved' || $topup->status == 'saved')
+                                                {{ number_format($topup->top_up_amount, 2) }}
+                                                @else
+                                                <input type="text" name="top_up_amount[{{ $topup->id }}]" class="form-control @error('top_up_amount') is-invalid @enderror" id="top_up_amount" step="any" placeholder=" GH&#x20B5; " value="{{ $topup->top_up_amount}}" >
+                                               @endif
                                                 @error('top_up_amount')
                                                 <span class="invalid-feedback" role="alert">
                                                 <strong>{{ $message }}</strong>
@@ -2599,8 +2622,7 @@
                                                                 </div>  
                                                         </div> 
                                                         <hr> <br> 
-
-
+                                                        <!-- MOMO TOP UPS -->
                                                         <div class="d-flex justify-content-between">
                                                                 <div> <strong class="text-info">PAID  </strong>  </div>   | 
                                                                 <div> <strong class="text-danger">OUTSTD'N  </strong> </div>
@@ -2608,12 +2630,12 @@
 
                                                         <div class="d-flex justify-content-between">
                                                                 <div>  <h4 class="card-title text-white"><strong> {{ number_format($topUpSalaries->where('field_id', 1)->where('status', 'approved')->sum('top_up_amount'), 2) }}  </strong> </h4>   </div> 
-                                                                <div>  <h4 class="card-title text-white"><strong>  {{ number_format($topUpSalaries->where('field_id', 1)->whereIn('status', ['pending','reversed'])->sum('top_up_amount'), 2) }} </strong> </h4>  </div>   
+                                                                <div>  <h4 class="card-title text-white"><strong>  {{ number_format($topUpSalaries->where('field_id', 1)->where('status', 'saved')->sum('top_up_amount'), 2) }} </strong> </h4>  </div>   
                                                         </div>
                                                     
                                                         <div class="d-flex justify-content-between">
                                                                 <div> <h6 class="card-title text-white"><strong>  N0 of Emp' : {{ $topUpSalaries->where('field_id', 1)->where('status', 'approved')->count() }} </strong> </h6>   </div>  
-                                                                <div> <h6 class="card-title text-white"><strong>  N0 of Emp' : {{ $topUpSalaries->where('field_id', 1)->whereIn('status', ['pending','reversed'])->count() }} </strong> </h6>   </div>  
+                                                                <div> <h6 class="card-title text-white"><strong>  N0 of Emp' : {{ $topUpSalaries->where('field_id', 1)->where('status', 'saved')->count() }} </strong> </h6>   </div>  
                                                         </div> 
                                                         <!-- <hr> <br>   -->
                                                     
@@ -2735,6 +2757,7 @@
                                                                 </div>  
                                                         </div> 
                                                         <hr> <br> 
+                                                          <!-- MOMO TOP UPS -->
                                                         <div class="d-flex justify-content-between">
                                                                 <div> <strong class="text-info">PAID  </strong>  </div>   | 
                                                                 <div> <strong class="text-danger">OUTSTD'N  </strong> </div>
@@ -2742,12 +2765,12 @@
 
                                                         <div class="d-flex justify-content-between">
                                                                 <div>  <h4 class="card-title text-white"><strong> {{ number_format($topUpSalaries->where('field_id', 2)->where('status', 'approved')->sum('top_up_amount'), 2) }}  </strong> </h4>   </div> 
-                                                                <div>  <h4 class="card-title text-white"><strong>  {{ number_format($topUpSalaries->where('field_id', 2)->whereIn('status', ['pending','reversed'])->sum('top_up_amount'), 2) }} </strong> </h4>  </div>   
+                                                                <div>  <h4 class="card-title text-white"><strong>  {{ number_format($topUpSalaries->where('field_id', 2)->where('status', 'saved')->sum('top_up_amount'), 2) }} </strong> </h4>  </div>   
                                                         </div>
                                                     
                                                         <div class="d-flex justify-content-between">
                                                                 <div> <h6 class="card-title text-white"><strong>  N0 of Emp' : {{ $topUpSalaries->where('field_id', 2)->where('status', 'approved')->count() }} </strong> </h6>   </div>  
-                                                                <div> <h6 class="card-title text-white"><strong>  N0 of Emp' : {{ $topUpSalaries->where('field_id', 2)->whereIn('status', ['pending','reversed'])->count() }} </strong> </h6>   </div>  
+                                                                <div> <h6 class="card-title text-white"><strong>  N0 of Emp' : {{ $topUpSalaries->where('field_id', 2)->where('status', 'saved')->count() }} </strong> </h6>   </div>  
                                                         </div> 
                                                         <!-- <hr> <br>   -->
                                                     </div>
@@ -2864,6 +2887,7 @@
                                                                 </div>  
                                                         </div> 
                                                         <hr> <br> 
+                                                          <!-- MOMO TOP UPS -->
                                                         <div class="d-flex justify-content-between">
                                                                 <div> <strong class="text-info">PAID  </strong>  </div>   | 
                                                                 <div> <strong class="text-danger">OUTSTD'N  </strong> </div>
@@ -2871,12 +2895,12 @@
 
                                                         <div class="d-flex justify-content-between">
                                                                 <div>  <h4 class="card-title text-white"><strong> {{ number_format($topUpSalaries->where('field_id', 3)->where('status', 'approved')->sum('top_up_amount'), 2) }}  </strong> </h4>   </div> 
-                                                                <div>  <h4 class="card-title text-white"><strong>  {{ number_format($topUpSalaries->where('field_id', 3)->whereIn('status', ['pending','reversed'])->sum('top_up_amount'), 2) }} </strong> </h4>  </div>   
+                                                                <div>  <h4 class="card-title text-white"><strong>  {{ number_format($topUpSalaries->where('field_id', 3)->where('status', 'saved')->sum('top_up_amount'), 2) }} </strong> </h4>  </div>   
                                                         </div>
                                                     
                                                         <div class="d-flex justify-content-between">
                                                                 <div> <h6 class="card-title text-white"><strong>  N0 of Emp' : {{ $topUpSalaries->where('field_id', 3)->where('status', 'approved')->count() }} </strong> </h6>   </div>  
-                                                                <div> <h6 class="card-title text-white"><strong>  N0 of Emp' : {{ $topUpSalaries->where('field_id', 3)->whereIn('status', ['pending','reversed'])->count() }} </strong> </h6>   </div>  
+                                                                <div> <h6 class="card-title text-white"><strong>  N0 of Emp' : {{ $topUpSalaries->where('field_id', 3)->where('status', 'saved')->count() }} </strong> </h6>   </div>  
                                                         </div> 
                                                         <!-- <hr> <br>   -->
                                                     </div>
@@ -2994,6 +3018,7 @@
                                                                 </div>  
                                                         </div> 
                                                         <hr> <br> 
+                                                          <!-- MOMO TOP UPS -->
                                                         <div class="d-flex justify-content-between">
                                                                 <div> <strong class="text-info">PAID  </strong>  </div>   | 
                                                                 <div> <strong class="text-danger">OUTSTD'N  </strong> </div>
@@ -3001,12 +3026,12 @@
 
                                                         <div class="d-flex justify-content-between">
                                                                 <div>  <h4 class="card-title text-white"><strong> {{ number_format($topUpSalaries->where('field_id', 7)->where('status', 'approved')->sum('top_up_amount'), 2) }}  </strong> </h4>   </div> 
-                                                                <div>  <h4 class="card-title text-white"><strong>  {{ number_format($topUpSalaries->where('field_id', 7)->whereIn('status', ['pending','reversed'])->sum('top_up_amount'), 2) }} </strong> </h4>  </div>   
+                                                                <div>  <h4 class="card-title text-white"><strong>  {{ number_format($topUpSalaries->where('field_id', 7)->where('status', 'saved')->sum('top_up_amount'), 2) }} </strong> </h4>  </div>   
                                                         </div>
                                                     
                                                         <div class="d-flex justify-content-between">
                                                                 <div> <h6 class="card-title text-white"><strong>  N0 of Emp' : {{ $topUpSalaries->where('field_id', 7)->where('status', 'approved')->count() }} </strong> </h6>   </div>  
-                                                                <div> <h6 class="card-title text-white"><strong>  N0 of Emp' : {{ $topUpSalaries->where('field_id', 7)->whereIn('status', ['pending','reversed'])->count() }} </strong> </h6>   </div>  
+                                                                <div> <h6 class="card-title text-white"><strong>  N0 of Emp' : {{ $topUpSalaries->where('field_id', 7)->where('status', 'saved')->count() }} </strong> </h6>   </div>  
                                                         </div> 
                                                         <!-- <hr> <br>   -->
                                                     </div>
@@ -3124,6 +3149,7 @@
                                                                 </div>  
                                                         </div> 
                                                         <hr> <br> 
+                                                          <!-- MOMO TOP UPS -->
                                                         <div class="d-flex justify-content-between">
                                                                 <div> <strong class="text-info">PAID  </strong>  </div>   | 
                                                                 <div> <strong class="text-danger">OUTSTD'N  </strong> </div>
@@ -3131,12 +3157,12 @@
 
                                                         <div class="d-flex justify-content-between">
                                                                 <div>  <h4 class="card-title text-white"><strong> {{ number_format($topUpSalaries->where('field_id', 4)->where('status', 'approved')->sum('top_up_amount'), 2) }}  </strong> </h4>   </div> 
-                                                                <div>  <h4 class="card-title text-white"><strong>  {{ number_format($topUpSalaries->where('field_id', 4)->whereIn('status', ['pending','reversed'])->sum('top_up_amount'), 2) }} </strong> </h4>  </div>   
+                                                                <div>  <h4 class="card-title text-white"><strong>  {{ number_format($topUpSalaries->where('field_id', 4)->where('status', 'saved')->sum('top_up_amount'), 2) }} </strong> </h4>  </div>   
                                                         </div>
                                                     
                                                         <div class="d-flex justify-content-between">
                                                                 <div> <h6 class="card-title text-white"><strong>  N0 of Emp' : {{ $topUpSalaries->where('field_id', 4)->where('status', 'approved')->count() }} </strong> </h6>   </div>  
-                                                                <div> <h6 class="card-title text-white"><strong>  N0 of Emp' : {{ $topUpSalaries->where('field_id', 4)->whereIn('status', ['pending','reversed'])->count() }} </strong> </h6>   </div>  
+                                                                <div> <h6 class="card-title text-white"><strong>  N0 of Emp' : {{ $topUpSalaries->where('field_id', 4)->where('status', 'saved')->count() }} </strong> </h6>   </div>  
                                                         </div> 
                                                         <!-- <hr> <br>   -->
                                                     </div>
@@ -3254,7 +3280,7 @@
                                                                 </div>  
                                                         </div> 
                                                         <hr> <br> 
-                                                    
+                                                      <!-- MOMO TOP UPS -->
                                                         <div class="d-flex justify-content-between">
                                                                 <div> <strong class="text-info">PAID  </strong>  </div>   | 
                                                                 <div> <strong class="text-danger">OUTSTD'N  </strong> </div>
@@ -3262,12 +3288,12 @@
 
                                                         <div class="d-flex justify-content-between">
                                                                 <div>  <h4 class="card-title text-white"><strong> {{ number_format($topUpSalaries->where('field_id', 5)->where('status', 'approved')->sum('top_up_amount'), 2) }}  </strong> </h4>   </div> 
-                                                                <div>  <h4 class="card-title text-white"><strong>  {{ number_format($topUpSalaries->where('field_id', 5)->whereIn('status', ['pending','reversed'])->sum('top_up_amount'), 2) }} </strong> </h4>  </div>   
+                                                                <div>  <h4 class="card-title text-white"><strong>  {{ number_format($topUpSalaries->where('field_id', 5)->where('status', 'saved')->sum('top_up_amount'), 2) }} </strong> </h4>  </div>   
                                                         </div>
                                                     
                                                         <div class="d-flex justify-content-between">
                                                                 <div> <h6 class="card-title text-white"><strong>  N0 of Emp' : {{ $topUpSalaries->where('field_id', 5)->where('status', 'approved')->count() }} </strong> </h6>   </div>  
-                                                                <div> <h6 class="card-title text-white"><strong>  N0 of Emp' : {{ $topUpSalaries->where('field_id', 5)->whereIn('status', ['pending','reversed'])->count() }} </strong> </h6>   </div>  
+                                                                <div> <h6 class="card-title text-white"><strong>  N0 of Emp' : {{ $topUpSalaries->where('field_id', 5)->where('status', 'saved')->count() }} </strong> </h6>   </div>  
                                                         </div> 
                                                         <!-- <hr> <br>   -->
                                                     </div>
@@ -3385,7 +3411,7 @@
                                                                 </div>  
                                                         </div> 
                                                         <hr> <br> 
-                                                    
+                                                     <!-- MOMO TOP UPS -->
                                                         <div class="d-flex justify-content-between">
                                                                 <div> <strong class="text-info">PAID  </strong>  </div>   | 
                                                                 <div> <strong class="text-danger">OUTSTD'N  </strong> </div>
@@ -3393,12 +3419,12 @@
 
                                                         <div class="d-flex justify-content-between">
                                                                 <div>  <h4 class="card-title text-white"><strong> {{ number_format($topUpSalaries->where('field_id', 6)->where('status', 'approved')->sum('top_up_amount'), 2) }}  </strong> </h4>   </div> 
-                                                                <div>  <h4 class="card-title text-white"><strong>  {{ number_format($topUpSalaries->where('field_id', 6)->whereIn('status', ['pending','reversed'])->sum('top_up_amount'), 2) }} </strong> </h4>  </div>   
+                                                                <div>  <h4 class="card-title text-white"><strong>  {{ number_format($topUpSalaries->where('field_id', 6)->where('status', 'saved')->sum('top_up_amount'), 2) }} </strong> </h4>  </div>   
                                                         </div>
                                                     
                                                         <div class="d-flex justify-content-between">
                                                                 <div> <h6 class="card-title text-white"><strong>  N0 of Emp' : {{ $topUpSalaries->where('field_id', 6)->where('status', 'approved')->count() }} </strong> </h6>   </div>  
-                                                                <div> <h6 class="card-title text-white"><strong>  N0 of Emp' : {{ $topUpSalaries->where('field_id', 6)->whereIn('status', ['pending','reversed'])->count() }} </strong> </h6>   </div>  
+                                                                <div> <h6 class="card-title text-white"><strong>  N0 of Emp' : {{ $topUpSalaries->where('field_id', 6)->where('status', 'saved')->count() }} </strong> </h6>   </div>  
                                                         </div> 
                                                         <!-- <hr> <br>   -->
                                                     </div>
@@ -3605,8 +3631,8 @@
                                         </div>
 
                                         <div class="d-flex justify-content-between">
-                                                <div>  <h4 class="card-title text-danger"><strong>  {{ number_format($topUpSalaries->whereIn('status', ['pending','reversed'])->sum('top_up_amount'), 2)  }} </strong> </h4>  </div>   
-                                                <div> <h4 class="card-title text-danger"><strong> {{ $topUpSalaries->whereIn('status', ['pending','reversed'])->count() }} </strong> </h4>  </div>  
+                                                <div>  <h4 class="card-title text-danger"><strong>  {{ number_format($topUpSalaries->where('status', 'saved')->sum('top_up_amount'), 2)  }} </strong> </h4>  </div>   
+                                                <div> <h4 class="card-title text-danger"><strong> {{ $topUpSalaries->where('status', 'saved')->count() }} </strong> </h4>  </div>  
                                         </div>
                                       
 

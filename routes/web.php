@@ -105,8 +105,10 @@ Route::resource('deposit', BankDepositController::class);
 
 Route::resource('banks', BankController::class);
 
+Route::get('/expense/list', [ExpenseController::class, 'list'])->name('expense.list');
+Route::post('/expense/{expense}/approve', [ExpenseController::class, 'approve'])->name('expense.approve');
+Route::post('/expense/{expense}/reject', [ExpenseController::class, 'reject'])->name('expense.reject');
 Route::resource('expense', ExpenseController::class);
-Route::get('/expenses/list', [ExpenseController::class, 'list'])->name('expenses.list');
 // Route::get('expenseCreate/{field_id}', [ExpenseController::class, 'CreateExpense'])->name('expense.CreateExpense');
 
 Route::resource('employees', EmployeeController::class); 

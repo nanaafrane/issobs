@@ -59,6 +59,36 @@ class SalaryTopUpsController extends Controller
                         $salarytopup->status = 'approved';
                         $salarytopup->user_id1 = Auth::id();
                         $salarytopup->status_date = now();
+                        // if(empty($request->payment_type[$salarytopup->id]) || empty($request->top_up_amount[$salarytopup->id]) || empty($request->reason[$salarytopup->id]) )
+                        // {
+                        //     $notCompleted[] = $salarytopup->salary?->employee?->name . " with Salary ID: " . $salarytopup->salary_id;
+                        //     continue;
+                        // }
+                        // $salarytopup->payment_type = $request->payment_type[$salarytopup->id];
+                        // $salarytopup->top_up_amount = $request->top_up_amount[$salarytopup->id];
+                        // $salarytopup->reason = $request->reason[$salarytopup->id];
+
+                        $salarytopup->save();
+                    }
+                //  dd(count($alreadyProcessed));
+                // if (!empty($alreadyProcessed))
+                //     {
+                //         return back()->with('error', 'Salaries have already been Approved : '. implode(', ', $alreadyProcessed))  ;
+                //     }
+                // if (!empty($notCompleted))
+                //     {
+                //         return back()->with('error', 'The following Topups were not completed '. implode(', ', $notCompleted));
+                //     }
+                return back()->with('success', 'Selected salaries approved for Top Ups : ' . implode(', ', $salaryIds));
+            }
+        if ($action === 'save')
+            {
+                    $salaries = SalaryTopUps::findOrFail($salaryIds);
+                    foreach ($salaries as $salarytopup) 
+                    {
+                        $salarytopup->status = 'saved';
+                        $salarytopup->user_id1 = Auth::id();
+                        $salarytopup->status_date = now();
                         if(empty($request->payment_type[$salarytopup->id]) || empty($request->top_up_amount[$salarytopup->id]) || empty($request->reason[$salarytopup->id]) )
                         {
                             $notCompleted[] = $salarytopup->salary?->employee?->name . " with Salary ID: " . $salarytopup->salary_id;
@@ -70,16 +100,12 @@ class SalaryTopUpsController extends Controller
 
                         $salarytopup->save();
                     }
-                //  dd(count($alreadyProcessed));
-                // if (!empty($alreadyProcessed))
-                //     {
-                //         return back()->with('error', 'Salaries have already been Approved : '. implode(', ', $alreadyProcessed))  ;
-                //     }
+
                 if (!empty($notCompleted))
                     {
                         return back()->with('error', 'The following Topups were not completed '. implode(', ', $notCompleted));
                     }
-                return back()->with('success', 'Selected salaries approved for Top Ups : ' . implode(', ', $salaryIds));
+                return back()->with('primary', 'Selected salaries Saved for Top Ups : ' . implode(', ', $salaryIds));
             }
         if ($action === 'reverse_topup')
             {
@@ -116,7 +142,7 @@ class SalaryTopUpsController extends Controller
                     {
                         return back()->with('error', 'The following Topups were not completed '. implode(', ', $notCompleted));
                     }
-                return back()->with('success', 'Selected salaries reversed for Top Ups : ' . implode(', ', $salaryIds));
+                return back()->with('dark', 'Selected salaries reversed for Top Ups : ' . implode(', ', $salaryIds));
             }
         if ($action === 'delete_topup')
             {
