@@ -438,13 +438,13 @@
                                             <td> FWSS{{ $salary->employee?->id }} </td>
 
                                                     @if ($salary->payment_status == 'pending')
-                                                    <td>{{ $salary->status2 }} <br>   <span class="badge bg-label-info"> {{ $salary->payment_status }} </span> <br> {{$salary->approval_date?->format('F l d, Y')}} <br> {{  $salary->user2?->name }}  </td>
+                                                    <td>    <span class="badge bg-label-info"> {{ $salary->payment_status }} </span> <br> {{ $salary->status2 }} <br> {{$salary->approval_date?->format('F l d, Y')}} <br> {{  $salary->user2?->name }}  </td>
                                                     @elseif($salary->payment_status == 'hold')
                                                     <td> <span class="badge bg-label-warning"> {{ $salary->payment_status }} </span> </td>
                                                     @elseif($salary->payment_status == 'rejected')
                                                     <td> <span class="badge bg-label-danger"> {{ $salary->payment_status }} </span> </td>
                                                     @else
-                                                    <td> {{ $salary->status2 }} <br>  <span class="badge bg-label-success"> {{ $salary->payment_status }} </span> <br> {{$salary->approval_date?->format('F l d, Y')}} <br> {{  $salary->user2?->name }}  </td>
+                                                    <td>  <br>  <span class="badge bg-label-success"> {{ $salary->payment_status }} </span> <br> {{ $salary->status2 }} <br> {{$salary->approval_date?->format('F l d, Y')}} <br> {{  $salary->user2?->name }}  </td>
                                                     @endif
                                                     <td> <textarea type="text" name="hold_reason[{{ $salary->id }}]" class="form-control"> {{ $salary?->hold_reason }} </textarea> </td>
                                                     <td> {{$salary->salary_month?->format('F, Y')}} </td>

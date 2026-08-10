@@ -380,9 +380,9 @@
                                             <td> FWSS{{ $salary->employee?->id }} </td>
                                             <!-- <td>  </td> -->
                                                             @if($salary->payment_status == 'pending')
-                                                                <td> {{ $salary->status2 }} <br> <span class="badge bg-label-info"> {{ $salary->payment_status }} </span> <br> {{$salary->approval_date?->format('F l d, Y')}} <br> {{  $salary->user2?->name }} </td>
+                                                                <td>  <span class="badge bg-label-info"> {{ $salary->payment_status }} </span> <br> {{ $salary->status2 }} <br> {{$salary->approval_date?->format('F l d, Y')}} <br> {{  $salary->user2?->name }} </td>
                                                             @else 
-                                                                <td> {{ $salary->status2 }} <br> <span class="badge bg-label-success"> {{ $salary->payment_status }} </span> <br> {{$salary->approval_date?->format('F l d, Y')}} <br> {{  $salary->user2?->name }}  </td>
+                                                                <td>  <span class="badge bg-label-success"> {{ $salary->payment_status }} </span> <br> {{ $salary->status2 }} <br> {{$salary->approval_date?->format('F l d, Y')}} <br> {{  $salary->user2?->name }}  </td>
                                                             @endif
                                             <td> 
                                                 @foreach($categories as $category)
