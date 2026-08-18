@@ -11,6 +11,7 @@ use App\Models\Field;
 use App\Models\Service;
 use App\Models\Transaction;
 use App\Models\Vat;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
@@ -59,6 +60,15 @@ class InvoiceController extends Controller
         $services = Service::all();
         return view('sales.invoice_create', compact('clients', 'fields', 'services'));
 
+    }
+
+    public function duplicate(Invoice $invoice)
+    {
+        $services = Service::all();
+        $invoice_data = DB::table('invoice_data')->where('invoice_id', $invoice->id)->get();
+        $clients = Client::all();
+
+        return view('sales.invoice_duplicate', compact('invoice', 'invoice_data', 'services', 'clients'));
     }
 
     /**
@@ -317,6 +327,87 @@ class InvoiceController extends Controller
     /**
      * Update the specified resource in storage.
      */
+    public function storeDuplicate(StoreInvoiceRequest $request, Invoice $sourceInvoice)
+    {
+        $invoice = new Invoice();
+        $invoice->client_id = $request->input('client_id');
+        $invoice->due_date = $request->input('due_date');
+        $invoice->invoice_month = Carbon::parse($request->input('invoice_month'))->format('Y-m-d');
+        $vat_standard = $request->input('vat_standard');
+        $vat_standard_21 = $request->input('vat_standard_21');
+        $invoice->status = 'unpaid';
+
+        $amount = $request->input('amount', []);
+        $sum_amount_from_invoice = array_sum(array_map('floatval', $amount));
+
+        $invoice->sub_amount = $sum_amount_from_invoice;
+        $invoice->user_id = Auth::user()->id;
+        $invoice->save();
+
+        $invoice_id = $invoice->id;
+
+        $service = $request->input('service', []);
+        $description = $request->input('description', []);
+        $quantity = $request->input('quantity', []);
+        $unit_price = $request->input('unit_price', []);
+
+        $nhilAmount = null;
+        $getfundAmount = null;
+        $chrlAmount = null;
+        $sub_total_without_vat = null;
+        $vatAmount = null;
+        $total = $sum_amount_from_invoice;
+
+        $quantity_count = count($quantity);
+
+        if ($quantity_count > 0) {
+            for ($i = 0; $i < $quantity_count; $i++) {
+                DB::table('invoice_data')->insert([
+                    'invoice_id' => $invoice_id,
+                    'service_name' => $service[$i],
+                    'description' => $description[$i],
+                    'quantity' => $quantity[$i],
+                    'unit_price' => $unit_price[$i],
+                    'amount' => $amount[$i],
+                ]);
+            }
+        }
+
+        if ($vat_standard == 'on') {
+            $vat = new Vat();
+            $nhilAmount = $vat->getNhilAmount($sum_amount_from_invoice);
+            $getfundAmount = $vat->getGetFundAmount($sum_amount_from_invoice);
+            $vatAmount = $vat->getVatAmount($sum_amount_from_invoice);
+            $total = $sum_amount_from_invoice + $nhilAmount + $getfundAmount + $vatAmount;
+        } elseif ($vat_standard_21 == 'on') {
+            $vat = new Vat();
+            $nhilAmount = $vat->getNhilAmount($sum_amount_from_invoice);
+            $getfundAmount = $vat->getGetFundAmount($sum_amount_from_invoice);
+            $chrlAmount = $vat->getChrlAmount($sum_amount_from_invoice);
+
+            $sub_total_without_vat = $sum_amount_from_invoice + $nhilAmount + $getfundAmount + $chrlAmount;
+            $vatAmount = $vat->getVatAmount($sub_total_without_vat);
+            $total = $sub_total_without_vat + $vatAmount;
+        }
+
+        $invoice->nhil = $nhilAmount;
+        $invoice->getfund = $getfundAmount;
+        $invoice->chrl = $chrlAmount;
+        $invoice->sub_total = $sub_total_without_vat;
+        $invoice->vat_amount = $vatAmount;
+        $invoice->total = $total;
+        $invoice->save();
+
+        $transaction = new Transaction();
+        $transaction->client_id = $request->input('client_id');
+        $transaction->invoice_id = $invoice_id;
+        $transaction->invoice_amount = $total;
+        $transaction->status = 'unpaid';
+        $transaction->save();
+
+        return redirect()->route('invoice.show', ['invoice' => $invoice_id])->with('primary', 'Invoice Duplicated Successfully');
+    }
+
     public function update(UpdateInvoiceRequest $request, Invoice $invoice)
     {
         //

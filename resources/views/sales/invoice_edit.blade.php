@@ -1,5 +1,23 @@
 <x-sales-dashboard>
 
+    @section('css')
+    <style>
+        .invoice-form-shell {
+            border: 1px solid rgba(17, 24, 39, 0.08);
+            border-radius: 1rem;
+            box-shadow: 0 0.35rem 1rem rgba(15, 23, 42, 0.06);
+            background: #fff;
+            padding: 1.5rem;
+        }
+
+        .invoice-form-title {
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            margin-bottom: 1rem;
+        }
+    </style>
+    @endsection
+
     @section('side_nav')
     <!-- Menu -->
     <aside id="layout-menu" class="layout-menu menu-vertical menu bg-menu-theme">
@@ -25,7 +43,7 @@
             <!-- Dashboards -->
             <li class="menu-item">
                 <a href="javascript:void(0);" class="menu-link menu-toggle">
-                    <i class="menu-icon tf-icons bx bx-home-smile"></i>
+                    <i class="menu-icon tf-icons bx bx-home-smile text-primary me-2"></i>
                     <div class="text-truncate" data-i18n="Dashboards">Dashboard</div>
                 </a>
                 <ul class="menu-sub">
@@ -43,20 +61,20 @@
             <!-- Pages -->
             <li class="menu-item">
                 <a href="{{url('transaction')}}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-transfer-alt"></i>
+                    <i class="menu-icon tf-icons bx bx-transfer-alt text-primary me-2"></i>
                     <div class="text-truncate" data-i18n="Transaction">Transactions</div>
                 </a>
             </li>
             @if(Auth::user()->hasRole(['Invoice','Finance Manager']))
             <li class="menu-item active">
                 <a href="{{ url('invoice') }}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-bxs-receipt"></i>
+                    <i class="menu-icon tf-icons bx bx-receipt text-primary me-2"></i>
                     <div class="text-truncate" data-i18n="Invoices">Invoices</div>
                 </a>
             </li>
       <li class="menu-item ">
           <a href="javascript:void(0);" class="menu-link menu-toggle">
-          <i class="menu-icon tf-icons bx bx-bxs-receipt bg-primary"></i>
+          <i class="menu-icon tf-icons bx bx-receipt text-primary me-2"></i>
           <div class="text-truncate" data-i18n="Staffs">Pro Forma</div>
           </a>
           <ul class="menu-sub">
@@ -84,7 +102,7 @@
 
                   <li class="menu-item">
                 <a href="{{url('receipt')}}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-money-withdraw"></i>
+                    <i class="menu-icon tf-icons bx bx-money-withdraw text-primary me-2"></i>
                     <div class="text-truncate" data-i18n="Receipts">Receipts</div>
                 </a>
             </li>
@@ -93,13 +111,13 @@
       <li class="menu-header small text-uppercase"><span class="menu-header-text text-info">Management</span></li>
       <li class="menu-item">
         <a href="{{url('client')}}" class="menu-link">
-          <i class="menu-icon tf-icons bx bx-bxs-user-detail bg-info"></i>
+          <i class="menu-icon tf-icons bx bx-user-detail text-info me-2"></i>
           <div class="text-truncate" data-i18n="Clients">Clients</div>
         </a>
       </li>
               <li class="menu-item ">
           <a href="javascript:void(0);" class="menu-link menu-toggle">
-          <i class="menu-icon tf-icons bx bxs-user-account"></i>
+          <i class="menu-icon tf-icons bx bx-user-circle text-info me-2"></i>
           <div class="text-truncate" data-i18n="Staffs">Employees</div>
           </a>
           <ul class="menu-sub">
@@ -125,7 +143,7 @@
       <li class="menu-header small text-uppercase"><span class="menu-header-text text-info">Management</span></li>
         <li class="menu-item ">
             <a class="menu-link menu-toggle">
-                <i class="menu-icon tf-icons bx bx-bxs-user-detail bg-info"></i>
+                <i class="menu-icon tf-icons bx bx-user-detail text-info me-2"></i>
                 <div class="text-truncate" data-i18n="Clients"><strong>Clients</strong></div>
             </a>
             <ul class="menu-sub">
@@ -143,7 +161,7 @@
         </li>
         <li class="menu-item ">
           <a href="javascript:void(0);" class="menu-link menu-toggle">
-          <i class="menu-icon tf-icons bx bxs-user-account"></i>
+          <i class="menu-icon tf-icons bx bx-user-circle text-info me-2"></i>
           <div class="text-truncate" data-i18n="Staffs">Employees</div>
           </a>
           <ul class="menu-sub">
@@ -166,13 +184,13 @@
       </li>
       <li class="menu-item">
           <a href="{{url('departments')}}" class="menu-link">
-          <i class="menu-icon tf-icons bx bxs-buildings"></i>
+          <i class="menu-icon tf-icons bx bx-buildings text-info me-2"></i>
           <div class="text-truncate" data-i18n="depnroles">Department & Roles </div>
           </a>
       </li>
       <li class="menu-item">
           <a href="{{url('field')}}" class="menu-link">
-          <i class="menu-icon tf-icons bx bx-bxs-location-plus"></i>
+          <i class="menu-icon tf-icons bx bx-map-pin text-info me-2"></i>
           <div class="text-truncate" data-i18n="fOffices">Field Offices</div>
           </a>
       </li>
@@ -184,7 +202,7 @@
 
       <li class="menu-item">
         <a href="javascript:void(0);" class="menu-link menu-toggle">
-          <i class="menu-icon tf-icons bx bxs-analyse bg-danger"></i>
+          <i class="menu-icon tf-icons bx bx-chart text-danger me-2"></i>
           <div class="text-truncate" data-i18n="Accounts"> Accounts </div>
         </a>
         <ul class="menu-sub">
@@ -202,7 +220,7 @@
           </li>
           <li class="menu-item">
             <a href="{{url('banks')}}" class="menu-link">
-              <i class="menu-icon tf-icons bx bxs-bank bg-danger"></i>
+              <i class="menu-icon tf-icons bx bx-bank text-danger me-2"></i>
               <div class="text-truncate" data-i18n="AList">Banks</div>
             </a>
           </li>
@@ -210,7 +228,7 @@
       </li>
       <li class="menu-item">
         <a href="{{url('expense')}}" class="menu-link">
-          <i class="menu-icon tf-icons bx bx-bxs-credit-card bg-secondary"></i>
+          <i class="menu-icon tf-icons bx bx-credit-card text-secondary me-2"></i>
           <div class="text-truncate" data-i18n="Expense"> Expense </div>
         </a>
        </li>
@@ -221,7 +239,7 @@
       <li class="menu-header small text-uppercase"><span class="menu-header-text">PAYROLL</span></li>
         <li class="menu-item">
                 <a href="javascript:void(0);" class="menu-link menu-toggle">
-                <i class="menu-icon tf-icons bx bx-money-withdraw"></i>
+                <i class="menu-icon tf-icons bx bx-money-withdraw text-primary me-2"></i>
                 <div class="text-truncate" data-i18n="Payroll">Payroll</div>
                 </a>
                 <ul class="menu-sub">
@@ -229,14 +247,14 @@
 
                 <li class="menu-item">
                     <a href="{{ url('salaries') }}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bxs-user-account"></i>
+                    <i class="menu-icon tf-icons bx bx-user-circle text-info me-2"></i>
                     <div class="text-truncate" data-i18n="Employees">Add to Salaries</div>
                     </a>
                 </li>
 
                 <li class="menu-item">
                     <a href="{{ url('salaries/create') }}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-money-withdraw"></i>
+                    <i class="menu-icon tf-icons bx bx-money-withdraw text-primary me-2"></i>
                     <div class="text-truncate" data-i18n="Salaries">Salaries</div>
                     </a>
                 </li>
@@ -245,7 +263,7 @@
 
                 <li class="menu-item">
                     <a href="{{ url('salariesTransaction') }}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-transfer-alt"></i>
+                    <i class="menu-icon tf-icons bx bx-transfer-alt text-primary me-2"></i>
                     <div class="text-truncate" data-i18n="Transaction">Transactions</div>
                     </a>
                 </li>
@@ -268,7 +286,7 @@
             <div class="row">
                 <div class="col-12">
                     <!-- <div class="card"> -->
-                    <h3 class="card-header text-primary"> <i class="icon-base bx bx-bxs-receipt"></i> Invoice <i class="icon-base bx bx-bxs-right-arrow-alt"></i> Edit </h3>
+                    <h3 class="card-header text-primary"> <i class="icon-base bx bx-receipt text-primary me-2"></i> Invoice <i class="icon-base bx bx-right-arrow-alt mx-1 text-muted"></i> Edit </h3>
                     <!-- <div class="card-body demo-vertical-spacing demo-only-element"> Invoice / Create </div> -->
                     <!-- </div> -->
                 </div>
@@ -280,7 +298,7 @@
             <!-- Invoice 1 - Bootstrap Brain Component -->
             <section class="py-3 py-md-5">
                 <div class="row justify-content-center">
-                    <div class="col-12 col-lg-9 col-xl-8 col-xxl-7">
+                    <div class="col-12 col-lg-9 col-xl-8 col-xxl-7 invoice-form-shell">
                         <div class="row gy-3 mb-3">
                             <div class="col-6">
                                 <h2 class="text-uppercase text-endx m-0 text-danger">Invoice</h2>

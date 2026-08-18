@@ -33,7 +33,7 @@
       <!-- Dashboards -->
       <li class="menu-item active open">
         <a href="javascript:void(0);" class="menu-link menu-toggle">
-          <i class="menu-icon tf-icons bx bx-home-smile"></i>
+          <i class="menu-icon tf-icons bx bx-home-smile text-primary me-2"></i>
           <div class="text-truncate" data-i18n="Dashboards"><strong>Dashboard</strong></div>
         </a>
         <ul class="menu-sub">
@@ -59,13 +59,13 @@
       @if(Auth::user()->hasRole(['Invoice','Finance Manager', 'Director']))
       <li class="menu-item">
         <a href="{{ url('invoice') }}" class="menu-link">
-          <i class="menu-icon tf-icons bx bx-bxs-receipt bg-primary"></i>
+          <i class="menu-icon tf-icons bx bx-receipt text-primary me-2"></i>
           <div class="text-truncate" data-i18n="Invoices">Invoices</div>
         </a>
       </li>
       <li class="menu-item ">
           <a href="javascript:void(0);" class="menu-link menu-toggle">
-          <i class="menu-icon tf-icons bx bx-bxs-receipt bg-primary"></i>
+          <i class="menu-icon tf-icons bx bx-receipt text-primary me-2"></i>
           <div class="text-truncate" data-i18n="Staffs">Pro Forma</div>
           </a>
           <ul class="menu-sub">
@@ -125,13 +125,13 @@
       <li class="menu-header small text-uppercase"><span class="menu-header-text text-info">Management</span></li>
       <li class="menu-item">
         <a href="{{url('client')}}" class="menu-link">
-          <i class="menu-icon tf-icons bx bx-bxs-user-detail bg-info"></i>
+          <i class="menu-icon tf-icons bx bx-user-detail text-info me-2"></i>
           <div class="text-truncate" data-i18n="Clients">Clients</div>
         </a>
       </li>
       <li class="menu-item ">
           <a href="javascript:void(0);" class="menu-link menu-toggle">
-          <i class="menu-icon tf-icons bx bxs-user-account bg-info"></i>
+          <i class="menu-icon tf-icons bx bx-user-circle text-info me-2"></i>
           <div class="text-truncate" data-i18n="Staffs">Employees</div>
           </a>
           <ul class="menu-sub">
@@ -166,7 +166,7 @@
 
       <li class="menu-item">
         <a href="{{url('category')}}" class="menu-link">
-          <i class="menu-icon tf-icons bx bxs-category bg-info"></i>
+          <i class="menu-icon tf-icons bx bx-category text-info me-2"></i>
           <div class="text-truncate" data-i18n="Categories">Categories</div>
         </a>
       </li>
@@ -175,7 +175,7 @@
       <li class="menu-header small text-uppercase"><span class="menu-header-text text-info">Management</span></li>
         <li class="menu-item ">
             <a class="menu-link menu-toggle">
-                <i class="menu-icon tf-icons bx bx-bxs-user-detail bg-info"></i>
+                <i class="menu-icon tf-icons bx bx-user-detail text-info me-2"></i>
                 <div class="text-truncate" data-i18n="Clients"><strong>Clients</strong></div>
             </a>
             <ul class="menu-sub">
@@ -205,7 +205,7 @@
         </li>
         <li class="menu-item ">
           <a href="javascript:void(0);" class="menu-link menu-toggle">
-          <i class="menu-icon tf-icons bx bxs-category bg-info"></i>
+          <i class="menu-icon tf-icons bx bx-category text-info me-2"></i>
           <div class="text-truncate" data-i18n="Staffs">Employees</div>
           </a>
           <ul class="menu-sub">
@@ -246,13 +246,13 @@
 
       <!-- <li class="menu-item">
           <a href="{{url('departments')}}" class="menu-link">
-          <i class="menu-icon tf-icons bx bxs-buildings"></i>
+          <i class="menu-icon tf-icons bx bx-buildings text-info me-2"></i>
           <div class="text-truncate" data-i18n="depnroles">Department & Roles </div>
           </a>
       </li>
       <li class="menu-item">
           <a href="{{url('field')}}" class="menu-link">
-          <i class="menu-icon tf-icons bx bx-bxs-location-plus"></i>
+          <i class="menu-icon tf-icons bx bx-map-pin text-info me-2"></i>
           <div class="text-truncate" data-i18n="fOffices">Field Offices</div>
           </a>
       </li> -->
@@ -264,7 +264,7 @@
 
       <li class="menu-item">
         <a href="javascript:void(0);" class="menu-link menu-toggle">
-          <i class="menu-icon tf-icons bx bxs-analyse bg-danger"></i>
+          <i class="menu-icon tf-icons bx bx-chart text-danger me-2"></i>
           <div class="text-truncate" data-i18n="Accounts"> Accounts </div>
         </a>
         <ul class="menu-sub">
@@ -282,7 +282,7 @@
           </li>
           <li class="menu-item">
             <a href="{{url('banks')}}" class="menu-link">
-              <i class="menu-icon tf-icons bx bxs-bank bg-danger"></i>
+              <i class="menu-icon tf-icons bx bx-bank text-danger me-2"></i>
               <div class="text-truncate" data-i18n="AList">Banks</div>
             </a>
           </li>
@@ -290,7 +290,7 @@
       </li>
       <li class="menu-item">
         <a href="{{url('expense')}}" class="menu-link">
-          <i class="menu-icon tf-icons bx bx-bxs-credit-card bg-secondary"></i>
+          <i class="menu-icon tf-icons bx bx-credit-card text-secondary me-2"></i>
           <div class="text-truncate" data-i18n="Expense"> Expense </div>
         </a>
        </li>
@@ -300,7 +300,7 @@
       <li class="menu-header small text-uppercase"><span class="menu-header-text">PAYROLL</span></li>
         <li class="menu-item">
                 <a href="javascript:void(0);" class="menu-link menu-toggle">
-                <i class="menu-icon tf-icons bx bx-money-withdraw"></i>
+                <i class="menu-icon tf-icons bx bx-money-withdraw text-primary me-2"></i>
                 <div class="text-truncate" data-i18n="Payroll">Payroll</div>
                 </a>
                 <ul class="menu-sub">
@@ -308,14 +308,14 @@
 
                 <li class="menu-item">
                     <a href="{{ url('salaries') }}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bxs-user-account"></i>
+                    <i class="menu-icon tf-icons bx bx-user-circle text-info me-2"></i>
                     <div class="text-truncate" data-i18n="Employees">Add to Salaries</div>
                     </a>
                 </li>
 
                 <li class="menu-item">
                     <a href="{{ url('salaries/create') }}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-money-withdraw"></i>
+                    <i class="menu-icon tf-icons bx bx-money-withdraw text-primary me-2"></i>
                     <div class="text-truncate" data-i18n="Salaries">Salaries</div>
                     </a>
                 </li>
@@ -324,7 +324,7 @@
 
                 <li class="menu-item">
                     <a href="{{ url('salariesTransaction') }}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-transfer-alt"></i>
+                    <i class="menu-icon tf-icons bx bx-transfer-alt text-primary me-2"></i>
                     <div class="text-truncate" data-i18n="Transaction">Transactions</div>
                     </a>
                 </li>
@@ -346,7 +346,7 @@
 
         <div class="row">
             <div class="col-12">
-                <h3 class="card-header text-primary"> <i class="icon-base bx bx-bxs-receipt"></i> Payment With Holdings @if (isset($month)) <strong> / For Month: {{  \Carbon\Carbon::parse($month)->format('F Y') }}</strong> @endif </h3>
+                <h3 class="card-header text-primary"> <i class="icon-base bx bx-receipt text-primary me-2"></i> Payment With Holdings @if (isset($month)) <strong> / For Month: {{  \Carbon\Carbon::parse($month)->format('F Y') }}</strong> @endif </h3>
             </div>
         </div><br>
 
@@ -757,7 +757,7 @@
 
                             <td>
                                 <a href="{{url('receipt', $receipt->id)}}" class="btn btn-info">
-                                    <i class="icon-base bx bxs-bullseye"></i>
+                                    <i class="icon-base bx bx-bullseye text-primary me-2"></i>
                                 </a>
                             </td>
                         </tr>
@@ -791,7 +791,7 @@
 
                             <td>
                                 <a href="{{url('receipt', $receipt->id)}}" class="btn btn-info">
-                                    <i class="icon-base bx bxs-bullseye"></i>
+                                    <i class="icon-base bx bx-bullseye text-primary me-2"></i>
                                 </a>
                             </td>
                         </tr>
@@ -827,7 +827,7 @@
 
                             <td>
                                 <a href="{{url('receipt', $receipt->id)}}" class="btn btn-info">
-                                    <i class="icon-base bx bxs-bullseye"></i>
+                                    <i class="icon-base bx bx-bullseye text-primary me-2"></i>
                                 </a>
                             </td>
                         </tr>
@@ -863,7 +863,7 @@
 
                             <td>
                                 <a href="{{url('receipt', $receipt->id)}}" class="btn btn-info">
-                                    <i class="icon-base bx bxs-bullseye"></i>
+                                    <i class="icon-base bx bx-bullseye text-primary me-2"></i>
                                 </a>
                             </td>
                         </tr>
@@ -899,7 +899,7 @@
 
                             <td>
                                 <a href="{{url('receipt', $receipt->id)}}" class="btn btn-info">
-                                    <i class="icon-base bx bxs-bullseye"></i>
+                                    <i class="icon-base bx bx-bullseye text-primary me-2"></i>
                                 </a>
                             </td>
                         </tr>
@@ -935,7 +935,7 @@
 
                             <td>
                                 <a href="{{url('receipt', $receipt->id)}}" class="btn btn-info">
-                                    <i class="icon-base bx bxs-bullseye"></i>
+                                    <i class="icon-base bx bx-bullseye text-primary me-2"></i>
                                 </a>
                             </td>
                         </tr>
@@ -972,7 +972,7 @@
 
                             <td>
                                 <a href="{{url('receipt', $receipt->id)}}" class="btn btn-info">
-                                    <i class="icon-base bx bxs-bullseye"></i>
+                                    <i class="icon-base bx bx-bullseye text-primary me-2"></i>
                                 </a>
                             </td>
                         </tr>

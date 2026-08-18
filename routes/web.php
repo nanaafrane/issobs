@@ -70,6 +70,8 @@ Route::resource('service', ServiceController::class);
 Route::resource('transaction', TransactionController::class);
 
 Route::resource('invoice', InvoiceController::class);
+Route::get('invoice/{invoice}/duplicate', [InvoiceController::class, 'duplicate'])->name('invoice.duplicate');
+Route::post('invoice/{invoice}/duplicate', [InvoiceController::class, 'storeDuplicate'])->name('invoice.storeDuplicate');
 Route::resource('proforma', ProformaController::class);
 Route::resource('proformaClient', ProformaClientController::class);
 Route::get('generate/{id}', [InvoiceController::class, 'generate']);

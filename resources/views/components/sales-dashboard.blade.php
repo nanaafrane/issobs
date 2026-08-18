@@ -106,7 +106,7 @@
                                                 </div>
                                                 <div class="flex-grow-1">
                                                     <h6 class="mb-0"> {{ Auth::user()->name }}</h6>
-                                                    <small class="text-body-secondary"> {{Auth::user()->department->name}}, {{Auth::user()->role->name }}</small>
+                                                    <small class="text-body-secondary"> {{ Auth::user()?->department?->name ?? 'No Department' }}, {{ Auth::user()?->role?->name ?? 'No Role' }}</small>
                                                 </div>
                                             </div>
                                         </a>

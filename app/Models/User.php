@@ -78,30 +78,45 @@ class User extends Authenticatable
 
     public function hasPermission($department)
     {
-        if($this->department->name == $department)
-        {
+        if (! $this->department) {
+            return false;
+        }
+
+        if ($this->department->name == $department) {
             return true;
         }
+
+        return false;
     }
 
     public function hasRole(array $roles)
-    {   
-        foreach ($roles as $role)
-        {
-        if ($this->role->name == $role) {
-            return true;
+    {
+        if (! $this->role) {
+            return false;
         }
+
+        foreach ($roles as $role) {
+            if ($this->role->name == $role) {
+                return true;
+            }
         }
+
+        return false;
     }
 
     public function hasNotRole(array $roles)
-    {   
-        foreach ($roles as $role)
-        {
-        if ($this->role->name == $role) {
-            return false;
+    {
+        if (! $this->role) {
+            return true;
         }
+
+        foreach ($roles as $role) {
+            if ($this->role->name == $role) {
+                return false;
+            }
         }
+
+        return true;
     }
 
 

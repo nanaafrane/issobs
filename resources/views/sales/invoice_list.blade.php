@@ -5,6 +5,62 @@
     <link rel="stylesheet" href="https://cdn.datatables.net/buttons/3.2.4/css/buttons.dataTables.css">
 
     <link href="https://cdn.datatables.net/columncontrol/1.1.1/css/columnControl.dataTables.min.css" rel="stylesheet">
+
+    <style>
+        .invoice-list-card {
+            border: 1px solid rgba(17, 24, 39, 0.08);
+            border-radius: 1rem;
+            box-shadow: 0 0.35rem 1rem rgba(15, 23, 42, 0.05);
+            overflow: hidden;
+        }
+
+        .invoice-list-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .invoice-list-header {
+            margin: 0;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+        }
+
+        .invoice-list-button {
+            border-radius: 0.75rem;
+            padding: 0.7rem 1.1rem;
+            font-weight: 600;
+        }
+
+        .invoice-table thead th {
+            background: rgba(220, 38, 38, 0.04);
+            font-size: 0.82rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: #374151;
+        }
+
+        .invoice-table tbody tr {
+            transition: background-color 0.2s ease;
+        }
+
+        .invoice-table tbody tr:hover {
+            background: rgba(220, 38, 38, 0.02);
+        }
+
+        .invoice-action-toggle {
+            border: 1px solid rgba(220, 38, 38, 0.12);
+            border-radius: 0.6rem;
+            padding: 0.35rem 0.55rem;
+            background: #fff;
+        }
+
+        .invoice-action-toggle:hover {
+            background: rgba(220, 38, 38, 0.04);
+        }
+    </style>
     @endsection
 
 
@@ -33,7 +89,7 @@
             <!-- Dashboards -->
             <li class="menu-item">
                 <a href="javascript:void(0);" class="menu-link menu-toggle">
-                    <i class="menu-icon tf-icons bx bx-home-smile"></i>
+                    <i class="menu-icon tf-icons bx bx-home-smile text-primary me-2"></i>
                     <div class="text-truncate" data-i18n="Dashboards"><strong>Dashboard</strong></div>
                 </a>
                 <ul class="menu-sub">
@@ -59,13 +115,13 @@
             @if(Auth::user()->hasRole(['Invoice','Finance Manager']))
             <li class="menu-item active">
                 <a href="{{ url('invoice') }}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-bxs-receipt"></i>
+                    <i class="menu-icon tf-icons bx bx-receipt text-primary me-2"></i>
                     <div class="text-truncate" data-i18n="Invoices"><strong>Invoices</strong></div>
                 </a>
             </li>
       <li class="menu-item ">
           <a href="javascript:void(0);" class="menu-link menu-toggle">
-          <i class="menu-icon tf-icons bx bx-bxs-receipt bg-primary"></i>
+          <i class="menu-icon tf-icons bx bx-receipt text-primary me-2"></i>
           <div class="text-truncate" data-i18n="Staffs">Pro Forma</div>
           </a>
           <ul class="menu-sub">
@@ -100,13 +156,13 @@
       <li class="menu-header small text-uppercase"><span class="menu-header-text text-info">Management</span></li>
       <li class="menu-item">
         <a href="{{url('client')}}" class="menu-link">
-          <i class="menu-icon tf-icons bx bx-bxs-user-detail bg-info"></i>
+          <i class="menu-icon tf-icons bx bx-user-detail text-info me-2"></i>
           <div class="text-truncate" data-i18n="Clients">Clients</div>
         </a>
       </li>
               <li class="menu-item ">
           <a href="javascript:void(0);" class="menu-link menu-toggle">
-          <i class="menu-icon tf-icons bx bxs-user-account"></i>
+          <i class="menu-icon tf-icons bx bx-user-circle text-info me-2"></i>
           <div class="text-truncate" data-i18n="Staffs">Employees</div>
           </a>
           <ul class="menu-sub">
@@ -132,7 +188,7 @@
       <li class="menu-header small text-uppercase"><span class="menu-header-text text-info">Management</span></li>
         <li class="menu-item ">
             <a class="menu-link menu-toggle">
-                <i class="menu-icon tf-icons bx bx-bxs-user-detail bg-info"></i>
+                <i class="menu-icon tf-icons bx bx-user-detail text-info me-2"></i>
                 <div class="text-truncate" data-i18n="Clients"><strong>Clients</strong></div>
             </a>
             <ul class="menu-sub">
@@ -150,7 +206,7 @@
         </li>
         <li class="menu-item ">
           <a href="javascript:void(0);" class="menu-link menu-toggle">
-          <i class="menu-icon tf-icons bx bxs-user-account"></i>
+          <i class="menu-icon tf-icons bx bx-user-circle text-info me-2"></i>
           <div class="text-truncate" data-i18n="Staffs">Employees</div>
           </a>
           <ul class="menu-sub">
@@ -173,13 +229,13 @@
       </li>
       <li class="menu-item">
           <a href="{{url('departments')}}" class="menu-link">
-          <i class="menu-icon tf-icons bx bxs-buildings"></i>
+          <i class="menu-icon tf-icons bx bx-buildings text-info me-2"></i>
           <div class="text-truncate" data-i18n="depnroles">Department & Roles </div>
           </a>
       </li>
       <li class="menu-item">
           <a href="{{url('field')}}" class="menu-link">
-          <i class="menu-icon tf-icons bx bx-bxs-location-plus"></i>
+          <i class="menu-icon tf-icons bx bx-map-pin text-info me-2"></i>
           <div class="text-truncate" data-i18n="fOffices">Field Offices</div>
           </a>
       </li>
@@ -191,7 +247,7 @@
 
       <li class="menu-item">
         <a href="javascript:void(0);" class="menu-link menu-toggle">
-          <i class="menu-icon tf-icons bx bxs-analyse bg-danger"></i>
+          <i class="menu-icon tf-icons bx bx-chart text-danger me-2"></i>
           <div class="text-truncate" data-i18n="Accounts"> Accounts </div>
         </a>
         <ul class="menu-sub">
@@ -209,7 +265,7 @@
           </li>
           <li class="menu-item">
             <a href="{{url('banks')}}" class="menu-link">
-              <i class="menu-icon tf-icons bx bxs-bank bg-danger"></i>
+              <i class="menu-icon tf-icons bx bx-bank text-danger me-2"></i>
               <div class="text-truncate" data-i18n="AList">Banks</div>
             </a>
           </li>
@@ -217,7 +273,7 @@
       </li>
       <li class="menu-item">
         <a href="{{url('expense')}}" class="menu-link">
-          <i class="menu-icon tf-icons bx bx-bxs-credit-card bg-secondary"></i>
+          <i class="menu-icon tf-icons bx bx-credit-card text-secondary me-2"></i>
           <div class="text-truncate" data-i18n="Expense"> Expense </div>
         </a>
        </li>
@@ -228,7 +284,7 @@
       <li class="menu-header small text-uppercase"><span class="menu-header-text">PAYROLL</span></li>
         <li class="menu-item">
                 <a href="javascript:void(0);" class="menu-link menu-toggle">
-                <i class="menu-icon tf-icons bx bx-money-withdraw"></i>
+                <i class="menu-icon tf-icons bx bx-money-withdraw text-primary me-2"></i>
                 <div class="text-truncate" data-i18n="Payroll">Payroll</div>
                 </a>
                 <ul class="menu-sub">
@@ -236,14 +292,14 @@
 
                 <li class="menu-item">
                     <a href="{{ url('salaries') }}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bxs-user-account"></i>
+                    <i class="menu-icon tf-icons bx bx-user-circle text-info me-2"></i>
                     <div class="text-truncate" data-i18n="Employees">Add to Salaries</div>
                     </a>
                 </li>
 
                 <li class="menu-item">
                     <a href="{{ url('salaries/create') }}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-money-withdraw"></i>
+                    <i class="menu-icon tf-icons bx bx-money-withdraw text-primary me-2"></i>
                     <div class="text-truncate" data-i18n="Salaries">Salaries</div>
                     </a>
                 </li>
@@ -252,7 +308,7 @@
 
                 <li class="menu-item">
                     <a href="{{ url('salariesTransaction') }}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-transfer-alt"></i>
+                    <i class="menu-icon tf-icons bx bx-transfer-alt text-primary me-2"></i>
                     <div class="text-truncate" data-i18n="Transaction">Transactions</div>
                     </a>
                 </li>
@@ -273,10 +329,10 @@
         <div class="container-xxl flex-grow-1 container-p-y">
             <div class="row">
                 <div class="col-6">
-                    <h3 class="card-header text-primary"> <i class="icon-base bx bx-bxs-receipt"></i> Invoice <i class="icon-base bx bx-bxs-right-arrow-alt"></i> List </h3>
+                    <h3 class="card-header text-primary"> <i class="icon-base bx bx-receipt text-primary me-2"></i> Invoice <i class="icon-base bx bx-right-arrow-alt mx-1 text-muted"></i> List </h3>
                 </div>
                 <div style="padding-left: 350px;" class="col-6">
-                    <a class="btn btn-danger" href="{{url('invoice/create')}}"> <i class="icon-base bx bx-bxs-user-plus"></i> Create </a>
+                    <a class="btn btn-danger" href="{{url('invoice/create')}}"> <i class="icon-base bx bx-user-plus me-2 text-primary"></i> Create </a>
                 </div>
             </div>
             <br>
@@ -287,14 +343,14 @@
 
             <div class="row ">
                 <div class="col-12">
-                    <div class="card">
-                        <div class="card-header">
-                            <h4>INVOICES</h4>
+                    <div class="invoice-list-card card">
+                        <div class="card-header border-0 pb-1">
+                            <h4 class="mb-0 text-dark fw-bold">INVOICES</h4>
                         </div>
-                        <div class="card-header">
+                        <div class="card-body pt-0">
                             <div class="table-responsive text-normal-dark">
                                 <!-- <div class="card-body demo-vertical-spacing demo-only-element"> Clients </div> -->
-                                <table id="myTable" class="display">
+                                <table id="myTable" class="invoice-table display">
                                     <thead>
                                         <tr>
                                             <th>#</th>
@@ -302,7 +358,7 @@
                                             <th>Invoice Month</th>
                                             <th>Client Name</th>
                                             <th>Phone No.</th>
-                                            <th>Business Name </th>
+                                            <!-- <th>Business Name </th> -->
                                             <th> Field Office </th>
                                             <th> Staff </th>
                                             <th>Date Created</th>
@@ -318,9 +374,9 @@
                                             <td>{{$key +1 }}</td>
                                             <td> #FWSSi{{$invoice->id}} </td>
                                             <td> {{ $invoice->invoice_month?->format('F, Y') }}</td>
-                                            <td> {{$invoice->client->name}}</td>
+                                            <td> {{$invoice->client->business_name ? $invoice->client->business_name : $invoice->client->name }}  </td>
                                             <td> {{$invoice->client->phone_number}} </td>
-                                            <td> {{$invoice->client->business_name}} </td>
+                                            <!-- <td>  </td> -->
                                             <td> {{$invoice->client->field->name}} </td>
                                             <td> {{$invoice->user->name}} </td>
                                             <td> {{$invoice->created_at->format('F l d, Y, H:i A')}} </td>
@@ -334,18 +390,19 @@
                                             <td>
                                                 <div class="dropdown">
                                                     <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown">
-                                                        <i class="icon-base bx bx-dots-vertical-rounded"></i>
+                                                        <i class="icon-base bx bx-dots-vertical-rounded text-primary"></i>
                                                     </button>
                                                     <div class="dropdown-menu">
-                                                        <a class="dropdown-item" href="{{url('invoice', $invoice->id)}}"><i class="icon-base bx bxs-bullseye"></i> view</a>
-                                                        @if($invoice->status !== 'completed' && $invoice->status !== 'uncompleted' )
-                                                        <a class="dropdown-item" href="invoice/{{$invoice->id}}/edit"><i class="icon-base bx bx-edit-alt me-1"></i> Edit</a>
+                                                        <a class="dropdown-item" href="{{url('invoice', $invoice->id)}}"><i class="icon-base bx bx-bullseye text-primary me-2"></i> view</a>
+                                                        <a class="dropdown-item" href="{{ route('invoice.duplicate', ['invoice' => $invoice->id]) }}"><i class="icon-base bx bx-copy me-2 text-primary"></i> Duplicate</a>
 
-                                                        <!-- <a class="dropdown-item" href=""><i class="icon-base bx bx-trash me-1"></i> Delete</a> -->
+                                                        @if($invoice->status !== 'completed' && $invoice->status !== 'uncompleted' )
+                                                        <a class="dropdown-item" href="invoice/{{$invoice->id}}/edit"><i class="icon-base bx bx-edit-alt me-2 text-primary"></i> Edit</a>
+                                                        <!-- <a class="dropdown-item" href=""><i class="icon-base bx bx-trash me-2 text-danger"></i> Delete</a> -->
                                                         <form action="invoice/{{$invoice->id}}" method="POST">
                                                             @csrf
                                                             @method('DELETE')
-                                                            <button class="dropdown-item" type="submit"><i class="icon-base bx bx-trash me-1"></i>Delete</button>
+                                                            <button class="dropdown-item" type="submit"><i class="icon-base bx bx-trash me-2 text-danger"></i>Delete</button>
                                                         </form>
                                                         @endif
                                                     </div>

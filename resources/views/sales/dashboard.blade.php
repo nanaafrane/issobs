@@ -1,5 +1,15 @@
 <x-sales-dashboard>
 
+  @php
+      $user = Auth::user();
+      $canViewInvoices = $user?->hasRole(['Invoice','Finance Manager', 'Director']) ?? false;
+      $canViewReceipts = $user?->hasRole(['Finance Manager', 'Manager','Admin Assistant']) ?? false;
+      $canManageFinance = $user?->hasRole(['Finance Manager']) ?? false;
+      $canManageOperations = $user?->hasRole(['Invoice' ,'Director', 'Manager', 'Admin Assistant']) ?? false;
+      $canViewAccounts = $user?->hasRole(['Finance Manager', 'Director']) ?? false;
+      $canViewPayroll = ($user?->hasPermission('Accounts') ?? false) && ($user?->hasRole(['Invoice', 'Officer', 'Director', 'Finance Manager']) ?? false);
+  @endphp
+
   @section('side_nav')
   <!-- Menu -->
   <aside id="layout-menu" class="layout-menu menu-vertical menu bg-menu-theme">
@@ -25,7 +35,7 @@
       <!-- Dashboards -->
       <li class="menu-item active open">
         <a href="javascript:void(0);" class="menu-link menu-toggle">
-          <i class="menu-icon tf-icons bx bx-home-smile"></i>
+          <i class="menu-icon tf-icons bx bx-home-smile text-primary me-2"></i>
           <div class="text-truncate" data-i18n="Dashboards"><strong>Dashboard</strong></div>
         </a>
         <ul class="menu-sub">
@@ -48,16 +58,16 @@
         </a>
       </li>
 
-      @if(Auth::user()->hasRole(['Invoice','Finance Manager', 'Director']))
+      @if($canViewInvoices)
       <li class="menu-item">
         <a href="{{ url('invoice') }}" class="menu-link">
-          <i class="menu-icon tf-icons bx bx-bxs-receipt bg-primary"></i>
+          <i class="menu-icon tf-icons bx bx-receipt text-primary me-2"></i>
           <div class="text-truncate" data-i18n="Invoices">Invoices</div>
         </a>
       </li>
       <li class="menu-item ">
           <a href="javascript:void(0);" class="menu-link menu-toggle">
-          <i class="menu-icon tf-icons bx bx-bxs-receipt bg-primary"></i>
+          <i class="menu-icon tf-icons bx bx-receipt text-primary me-2"></i>
           <div class="text-truncate" data-i18n="Staffs">Pro Forma</div>
           </a>
           <ul class="menu-sub">
@@ -81,7 +91,7 @@
       @endif
 
 
-      @if(Auth::user()->hasRole(['Finance Manager', 'Manager','Admin Assistant' ]))
+      @if($canViewReceipts)
             
      <!-- <li class="menu-item">
         <a href="{{url('receipt')}}" class="menu-link">
@@ -112,18 +122,18 @@
       </li>
        @endif
 
-       @if(Auth::user()->hasRole(['Finance Manager' ]))
+       @if($canManageFinance)
       <!-- Components -->
       <li class="menu-header small text-uppercase"><span class="menu-header-text text-info">Management</span></li>
       <li class="menu-item">
         <a href="{{url('client')}}" class="menu-link">
-          <i class="menu-icon tf-icons bx bx-bxs-user-detail bg-info"></i>
+          <i class="menu-icon tf-icons bx bx-user-detail text-info me-2"></i>
           <div class="text-truncate" data-i18n="Clients">Clients</div>
         </a>
       </li>
       <li class="menu-item ">
           <a href="javascript:void(0);" class="menu-link menu-toggle">
-          <i class="menu-icon tf-icons bx bxs-user-account bg-info"></i>
+          <i class="menu-icon tf-icons bx bx-user-circle text-info me-2"></i>
           <div class="text-truncate" data-i18n="Staffs">Employees</div>
           </a>
           <ul class="menu-sub">
@@ -158,16 +168,16 @@
 
       <li class="menu-item">
         <a href="{{url('category')}}" class="menu-link">
-          <i class="menu-icon tf-icons bx bxs-category bg-info"></i>
+          <i class="menu-icon tf-icons bx bx-category text-info me-2"></i>
           <div class="text-truncate" data-i18n="Categories">Categories</div>
         </a>
       </li>
-      @elseif(Auth::user()->hasRole(['Invoice' ,'Director', 'Manager', 'Admin Assistant']))
+      @elseif($canManageOperations)
 
       <li class="menu-header small text-uppercase"><span class="menu-header-text text-info">Management</span></li>
         <li class="menu-item ">
             <a class="menu-link menu-toggle">
-                <i class="menu-icon tf-icons bx bx-bxs-user-detail bg-info"></i>
+                <i class="menu-icon tf-icons bx bx-user-detail text-info me-2"></i>
                 <div class="text-truncate" data-i18n="Clients"><strong>Clients</strong></div>
             </a>
             <ul class="menu-sub">
@@ -197,7 +207,7 @@
         </li>
         <li class="menu-item ">
           <a href="javascript:void(0);" class="menu-link menu-toggle">
-          <i class="menu-icon tf-icons bx bxs-category bg-info"></i>
+          <i class="menu-icon tf-icons bx bx-category text-info me-2"></i>
           <div class="text-truncate" data-i18n="Staffs">Employees</div>
           </a>
           <ul class="menu-sub">
@@ -238,25 +248,25 @@
 
       <!-- <li class="menu-item">
           <a href="{{url('departments')}}" class="menu-link">
-          <i class="menu-icon tf-icons bx bxs-buildings"></i>
+          <i class="menu-icon tf-icons bx bx-buildings text-info me-2"></i>
           <div class="text-truncate" data-i18n="depnroles">Department & Roles </div>
           </a>
       </li>
       <li class="menu-item">
           <a href="{{url('field')}}" class="menu-link">
-          <i class="menu-icon tf-icons bx bx-bxs-location-plus"></i>
+          <i class="menu-icon tf-icons bx bx-map-pin text-info me-2"></i>
           <div class="text-truncate" data-i18n="fOffices">Field Offices</div>
           </a>
       </li> -->
       @endif
 
-      @if(Auth::user()->hasRole(['Finance Manager', 'Director']) )
+      @if($canViewAccounts)
 
       <li class="menu-header small text-uppercase"> <span class="menu-header-text text-danger">Accounts</span></li>
 
       <li class="menu-item">
         <a href="javascript:void(0);" class="menu-link menu-toggle">
-          <i class="menu-icon tf-icons bx bxs-analyse bg-danger"></i>
+          <i class="menu-icon tf-icons bx bx-chart text-danger me-2"></i>
           <div class="text-truncate" data-i18n="Accounts"> Accounts </div>
         </a>
         <ul class="menu-sub">
@@ -274,7 +284,7 @@
           </li>
           <li class="menu-item">
             <a href="{{url('banks')}}" class="menu-link">
-              <i class="menu-icon tf-icons bx bxs-bank bg-danger"></i>
+              <i class="menu-icon tf-icons bx bx-bank text-danger me-2"></i>
               <div class="text-truncate" data-i18n="AList">Banks</div>
             </a>
           </li>
@@ -282,17 +292,17 @@
       </li>
       <li class="menu-item">
         <a href="{{url('expense')}}" class="menu-link">
-          <i class="menu-icon tf-icons bx bx-bxs-credit-card bg-secondary"></i>
+          <i class="menu-icon tf-icons bx bx-credit-card text-secondary me-2"></i>
           <div class="text-truncate" data-i18n="Expense"> Expense </div>
         </a>
        </li>
       @endif
 
-      @if(Auth::user()->hasPermission('Accounts') && Auth::user()->hasRole(['Invoice', 'Officer', 'Director', 'Finance Manager']) )
+      @if($canViewPayroll)
       <li class="menu-header small text-uppercase"><span class="menu-header-text">PAYROLL</span></li>
         <li class="menu-item">
                 <a href="javascript:void(0);" class="menu-link menu-toggle">
-                <i class="menu-icon tf-icons bx bx-money-withdraw"></i>
+                <i class="menu-icon tf-icons bx bx-money-withdraw text-primary me-2"></i>
                 <div class="text-truncate" data-i18n="Payroll">Payroll</div>
                 </a>
                 <ul class="menu-sub">
@@ -300,14 +310,14 @@
 
                 <li class="menu-item">
                     <a href="{{ url('salaries') }}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bxs-user-account"></i>
+                    <i class="menu-icon tf-icons bx bx-user-circle text-info me-2"></i>
                     <div class="text-truncate" data-i18n="Employees">Add to Salaries</div>
                     </a>
                 </li>
 
                 <li class="menu-item">
                     <a href="{{ url('salaries/create') }}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-money-withdraw"></i>
+                    <i class="menu-icon tf-icons bx bx-money-withdraw text-primary me-2"></i>
                     <div class="text-truncate" data-i18n="Salaries">Salaries</div>
                     </a>
                 </li>
@@ -316,7 +326,7 @@
 
                 <li class="menu-item">
                     <a href="{{ url('salariesTransaction') }}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-transfer-alt"></i>
+                    <i class="menu-icon tf-icons bx bx-transfer-alt text-primary me-2"></i>
                     <div class="text-truncate" data-i18n="Transaction">Transactions</div>
                     </a>
                 </li>
@@ -330,6 +340,40 @@
   <!-- / Menu -->
   @endsection
 
+  @section('css')
+  <style>
+    .sales-dashboard-card {
+      border: 1px solid rgba(26, 33, 49, 0.08);
+      box-shadow: 0 0.3rem 0.9rem rgba(16, 24, 40, 0.06);
+      border-radius: 1rem;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .sales-dashboard-card:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 0.55rem 1.1rem rgba(16, 24, 40, 0.09);
+    }
+
+    .sales-dashboard-card .card-body {
+      padding: 1.25rem 1.1rem;
+    }
+
+    .sales-dashboard-card .avatar img {
+      width: 38px;
+      height: 38px;
+      object-fit: contain;
+    }
+
+    .sales-dashboard-card .dropdown .btn,
+    .sales-dashboard-card .dropdown .btn:focus {
+      box-shadow: none;
+    }
+
+    .sales-dashboard-card .icon-base {
+      font-size: 1.15rem;
+    }
+  </style>
+  @endsection
 
   @section('content')
 
@@ -340,7 +384,7 @@
 
         <div class="row">
           <div class="col-lg-3">
-            <div style="background: crimson; color: white;" class="card h-100">
+            <div style="background: crimson; color: white;" class="sales-dashboard-card card h-100">
               <div class="card-body">
                 <div class="card-title d-flex align-items-start justify-content-between mb-4">
                   <div class="avatar flex-shrink-0">
@@ -366,7 +410,7 @@
                 </div>
                 <p class="mb-1">Invoice</p>
                 <h4 class="card-title mb-3 text-white"><strong>&#x20B5;
-                    @if(Auth::user()->hasRole(['Invoice','Finance Manager']))
+                    @if(Auth::user()?->hasRole(['Invoice','Finance Manager']))
                     {{number_format(array_sum( $sum_invoices),2)}}
                     @elseif(Auth::user()->field?->name == 'Accra')
                     {{number_format($sum_invoices[0], 2)}}
@@ -400,7 +444,7 @@
           </div>
 
           <div class="col-lg-3">
-            <div style="background: #ffe0e0ff;" class="card h-100 text-danger">
+            <div style="background: #ffe0e0ff;" class="sales-dashboard-card card h-100 text-danger">
               <div class="card-body">
                 <div class="card-title d-flex align-items-start justify-content-between mb-4">
                   <div class="avatar flex-shrink-0">
@@ -425,7 +469,7 @@
                 </div>
                 <p class="mb-1">Invoice</p>
                 <h4 class="card-title mb-3">&#x20B5;
-                  @if(Auth::user()->hasRole(['Invoice', 'Finance Manager']))
+                  @if(Auth::user()?->hasRole(['Invoice', 'Finance Manager']))
                   {{number_format(array_sum( $invoices_outstanding),2)}}
                   @elseif(Auth::user()->field?->name == 'Accra')
                   {{number_format($invoices_outstanding[0], 2)}}
@@ -483,7 +527,7 @@
                 </div>
                 <p class="mb-1">PAYMENTS WITH </p>
                 <h4 class="card-title mb-3">&#x20B5;
-                  @if(Auth::user()->hasRole(['Invoice', 'Finance Manager']) )
+                  @if(Auth::user()?->hasRole(['Invoice', 'Finance Manager']) )
                   {{number_format(array_sum( $total_after_wht),2)}}
                   @elseif(Auth::user()->field?->name == 'Accra')
                   {{number_format($total_after_wht[0], 2)}}
@@ -529,7 +573,7 @@
                 <p class="mb-1">WITH HOLDINGS TAX</p>
                 <h4 class="card-title mb-3">&#x20B5;
 
-                  @if(Auth::user()->hasRole(['Invoice', 'Finance Manager']))
+                  @if(Auth::user()?->hasRole(['Invoice', 'Finance Manager']))
                   {{number_format(array_sum( $total_wth),2)}}
                   @elseif(Auth::user()->field?->name == 'Accra')
                   {{number_format($total_wth[0], 2)}}
@@ -568,7 +612,7 @@
       <div class="col-xxl-4 col-lg-12 col-md-4 order-1">
         <div class="row">
           <div class="col-lg-6 col-md-12 col-6 mb-6">
-            <div class="card h-100">
+            <div class="sales-dashboard-card card h-100">
               <div class="card-body">
                 <div class="card-title d-flex align-items-start justify-content-between mb-4">
                   <div class="avatar flex-shrink-0">
@@ -594,7 +638,7 @@
                 <p class="mb-1 text-info">Part Payment</p>
                 <h4 class="card-title mb-3"> &#x20B5;
 
-                  @if(Auth::user()->hasRole(['Invoice','Finance Manager']))
+                  @if(Auth::user()?->hasRole(['Invoice','Finance Manager']))
                   {{number_format(array_sum($balance_outstanding), 2)}}
                   @elseif(Auth::user()->field?->name == 'Accra')
                   {{number_format($balance_outstanding[0], 2)}}
@@ -628,7 +672,7 @@
             </div>
           </div>
           <div class="col-lg-6 col-md-12 col-6 mb-6">
-            <div style="background: #152356; color: white;" class="card h-100">
+            <div style="background: #152356; color: white;" class="sales-dashboard-card card h-100">
               <div class="card-body">
                 <div class="card-title d-flex align-items-start justify-content-between mb-4">
                   <div class="avatar flex-shrink-0">
@@ -654,7 +698,7 @@
                 </div>
                 <p class="mb-1">Payments</p>
                 <h4 style="color:white" class="card-title mb-3"> &#x20B5;
-                  @if(Auth::user()->hasRole(['Invoice', 'Finance Manager']))
+                  @if(Auth::user()?->hasRole(['Invoice', 'Finance Manager']))
                   {{number_format(array_sum($receipt_AllPayment), 2)}}
                   @elseif(Auth::user()->field?->name == 'Accra')
                   {{number_format($receipt_AllPayment[0], 2)}}
@@ -690,7 +734,7 @@
 
       <!-- Total Revenue -->
       <div class="col-12 col-xxl-8 order-2 order-md-3 order-xxl-2 mb-6 total-revenue">
-        <div class="card">
+        <div class="sales-dashboard-card card">
           <div class="row row-bordered g-0">
             <div class="col-lg-12">
               <div class="card-header d-flex align-items-center justify-content-between">
@@ -750,7 +794,7 @@
                 <p class="mb-1">Payments</p>
                 <h4 class="card-title mb-3">&#x20B5;
 
-                  @if(Auth::user()->hasRole(['Invoice','Finance Manager']))
+                  @if(Auth::user()?->hasRole(['Invoice','Finance Manager']))
                   {{number_format(array_sum($receiept_TransferAmount), 2)}}
                   @elseif(Auth::user()->field?->name == 'Accra')
                   {{number_format($receiept_TransferAmount[0], 2)}}
@@ -808,7 +852,7 @@
                 <p class="mb-1">Payments</p>
                 <h4 class="card-title mb-3">&#x20B5;
 
-                  @if(Auth::user()->hasRole(['Invoice', 'Finance Manager']))
+                  @if(Auth::user()?->hasRole(['Invoice', 'Finance Manager']))
                   {{number_format(array_sum($receiept_CashAmount), 2)}}
                   @elseif(Auth::user()->field?->name == 'Accra')
                   {{number_format($receiept_CashAmount[0], 2)}}
@@ -861,7 +905,7 @@
                 <p class="mb-1">Payments</p>
                 <h4 class="card-title mb-3">&#x20B5;
 
-                  @if(Auth::user()->hasRole(['Invoice', 'Finance Manager']))
+                  @if(Auth::user()?->hasRole(['Invoice', 'Finance Manager']))
                   {{number_format(array_sum($receiept_BankAmount), 2)}}
                   @elseif(Auth::user()->field?->name == 'Accra')
                   {{number_format($receiept_BankAmount[0], 2)}}
@@ -913,7 +957,7 @@
                 <p class="mb-1">Payments</p>
                 <h4 class="card-title mb-3">&#x20B5;
 
-                  @if(Auth::user()->hasRole(['Invoice', 'Finance Manager']))
+                  @if(Auth::user()?->hasRole(['Invoice', 'Finance Manager']))
                   {{number_format(array_sum($receiept_MoMoAmount), 2)}}
                   @elseif(Auth::user()->field?->name == 'Accra')
                   {{number_format($receiept_MoMoAmount[0], 2)}}
@@ -954,7 +998,7 @@
 
       <!-- Transactions -->
       <div class="col-md-8 col-lg-8 order-0 mb-6">
-        <div class="card h-100 bg-dark text-white">
+        <div class="sales-dashboard-card card h-100 bg-dark text-white">
           <div class="card-header d-flex align-items-center justify-content-between">
             <h5 class="card-title m-0 me-2 text-white">Banks</h5>
           </div>
