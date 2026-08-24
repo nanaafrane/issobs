@@ -330,14 +330,14 @@
                                 <div class="col-6">
                                     <h6 class="card-header">Due Date</h6>
                                     <div class="input-group">
-                                        <input value="{{ $invoice->due_date->format('Y-m-d\TH:i') }}" name="due_date" type="datetime-local" class="form-control" required>
+                                        <input value="{{ Carbon\Carbon::parse($invoice->due_date)?->addMonth()?->format('Y-m-d\TH:i') }}" name="due_date" type="datetime-local" class="form-control" required>
                                     </div>
                                 </div>
                                 <div class="col-3"></div>
                                 <div class="col-3">
                                     <h6 class="card-header"> Invoice Month </h6>
                                     <div class="input-group">
-                                        <input name="invoice_month" type="month" value="{{ now()->format('Y-m') }}" class="form-control" required>
+                                        <input name="invoice_month" type="month" value="{{ Carbon\Carbon::parse($invoice->invoice_month)?->addMonth()?->format('Y-m') }}" class="form-control" required>
                                     </div>
                                 </div>
                             </div> <br>
@@ -345,7 +345,7 @@
 
                             <div class="row">
                                 <div class="col-md-4 form-check form-switch">
-                                    <input name="vat_standard" class="form-check-input" type="checkbox" id="vat_standard" checked>
+                                    <input name="vat_standard" class="form-check-input" type="checkbox" id="vat_standard" >
                                     <label class="form-check-label" for="vat_standard"> VAT 20% STANDARD RATE </label>
                                 </div>
                                 <div class="col-md-4 form-check form-switch">
