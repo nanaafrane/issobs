@@ -5,6 +5,8 @@ namespace App\Providers;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Schema;
+use App\Models\Overtime;
+use App\Observers\OvertimeObserver;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -25,6 +27,6 @@ class AppServiceProvider extends ServiceProvider
         //
         // Paginator::useBootstrapFive();
         Schema::defaultStringLength(200);
-        
+        Overtime::observe(OvertimeObserver::class);
     }
 }

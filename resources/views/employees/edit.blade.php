@@ -413,7 +413,7 @@
                   <h5 class="mb-1 text-white"><strong> {{ strtoupper( $employee->phone_number ?: 'Not provided' ) }}</strong></h5>
 
                   <small class="text-muted">Client Name</small>
-                  <h5 class="mb-1 text-white"><strong>{{ strtoupper($employee->client->business_name) ?: '-' }}</strong></h5>
+                  <h5 class="mb-1 text-white"><strong> {{ strtoupper($employee->client?->name) }} {{ strtoupper($employee->client?->business_name) ?: '-' }}</strong></h5>
                   <small class="text-muted">Location</small>
                   <h5 class="mb-1 text-white"><strong>{{ strtoupper($employee->location) ?: '-' }}</strong></h5>
                 </div>

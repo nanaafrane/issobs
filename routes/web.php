@@ -8,6 +8,7 @@ use App\Http\Controllers\CollectionController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\ExpenseController;
+use App\Http\Controllers\OvertimeController;
 use App\Http\Controllers\FieldController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InvoiceController;
@@ -113,6 +114,16 @@ Route::post('/expense/{expense}/reject', [ExpenseController::class, 'reject'])->
 Route::resource('expense', ExpenseController::class);
 // Route::get('expenseCreate/{field_id}', [ExpenseController::class, 'CreateExpense'])->name('expense.CreateExpense');
 
+
+Route::post('overtime/{overtime}/approve', [OvertimeController::class, 'approve'])->name('overtime.approve');
+Route::post('overtime/{overtime}/reject', [OvertimeController::class, 'reject'])->name('overtime.reject');
+Route::get('overtime-report', [OvertimeController::class, 'report'])->name('overtime.report');
+// select2 search endpoints (JSON), reused by both the create and edit rows
+Route::get('overtime/lookup/employees', [OvertimeController::class, 'employeeOptions'])->name('overtime.lookup.employees');
+Route::get('overtime/lookup/clients', [OvertimeController::class, 'clientOptions'])->name('overtime.lookup.clients');
+Route::resource('overtime', OvertimeController::class);
+
+
 Route::resource('employees', EmployeeController::class); 
 Route::get('employeesBank', [EmployeeController::class, 'employeesBank'])->name('employees.Bank');
 Route::get('employeesBankView/{id}', [EmployeeController::class, 'employeesBankView' ]);
@@ -170,6 +181,7 @@ Route::get('invToPayroll', [SalaryController::class, 'InvToParollMonth'])->name(
 Route::post('uploadSalaries', [SalaryController::class, 'uploadSalaries'])->name('salaries.upload');
 Route::get('invToPayrollInvoice/{client_id}/{month}', [InvoiceController::class, 'PayrollInvoice']);
 Route::get('invToPayrollGuards/{client_id}/{month}', [SalaryController::class, 'PayrollGuards']);
+
 
 
 Route::get('sendMoney', [SendMoneyController::class, 'sendMoney']);

@@ -97,5 +97,10 @@ class Client extends Model
         return $this->belongsTo(category::class);
     }
 
+    public function scopeActive($query)
+    {
+        return $query->where('status', 'Active');
+    }
+
 
 }

@@ -136,4 +136,9 @@ class employee extends Model
         return $this->hasMany(Salary::class);
     }
 
+    public function scopeActive($query)
+    {
+        return $query->where('status', 'Active');
+    }
+
 }

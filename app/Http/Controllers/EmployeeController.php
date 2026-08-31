@@ -355,6 +355,16 @@ class EmployeeController extends Controller
                $employee->assit_status = 'pending';
 
             }
+
+        if(Auth::user()->department?->id == '4' && Auth::user()->role?->id == '27')
+            {
+               $employee->bran_status = 'pending';
+               $employee->user_id1 = $staff;
+               $employee->status = 'Pending';
+
+               $employee->assit_status = 'pending';
+
+            }
         $employee->save();
 
         $employee_pay_info = new PaymentInfo();
@@ -558,6 +568,17 @@ class EmployeeController extends Controller
                $employee->user_id1 = $user_id;
             }
         if(Auth::user()->department?->id == '7' && Auth::user()->role?->id == '27')
+            {
+               $employee->ho_status = null;
+               $employee->bran_status = 'pending';
+               $employee->user_id1 = $staff;
+               $employee->status = 'Pending';
+
+               $employee->assit_status = 'pending';
+
+            }
+
+        if(Auth::user()->department?->id == '4' && Auth::user()->role?->id == '27')
             {
                $employee->ho_status = null;
                $employee->bran_status = 'pending';
@@ -1101,7 +1122,7 @@ class EmployeeController extends Controller
                     $employee->user_id2 = $user->id;
                     $employee->ho_date = now();
 
-                    if($employee->status == 'Pending' || $employee->status == 'Re-Instate')
+                    if($employee->status == 'Pending' || $employee->status == 'Re-Instate' || $employee->status == null)
                     {
                         $employee->status = 'Active';
 

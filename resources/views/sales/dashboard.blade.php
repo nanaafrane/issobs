@@ -296,6 +296,14 @@
           <div class="text-truncate" data-i18n="Expense"> Expense </div>
         </a>
        </li>
+
+      <li class="menu-item">
+          <a href="javascript:void(0);" class="menu-link menu-toggle"><i class="menu-icon tf-icons bx bx-time-five bg-danger"></i><div>Overtime</div></a>
+          <ul class="menu-sub">
+              <li class="menu-item"><a href="{{url('overtime')}}" class="menu-link"><div>Daily Entry</div></a></li>
+              <li class="menu-item"><a href="{{url('overtime-report')}}" class="menu-link"><div>Reports</div></a></li>
+          </ul>
+      </li>
       @endif
 
       @if($canViewPayroll)

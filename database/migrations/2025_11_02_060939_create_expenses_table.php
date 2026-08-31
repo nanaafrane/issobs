@@ -17,6 +17,7 @@ return new class extends Migration
             $table->decimal('amount')->nullable();
             $table->foreignId('field_id')->nullable()->after('id')->constrained('fields')->nullOnDelete();
             $table->foreignId('expense_type_id')->nullable()->after('field_id')->constrained('expense_types')->nullOnDelete();
+            $table->foreignId('overtime_id')->nullable()->after('expense_type_id')->constrained('overtimes')->nullOnDelete();
             $table->integer('user_1')->nullable();
             $table->string('status_1')->nullable();
             $table->dateTime('date_1')->nullable();
@@ -29,6 +30,9 @@ return new class extends Migration
             $table->string('image', 512)->nullable();
             $table->softDeletes();
             $table->timestamps();
+
+            $table->unique('overtime_id');
+
         });
     }
 
