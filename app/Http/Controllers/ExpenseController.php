@@ -274,10 +274,35 @@ class ExpenseController extends Controller
             $office = Field::find($fieldId);
             $scope = $office && strtolower(trim($office->name)) === 'accra' ? 'corporate' : 'field';
 
+            $name = Str::of($request->new_expense_type)->trim()->title();
+
+            // Prefer a single canonical "Overtime" expense type across all offices.
+            if (strtolower(trim($name)) === 'overtime') {
+                $type = ExpenseType::whereRaw('LOWER(TRIM(name)) = ?', ['overtime'])->first();
+
+                if ($type) {
+                    // Ensure the canonical type is usable for field offices.
+                    if ($type->scope !== 'field') {
+                        $type->update(['scope' => 'field']);
+                    }
+
+                    // Attach this field to the expense type if not already attached.
+                    $type->fields()->syncWithoutDetaching([$fieldId]);
+
+                    return $type->id;
+                }
+            }
+
             $type = ExpenseType::firstOrCreate(
-                ['name' => Str::of($request->new_expense_type)->trim()->title(), 'scope' => $scope],
+                ['name' => $name, 'scope' => $scope],
                 ['created_by' => Auth::id()]
             );
+
+            // Ensure new custom types created for a field are attached to that field
+            // so the UI suggestions and summaries work as intended.
+            if ($type->scope === 'field') {
+                $type->fields()->syncWithoutDetaching([$fieldId]);
+            }
 
             return $type->id;
         }

@@ -5,17 +5,17 @@ namespace App\Http\Controllers;
 use App\Models\Receipt;
 use App\Http\Requests\StoreReceiptRequest;
 use App\Http\Requests\UpdateReceiptRequest;
+use App\Models\Field;
+use Carbon\Carbon;
 use App\Http\Requests\InvoiceToPayrollSearchRequest;
 use Illuminate\Http\Request;
 use App\Models\category;
 use App\Models\Client;
 use App\Models\Collection;
-use App\Models\Field;
 use App\Models\Invoice;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Models\Wht;
-use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -37,6 +37,85 @@ class ReceiptController extends Controller
     public function __construct()
     {
         $this->middleware('auth');
+    }
+
+    /**
+     * Receipts reporting: period windows with breakdowns by field, payment
+     * method, top clients and top collectors, plus trend data for charts.
+     */
+    public function report(Request $request)
+    {
+        $period = $request->input('period', 'monthly');
+        $anchor = $request->filled('date') ? Carbon::parse($request->date) : Carbon::today();
+
+        [$from, $to] = match ($period) {
+            'daily' => [$anchor->copy()->startOfDay(), $anchor->copy()->endOfDay()],
+            'weekly' => [$anchor->copy()->startOfWeek(), $anchor->copy()->endOfWeek()],
+            'yearly' => [$anchor->copy()->startOfYear(), $anchor->copy()->endOfYear()],
+            default => [$anchor->copy()->startOfMonth(), $anchor->copy()->endOfMonth()],
+        };
+
+        // Only include approved receipts (Ho approved) - qualify columns to avoid
+        // ambiguity when joining clients / fields / users.
+        $base = Receipt::where('receipts.ho_status', 'approved')
+            ->whereBetween('receipts.receipt_month', [$from, $to]);
+
+        $total = (clone $base)->sum('amount_received');
+        $count = (clone $base)->count();
+
+        $byField = (clone $base)->join('clients', 'clients.id', '=', 'receipts.client_id')
+            ->join('fields', 'fields.id', '=', 'clients.field_id')
+            ->select('fields.name as field_name', DB::raw('SUM(receipts.amount_received) as total'), DB::raw('COUNT(receipts.id) as cnt'))
+            ->groupBy('fields.name')->orderByDesc('total')->get();
+
+        // Payment method totals from explicit columns
+        $modes = (clone $base)->select(
+            DB::raw('SUM(receipts.cash_amount) as cash'),
+            DB::raw('SUM(receipts.momo_amount) as momo'),
+            DB::raw('SUM(receipts.cheque_amount) as cheque'),
+            DB::raw('SUM(receipts.transfer_amount) as transfer')
+        )->first();
+
+        $topClients = (clone $base)->join('clients', 'clients.id', '=', 'receipts.client_id')
+            ->select('clients.id', 'clients.business_name', 'clients.name', DB::raw('SUM(receipts.amount_received) as total'), DB::raw('COUNT(receipts.id) as cnt'))
+            ->groupBy('clients.id', 'clients.business_name', 'clients.name')
+            ->orderByDesc('total')->limit(10)->get();
+
+        $topCollectors = (clone $base)->join('users', 'users.id', '=', 'receipts.user_id')
+            ->select('users.id', 'users.name', DB::raw('SUM(receipts.amount_received) as total'), DB::raw('COUNT(receipts.id) as cnt'))
+            ->groupBy('users.id', 'users.name')
+            ->orderByDesc('total')->limit(10)->get();
+
+        $trend = (clone $base)->select('receipts.receipt_month', DB::raw('SUM(receipts.amount_received) as total'))
+            ->groupBy('receipts.receipt_month')->orderBy('receipts.receipt_month')->get();
+
+        $byStatus = (clone $base)->select('status', DB::raw('SUM(amount_received) as total'), DB::raw('COUNT(*) as cnt'))
+            ->groupBy('status')->get();
+
+        $projection = $this->projectNextPeriodReceipts($period, $anchor);
+
+        return view('receipts.report', compact(
+            'period', 'anchor', 'from', 'to', 'total', 'count',
+            'byField', 'modes', 'topClients', 'topCollectors', 'trend', 'projection', 'byStatus'
+        ));
+    }
+
+    protected function projectNextPeriodReceipts(string $period, Carbon $anchor): float
+    {
+        $samples = [];
+
+        for ($i = 1; $i <= 4; $i++) {
+            [$from, $to] = match ($period) {
+                'daily' => [$anchor->copy()->subDays($i)->startOfDay(), $anchor->copy()->subDays($i)->endOfDay()],
+                'weekly' => [$anchor->copy()->subWeeks($i)->startOfWeek(), $anchor->copy()->subWeeks($i)->endOfWeek()],
+                'yearly' => [$anchor->copy()->subYears($i)->startOfYear(), $anchor->copy()->subYears($i)->endOfYear()],
+                default => [$anchor->copy()->subMonths($i)->startOfMonth(), $anchor->copy()->subMonths($i)->endOfMonth()],
+            };
+
+            $samples[] = Receipt::where('ho_status', 'approved')->whereBetween('receipt_month', [$from, $to])->sum('amount_received');
+        }
+
+        return $samples ? round(array_sum($samples) / count($samples), 2) : 0.0;
     }
 
     /**

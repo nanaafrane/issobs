@@ -1,5 +1,15 @@
 <x-sales-dashboard>
 
+  @php
+      $user = Auth::user();
+      $canViewInvoices = $user?->hasRole(['Invoice','Finance Manager', 'Director']) ?? false;
+      $canViewReceipts = $user?->hasRole(['Finance Manager', 'Manager','Admin Assistant']) ?? false;
+      $canManageFinance = $user?->hasRole(['Finance Manager']) ?? false;
+      $canManageOperations = $user?->hasRole(['Invoice' ,'Director', 'Manager', 'Admin Assistant']) ?? false;
+      $canViewAccounts = $user?->hasRole(['Finance Manager', 'Director']) ?? false;
+      $canViewPayroll = ($user?->hasPermission('Accounts') ?? false) && ($user?->hasRole(['Invoice', 'Officer', 'Director', 'Finance Manager']) ?? false);
+  @endphp
+
     @section('css')
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <style>
@@ -22,31 +32,318 @@
 
     @section('side_nav')
     <!-- Menu -->
+
     <aside id="layout-menu" class="layout-menu menu-vertical menu bg-menu-theme">
         <div class="app-brand demo">
-            <a href="#" class="app-brand-link">
-                <span class="app-brand-logo demo">
-                    <img width="70px" src="{{asset('img/icons/brands/issobs.png')}}" alt="">
-                </span>
-                <span class="app-brand-text demo menu-text fw-bold ms-2">ISSOBS</span>
-            </a>
+        <a href="#" class="app-brand-link">
+            <span class="app-brand-logo demo">
+            <img width="70px" src="{{asset('img/icons/brands/issobs.png')}}" alt="">
+            <!-- Logo -->
+            </span>
+            <span class="app-brand-text demo menu-text fw-bold ms-2">ISSOBS</span>
+        </a>
+
+        <a href="javascript:void(0);" class="layout-menu-toggle menu-link text-large ms-auto">
+            <i class="bx bx-chevron-left d-block d-xl-none align-middle"></i>
+        </a>
         </div>
+
         <div class="menu-divider mt-0"></div>
+
+        <div class="menu-inner-shadow"></div>
+
         <ul class="menu-inner py-1">
-            <li class="menu-item"><a href="{{url('home')}}" class="menu-link"><i class="menu-icon tf-icons bx bx-home-smile"></i><div>Dashboard</div></a></li>
-            <li class="menu-item"><a href="{{url('transaction')}}" class="menu-link"><i class="menu-icon tf-icons bx bx-transfer-alt bg-primary"></i><div>Transactions</div></a></li>
-            <li class="menu-item"><a href="{{url('client')}}" class="menu-link"><i class="menu-icon tf-icons bx bx-bxs-user-detail bg-info"></i><div>Clients</div></a></li>
-            <li class="menu-item"><a href="{{url('employees')}}" class="menu-link"><i class="menu-icon tf-icons bx bxs-user-account"></i><div>Employees</div></a></li>
-            @if(Auth::user()->hasRole(['Manager','Officer','Finance Manager','Director']))
-            <li class="menu-item"><a href="{{url('expense')}}" class="menu-link"><i class="menu-icon tf-icons bx bx-bxs-credit-card bg-secondary"></i><div>Expenses</div></a></li>
-            @endif
-            <li class="menu-item active open">
-                <a href="javascript:void(0);" class="menu-link menu-toggle"><i class="menu-icon tf-icons bx bx-time-five bg-danger"></i><div>Overtime</div></a>
+        <!-- Dashboards -->
+        <li class="menu-item ">
+            <a href="javascript:void(0);" class="menu-link menu-toggle">
+            <i class="menu-icon tf-icons bx bx-home-smile text-primary me-2"></i>
+            <div class="text-truncate" data-i18n="Dashboards"><strong>Dashboard</strong></div>
+            </a>
+            <ul class="menu-sub">
+            <li class="menu-item ">
+                <a href="{{url('home')}}" class="menu-link">
+                <div class="text-truncate" data-i18n="Dashboard">Dashboard</div>
+                </a>
+            </li>
+            </ul>
+        </li>
+        <!-- Apps & Pages -->
+        <li class="menu-header small text-uppercase ">
+            <span class="menu-header-text text-primary">Transactions</span>
+        </li>
+        <!-- Pages -->
+        <li class="menu-item">
+            <a href="{{url('transaction')}}" class="menu-link">
+            <i class="menu-icon tf-icons bx bx-transfer-alt bg-primary"></i>
+            <div class="text-truncate" data-i18n="Transaction">Transactions</div>
+            </a>
+        </li>
+
+        @if($canViewInvoices)
+        <li class="menu-item">
+            <a href="{{ url('invoice') }}" class="menu-link">
+            <i class="menu-icon tf-icons bx bx-receipt text-primary me-2"></i>
+            <div class="text-truncate" data-i18n="Invoices">Invoices</div>
+            </a>
+        </li>
+        <li class="menu-item ">
+            <a href="javascript:void(0);" class="menu-link menu-toggle">
+            <i class="menu-icon tf-icons bx bx-receipt text-primary me-2"></i>
+            <div class="text-truncate" data-i18n="Staffs">Pro Forma</div>
+            </a>
+            <ul class="menu-sub">
+            <li class="menu-item ">
+                <a href="{{url('proforma/create')}}" class="menu-link">
+                <div class="text-truncate" data-i18n="SRegister">Generate</div>
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="{{url('proforma')}}" class="menu-link">
+                <div class="text-truncate" data-i18n="SList">List</div>
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="{{url('proformaClient')}}" class="menu-link">
+                <div class="text-truncate" data-i18n="SList">ProForma Clients</div>
+                </a>
+            </li>
+            </ul>
+        </li>
+        @endif
+
+
+        @if($canViewReceipts)
+
+        <li class="menu-item ">
+            <a href="javascript:void(0);" class="menu-link menu-toggle">
+            <i class="menu-icon tf-icons bx bx-money-withdraw bg-primary"></i>
+            <div class="text-truncate" data-i18n="Receipts">Receipts</div>
+            </a>
+            <ul class="menu-sub">
+
+                <li class="menu-item">
+                    <a href="{{url('receipt')}}" class="menu-link">
+                    <div class="text-truncate" data-i18n="RList">List</div>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="{{url('receiptPending')}}" class="menu-link">
+                    <div class="text-truncate" data-i18n="RPending">Pending </div>
+                    </a>
+                </li>
+
+            </ul>
+        </li>
+        @endif
+
+        @if($canManageFinance)
+        <!-- Components -->
+        <li class="menu-header small text-uppercase"><span class="menu-header-text text-info">Management</span></li>
+        <li class="menu-item">
+            <a href="{{url('client')}}" class="menu-link">
+            <i class="menu-icon tf-icons bx bx-user-detail text-info me-2"></i>
+            <div class="text-truncate" data-i18n="Clients">Clients</div>
+            </a>
+        </li>
+        <li class="menu-item ">
+            <a href="javascript:void(0);" class="menu-link menu-toggle">
+            <i class="menu-icon tf-icons bx bx-user-circle text-info me-2"></i>
+            <div class="text-truncate" data-i18n="Staffs">Employees</div>
+            </a>
+            <ul class="menu-sub">
+            <li class="menu-item ">
+                <a href="{{url('employees/create')}}" class="menu-link">
+                <div class="text-truncate" data-i18n="SRegister">Register</div>
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="{{url('employees')}}" class="menu-link">
+                <div class="text-truncate" data-i18n="SList">List</div>
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="{{url('employeesnrrit')}}" class="menu-link">
+                <div class="text-truncate" data-i18n="SList">Terminate / Recruit</div>
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="{{url('employeesBank')}}" class="menu-link">
+                <div class="text-truncate" data-i18n="SList">Employee Banks</div>
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="{{url('employeesCash')}}" class="menu-link">
+                <div class="text-truncate" data-i18n="SList">Employee Cash</div>
+                </a>
+            </li>
+
+            </ul>
+        </li>
+
+        <li class="menu-item">
+            <a href="{{url('category')}}" class="menu-link">
+            <i class="menu-icon tf-icons bx bx-category text-info me-2"></i>
+            <div class="text-truncate" data-i18n="Categories">Categories</div>
+            </a>
+        </li>
+        @elseif($canManageOperations)
+
+        <li class="menu-header small text-uppercase"><span class="menu-header-text text-info">Management</span></li>
+            <li class="menu-item ">
+                <a class="menu-link menu-toggle">
+                    <i class="menu-icon tf-icons bx bx-user-detail text-info me-2"></i>
+                    <div class="text-truncate" data-i18n="Clients"><strong>Clients</strong></div>
+                </a>
                 <ul class="menu-sub">
-                    <li class="menu-item active"><a href="{{url('overtime')}}" class="menu-link"><div>Daily Entry</div></a></li>
-                    <li class="menu-item"><a href="{{url('overtime-report')}}" class="menu-link"><div>Reports</div></a></li>
+                    <li class="menu-item ">
+                        <a href="{{url('client/create')}}" class="menu-link">
+                            <div class="text-truncate" data-i18n="CRegister">Register</div>
+                        </a>
+                    </li>
+                    <li class="menu-item ">
+                        <a href="{{url('client')}}" class="menu-link">
+                            <div class="text-truncate" data-i18n="CList">List</div>
+                        </a>
+                    </li>
+
+                    <li class="menu-item ">
+                        <a href="{{url('clientTerminated')}}" class="menu-link">
+                            <div class="text-truncate" data-i18n="CList">Terminated</div>
+                        </a>
+                    </li>
+
+                    <li class="menu-item ">
+                        <a href="{{url('clientPending')}}" class="menu-link">
+                            <div class="text-truncate" data-i18n="CList">Pending</div>
+                        </a>
+                    </li>
                 </ul>
             </li>
+            <li class="menu-item ">
+            <a href="javascript:void(0);" class="menu-link menu-toggle">
+            <i class="menu-icon tf-icons bx bx-category text-info me-2"></i>
+            <div class="text-truncate" data-i18n="Staffs">Employees</div>
+            </a>
+            <ul class="menu-sub">
+            <li class="menu-item ">
+                <a href="{{url('employees/create')}}" class="menu-link">
+                <div class="text-truncate" data-i18n="SRegister">Register</div>
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="{{url('employees')}}" class="menu-link">
+                <div class="text-truncate" data-i18n="SList">List</div>
+                </a>
+            </li>
+            <li class="menu-item">
+                    <a href="{{url('employeesPending')}}" class="menu-link">
+                    <div class="text-truncate" data-i18n="SList">Pending</div>
+                    </a>
+                </li>
+            <li class="menu-item">
+                <a href="{{url('employeesnrrit')}}" class="menu-link">
+                <div class="text-truncate" data-i18n="SList">Terminate / Recruit </div>
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="{{url('employeesBank')}}" class="menu-link">
+                <div class="text-truncate" data-i18n="SList">Employee Banks</div>
+                </a>
+            </li>
+
+            <li class="menu-item">
+                <a href="{{url('employeesCash')}}" class="menu-link">
+                <div class="text-truncate" data-i18n="SList">Employee Cash</div>
+                </a>
+            </li>
+
+            </ul>
+        </li>
+        @endif
+
+        @if($canViewAccounts)
+
+        <li class="menu-header small text-uppercase"> <span class="menu-header-text text-danger">Accounts</span></li>
+
+        <li class="menu-item">
+            <a href="javascript:void(0);" class="menu-link menu-toggle">
+            <i class="menu-icon tf-icons bx bx-chart text-danger me-2"></i>
+            <div class="text-truncate" data-i18n="Accounts"> Accounts </div>
+            </a>
+            <ul class="menu-sub">
+            <li class="menu-item">
+                <a href="{{url('collections')}}" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-add-to-queue bg-danger"></i>
+                <div class="text-truncate" data-i18n="ARegister">Collections</div>
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="{{url('deposit')}}" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-arrow-from-left bg-danger"></i>
+                <div class="text-truncate" data-i18n="AList">Bank Deposit</div>
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="{{url('banks')}}" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-bank text-danger me-2"></i>
+                <div class="text-truncate" data-i18n="AList">Banks</div>
+                </a>
+            </li>
+            </ul>
+        </li>
+        <li class="menu-item">
+            <a href="{{url('expense')}}" class="menu-link">
+            <i class="menu-icon tf-icons bx bx-credit-card text-secondary me-2"></i>
+            <div class="text-truncate" data-i18n="Expense"> Expense </div>
+            </a>
+        </li>
+
+        <li class="menu-item active open">
+            <a href="javascript:void(0);" class="menu-link menu-toggle"><i class="menu-icon tf-icons bx bx-time-five bg-danger"></i><div>Overtime</div></a>
+            <ul class="menu-sub">
+                <li class="menu-item active"><a href="{{url('overtime')}}" class="menu-link"><div>Daily Entry</div></a></li>
+                <li class="menu-item"><a href="{{url('overtime-report')}}" class="menu-link"><div>Reports</div></a></li>
+            </ul>
+        </li>
+        @endif
+
+        @if($canViewPayroll)
+        <li class="menu-header small text-uppercase"><span class="menu-header-text">PAYROLL</span></li>
+            <li class="menu-item">
+                    <a href="javascript:void(0);" class="menu-link menu-toggle">
+                    <i class="menu-icon tf-icons bx bx-money-withdraw text-primary me-2"></i>
+                    <div class="text-truncate" data-i18n="Payroll">Payroll</div>
+                    </a>
+                    <ul class="menu-sub">
+                    @if(Auth::user()->hasRole([ 'Finance Manager']))
+
+                    <li class="menu-item">
+                        <a href="{{ url('salaries') }}" class="menu-link">
+                        <i class="menu-icon tf-icons bx bx-user-circle text-info me-2"></i>
+                        <div class="text-truncate" data-i18n="Employees">Add to Salaries</div>
+                        </a>
+                    </li>
+
+                    <li class="menu-item">
+                        <a href="{{ url('salaries/create') }}" class="menu-link">
+                        <i class="menu-icon tf-icons bx bx-money-withdraw text-primary me-2"></i>
+                        <div class="text-truncate" data-i18n="Salaries">Salaries</div>
+                        </a>
+                    </li>
+                    @endif
+
+
+                    <li class="menu-item">
+                        <a href="{{ url('salariesTransaction') }}" class="menu-link">
+                        <i class="menu-icon tf-icons bx bx-transfer-alt text-primary me-2"></i>
+                        <div class="text-truncate" data-i18n="Transaction">Transactions</div>
+                        </a>
+                    </li>
+
+                    </ul>
+                </li>
+        @endif
+
         </ul>
     </aside>
     <!-- / Menu -->
@@ -71,7 +368,7 @@
                 <label class="form-label small mb-0">Date</label>
                 <input type="date" name="date" value="{{ $date->format('Y-m-d') }}" class="form-control form-control-sm" max="{{ now()->format('Y-m-d') }}" onchange="this.form.submit()">
             </div>
-            @if($fields->count() > 1 || Auth::user()->hasRole(['Finance Manager','Invoice','Director']))
+            @if($fields->count() > 1 || Auth::user()->hasRole(['Finance Manager','Director']))
             <div class="col-auto">
                 <label class="form-label small mb-0">Field Office</label>
                 <select name="field_id" class="form-select form-select-sm" onchange="this.form.submit()">
@@ -196,29 +493,36 @@
         const csrf = "{{ csrf_token() }}";
 
         function initSelects(scope) {
-            scope.find('.ot-select-employee').select2({
-                width: '160px',
-                placeholder: function () { return $(this).data('placeholder'); },
-                allowClear: true,
-                ajax: {
-                    url: employeeUrl,
-                    dataType: 'json',
-                    delay: 200,
-                    data: params => ({ q: params.term }),
-                    processResults: data => ({ results: data })
-                }
+            scope.find('.ot-select-employee').each(function () {
+                const $el = $(this);
+                $el.select2({
+                    width: '160px',
+                    placeholder: function () { return $el.data('placeholder'); },
+                    allowClear: true,
+                    ajax: {
+                        url: employeeUrl,
+                        dataType: 'json',
+                        delay: 200,
+                        data: function (params) { return { q: params.term, select_name: $el.attr('name'), field_id: $('select[name=field_id]').val() }; },
+                        processResults: data => ({ results: data })
+                    }
+                });
             });
-            scope.find('.ot-select-client').select2({
-                width: '160px',
-                placeholder: function () { return $(this).data('placeholder'); },
-                allowClear: true,
-                ajax: {
-                    url: clientUrl,
-                    dataType: 'json',
-                    delay: 200,
-                    data: params => ({ q: params.term }),
-                    processResults: data => ({ results: data })
-                }
+
+            scope.find('.ot-select-client').each(function () {
+                const $el = $(this);
+                $el.select2({
+                    width: '160px',
+                    placeholder: function () { return $el.data('placeholder'); },
+                    allowClear: true,
+                    ajax: {
+                        url: clientUrl,
+                        dataType: 'json',
+                        delay: 200,
+                        data: function (params) { return { q: params.term, select_name: $el.attr('name'), field_id: $('select[name=field_id]').val() }; },
+                        processResults: data => ({ results: data })
+                    }
+                });
             });
         }
         initSelects($('body'));

@@ -139,4 +139,48 @@ class InvoiceDuplicateTest extends TestCase
             'invoice_month' => now()->addMonth()->startOfMonth()->format('Y-m-d 00:00:00'),
         ]);
     }
+
+    public function test_invoice_index_uses_server_side_datatable_ajax(): void
+    {
+        $department = Department::create(['name' => 'Finance']);
+        $role = Role::create(['name' => 'Invoice', 'department_id' => $department->id]);
+        $user = User::factory()->create([
+            'department_id' => $department->id,
+            'role_id' => $role->id,
+        ]);
+
+        $field = Field::create([
+            'name' => 'Accra',
+            'user_id' => $user->id,
+            'number' => '0200000001',
+        ]);
+
+        $client = Client::create([
+            'name' => 'John Smith',
+            'phone_number' => '0550000000',
+            'business_name' => 'Alpha Security',
+            'address' => 'Accra',
+            'field_id' => $field->id,
+            'user_id' => $user->id,
+        ]);
+
+        foreach (range(1, 30) as $i) {
+            Invoice::create([
+                'client_id' => $client->id,
+                'due_date' => now()->addDays($i),
+                'invoice_month' => now()->startOfMonth()->addDays($i),
+                'status' => 'unpaid',
+                'sub_amount' => 100,
+                'total' => 100,
+                'user_id' => $user->id,
+            ]);
+        }
+
+        $this->actingAs($user)
+            ->getJson(route('invoice.data', ['draw' => 1, 'start' => 0, 'length' => 25, 'search' => ['value' => '']]))
+            ->assertOk()
+            ->assertJsonPath('recordsTotal', 30)
+            ->assertJsonPath('recordsFiltered', 30)
+            ->assertJsonCount(25, 'data');
+    }
 }

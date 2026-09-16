@@ -1,5 +1,15 @@
 <x-sales-dashboard>
 
+  @php
+      $user = Auth::user();
+      $canViewInvoices = $user?->hasRole(['Invoice','Finance Manager', 'Director']) ?? false;
+      $canViewReceipts = $user?->hasRole(['Finance Manager', 'Manager','Admin Assistant']) ?? false;
+      $canManageFinance = $user?->hasRole(['Finance Manager']) ?? false;
+      $canManageOperations = $user?->hasRole(['Invoice' ,'Director', 'Manager', 'Admin Assistant']) ?? false;
+      $canViewAccounts = $user?->hasRole(['Finance Manager', 'Director']) ?? false;
+      $canViewPayroll = ($user?->hasPermission('Accounts') ?? false) && ($user?->hasRole(['Invoice', 'Officer', 'Director', 'Finance Manager']) ?? false);
+  @endphp
+
     @section('css')
     <link rel="stylesheet" href="https://cdn.datatables.net/2.3.3/css/dataTables.dataTables.css" />
     <link rel="stylesheet" href="https://cdn.datatables.net/buttons/3.2.4/css/buttons.dataTables.css">
@@ -66,59 +76,65 @@
 
     @section('side_nav')
     <!-- Menu -->
-    <aside id="layout-menu" class="layout-menu menu-vertical menu bg-menu-theme">
-        <div class="app-brand demo">
-            <a href="#" class="app-brand-link">
-                <span class="app-brand-logo demo">
-                    <img width="70px" src="{{asset('img/icons/brands/issobs.png')}}" alt="">
-                    <!-- Logo -->
-                </span>
-                <span class="app-brand-text demo menu-text fw-bold ms-2">ISSOBS</span>
+  <aside id="layout-menu" class="layout-menu menu-vertical menu bg-menu-theme">
+    <div class="app-brand demo">
+      <a href="#" class="app-brand-link">
+        <span class="app-brand-logo demo">
+          <img width="70px" src="{{asset('img/icons/brands/issobs.png')}}" alt="">
+          <!-- Logo -->
+        </span>
+        <span class="app-brand-text demo menu-text fw-bold ms-2">ISSOBS</span>
+      </a>
+
+      <a href="javascript:void(0);" class="layout-menu-toggle menu-link text-large ms-auto">
+        <i class="bx bx-chevron-left d-block d-xl-none align-middle"></i>
+      </a>
+    </div>
+
+    <div class="menu-divider mt-0"></div>
+
+    <div class="menu-inner-shadow"></div>
+
+    <ul class="menu-inner py-1">
+      <!-- Dashboards -->
+      <li class="menu-item ">
+        <a href="javascript:void(0);" class="menu-link menu-toggle">
+          <i class="menu-icon tf-icons bx bx-home-smile text-primary me-2"></i>
+          <div class="text-truncate" data-i18n="Dashboards"><strong>Dashboard</strong></div>
+        </a>
+        <ul class="menu-sub">
+          <li class="menu-item ">
+            <a href="{{url('home')}}" class="menu-link">
+              <div class="text-truncate" data-i18n="Dashboard">Dashboard</div>
             </a>
+          </li>
+        </ul>
+      </li>
+      <!-- Apps & Pages -->
+      <li class="menu-header small text-uppercase ">
+        <span class="menu-header-text text-primary">Transactions</span>
+      </li>
+      <!-- Pages -->
+      @if($canViewInvoices)
+      <li class="menu-item active open">
+        <a href="javascript:void(0);" class="menu-link menu-toggle">
+           <i class="menu-icon tf-icons bx bx-receipt text-primary me-2"></i>
+                <div class="text-truncate" data-i18n="Invoices">Invoices</div>
+          </a>
+          <ul class="menu-sub"> 
+              <li class="menu-item active">
+                  <a href="{{url('invoice')}}" class="menu-link">
+                  <div class="text-truncate" data-i18n="SList">Invoices</div>
+                  </a>
+              </li>
 
-            <a href="javascript:void(0);" class="layout-menu-toggle menu-link text-large ms-auto">
-                <i class="bx bx-chevron-left d-block d-xl-none align-middle"></i>
-            </a>
-        </div>
-
-        <div class="menu-divider mt-0"></div>
-
-        <div class="menu-inner-shadow"></div>
-
-        <ul class="menu-inner py-1">
-            <!-- Dashboards -->
-            <li class="menu-item">
-                <a href="javascript:void(0);" class="menu-link menu-toggle">
-                    <i class="menu-icon tf-icons bx bx-home-smile text-primary me-2"></i>
-                    <div class="text-truncate" data-i18n="Dashboards"><strong>Dashboard</strong></div>
-                </a>
-                <ul class="menu-sub">
-                    <li class="menu-item">
-                        <a href="{{url('home')}}" class="menu-link">
-                            <div class="text-truncate" data-i18n="Dashboard">Dashboard</div>
-                        </a>
-                    </li>
-                </ul>
-            </li>
-            <!-- Apps & Pages -->
-            <li class="menu-header small text-uppercase ">
-                <span class="menu-header-text text-primary">Transactions</span>
-            </li>
-            <!-- Pages -->
-            <li class="menu-item">
-                <a href="{{url('transaction')}}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-transfer-alt text-primary"></i>
-                    <div class="text-truncate" data-i18n="Transaction">Transactions</div>
-                </a>
-            </li>
-
-            @if(Auth::user()->hasRole(['Invoice','Finance Manager']))
-            <li class="menu-item active">
-                <a href="{{ url('invoice') }}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-receipt text-primary me-2"></i>
-                    <div class="text-truncate" data-i18n="Invoices"><strong>Invoices</strong></div>
-                </a>
-            </li>
+              <li class="menu-item">
+                  <a href="{{url('invoice-report')}}" class="menu-link">
+                  <div class="text-truncate" data-i18n="SList">Reports</div>
+                  </a>
+              </li>
+          </ul>
+      </li>
       <li class="menu-item ">
           <a href="javascript:void(0);" class="menu-link menu-toggle">
           <i class="menu-icon tf-icons bx bx-receipt text-primary me-2"></i>
@@ -142,16 +158,38 @@
           </li>
           </ul>
       </li>
-            @endif
+      @endif
 
 
-        @if(Auth::user()->hasRole(['Finance Manager']))
-                             <li class="menu-item">
+      @if($canViewReceipts)
+      <li class="menu-item ">
+          <a href="javascript:void(0);" class="menu-link menu-toggle">
+          <i class="menu-icon tf-icons bx bx-money-withdraw bg-primary"></i>
+          <div class="text-truncate" data-i18n="Receipts">Receipts</div>
+          </a>
+          <ul class="menu-sub">
+
+            <li class="menu-item">
                 <a href="{{url('receipt')}}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-money-withdraw text-primary"></i>
-                    <div class="text-truncate" data-i18n="Receipts">Receipts</div>
+                <div class="text-truncate" data-i18n="RList">List</div>
                 </a>
             </li>
+            <li class="menu-item">
+                <a href="{{url('receiptPending')}}" class="menu-link">
+                <div class="text-truncate" data-i18n="RPending">Pending </div>
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="{{url('receipt-report')}}" class="menu-link">
+                <div class="text-truncate" data-i18n="RPending">Reports </div>
+                </a>
+            </li>
+
+          </ul>
+      </li>
+       @endif
+
+       @if($canManageFinance)
       <!-- Components -->
       <li class="menu-header small text-uppercase"><span class="menu-header-text text-info">Management</span></li>
       <li class="menu-item">
@@ -160,7 +198,7 @@
           <div class="text-truncate" data-i18n="Clients">Clients</div>
         </a>
       </li>
-              <li class="menu-item ">
+      <li class="menu-item ">
           <a href="javascript:void(0);" class="menu-link menu-toggle">
           <i class="menu-icon tf-icons bx bx-user-circle text-info me-2"></i>
           <div class="text-truncate" data-i18n="Staffs">Employees</div>
@@ -168,7 +206,7 @@
           <ul class="menu-sub">
           <li class="menu-item ">
               <a href="{{url('employees/create')}}" class="menu-link">
-              <div class="text-truncate" data-i18n="SRegister">Register</div>
+              <div class="text-truncate" data-i18n="SRegister">New Recruit</div>
               </a>
           </li>
           <li class="menu-item">
@@ -177,13 +215,36 @@
               </a>
           </li>
           <li class="menu-item">
+              <a href="{{url('employee-report')}}" class="menu-link">
+              <div class="text-truncate" data-i18n="SList">Reports</div>
+              </a>
+          </li>
+          <li class="menu-item">
+              <a href="{{url('employeesnrrit')}}" class="menu-link">
+              <div class="text-truncate" data-i18n="SList">Terminate / Recruit</div>
+              </a>
+          </li>
+          <li class="menu-item">
               <a href="{{url('employeesBank')}}" class="menu-link">
               <div class="text-truncate" data-i18n="SList">Employee Banks</div>
               </a>
           </li>
+          <li class="menu-item">
+              <a href="{{url('employeesCash')}}" class="menu-link">
+              <div class="text-truncate" data-i18n="SList">Employee Cash</div>
+              </a>
+          </li>
+
           </ul>
       </li>
-      @elseif(Auth::user()->hasRole(['Invoice']))
+
+      <li class="menu-item">
+        <a href="{{url('category')}}" class="menu-link">
+          <i class="menu-icon tf-icons bx bx-category text-info me-2"></i>
+          <div class="text-truncate" data-i18n="Categories">Categories</div>
+        </a>
+      </li>
+      @elseif($canManageOperations)
 
       <li class="menu-header small text-uppercase"><span class="menu-header-text text-info">Management</span></li>
         <li class="menu-item ">
@@ -194,7 +255,7 @@
             <ul class="menu-sub">
                 <li class="menu-item ">
                     <a href="{{url('client/create')}}" class="menu-link">
-                        <div class="text-truncate" data-i18n="CRegister">Register</div>
+                        <div class="text-truncate" data-i18n="CRegister">New Contract</div>
                     </a>
                 </li>
                 <li class="menu-item ">
@@ -202,17 +263,29 @@
                         <div class="text-truncate" data-i18n="CList">List</div>
                     </a>
                 </li>
+
+                <li class="menu-item ">
+                    <a href="{{url('clientTerminated')}}" class="menu-link">
+                        <div class="text-truncate" data-i18n="CList">Terminated</div>
+                    </a>
+                </li>
+
+                <li class="menu-item ">
+                    <a href="{{url('clientPending')}}" class="menu-link">
+                        <div class="text-truncate" data-i18n="CList">Pending</div>
+                    </a>
+                </li>
             </ul>
         </li>
         <li class="menu-item ">
           <a href="javascript:void(0);" class="menu-link menu-toggle">
-          <i class="menu-icon tf-icons bx bx-user-circle text-info me-2"></i>
+          <i class="menu-icon tf-icons bx bx-category text-info me-2"></i>
           <div class="text-truncate" data-i18n="Staffs">Employees</div>
           </a>
           <ul class="menu-sub">
           <li class="menu-item ">
               <a href="{{url('employees/create')}}" class="menu-link">
-              <div class="text-truncate" data-i18n="SRegister">Register</div>
+              <div class="text-truncate" data-i18n="SRegister">New Recruit</div>
               </a>
           </li>
           <li class="menu-item">
@@ -220,28 +293,33 @@
               <div class="text-truncate" data-i18n="SList">List</div>
               </a>
           </li>
-                    <li class="menu-item">
+          <li class="menu-item">
+                <a href="{{url('employeesPending')}}" class="menu-link">
+                <div class="text-truncate" data-i18n="SList">Pending</div>
+                </a>
+            </li>
+          <li class="menu-item">
+              <a href="{{url('employeesnrrit')}}" class="menu-link">
+              <div class="text-truncate" data-i18n="SList">Terminate / Recruit </div>
+              </a>
+          </li>
+          <li class="menu-item">
               <a href="{{url('employeesBank')}}" class="menu-link">
               <div class="text-truncate" data-i18n="SList">Employee Banks</div>
               </a>
           </li>
+
+          <li class="menu-item">
+              <a href="{{url('employeesCash')}}" class="menu-link">
+              <div class="text-truncate" data-i18n="SList">Employee Cash</div>
+              </a>
+          </li>
+
           </ul>
-      </li>
-      <li class="menu-item">
-          <a href="{{url('departments')}}" class="menu-link">
-          <i class="menu-icon tf-icons bx bx-buildings text-info me-2"></i>
-          <div class="text-truncate" data-i18n="depnroles">Department & Roles </div>
-          </a>
-      </li>
-      <li class="menu-item">
-          <a href="{{url('field')}}" class="menu-link">
-          <i class="menu-icon tf-icons bx bx-map-pin text-info me-2"></i>
-          <div class="text-truncate" data-i18n="fOffices">Field Offices</div>
-          </a>
       </li>
       @endif
 
-      @if(Auth::user()->hasRole(['Manager','Officer','Finance Manager']) )
+      @if($canViewAccounts)
 
       <li class="menu-header small text-uppercase"> <span class="menu-header-text text-danger">Accounts</span></li>
 
@@ -277,10 +355,17 @@
           <div class="text-truncate" data-i18n="Expense"> Expense </div>
         </a>
        </li>
+
+      <li class="menu-item">
+          <a href="javascript:void(0);" class="menu-link menu-toggle"><i class="menu-icon tf-icons bx bx-time-five bg-danger"></i><div>Overtime</div></a>
+          <ul class="menu-sub">
+              <li class="menu-item"><a href="{{url('overtime')}}" class="menu-link"><div>Daily Entry</div></a></li>
+              <li class="menu-item"><a href="{{url('overtime-report')}}" class="menu-link"><div>Reports</div></a></li>
+          </ul>
+      </li>
       @endif
 
-            @if(Auth::user()->hasPermission('Accounts') && Auth::user()->hasRole([ 'Invoice', 'Officer', 'Director', 'Finance Manager']) )
-
+      @if($canViewPayroll)
       <li class="menu-header small text-uppercase"><span class="menu-header-text">PAYROLL</span></li>
         <li class="menu-item">
                 <a href="javascript:void(0);" class="menu-link menu-toggle">
@@ -316,8 +401,9 @@
                 </ul>
             </li>
       @endif
-        </ul>
-    </aside>
+
+    </ul>
+  </aside>
     <!-- / Menu -->
     @endsection
 
@@ -350,7 +436,7 @@
                         <div class="card-body pt-0">
                             <div class="table-responsive text-normal-dark">
                                 <!-- <div class="card-body demo-vertical-spacing demo-only-element"> Clients </div> -->
-                                <table id="myTable" class="invoice-table display">
+                                <table id="myTable" class="invoice-table display" data-source="{{ route('invoice.data') }}">
                                     <thead>
                                         <tr>
                                             <th>#</th>
@@ -358,9 +444,8 @@
                                             <th>Invoice Month</th>
                                             <th>Client Name</th>
                                             <th>Phone No.</th>
-                                            <!-- <th>Business Name </th> -->
-                                            <th> Field Office </th>
-                                            <th> Staff </th>
+                                            <th>Field Office</th>
+                                            <th>Staff</th>
                                             <th>Date Created</th>
                                             <th>Due Date</th>
                                             <th>Amount</th>
@@ -368,49 +453,7 @@
                                             <th>Action</th>
                                         </tr>
                                     </thead>
-                                    <tbody class="table-border-bottom-0">
-                                        @foreach($invoices as $key => $invoice)
-                                        <tr>
-                                            <td>{{$key +1 }}</td>
-                                            <td> #FWSSi{{$invoice->id}} </td>
-                                            <td> {{ $invoice->invoice_month?->format('F, Y') }}</td>
-                                            <td> {{$invoice->client->business_name ? $invoice->client->business_name : $invoice->client->name }}  </td>
-                                            <td> {{$invoice->client->phone_number}} </td>
-                                            <!-- <td>  </td> -->
-                                            <td> {{$invoice->client->field->name}} </td>
-                                            <td> {{$invoice->user->name}} </td>
-                                            <td> {{$invoice->created_at->format('F l d, Y, H:i A')}} </td>
-                                            <td> {{$invoice->due_date->diffForHumans()}} </td>
-                                            <td> GH&#x20B5; {{number_format($invoice->total,2)}} </td>
-                                            @if($invoice->status == 'completed')
-                                            <td><span class="badge bg-label-success">{{$invoice->status}}</span></td>
-                                            @else
-                                            <td><span class="badge bg-label-danger">{{$invoice->status}}</span></td>
-                                            @endif
-                                            <td>
-                                                <div class="dropdown">
-                                                    <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown">
-                                                        <i class="icon-base bx bx-dots-vertical-rounded text-primary"></i>
-                                                    </button>
-                                                    <div class="dropdown-menu">
-                                                        <a class="dropdown-item" href="{{url('invoice', $invoice->id)}}"><i class="icon-base bx bx-bullseye text-primary me-2"></i> view</a>
-                                                        <a class="dropdown-item" href="{{ route('invoice.duplicate', ['invoice' => $invoice->id]) }}"><i class="icon-base bx bx-copy me-2 text-primary"></i> Duplicate</a>
-
-                                                        @if($invoice->status !== 'completed' && $invoice->status !== 'uncompleted' )
-                                                        <a class="dropdown-item" href="invoice/{{$invoice->id}}/edit"><i class="icon-base bx bx-edit-alt me-2 text-primary"></i> Edit</a>
-                                                        <!-- <a class="dropdown-item" href=""><i class="icon-base bx bx-trash me-2 text-danger"></i> Delete</a> -->
-                                                        <form action="invoice/{{$invoice->id}}" method="POST">
-                                                            @csrf
-                                                            @method('DELETE')
-                                                            <button class="dropdown-item" type="submit"><i class="icon-base bx bx-trash me-2 text-danger"></i>Delete</button>
-                                                        </form>
-                                                        @endif
-                                                    </div>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        @endforeach
-                                    </tbody>
+                                    <tbody class="table-border-bottom-0"></tbody>
                                 </table>
                             </div>
                         </div>
@@ -436,17 +479,50 @@
     <script src="https://cdn.datatables.net/columncontrol/1.1.1/js/dataTables.columnControl.min.js"></script>
 
     <script>
-        new DataTable('#myTable', {
-            responsive: true,
-
-            layout: {
-                topStart: {
-                    buttons: ['excelHtml5', 'pdfHtml5']
+        $(function () {
+            const table = $('#myTable').DataTable({
+                processing: true,
+                serverSide: true,
+                responsive: true,
+                pageLength: 25,
+                ordering: true,
+                searching: true,
+                ajax: {
+                    url: $('#myTable').data('source'),
+                    type: 'GET',
+                    dataType: 'json',
+                    dataSrc: 'data'
+                },
+                order: [[7, 'desc']],
+                columnControl: [
+                    ['search']
+                ],
+                columns: [
+                    { data: 'row_number', orderable: false, searchable: false, render: function (data, type, row, meta) {
+                        return meta.row + 1 + meta.settings._iDisplayStart;
+                    } },
+                    { data: 'invoice_id', render: function(data) { return '#FWSSi' + data; }, orderable: true, searchable: true },
+                    { data: 'invoice_month', orderable: true, searchable: true },
+                    { data: 'client_name', orderable: true, searchable: true },
+                    { data: 'phone_number', orderable: true, searchable: true },
+                    { data: 'field_name', orderable: true, searchable: true },
+                    { data: 'staff_name', orderable: true, searchable: true },
+                    { data: 'created_at', orderable: true, searchable: true },
+                    { data: 'due_date', orderable: true, searchable: true },
+                    { data: 'amount', orderable: true, searchable: false },
+                    { data: 'status', orderable: true, searchable: true },
+                    { data: 'action', orderable: false, searchable: false }
+                ],
+                layout: {
+                    topStart: {
+                        buttons: ['excelHtml5', 'pdfHtml5']
+                    }
                 }
-            },
-            columnControl: [
-                ['search']
-            ]
+            });
+
+            table.on('draw.dt', function () {
+                $('select[name="myTable_length"]').addClass('form-select form-select-sm');
+            });
         });
     </script>
 

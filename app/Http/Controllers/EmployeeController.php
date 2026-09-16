@@ -31,6 +31,193 @@ class EmployeeController extends Controller
         $this->middleware('auth');
     }
 
+
+        public function report(Request $request)
+    {
+        $period = $request->input('period', 'monthly');
+        $anchor = $request->filled('date') ? Carbon::parse($request->date) : Carbon::today();
+
+        [$from, $to] = match ($period) {
+            'daily' => [$anchor->copy()->startOfDay(), $anchor->copy()->endOfDay()],
+            'weekly' => [$anchor->copy()->startOfWeek(), $anchor->copy()->endOfWeek()],
+            'yearly' => [$anchor->copy()->startOfYear(), $anchor->copy()->endOfYear()],
+            default => [$anchor->copy()->startOfMonth(), $anchor->copy()->endOfMonth()],
+        };
+
+        $base = employee::whereBetween('date_of_joining', [$from, $to]);
+
+        $total = employee::where('ho_status', 'approved')->where('status', 'Active')->orwhere('status', 'Terminated')->count();
+        // hires in period (new recruits by date_of_joining) plus reinstatements recorded in `nrrit`
+        $hiresFromEmployees = (clone $base)->count();
+        $reinstateIds = DB::table('nrrit')->whereBetween('nrrit.status_month', [$from, $to])->where(function($q){
+            $q->where('nrrit.status1', 'Re-Instate')->orWhere('nrrit.status1', 'New Recruit');
+        })->pluck('employee_id')->toArray();
+        $reinstateCount = count($reinstateIds);
+        $count = $hiresFromEmployees + $reinstateCount;
+
+        // Prefer salary-based active count for the selected period; fallback to employees active status
+        $salaryActiveCount = Salary::whereBetween('salary_month', [$from, $to])->count();
+        $active = $salaryActiveCount > 0 ? $salaryActiveCount : employee::where('status', 'Active')->count();
+        $avgSalary = (float) employee::whereBetween('date_of_joining', [$from, $to])->where('ho_status', 'approved')->where('status', 'Active')->avg('basic_salary') ?: 0.0;
+        // Overall headcount by status for KPIs
+        $terminated = employee::where('status', 'Terminated')->where('ho_status', 'approved')->count();
+        $pending = employee::where('status', 'Pending')->where('ho_status', 'approved')->count();
+
+        $byField = (clone $base)->join('fields', 'fields.id', '=', 'employees.field_id')
+            ->select('fields.name as field_name', DB::raw('COUNT(employees.id) as cnt'))
+            ->groupBy('fields.name')->orderByDesc('cnt')->get();
+
+        $byDepartment = (clone $base)->join('departments', 'departments.id', '=', 'employees.department_id')
+            ->select('departments.name as dept_name', DB::raw('COUNT(employees.id) as cnt'))
+            ->groupBy('departments.name')->orderByDesc('cnt')->limit(10)->get();
+
+        // Status counts (from employees table)
+        $byStatus = (clone $base)->select('status', DB::raw('COUNT(*) as cnt'))
+            ->groupBy('status')->get();
+
+        // Trend of hires: include reinstate events from nrrit as separate counts when present
+        $trend = (clone $base)->select('date_of_joining', DB::raw('COUNT(id) as total'))
+            ->groupBy('date_of_joining')->orderBy('date_of_joining')->get();
+
+        // Roles summary (overall headcount per role) and top roles
+        // Role summary limited to the selected period (hires in period by role)
+        // Role summary: hires in period plus reinstatements mapped to current role
+        $roleSummaryEmp = employee::whereBetween('date_of_joining', [$from, $to])
+            ->join('roles', 'roles.id', '=', 'employees.role_id')
+            ->select('roles.name', DB::raw('COUNT(employees.id) as cnt'))
+            ->groupBy('roles.name')->get();
+
+        $roleSummaryReinstate = DB::table('nrrit')
+            ->whereBetween('nrrit.status_month', [$from, $to])
+            ->where(function($q){ $q->where('nrrit.status1','Re-Instate')->orWhere('nrrit.status1','New Recruit'); })
+            ->join('employees', 'nrrit.employee_id', '=', 'employees.id')
+            ->join('roles', 'roles.id', '=', 'employees.role_id')
+            ->select('roles.name', DB::raw('COUNT(nrrit.employee_id) as cnt'))
+            ->groupBy('roles.name')->get();
+
+        // Merge summaries
+        $roleMap = [];
+        foreach ($roleSummaryEmp as $r) { $roleMap[$r->name] = ($roleMap[$r->name] ?? 0) + $r->cnt; }
+        foreach ($roleSummaryReinstate as $r) { $roleMap[$r->name] = ($roleMap[$r->name] ?? 0) + $r->cnt; }
+        $roleSummary = collect(array_map(function($k,$v){ return (object)['name'=>$k,'cnt'=>$v]; }, array_keys($roleMap), $roleMap))->sortByDesc('cnt')->values();
+        $topRoles = $roleSummary->take(10);
+
+        // Terminations in the selected period and by-month terminations
+        // Use `nrrit` table as the source of truth for terminations (and reinstates)
+        $terminationsInPeriod = DB::table('nrrit')->where('nrrit.status', 'Terminated')->whereBetween('nrrit.status_month', [$from, $to])->count();
+
+        $terminationsTrend = DB::table('nrrit')->where('nrrit.status', 'Terminated')
+            ->whereBetween('nrrit.status_month', [$from, $to])
+            ->select(DB::raw('DATE_FORMAT(nrrit.status_month, "%Y-%m-01") as month'), DB::raw('COUNT(*) as total'))
+            ->groupBy('month')->orderBy('month')->get();
+
+        // Field-level summaries: active, hires this period, terminations this period
+        $fields = Field::orderBy('name')->get();
+
+        $activePerField = employee::where('ho_status', 'approved')->where('status', 'Active')
+            ->select('field_id', DB::raw('COUNT(*) as cnt'))->groupBy('field_id')->pluck('cnt', 'field_id');
+
+        $hiresPerField = employee::whereBetween('date_of_joining', [$from, $to])
+            ->select('field_id', DB::raw('COUNT(*) as cnt'))->groupBy('field_id')->pluck('cnt', 'field_id');
+
+        // include reinstates from nrrit mapped to employee.field_id
+        $reinstatePerField = DB::table('nrrit')
+            ->whereBetween('nrrit.status_month', [$from, $to])
+            ->where(function($q){ $q->where('nrrit.status1','Re-Instate')->orWhere('nrrit.status1','New Recruit'); })
+            ->join('employees','nrrit.employee_id','=','employees.id')
+            ->select('employees.field_id', DB::raw('COUNT(nrrit.employee_id) as cnt'))
+            ->groupBy('employees.field_id')->pluck('cnt', 'field_id');
+
+        // merge hire counts
+        foreach ($reinstatePerField as $fid => $c) { $hiresPerField[$fid] = ($hiresPerField[$fid] ?? 0) + $c; }
+
+        $termsPerField = DB::table('nrrit')->where('nrrit.status', 'Terminated')->whereBetween('nrrit.status_month', [$from, $to])
+            ->join('employees','nrrit.employee_id','=','employees.id')
+            ->select('employees.field_id', DB::raw('COUNT(nrrit.employee_id) as cnt'))
+            ->groupBy('employees.field_id')->pluck('cnt', 'field_id');
+
+        // Prepare arrays for charts
+        $fieldLabels = $fields->pluck('name');
+        $fieldActiveArr = $fields->pluck('id')->map(fn($id) => $activePerField[$id] ?? 0);
+        $fieldHiresArr = $fields->pluck('id')->map(fn($id) => $hiresPerField[$id] ?? 0);
+        $fieldTermsArr = $fields->pluck('id')->map(fn($id) => $termsPerField[$id] ?? 0);
+
+        $roleLabels = $roleSummary->pluck('name');
+        $roleCounts = $roleSummary->pluck('cnt');
+
+        $topRoleLabels = $topRoles->pluck('name');
+        $topRoleCounts = $topRoles->pluck('cnt');
+
+        $deptLabels = $byDepartment->pluck('dept_name');
+        $deptCounts = $byDepartment->pluck('cnt');
+
+        $terminationMonths = $terminationsTrend->pluck('month');
+        $terminationCounts = $terminationsTrend->pluck('total');
+
+        // Build period-aligned buckets for overlay chart (hires vs terminations)
+        $overlayLabels = [];
+        $overlayHires = [];
+        $overlayTerms = [];
+        $cursor = $from->copy();
+        while ($cursor <= $to) {
+            if ($period === 'daily') {
+                $start = $cursor->copy()->startOfDay();
+                $end = $cursor->copy()->endOfDay();
+                $next = $cursor->copy()->addDay();
+            } elseif ($period === 'weekly') {
+                $start = $cursor->copy()->startOfWeek();
+                $end = $cursor->copy()->endOfWeek();
+                $next = $cursor->copy()->addWeek();
+            } elseif ($period === 'yearly') {
+                $start = $cursor->copy()->startOfYear();
+                $end = $cursor->copy()->endOfYear();
+                $next = $cursor->copy()->addYear();
+            } else {
+                // monthly
+                $start = $cursor->copy()->startOfMonth();
+                $end = $cursor->copy()->endOfMonth();
+                $next = $cursor->copy()->addMonth();
+            }
+
+            $label = $start->format('Y-m-d');
+            $overlayLabels[] = $label;
+            // hires: employees joined in bucket + reinstate events in nrrit
+            $empHires = employee::whereBetween('date_of_joining', [$start, $end])->count();
+            $reinstateBucket = DB::table('nrrit')->whereBetween('nrrit.status_month', [$start, $end])
+                ->where(function($q){ $q->where('nrrit.status1','Re-Instate')->orWhere('nrrit.status1','New Recruit'); })->count();
+            $overlayHires[] = $empHires + $reinstateBucket;
+
+            // terminations: count nrrit terminations in bucket
+            $overlayTerms[] = DB::table('nrrit')->where('nrrit.status', 'Terminated')->whereBetween('nrrit.status_month', [$start, $end])->count();
+
+            $cursor = $next;
+        }
+
+        // projection: average hires of last 4 periods
+        $samples = [];
+        for ($i = 1; $i <= 4; $i++) {
+            [$pf, $pt] = match ($period) {
+                'daily' => [$anchor->copy()->subDays($i)->startOfDay(), $anchor->copy()->subDays($i)->endOfDay()],
+                'weekly' => [$anchor->copy()->subWeeks($i)->startOfWeek(), $anchor->copy()->subWeeks($i)->endOfWeek()],
+                'yearly' => [$anchor->copy()->subYears($i)->startOfYear(), $anchor->copy()->subYears($i)->endOfYear()],
+                default => [$anchor->copy()->subMonths($i)->startOfMonth(), $anchor->copy()->subMonths($i)->endOfMonth()],
+            };
+            $samples[] = employee::whereBetween('date_of_joining', [$pf, $pt])->count();
+        }
+
+        $projection = $samples ? round(array_sum($samples) / count($samples), 2) : 0.0;
+
+        return view('employees.report', compact(
+            'period', 'anchor', 'from', 'to', 'total', 'count', 'active', 'avgSalary',
+            'byField', 'byDepartment', 'byStatus', 'trend', 'projection',
+            'roleSummary', 'topRoles', 'terminationsInPeriod', 'terminationsTrend', 'fields', 'activePerField', 'hiresPerField', 'termsPerField',
+            'fieldLabels', 'fieldActiveArr', 'fieldHiresArr', 'fieldTermsArr',
+            'roleLabels', 'roleCounts', 'topRoleLabels', 'topRoleCounts',
+            'deptLabels', 'deptCounts', 'terminationMonths', 'terminationCounts',
+            'overlayLabels', 'overlayHires', 'overlayTerms', 'terminated', 'pending'
+        ));
+    }
+
     /**
      * Display a listing of the resource.
      */

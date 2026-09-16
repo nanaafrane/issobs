@@ -29,16 +29,220 @@ class InvoiceController extends Controller
         $this->middleware('auth');
     }
 
+    /**
+     * Invoices reporting: period windows with breakdowns by field, status,
+     * top clients and top issuers, plus trend data for charts.
+     */
+    public function report(Request $request)
+    {
+        $period = $request->input('period', 'monthly');
+        $anchor = $request->filled('date') ? Carbon::parse($request->date) : Carbon::today();
+
+        [$from, $to] = match ($period) {
+            'daily' => [$anchor->copy()->startOfDay(), $anchor->copy()->endOfDay()],
+            'weekly' => [$anchor->copy()->startOfWeek(), $anchor->copy()->endOfWeek()],
+            'yearly' => [$anchor->copy()->startOfYear(), $anchor->copy()->endOfYear()],
+            default => [$anchor->copy()->startOfMonth(), $anchor->copy()->endOfMonth()],
+        };
+
+        $base = Invoice::whereBetween('invoice_month', [$from, $to]);
+
+        $total = (clone $base)->sum('total');
+        $count = (clone $base)->count();
+
+        $byField = (clone $base)->join('clients', 'clients.id', '=', 'invoices.client_id')
+            ->join('fields', 'fields.id', '=', 'clients.field_id')
+            ->select('fields.name as field_name', DB::raw('SUM(invoices.total) as total'), DB::raw('COUNT(invoices.id) as cnt'))
+            ->groupBy('fields.name')->orderByDesc('total')->get();
+
+        $byStatus = (clone $base)->select('status', DB::raw('SUM(total) as total'), DB::raw('COUNT(*) as cnt'))
+            ->groupBy('status')->get();
+
+        $topClients = (clone $base)->join('clients', 'clients.id', '=', 'invoices.client_id')
+            ->select('clients.id', 'clients.business_name', 'clients.name', DB::raw('SUM(invoices.total) as total'), DB::raw('COUNT(invoices.id) as cnt'))
+            ->groupBy('clients.id', 'clients.business_name', 'clients.name')
+            ->orderByDesc('total')->limit(10)->get();
+
+        $topIssuers = (clone $base)->join('users', 'users.id', '=', 'invoices.user_id')
+            ->select('users.id', 'users.name', DB::raw('SUM(invoices.total) as total'), DB::raw('COUNT(invoices.id) as cnt'))
+            ->groupBy('users.id', 'users.name')
+            ->orderByDesc('total')->limit(10)->get();
+
+        $trend = (clone $base)->select('invoice_month', DB::raw('SUM(total) as total'))
+            ->groupBy('invoice_month')->orderBy('invoice_month')->get();
+
+        $projection = $this->projectNextPeriodInvoices($period, $anchor);
+
+        return view('sales.invoice_report', compact(
+            'period', 'anchor', 'from', 'to', 'total', 'count',
+            'byField', 'byStatus', 'topClients', 'topIssuers', 'trend', 'projection'
+        ));
+    }
+
+    protected function projectNextPeriodInvoices(string $period, Carbon $anchor): float
+    {
+        $samples = [];
+        for ($i = 1; $i <= 4; $i++) {
+            [$from, $to] = match ($period) {
+                'daily' => [$anchor->copy()->subDays($i)->startOfDay(), $anchor->copy()->subDays($i)->endOfDay()],
+                'weekly' => [$anchor->copy()->subWeeks($i)->startOfWeek(), $anchor->copy()->subWeeks($i)->endOfWeek()],
+                'yearly' => [$anchor->copy()->subYears($i)->startOfYear(), $anchor->copy()->subYears($i)->endOfYear()],
+                default => [$anchor->copy()->subMonths($i)->startOfMonth(), $anchor->copy()->subMonths($i)->endOfMonth()],
+            };
+            $samples[] = Invoice::whereBetween('invoice_month', [$from, $to])->sum('total');
+        }
+
+        return $samples ? round(array_sum($samples) / count($samples), 2) : 0.0;
+    }
+
 
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
-        //
-        $invoices = Invoice::all();
-        return view('sales.invoice_list', compact('invoices'));
+        return view('sales.invoice_list');
+    }
 
+    public function datatable(Request $request)
+    {
+        $query = Invoice::query()
+            ->select([
+                'invoices.id',
+                'invoices.client_id',
+                'invoices.user_id',
+                'invoices.due_date',
+                'invoices.invoice_month',
+                'invoices.created_at',
+                'invoices.total',
+                'invoices.status',
+                'clients.business_name as client_business_name',
+                'clients.name as client_name',
+                'clients.phone_number',
+                'fields.name as field_name',
+                'users.name as staff_name',
+            ])
+            ->leftJoin('clients', 'clients.id', '=', 'invoices.client_id')
+            ->leftJoin('fields', 'fields.id', '=', 'clients.field_id')
+            ->leftJoin('users', 'users.id', '=', 'invoices.user_id');
+
+        $search = trim((string) $request->input('search.value', ''));
+        $columns = $request->input('columns', []);
+
+        if ($search !== '') {
+            $query->where(function ($q) use ($search) {
+                $q->where('invoices.id', 'like', "%{$search}%")
+                    ->orWhere('invoices.status', 'like', "%{$search}%")
+                    ->orWhere('clients.business_name', 'like', "%{$search}%")
+                    ->orWhere('clients.name', 'like', "%{$search}%")
+                    ->orWhere('clients.phone_number', 'like', "%{$search}%")
+                    ->orWhere('fields.name', 'like', "%{$search}%")
+                    ->orWhere('users.name', 'like', "%{$search}%")
+                    ->orWhereRaw("DATE_FORMAT(invoices.invoice_month, '%M, %Y') LIKE ?", ["%{$search}%"])
+                    ->orWhereRaw("DATE_FORMAT(invoices.created_at, '%M %d, %Y') LIKE ?", ["%{$search}%"]);
+            });
+        }
+
+        foreach ($columns as $index => $column) {
+            $value = trim((string) ($column['search']['value'] ?? ''));
+            if ($value === '') {
+                continue;
+            }
+
+            switch ($index) {
+                case 2:
+                    $query->whereRaw("DATE_FORMAT(invoices.invoice_month, '%M, %Y') LIKE ?", ["%{$value}%"]);
+                    break;
+                case 3:
+                    $query->where(function ($q) use ($value) {
+                        $q->where('clients.business_name', 'like', "%{$value}%")
+                            ->orWhere('clients.name', 'like', "%{$value}%");
+                    });
+                    break;
+                case 4:
+                    $query->where('clients.phone_number', 'like', "%{$value}%");
+                    break;
+                case 5:
+                    $query->where('fields.name', 'like', "%{$value}%");
+                    break;
+                case 6:
+                    $query->where('users.name', 'like', "%{$value}%");
+                    break;
+                case 7:
+                    $query->whereRaw("DATE_FORMAT(invoices.created_at, '%M %d, %Y') LIKE ?", ["%{$value}%"]);
+                    break;
+                case 8:
+                    $query->whereRaw("DATE_FORMAT(invoices.due_date, '%M %d, %Y') LIKE ?", ["%{$value}%"]);
+                    break;
+                case 10:
+                    $query->where('invoices.status', 'like', "%{$value}%");
+                    break;
+                default:
+                    $query->where('invoices.id', 'like', "%{$value}%");
+                    break;
+            }
+        }
+
+        $recordsTotal = Invoice::count();
+        $recordsFiltered = (clone $query)->count();
+
+        $columnMap = [
+            0 => 'invoices.id',
+            1 => 'invoices.id',
+            2 => 'invoices.invoice_month',
+            3 => 'client_business_name',
+            4 => 'clients.phone_number',
+            5 => 'field_name',
+            6 => 'staff_name',
+            7 => 'invoices.created_at',
+            8 => 'invoices.due_date',
+            9 => 'invoices.total',
+            10 => 'invoices.status',
+        ];
+
+        $orderColumn = $request->input('order.0.column', 0);
+        $orderDir = $request->input('order.0.dir', 'desc');
+        $sortColumn = $columnMap[$orderColumn] ?? 'invoices.created_at';
+
+        if (in_array($sortColumn, ['client_business_name', 'field_name', 'staff_name'], true)) {
+            $query->orderByRaw($sortColumn . ' ' . $orderDir);
+        } else {
+            $query->orderBy($sortColumn, $orderDir);
+        }
+
+        $start = (int) $request->input('start', 0);
+        $length = (int) $request->input('length', 25);
+        $length = $length > 0 ? $length : 25;
+
+        $rows = $query->offset($start)->limit($length)->get();
+
+        $data = $rows->map(function ($invoice) {
+            $clientName = trim((string) ($invoice->client_business_name ?: $invoice->client_name));
+            $badgeClass = $invoice->status === 'completed' ? 'bg-label-success' : 'bg-label-danger';
+            $dueLabel = $invoice->due_date ? Carbon::parse($invoice->due_date)->diffForHumans() : '';
+
+            return [
+                'row_number' => '',
+                'invoice_id' => $invoice->id,
+                'invoice_month' => $invoice->invoice_month ? Carbon::parse($invoice->invoice_month)->format('F, Y') : '',
+                'client_name' => $clientName,
+                'phone_number' => $invoice->phone_number,
+                'field_name' => $invoice->field_name,
+                'staff_name' => $invoice->staff_name,
+                'created_at' => $invoice->created_at ? $invoice->created_at->format('F l d, Y, H:i A') : '',
+                'due_date' => $dueLabel,
+                'amount' => 'GH₵ ' . number_format((float) $invoice->total, 2),
+                'status' => '<span class="badge ' . $badgeClass . '">' . e($invoice->status) . '</span>',
+                'action' => view('partials.invoice_row_actions', ['invoice' => $invoice])->render(),
+            ];
+        })->all();
+
+        return response()->json([
+            'draw' => (int) $request->input('draw', 1),
+            'recordsTotal' => $recordsTotal,
+            'recordsFiltered' => $recordsFiltered,
+            'data' => $data,
+        ]);
     }
 
     public function printInvoice($invoice_id)

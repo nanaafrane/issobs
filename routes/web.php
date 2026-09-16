@@ -70,6 +70,8 @@ Route::resource('service', ServiceController::class);
 // Route::get('invoice/list', [InvoiceController::class, 'list']);
 Route::resource('transaction', TransactionController::class);
 
+Route::get('invoice-report', [InvoiceController::class, 'report'])->name('invoice.report');
+Route::get('invoice/data', [InvoiceController::class, 'datatable'])->name('invoice.data');
 Route::resource('invoice', InvoiceController::class);
 Route::get('invoice/{invoice}/duplicate', [InvoiceController::class, 'duplicate'])->name('invoice.duplicate');
 Route::post('invoice/{invoice}/duplicate', [InvoiceController::class, 'storeDuplicate'])->name('invoice.storeDuplicate');
@@ -85,6 +87,7 @@ Route::get('invoiceSearch', [InvoiceController::class, 'invoiceSearch'])->name('
 Route::get('searchOutstandingInvoices', [InvoiceController::class, 'searchOutstandingInvoices'])->name('invoice.searchOutstandingInvoices');
 Route::get('searchPartPaymentOutstanding', [InvoiceController::class, 'searchPartPaymentOutstanding'])->name('invoice.searchPartPaymentOutstanding');
 
+Route::get('receipt-report', [ReceiptController::class, 'report'])->name('receipt.report');
 Route::resource('receipt', ReceiptController::class);
 Route::get('receiptPending', [ReceiptController::class, 'PendingReceipts'])->name('receipt.pending');
 Route::post('receiptChannels', [ReceiptController::class, 'receiptChannels']);
@@ -118,6 +121,10 @@ Route::resource('expense', ExpenseController::class);
 Route::post('overtime/{overtime}/approve', [OvertimeController::class, 'approve'])->name('overtime.approve');
 Route::post('overtime/{overtime}/reject', [OvertimeController::class, 'reject'])->name('overtime.reject');
 Route::get('overtime-report', [OvertimeController::class, 'report'])->name('overtime.report');
+Route::get('overtime/field/{field}/details', [OvertimeController::class, 'fieldDetails']);
+Route::get('overtime/reason/{reason}/details', [OvertimeController::class, 'reasonDetails']);
+Route::get('overtime/client/{client}/details', [OvertimeController::class, 'clientDetails']);
+Route::get('overtime/employee/{employee}/details', [OvertimeController::class, 'employeeDetails']);
 // select2 search endpoints (JSON), reused by both the create and edit rows
 Route::get('overtime/lookup/employees', [OvertimeController::class, 'employeeOptions'])->name('overtime.lookup.employees');
 Route::get('overtime/lookup/clients', [OvertimeController::class, 'clientOptions'])->name('overtime.lookup.clients');
@@ -125,6 +132,7 @@ Route::resource('overtime', OvertimeController::class);
 
 
 Route::resource('employees', EmployeeController::class); 
+Route::get('employee-report', [EmployeeController::class, 'report'])->name('employee.report');
 Route::get('employeesBank', [EmployeeController::class, 'employeesBank'])->name('employees.Bank');
 Route::get('employeesBankView/{id}', [EmployeeController::class, 'employeesBankView' ]);
 Route::get('employeesCash', [EmployeeController::class, 'employeesCash'])->name('employees.Cash');

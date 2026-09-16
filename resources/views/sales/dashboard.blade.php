@@ -51,19 +51,25 @@
         <span class="menu-header-text text-primary">Transactions</span>
       </li>
       <!-- Pages -->
-      <li class="menu-item">
-        <a href="{{url('transaction')}}" class="menu-link">
-          <i class="menu-icon tf-icons bx bx-transfer-alt bg-primary"></i>
-          <div class="text-truncate" data-i18n="Transaction">Transactions</div>
-        </a>
-      </li>
-
       @if($canViewInvoices)
       <li class="menu-item">
-        <a href="{{ url('invoice') }}" class="menu-link">
-          <i class="menu-icon tf-icons bx bx-receipt text-primary me-2"></i>
-          <div class="text-truncate" data-i18n="Invoices">Invoices</div>
-        </a>
+        <a href="javascript:void(0);" class="menu-link menu-toggle">
+           <i class="menu-icon tf-icons bx bx-receipt text-primary me-2"></i>
+                <div class="text-truncate" data-i18n="Invoices">Invoices</div>
+          </a>
+          <ul class="menu-sub"> 
+              <li class="menu-item">
+                  <a href="{{url('invoice')}}" class="menu-link">
+                  <div class="text-truncate" data-i18n="SList">Invoices</div>
+                  </a>
+              </li>
+
+              <li class="menu-item">
+                  <a href="{{url('invoice-report')}}" class="menu-link">
+                  <div class="text-truncate" data-i18n="SList">Reports</div>
+                  </a>
+              </li>
+          </ul>
       </li>
       <li class="menu-item ">
           <a href="javascript:void(0);" class="menu-link menu-toggle">
@@ -92,14 +98,6 @@
 
 
       @if($canViewReceipts)
-            
-     <!-- <li class="menu-item">
-        <a href="{{url('receipt')}}" class="menu-link">
-          <i class="menu-icon tf-icons bx bx-money-withdraw bg-primary"></i>
-          <div class="text-truncate" data-i18n="Receipts">Receipts</div>
-        </a>
-      </li> -->
-
       <li class="menu-item ">
           <a href="javascript:void(0);" class="menu-link menu-toggle">
           <i class="menu-icon tf-icons bx bx-money-withdraw bg-primary"></i>
@@ -115,6 +113,11 @@
             <li class="menu-item">
                 <a href="{{url('receiptPending')}}" class="menu-link">
                 <div class="text-truncate" data-i18n="RPending">Pending </div>
+                </a>
+            </li>
+            <li class="menu-item">
+                <a href="{{url('receipt-report')}}" class="menu-link">
+                <div class="text-truncate" data-i18n="RPending">Reports </div>
                 </a>
             </li>
 
@@ -139,12 +142,17 @@
           <ul class="menu-sub">
           <li class="menu-item ">
               <a href="{{url('employees/create')}}" class="menu-link">
-              <div class="text-truncate" data-i18n="SRegister">Register</div>
+              <div class="text-truncate" data-i18n="SRegister">New Recruit</div>
               </a>
           </li>
           <li class="menu-item">
               <a href="{{url('employees')}}" class="menu-link">
               <div class="text-truncate" data-i18n="SList">List</div>
+              </a>
+          </li>
+          <li class="menu-item">
+              <a href="{{url('employee-report')}}" class="menu-link">
+              <div class="text-truncate" data-i18n="SList">Reports</div>
               </a>
           </li>
           <li class="menu-item">
@@ -183,7 +191,7 @@
             <ul class="menu-sub">
                 <li class="menu-item ">
                     <a href="{{url('client/create')}}" class="menu-link">
-                        <div class="text-truncate" data-i18n="CRegister">Register</div>
+                        <div class="text-truncate" data-i18n="CRegister">New Contract</div>
                     </a>
                 </li>
                 <li class="menu-item ">
@@ -213,7 +221,7 @@
           <ul class="menu-sub">
           <li class="menu-item ">
               <a href="{{url('employees/create')}}" class="menu-link">
-              <div class="text-truncate" data-i18n="SRegister">Register</div>
+              <div class="text-truncate" data-i18n="SRegister">New Recruit</div>
               </a>
           </li>
           <li class="menu-item">
@@ -245,19 +253,6 @@
 
           </ul>
       </li>
-
-      <!-- <li class="menu-item">
-          <a href="{{url('departments')}}" class="menu-link">
-          <i class="menu-icon tf-icons bx bx-buildings text-info me-2"></i>
-          <div class="text-truncate" data-i18n="depnroles">Department & Roles </div>
-          </a>
-      </li>
-      <li class="menu-item">
-          <a href="{{url('field')}}" class="menu-link">
-          <i class="menu-icon tf-icons bx bx-map-pin text-info me-2"></i>
-          <div class="text-truncate" data-i18n="fOffices">Field Offices</div>
-          </a>
-      </li> -->
       @endif
 
       @if($canViewAccounts)
