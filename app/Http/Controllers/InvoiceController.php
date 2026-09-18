@@ -41,6 +41,10 @@ class InvoiceController extends Controller
         [$from, $to] = match ($period) {
             'daily' => [$anchor->copy()->startOfDay(), $anchor->copy()->endOfDay()],
             'weekly' => [$anchor->copy()->startOfWeek(), $anchor->copy()->endOfWeek()],
+            'quarterly' => [$anchor->copy()->startOfQuarter(), $anchor->copy()->endOfQuarter()],
+            'semiannual' => ($anchor->month <= 6)
+                ? [$anchor->copy()->startOfYear(), $anchor->copy()->startOfYear()->addMonths(5)->endOfMonth()]
+                : [$anchor->copy()->startOfYear()->addMonths(6), $anchor->copy()->endOfYear()],
             'yearly' => [$anchor->copy()->startOfYear(), $anchor->copy()->endOfYear()],
             default => [$anchor->copy()->startOfMonth(), $anchor->copy()->endOfMonth()],
         };
@@ -86,6 +90,13 @@ class InvoiceController extends Controller
             [$from, $to] = match ($period) {
                 'daily' => [$anchor->copy()->subDays($i)->startOfDay(), $anchor->copy()->subDays($i)->endOfDay()],
                 'weekly' => [$anchor->copy()->subWeeks($i)->startOfWeek(), $anchor->copy()->subWeeks($i)->endOfWeek()],
+                'quarterly' => [
+                    $anchor->copy()->subMonths(3 * $i)->startOfQuarter(),
+                    $anchor->copy()->subMonths(3 * $i)->endOfQuarter(),
+                ],
+                'semiannual' => ($anchor->copy()->subMonths(6 * $i)->month <= 6)
+                    ? [$anchor->copy()->subMonths(6 * $i)->startOfYear(), $anchor->copy()->subMonths(6 * $i)->startOfYear()->addMonths(5)->endOfMonth()]
+                    : [$anchor->copy()->subMonths(6 * $i)->startOfYear()->addMonths(6), $anchor->copy()->subMonths(6 * $i)->endOfYear()],
                 'yearly' => [$anchor->copy()->subYears($i)->startOfYear(), $anchor->copy()->subYears($i)->endOfYear()],
                 default => [$anchor->copy()->subMonths($i)->startOfMonth(), $anchor->copy()->subMonths($i)->endOfMonth()],
             };
@@ -144,7 +155,15 @@ class InvoiceController extends Controller
         }
 
         foreach ($columns as $index => $column) {
-            $value = trim((string) ($column['search']['value'] ?? ''));
+            // ColumnControl sends per-column input values separately from
+            // DataTables' standard `columns[index][search][value]` field.
+            // Prefer its value when present, but retain the standard field so
+            // other DataTables controls continue to work.
+            $value = trim((string) (
+                $column['columnControl']['search']['value']
+                    ?? $column['search']['value']
+                    ?? ''
+            ));
             if ($value === '') {
                 continue;
             }

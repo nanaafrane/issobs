@@ -73,6 +73,7 @@ Route::resource('transaction', TransactionController::class);
 Route::get('invoice-report', [InvoiceController::class, 'report'])->name('invoice.report');
 Route::get('invoice/data', [InvoiceController::class, 'datatable'])->name('invoice.data');
 Route::resource('invoice', InvoiceController::class);
+Route::get('receipt/data', [ReceiptController::class, 'datatable'])->name('receipt.data');
 Route::get('invoice/{invoice}/duplicate', [InvoiceController::class, 'duplicate'])->name('invoice.duplicate');
 Route::post('invoice/{invoice}/duplicate', [InvoiceController::class, 'storeDuplicate'])->name('invoice.storeDuplicate');
 Route::resource('proforma', ProformaController::class);
@@ -131,6 +132,7 @@ Route::get('overtime/lookup/clients', [OvertimeController::class, 'clientOptions
 Route::resource('overtime', OvertimeController::class);
 
 
+Route::get('employees/data', [EmployeeController::class, 'datatable'])->name('employees.data');
 Route::resource('employees', EmployeeController::class); 
 Route::get('employee-report', [EmployeeController::class, 'report'])->name('employee.report');
 Route::get('employeesBank', [EmployeeController::class, 'employeesBank'])->name('employees.Bank');

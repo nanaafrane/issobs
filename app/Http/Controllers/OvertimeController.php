@@ -67,6 +67,14 @@ class OvertimeController extends Controller
             ->whereMonth('entry_date', $date->month)->whereYear('entry_date', $date->year)
             ->sum('amount');
 
+        // allow for hr to acces overtime temporaly
+        if($user->department?->name == 'HR' && $user->role?->name == 'Manager' )
+            {
+            return view('hr.index', compact(
+            'date', 'fields', 'fieldId', 'day', 'night', 'dayTotal', 'nightTotal',
+            'reasons', 'weekTotal', 'monthTotal'
+        ));
+            }
         return view('overtime.index', compact(
             'date', 'fields', 'fieldId', 'day', 'night', 'dayTotal', 'nightTotal',
             'reasons', 'weekTotal', 'monthTotal'
@@ -214,7 +222,7 @@ class OvertimeController extends Controller
     {
         $period = $request->input('period', 'monthly'); // daily|weekly|monthly|yearly
         $anchor = $request->filled('date') ? Carbon::parse($request->date) : Carbon::today();
-
+        $user = Auth::user();
         [$from, $to] = match ($period) {
             'daily' => [$anchor->copy()->startOfDay(), $anchor->copy()->endOfDay()],
             'weekly' => [$anchor->copy()->startOfWeek(), $anchor->copy()->endOfWeek()],
@@ -260,15 +268,24 @@ class OvertimeController extends Controller
         // Trend line: daily buckets across the selected window, for the chart
         $trend = (clone $base)->select('entry_date', DB::raw('SUM(amount) as total'))
             ->groupBy('entry_date')->orderBy('entry_date')->get();
+        $trendLabels = $trend->map(fn ($point) => Carbon::parse($point->entry_date)->format('D, j M Y'));
 
         // Simple next-period projection: average of the last 4 comparable
         // periods, so a branch head can anticipate next month/week's overtime
         // exposure at a glance (see DESIGN.md for the reasoning).
         $projection = $this->projectNextPeriod($period, $anchor);
 
+         if($user->department?->name == 'HR' && $user->role?->name == 'Manager' )
+            {
+                return view('hr.report', compact(
+                    'period', 'anchor', 'from', 'to', 'total', 'count',
+                    'byField', 'byShift', 'byReason', 'topClients', 'topEmployees', 'trend', 'trendLabels', 'projection'
+                ));
+            }
+
         return view('overtime.report', compact(
             'period', 'anchor', 'from', 'to', 'total', 'count',
-            'byField', 'byShift', 'byReason', 'topClients', 'topEmployees', 'trend', 'projection'
+            'byField', 'byShift', 'byReason', 'topClients', 'topEmployees', 'trend', 'trendLabels', 'projection'
         ));
     }
 
@@ -299,7 +316,6 @@ class OvertimeController extends Controller
             ->join('clients', 'clients.id', '=', 'overtimes.client_id')
             ->where('overtimes.field_id', $fieldId)
             ->whereBetween('overtimes.entry_date', [$from, $to])
-            ->whereRaw('LOWER(clients.status) = ?', ['active'])
             ->select('clients.id', 'clients.business_name', 'clients.name', DB::raw('COUNT(*) as cnt'), DB::raw('SUM(overtimes.amount) as total'))
             ->groupBy('clients.id', 'clients.business_name', 'clients.name')
             ->orderByDesc('cnt')

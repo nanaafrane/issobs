@@ -194,7 +194,7 @@
       <li class="menu-header small text-uppercase"><span class="menu-header-text text-info">Management</span></li>
       <li class="menu-item">
         <a href="{{url('client')}}" class="menu-link">
-          <i class="menu-icon tf-icons bx bx-user-detail text-info me-2"></i>
+           <i class="menu-icon tf-icons bx bx-bxs-user-detail text-info me-2"></i>
           <div class="text-truncate" data-i18n="Clients">Clients</div>
         </a>
       </li>
@@ -249,7 +249,7 @@
       <li class="menu-header small text-uppercase"><span class="menu-header-text text-info">Management</span></li>
         <li class="menu-item ">
             <a class="menu-link menu-toggle">
-                <i class="menu-icon tf-icons bx bx-user-detail text-info me-2"></i>
+                <i class="menu-icon tf-icons bx bxs-user-detail text-info me-2"></i>
                 <div class="text-truncate" data-i18n="Clients"><strong>Clients</strong></div>
             </a>
             <ul class="menu-sub">
@@ -494,9 +494,12 @@
                     dataSrc: 'data'
                 },
                 order: [[7, 'desc']],
-                columnControl: [
-                    ['search']
-                ],
+                // Keep the column filters visible and let ColumnControl redraw
+                // the server-side table as each filter value changes.
+                columnControl: [{
+                    target: 1,
+                    content: ['search']
+                }],
                 columns: [
                     { data: 'row_number', orderable: false, searchable: false, render: function (data, type, row, meta) {
                         return meta.row + 1 + meta.settings._iDisplayStart;
@@ -515,7 +518,22 @@
                 ],
                 layout: {
                     topStart: {
-                        buttons: ['excelHtml5', 'pdfHtml5']
+                        buttons: [ 
+                        {
+                            extend: 'pageLength',
+                            text: 'Show',
+                            className: 'btn btn-secondary',
+                            Options: [10, 25, 50, 100, 250, 500, 1000, 2000], 
+                        },
+                            {
+                                extend: 'excelHtml5',
+                                title:  "Invoices",
+                                className: 'btn btn-secondary',
+                                exportOptions: {
+                                    columns: ':visible'
+                                }
+                            },
+                        ]
                     }
                 }
             });

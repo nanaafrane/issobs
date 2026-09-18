@@ -10,7 +10,7 @@ class Overtime extends Model
     use SoftDeletes;
 
     public const REASONS = [
-        'Shortage', 'Absent', 'Sick', 'Terminated', 'Extra Post', 'Event/Function', 'Other',
+        'Shortage', 'Absent', 'Sick', 'Terminated', 'Extra Post', 'Event/Function', 'Other','Off Duty', 'Pass'
     ];
 
     public const STAGE_LABELS = [

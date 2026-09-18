@@ -95,7 +95,7 @@
       <li class="menu-header small text-uppercase"><span class="menu-header-text text-info">Management</span></li>
       <li class="menu-item">
         <a href="{{url('client')}}" class="menu-link">
-          <i class="menu-icon tf-icons bx bx-user-detail text-info me-2"></i>
+          <i class="menu-icon tf-icons bx bxs-user-detail text-info me-2"></i>
           <div class="text-truncate" data-i18n="Clients">Clients</div>
         </a>
       </li>
@@ -127,7 +127,7 @@
       <li class="menu-header small text-uppercase"><span class="menu-header-text text-info">Management</span></li>
         <li class="menu-item ">
             <a class="menu-link menu-toggle">
-                <i class="menu-icon tf-icons bx bx-user-detail text-info me-2"></i>
+                <i class="menu-icon tf-icons bx bxs-user-detail text-info me-2"></i>
                 <div class="text-truncate" data-i18n="Clients"><strong>Clients</strong></div>
             </a>
             <ul class="menu-sub">

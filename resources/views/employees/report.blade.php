@@ -132,14 +132,19 @@
                             <div class="text-truncate" data-i18n="SRegister">Register</div>
                             </a>
                         </li>
-                        <li class="menu-item active">
+                        <li class="menu-item ">
                             <a href="{{url('employees')}}" class="menu-link">
                             <div class="text-truncate" data-i18n="SList">List</div>
                             </a>
                         </li>
-                        <li class="menu-item">
+                        <li class="menu-item ">
                             <a href="{{url('employeesPending')}}" class="menu-link">
                             <div class="text-truncate" data-i18n="SList">Pending</div>
+                            </a>
+                        </li>
+                        <li class="menu-item active">
+                            <a href="{{url('employee-report')}}" class="menu-link">
+                            <div class="text-truncate" data-i18n="SList"> Report </div>
                             </a>
                         </li>
                         <li class="menu-item ">
@@ -362,7 +367,7 @@
             <div class="col-auto">
                 <label class="form-label small mb-0">Period</label>
                 <select name="period" class="form-select form-select-sm" onchange="this.form.submit()">
-                    @foreach(['daily'=>'Daily','weekly'=>'Weekly','monthly'=>'Monthly','yearly'=>'Yearly'] as $val=>$label)
+                    @foreach(['daily'=>'Daily','weekly'=>'Weekly','monthly'=>'Monthly','quarterly'=>'Quarterly','semiannual'=>'Semiannual','yearly'=>'Yearly'] as $val=>$label)
                         <option value="{{ $val }}" @selected($period == $val)>{{ $label }}</option>
                     @endforeach
                 </select>

@@ -699,7 +699,7 @@
                 <div class="card"> 
                     <div class="card-body"> 
                     <div class="table-responsive text-normal-dark"> 
-                    <table id="myTable" class="display">
+                    <table id="myTable" class="display" data-source="{{ route('employees.data') }}">
                         <thead>
                             <tr>
                                 <th>#</th>
@@ -733,6 +733,8 @@
                             </tr>
                         </thead>
                         <tbody>
+                         {{-- Rows are loaded by the server-side DataTable. --}}
+                         @if (false)
 
                          @if(Auth::user()->hasRole(['Invoice', 'Finance Manager']) || (Auth::user()->department?->name == 'HR' && Auth::user()->role?->name == 'Manager'))
                             @foreach ($employees as $key => $employee )
@@ -1190,6 +1192,7 @@
 
                        
                        
+                        @endif
                         </tbody>
                     </table>
                     </div>
@@ -1218,7 +1221,29 @@
     <script>
         new DataTable('#myTable', {
             responsive: true,
-            columnControl: [ ['search'] ],
+            processing: true,
+            serverSide: true,
+            pageLength: 25,
+            ajax: {
+                url: $('#myTable').data('source'),
+                type: 'GET',
+                dataSrc: 'data'
+            },
+            order: [[22, 'desc']],
+            columnControl: [{
+                target: 1,
+                content: ['search']
+            }],
+            columns: [
+                { data: 'row_number', orderable: false, searchable: false, render: function (data, type, row, meta) { return meta.row + 1 + meta.settings._iDisplayStart; } },
+                { data: 'employee_id' }, { data: 'name' }, { data: 'gender' }, { data: 'phone_number' },
+                { data: 'date_of_joining' }, { data: 'department' }, { data: 'role' }, { data: 'field' },
+                { data: 'client' }, { data: 'location' }, { data: 'payment_type' }, { data: 'bank' },
+                { data: 'account_number' }, { data: 'status' }, { data: 'status_date' }, { data: 'tax' },
+                { data: 'tin' }, { data: 'ssnit' }, { data: 'ssnit_number' }, { data: 'basic_salary' },
+                { data: 'allowances' }, { data: 'created_at' }, { data: 'created_period' }, { data: 'updated_at' },
+                { data: 'updated_period' }, { data: 'staff' }, { data: 'action', orderable: false, searchable: false }
+            ],
             layout: {
                 topStart: {
                     buttons: [ 

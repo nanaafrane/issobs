@@ -40,6 +40,10 @@ class EmployeeController extends Controller
         [$from, $to] = match ($period) {
             'daily' => [$anchor->copy()->startOfDay(), $anchor->copy()->endOfDay()],
             'weekly' => [$anchor->copy()->startOfWeek(), $anchor->copy()->endOfWeek()],
+            'quarterly' => [$anchor->copy()->startOfQuarter(), $anchor->copy()->endOfQuarter()],
+            'semiannual' => ($anchor->month <= 6)
+                ? [$anchor->copy()->startOfYear(), $anchor->copy()->startOfYear()->addMonths(5)->endOfMonth()]
+                : [$anchor->copy()->startOfYear()->addMonths(6), $anchor->copy()->endOfYear()],
             'yearly' => [$anchor->copy()->startOfYear(), $anchor->copy()->endOfYear()],
             default => [$anchor->copy()->startOfMonth(), $anchor->copy()->endOfMonth()],
         };
@@ -168,6 +172,18 @@ class EmployeeController extends Controller
                 $start = $cursor->copy()->startOfWeek();
                 $end = $cursor->copy()->endOfWeek();
                 $next = $cursor->copy()->addWeek();
+            } elseif ($period === 'quarterly') {
+                $start = $cursor->copy()->startOfQuarter();
+                $end = $cursor->copy()->endOfQuarter();
+                $next = $cursor->copy()->addQuarter();
+            } elseif ($period === 'semiannual') {
+                $start = $cursor->month <= 6
+                    ? $cursor->copy()->startOfYear()
+                    : $cursor->copy()->startOfYear()->addMonths(6);
+                $end = $cursor->month <= 6
+                    ? $cursor->copy()->startOfYear()->addMonths(5)->endOfMonth()
+                    : $cursor->copy()->endOfYear();
+                $next = $cursor->copy()->addMonths(6);
             } elseif ($period === 'yearly') {
                 $start = $cursor->copy()->startOfYear();
                 $end = $cursor->copy()->endOfYear();
@@ -199,6 +215,13 @@ class EmployeeController extends Controller
             [$pf, $pt] = match ($period) {
                 'daily' => [$anchor->copy()->subDays($i)->startOfDay(), $anchor->copy()->subDays($i)->endOfDay()],
                 'weekly' => [$anchor->copy()->subWeeks($i)->startOfWeek(), $anchor->copy()->subWeeks($i)->endOfWeek()],
+                'quarterly' => [
+                    $anchor->copy()->subMonths(3 * $i)->startOfQuarter(),
+                    $anchor->copy()->subMonths(3 * $i)->endOfQuarter(),
+                ],
+                'semiannual' => ($anchor->copy()->subMonths(6 * $i)->month <= 6)
+                    ? [$anchor->copy()->subMonths(6 * $i)->startOfYear(), $anchor->copy()->subMonths(6 * $i)->startOfYear()->addMonths(5)->endOfMonth()]
+                    : [$anchor->copy()->subMonths(6 * $i)->startOfYear()->addMonths(6), $anchor->copy()->subMonths(6 * $i)->endOfYear()],
                 'yearly' => [$anchor->copy()->subYears($i)->startOfYear(), $anchor->copy()->subYears($i)->endOfYear()],
                 default => [$anchor->copy()->subMonths($i)->startOfMonth(), $anchor->copy()->subMonths($i)->endOfMonth()],
             };
@@ -340,6 +363,112 @@ class EmployeeController extends Controller
         return view('employees.index', compact( 'employees', 'activeEmployees', 'terminatedEmployees', 'employeeAccra', 'employeeAccraTerminated', 'employeeAccraActive', 'employeeBotwe', 'employeeBotweTerminated', 'employeeBotweActive', 'employeeTema', 'employeeTemaTerminated', 'employeeTemaActive', 'employeeTakoradiActive', 'employeeTakoradiTerminated','employeeTakoradi', 'employeeKoforiduaActive', 'employeeKoforiduaTerminated','employeeKoforidua', 'employeeKumasiActive', 'employeeKumasiTerminated','employeeKumasi', 'employeeShyhills', 'employeeShyhillsTerminated', 'employeeShyhillsActive'));
    
         }
+
+    /** Paginated employee data for the employee-list DataTable. */
+    public function datatable(Request $request)
+    {
+        $user = Auth::user();
+        $canViewAll = $user?->hasRole(['Invoice', 'Finance Manager'])
+            || ($user?->department?->name === 'HR' && $user?->role?->name === 'Manager');
+
+        $query = employee::query()
+            ->select([
+                'employees.id', 'employees.name', 'employees.gender', 'employees.phone_number',
+                'employees.date_of_joining', 'employees.location', 'employees.payment_type',
+                'employees.status', 'employees.status_date', 'employees.tax_button', 'employees.tin_number',
+                'employees.ssnit_button', 'employees.ssnit_number', 'employees.basic_salary',
+                'employees.allowances', 'employees.created_at', 'employees.updated_at', 'employees.ho_status',
+                'departments.name as department_name', 'roles.name as role_name', 'fields.name as field_name',
+                'clients.name as client_name', 'clients.business_name as client_business_name',
+                'payment_infos.acc_number', 'banks.name as bank_name', 'users.name as staff_name',
+            ])
+            ->leftJoin('departments', 'departments.id', '=', 'employees.department_id')
+            ->leftJoin('roles', 'roles.id', '=', 'employees.role_id')
+            ->leftJoin('fields', 'fields.id', '=', 'employees.field_id')
+            ->leftJoin('clients', 'clients.id', '=', 'employees.client_id')
+            ->leftJoin('payment_infos', 'payment_infos.employee_id', '=', 'employees.id')
+            ->leftJoin('banks', 'banks.id', '=', 'payment_infos.bank_id')
+            ->leftJoin('users', 'users.id', '=', 'employees.user_id1')
+            ->where('employees.ho_status', 'approved')
+            ->whereIn('employees.status', ['Active', 'Terminated']);
+
+        if (! $canViewAll) {
+            $fieldIds = $user?->field_id === 3 ? [3, 7] : array_filter([$user?->field_id]);
+            $fieldIds ? $query->whereIn('employees.field_id', $fieldIds) : $query->whereRaw('1 = 0');
+        }
+
+        $recordsTotal = (clone $query)->distinct('employees.id')->count('employees.id');
+        $columns = $request->input('columns', []);
+        foreach ($columns as $index => $column) {
+            $value = trim((string) ($column['columnControl']['search']['value'] ?? $column['search']['value'] ?? ''));
+            if ($value === '') {
+                continue;
+            }
+
+            switch ((int) $index) {
+                case 1: $query->where('employees.id', 'like', "%{$value}%"); break;
+                case 2: $query->where('employees.name', 'like', "%{$value}%"); break;
+                case 3: $query->where('employees.gender', 'like', "%{$value}%"); break;
+                case 4: $query->where('employees.phone_number', 'like', "%{$value}%"); break;
+                case 5: $query->whereRaw("DATE_FORMAT(employees.date_of_joining, '%W %M %d, %Y') LIKE ?", ["%{$value}%"]); break;
+                case 6: $query->where('departments.name', 'like', "%{$value}%"); break;
+                case 7: $query->where('roles.name', 'like', "%{$value}%"); break;
+                case 8: $query->where('fields.name', 'like', "%{$value}%"); break;
+                case 9: $query->where(function ($q) use ($value) { $q->where('clients.name', 'like', "%{$value}%")->orWhere('clients.business_name', 'like', "%{$value}%"); }); break;
+                case 10: $query->where('employees.location', 'like', "%{$value}%"); break;
+                case 11: $query->where('employees.payment_type', 'like', "%{$value}%"); break;
+                case 12: $query->where('banks.name', 'like', "%{$value}%"); break;
+                case 13: $query->where('payment_infos.acc_number', 'like', "%{$value}%"); break;
+                case 14: $query->where('employees.status', 'like', "%{$value}%"); break;
+                case 17: $query->where('employees.tin_number', 'like', "%{$value}%"); break;
+                case 19: $query->where('employees.ssnit_number', 'like', "%{$value}%"); break;
+                case 26: $query->where('users.name', 'like', "%{$value}%"); break;
+            }
+        }
+
+        $recordsFiltered = (clone $query)->distinct('employees.id')->count('employees.id');
+        $orderMap = [1 => 'employees.id', 2 => 'employees.name', 3 => 'employees.gender', 4 => 'employees.phone_number', 5 => 'employees.date_of_joining', 6 => 'departments.name', 7 => 'roles.name', 8 => 'fields.name', 9 => 'clients.business_name', 10 => 'employees.location', 11 => 'employees.payment_type', 12 => 'banks.name', 13 => 'payment_infos.acc_number', 14 => 'employees.status', 15 => 'employees.status_date', 20 => 'employees.basic_salary', 21 => 'employees.allowances', 22 => 'employees.created_at', 24 => 'employees.updated_at', 26 => 'users.name'];
+        $orderColumn = (int) $request->input('order.0.column', 22);
+        $orderDir = $request->input('order.0.dir', 'desc') === 'asc' ? 'asc' : 'desc';
+        $rows = $query->orderBy($orderMap[$orderColumn] ?? 'employees.created_at', $orderDir)
+            ->offset(max(0, (int) $request->input('start', 0)))
+            ->limit(max(1, (int) $request->input('length', 25)))->get();
+
+        $canEditAll = $user?->hasRole(['Finance Manager']) ?? false;
+        $canViewSalary = ! ($user?->hasRole(['Manager']) ?? false);
+        $data = $rows->map(function ($employee) use ($canViewAll, $canEditAll, $canViewSalary) {
+            $clientName = trim($employee->client_name . ' ' . $employee->client_business_name);
+            $actions = '<div class="dropdown"><button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown"><i class="icon-base bx bx-dots-vertical-rounded"></i></button><div class="dropdown-menu"><a class="dropdown-item" href="' . e(url('employees/' . $employee->id)) . '"><i class="icon-base bx bxs-bullseye"></i> view</a>';
+            if ($canViewAll || $employee->ho_status !== 'approved' || $canEditAll) {
+                $actions .= '<a class="dropdown-item" href="' . e(url('employees/' . $employee->id . '/edit')) . '"><i class="icon-base bx bx-edit-alt me-1"></i> Edit</a>';
+            }
+            if ($canViewSalary) {
+                $actions .= '<hr><a class="dropdown-item" href="' . e(url('employeesSalary/' . $employee->id)) . '"><i class="icon-base bx bx-money-withdraw"></i> Salaries</a>';
+            }
+            $actions .= '</div></div>';
+
+            return [
+                'row_number' => '', 'employee_id' => 'FWSS ' . $employee->id, 'name' => $employee->name,
+                'gender' => $employee->gender, 'phone_number' => $employee->phone_number,
+                'date_of_joining' => $employee->date_of_joining ? Carbon::parse($employee->date_of_joining)->format('l F d, Y') : '',
+                'department' => $employee->department_name, 'role' => $employee->role_name, 'field' => $employee->field_name,
+                'client' => $clientName, 'location' => $employee->location, 'payment_type' => $employee->payment_type,
+                'bank' => $employee->bank_name, 'account_number' => $employee->acc_number,
+                'status' => '<span class="badge ' . ($employee->status === 'Active' ? 'bg-label-success' : 'bg-label-danger') . '">' . e($employee->status) . '</span>',
+                'status_date' => $employee->status_date ? Carbon::parse($employee->status_date)->format('F, Y') : '',
+                'tax' => $employee->tax_button === 'on' ? '<span class="badge bg-label-dark">on</span>' : '<span class="badge bg-label-danger">OFF</span>',
+                'tin' => $employee->tin_number, 'ssnit' => $employee->ssnit_button === 'on' ? '<span class="badge bg-label-dark">on</span>' : '<span class="badge bg-label-danger">OFF</span>',
+                'ssnit_number' => $employee->ssnit_number, 'basic_salary' => $employee->basic_salary, 'allowances' => $employee->allowances,
+                'created_at' => $employee->created_at ? Carbon::parse($employee->created_at)->format('F, Y') : '',
+                'created_period' => $employee->created_at ? Carbon::parse($employee->created_at)->diffForHumans() : '',
+                'updated_at' => $employee->updated_at ? Carbon::parse($employee->updated_at)->format('F, Y') : '',
+                'updated_period' => $employee->updated_at ? Carbon::parse($employee->updated_at)->diffForHumans() : '',
+                'staff' => $employee->staff_name, 'action' => $actions,
+            ];
+        })->all();
+
+        return response()->json(['draw' => (int) $request->input('draw', 1), 'recordsTotal' => $recordsTotal, 'recordsFiltered' => $recordsFiltered, 'data' => $data]);
+    }
 
     /**
      * Show the form for creating a new resource.
