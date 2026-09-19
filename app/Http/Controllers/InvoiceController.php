@@ -56,8 +56,8 @@ class InvoiceController extends Controller
 
         $byField = (clone $base)->join('clients', 'clients.id', '=', 'invoices.client_id')
             ->join('fields', 'fields.id', '=', 'clients.field_id')
-            ->select('fields.name as field_name', DB::raw('SUM(invoices.total) as total'), DB::raw('COUNT(invoices.id) as cnt'))
-            ->groupBy('fields.name')->orderByDesc('total')->get();
+            ->select('fields.id as field_id', 'fields.name as field_name', DB::raw('SUM(invoices.total) as total'), DB::raw('COUNT(invoices.id) as cnt'))
+            ->groupBy('fields.id', 'fields.name')->orderByDesc('total')->get();
 
         $byStatus = (clone $base)->select('status', DB::raw('SUM(total) as total'), DB::raw('COUNT(*) as cnt'))
             ->groupBy('status')->get();
@@ -104,6 +104,107 @@ class InvoiceController extends Controller
         }
 
         return $samples ? round(array_sum($samples) / count($samples), 2) : 0.0;
+    }
+
+    /**
+     * Resolve the [from, to] window for a report period + anchor date.
+     * Shared by the report's drilldown endpoints so every window matches
+     * the one the report() action used to build the tables.
+     */
+    protected function reportRange(string $period, Carbon $anchor): array
+    {
+        return match ($period) {
+            'daily' => [$anchor->copy()->startOfDay(), $anchor->copy()->endOfDay()],
+            'weekly' => [$anchor->copy()->startOfWeek(), $anchor->copy()->endOfWeek()],
+            'monthly' => [$anchor->copy()->startOfMonth(), $anchor->copy()->endOfMonth()],
+            'quarterly' => [$anchor->copy()->startOfQuarter(), $anchor->copy()->endOfQuarter()],
+            'semiannual' => ($anchor->month <= 6)
+                ? [$anchor->copy()->startOfYear(), $anchor->copy()->startOfYear()->addMonths(5)->endOfMonth()]
+                : [$anchor->copy()->startOfYear()->addMonths(6), $anchor->copy()->endOfYear()],
+            'yearly' => [$anchor->copy()->startOfYear(), $anchor->copy()->endOfYear()],
+            default => [$anchor->copy()->startOfMonth(), $anchor->copy()->endOfMonth()],
+        };
+    }
+
+    /**
+     * Return the clients invoiced within a field office for the report's
+     * selected window (used by the report's "By Field Office" drilldown).
+     */
+    public function fieldDetails(Request $request, $fieldId)
+    {
+        $period = $request->input('period', 'monthly');
+        $anchor = $request->filled('date') ? Carbon::parse($request->date) : Carbon::today();
+        [$from, $to] = $this->reportRange($period, $anchor);
+
+        $clients = Invoice::query()
+            ->join('clients', 'clients.id', '=', 'invoices.client_id')
+            ->where('clients.field_id', $fieldId)
+            ->whereBetween('invoices.invoice_month', [$from, $to])
+            ->select('clients.id', 'clients.business_name', 'clients.name', DB::raw('COUNT(invoices.id) as cnt'), DB::raw('SUM(invoices.total) as total'))
+            ->groupBy('clients.id', 'clients.business_name', 'clients.name')
+            ->orderByDesc('total')
+            ->get()
+            ->map(fn ($c) => [
+                'id' => $c->id,
+                'business_name' => $c->business_name,
+                'name' => $c->name,
+                'entries' => (int) $c->cnt,
+                'total' => (float) $c->total,
+            ]);
+
+        return response()->json(['clients' => $clients]);
+    }
+
+    /**
+     * Return the issuers (staff) who raised invoices for a client within the
+     * report's selected window (used by the "Top 10 Clients" drilldown).
+     */
+    public function clientDetails(Request $request, $clientId)
+    {
+        $period = $request->input('period', 'monthly');
+        $anchor = $request->filled('date') ? Carbon::parse($request->date) : Carbon::today();
+        [$from, $to] = $this->reportRange($period, $anchor);
+
+        $issuers = Invoice::query()
+            ->join('users', 'users.id', '=', 'invoices.user_id')
+            ->where('invoices.client_id', $clientId)
+            ->whereBetween('invoices.invoice_month', [$from, $to])
+            ->select('users.id', 'users.name', DB::raw('COUNT(invoices.id) as cnt'), DB::raw('SUM(invoices.total) as total'))
+            ->groupBy('users.id', 'users.name')
+            ->orderByDesc('total')
+            ->get()
+            ->map(fn ($u) => ['id' => $u->id, 'name' => $u->name, 'entries' => (int) $u->cnt, 'total' => (float) $u->total]);
+
+        return response()->json(['issuers' => $issuers]);
+    }
+
+    /**
+     * Return the clients an issuer invoiced within the report's selected
+     * window (used by the "Top 10 Issuers" drilldown).
+     */
+    public function issuerDetails(Request $request, $issuerId)
+    {
+        $period = $request->input('period', 'monthly');
+        $anchor = $request->filled('date') ? Carbon::parse($request->date) : Carbon::today();
+        [$from, $to] = $this->reportRange($period, $anchor);
+
+        $clients = Invoice::query()
+            ->join('clients', 'clients.id', '=', 'invoices.client_id')
+            ->where('invoices.user_id', $issuerId)
+            ->whereBetween('invoices.invoice_month', [$from, $to])
+            ->select('clients.id', 'clients.business_name', 'clients.name', DB::raw('COUNT(invoices.id) as cnt'), DB::raw('SUM(invoices.total) as total'))
+            ->groupBy('clients.id', 'clients.business_name', 'clients.name')
+            ->orderByDesc('total')
+            ->get()
+            ->map(fn ($c) => [
+                'id' => $c->id,
+                'business_name' => $c->business_name,
+                'name' => $c->name,
+                'entries' => (int) $c->cnt,
+                'total' => (float) $c->total,
+            ]);
+
+        return response()->json(['clients' => $clients]);
     }
 
 

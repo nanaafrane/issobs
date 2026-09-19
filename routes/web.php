@@ -71,6 +71,9 @@ Route::resource('service', ServiceController::class);
 Route::resource('transaction', TransactionController::class);
 
 Route::get('invoice-report', [InvoiceController::class, 'report'])->name('invoice.report');
+Route::get('invoice/field/{field}/details', [InvoiceController::class, 'fieldDetails']);
+Route::get('invoice/client/{client}/details', [InvoiceController::class, 'clientDetails']);
+Route::get('invoice/issuer/{issuer}/details', [InvoiceController::class, 'issuerDetails']);
 Route::get('invoice/data', [InvoiceController::class, 'datatable'])->name('invoice.data');
 Route::resource('invoice', InvoiceController::class);
 Route::get('receipt/data', [ReceiptController::class, 'datatable'])->name('receipt.data');
@@ -89,6 +92,9 @@ Route::get('searchOutstandingInvoices', [InvoiceController::class, 'searchOutsta
 Route::get('searchPartPaymentOutstanding', [InvoiceController::class, 'searchPartPaymentOutstanding'])->name('invoice.searchPartPaymentOutstanding');
 
 Route::get('receipt-report', [ReceiptController::class, 'report'])->name('receipt.report');
+Route::get('receipt/field/{field}/details', [ReceiptController::class, 'fieldDetails']);
+Route::get('receipt/client/{client}/details', [ReceiptController::class, 'clientDetails']);
+Route::get('receipt/collector/{collector}/details', [ReceiptController::class, 'collectorDetails']);
 Route::resource('receipt', ReceiptController::class);
 Route::get('receiptPending', [ReceiptController::class, 'PendingReceipts'])->name('receipt.pending');
 Route::post('receiptChannels', [ReceiptController::class, 'receiptChannels']);
@@ -222,4 +228,4 @@ Route::get('exportCategory/{month}/{category}', [SalaryController::class, 'expor
 //     //     # code...
 //     //     echo $value->name. " / ". $value->business_name ;
 //     // }
-// }); 
+// });

@@ -64,13 +64,24 @@ class ReceiptController extends Controller
         $base = Receipt::where('receipts.ho_status', 'approved')
             ->whereBetween('receipts.receipt_month', [$from, $to]);
 
+        // Scope the whole report to the field offices the user may see —
+        // same rule as the receipt list (see reportAllowedFieldIds()).
+        $fieldIds = $this->reportAllowedFieldIds();
+        if ($fieldIds !== null) {
+            if ($fieldIds) {
+                $base->whereHas('client', fn ($q) => $q->whereIn('field_id', $fieldIds));
+            } else {
+                $base->whereRaw('1 = 0');
+            }
+        }
+
         $total = (clone $base)->sum('amount_received');
         $count = (clone $base)->count();
 
         $byField = (clone $base)->join('clients', 'clients.id', '=', 'receipts.client_id')
             ->join('fields', 'fields.id', '=', 'clients.field_id')
-            ->select('fields.name as field_name', DB::raw('SUM(receipts.amount_received) as total'), DB::raw('COUNT(receipts.id) as cnt'))
-            ->groupBy('fields.name')->orderByDesc('total')->get();
+            ->select('fields.id as field_id', 'fields.name as field_name', DB::raw('SUM(receipts.amount_received) as total'), DB::raw('COUNT(receipts.id) as cnt'))
+            ->groupBy('fields.id', 'fields.name')->orderByDesc('total')->get();
 
         // Payment method totals from explicit columns
         $modes = (clone $base)->select(
@@ -96,7 +107,7 @@ class ReceiptController extends Controller
         $byStatus = (clone $base)->select('status', DB::raw('SUM(amount_received) as total'), DB::raw('COUNT(*) as cnt'))
             ->groupBy('status')->get();
 
-        $projection = $this->projectNextPeriodReceipts($period, $anchor);
+        $projection = $this->projectNextPeriodReceipts($period, $anchor, $fieldIds);
 
         return view('sales.receipt_report', compact(
             'period', 'anchor', 'from', 'to', 'total', 'count',
@@ -104,7 +115,7 @@ class ReceiptController extends Controller
         ));
     }
 
-    protected function projectNextPeriodReceipts(string $period, Carbon $anchor): float
+    protected function projectNextPeriodReceipts(string $period, Carbon $anchor, ?array $fieldIds = null): float
     {
         $samples = [];
 
@@ -123,10 +134,171 @@ class ReceiptController extends Controller
                 default => [$anchor->copy()->subMonths($i)->startOfMonth(), $anchor->copy()->subMonths($i)->endOfMonth()],
             };
 
-            $samples[] = Receipt::where('ho_status', 'approved')->whereBetween('receipt_month', [$from, $to])->sum('amount_received');
+            $query = Receipt::where('ho_status', 'approved')->whereBetween('receipt_month', [$from, $to]);
+
+            if ($fieldIds !== null) {
+                if ($fieldIds) {
+                    $query->whereHas('client', fn ($q) => $q->whereIn('field_id', $fieldIds));
+                } else {
+                    $query->whereRaw('1 = 0');
+                }
+            }
+
+            $samples[] = $query->sum('amount_received');
         }
 
         return $samples ? round(array_sum($samples) / count($samples), 2) : 0.0;
+    }
+
+    /**
+     * Field offices the authenticated user may see in the receipt report.
+     * Mirrors the access rule used by the receipt list's datatable()
+     * (and index()): a user is limited to their own field office, with
+     * Tema (field 3) also covering Shaihills (field 7). The sole
+     * exception is Finance Manager, who can see every field office.
+     *
+     * Returns null when unrestricted (see every field office), or an
+     * array of allowed field ids (possibly empty, meaning "see nothing")
+     * otherwise.
+     */
+    protected function reportAllowedFieldIds(): ?array
+    {
+        $user = Auth::user();
+
+        if ($user?->hasRole(['Finance Manager'])) {
+            return null;
+        }
+
+        return $user?->field_id === 3 ? [3, 7] : array_filter([$user?->field_id]);
+    }
+
+    /**
+     * Resolve the [from, to] window for a report period + anchor date.
+     * Shared by the report's drilldown endpoints so every window matches
+     * the one the report() action used to build the tables.
+     */
+    protected function reportRange(string $period, Carbon $anchor): array
+    {
+        return match ($period) {
+            'daily' => [$anchor->copy()->startOfDay(), $anchor->copy()->endOfDay()],
+            'weekly' => [$anchor->copy()->startOfWeek(), $anchor->copy()->endOfWeek()],
+            'monthly' => [$anchor->copy()->startOfMonth(), $anchor->copy()->endOfMonth()],
+            'quarterly' => [$anchor->copy()->startOfQuarter(), $anchor->copy()->endOfQuarter()],
+            'semiannual' => ($anchor->month <= 6)
+                ? [$anchor->copy()->startOfYear(), $anchor->copy()->startOfYear()->addMonths(5)->endOfMonth()]
+                : [$anchor->copy()->startOfYear()->addMonths(6), $anchor->copy()->endOfYear()],
+            'yearly' => [$anchor->copy()->startOfYear(), $anchor->copy()->endOfYear()],
+            default => [$anchor->copy()->startOfMonth(), $anchor->copy()->endOfMonth()],
+        };
+    }
+
+    /**
+     * Return the clients with receipts within a field office for the
+     * report's selected window (used by the "By Field Office" drilldown).
+     */
+    public function fieldDetails(Request $request, $fieldId)
+    {
+        $fieldIds = $this->reportAllowedFieldIds();
+        if ($fieldIds !== null && ! in_array((int) $fieldId, $fieldIds, true)) {
+            abort(403);
+        }
+
+        $period = $request->input('period', 'monthly');
+        $anchor = $request->filled('date') ? Carbon::parse($request->date) : Carbon::today();
+        [$from, $to] = $this->reportRange($period, $anchor);
+
+        $clients = Receipt::query()
+            ->join('clients', 'clients.id', '=', 'receipts.client_id')
+            ->where('clients.field_id', $fieldId)
+            ->where('receipts.ho_status', 'approved')
+            ->whereBetween('receipts.receipt_month', [$from, $to])
+            ->select('clients.id', 'clients.business_name', 'clients.name', DB::raw('COUNT(receipts.id) as cnt'), DB::raw('SUM(receipts.amount_received) as total'))
+            ->groupBy('clients.id', 'clients.business_name', 'clients.name')
+            ->orderByDesc('total')
+            ->get()
+            ->map(fn ($c) => [
+                'id' => $c->id,
+                'business_name' => $c->business_name,
+                'name' => $c->name,
+                'entries' => (int) $c->cnt,
+                'total' => (float) $c->total,
+            ]);
+
+        return response()->json(['clients' => $clients]);
+    }
+
+    /**
+     * Return the collectors who receipted payments for a client within the
+     * report's selected window (used by the "Top 10 Clients" drilldown).
+     */
+    public function clientDetails(Request $request, $clientId)
+    {
+        $fieldIds = $this->reportAllowedFieldIds();
+        if ($fieldIds !== null) {
+            $clientFieldId = Client::whereKey($clientId)->value('field_id');
+            if ($clientFieldId === null || ! in_array((int) $clientFieldId, $fieldIds, true)) {
+                abort(403);
+            }
+        }
+
+        $period = $request->input('period', 'monthly');
+        $anchor = $request->filled('date') ? Carbon::parse($request->date) : Carbon::today();
+        [$from, $to] = $this->reportRange($period, $anchor);
+
+        $collectors = Receipt::query()
+            ->join('users', 'users.id', '=', 'receipts.user_id')
+            ->where('receipts.client_id', $clientId)
+            ->where('receipts.ho_status', 'approved')
+            ->whereBetween('receipts.receipt_month', [$from, $to])
+            ->select('users.id', 'users.name', DB::raw('COUNT(receipts.id) as cnt'), DB::raw('SUM(receipts.amount_received) as total'))
+            ->groupBy('users.id', 'users.name')
+            ->orderByDesc('total')
+            ->get()
+            ->map(fn ($u) => ['id' => $u->id, 'name' => $u->name, 'entries' => (int) $u->cnt, 'total' => (float) $u->total]);
+
+        return response()->json(['collectors' => $collectors]);
+    }
+
+    /**
+     * Return the clients a collector receipted within the report's selected
+     * window (used by the "Top 10 Collectors" drilldown).
+     */
+    public function collectorDetails(Request $request, $collectorId)
+    {
+        $fieldIds = $this->reportAllowedFieldIds();
+
+        $period = $request->input('period', 'monthly');
+        $anchor = $request->filled('date') ? Carbon::parse($request->date) : Carbon::today();
+        [$from, $to] = $this->reportRange($period, $anchor);
+
+        $query = Receipt::query()
+            ->join('clients', 'clients.id', '=', 'receipts.client_id')
+            ->where('receipts.user_id', $collectorId)
+            ->where('receipts.ho_status', 'approved')
+            ->whereBetween('receipts.receipt_month', [$from, $to]);
+
+        if ($fieldIds !== null) {
+            if ($fieldIds) {
+                $query->whereIn('clients.field_id', $fieldIds);
+            } else {
+                $query->whereRaw('1 = 0');
+            }
+        }
+
+        $clients = $query
+            ->select('clients.id', 'clients.business_name', 'clients.name', DB::raw('COUNT(receipts.id) as cnt'), DB::raw('SUM(receipts.amount_received) as total'))
+            ->groupBy('clients.id', 'clients.business_name', 'clients.name')
+            ->orderByDesc('total')
+            ->get()
+            ->map(fn ($c) => [
+                'id' => $c->id,
+                'business_name' => $c->business_name,
+                'name' => $c->name,
+                'entries' => (int) $c->cnt,
+                'total' => (float) $c->total,
+            ]);
+
+        return response()->json(['clients' => $clients]);
     }
 
     /**
@@ -313,7 +485,7 @@ class ReceiptController extends Controller
 
             return [
                 'receipt_id' => 'FWSSR' . $receipt->id,
-                'receipt_month' => $receipt->receipt_month ? Carbon::parse($receipt->receipt_month)->format('l, F j, Y') : '',
+                'receipt_month' => $receipt->receipt_month ? Carbon::parse($receipt->receipt_month)->format('l j, F Y') : '',
                 'invoice_id' => 'FWSSi' . $receipt->invoice_id,
                 'invoice_month' => $receipt->invoice_month ? Carbon::parse($receipt->invoice_month)->format('F, Y') : '',
                 'client_name' => $clientName, 'phone_number' => $receipt->phone_number,

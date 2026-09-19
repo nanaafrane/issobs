@@ -438,7 +438,7 @@
                             <thead><tr><th>Office</th><th>Invoices</th><th>Total</th></tr></thead>
                             <tbody>
                                 @forelse($byField as $row)
-                                <tr><td>{{ $row->field_name }}</td><td>{{ $row->cnt }}</td><td>GH&#x20B5; {{ number_format($row->total,2) }}</td></tr>
+                                <tr class="inv-drill-row" data-type="field" data-field-id="{{ $row->field_id }}"><td>{{ $row->field_name }}</td><td>{{ $row->cnt }}</td><td>GH&#x20B5; {{ number_format($row->total,2) }}</td></tr>
                                 @empty
                                 <tr><td colspan="3" class="text-muted text-center py-3">No data for this period.</td></tr>
                                 @endforelse
@@ -455,7 +455,7 @@
                             <thead><tr><th>Client</th><th>Invoices</th><th>Total</th></tr></thead>
                             <tbody>
                                 @forelse($topClients as $row)
-                                <tr><td>{{ $row->business_name ?: $row->name }}</td><td>{{ $row->cnt }}</td><td>GH&#x20B5; {{ number_format($row->total,2) }}</td></tr>
+                                <tr class="inv-drill-row" data-type="client" data-client-id="{{ $row->id }}"><td>{{ $row->business_name ?: $row->name }}</td><td>{{ $row->cnt }}</td><td>GH&#x20B5; {{ number_format($row->total,2) }}</td></tr>
                                 @empty
                                 <tr><td colspan="3" class="text-muted text-center py-3">No data for this period.</td></tr>
                                 @endforelse
@@ -475,7 +475,7 @@
                             <thead><tr><th>User</th><th>Invoices</th><th>Total</th></tr></thead>
                             <tbody>
                                 @forelse($topIssuers as $row)
-                                <tr><td>{{ $row->name }}</td><td>{{ $row->cnt }}</td><td>GH&#x20B5; {{ number_format($row->total,2) }}</td></tr>
+                                <tr class="inv-drill-row" data-type="issuer" data-issuer-id="{{ $row->id }}"><td>{{ $row->name }}</td><td>{{ $row->cnt }}</td><td>GH&#x20B5; {{ number_format($row->total,2) }}</td></tr>
                                 @empty
                                 <tr><td colspan="3" class="text-muted text-center py-3">No data for this period.</td></tr>
                                 @endforelse
@@ -538,6 +538,162 @@
         } else {
             document.querySelector('#inv-status-chart').innerHTML = '<div class="text-muted p-4">No invoice status data for this period.</div>';
         }
+
+        // Drilldown modal: click a row in "By Field Office", "Top 10 Clients"
+        // or "Top 10 Issuers" to fetch a grouped breakdown for that entity,
+        // scoped to the same period/anchor as the report above.
+        document.querySelectorAll('.inv-drill-row').forEach(r => r.style.cursor = 'pointer');
+        const invModalEl = document.createElement('div');
+        invModalEl.innerHTML = `
+        <div class="modal fade" id="inv-details-modal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="inv-details-title">Details</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div id="inv-details-loading" class="text-center py-3">Loading…</div>
+                        <div id="inv-details-body" class="d-none">
+                            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                                <div class="small text-muted" id="inv-details-summary"></div>
+                                <button type="button" class="btn btn-success btn-sm" id="inv-details-export" disabled>
+                                    <i class="bx bx-spreadsheet me-1"></i> Export Excel
+                                </button>
+                            </div>
+                            <div class="table-responsive border rounded">
+                                <table class="table table-sm table-hover mb-0" id="inv-details-table">
+                                    <thead class="table-light"><tr id="inv-details-table-head"></tr></thead>
+                                    <tbody id="inv-details-rows"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+        document.body.appendChild(invModalEl);
+        let invExportName = 'Details';
+
+        document.getElementById('inv-details-export').addEventListener('click', function () {
+            const table = document.getElementById('inv-details-table');
+            const workbook = '<html><head><meta charset="utf-8"></head><body><h3>'
+                + invExportName.replace(/[&<>"']/g, '') + '</h3>'
+                + table.outerHTML + '</body></html>';
+            const file = new Blob(['\ufeff', workbook], { type: 'application/vnd.ms-excel' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(file);
+            link.download = invExportName.replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '') + '-invoices.xls';
+            link.click();
+            URL.revokeObjectURL(link.href);
+        });
+
+        function renderInvModalTable(headers, rows) {
+            const head = document.getElementById('inv-details-table-head');
+            const body = document.getElementById('inv-details-rows');
+            head.innerHTML = '';
+            headers.forEach((header, index) => {
+                const cell = document.createElement('th');
+                cell.textContent = header;
+                if (index > 0) cell.className = 'text-end';
+                head.appendChild(cell);
+            });
+            body.innerHTML = '';
+            if (!rows.length) {
+                body.innerHTML = `<tr><td colspan="${headers.length}" class="text-center text-muted py-3">No invoices for this period.</td></tr>`;
+                return false;
+            }
+            rows.forEach(values => {
+                const row = document.createElement('tr');
+                values.forEach((value, index) => {
+                    const cell = document.createElement('td');
+                    cell.textContent = value;
+                    if (index > 0) cell.className = 'text-end';
+                    row.appendChild(cell);
+                });
+                body.appendChild(row);
+            });
+            return true;
+        }
+
+        function showInvDetails(type, key, displayName) {
+            const title = type === 'field' ? 'Field Office Details'
+                : type === 'client' ? 'Client Details'
+                : type === 'issuer' ? 'Issuer Details'
+                : 'Details';
+            const titleNode = document.getElementById('inv-details-title');
+            const loadingNode = document.getElementById('inv-details-loading');
+            const bodyNode = document.getElementById('inv-details-body');
+            const summaryNode = document.getElementById('inv-details-summary');
+            const exportNode = document.getElementById('inv-details-export');
+
+            titleNode.textContent = title + (displayName ? ' — ' + displayName : '');
+            loadingNode.style.display = '';
+            bodyNode.classList.add('d-none');
+            summaryNode.textContent = '';
+            exportNode.disabled = true;
+            invExportName = displayName || title;
+
+            let url;
+            if (type === 'field') url = `/invoice/field/${encodeURIComponent(key)}/details`;
+            else if (type === 'client') url = `/invoice/client/${encodeURIComponent(key)}/details`;
+            else if (type === 'issuer') url = `/invoice/issuer/${encodeURIComponent(key)}/details`;
+            else return;
+
+            url += `?period=${encodeURIComponent(reportPeriod)}&date=${encodeURIComponent(@json($anchor->format('Y-m-d')))}`;
+
+            fetch(url, { headers: { 'Accept': 'application/json' } })
+                .then(r => r.json())
+                .then(data => {
+                    loadingNode.style.display = 'none';
+                    bodyNode.classList.remove('d-none');
+
+                    if (type === 'field') {
+                        const clients = Array.isArray(data.clients) ? data.clients : [];
+                        const total = clients.reduce((sum, c) => sum + (Number(c.total) || 0), 0);
+                        summaryNode.textContent = `${clients.length} client${clients.length === 1 ? '' : 's'} · GH₵ ${total.toFixed(2)} total`;
+                        exportNode.disabled = !renderInvModalTable(['Client', 'Invoices', 'Total (GH₵)'], clients.map(c => [c.business_name || c.name || '–', Number(c.entries) || 0, (Number(c.total) || 0).toFixed(2)]));
+                    } else if (type === 'client') {
+                        const issuers = Array.isArray(data.issuers) ? data.issuers : [];
+                        const total = issuers.reduce((sum, i) => sum + (Number(i.total) || 0), 0);
+                        summaryNode.textContent = `${issuers.length} issuer${issuers.length === 1 ? '' : 's'} · GH₵ ${total.toFixed(2)} total`;
+                        exportNode.disabled = !renderInvModalTable(['Issuer', 'Invoices', 'Total (GH₵)'], issuers.map(i => [i.name || '–', Number(i.entries) || 0, (Number(i.total) || 0).toFixed(2)]));
+                    } else if (type === 'issuer') {
+                        const clients = Array.isArray(data.clients) ? data.clients : [];
+                        const total = clients.reduce((sum, c) => sum + (Number(c.total) || 0), 0);
+                        summaryNode.textContent = `${clients.length} client${clients.length === 1 ? '' : 's'} · GH₵ ${total.toFixed(2)} total`;
+                        exportNode.disabled = !renderInvModalTable(['Client', 'Invoices', 'Total (GH₵)'], clients.map(c => [c.business_name || c.name || '–', Number(c.entries) || 0, (Number(c.total) || 0).toFixed(2)]));
+                    }
+                })
+                .catch(() => {
+                    loadingNode.style.display = 'none';
+                    bodyNode.classList.remove('d-none');
+                    summaryNode.textContent = 'Unable to load drill-down data.';
+                    renderInvModalTable(['Details'], []);
+                });
+
+            if (window.bootstrap && typeof bootstrap.Modal === 'function') {
+                const m = new bootstrap.Modal(document.getElementById('inv-details-modal'));
+                m.show();
+            } else {
+                const el = document.getElementById('inv-details-modal');
+                el.classList.add('show');
+                el.style.display = 'block';
+            }
+        }
+
+        document.addEventListener('click', function (ev) {
+            const row = ev.target.closest('.inv-drill-row');
+            if (!row) return;
+            const type = row.dataset.type;
+            let key;
+            if (type === 'field') key = row.dataset.fieldId;
+            else if (type === 'client') key = row.dataset.clientId;
+            else if (type === 'issuer') key = row.dataset.issuerId;
+            else return;
+            const displayName = row.querySelector('td') ? row.querySelector('td').textContent.trim() : null;
+            showInvDetails(type, key, displayName);
+        });
     </script>
     @endsection
 

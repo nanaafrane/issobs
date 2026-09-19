@@ -369,7 +369,7 @@
                 @include('flash-messages')
             </div>
         @if(Auth::user()->hasRole(['Invoice', 'Finance Manager']))
-        <div class="row">
+        <!-- <div class="row">
             <div class="col-lg-2">
                 <div style="background: #152356; color: white;" class="card h-100">
                     <div class="card-body">
@@ -501,9 +501,9 @@
                 </div>
             </div>
 
-        </div>
+        </div> -->
         @elseif(Auth::user()->field?->name == 'Accra')
-        <div class="row">
+        <!-- <div class="row">
             <div class="col-xxl-12 mb-6 order-0">
                 <div style="background: #152356; color: white;" class="card h-100">
                     <div class="card-body">
@@ -521,11 +521,11 @@
                     </div>
                 </div>
             </div>
-        </div>
+        </div> -->
         @endif
 
         @if(Auth::user()->field?->name == 'Botwe')
-        <div class="row">
+        <!-- <div class="row">
             <div class="col-xxl-12 mb-6 order-0">
                 <div style="background: #152356; color: white;" class="card h-100">
                     <div class="card-body">
@@ -543,11 +543,11 @@
                     </div>
                 </div>
             </div>
-        </div>
+        </div> -->
         @endif
 
         @if(Auth::user()->field?->name == 'Tema')
-        <div class="row">
+        <!-- <div class="row">
             <div class="col-xxl-12 mb-6 order-0">
                 <div style="background: #152356; color: white;" class="card h-100">
                     <div class="card-body">
@@ -565,12 +565,12 @@
                     </div>
                 </div>
             </div>
-        </div>
+        </div> -->
         @endif
 
 
         @if(Auth::user()->field?->name == 'Takoradi')
-        <div class="row">
+        <!-- <div class="row">
             <div class="col-xxl-12 mb-6 order-0">
                 <div style="background: #152356; color: white;" class="card h-100">
                     <div class="card-body">
@@ -588,12 +588,12 @@
                     </div>
                 </div>
             </div>
-        </div>
+        </div> -->
         @endif
 
 
         @if(Auth::user()->field?->name == 'Koforidua')
-        <div class="row">
+        <!-- <div class="row">
             <div class="col-xxl-12 mb-6 order-0">
                 <div style="background: #152356; color: white;" class="card h-100">
                     <div class="card-body">
@@ -611,12 +611,12 @@
                     </div>
                 </div>
             </div>
-        </div>
+        </div> -->
         @endif
 
 
         @if(Auth::user()->field?->name == 'Kumasi')
-        <div class="row">
+        <!-- <div class="row">
             <div class="col-xxl-12 mb-6 order-0">
                 <div style="background: #152356; color: white;" class="card h-100">
                     <div class="card-body">
@@ -634,25 +634,9 @@
                     </div>
                 </div>
             </div>
-        </div>
+        </div> -->
         @endif
         <br>
-
-        <div class="row">
-            <form action="/receiptListSearch" method="GET">
-                @csrf
-                <div class="col">
-
-                    <label for="" class="form-label"> <strong>   CHOOSE A MONTH TO SEARCH </strong> </label> <br>
-
-                    <div class="form-check form-check-inline">
-                        <input type="month" class="form-control" name="month" required/> <br>
-                        
-                        <button class="btn btn-dark" type="submit" onclick="return confirm('Kindly Confirm?')"> <i class="icon-base bx bx-arrow-from-left"> </i> {{ __('') }}</button>
-                    </div>
-                </div>
-            </form>
-        </div>
 
          <hr> <br>  
 
@@ -708,7 +692,7 @@
                             @foreach($receipts as $receipt)
                             <tr>
                             <td>FWSSR{{$receipt->id}}</td>
-                            <td> {{ $receipt->receipt_month?->format('l, F j, Y') }} </td>
+                            <td> {{ $receipt->receipt_month?->format('l,j, F Y') }} </td>
                             <td>FWSSi{{$receipt->invoice_id}} </td>
                             <td> {{ $receipt->invoice?->invoice_month?->format('F, Y') }} </td>
                             @if ($receipt->client->name === $receipt->client->business_name)

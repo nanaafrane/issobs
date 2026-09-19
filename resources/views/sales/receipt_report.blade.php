@@ -441,7 +441,7 @@
                             <thead><tr><th>Office</th><th>Receipts</th><th>Total</th></tr></thead>
                             <tbody>
                                 @forelse($byField as $row)
-                                <tr><td>{{ $row->field_name }}</td><td>{{ $row->cnt }}</td><td>GH&#x20B5; {{ number_format($row->total,2) }}</td></tr>
+                                <tr class="rcpt-drill-row" data-type="field" data-field-id="{{ $row->field_id }}"><td>{{ $row->field_name }}</td><td>{{ $row->cnt }}</td><td>GH&#x20B5; {{ number_format($row->total,2) }}</td></tr>
                                 @empty
                                 <tr><td colspan="3" class="text-muted text-center py-3">No data for this period.</td></tr>
                                 @endforelse
@@ -458,7 +458,7 @@
                             <thead><tr><th>Client</th><th>Receipts</th><th>Total</th></tr></thead>
                             <tbody>
                                 @forelse($topClients as $row)
-                                <tr><td>{{ $row->business_name ?: $row->name }}</td><td>{{ $row->cnt }}</td><td>GH&#x20B5; {{ number_format($row->total,2) }}</td></tr>
+                                <tr class="rcpt-drill-row" data-type="client" data-client-id="{{ $row->id }}"><td>{{ $row->business_name ?: $row->name }}</td><td>{{ $row->cnt }}</td><td>GH&#x20B5; {{ number_format($row->total,2) }}</td></tr>
                                 @empty
                                 <tr><td colspan="3" class="text-muted text-center py-3">No data for this period.</td></tr>
                                 @endforelse
@@ -478,7 +478,7 @@
                             <thead><tr><th>Collector</th><th>Receipts</th><th>Total</th></tr></thead>
                             <tbody>
                                 @forelse($topCollectors as $row)
-                                <tr><td>{{ $row->name }}</td><td>{{ $row->cnt }}</td><td>GH&#x20B5; {{ number_format($row->total,2) }}</td></tr>
+                                <tr class="rcpt-drill-row" data-type="collector" data-collector-id="{{ $row->id }}"><td>{{ $row->name }}</td><td>{{ $row->cnt }}</td><td>GH&#x20B5; {{ number_format($row->total,2) }}</td></tr>
                                 @empty
                                 <tr><td colspan="3" class="text-muted text-center py-3">No data for this period.</td></tr>
                                 @endforelse
@@ -545,6 +545,162 @@
         }
 
         // (status donut removed) status summary is shown as KPI cards above
+
+        // Drilldown modal: click a row in "By Field Office", "Top 10 Clients"
+        // or "Top 10 Collectors" to fetch a grouped breakdown for that
+        // entity, scoped to the same period/anchor as the report above.
+        document.querySelectorAll('.rcpt-drill-row').forEach(r => r.style.cursor = 'pointer');
+        const rcptModalEl = document.createElement('div');
+        rcptModalEl.innerHTML = `
+        <div class="modal fade" id="rcpt-details-modal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="rcpt-details-title">Details</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div id="rcpt-details-loading" class="text-center py-3">Loading…</div>
+                        <div id="rcpt-details-body" class="d-none">
+                            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                                <div class="small text-muted" id="rcpt-details-summary"></div>
+                                <button type="button" class="btn btn-success btn-sm" id="rcpt-details-export" disabled>
+                                    <i class="bx bx-spreadsheet me-1"></i> Export Excel
+                                </button>
+                            </div>
+                            <div class="table-responsive border rounded">
+                                <table class="table table-sm table-hover mb-0" id="rcpt-details-table">
+                                    <thead class="table-light"><tr id="rcpt-details-table-head"></tr></thead>
+                                    <tbody id="rcpt-details-rows"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+        document.body.appendChild(rcptModalEl);
+        let rcptExportName = 'Details';
+
+        document.getElementById('rcpt-details-export').addEventListener('click', function () {
+            const table = document.getElementById('rcpt-details-table');
+            const workbook = '<html><head><meta charset="utf-8"></head><body><h3>'
+                + rcptExportName.replace(/[&<>"']/g, '') + '</h3>'
+                + table.outerHTML + '</body></html>';
+            const file = new Blob(['\ufeff', workbook], { type: 'application/vnd.ms-excel' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(file);
+            link.download = rcptExportName.replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '') + '-receipts.xls';
+            link.click();
+            URL.revokeObjectURL(link.href);
+        });
+
+        function renderRcptModalTable(headers, rows) {
+            const head = document.getElementById('rcpt-details-table-head');
+            const body = document.getElementById('rcpt-details-rows');
+            head.innerHTML = '';
+            headers.forEach((header, index) => {
+                const cell = document.createElement('th');
+                cell.textContent = header;
+                if (index > 0) cell.className = 'text-end';
+                head.appendChild(cell);
+            });
+            body.innerHTML = '';
+            if (!rows.length) {
+                body.innerHTML = `<tr><td colspan="${headers.length}" class="text-center text-muted py-3">No receipts for this period.</td></tr>`;
+                return false;
+            }
+            rows.forEach(values => {
+                const row = document.createElement('tr');
+                values.forEach((value, index) => {
+                    const cell = document.createElement('td');
+                    cell.textContent = value;
+                    if (index > 0) cell.className = 'text-end';
+                    row.appendChild(cell);
+                });
+                body.appendChild(row);
+            });
+            return true;
+        }
+
+        function showRcptDetails(type, key, displayName) {
+            const title = type === 'field' ? 'Field Office Details'
+                : type === 'client' ? 'Client Details'
+                : type === 'collector' ? 'Collector Details'
+                : 'Details';
+            const titleNode = document.getElementById('rcpt-details-title');
+            const loadingNode = document.getElementById('rcpt-details-loading');
+            const bodyNode = document.getElementById('rcpt-details-body');
+            const summaryNode = document.getElementById('rcpt-details-summary');
+            const exportNode = document.getElementById('rcpt-details-export');
+
+            titleNode.textContent = title + (displayName ? ' — ' + displayName : '');
+            loadingNode.style.display = '';
+            bodyNode.classList.add('d-none');
+            summaryNode.textContent = '';
+            exportNode.disabled = true;
+            rcptExportName = displayName || title;
+
+            let url;
+            if (type === 'field') url = `/receipt/field/${encodeURIComponent(key)}/details`;
+            else if (type === 'client') url = `/receipt/client/${encodeURIComponent(key)}/details`;
+            else if (type === 'collector') url = `/receipt/collector/${encodeURIComponent(key)}/details`;
+            else return;
+
+            url += `?period=${encodeURIComponent(reportPeriod)}&date=${encodeURIComponent(@json($anchor->format('Y-m-d')))}`;
+
+            fetch(url, { headers: { 'Accept': 'application/json' } })
+                .then(r => r.json())
+                .then(data => {
+                    loadingNode.style.display = 'none';
+                    bodyNode.classList.remove('d-none');
+
+                    if (type === 'field') {
+                        const clients = Array.isArray(data.clients) ? data.clients : [];
+                        const total = clients.reduce((sum, c) => sum + (Number(c.total) || 0), 0);
+                        summaryNode.textContent = `${clients.length} client${clients.length === 1 ? '' : 's'} · GH₵ ${total.toFixed(2)} total`;
+                        exportNode.disabled = !renderRcptModalTable(['Client', 'Receipts', 'Total (GH₵)'], clients.map(c => [c.business_name || c.name || '–', Number(c.entries) || 0, (Number(c.total) || 0).toFixed(2)]));
+                    } else if (type === 'client') {
+                        const collectors = Array.isArray(data.collectors) ? data.collectors : [];
+                        const total = collectors.reduce((sum, c) => sum + (Number(c.total) || 0), 0);
+                        summaryNode.textContent = `${collectors.length} collector${collectors.length === 1 ? '' : 's'} · GH₵ ${total.toFixed(2)} total`;
+                        exportNode.disabled = !renderRcptModalTable(['Collector', 'Receipts', 'Total (GH₵)'], collectors.map(c => [c.name || '–', Number(c.entries) || 0, (Number(c.total) || 0).toFixed(2)]));
+                    } else if (type === 'collector') {
+                        const clients = Array.isArray(data.clients) ? data.clients : [];
+                        const total = clients.reduce((sum, c) => sum + (Number(c.total) || 0), 0);
+                        summaryNode.textContent = `${clients.length} client${clients.length === 1 ? '' : 's'} · GH₵ ${total.toFixed(2)} total`;
+                        exportNode.disabled = !renderRcptModalTable(['Client', 'Receipts', 'Total (GH₵)'], clients.map(c => [c.business_name || c.name || '–', Number(c.entries) || 0, (Number(c.total) || 0).toFixed(2)]));
+                    }
+                })
+                .catch(() => {
+                    loadingNode.style.display = 'none';
+                    bodyNode.classList.remove('d-none');
+                    summaryNode.textContent = 'Unable to load drill-down data.';
+                    renderRcptModalTable(['Details'], []);
+                });
+
+            if (window.bootstrap && typeof bootstrap.Modal === 'function') {
+                const m = new bootstrap.Modal(document.getElementById('rcpt-details-modal'));
+                m.show();
+            } else {
+                const el = document.getElementById('rcpt-details-modal');
+                el.classList.add('show');
+                el.style.display = 'block';
+            }
+        }
+
+        document.addEventListener('click', function (ev) {
+            const row = ev.target.closest('.rcpt-drill-row');
+            if (!row) return;
+            const type = row.dataset.type;
+            let key;
+            if (type === 'field') key = row.dataset.fieldId;
+            else if (type === 'client') key = row.dataset.clientId;
+            else if (type === 'collector') key = row.dataset.collectorId;
+            else return;
+            const displayName = row.querySelector('td') ? row.querySelector('td').textContent.trim() : null;
+            showRcptDetails(type, key, displayName);
+        });
     </script>
     @endsection
 
