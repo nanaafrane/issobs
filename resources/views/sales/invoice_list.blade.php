@@ -465,85 +465,90 @@
     @endsection
 
 
-    @section('scripts')
-
-    <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
-    <script src="https://cdn.datatables.net/2.3.3/js/dataTables.js"></script>
-    <script src="https://cdn.datatables.net/buttons/3.2.4/js/dataTables.buttons.js"></script>
-    <script src="https://cdn.datatables.net/buttons/3.2.4/js/buttons.dataTables.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
-    <script src="https://cdn.datatables.net/buttons/3.2.4/js/buttons.html5.min.js"></script>
-
-    <script src="https://cdn.datatables.net/columncontrol/1.1.1/js/dataTables.columnControl.min.js"></script>
-
-    <script>
-        $(function () {
-            const table = $('#myTable').DataTable({
-                processing: true,
-                serverSide: true,
-                responsive: true,
-                pageLength: 25,
-                ordering: true,
-                searching: true,
-                ajax: {
-                    url: $('#myTable').data('source'),
-                    type: 'GET',
-                    dataType: 'json',
-                    dataSrc: 'data'
-                },
-                order: [[7, 'desc']],
-                // Keep the column filters visible and let ColumnControl redraw
-                // the server-side table as each filter value changes.
-                columnControl: [{
-                    target: 1,
-                    content: ['search']
-                }],
-                columns: [
-                    { data: 'row_number', orderable: false, searchable: false, render: function (data, type, row, meta) {
-                        return meta.row + 1 + meta.settings._iDisplayStart;
-                    } },
-                    { data: 'invoice_id', render: function(data) { return '#FWSSi' + data; }, orderable: true, searchable: true },
-                    { data: 'invoice_month', orderable: true, searchable: true },
-                    { data: 'client_name', orderable: true, searchable: true },
-                    { data: 'phone_number', orderable: true, searchable: true },
-                    { data: 'field_name', orderable: true, searchable: true },
-                    { data: 'staff_name', orderable: true, searchable: true },
-                    { data: 'created_at', orderable: true, searchable: true },
-                    { data: 'due_date', orderable: true, searchable: true },
-                    { data: 'amount', orderable: true, searchable: false },
-                    { data: 'status', orderable: true, searchable: true },
-                    { data: 'action', orderable: false, searchable: false }
-                ],
-                layout: {
-                    topStart: {
-                        buttons: [ 
+  {{-- =============== resources/views/sales/invoice_list.blade.php =============== --}}
+@section('scripts')
+ 
+<script src="https://code.jquery.com/jquery-3.7.1.js"></script>
+<script src="https://cdn.datatables.net/2.3.3/js/dataTables.js"></script>
+<script src="https://cdn.datatables.net/buttons/3.2.4/js/dataTables.buttons.js"></script>
+<script src="https://cdn.datatables.net/buttons/3.2.4/js/buttons.dataTables.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+<script src="https://cdn.datatables.net/buttons/3.2.4/js/buttons.html5.min.js"></script>
+<script src="https://cdn.datatables.net/columncontrol/1.1.1/js/dataTables.columnControl.min.js"></script>
+ 
+@include('partials.dt_range')
+ 
+<script>
+    $(function () {
+        // invoice_month is always the 1st of a month, so MONTH pickers are the honest control:
+        // a mid-month day picker could never match anything.
+        const range = DtRange.mount('#myTable', {
+            label: 'Invoice month',
+            type: 'month',
+            presets: ['month', 'lastmonth', 'year'],
+            exportUrl: '{{ route('invoice.export') }}',
+        });
+ 
+        const table = $('#myTable').DataTable({
+            processing: true,
+            serverSide: true,
+            responsive: true,
+            pageLength: 25,
+            ordering: true,
+            searching: true,
+            searchDelay: 500,
+            ajax: {
+                url: $('#myTable').data('source'),
+                type: 'GET',
+                dataType: 'json',
+                data: range.append,
+                dataSrc: 'data'
+            },
+            order: [[7, 'desc']],
+            columnControl: [{
+                target: 1,
+                content: ['search']
+            }],
+            columns: [
+                { data: 'row_number', orderable: false, searchable: false, render: function (data, type, row, meta) {
+                    return meta.row + 1 + meta.settings._iDisplayStart;
+                } },
+                { data: 'invoice_id', render: function (data) { return '#FWSSi' + data; }, orderable: true, searchable: true },
+                { data: 'invoice_month', orderable: true, searchable: true },
+                { data: 'client_name', orderable: true, searchable: true },
+                { data: 'phone_number', orderable: true, searchable: true },
+                { data: 'field_name', orderable: true, searchable: true },
+                { data: 'staff_name', orderable: true, searchable: true },
+                { data: 'created_at', orderable: true, searchable: true },
+                { data: 'due_date', orderable: true, searchable: true },
+                { data: 'amount', orderable: true, searchable: true },
+                { data: 'status', orderable: true, searchable: true },
+                { data: 'action', orderable: false, searchable: false }
+            ],
+            layout: {
+                topStart: {
+                    buttons: [
                         {
                             extend: 'pageLength',
                             text: 'Show',
                             className: 'btn btn-secondary',
-                            Options: [10, 25, 50, 100, 250, 500, 1000, 2000], 
+                            Options: [10, 25, 50, 100, 250, 500, 1000, 2000],
                         },
-                            {
-                                extend: 'excelHtml5',
-                                title:  "Invoices",
-                                className: 'btn btn-secondary',
-                                exportOptions: {
-                                    columns: ':visible'
-                                }
-                            },
-                        ]
-                    }
+                    ]
                 }
-            });
-
-            table.on('draw.dt', function () {
-                $('select[name="myTable_length"]').addClass('form-select form-select-sm');
-            });
+            }
         });
-    </script>
-
-    @endsection
+ 
+        range.bind(table);
+ 
+        table.on('draw.dt', function () {
+            $('select[name="myTable_length"]').addClass('form-select form-select-sm');
+        });
+    });
+</script>
+ 
+@endsection
 
 </x-sales-dashboard>

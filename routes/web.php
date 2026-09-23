@@ -67,16 +67,14 @@ Route::get('categorySearch', [CategoryController::class, 'categorySearch']);
 Route::resource('service', ServiceController::class);
 
 
-// Route::get('invoice/list', [InvoiceController::class, 'list']);
 Route::resource('transaction', TransactionController::class);
-
+Route::get('invoice/export', [InvoiceController::class, 'export'])->name('invoice.export');
 Route::get('invoice-report', [InvoiceController::class, 'report'])->name('invoice.report');
 Route::get('invoice/field/{field}/details', [InvoiceController::class, 'fieldDetails']);
 Route::get('invoice/client/{client}/details', [InvoiceController::class, 'clientDetails']);
 Route::get('invoice/issuer/{issuer}/details', [InvoiceController::class, 'issuerDetails']);
 Route::get('invoice/data', [InvoiceController::class, 'datatable'])->name('invoice.data');
 Route::resource('invoice', InvoiceController::class);
-Route::get('receipt/data', [ReceiptController::class, 'datatable'])->name('receipt.data');
 Route::get('invoice/{invoice}/duplicate', [InvoiceController::class, 'duplicate'])->name('invoice.duplicate');
 Route::post('invoice/{invoice}/duplicate', [InvoiceController::class, 'storeDuplicate'])->name('invoice.storeDuplicate');
 Route::resource('proforma', ProformaController::class);
@@ -91,6 +89,8 @@ Route::get('invoiceSearch', [InvoiceController::class, 'invoiceSearch'])->name('
 Route::get('searchOutstandingInvoices', [InvoiceController::class, 'searchOutstandingInvoices'])->name('invoice.searchOutstandingInvoices');
 Route::get('searchPartPaymentOutstanding', [InvoiceController::class, 'searchPartPaymentOutstanding'])->name('invoice.searchPartPaymentOutstanding');
 
+Route::get('receipt/export', [ReceiptController::class, 'export'])->name('receipt.export');
+Route::get('receipt/data', [ReceiptController::class, 'datatable'])->name('receipt.data');
 Route::get('receipt-report', [ReceiptController::class, 'report'])->name('receipt.report');
 Route::get('receipt/field/{field}/details', [ReceiptController::class, 'fieldDetails']);
 Route::get('receipt/client/{client}/details', [ReceiptController::class, 'clientDetails']);
@@ -137,7 +137,7 @@ Route::get('overtime/lookup/employees', [OvertimeController::class, 'employeeOpt
 Route::get('overtime/lookup/clients', [OvertimeController::class, 'clientOptions'])->name('overtime.lookup.clients');
 Route::resource('overtime', OvertimeController::class);
 
-
+Route::get('employees/export', [EmployeeController::class, 'export'])->name('employees.export');
 Route::get('employees/data', [EmployeeController::class, 'datatable'])->name('employees.data');
 Route::resource('employees', EmployeeController::class); 
 Route::get('employee-report', [EmployeeController::class, 'report'])->name('employee.report');
@@ -228,4 +228,4 @@ Route::get('exportCategory/{month}/{category}', [SalaryController::class, 'expor
 //     //     # code...
 //     //     echo $value->name. " / ". $value->business_name ;
 //     // }
-// });
+// });  

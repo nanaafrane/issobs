@@ -458,19 +458,6 @@
             }
         }
 
-        @media print {
-            .receipt-show-page .btn,
-            .receipt-show-page .offcanvas,
-            .receipt-show-page .layout-navbar,
-            .receipt-show-page footer,
-            .receipt-show-page .card-header,
-            .receipt-show-page .btn-outline-secondary {
-                display: none !important;
-            }
-            .receipt-show-page .container-xxl {
-                padding-top: 0 !important;
-            }
-        }
     </style>
     @endsection
 
@@ -689,6 +676,8 @@
             </div>
 
         </div>
+
+         @include('partials.receipt_print')
 
     @endsection
 

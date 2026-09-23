@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Receipt;
 use App\Http\Requests\StoreReceiptRequest;
 use App\Http\Requests\UpdateReceiptRequest;
+use App\Exports\FilteredQueryExport;
+use App\Http\Controllers\Concerns\SearchesDates;
 use App\Models\Field;
 use Carbon\Carbon;
 use App\Http\Requests\InvoiceToPayrollSearchRequest;
@@ -21,11 +23,12 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 // use Illuminate\Support\Number;
 use Illuminate\Support\Str;
-
 use function Symfony\Component\Clock\now;
 
 class ReceiptController extends Controller
 {
+    use SearchesDates;
+
     public ?float $wht_amount = null;
     public ?float $vat7_amount = null;
 
@@ -379,12 +382,72 @@ class ReceiptController extends Controller
         return view('sales.receipt_list', compact('receipts'));
     }
 
-    /**
-     * Paginated receipt data for the receipt-list DataTable.
-     */
-    public function datatable(Request $request)
+
+
+      /** Balance is computed, so it is defined once and reused for filter + sort. */
+    private const RECEIPT_BALANCE = '(COALESCE(invoices.total,0) - COALESCE(receipts.total,0) - COALESCE(receipts.dAmount,0))';
+ 
+    /** DataTables column index => SQL column. Indexes match the <thead> / columns[] order. */
+    private const RECEIPT_TEXT_COLUMNS = [
+        5  => 'clients.phone_number',
+        6  => 'fields.name',
+        7  => 'users.name',
+        11 => 'receipts.cheque_bank',
+        12 => 'receipts.cheque_reference',
+        14 => 'receipts.transfer_bank',
+        15 => 'receipts.transfer_reference',
+        24 => 'receipts.advance_payment',
+        25 => 'receipts.status',
+    ];
+ 
+    private const RECEIPT_NUMBER_COLUMNS = [
+        9  => 'invoices.total',
+        10 => 'receipts.total',
+        13 => 'receipts.cheque_amount',
+        16 => 'receipts.transfer_amount',
+        17 => 'receipts.momo_amount',
+        18 => 'receipts.cash_amount',
+        19 => 'receipts.dAmount',
+        20 => 'receipts.other_payment_amnt',
+        21 => 'receipts.wht_amount',
+        22 => 'receipts.vat7_value',
+        23 => self::RECEIPT_BALANCE,
+    ];
+ 
+    private const RECEIPT_ORDER_COLUMNS = [
+        0  => 'receipts.id',
+        1  => 'receipts.receipt_month',
+        2  => 'receipts.invoice_id',
+        3  => 'invoices.invoice_month',
+        4  => 'clients.business_name',
+        5  => 'clients.phone_number',
+        6  => 'fields.name',
+        7  => 'users.name',
+        8  => 'receipts.created_at',
+        9  => 'invoices.total',
+        10 => 'receipts.total',
+        11 => 'receipts.cheque_bank',
+        12 => 'receipts.cheque_reference',
+        13 => 'receipts.cheque_amount',
+        14 => 'receipts.transfer_bank',
+        15 => 'receipts.transfer_reference',
+        16 => 'receipts.transfer_amount',
+        17 => 'receipts.momo_amount',
+        18 => 'receipts.cash_amount',
+        19 => 'receipts.dAmount',
+        20 => 'receipts.other_payment_amnt',
+        21 => 'receipts.wht_amount',
+        22 => 'receipts.vat7_value',
+        23 => self::RECEIPT_BALANCE,
+        24 => 'receipts.advance_payment',
+        25 => 'receipts.status',
+    ];
+ 
+    /** Select + joins + the user's office scope. No user-supplied filters here. */
+    private function receiptListBase()
     {
         $user = Auth::user();
+ 
         $query = Receipt::query()
             ->select([
                 'receipts.id', 'receipts.receipt_month', 'receipts.invoice_id',
@@ -403,78 +466,139 @@ class ReceiptController extends Controller
             ->leftJoin('fields', 'fields.id', '=', 'clients.field_id')
             ->leftJoin('users', 'users.id', '=', 'receipts.user_id')
             ->where('receipts.ho_status', 'approved');
-
-        // Match the office access rules used by index(), including Tema's
-        // shared access to Shaihills receipts.
+ 
+        // Same office access rules as index(), including Tema's shared access to Shaihills.
         if (! $user?->hasRole(['Finance Manager', 'Invoice'])) {
             $fieldIds = $user?->field_id === 3 ? [3, 7] : array_filter([$user?->field_id]);
             $fieldIds ? $query->whereIn('clients.field_id', $fieldIds) : $query->whereRaw('1 = 0');
         }
-
-        $recordsTotal = (clone $query)->count();
-        $columns = $request->input('columns', []);
-        $globalSearch = trim((string) $request->input('search.value', ''));
-
+ 
+        return $query;
+    }
+ 
+    /** Range picker + global search + per-column filters. */
+    private function receiptListFilters($query, Request $request): void
+    {
+        // Range picker (receipt date). Y-m-d or Y-m; blank / invalid edges are ignored.
+        $this->whereWithinRange(
+            $query,
+            'receipts.receipt_month',
+            $this->requestString($request, 'from'),
+            $this->requestString($request, 'to')
+        );
+ 
+        // Global search box.
+        $globalSearch = trim((string) $this->requestString($request, 'search.value'));
         if ($globalSearch !== '') {
-            $query->where(function ($q) use ($globalSearch) {
-                $q->where('receipts.id', 'like', "%{$globalSearch}%")
-                    ->orWhere('receipts.status', 'like', "%{$globalSearch}%")
-                    ->orWhere('clients.business_name', 'like', "%{$globalSearch}%")
-                    ->orWhere('clients.name', 'like', "%{$globalSearch}%")
-                    ->orWhere('clients.phone_number', 'like', "%{$globalSearch}%")
-                    ->orWhere('fields.name', 'like', "%{$globalSearch}%")
-                    ->orWhere('users.name', 'like', "%{$globalSearch}%")
-                    ->orWhereRaw("DATE_FORMAT(receipts.receipt_month, '%M %d, %Y') LIKE ?", ["%{$globalSearch}%"])
-                    ->orWhereRaw("DATE_FORMAT(invoices.invoice_month, '%M, %Y') LIKE ?", ["%{$globalSearch}%"]);
+            $term = $this->likeTerm($globalSearch);
+ 
+            $query->where(function ($q) use ($globalSearch, $term) {
+                $q->where('receipts.status', 'like', $term)
+                    ->orWhere('clients.business_name', 'like', $term)
+                    ->orWhere('clients.name', 'like', $term)
+                    ->orWhere('clients.phone_number', 'like', $term)
+                    ->orWhere('fields.name', 'like', $term)
+                    ->orWhere('users.name', 'like', $term)
+                    ->orWhere(function ($w) use ($globalSearch) {
+                        $this->whereDateMatches($w, 'receipts.receipt_month', $globalSearch);
+                    })
+                    ->orWhere(function ($w) use ($globalSearch) {
+                        $this->whereDateMatches($w, 'invoices.invoice_month', $globalSearch);
+                    });
+ 
+                // Only treat it as an id when it looks like one ("45", "FWSSR45").
+                if (preg_match('/^(fwss[ri]?)?\s*#?\d+$/i', $globalSearch)) {
+                    $q->orWhere('receipts.id', 'like', '%' . preg_replace('/\D/', '', $globalSearch) . '%');
+                }
             });
         }
-
-        foreach ($columns as $index => $column) {
-            $value = trim((string) (
-                $column['columnControl']['search']['value']
-                    ?? $column['search']['value']
-                    ?? ''
-            ));
-
+ 
+        // Per-column filters (ColumnControl, falling back to the standard field).
+        $columns = $request->input('columns', []);
+        foreach (is_array($columns) ? $columns : [] as $index => $column) {
+            $value = $this->columnFilterValue($column);
             if ($value === '') {
                 continue;
             }
-
-            switch ((int) $index) {
-                case 0: $query->where('receipts.id', 'like', "%{$value}%"); break;
-                case 1: $query->whereRaw("DATE_FORMAT(receipts.receipt_month, '%M %d, %Y') LIKE ?", ["%{$value}%"]); break;
-                case 2: $query->where('receipts.invoice_id', 'like', "%{$value}%"); break;
-                case 3: $query->whereRaw("DATE_FORMAT(invoices.invoice_month, '%M, %Y') LIKE ?", ["%{$value}%"]); break;
-                case 4: $query->where(function ($q) use ($value) {
-                    $q->where('clients.business_name', 'like', "%{$value}%")
-                        ->orWhere('clients.name', 'like', "%{$value}%");
-                }); break;
-                case 5: $query->where('clients.phone_number', 'like', "%{$value}%"); break;
-                case 6: $query->where('fields.name', 'like', "%{$value}%"); break;
-                case 7: $query->where('users.name', 'like', "%{$value}%"); break;
-                case 8: $query->whereRaw("DATE_FORMAT(receipts.created_at, '%M %d, %Y') LIKE ?", ["%{$value}%"]); break;
-                case 25: $query->where('receipts.status', 'like', "%{$value}%"); break;
-                default: break;
+ 
+            $index = (int) $index;
+ 
+            switch (true) {
+                case $index === 0:
+                    $this->whereIdMatches($query, 'receipts.id', $value);
+                    break;
+ 
+                case $index === 1:
+                    $this->whereDateMatches($query, 'receipts.receipt_month', $value);
+                    break;
+ 
+                case $index === 2:
+                    $this->whereIdMatches($query, 'receipts.invoice_id', $value);
+                    break;
+ 
+                case $index === 3:
+                    $this->whereDateMatches($query, 'invoices.invoice_month', $value);
+                    break;
+ 
+                case $index === 4:
+                    $term = $this->likeTerm($value);
+                    $query->where(function ($q) use ($term) {
+                        $q->where('clients.business_name', 'like', $term)
+                            ->orWhere('clients.name', 'like', $term);
+                    });
+                    break;
+ 
+                case $index === 8:
+                    $this->whereDateMatches($query, 'receipts.created_at', $value);
+                    break;
+ 
+                case isset(self::RECEIPT_TEXT_COLUMNS[$index]):
+                    $query->where(self::RECEIPT_TEXT_COLUMNS[$index], 'like', $this->likeTerm($value));
+                    break;
+ 
+                case isset(self::RECEIPT_NUMBER_COLUMNS[$index]):
+                    $this->whereNumberMatches($query, self::RECEIPT_NUMBER_COLUMNS[$index], $value);
+                    break;
             }
         }
-
-        $recordsFiltered = (clone $query)->count();
-
-        $orderMap = [0 => 'receipts.id', 1 => 'receipts.receipt_month', 2 => 'receipts.invoice_id', 3 => 'invoices.invoice_month', 4 => 'clients.business_name', 5 => 'clients.phone_number', 6 => 'fields.name', 7 => 'users.name', 8 => 'receipts.created_at', 9 => 'invoices.total', 10 => 'receipts.total', 25 => 'receipts.status'];
+    }
+ 
+    private function receiptListOrder($query, Request $request): void
+    {
         $orderColumn = (int) $request->input('order.0.column', 8);
-        $orderDir = $request->input('order.0.dir', 'desc') === 'asc' ? 'asc' : 'desc';
-        $query->orderBy($orderMap[$orderColumn] ?? 'receipts.created_at', $orderDir);
-
+        $orderDir = $request->input('order.0.dir', 'desc') === 'asc' ? 'asc' : 'desc';   // validated
+        $orderExpr = self::RECEIPT_ORDER_COLUMNS[$orderColumn] ?? 'receipts.created_at'; // whitelisted
+ 
+        // Unique tiebreaker: stable paging AND required for chunked Excel export.
+        $query->orderByRaw("{$orderExpr} {$orderDir}")->orderBy('receipts.id', 'desc');
+    }
+ 
+    /**
+     * Paginated receipt data for the receipt-list DataTable.
+     */
+    public function datatable(Request $request)
+    {
+        $user = Auth::user();
+ 
+        $query = $this->receiptListBase();
+        $recordsTotal = (clone $query)->count();
+ 
+        $this->receiptListFilters($query, $request);
+        $recordsFiltered = (clone $query)->count();
+ 
+        $this->receiptListOrder($query, $request);
+ 
         $start = max(0, (int) $request->input('start', 0));
-        $length = max(1, (int) $request->input('length', 25));
+        $length = max(1, min(2000, (int) $request->input('length', 25)));
         $rows = $query->offset($start)->limit($length)->get();
         $canManage = $user?->hasRole(['Finance Manager']) ?? false;
-
+ 
         $data = $rows->map(function ($receipt) use ($canManage) {
             $clientName = $receipt->client_name === $receipt->client_business_name
                 ? $receipt->client_business_name
                 : trim($receipt->client_name . ' ' . $receipt->client_business_name);
             $statusClass = $receipt->status === 'completed' ? 'bg-label-success' : 'bg-label-danger';
+ 
             $actions = '<div class="dropdown"><button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown"><i class="icon-base bx bx-dots-vertical-rounded text-primary"></i></button><div class="dropdown-menu"><a class="dropdown-item" href="' . e(url('receipt/' . $receipt->id)) . '"><i class="icon-base bx bx-bullseye text-primary me-2"></i> view</a>';
             if ($canManage) {
                 $receiptUrl = e(url('receipt/' . $receipt->id));
@@ -482,7 +606,13 @@ class ReceiptController extends Controller
                     . '<form action="' . $receiptUrl . '" method="POST"><input type="hidden" name="_token" value="' . e(csrf_token()) . '"><input type="hidden" name="_method" value="DELETE"><button class="dropdown-item" type="submit"><i class="icon-base bx bx-trash me-2 text-danger"></i>Delete</button></form>';
             }
             $actions .= '</div></div>';
-
+ 
+            // Absolute date is what the column search matches; the relative label is a tooltip.
+            $createdCell = $receipt->created_at
+                ? '<span title="' . e(Carbon::parse($receipt->created_at)->diffForHumans()) . '">'
+                    . e(Carbon::parse($receipt->created_at)->format('d M Y, H:i')) . '</span>'
+                : '';
+ 
             return [
                 'receipt_id' => 'FWSSR' . $receipt->id,
                 'receipt_month' => $receipt->receipt_month ? Carbon::parse($receipt->receipt_month)->format('l j, F Y') : '',
@@ -490,7 +620,7 @@ class ReceiptController extends Controller
                 'invoice_month' => $receipt->invoice_month ? Carbon::parse($receipt->invoice_month)->format('F, Y') : '',
                 'client_name' => $clientName, 'phone_number' => $receipt->phone_number,
                 'field_name' => $receipt->field_name, 'staff_name' => $receipt->staff_name,
-                'created_at' => $receipt->created_at ? Carbon::parse($receipt->created_at)->diffForHumans() : '',
+                'created_at' => $createdCell,
                 'invoice_total' => number_format((float) $receipt->invoice_total, 2),
                 'total' => number_format((float) $receipt->total, 2),
                 'cheque_bank' => $receipt->cheque_bank, 'cheque_reference' => $receipt->cheque_reference,
@@ -504,9 +634,57 @@ class ReceiptController extends Controller
                 'advance_payment' => $receipt->advance_payment, 'status' => '<span class="badge ' . $statusClass . '">' . e($receipt->status) . '</span>', 'action' => $actions,
             ];
         })->all();
-
-        return response()->json(['draw' => (int) $request->input('draw', 1), 'recordsTotal' => $recordsTotal, 'recordsFiltered' => $recordsFiltered, 'data' => $data]);
+ 
+        return response()->json([
+            'draw' => (int) $request->input('draw', 1),
+            'recordsTotal' => $recordsTotal,
+            'recordsFiltered' => $recordsFiltered,
+            'data' => $data,
+        ]);
     }
+ 
+    /**
+     * Excel export of EVERY receipt matching the current filters (not just the visible page).
+     */
+    public function export(Request $request)
+    {
+        $query = $this->receiptListBase();
+        $this->receiptListFilters($query, $request);
+        $this->receiptListOrder($query, $request);
+ 
+        $headings = [
+            'Receipt No.', 'Receipt Date', 'Invoice No.', 'Invoice Month', 'Client', 'Phone', 'Field Office',
+            'Staff', 'Date Created', 'Invoice Amount', 'Paid', 'Cheque Bank', 'Cheque Ref', 'Cheque Amount',
+            'Transfer Bank', 'Transfer Ref', 'Transfer Amount', 'MoMo', 'Cash', 'Deductions', 'Other Payment',
+            'WHT', 'VAT 7%', 'Balance', 'Advance', 'Status',
+        ];
+ 
+        $export = new FilteredQueryExport($query, $headings, function ($r) {
+            $day = fn ($v) => $v ? Carbon::parse($v)->format('Y-m-d') : '';
+            $client = $r->client_name === $r->client_business_name
+                ? $r->client_business_name
+                : trim($r->client_name . ' ' . $r->client_business_name);
+ 
+            return [
+                'FWSSR' . $r->id,
+                $day($r->receipt_month),
+                'FWSSi' . $r->invoice_id,
+                $r->invoice_month ? Carbon::parse($r->invoice_month)->format('F Y') : '',
+                $client, $r->phone_number, $r->field_name, $r->staff_name,
+                $r->created_at ? Carbon::parse($r->created_at)->format('Y-m-d H:i') : '',
+                (float) $r->invoice_total, (float) $r->total,
+                $r->cheque_bank, $r->cheque_reference, (float) $r->cheque_amount,
+                $r->transfer_bank, $r->transfer_reference, (float) $r->transfer_amount,
+                (float) $r->momo_amount, (float) $r->cash_amount, (float) $r->dAmount,
+                (float) $r->other_payment_amnt, (float) $r->wht_amount, (float) $r->vat7_value,
+                (float) $r->invoice_total - (float) $r->total - (float) $r->dAmount,
+                $r->advance_payment, $r->status,
+            ];
+        });
+ 
+        return $export->download('Receipts-' . now()->format('Ymd-His') . '.xlsx');
+    }
+
 
     /**
      * Show the form for creating a new resource.

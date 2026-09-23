@@ -638,6 +638,7 @@
         @endif
         <br>
 
+
          <hr> <br>  
 
             <div class="row ">
@@ -652,108 +653,41 @@
                                 <table id="myTable" class="display" data-source="{{ route('receipt.data') }}">
                                     <thead>
                                         <tr>
-                            <th>id</th>
-                            <th>Receipt Date</th>
-                            <th>Invoice No.</th>
-                            <th>Inv. Month</th>
-                            <th>Client Name</th>
-                            <th>Phone No.</th>
-                            <th> Field Office </th>
-                            <th> Staff </th>
-                            <th>Date Created</th>
-                            <th>Inv Amount</th>
-                            <th>Paid</th>
+                                            <th>id</th>
+                                            <th>Receipt Date</th>
+                                            <th>Invoice No.</th>
+                                            <th>Inv. Month</th>
+                                            <th>Client Name</th>
+                                            <th>Phone No.</th>
+                                            <th> Field Office </th>
+                                            <th> Staff </th>
+                                            <th>Date Created</th>
+                                            <th>Inv Amount</th>
+                                            <th>Paid</th>
 
-                            <th>Cheque Bank</th>
-                            <th>Cheque Ref</th>
-                            <th>Cheque Amnt</th>
+                                            <th>Cheque Bank</th>
+                                            <th>Cheque Ref</th>
+                                            <th>Cheque Amnt</th>
 
-                            <th>Transfer Bank</th>
-                            <th>Transfer Ref</th>
-                            <th>Transfer Amnt</th>
+                                            <th>Transfer Bank</th>
+                                            <th>Transfer Ref</th>
+                                            <th>Transfer Amnt</th>
 
-                            <th>MoMo </th>
-                            <th>Cash </th>
+                                            <th>MoMo </th>
+                                            <th>Cash </th>
 
-                            <th>Deductions</th>
-                            <th>Other Payment</th>
-                            <th>WHT</th>
-                            <th>VAT 7%</th>
+                                            <th>Deductions</th>
+                                            <th>Other Payment</th>
+                                            <th>WHT</th>
+                                            <th>VAT 7%</th>
 
-                            <th>Balance</th>
-                            <th>Advance</th>
-                            <th>Status</th>
-                            <th>View</th>
-                            </tr>
-                        </thead>
-                        <tbody class="table-border-bottom-0">
-                            {{-- DataTables loads the paginated rows from receipt.data. --}}
-                            @if (false)
-                            @foreach($receipts as $receipt)
-                            <tr>
-                            <td>FWSSR{{$receipt->id}}</td>
-                            <td> {{ $receipt->receipt_month?->format('l,j, F Y') }} </td>
-                            <td>FWSSi{{$receipt->invoice_id}} </td>
-                            <td> {{ $receipt->invoice?->invoice_month?->format('F, Y') }} </td>
-                            @if ($receipt->client->name === $receipt->client->business_name)
-                            <td> {{$receipt->client->business_name}} </td>
-                            @else
-                            <td> {{$receipt->client->name}} {{$receipt->client->business_name}} </td>
-                            @endif
-                            <td> {{$receipt->client->phone_number}} </td>
-                            <td> {{$receipt->client->field->name}} </td>
-                            <td> {{$receipt->user->name}} </td>
-                            <td> {{$receipt->created_at->diffForHumans()}} </td>
-                            <td>   {{ number_format($receipt->invoice->total, 2) }}</td>
-
-                            <td>  {{number_format($receipt->total,2) }} </td>
-
-                            <td> {{$receipt->cheque_bank}} </td>
-                            <td> {{$receipt->cheque_reference}} </td>
-                            <td>  {{number_format($receipt->cheque_amount, 2) }} </td>
-                            <td> {{$receipt->transfer_bank}} </td>
-                            <td> {{$receipt->transfer_reference}} </td>
-                            <td>  {{number_format($receipt->transfer_amount, 2) }} </td>
-                            <td>  {{number_format($receipt->momo_amount, 2) }} </td>
-                            <td>  {{number_format($receipt->cash_amount, 2) }} </td>
-
-
-                           <td>  {{number_format($receipt->dAmount, 2) }} </td>
-                           <td>  {{number_format($receipt->other_payment_amnt, 2) }} </td>
-                           <td>  {{number_format($receipt->wht_amount, 2) }} </td>
-                           <td>  {{number_format($receipt->vat7_value, 2) }} </td>
-
-                            <td>   {{number_format($receipt->invoice->total - $receipt->total - $receipt->dAmount ,2)  }} </td>
-                            <td> {{ $receipt->advance_payment }} </td>
-                            @if($receipt->status == 'completed')
-                            <td><span class="badge bg-label-success">{{$receipt->status}}</span></td>
-                            @else
-                            <td><span class="badge bg-label-danger">{{$receipt->status}}</span></td>
-                            @endif
-
-                            <td>
-                                <div class="dropdown">
-                                    <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown">
-                                        <i class="icon-base bx bx-dots-vertical-rounded text-primary"></i>
-                                    </button>
-                                    <div class="dropdown-menu">
-                                        <a class="dropdown-item" href="{{url('receipt', $receipt->id)}}"><i class="icon-base bx bx-bullseye text-primary me-2"></i> view</a>
-                                        @if( Auth::user()->hasRole(['Finance Manager']) )
-                                        <a class="dropdown-item" href="/receipt/{{$receipt->id}}/edit"><i class="icon-base bx bx-edit-alt me-2 text-primary"></i> Edit</a>
-                                        <form action="receipt/{{$receipt->id}}" method="POST">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button class="dropdown-item" type="submit"><i class="icon-base bx bx-trash me-2 text-danger"></i>Delete</button>
-                                        </form>
-                                        @endif
-                                    </div>
-                                </div>
-                            </td>
-                            </tr>
-                            @endforeach
-                            @endif
-                        </tbody>
-                    </table>
+                                            <th>Balance</th>
+                                            <th>Advance</th>
+                                            <th>Status</th>
+                                            <th>View</th>
+                                            </tr>
+                                        </thead>
+                                </table>
                             </div>
                         </div>
                     </div>
@@ -763,35 +697,43 @@
     </div>
     @endsection
 
-
-    @section('scripts')
-
-    <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
-    <script src="https://cdn.datatables.net/2.3.3/js/dataTables.js"></script>
-    <script src="https://cdn.datatables.net/buttons/3.2.4/js/dataTables.buttons.js"></script>
-    <script src="https://cdn.datatables.net/buttons/3.2.4/js/buttons.dataTables.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
-    <script src="https://cdn.datatables.net/buttons/3.2.4/js/buttons.html5.min.js"></script>
-
-    <script src="https://cdn.datatables.net/columncontrol/1.1.1/js/dataTables.columnControl.min.js"></script>
-
-    <script>
-      new DataTable('#myTable', {
-        //  dom: 'Blfrtip',
-        //  stateSave: false,
+{{-- =============== resources/views/sales/receipt_list.blade.php =============== --}}
+@section('scripts')
+ 
+<script src="https://code.jquery.com/jquery-3.7.1.js"></script>
+<script src="https://cdn.datatables.net/2.3.3/js/dataTables.js"></script>
+<script src="https://cdn.datatables.net/buttons/3.2.4/js/dataTables.buttons.js"></script>
+<script src="https://cdn.datatables.net/buttons/3.2.4/js/buttons.dataTables.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+<script src="https://cdn.datatables.net/buttons/3.2.4/js/buttons.html5.min.js"></script>
+<script src="https://cdn.datatables.net/columncontrol/1.1.1/js/dataTables.columnControl.min.js"></script>
+ 
+@include('partials.dt_range')
+ 
+<script>
+    // 1. Mount BEFORE creating the table: it inserts the bar above the table.
+    const range = DtRange.mount('#myTable', {
+        label: 'Receipt date',
+        type: 'date',
+        presets: ['today', 'week', 'month', 'lastmonth', 'year'],
+        exportUrl: '{{ route('receipt.export') }}',
+    });
+ 
+    // 2. Send the range with every request.
+    const table = new DataTable('#myTable', {
         processing: true,
         serverSide: true,
         pageLength: 25,
+        searchDelay: 500,   // date filters use DATE_FORMAT() LIKE (no index): debounce typing
         ajax: {
             url: $('#myTable').data('source'),
             type: 'GET',
+            data: range.append,
             dataSrc: 'data'
         },
         order: [[8, 'desc']],
-        // A dedicated second header row keeps filters visible and makes the
-        // server-side receipt table update as the user types.
         columnControl: [{
             target: 1,
             content: ['search']
@@ -810,31 +752,24 @@
         ],
         layout: {
             topStart: {
-                buttons: [ 
-                {
-                     extend: 'pageLength',
-                    text: 'Show',
-                    className: 'btn btn-secondary',
-                    Options: [10, 25, 50, 100, 250, 500, 1000, 2000], 
-                },
+                buttons: [
                     {
-                        extend: 'excelHtml5',
-                        // The list can be empty, and Finance users can view
-                        // multiple offices; use a stable export title.
-                        title: 'Receipts',
+                        extend: 'pageLength',
+                        text: 'Show',
                         className: 'btn btn-secondary',
-                        exportOptions: {
-                            columns: ':visible'
-                        }
+                        Options: [10, 25, 50, 100, 250, 500, 1000, 2000],
                     },
+                    // The built-in Excel button is intentionally gone: in server-side mode it
+                    // only exports the visible page. Use "Export all (filtered)" in the bar above.
                 ]
             }
         },
-                
     });
-    </script>
-
-
-    @endsection
+ 
+    // 3. Wire pickers / presets / export button to the table.
+    range.bind(table);
+</script>
+ 
+@endsection
 
 </x-sales-dashboard>

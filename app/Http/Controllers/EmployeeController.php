@@ -10,6 +10,8 @@ use App\Http\Requests\StoreemployeeRequest;
 use App\Http\Requests\UpdateemployeeRequest;
 use App\Http\Requests\StorePaymentInfoRequest;
 use App\Http\Requests\UpdatePaymentInfoRequest;
+use App\Exports\FilteredQueryExport;
+use App\Http\Controllers\Concerns\SearchesDates;
 use App\Models\Bank;
 use App\Models\Client;
 use App\Models\Department;
@@ -25,6 +27,7 @@ use Illuminate\Support\Facades\Storage;
 
 class EmployeeController extends Controller
 {
+      use SearchesDates;
 
     public function __construct()
     {
@@ -364,13 +367,87 @@ class EmployeeController extends Controller
    
         }
 
-    /** Paginated employee data for the employee-list DataTable. */
-    public function datatable(Request $request)
+
+
+        private const EMPLOYEE_RANGE_COLUMNS = [
+        'date_of_joining' => 'employees.date_of_joining',
+        'created_at'      => 'employees.created_at',
+        'status_date'     => 'employees.status_date',
+    ];
+ 
+    /** DataTables column index => SQL column. Indexes match the columns[] order in the view. */
+    private const EMPLOYEE_TEXT_COLUMNS = [
+        2  => 'employees.name',
+        3  => 'employees.gender',
+        4  => 'employees.phone_number',
+        6  => 'departments.name',
+        7  => 'roles.name',
+        8  => 'fields.name',
+        10 => 'employees.location',
+        11 => 'employees.payment_type',
+        12 => 'banks.name',
+        13 => 'payment_infos.acc_number',
+        14 => 'employees.status',
+        17 => 'employees.tin_number',
+        19 => 'employees.ssnit_number',
+        26 => 'users.name',
+    ];
+ 
+    private const EMPLOYEE_DATE_COLUMNS = [
+        5  => 'employees.date_of_joining',
+        15 => 'employees.status_date',
+        22 => 'employees.created_at',
+        23 => 'employees.created_at',   // "created (relative)" column
+        24 => 'employees.updated_at',
+        25 => 'employees.updated_at',   // "updated (relative)" column
+    ];
+ 
+    private const EMPLOYEE_SALARY_COLUMNS = [
+        20 => 'employees.basic_salary',
+        21 => 'employees.allowances',
+    ];
+ 
+    private const EMPLOYEE_ORDER_COLUMNS = [
+        1  => 'employees.id',
+        2  => 'employees.name',
+        3  => 'employees.gender',
+        4  => 'employees.phone_number',
+        5  => 'employees.date_of_joining',
+        6  => 'departments.name',
+        7  => 'roles.name',
+        8  => 'fields.name',
+        9  => 'clients.business_name',
+        10 => 'employees.location',
+        11 => 'employees.payment_type',
+        12 => 'banks.name',
+        13 => 'payment_infos.acc_number',
+        14 => 'employees.status',
+        15 => 'employees.status_date',
+        20 => 'employees.basic_salary',
+        21 => 'employees.allowances',
+        22 => 'employees.created_at',
+        24 => 'employees.updated_at',
+        26 => 'users.name',
+    ];
+ 
+    private function employeeCanViewAll(): bool
     {
         $user = Auth::user();
-        $canViewAll = $user?->hasRole(['Invoice', 'Finance Manager'])
-            || ($user?->department?->name === 'HR' && $user?->role?->name === 'Manager');
-
+ 
+        return (bool) ($user?->hasRole(['Invoice', 'Finance Manager'])
+            || ($user?->department?->name === 'HR' && $user?->role?->name === 'Manager'));
+    }
+ 
+    /** Same rule the original list used: Managers do not see salaries. */
+    private function employeeCanViewSalary(): bool
+    {
+        return ! (Auth::user()?->hasRole(['Manager']) ?? false);
+    }
+ 
+    private function employeeListBase()
+    {
+        $user = Auth::user();
+ 
         $query = employee::query()
             ->select([
                 'employees.id', 'employees.name', 'employees.gender', 'employees.phone_number',
@@ -391,51 +468,142 @@ class EmployeeController extends Controller
             ->leftJoin('users', 'users.id', '=', 'employees.user_id1')
             ->where('employees.ho_status', 'approved')
             ->whereIn('employees.status', ['Active', 'Terminated']);
-
-        if (! $canViewAll) {
+ 
+        if (! $this->employeeCanViewAll()) {
             $fieldIds = $user?->field_id === 3 ? [3, 7] : array_filter([$user?->field_id]);
             $fieldIds ? $query->whereIn('employees.field_id', $fieldIds) : $query->whereRaw('1 = 0');
         }
-
-        $recordsTotal = (clone $query)->distinct('employees.id')->count('employees.id');
+ 
+        return $query;
+    }
+ 
+    private function employeeListFilters($query, Request $request): void
+    {
+        $canViewSalary = $this->employeeCanViewSalary();
+ 
+        // Range picker. "range_by" is validated against a whitelist.
+        $rangeBy = $this->requestString($request, 'range_by');
+        $rangeColumn = self::EMPLOYEE_RANGE_COLUMNS[$rangeBy ?? ''] ?? self::EMPLOYEE_RANGE_COLUMNS['date_of_joining'];
+        $this->whereWithinRange(
+            $query,
+            $rangeColumn,
+            $this->requestString($request, 'from'),
+            $this->requestString($request, 'to')
+        );
+ 
         $columns = $request->input('columns', []);
-        foreach ($columns as $index => $column) {
-            $value = trim((string) ($column['columnControl']['search']['value'] ?? $column['search']['value'] ?? ''));
+        foreach (is_array($columns) ? $columns : [] as $index => $column) {
+            $value = $this->columnFilterValue($column);
             if ($value === '') {
                 continue;
             }
-
-            switch ((int) $index) {
-                case 1: $query->where('employees.id', 'like', "%{$value}%"); break;
-                case 2: $query->where('employees.name', 'like', "%{$value}%"); break;
-                case 3: $query->where('employees.gender', 'like', "%{$value}%"); break;
-                case 4: $query->where('employees.phone_number', 'like', "%{$value}%"); break;
-                case 5: $query->whereRaw("DATE_FORMAT(employees.date_of_joining, '%W %M %d, %Y') LIKE ?", ["%{$value}%"]); break;
-                case 6: $query->where('departments.name', 'like', "%{$value}%"); break;
-                case 7: $query->where('roles.name', 'like', "%{$value}%"); break;
-                case 8: $query->where('fields.name', 'like', "%{$value}%"); break;
-                case 9: $query->where(function ($q) use ($value) { $q->where('clients.name', 'like', "%{$value}%")->orWhere('clients.business_name', 'like', "%{$value}%"); }); break;
-                case 10: $query->where('employees.location', 'like', "%{$value}%"); break;
-                case 11: $query->where('employees.payment_type', 'like', "%{$value}%"); break;
-                case 12: $query->where('banks.name', 'like', "%{$value}%"); break;
-                case 13: $query->where('payment_infos.acc_number', 'like', "%{$value}%"); break;
-                case 14: $query->where('employees.status', 'like', "%{$value}%"); break;
-                case 17: $query->where('employees.tin_number', 'like', "%{$value}%"); break;
-                case 19: $query->where('employees.ssnit_number', 'like', "%{$value}%"); break;
-                case 26: $query->where('users.name', 'like', "%{$value}%"); break;
+ 
+            $index = (int) $index;
+ 
+            switch (true) {
+                case $index === 1:
+                    $this->whereIdMatches($query, 'employees.id', $value);   // "FWSS 45" -> 45
+                    break;
+ 
+                case $index === 9:
+                    $term = $this->likeTerm($value);
+                    $query->where(function ($q) use ($term) {
+                        $q->where('clients.name', 'like', $term)
+                            ->orWhere('clients.business_name', 'like', $term);
+                    });
+                    break;
+ 
+                case $index === 16 || $index === 18:   // TAX / SSNIT switch columns: on | off
+                    $flag = $index === 16 ? 'employees.tax_button' : 'employees.ssnit_button';
+                    $word = strtolower($value);
+                    if ($word === 'on') {
+                        $query->where($flag, 'on');
+                    } elseif ($word === 'off') {
+                        $query->where(function ($q) use ($flag) {
+                            $q->whereNull($flag)->orWhere($flag, '!=', 'on');
+                        });
+                    }
+                    break;
+ 
+                case isset(self::EMPLOYEE_DATE_COLUMNS[$index]):
+                    $this->whereDateMatches($query, self::EMPLOYEE_DATE_COLUMNS[$index], $value);
+                    break;
+ 
+                case isset(self::EMPLOYEE_SALARY_COLUMNS[$index]):
+                    if ($canViewSalary) {   // never let a filter reveal hidden salary data
+                        $this->whereNumberMatches($query, self::EMPLOYEE_SALARY_COLUMNS[$index], $value);
+                    }
+                    break;
+ 
+                case isset(self::EMPLOYEE_TEXT_COLUMNS[$index]):
+                    $query->where(self::EMPLOYEE_TEXT_COLUMNS[$index], 'like', $this->likeTerm($value));
+                    break;
             }
         }
-
-        $recordsFiltered = (clone $query)->distinct('employees.id')->count('employees.id');
-        $orderMap = [1 => 'employees.id', 2 => 'employees.name', 3 => 'employees.gender', 4 => 'employees.phone_number', 5 => 'employees.date_of_joining', 6 => 'departments.name', 7 => 'roles.name', 8 => 'fields.name', 9 => 'clients.business_name', 10 => 'employees.location', 11 => 'employees.payment_type', 12 => 'banks.name', 13 => 'payment_infos.acc_number', 14 => 'employees.status', 15 => 'employees.status_date', 20 => 'employees.basic_salary', 21 => 'employees.allowances', 22 => 'employees.created_at', 24 => 'employees.updated_at', 26 => 'users.name'];
+    }
+ 
+    private function employeeListOrder($query, Request $request): void
+    {
         $orderColumn = (int) $request->input('order.0.column', 22);
         $orderDir = $request->input('order.0.dir', 'desc') === 'asc' ? 'asc' : 'desc';
-        $rows = $query->orderBy($orderMap[$orderColumn] ?? 'employees.created_at', $orderDir)
-            ->offset(max(0, (int) $request->input('start', 0)))
-            ->limit(max(1, (int) $request->input('length', 25)))->get();
+ 
+        $sortable = self::EMPLOYEE_ORDER_COLUMNS;
+        if (! $this->employeeCanViewSalary()) {
+            unset($sortable[20], $sortable[21]);   // sorting by salary would leak it too
+        }
+ 
+        $query->orderBy($sortable[$orderColumn] ?? 'employees.created_at', $orderDir)
+            ->orderBy('employees.id', 'desc');   // unique tiebreaker (paging + chunked export)
+    }
+ 
+    /** Paginated employee data for the employee-list DataTable. */
+    public function datatable(Request $request)
+    {
+        $query = $this->employeeListBase();
+ 
+        $recordsTotal = (clone $query)->distinct('employees.id')->count('employees.id');
 
+        $globalSearch = trim((string) $request->input('search.value', ''));
+        if ($globalSearch !== '') {
+            $query->where(function ($q) use ($globalSearch) {
+                $q->where('employees.id', 'like', "%{$globalSearch}%")
+                    ->orWhere('employees.name', 'like', "%{$globalSearch}%")
+                    ->orWhere('employees.phone_number', 'like', "%{$globalSearch}%")
+                    ->orWhere('departments.name', 'like', "%{$globalSearch}%")
+                    ->orWhere('roles.name', 'like', "%{$globalSearch}%")
+                    ->orWhere('fields.name', 'like', "%{$globalSearch}%")
+                    ->orWhere('clients.name', 'like', "%{$globalSearch}%")
+                    ->orWhere('clients.business_name', 'like', "%{$globalSearch}%")
+                    ->orWhere('employees.location', 'like', "%{$globalSearch}%")
+                    ->orWhere('employees.status', 'like', "%{$globalSearch}%")
+                    ->orWhere('banks.name', 'like', "%{$globalSearch}%")
+                    ->orWhere('users.name', 'like', "%{$globalSearch}%")
+                    ->orWhereRaw("DATE_FORMAT(employees.date_of_joining, '%W %M %d, %Y') LIKE ?", ["%{$globalSearch}%"])
+                    ->orWhereRaw("DATE_FORMAT(employees.created_at, '%F, %Y') LIKE ?", ["%{$globalSearch}%"]);
+            });
+        }
+
+        $columns = $request->input('columns', []);
+        foreach ($columns as $index => $column) {
+            // ...existing switch unchanged...
+        }
+
+
+        $this->employeeListFilters($query, $request);
+        $recordsFiltered = (clone $query)->distinct('employees.id')->count('employees.id');
+ 
+        $this->employeeListOrder($query, $request);
+ 
+        $rows = $query
+            ->offset(max(0, (int) $request->input('start', 0)))
+            ->limit(max(1, min(2000, (int) $request->input('length', 25))))
+            ->get();
+ 
+        $user = Auth::user();
+        $canViewAll = $this->employeeCanViewAll();
         $canEditAll = $user?->hasRole(['Finance Manager']) ?? false;
-        $canViewSalary = ! ($user?->hasRole(['Manager']) ?? false);
+        $canViewSalary = $this->employeeCanViewSalary();
+ 
         $data = $rows->map(function ($employee) use ($canViewAll, $canEditAll, $canViewSalary) {
             $clientName = trim($employee->client_name . ' ' . $employee->client_business_name);
             $actions = '<div class="dropdown"><button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown"><i class="icon-base bx bx-dots-vertical-rounded"></i></button><div class="dropdown-menu"><a class="dropdown-item" href="' . e(url('employees/' . $employee->id)) . '"><i class="icon-base bx bxs-bullseye"></i> view</a>';
@@ -446,7 +614,7 @@ class EmployeeController extends Controller
                 $actions .= '<hr><a class="dropdown-item" href="' . e(url('employeesSalary/' . $employee->id)) . '"><i class="icon-base bx bx-money-withdraw"></i> Salaries</a>';
             }
             $actions .= '</div></div>';
-
+ 
             return [
                 'row_number' => '', 'employee_id' => 'FWSS ' . $employee->id, 'name' => $employee->name,
                 'gender' => $employee->gender, 'phone_number' => $employee->phone_number,
@@ -466,8 +634,58 @@ class EmployeeController extends Controller
                 'staff' => $employee->staff_name, 'action' => $actions,
             ];
         })->all();
-
-        return response()->json(['draw' => (int) $request->input('draw', 1), 'recordsTotal' => $recordsTotal, 'recordsFiltered' => $recordsFiltered, 'data' => $data]);
+ 
+        return response()->json([
+            'draw' => (int) $request->input('draw', 1),
+            'recordsTotal' => $recordsTotal,
+            'recordsFiltered' => $recordsFiltered,
+            'data' => $data,
+        ]);
+    }
+ 
+    /** Excel export of EVERY employee matching the current filters. */
+    public function export(Request $request)
+    {
+        $canViewSalary = $this->employeeCanViewSalary();
+ 
+        $query = $this->employeeListBase();
+        $this->employeeListFilters($query, $request);
+        $this->employeeListOrder($query, $request);
+ 
+        $headings = [
+            'Employee ID', 'Name', 'Gender', 'Phone', 'Date Joined', 'Department', 'Role', 'Field Office',
+            'Client', 'Location', 'Payment Type', 'Bank', 'Account No.', 'Status', 'Status Date',
+            'TIN', 'SSNIT No.',
+        ];
+        if ($canViewSalary) {
+            array_push($headings, 'Basic Salary', 'Allowances');
+        }
+        array_push($headings, 'Created', 'Updated', 'Updated By');
+ 
+        $export = new FilteredQueryExport($query, $headings, function ($e) use ($canViewSalary) {
+            $day = fn ($v) => $v ? Carbon::parse($v)->format('Y-m-d') : '';
+ 
+            $row = [
+                'FWSS ' . $e->id, $e->name, $e->gender, $e->phone_number, $day($e->date_of_joining),
+                $e->department_name, $e->role_name, $e->field_name,
+                trim($e->client_name . ' ' . $e->client_business_name), $e->location, $e->payment_type,
+                $e->bank_name, $e->acc_number, $e->status, $day($e->status_date),
+                $e->tin_number, $e->ssnit_number,
+            ];
+            if ($canViewSalary) {
+                array_push($row, (float) $e->basic_salary, (float) $e->allowances);
+            }
+            array_push(
+                $row,
+                $e->created_at ? Carbon::parse($e->created_at)->format('Y-m-d H:i') : '',
+                $e->updated_at ? Carbon::parse($e->updated_at)->format('Y-m-d H:i') : '',
+                $e->staff_name
+            );
+ 
+            return $row;
+        });
+ 
+        return $export->download('Employees-' . now()->format('Ymd-His') . '.xlsx');
     }
 
     /**

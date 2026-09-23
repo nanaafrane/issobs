@@ -6,6 +6,8 @@ use App\Models\Invoice;
 use App\Http\Requests\StoreInvoiceRequest;
 use App\Http\Requests\UpdateInvoiceRequest;
 use App\Http\Requests\InvoiceToPayrollSearchRequest;
+ use App\Exports\FilteredQueryExport;
+use App\Http\Controllers\Concerns\SearchesDates;
 use App\Models\Client;
 use App\Models\Field;
 use App\Models\Service;
@@ -18,6 +20,8 @@ use Carbon\Carbon;
 
 class InvoiceController extends Controller
 {
+
+    use SearchesDates;
 
     /**
      * Create a new controller instance.
@@ -216,9 +220,22 @@ class InvoiceController extends Controller
         return view('sales.invoice_list');
     }
 
-    public function datatable(Request $request)
+       private const INVOICE_ORDER_COLUMNS = [
+        1  => 'invoices.id',
+        2  => 'invoices.invoice_month',
+        3  => 'client_business_name',
+        4  => 'clients.phone_number',
+        5  => 'field_name',
+        6  => 'staff_name',
+        7  => 'invoices.created_at',
+        8  => 'invoices.due_date',
+        9  => 'invoices.total',
+        10 => 'invoices.status',
+    ];
+ 
+    private function invoiceListBase()
     {
-        $query = Invoice::query()
+        return Invoice::query()
             ->select([
                 'invoices.id',
                 'invoices.client_id',
@@ -237,110 +254,134 @@ class InvoiceController extends Controller
             ->leftJoin('clients', 'clients.id', '=', 'invoices.client_id')
             ->leftJoin('fields', 'fields.id', '=', 'clients.field_id')
             ->leftJoin('users', 'users.id', '=', 'invoices.user_id');
-
-        $search = trim((string) $request->input('search.value', ''));
-        $columns = $request->input('columns', []);
-
+    }
+ 
+    private function invoiceListFilters($query, Request $request): void
+    {
+        // Month-anchored column => wholeMonths: true (from snaps to the 1st, to snaps to month end).
+        $this->whereWithinRange(
+            $query,
+            'invoices.invoice_month',
+            $this->requestString($request, 'from'),
+            $this->requestString($request, 'to'),
+            true
+        );
+ 
+        $search = trim((string) $this->requestString($request, 'search.value'));
         if ($search !== '') {
-            $query->where(function ($q) use ($search) {
-                $q->where('invoices.id', 'like', "%{$search}%")
-                    ->orWhere('invoices.status', 'like', "%{$search}%")
-                    ->orWhere('clients.business_name', 'like', "%{$search}%")
-                    ->orWhere('clients.name', 'like', "%{$search}%")
-                    ->orWhere('clients.phone_number', 'like', "%{$search}%")
-                    ->orWhere('fields.name', 'like', "%{$search}%")
-                    ->orWhere('users.name', 'like', "%{$search}%")
-                    ->orWhereRaw("DATE_FORMAT(invoices.invoice_month, '%M, %Y') LIKE ?", ["%{$search}%"])
-                    ->orWhereRaw("DATE_FORMAT(invoices.created_at, '%M %d, %Y') LIKE ?", ["%{$search}%"]);
+            $term = $this->likeTerm($search);
+ 
+            $query->where(function ($q) use ($search, $term) {
+                $q->where('invoices.status', 'like', $term)
+                    ->orWhere('clients.business_name', 'like', $term)
+                    ->orWhere('clients.name', 'like', $term)
+                    ->orWhere('clients.phone_number', 'like', $term)
+                    ->orWhere('fields.name', 'like', $term)
+                    ->orWhere('users.name', 'like', $term)
+                    ->orWhere(function ($w) use ($search) {
+                        $this->whereDateMatches($w, 'invoices.invoice_month', $search);
+                    })
+                    ->orWhere(function ($w) use ($search) {
+                        $this->whereDateMatches($w, 'invoices.created_at', $search);
+                    })
+                    ->orWhere(function ($w) use ($search) {
+                        $this->whereDateMatches($w, 'invoices.due_date', $search);
+                    });
+ 
+                if (preg_match('/^(fwss[ri]?)?\s*#?\d+$/i', $search)) {
+                    $q->orWhere('invoices.id', 'like', '%' . preg_replace('/\D/', '', $search) . '%');
+                }
             });
         }
-
-        foreach ($columns as $index => $column) {
-            // ColumnControl sends per-column input values separately from
-            // DataTables' standard `columns[index][search][value]` field.
-            // Prefer its value when present, but retain the standard field so
-            // other DataTables controls continue to work.
-            $value = trim((string) (
-                $column['columnControl']['search']['value']
-                    ?? $column['search']['value']
-                    ?? ''
-            ));
+ 
+        // Per-column filters. Indexes match the <thead> / columns[] order.
+        $columns = $request->input('columns', []);
+        foreach (is_array($columns) ? $columns : [] as $index => $column) {
+            $value = $this->columnFilterValue($column);
             if ($value === '') {
                 continue;
             }
-
-            switch ($index) {
+ 
+            switch ((int) $index) {
+                case 1:
+                    $this->whereIdMatches($query, 'invoices.id', $value);
+                    break;
                 case 2:
-                    $query->whereRaw("DATE_FORMAT(invoices.invoice_month, '%M, %Y') LIKE ?", ["%{$value}%"]);
+                    $this->whereDateMatches($query, 'invoices.invoice_month', $value);
                     break;
                 case 3:
-                    $query->where(function ($q) use ($value) {
-                        $q->where('clients.business_name', 'like', "%{$value}%")
-                            ->orWhere('clients.name', 'like', "%{$value}%");
+                    $term = $this->likeTerm($value);
+                    $query->where(function ($q) use ($term) {
+                        $q->where('clients.business_name', 'like', $term)
+                            ->orWhere('clients.name', 'like', $term);
                     });
                     break;
                 case 4:
-                    $query->where('clients.phone_number', 'like', "%{$value}%");
+                    $query->where('clients.phone_number', 'like', $this->likeTerm($value));
                     break;
                 case 5:
-                    $query->where('fields.name', 'like', "%{$value}%");
+                    $query->where('fields.name', 'like', $this->likeTerm($value));
                     break;
                 case 6:
-                    $query->where('users.name', 'like', "%{$value}%");
+                    $query->where('users.name', 'like', $this->likeTerm($value));
                     break;
                 case 7:
-                    $query->whereRaw("DATE_FORMAT(invoices.created_at, '%M %d, %Y') LIKE ?", ["%{$value}%"]);
+                    $this->whereDateMatches($query, 'invoices.created_at', $value);
                     break;
                 case 8:
-                    $query->whereRaw("DATE_FORMAT(invoices.due_date, '%M %d, %Y') LIKE ?", ["%{$value}%"]);
+                    $this->whereDateMatches($query, 'invoices.due_date', $value);
+                    break;
+                case 9:
+                    $this->whereNumberMatches($query, 'invoices.total', $value);
                     break;
                 case 10:
-                    $query->where('invoices.status', 'like', "%{$value}%");
+                    $query->where('invoices.status', 'like', $this->likeTerm($value));
                     break;
-                default:
-                    $query->where('invoices.id', 'like', "%{$value}%");
-                    break;
+                // 0 (row number) and 11 (action) are not filterable.
             }
         }
-
+    }
+ 
+    private function invoiceListOrder($query, Request $request): void
+    {
+        $orderColumn = (int) $request->input('order.0.column', 7);
+        $orderDir = $request->input('order.0.dir', 'desc') === 'asc' ? 'asc' : 'desc';   // validated
+        $sortColumn = self::INVOICE_ORDER_COLUMNS[$orderColumn] ?? 'invoices.created_at'; // whitelisted
+ 
+        $query->orderByRaw("{$sortColumn} {$orderDir}")->orderBy('invoices.id', 'desc');
+    }
+ 
+    public function datatable(Request $request)
+    {
+        $query = $this->invoiceListBase();
         $recordsTotal = Invoice::count();
+ 
+        $this->invoiceListFilters($query, $request);
         $recordsFiltered = (clone $query)->count();
-
-        $columnMap = [
-            0 => 'invoices.id',
-            1 => 'invoices.id',
-            2 => 'invoices.invoice_month',
-            3 => 'client_business_name',
-            4 => 'clients.phone_number',
-            5 => 'field_name',
-            6 => 'staff_name',
-            7 => 'invoices.created_at',
-            8 => 'invoices.due_date',
-            9 => 'invoices.total',
-            10 => 'invoices.status',
-        ];
-
-        $orderColumn = $request->input('order.0.column', 0);
-        $orderDir = $request->input('order.0.dir', 'desc');
-        $sortColumn = $columnMap[$orderColumn] ?? 'invoices.created_at';
-
-        if (in_array($sortColumn, ['client_business_name', 'field_name', 'staff_name'], true)) {
-            $query->orderByRaw($sortColumn . ' ' . $orderDir);
-        } else {
-            $query->orderBy($sortColumn, $orderDir);
-        }
-
-        $start = (int) $request->input('start', 0);
+ 
+        $this->invoiceListOrder($query, $request);
+ 
+        $start = max(0, (int) $request->input('start', 0));
         $length = (int) $request->input('length', 25);
-        $length = $length > 0 ? $length : 25;
-
+        $length = $length > 0 ? min($length, 2000) : 25;
+ 
         $rows = $query->offset($start)->limit($length)->get();
-
+ 
         $data = $rows->map(function ($invoice) {
             $clientName = trim((string) ($invoice->client_business_name ?: $invoice->client_name));
             $badgeClass = $invoice->status === 'completed' ? 'bg-label-success' : 'bg-label-danger';
-            $dueLabel = $invoice->due_date ? Carbon::parse($invoice->due_date)->diffForHumans() : '';
-
+ 
+            // Absolute dates are searchable; the relative label is a tooltip.
+            $createdCell = $invoice->created_at
+                ? '<span title="' . e($invoice->created_at->diffForHumans()) . '">'
+                    . e($invoice->created_at->format('d M Y, H:i')) . '</span>'
+                : '';
+ 
+            $dueCell = $invoice->due_date
+                ? '<span title="' . e(Carbon::parse($invoice->due_date)->diffForHumans()) . '">'
+                    . e(Carbon::parse($invoice->due_date)->format('d M Y, H:i')) . '</span>'
+                : '';
+ 
             return [
                 'row_number' => '',
                 'invoice_id' => $invoice->id,
@@ -349,20 +390,52 @@ class InvoiceController extends Controller
                 'phone_number' => $invoice->phone_number,
                 'field_name' => $invoice->field_name,
                 'staff_name' => $invoice->staff_name,
-                'created_at' => $invoice->created_at ? $invoice->created_at->format('F l d, Y, H:i A') : '',
-                'due_date' => $dueLabel,
+                'created_at' => $createdCell,
+                'due_date' => $dueCell,
                 'amount' => 'GH₵ ' . number_format((float) $invoice->total, 2),
                 'status' => '<span class="badge ' . $badgeClass . '">' . e($invoice->status) . '</span>',
                 'action' => view('partials.invoice_row_actions', ['invoice' => $invoice])->render(),
             ];
         })->all();
-
+ 
         return response()->json([
             'draw' => (int) $request->input('draw', 1),
             'recordsTotal' => $recordsTotal,
             'recordsFiltered' => $recordsFiltered,
             'data' => $data,
         ]);
+    }
+ 
+    /**
+     * Excel export of EVERY invoice matching the current filters.
+     */
+    public function export(Request $request)
+    {
+        $query = $this->invoiceListBase();
+        $this->invoiceListFilters($query, $request);
+        $this->invoiceListOrder($query, $request);
+ 
+        $headings = [
+            'Invoice No.', 'Invoice Month', 'Client', 'Phone', 'Field Office', 'Staff',
+            'Date Created', 'Due Date', 'Amount', 'Status',
+        ];
+ 
+        $export = new FilteredQueryExport($query, $headings, function ($i) {
+            return [
+                'FWSSi' . $i->id,
+                $i->invoice_month ? Carbon::parse($i->invoice_month)->format('F Y') : '',
+                trim((string) ($i->client_business_name ?: $i->client_name)),
+                $i->phone_number,
+                $i->field_name,
+                $i->staff_name,
+                $i->created_at ? $i->created_at->format('Y-m-d H:i') : '',
+                $i->due_date ? Carbon::parse($i->due_date)->format('Y-m-d') : '',
+                (float) $i->total,
+                $i->status,
+            ];
+        });
+ 
+        return $export->download('Invoices-' . now()->format('Ymd-His') . '.xlsx');
     }
 
     public function printInvoice($invoice_id)
