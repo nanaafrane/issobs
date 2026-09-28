@@ -15,258 +15,8 @@
 
 
   @section('side_nav')
-  <!-- Menu -->
-    <aside id="layout-menu" class="layout-menu menu-vertical menu bg-menu-theme">
-        <div class="app-brand demo">
-            <a href="#" class="app-brand-link">
-                <span class="app-brand-logo demo">
-                    <img width="70px" src="{{asset('img/icons/brands/issobs.png')}}" alt="">
-                    <!-- Logo -->
-                </span>
-                <span class="app-brand-text demo menu-text fw-bold ms-2">ISSOBS</span>
-            </a>
-
-            <a href="javascript:void(0);" class="layout-menu-toggle menu-link text-large ms-auto">
-                <i class="bx bx-chevron-left d-block d-xl-none align-middle"></i>
-            </a>
-        </div>
-
-        <div class="menu-divider mt-0"></div>
-
-        <div class="menu-inner-shadow"></div>
-
-        <ul class="menu-inner py-1">
-            <!-- Dashboards -->
-            <li class="menu-item">
-                <a href="javascript:void(0);" class="menu-link menu-toggle">
-                    <i class="menu-icon tf-icons bx bx-home-smile"></i>
-                    <div class="text-truncate" data-i18n="Dashboards"><strong>Dashboard</strong></div>
-                </a>
-                <ul class="menu-sub">
-                    <li class="menu-item ">
-                        <a href="{{url('home')}}" class="menu-link">
-                            <div class="text-truncate" data-i18n="Dashboard">Dashboard</div>
-                        </a>
-                    </li>
-                </ul>
-            </li>
-
-        @if(Auth::user()->hasPermission('Accounts'))
-            <!-- Apps & Pages -->
-            <li class="menu-header small text-uppercase ">
-                <span class="menu-header-text text-primary">Transactions</span>
-            </li>
-            <!-- Pages -->
-            <li class="menu-item">
-                <a href="{{url('transaction')}}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-transfer-alt bg-primary"></i>
-                    <div class="text-truncate" data-i18n="Transaction">Transactions</div>
-                </a>
-            </li>
-
-                @if(Auth::user()->hasRole(['Invoice', 'Finance Manager']))
-                <li class="menu-item">
-                    <a href="{{ url('invoice') }}" class="menu-link">
-                        <i class="menu-icon tf-icons bx bx-bxs-receipt bg-primary"></i>
-                        <div class="text-truncate" data-i18n="Invoices">Invoices</div>
-                    </a>
-                </li>
-                @endif
-
-                @if(Auth::user()->hasRole(['Finance Manager']))
-                    <li class="menu-item">
-                        <a href="{{url('receipt')}}" class="menu-link">
-                            <i class="menu-icon tf-icons bx bx-money-withdraw bg-primary"></i>
-                            <div class="text-truncate" data-i18n="Receipts">Receipts</div>
-                        </a>
-                    </li>
-
-            <li class="menu-header small text-uppercase"><span class="menu-header-text text-info">Management</span></li>
-            <li class="menu-item">
-                <a href="{{url('client')}}" class="menu-link">
-                <i class="menu-icon tf-icons bx bx-bxs-user-detail bg-info"></i>
-                <div class="text-truncate" data-i18n="Clients">Clients</div>
-                </a>
-            </li>
-                @endif
-        @endif
-
-        @if(Auth::user()->hasPermission('HR') || Auth::user()->hasRole(['Invoice']))
-            <li class="menu-header small text-uppercase"><span class="menu-header-text text-info">Management</span></li>
-            @if(Auth::user()->hasPermission('HR'))
-            <li class="menu-item">
-                    <a href="javascript:void(0);" class="menu-link menu-toggle">
-                        <i class="menu-icon tf-icons bx bx-bxs-group"></i>
-                        <div class="text-truncate" data-i18n="Staffs">System Users</div>
-                    </a>
-                    <ul class="menu-sub">
-                        <li class="menu-item">
-                            <a href="{{url('staffAdd')}}" class="menu-link">
-                                <div class="text-truncate" data-i18n="SRegister">Register</div>
-                            </a>
-                        </li>
-                        <li class="menu-item">
-                            <a href="{{url('staff')}}" class="menu-link">
-                                <div class="text-truncate" data-i18n="SList">List</div>
-                            </a>
-                        </li>
-                    </ul>
-            </li>
-            @endif
-            <li class="menu-item ">
-                <a href="javascript:void(0);" class="menu-link menu-toggle">
-                <i class="menu-icon tf-icons bx bxs-user-account"></i>
-                <div class="text-truncate" data-i18n="Staffs">Employees</div>
-                </a>
-                <ul class="menu-sub">
-                <li class="menu-item ">
-                    <a href="{{url('employees/create')}}" class="menu-link">
-                    <div class="text-truncate" data-i18n="SRegister">Register</div>
-                    </a>
-                </li>
-                <li class="menu-item">
-                    <a href="{{url('employees')}}" class="menu-link">
-                    <div class="text-truncate" data-i18n="SList">List</div>
-                    </a>
-                </li>
-          <li class="menu-item">
-              <a href="{{url('employeesBank')}}" class="menu-link">
-              <div class="text-truncate" data-i18n="SList">Employee Banks</div>
-              </a>
-          </li>
-                      <li class="menu-item">
-              <a href="{{url('employeesCash')}}" class="menu-link">
-              <div class="text-truncate" data-i18n="SList">Employee MoMo</div>
-              </a>
-          </li>
-                </ul>
-            </li>
-        
-            <li class="menu-item ">
-                <a class="menu-link menu-toggle">
-                    <i class="menu-icon tf-icons bx bx-bxs-user-detail"></i>
-                    <div class="text-truncate" data-i18n="Clients"><strong>Clients</strong></div>
-                </a>
-                <ul class="menu-sub">
-                    <li class="menu-item ">
-                        <a href="{{url('client/create')}}" class="menu-link">
-                            <div class="text-truncate" data-i18n="CRegister">Register</div>
-                        </a>
-                    </li>
-                    <li class="menu-item">
-                        <a href="{{url('client')}}" class="menu-link">
-                            <div class="text-truncate" data-i18n="CList">List</div>
-                        </a>
-                    </li>
-                </ul>
-            </li>
-
-            <li class="menu-item">
-                <a href="{{url('departments')}}" class="menu-link">
-                <i class="menu-icon tf-icons bx bxs-buildings"></i>
-                <div class="text-truncate" data-i18n="depnroles">Department & Roles </div>
-                </a>
-            </li>
-
-            <li class="menu-item">
-                <a href="{{url('field')}}" class="menu-link">
-                <i class="menu-icon tf-icons bx bx-bxs-location-plus"></i>
-                <div class="text-truncate" data-i18n="fOffices">Field Offices</div>
-                </a>
-            </li>
-            @endif
-
-            @if((Auth::user()->hasRole(['Manager', 'Finance Manager']) && Auth::user()->hasPermission('Accounts')) )
-
-            <li class="menu-header small text-uppercase"> <span class="menu-header-text text-danger">Accounts</span></li>
-
-            <li class="menu-item">
-                <a href="javascript:void(0);" class="menu-link menu-toggle">
-                    <i class="menu-icon tf-icons bx bxs-analyse bg-danger"></i>
-                    <div class="text-truncate" data-i18n="Accounts"> Accounts</div>
-                </a>
-                <ul class="menu-sub">
-                    <li class="menu-item">
-                        <a href="{{url('collections')}}" class="menu-link">
-                            <i class="menu-icon tf-icons bx bx-add-to-queue bg-danger"></i>
-                            <div class="text-truncate" data-i18n="ARegister">Collections</div>
-                        </a>
-                    </li>
-                    <li class="menu-item">
-                        <a href="" class="menu-link">
-                            <i class="menu-icon tf-icons bx bx-arrow-from-left bg-danger"></i>
-                            <div class="text-truncate" data-i18n="AList">Bank Deposit</div>
-                        </a>
-                    </li>
-                    <li class="menu-item">
-                        <a href="" class="menu-link">
-                            <i class="menu-icon tf-icons bx bxs-bank bg-danger"></i>
-                            <div class="text-truncate" data-i18n="AList">Banks</div>
-                        </a>
-                    </li>
-                </ul>
-            </li>
-
-            <li class="menu-item">
-                <a href="{{url('expense')}}" class="menu-link">
-                <i class="menu-icon tf-icons bx bx-bxs-credit-card bg-secondary"></i>
-                <div class="text-truncate" data-i18n="Expense"> Expense </div>
-                </a>
-            </li>
-
-            @endif
-
-            <li class="menu-header small text-uppercase"><span class="menu-header-text">PAYROLL</span></li>
-            <li class="menu-item active open">
-                    <a href="javascript:void(0);" class="menu-link menu-toggle">
-                    <i class="menu-icon tf-icons bx bx-money-withdraw"></i>
-                    <div class="text-truncate" data-i18n="Payroll">Payroll</div>
-                    </a>
-                    <ul class="menu-sub">
-                    @if(Auth::user()->hasPermission('HR') || Auth::user()->hasRole(['Invoice']))
-                    <li class="menu-item ">
-                        <a href="{{ url('salaries') }}" class="menu-link">
-                        <i class="menu-icon tf-icons bx bxs-user-account"></i>
-                        <div class="text-truncate" data-i18n="Employees">Add to Salaries</div>
-                        </a>
-                    </li>
-                    @endif
-
-                    <li class="menu-item ">
-                        <a href="{{ url('salaries/create') }}" class="menu-link">
-                        <i class="menu-icon tf-icons bx bx-money-withdraw"></i>
-                        <div class="text-truncate" data-i18n="Salaries">Salaries</div>
-                        </a>
-                    </li>
-
-                    <li class="menu-item active">
-                        <a href="{{ url('salariesTransaction') }}" class="menu-link">
-                        <i class="menu-icon tf-icons bx bx-transfer-alt"></i>
-                        <div class="text-truncate" data-i18n="Transaction">Transactions</div>
-                        </a>
-                    </li>
-
-                                                        <!-- <li class="menu-item">
-                    <a href="{{ url('salariesBulkCash') }}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bxs-group"></i>
-                    <div class="text-truncate" data-i18n="Transaction">Bulk MoMo Salaries</div>
-                    </a>
-                </li>
-
-
-                    <li class="menu-item">
-                        <a href="{{ url('salariesInvPayroll') }}" class="menu-link">
-                        <i class="menu-icon tf-icons bx bx-git-compare"></i>
-                        <div class="text-truncate" data-i18n="InvtoPayroll">Invoice to Payroll</div>
-                        </a>
-                    </li> -->
-                    </ul>
-                </li>
-        </ul>
-    </aside>
-  <!-- / Menu -->
+    @include('partials.payroll_side_nav')
   @endsection
-
 
   @section('content')
 
@@ -648,13 +398,13 @@
                                                     </td>
                                                     <td> @if( $catA->client?->category_month == \Carbon\Carbon::parse($month)->format('Y-m-d') ) {{ $catA->client?->category?->updated_at?->format('F l d, Y') }} @endif </td>
                                                     <td> {{ $catA->client?->field?->name }} </td>
-                                                    <td> @php  $catAinv = $catA->client?->invoices()->whereMonth('invoice_month', $month->month)->get(); @endphp GH&#x20B5; {{  number_format($catAinv->sum('total'), 2)  }} </td>
+                                                    <td> @php  $catAinv = $catA->client?->invoices; @endphp GH&#x20B5; {{  number_format($catAinv->sum('total'), 2)  }} </td>
                                                   
                                                     <td>  
                                                         @php
                                                             $guardsa = [];
                                                             foreach ($catAinv as $invGuard) {
-                                                                $guardsa[] = $invGuard->invoice_data()->sum('quantity');
+                                                                $guardsa[] = $invGuard->invoice_data->sum('quantity');
                                                             }
                                                         @endphp
                                                         {{ collect($guardsa)->sum() }}
@@ -734,12 +484,12 @@
                                                     </td>
                                                     <td>  @if( $catB->client?->category_month == \Carbon\Carbon::parse($month)->format('Y-m-d') ) {{ $catB->client?->category?->updated_at?->format('F l d, Y') }} @endif </td>
                                                     <td> {{ $catB->client?->field?->name }} </td>
-                                                    <td> @php $catBinv = $catB->client?->invoices()->whereMonth('invoice_month', $month->month)->get() @endphp GH&#x20B5; {{ number_format( $catBinv->sum('total'),2)  }} </td>
+                                                    <td> @php $catBinv = $catB->client?->invoices @endphp GH&#x20B5; {{ number_format( $catBinv->sum('total'),2)  }} </td>
                                                     <td> 
                                                         @php
                                                             $guardsb = [];
                                                             foreach ($catBinv as $invGuard) {
-                                                                $guardsb[] = $invGuard->invoice_data()->sum('quantity');
+                                                                $guardsb[] = $invGuard->invoice_data->sum('quantity');
                                                             }
                                                         @endphp
                                                         {{ collect($guardsb)->sum() }}
@@ -820,12 +570,12 @@
                                                     </td>
                                                     <td> @if( $catC->client?->category_month == \Carbon\Carbon::parse($month)->format('Y-m-d') ) {{ $catC->client?->category?->updated_at?->format('F l d, Y') }} @endif </td>
                                                     <td> {{ $catC->client?->field?->name }} </td>
-                                                    <td>  @php $catCinv = $catC->client?->invoices()->whereMonth('invoice_month', $month->month)->get() @endphp GH&#x20B5; {{ number_format( $catCinv->sum('total'),2)  }} </td>
+                                                    <td>  @php $catCinv = $catC->client?->invoices @endphp GH&#x20B5; {{ number_format( $catCinv->sum('total'),2)  }} </td>
                                                     <td>
                                                         @php
                                                             $guardsc = [];
                                                             foreach ($catCinv as $invGuard) {
-                                                                $guardsc[] = $invGuard->invoice_data()->sum('quantity');
+                                                                $guardsc[] = $invGuard->invoice_data->sum('quantity');
                                                             }
                                                         @endphp
                                                         {{ collect($guardsc)->sum() }}
@@ -906,12 +656,12 @@
                                                    </td>
                                                     <td> @if( $catD->client?->category_month == \Carbon\Carbon::parse($month)->format('Y-m-d') ) {{ $catD->client?->category?->updated_at?->format('F l d, Y') }} @endif </td>
                                                     <td> {{ $catD->client?->field?->name }} </td>
-                                                    <td> @php $catDinv = $catD->client?->invoices()->whereMonth('invoice_month', $month->month)->get() @endphp GH&#x20B5; {{ number_format( $catDinv->sum('total'),2)  }} </td>
+                                                    <td> @php $catDinv = $catD->client?->invoices @endphp GH&#x20B5; {{ number_format( $catDinv->sum('total'),2)  }} </td>
                                                     <td> 
                                                         @php
                                                             $guardsd = [];
                                                             foreach ($catDinv as $invGuard) {
-                                                                $guardsd[] = $invGuard->invoice_data()->sum('quantity');
+                                                                $guardsd[] = $invGuard->invoice_data->sum('quantity');
                                                             }
                                                         @endphp
                                                         {{ collect($guardsd)->sum() }}
@@ -993,12 +743,12 @@
                                                                 </select>
                                                         </td>
                                                         <td> {{ $clientMaster->client?->field?->name }} </td>
-                                                        <td> @php $clientInv = $clientMaster->client?->invoices()->whereMonth('invoice_month', $month->month)->get() @endphp GH&#x20B5; {{ number_format($clientInv->sum('total'), 2) }} </td>
+                                                        <td> @php $clientInv = $clientMaster->client?->invoices @endphp GH&#x20B5; {{ number_format($clientInv->sum('total'), 2) }} </td>
                                                         <td> 
                                                             @php
                                                                 $guards = [];
                                                                 foreach ($clientInv as $invGuard) {
-                                                                    $guards[] = $invGuard->invoice_data()->sum('quantity');
+                                                                    $guards[] = $invGuard->invoice_data->sum('quantity');
                                                                 }
                                                             @endphp
                                                             {{ collect($guards)->sum() }}
@@ -1107,30 +857,84 @@
                 </div>
 
                  <div class="tab-pane fade show active" id="navs-pills-justified-master" role="tabpanel">
-                    <form action="/salariesBulkCash" method="POST">
+                    @php $canEditMaster = Auth::user()->hasRole(['Finance Manager']); @endphp
+                    <form action="/salariesBulkCash" method="POST" id="masterForm">
                         @csrf
                         <input type="hidden" name="action_type" id="salaries_bulk_action_type" value="" />
-                        
+                        <div id="masterSelectionInputs"></div>
+
+                        {{-- Filters (server-side). Export always exports ALL filtered rows, not just the visible page. --}}
+                        <div class="row g-2 align-items-end mb-2">
+                            <div class="col-auto">
+                                <label class="form-label small mb-0" for="m_status">Status</label>
+                                <select id="m_status" class="form-select form-select-sm master-filter">
+                                    <option value="">All</option>
+                                    <option value="pending">Pending</option>
+                                    <option value="approved">Approved (paid)</option>
+                                    <option value="outstanding">Outstanding (pending + hold + rejected)</option>
+                                    <option value="hold">Hold</option>
+                                    <option value="rejected">Rejected</option>
+                                </select>
+                            </div>
+                            <div class="col-auto">
+                                <label class="form-label small mb-0" for="m_type">Payment type</label>
+                                <select id="m_type" class="form-select form-select-sm master-filter">
+                                    <option value="">All</option>
+                                    <option value="bank">Bank</option>
+                                    <option value="cash">MoMo / Cash</option>
+                                </select>
+                            </div>
+                            <div class="col-auto">
+                                <label class="form-label small mb-0" for="m_field">Field office</label>
+                                <select id="m_field" class="form-select form-select-sm master-filter">
+                                    <option value="">All fields</option>
+                                    @foreach($fields as $field)
+                                        <option value="{{ $field->id }}">{{ $field->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-auto">
+                                <label class="form-label small mb-0" for="m_category">Category</label>
+                                <select id="m_category" class="form-select form-select-sm master-filter">
+                                    <option value="">All</option>
+                                    @foreach(['A','B','C','D'] as $L)
+                                        <option value="Category {{ $L }}">Category {{ $L }}</option>
+                                    @endforeach
+                                    <option value="none">No category</option>
+                                </select>
+                            </div>
+                            <div class="col-auto">
+                                <button type="button" class="btn btn-sm btn-success" id="masterExport">
+                                    <i class="bx bx-spreadsheet me-1"></i> Export filtered rows to Excel
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="small text-muted mb-2" id="masterTotals" aria-live="polite">Loading totals…</div>
+
+                        @if($canEditMaster)
+                        <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+                            <button class="btn btn-danger btn-sm" type="submit" data-action="hold" disabled>
+                                <i class="icon-base bx bx-bxs-file-plus"></i> Hold selected
+                            </button>
+                            <button class="btn btn-dark btn-sm" type="submit" data-action="topup" disabled>
+                                <i class="icon-base bx bx-bxs-file-plus"></i> Add salary top ups
+                            </button>
+                            <span class="small" id="masterSelectionText">No salary selected.</span>
+                            <a href="#" class="small text-danger d-none" id="masterClear">Clear selection</a>
+                        </div>
+                        @endif
+
                         <div class="table-responsive text-nowrap">
-                            @if(Auth::user()->hasRole(['Finance Manager']))
-                            <input class="form-check-input form-check-inline" type="checkbox" value="" id="options" />
-
-                            <div class="form-check form-check-inline">
-                                <button class="btn btn-danger m-4"  onclick="document.getElementById('salaries_bulk_action_type').value='hold'; return confirm('Kindly Confirm?')" type="submit"> <i class="icon-base bx bx-bxs-file-plus"> </i> {{ __(' Hold') }}</button>                   
-                            </div>
-                            <div class="form-check form-check-inline">
-                                <button class="btn btn-dark m-4"  onclick="document.getElementById('salaries_bulk_action_type').value='topup'; return confirm('Kindly Confirm?')" type="submit"> <i class="icon-base bx bx-bxs-file-plus"> </i> {{ __('Add Salary Top Ups ') }}</button>                   
-                            </div>
-                                <!-- <a href="{{ url('/exportMaster', $salariesMaster[0]->salary_month?->format('F, Y'))}} " class="btn btn-success m-4" > <i class="icon-base bx bx-bxs-file-plus"> </i> {{ __(' Excel Download Master') }}</a>                    -->
-                            @endif
-
-                            <table id="myTableimaster" class="display">
+                            <table id="myTableimaster" class="display"
+                                   data-source="{{ route('salaries.salariesMonthData') }}"
+                                   data-export="{{ route('salaries.salariesMonthExport') }}"
+                                   data-month="{{ $month->format('Y-m') }}"
+                                   data-can-edit="{{ $canEditMaster ? 1 : 0 }}">
                                 <thead>
                                     <tr>
-                                        <th> </th>
+                                        <th>@if($canEditMaster)<input class="form-check-input" type="checkbox" id="masterOptions" title="Select all on this page" />@endif</th>
                                         <th> Action </th>
-                                        <!-- <th> Approval Date </th> -->
-                                        <!-- <th> Bulk Cash</th> -->
                                         <th> Payment Status</th>
                                         <th> Hold Reason</th>
                                         <th> Category </th>
@@ -1184,93 +988,7 @@
                                         <th> cost_to_company </th>
                                     </tr>
                                 </thead>
-                                <tbody class="table-border-bottom-0">
-                                @foreach ($salariesMaster as $key => $salary)
-
-                                    <tr>
-                                                    <td> <input class="checkBoxes form-check-input" type="checkbox" name="salary[]" value="{{ $salary->id }}" /> </td>
-                                                    <td>
-                                                        <div class="dropdown">
-                                                            <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown">
-                                                                <i class="icon-base bx bx-dots-vertical-rounded"></i>
-                                                            </button>
-                                                            <div class="dropdown-menu">
-                                                                
-                                                                <a class="dropdown-item" href="/salaries/{{$salary->id}}"><i class="icon-base bx bxs-bullseye"></i>view</a> 
-                                                                <a class="dropdown-item" href="/salaries/{{$salary->id}}/edit"><i class="icon-base bx bx-edit-alt me-1"></i> Edit</a> 
-
-                                                            </div>
-                                                        </div>
-                                                    </td>
-
-                                                    @if ($salary->payment_status == 'pending')
-                                                    <td>  <span class="badge bg-label-info"> {{ $salary->payment_status }} </span> <br>{{ $salary->status2 }} <br> {{$salary->approval_date?->format('F l d, Y')}} <br> {{  $salary->user2?->name }} </td>
-                                                    @elseif($salary->payment_status == 'hold')
-                                                    <td> <span class="badge bg-label-warning"> {{ $salary->payment_status }} </span> </td>
-                                                    @elseif($salary->payment_status == 'rejected')
-                                                    <td> <span class="badge bg-label-danger"> {{ $salary->payment_status }} </span> </td>
-                                                    @else
-                                                    <td>  <span class="badge bg-label-success"> {{ $salary->payment_status }} </span> <br> {{ $salary->status2 }} <br> {{$salary->approval_date?->format('F l d, Y')}} <br> {{  $salary->user2?->name }}  </td>
-                                                    @endif
-                                                    <td> <textarea type="text" name="hold_reason[{{ $salary->id }}]" class="form-control"> {{ $salary?->hold_reason }} </textarea> </td>
-                                                    <td> 
-                                                        @foreach($categories as $category)
-                                                            @if($salary->client_id == $category->client_id)
-                                                                {{ $category->name }}
-                                                            @endif
-                                                        @endforeach
-                                                    </td>
-                                                    <td> {{ $salary->id }} </td>
-                                                    <td> {{$salary->salary_month?->format('F, Y')}} </td>
-                                                    <td> FWSS {{ $salary?->employee_id }} </td>
-                                                    <td> {{ strtoupper($salary->employee?->name) }} </td>
-                                                    <td> {{ $salary->department?->name }} </td>
-                                                    <td> {{ $salary->role?->name }} </td>
-                                                    <td> {{ $salary->field?->name }} </td>
-                                                    <td> {{ $salary->employee?->worker_type }} </td>
-                                                    <td> {{ $salary->client?->name }} {{ $salary->client?->business_name }}</td>
-                                                    <td> {{ $salary->location }} </td>
-                                                    <td> {{ $salary->client?->invoices()->whereMonth('invoice_month', $month->month)->pluck('status') }} </td>
-                                                    <td> {{$salary->employee?->ssnit_number}}</td>
-                                                    <td> {{$salary->employee?->tin_number}}</td>
-                                                    <td> {{$salary->payment_type}}</td>
-                                                    <td> {{$salary->bank?->name}}</td>
-                                                    <td> {{$salary->branch}}</td>
-                                                    <td> {{$salary->account_number}}</td>
-                                                    <td> {{$salary->basic_salary}}</td>
-                                                    <td> {{$salary->allowances}}</td>
-                                                    <td> {{$salary->airtime_allowance}}</td>
-                                                    <td> {{$salary->overtime}}</td>
-                                                    <td> {{$salary->reimbursements}}</td>
-                                                    <td> {{$salary->transport_allowance}}</td>
-                                                    <td> {{$salary->ssnit_tier2_5}}</td>
-                                                    <td> {{$salary->ssnit_tier2_5d}}</td>   
-                                                    <td> {{$salary->tax}} </td>                            
-                                                    <td> {{$salary->ssnit_tier1_0_5}} </td>                            
-                                                    <td> {{$salary->welfare}} </td>                            
-                                                    <td> {{$salary->maintenance}} </td>                            
-                                                    <td> {{$salary->absent}} </td>                            
-                                                    <td> {{$salary->boot}} </td>                            
-                                                    <td> {{$salary->iou}} </td>                            
-                                                    <td> {{$salary->hostel}} </td>                            
-                                                    <td> {{$salary->insurance}} </td>                            
-                                                    <td> {{$salary->reprimand}} </td>                            
-                                                    <td> {{$salary->scouter}} </td>                            
-                                                    <td> {{$salary->raincoat}} </td>                            
-                                                    <td> {{$salary->meal}} </td>                            
-                                                    <td> {{$salary->loan}} </td>                            
-                                                    <td> {{$salary->walkin}} </td>                            
-                                                    <td> {{$salary->amnt_ded_cof_start_date}} </td>                            
-                                                    <td> {{$salary->other_deductions}} </td>                            
-                                                    <td> {{$salary->gross_salary}} </td>                            
-                                                    <td> {{$salary->total_deductions}} </td>                            
-                                                    <td> {{$salary->net_salary}} </td>                            
-                                                    <td> {{$salary->ssnit_comp_cont_13}} </td>                            
-                                                    <td> {{$salary->ssnit_tobe_paid13_5}} </td>                            
-                                                    <td> {{$salary->cost_to_company }}</td>
-                                    </tr>
-                                @endforeach
-                                </tbody>
+                                <tbody class="table-border-bottom-0">{{-- Loaded page by page by the server-side DataTable. --}}</tbody>
                             </table>
                         </div>
                     </form>
@@ -1396,12 +1114,12 @@
                                                     <td> {{ $catAHold->client?->name }} {{ $catAHold->client?->business_name }} </td>
                                                     <td> {{ $catAHold->client?->field?->name }} </td>
 
-                                                    <td> GH&#x20B5; {{ number_format( $catAHold->client?->invoices()->whereMonth('invoice_month', $month->month)->sum('total'),2)  }} </td>
-                                                    <td>  {{ $catAHold->client?->invoices()->whereMonth('invoice_month', $month->month)->pluck('status') }} </td>
+                                                    <td> GH&#x20B5; {{ number_format( $catAHold->client?->invoices->sum('total'),2)  }} </td>
+                                                    <td>  {{ $catAHold->client?->invoices->pluck('status') }} </td>
                                                     <td> GH&#x20B5; {{ number_format($catAHold->net_salary, 2) }} </td>
-                                                    <td> GH&#x20B5; {{ number_format($catAHold->client?->invoices()->whereMonth('invoice_month', $month->month)->sum('total') - $catAHold->net_salary, 2) }} </td>
+                                                    <td> GH&#x20B5; {{ number_format($catAHold->client?->invoices->sum('total') - $catAHold->net_salary, 2) }} </td>
                                                 
-                                                    @if( $catAHold->client?->invoices()->whereMonth('invoice_month', $month->month)->sum('total') <= $catAHold->net_salary )
+                                                    @if( $catAHold->client?->invoices->sum('total') <= $catAHold->net_salary )
                                                         <td><span class="badge bg-label-danger"> Loss </span></td>
                                                     @else
                                                         <td><span class="badge bg-label-success"> Profit </span></td>
@@ -1444,12 +1162,12 @@
                                                     <td> {{ $catBHold->client?->name }} {{ $catBHold->client?->business_name }} </td>
                                                     <td> {{ $catBHold->client?->field?->name }} </td>
 
-                                                    <td> GH&#x20B5; {{ number_format( $catBHold->client?->invoices()->whereMonth('invoice_month', $month->month)->sum('total'),2)  }} </td>
-                                                    <td>  {{ $catBHold->client?->invoices()->whereMonth('invoice_month', $month->month)->pluck('status') }} </td>
+                                                    <td> GH&#x20B5; {{ number_format( $catBHold->client?->invoices->sum('total'),2)  }} </td>
+                                                    <td>  {{ $catBHold->client?->invoices->pluck('status') }} </td>
                                                     <td> GH&#x20B5; {{ number_format($catBHold->net_salary, 2) }} </td>
-                                                    <td> GH&#x20B5; {{ number_format($catBHold->client?->invoices()->whereMonth('invoice_month', $month->month)->sum('total') - $catBHold->net_salary, 2) }} </td>
+                                                    <td> GH&#x20B5; {{ number_format($catBHold->client?->invoices->sum('total') - $catBHold->net_salary, 2) }} </td>
                                                 
-                                                    @if( $catBHold->client?->invoices()->whereMonth('invoice_month', $month->month)->sum('total') <= $catBHold->net_salary )
+                                                    @if( $catBHold->client?->invoices->sum('total') <= $catBHold->net_salary )
                                                         <td><span class="badge bg-label-danger"> Loss </span></td>
                                                     @else
                                                         <td><span class="badge bg-label-success"> Profit </span></td>
@@ -1493,12 +1211,12 @@
                                                     <td> {{ $catCHold->client?->name }} {{ $catCHold->client?->business_name }} </td>
                                                     <td> {{ $catCHold->client?->field?->name }} </td>
 
-                                                    <td> GH&#x20B5; {{ number_format( $catCHold->client?->invoices()->whereMonth('invoice_month', $month->month)->sum('total'),2)  }} </td>
-                                                    <td>  {{ $catCHold->client?->invoices()->whereMonth('invoice_month', $month->month)->pluck('status') }} </td>
+                                                    <td> GH&#x20B5; {{ number_format( $catCHold->client?->invoices->sum('total'),2)  }} </td>
+                                                    <td>  {{ $catCHold->client?->invoices->pluck('status') }} </td>
                                                     <td> GH&#x20B5; {{ number_format($catCHold->net_salary, 2) }} </td>
-                                                    <td> GH&#x20B5; {{ number_format($catCHold->client?->invoices()->whereMonth('invoice_month', $month->month)->sum('total') - $catCHold->net_salary, 2) }} </td>
+                                                    <td> GH&#x20B5; {{ number_format($catCHold->client?->invoices->sum('total') - $catCHold->net_salary, 2) }} </td>
                                                 
-                                                    @if( $catCHold->client?->invoices()->whereMonth('invoice_month', $month->month)->sum('total') <= $catCHold->net_salary )
+                                                    @if( $catCHold->client?->invoices->sum('total') <= $catCHold->net_salary )
                                                         <td><span class="badge bg-label-danger"> Loss </span></td>
                                                     @else
                                                         <td><span class="badge bg-label-success"> Profit </span></td>
@@ -1542,12 +1260,12 @@
                                                     <td> {{ $catDHold->client?->name }} {{ $catDHold->client?->business_name }} </td>
                                                     <td> {{ $catDHold->client?->field?->name }} </td>
 
-                                                    <td> GH&#x20B5; {{ number_format( $catDHold->client?->invoices()->whereMonth('invoice_month', $month->month)->sum('total'),2)  }} </td>
-                                                    <td>  {{ $catDHold->client?->invoices()->whereMonth('invoice_month', $month->month)->pluck('status') }} </td>
+                                                    <td> GH&#x20B5; {{ number_format( $catDHold->client?->invoices->sum('total'),2)  }} </td>
+                                                    <td>  {{ $catDHold->client?->invoices->pluck('status') }} </td>
                                                     <td> GH&#x20B5; {{ number_format($catDHold->net_salary, 2) }} </td>
-                                                    <td> GH&#x20B5; {{ number_format($catDHold->client?->invoices()->whereMonth('invoice_month', $month->month)->sum('total') - $catDHold->net_salary, 2) }} </td>
+                                                    <td> GH&#x20B5; {{ number_format($catDHold->client?->invoices->sum('total') - $catDHold->net_salary, 2) }} </td>
                                                 
-                                                    @if( $catDHold->client?->invoices()->whereMonth('invoice_month', $month->month)->sum('total') <= $catDHold->net_salary )
+                                                    @if( $catDHold->client?->invoices->sum('total') <= $catDHold->net_salary )
                                                         <td><span class="badge bg-label-danger"> Loss </span></td>
                                                     @else
                                                         <td><span class="badge bg-label-success"> Profit </span></td>
@@ -1591,12 +1309,12 @@
                                                     <td> {{ $clientMasterHold->client?->name }} {{ $clientMasterHold->client?->business_name }} </td>
                                                     <td> {{ $clientMasterHold->client?->field?->name }} </td>
 
-                                                    <td> GH&#x20B5; {{ number_format( $clientMasterHold->client?->invoices()->whereMonth('invoice_month', $month->month)->sum('total'),2)  }} </td>
-                                                    <td>  {{ $clientMasterHold->client?->invoices()->whereMonth('invoice_month', $month->month)->pluck('status') }} </td>
+                                                    <td> GH&#x20B5; {{ number_format( $clientMasterHold->client?->invoices->sum('total'),2)  }} </td>
+                                                    <td>  {{ $clientMasterHold->client?->invoices->pluck('status') }} </td>
                                                     <td> GH&#x20B5; {{ number_format($clientMasterHold->paid, 2) }} </td>
-                                                    <td> GH&#x20B5; {{ number_format($clientMasterHold->client?->invoices()->whereMonth('invoice_month', $month->month)->sum('total') - $clientMasterHold->paid, 2) }} </td>
+                                                    <td> GH&#x20B5; {{ number_format($clientMasterHold->client?->invoices->sum('total') - $clientMasterHold->paid, 2) }} </td>
                                                 
-                                                    @if( $clientMasterHold->client?->invoices()->whereMonth('invoice_month', $month->month)->sum('total') <= $clientMasterHold->paid )
+                                                    @if( $clientMasterHold->client?->invoices->sum('total') <= $clientMasterHold->paid )
                                                         <td><span class="badge bg-label-danger"> Loss </span></td>
                                                     @else
                                                         <td><span class="badge bg-label-success"> Profit </span></td>
@@ -2550,8 +2268,8 @@
                                                     
                                                         <!-- OUTSTANDING -->
                                                         <p class="mb-0"><strong>  TOTAL  OUTSTANDING </strong> </p>
-                                                        <h4 class="card-title text-danger"><strong> &#x20B5;  {{ number_format($salariesMaster->where('field_id', 1)->whereIn('payment_status', ['pending', 'hold'])->sum('net_salary'), 2) }} </strong> </h4> 
-                                                        <h6 class="card-title text-danger"><strong>  NUMBER OF EMPLOYEES : {{ $salariesMaster->where('field_id', 1)->whereIn('payment_status', ['pending', 'hold'])->count() }} </strong> </h6> 
+                                                        <h4 class="card-title text-danger"><strong> &#x20B5;  {{ number_format($salariesMaster->where('field_id', 1)->whereIn('payment_status', ['pending', 'hold', 'rejected'])->sum('net_salary'), 2) }} </strong> </h4> 
+                                                        <h6 class="card-title text-danger"><strong>  NUMBER OF EMPLOYEES : {{ $salariesMaster->where('field_id', 1)->whereIn('payment_status', ['pending', 'hold', 'rejected'])->count() }} </strong> </h6> 
                                                         <br> <hr style="margin-top: 210px;"> <br>
                                                    
                                                           <!--  MOMO TOP UPS -->
@@ -2614,7 +2332,7 @@
                                                         </div>
                                                     
                                                         <div class="d-flex justify-content-between">
-                                                                <div> <h6 class="card-title text-danger"><strong>  N0 of Emp' : {{ $salariesMaster->where('field_id', 1)->where('payment_type', 'Bank')->whereIn('payment_status', ['pending','hold','reejcted'])->count() }} </strong> </h6>  PENDING  <br>  {{ $salariesMaster->where('field_id', 1)->where('payment_type', 'Bank')->where('payment_status', 'pending')->count() }}
+                                                                <div> <h6 class="card-title text-danger"><strong>  N0 of Emp' : {{ $salariesMaster->where('field_id', 1)->where('payment_type', 'Bank')->whereIn('payment_status', ['pending','hold','rejected'])->count() }} </strong> </h6>  PENDING  <br>  {{ $salariesMaster->where('field_id', 1)->where('payment_type', 'Bank')->where('payment_status', 'pending')->count() }}
                                                                     <p>HOLD <br> {{ $salariesMaster->where('field_id', 1)->where('payment_type', 'Bank')->whereIn('payment_status', ['hold', 'rejected'])->count() }} </p>
                                                                 </div>  
                                                                 <div> <h6 class="card-title text-danger"><strong>  N0 of Emp' : {{ $salariesMaster->where('field_id', 1)->where('payment_type', 'Cash')->whereIn('payment_status', ['hold', 'pending', 'rejected'])->count() }} </strong> </h6>  PENDING <br>  {{ $salariesMaster->where('field_id', 1)->where('payment_type', 'Cash')->where('payment_status', 'pending')->count() }}
@@ -2686,8 +2404,8 @@
                                                     
                                                         <!-- OUTSTANDING -->
                                                         <p class="mb-0"><strong>  TOTAL  OUTSTANDING </strong> </p>
-                                                        <h4 class="card-title text-danger"><strong> &#x20B5;  {{ number_format($salariesMaster->where('field_id', 2)->whereIn('payment_status', ['pending', 'hold'])->sum('net_salary'), 2) }} </strong> </h4> 
-                                                        <h6 class="card-title text-danger"><strong> &#x20B5; NUMBER OF EMPLOYEES : {{ $salariesMaster->where('field_id', 2)->whereIn('payment_status', ['pending', 'hold'])->count() }} </strong> </h6> 
+                                                        <h4 class="card-title text-danger"><strong> &#x20B5;  {{ number_format($salariesMaster->where('field_id', 2)->whereIn('payment_status', ['pending', 'hold', 'rejected'])->sum('net_salary'), 2) }} </strong> </h4> 
+                                                        <h6 class="card-title text-danger"><strong> &#x20B5; NUMBER OF EMPLOYEES : {{ $salariesMaster->where('field_id', 2)->whereIn('payment_status', ['pending', 'hold', 'rejected'])->count() }} </strong> </h6> 
                                                         <br> <hr style="margin-top: 200px;"> <br>
                                                    
                                                         <!--  MOMO TOP UPS -->
@@ -2749,7 +2467,7 @@
                                                         </div>
                                                     
                                                         <div class="d-flex justify-content-between">
-                                                                <div> <h6 class="card-title text-danger"><strong>  N0 of Emp' : {{ $salariesMaster->where('field_id', 2)->where('payment_type', 'Bank')->whereIn('payment_status', ['pending','hold','reejcted'])->count() }} </strong> </h6>  PENDING  <br>  {{ $salariesMaster->where('field_id', 2)->where('payment_type', 'Bank')->where('payment_status', 'pending')->count() }}
+                                                                <div> <h6 class="card-title text-danger"><strong>  N0 of Emp' : {{ $salariesMaster->where('field_id', 2)->where('payment_type', 'Bank')->whereIn('payment_status', ['pending','hold','rejected'])->count() }} </strong> </h6>  PENDING  <br>  {{ $salariesMaster->where('field_id', 2)->where('payment_type', 'Bank')->where('payment_status', 'pending')->count() }}
                                                                     <p>HOLD <br> {{ $salariesMaster->where('field_id', 2)->where('payment_type', 'Bank')->whereIn('payment_status', ['hold', 'rejected'])->count() }} </p>
                                                                 </div>  
                                                                 <div> <h6 class="card-title text-danger"><strong>  N0 of Emp' : {{ $salariesMaster->where('field_id', 2)->where('payment_type', 'Cash')->whereIn('payment_status', ['hold', 'pending', 'rejected'])->count() }} </strong> </h6>  PENDING <br>  {{ $salariesMaster->where('field_id', 2)->where('payment_type', 'Cash')->where('payment_status', 'pending')->count() }}
@@ -2816,8 +2534,8 @@
                                                     
                                                         <!-- OUTSTANDING -->
                                                         <p class="mb-0"><strong>  TOTAL  OUTSTANDING </strong> </p>
-                                                        <h4 class="card-title text-danger"><strong> &#x20B5;  {{ number_format($salariesMaster->where('field_id', 3)->whereIn('payment_status', ['pending', 'hold'])->sum('net_salary'), 2) }} </strong> </h4> 
-                                                        <h6 class="card-title text-danger"><strong> &#x20B5; NUMBER OF EMPLOYEES : {{ $salariesMaster->where('field_id', 3)->whereIn('payment_status', ['pending', 'hold'])->count() }} </strong> </h6> 
+                                                        <h4 class="card-title text-danger"><strong> &#x20B5;  {{ number_format($salariesMaster->where('field_id', 3)->whereIn('payment_status', ['pending', 'hold', 'rejected'])->sum('net_salary'), 2) }} </strong> </h4> 
+                                                        <h6 class="card-title text-danger"><strong> &#x20B5; NUMBER OF EMPLOYEES : {{ $salariesMaster->where('field_id', 3)->whereIn('payment_status', ['pending', 'hold', 'rejected'])->count() }} </strong> </h6> 
                                                         <br> <hr style="margin-top: 200px;"> <br>
                                                     
                                                         <!--  MOMO TOP UPS -->
@@ -2879,7 +2597,7 @@
                                                         </div>
                                                     
                                                         <div class="d-flex justify-content-between">
-                                                                <div> <h6 class="card-title text-danger"><strong>  N0 of Emp' : {{ $salariesMaster->where('field_id', 3)->where('payment_type', 'Bank')->whereIn('payment_status', ['pending','hold','reejcted'])->count() }} </strong> </h6>  PENDING  <br>  {{ $salariesMaster->where('field_id', 3)->where('payment_type', 'Bank')->where('payment_status', 'pending')->count() }}
+                                                                <div> <h6 class="card-title text-danger"><strong>  N0 of Emp' : {{ $salariesMaster->where('field_id', 3)->where('payment_type', 'Bank')->whereIn('payment_status', ['pending','hold','rejected'])->count() }} </strong> </h6>  PENDING  <br>  {{ $salariesMaster->where('field_id', 3)->where('payment_type', 'Bank')->where('payment_status', 'pending')->count() }}
                                                                     <p>HOLD <br> {{ $salariesMaster->where('field_id', 3)->where('payment_type', 'Bank')->whereIn('payment_status', ['hold', 'rejected'])->count() }} </p>
                                                                 </div>  
                                                                 <div> <h6 class="card-title text-danger"><strong>  N0 of Emp' : {{ $salariesMaster->where('field_id', 3)->where('payment_type', 'Cash')->whereIn('payment_status', ['hold', 'pending', 'rejected'])->count() }} </strong> </h6>  PENDING <br>  {{ $salariesMaster->where('field_id', 3)->where('payment_type', 'Cash')->where('payment_status', 'pending')->count() }}
@@ -2947,8 +2665,8 @@
                                                     
                                                         <!-- OUTSTANDING -->
                                                         <p class="mb-0"><strong>  TOTAL  OUTSTANDING </strong> </p>
-                                                        <h4 class="card-title text-danger"><strong> &#x20B5;  {{ number_format($salariesMaster->where('field_id', 7)->whereIn('payment_status', ['pending', 'hold'])->sum('net_salary'), 2) }} </strong> </h4> 
-                                                        <h6 class="card-title text-danger"><strong> &#x20B5; NUMBER OF EMPLOYEES : {{ $salariesMaster->where('field_id', 7)->whereIn('payment_status', ['pending', 'hold'])->count() }} </strong> </h6> 
+                                                        <h4 class="card-title text-danger"><strong> &#x20B5;  {{ number_format($salariesMaster->where('field_id', 7)->whereIn('payment_status', ['pending', 'hold', 'rejected'])->sum('net_salary'), 2) }} </strong> </h4> 
+                                                        <h6 class="card-title text-danger"><strong> &#x20B5; NUMBER OF EMPLOYEES : {{ $salariesMaster->where('field_id', 7)->whereIn('payment_status', ['pending', 'hold', 'rejected'])->count() }} </strong> </h6> 
                                                         <br> <hr style="margin-top: 200px;"> <br>
 
                                                         <!--  MOMO TOP UPS -->
@@ -3010,7 +2728,7 @@
                                                         </div>
                                                     
                                                         <div class="d-flex justify-content-between">
-                                                                <div> <h6 class="card-title text-danger"><strong>  N0 of Emp' : {{ $salariesMaster->where('field_id', 7)->where('payment_type', 'Bank')->whereIn('payment_status', ['pending','hold','reejcted'])->count() }} </strong> </h6>  PENDING  <br>  {{ $salariesMaster->where('field_id', 7)->where('payment_type', 'Bank')->where('payment_status', 'pending')->count() }}
+                                                                <div> <h6 class="card-title text-danger"><strong>  N0 of Emp' : {{ $salariesMaster->where('field_id', 7)->where('payment_type', 'Bank')->whereIn('payment_status', ['pending','hold','rejected'])->count() }} </strong> </h6>  PENDING  <br>  {{ $salariesMaster->where('field_id', 7)->where('payment_type', 'Bank')->where('payment_status', 'pending')->count() }}
                                                                     <p>HOLD <br> {{ $salariesMaster->where('field_id', 7)->where('payment_type', 'Bank')->whereIn('payment_status', ['hold', 'rejected'])->count() }} </p>
                                                                 </div>  
                                                                 <div> <h6 class="card-title text-danger"><strong>  N0 of Emp' : {{ $salariesMaster->where('field_id', 7)->where('payment_type', 'Cash')->whereIn('payment_status', ['hold', 'pending', 'rejected'])->count() }} </strong> </h6>  PENDING <br>  {{ $salariesMaster->where('field_id', 7)->where('payment_type', 'Cash')->where('payment_status', 'pending')->count() }}
@@ -3078,8 +2796,8 @@
                                                     
                                                         <!-- OUTSTANDING -->
                                                         <p class="mb-0"><strong>  TOTAL  OUTSTANDING </strong> </p>
-                                                        <h4 class="card-title text-danger"><strong> &#x20B5;  {{ number_format($salariesMaster->where('field_id', 4)->whereIn('payment_status', ['pending', 'hold'])->sum('net_salary'), 2) }} </strong> </h4> 
-                                                        <h6 class="card-title text-danger"><strong> &#x20B5; NUMBER OF EMPLOYEES : {{ $salariesMaster->where('field_id', 4)->whereIn('payment_status', ['pending', 'hold'])->count() }} </strong> </h6> 
+                                                        <h4 class="card-title text-danger"><strong> &#x20B5;  {{ number_format($salariesMaster->where('field_id', 4)->whereIn('payment_status', ['pending', 'hold', 'rejected'])->sum('net_salary'), 2) }} </strong> </h4> 
+                                                        <h6 class="card-title text-danger"><strong> &#x20B5; NUMBER OF EMPLOYEES : {{ $salariesMaster->where('field_id', 4)->whereIn('payment_status', ['pending', 'hold', 'rejected'])->count() }} </strong> </h6> 
                                                         <br> <hr style="margin-top: 200px;"> <br>
 
                                                         <!--  MOMO TOP UPS -->
@@ -3141,7 +2859,7 @@
                                                         </div>
                                                     
                                                         <div class="d-flex justify-content-between">
-                                                                <div> <h6 class="card-title text-danger"><strong>  N0 of Emp' : {{ $salariesMaster->where('field_id', 4)->where('payment_type', 'Bank')->whereIn('payment_status', ['pending','hold','reejcted'])->count() }} </strong> </h6>  PENDING  <br>  {{ $salariesMaster->where('field_id', 4)->where('payment_type', 'Bank')->where('payment_status', 'pending')->count() }}
+                                                                <div> <h6 class="card-title text-danger"><strong>  N0 of Emp' : {{ $salariesMaster->where('field_id', 4)->where('payment_type', 'Bank')->whereIn('payment_status', ['pending','hold','rejected'])->count() }} </strong> </h6>  PENDING  <br>  {{ $salariesMaster->where('field_id', 4)->where('payment_type', 'Bank')->where('payment_status', 'pending')->count() }}
                                                                     <p>HOLD <br> {{ $salariesMaster->where('field_id', 4)->where('payment_type', 'Bank')->whereIn('payment_status', ['hold', 'rejected'])->count() }} </p>
                                                                 </div>  
                                                                 <div> <h6 class="card-title text-danger"><strong>  N0 of Emp' : {{ $salariesMaster->where('field_id', 4)->where('payment_type', 'Cash')->whereIn('payment_status', ['hold', 'pending', 'rejected'])->count() }} </strong> </h6>  PENDING <br>  {{ $salariesMaster->where('field_id', 4)->where('payment_type', 'Cash')->where('payment_status', 'pending')->count() }}
@@ -3209,8 +2927,8 @@
                                                     
                                                         <!-- OUTSTANDING -->
                                                         <p class="mb-0"><strong>  TOTAL  OUTSTANDING </strong> </p>
-                                                        <h4 class="card-title text-danger"><strong> &#x20B5;  {{ number_format($salariesMaster->where('field_id', 5)->whereIn('payment_status', ['pending', 'hold'])->sum('net_salary'), 2) }} </strong> </h4> 
-                                                        <h6 class="card-title text-danger"><strong> &#x20B5; NUMBER OF EMPLOYEES : {{ $salariesMaster->where('field_id', 5)->whereIn('payment_status', ['pending', 'hold'])->count() }} </strong> </h6> 
+                                                        <h4 class="card-title text-danger"><strong> &#x20B5;  {{ number_format($salariesMaster->where('field_id', 5)->whereIn('payment_status', ['pending', 'hold', 'rejected'])->sum('net_salary'), 2) }} </strong> </h4> 
+                                                        <h6 class="card-title text-danger"><strong> &#x20B5; NUMBER OF EMPLOYEES : {{ $salariesMaster->where('field_id', 5)->whereIn('payment_status', ['pending', 'hold', 'rejected'])->count() }} </strong> </h6> 
                                                         <br> <hr style="margin-top: 200px;"> <br>
 
                                                         <!--  MOMO TOP UPS -->
@@ -3272,7 +2990,7 @@
                                                         </div>
                                                     
                                                         <div class="d-flex justify-content-between">
-                                                                <div> <h6 class="card-title text-danger"><strong>  N0 of Emp' : {{ $salariesMaster->where('field_id', 5)->where('payment_type', 'Bank')->whereIn('payment_status', ['pending','hold','reejcted'])->count() }} </strong> </h6>  PENDING  <br>  {{ $salariesMaster->where('field_id', 5)->where('payment_type', 'Bank')->where('payment_status', 'pending')->count() }}
+                                                                <div> <h6 class="card-title text-danger"><strong>  N0 of Emp' : {{ $salariesMaster->where('field_id', 5)->where('payment_type', 'Bank')->whereIn('payment_status', ['pending','hold','rejected'])->count() }} </strong> </h6>  PENDING  <br>  {{ $salariesMaster->where('field_id', 5)->where('payment_type', 'Bank')->where('payment_status', 'pending')->count() }}
                                                                     <p>HOLD <br> {{ $salariesMaster->where('field_id', 5)->where('payment_type', 'Bank')->whereIn('payment_status', ['hold', 'rejected'])->count() }} </p>
                                                                 </div>  
                                                                 <div> <h6 class="card-title text-danger"><strong>  N0 of Emp' : {{ $salariesMaster->where('field_id', 5)->where('payment_type', 'Cash')->whereIn('payment_status', ['hold', 'pending', 'rejected'])->count() }} </strong> </h6>  PENDING <br>  {{ $salariesMaster->where('field_id', 5)->where('payment_type', 'Cash')->where('payment_status', 'pending')->count() }}
@@ -3340,8 +3058,8 @@
                                                     
                                                         <!-- OUTSTANDING -->
                                                         <p class="mb-0"><strong>  TOTAL  OUTSTANDING </strong> </p>
-                                                        <h4 class="card-title text-danger"><strong> &#x20B5;  {{ number_format($salariesMaster->where('field_id', 6)->whereIn('payment_status', ['pending', 'hold'])->sum('net_salary'), 2) }} </strong> </h4> 
-                                                        <h6 class="card-title text-danger"><strong> &#x20B5; NUMBER OF EMPLOYEES : {{ $salariesMaster->where('field_id', 6)->whereIn('payment_status', ['pending', 'hold'])->count() }} </strong> </h6> 
+                                                        <h4 class="card-title text-danger"><strong> &#x20B5;  {{ number_format($salariesMaster->where('field_id', 6)->whereIn('payment_status', ['pending', 'hold', 'rejected'])->sum('net_salary'), 2) }} </strong> </h4> 
+                                                        <h6 class="card-title text-danger"><strong> &#x20B5; NUMBER OF EMPLOYEES : {{ $salariesMaster->where('field_id', 6)->whereIn('payment_status', ['pending', 'hold', 'rejected'])->count() }} </strong> </h6> 
                                                         <br> <hr style="margin-top: 200px;"> <br>
 
                                                         <!--  MOMO TOP UPS -->
@@ -3403,7 +3121,7 @@
                                                         </div>
                                                     
                                                         <div class="d-flex justify-content-between">
-                                                                <div> <h6 class="card-title text-danger"><strong>  N0 of Emp' : {{ $salariesMaster->where('field_id', 6)->where('payment_type', 'Bank')->whereIn('payment_status', ['pending','hold','reejcted'])->count() }} </strong> </h6>  PENDING  <br>  {{ $salariesMaster->where('field_id', 6)->where('payment_type', 'Bank')->where('payment_status', 'pending')->count() }}
+                                                                <div> <h6 class="card-title text-danger"><strong>  N0 of Emp' : {{ $salariesMaster->where('field_id', 6)->where('payment_type', 'Bank')->whereIn('payment_status', ['pending','hold','rejected'])->count() }} </strong> </h6>  PENDING  <br>  {{ $salariesMaster->where('field_id', 6)->where('payment_type', 'Bank')->where('payment_status', 'pending')->count() }}
                                                                     <p>HOLD <br> {{ $salariesMaster->where('field_id', 6)->where('payment_type', 'Bank')->whereIn('payment_status', ['hold', 'rejected'])->count() }} </p>
                                                                 </div>  
                                                                 <div> <h6 class="card-title text-danger"><strong>  N0 of Emp' : {{ $salariesMaster->where('field_id', 6)->where('payment_type', 'Cash')->whereIn('payment_status', ['hold', 'pending', 'rejected'])->count() }} </strong> </h6>  PENDING <br>  {{ $salariesMaster->where('field_id', 6)->where('payment_type', 'Cash')->where('payment_status', 'pending')->count() }}
@@ -3778,39 +3496,142 @@
                 lengthMenu: [[10, 25, 50, 100, 500], [10, 25, 50, 100, 500]],
                 columnControl: [ ['search'] ]
         }); 
+        // ---- Master salaries: server-side ------------------------------------------------
+        (function () {
+            const $t = $('#myTableimaster');
+            const canEdit = String($t.data('can-edit')) === '1';
+            const money = new Intl.NumberFormat(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            const filterVal = id => document.getElementById(id).value;
+            const moneyCols = ['basic_salary','allowances','airtime_allowance','overtime','reimbursements','transport_allowance',
+                'ssnit_tier2_5','ssnit_tier2_5d','tax','ssnit_tier1_0_5','welfare','maintenance','absent','boot','iou','hostel',
+                'insurance','reprimand','scouter','raincoat','meal','loan','walkin','amnt_ded_cof_start_date','other_deductions',
+                'gross_salary','total_deductions','net_salary','ssnit_comp_cont_13','ssnit_tobe_paid13_5','cost_to_company'];
 
+            // Selected salary ids and edited hold reasons survive paging, sorting and searching.
+            const selected = new Set();
+            const reasons = new Map();
+            let lastParams = {};
 
-        new DataTable('#myTableimaster', {
-                responsive: true,
-                    dom: 'Bflrtip',
-                    buttons: [
-                        'excel'
-                    ],
-              columnControl: [ ['search'] ],
+            const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
-                        fixedColumns: {
-                        start: 0,
-                        end: 0
+            const table = $t.DataTable({
+                processing: true,
+                serverSide: true,
+                pageLength: 50,
+                searchDelay: 400,
+                scrollX: true,
+                scrollY: 600,
+                scrollCollapse: true,
+                fixedHeader: { header: true },
+                ajax: {
+                    url: $t.data('source'),
+                    type: 'GET',
+                    data: function (d) {
+                        d.month = $t.data('month');
+                        d.status = filterVal('m_status');
+                        d.payment_type = filterVal('m_type');
+                        d.field_id = filterVal('m_field');
+                        d.category = filterVal('m_category');
+                        lastParams = d;
+                        return d;
                     },
-                    fixedHeader: {
-                        header: true,
-                        footer: true
+                    dataSrc: function (json) {
+                        const t = json.totals || {};
+                        $('#masterTotals').text(json.recordsFiltered + ' salaries shown' +
+                            ' | Gross GH₵ ' + money.format(t.gross || 0) +
+                            ' | Deductions GH₵ ' + money.format(t.deductions || 0) +
+                            ' | Net GH₵ ' + money.format(t.net || 0) +
+                            ' | Cost to company GH₵ ' + money.format(t.ctc || 0));
+                        return json.data;
                     },
-                    paging: false,
-                    scrollCollapse: true,
-                    scrollX: true,
-                    scrollY: 600
+                },
+                order: [[8, 'asc']],
+                columnControl: [{ target: 1, content: ['search'] }],
+                lengthMenu: [[25, 50, 100, 250, 500], [25, 50, 100, 250, 500]],
+                columns: [
+                    { data: 'id', orderable: false, searchable: false, render: id => canEdit
+                        ? '<input class="masterBox form-check-input" type="checkbox" value="' + id + '"' + (selected.has(id) ? ' checked' : '') + ' />' : '' },
+                    { data: 'action', orderable: false, searchable: false },
+                    { data: 'payment_status' },
+                    { data: 'hold_reason_raw', orderable: false, render: function (raw, type, row) {
+                        const value = reasons.has(row.id) ? reasons.get(row.id) : raw;
+                        return canEdit
+                            ? '<textarea class="form-control form-control-sm masterReason" data-id="' + row.id + '" rows="1">' + esc(value) + '</textarea>'
+                            : esc(value);
+                    } },
+                    { data: 'category' }, { data: 'salary_id' }, { data: 'salary_month', orderable: false },
+                    { data: 'employee_id' }, { data: 'name' }, { data: 'department' }, { data: 'role' }, { data: 'field' },
+                    { data: 'worker_type' }, { data: 'client' }, { data: 'location' }, { data: 'invoice_status', orderable: false },
+                    { data: 'ssnit_number', orderable: false }, { data: 'tin_number', orderable: false }, { data: 'payment_type' },
+                    { data: 'bank' }, { data: 'branch', orderable: false }, { data: 'account_number', orderable: false },
+                ].concat(moneyCols.map(c => ({ data: c, className: 'text-end' }))),
+            });
+
+            function refreshSelection() {
+                if (!canEdit) return;
+                const n = selected.size;
+                $('#masterSelectionText').text(n === 0 ? 'No salary selected.' : n + ' salary(ies) selected across all pages.');
+                $('#masterClear').toggleClass('d-none', n === 0);
+                $('#masterForm [data-action]').prop('disabled', n === 0);
+                const $boxes = $t.find('tbody .masterBox');
+                $('#masterOptions').prop('checked', $boxes.length > 0 && $boxes.filter(':checked').length === $boxes.length);
+            }
+
+            $t.on('change', 'tbody .masterBox', function () {
+                this.checked ? selected.add(Number(this.value)) : selected.delete(Number(this.value));
+                refreshSelection();
+            });
+            $t.on('input', 'tbody .masterReason', function () { reasons.set(Number(this.dataset.id), this.value); });
+            // Header checkbox is cloned into the scroll header by DataTables, so bind by delegation.
+            $(document).on('change', '#masterOptions', function () {
+                const on = this.checked;
+                $t.find('tbody .masterBox').each(function () {
+                    if (this.checked !== on) { this.checked = on; $(this).trigger('change'); }
                 });
+            });
+            $('#masterClear').on('click', function (e) { e.preventDefault(); selected.clear(); table.draw(false); });
+            $('.master-filter').on('change', () => table.draw());
+            table.on('draw.dt', refreshSelection);
+
+            $('#masterForm [data-action]').on('click', function () {
+                $('#salaries_bulk_action_type').val(this.dataset.action);
+            });
+            $('#masterForm').on('submit', function (e) {
+                const action = $('#salaries_bulk_action_type').val();
+                const label = action === 'topup' ? 'add top ups for' : 'HOLD';
+                if (selected.size === 0 || !confirm('Kindly confirm: ' + label + ' ' + selected.size + ' salary(ies)?')) { e.preventDefault(); return; }
+                const $box = $('#masterSelectionInputs').empty();
+                selected.forEach(function (id) {
+                    $box.append($('<input type="hidden" name="salary[]">').val(id));
+                    if (reasons.has(id)) $box.append($('<input type="hidden">').attr('name', 'hold_reason[' + id + ']').val(reasons.get(id)));
+                });
+            });
+
+            // Export every row matching the current filters (compact params keep the URL short).
+            $('#masterExport').on('click', function () {
+                const q = new URLSearchParams({ month: $t.data('month') });
+                ['status', 'payment_type', 'field_id', 'category'].forEach(k => { if (lastParams[k]) q.set(k, lastParams[k]); });
+                if (lastParams.search && lastParams.search.value) q.set('search[value]', lastParams.search.value);
+                if (lastParams.order && lastParams.order[0]) {
+                    q.set('order[0][column]', lastParams.order[0].column);
+                    q.set('order[0][dir]', lastParams.order[0].dir);
+                }
+                (lastParams.columns || []).forEach(function (c, i) {
+                    const v = (c.columnControl && c.columnControl.search && c.columnControl.search.value) || (c.search && c.search.value) || '';
+                    if (v) q.set('columns[' + i + '][columnControl][search][value]', v);
+                });
+                (window.salariesNavigate || (u => { window.location.href = u; }))($t.data('export') + '?' + q.toString()); // overridable by tests, like DtRange.navigate
+            });
+
+            // A table initialised inside a hidden tab measures 0px wide; re-measure when shown.
+            $('button[data-bs-toggle="tab"], button[data-bs-toggle="pill"]').on('shown.bs.tab', () => table.columns.adjust());
+        })();
 
     </script>
 
     <script>
         $(document).ready(function() {
-            $('#options').change(function() {
-                $('.checkBoxes').prop('checked', function(i, val) {
-                    return !val;
-                });
-            });
+
         });
 
 

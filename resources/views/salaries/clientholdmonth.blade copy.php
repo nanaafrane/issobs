@@ -449,7 +449,7 @@
                                                     <td> {{ $salary->employee?->worker_type }} </td>
                                                     <td> {{ $salary->client?->name }} {{ $salary->client?->business_name }}</td>
                                                     <td> {{ $salary->location }} </td>
-                                                    <td> {{ $salary->client?->invoices()->whereBetween('invoice_month', \App\Support\PayrollMonth::span($month))->pluck('status') }} </td>
+                                                    <td> {{ $salary->client?->invoices()->whereMonth('invoice_month', $month->month)->pluck('status') }} </td>
                                                     <td>  {{ number_format( $salary->net_salary,2) }} </td>  
                                                     <td> {{$salary->employee?->ssnit_number}}</td>
                                                     <td> {{$salary->employee?->tin_number}}</td>

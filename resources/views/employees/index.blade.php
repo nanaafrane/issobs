@@ -376,7 +376,7 @@
                             <p class="mb-1"><strong> ACTIVE EMPLOYEES </strong> </p>
                             <h4 class="card-title mb-3 text-white"><strong> {{ $activeEmployees }}  </strong> </h4>
                             <small class="fw-medium"> TERMINATED EMPLOYEES : {{ $terminatedEmployees }}  </small> <br> <hr>
-                            <small class="fw-medium"> TOTAL EMPLOYEES : {{ $employees->count() }}  </small>
+                            <small class="fw-medium"> TOTAL EMPLOYEES : {{ $activeEmployees + $terminatedEmployees }}  </small>
                     </div>
                 </div>
             </div>
@@ -397,7 +397,7 @@
                         <p class="mb-1"><strong> ACCRA </strong> </p>
                         <h4 class="card-title mb-3 text-white"><strong> {{ $employeeAccraActive }}  </strong> </h4>
                         <small class="fw-medium"> TERMINATED : {{ $employeeAccraTerminated }} </small>  <br> <hr>
-                        <small class="fw-medium"> TOTAL EMPLOYEES : {{ count($employeeAccra) }} </small> 
+                        <small class="fw-medium"> TOTAL EMPLOYEES : {{ $employeeAccraActive + $employeeAccraTerminated }} </small> 
 
                     </div>
                 </div>
@@ -417,7 +417,7 @@
                         <p class="mb-1"><strong> BOTWE </strong></p>
                         <h4 class="card-title mb-3 text-white"><strong> {{ $employeeBotweActive }} </strong> </h4>
                         <small class="fw-medium"> TERMINATED : {{ $employeeBotweTerminated }} </small>  <br> <hr>
-                        <small class="fw-medium"> TOTAL EMPLOYEES : {{ count($employeeBotwe) }} </small>
+                        <small class="fw-medium"> TOTAL EMPLOYEES : {{ $employeeBotweActive + $employeeBotweTerminated }} </small>
 
                     </div>
                 </div>
@@ -439,7 +439,7 @@
                         <p class="mb-1"><strong> SHAIHILLS </strong></p>
                         <h4 class="card-title mb-3 text-white"><strong> {{ $employeeShyhillsActive }} </strong> </h4>
                         <small class="fw-medium"> TERMINATED : {{ $employeeShyhillsTerminated }} </small> <br> <hr>
-                        <small class="fw-medium"> TOTAL EMPLOYEES : {{ $employeeShyhills->where('field_id', '7')->count() }} </small> 
+                        <small class="fw-medium"> TOTAL EMPLOYEES : {{ $employeeShyhillsActive + $employeeShyhillsTerminated }} </small> 
                     </div>
                 </div>
             </div>
@@ -458,7 +458,7 @@
                         <p class="mb-1"><strong> TEMA </strong></p>
                         <h4 class="card-title mb-3 text-white"><strong> {{ $employeeTemaActive }} </strong> </h4>
                         <small class="fw-medium"> TERMINATED : {{ $employeeTemaTerminated }} </small> <br> <hr>
-                        <small class="fw-medium"> TOTAL EMPLOYEES : {{ $employeeTema->where('field_id', '3')->count()  }} </small> 
+                        <small class="fw-medium"> TOTAL EMPLOYEES : {{ $employeeTemaActive + $employeeTemaTerminated }} </small> 
                     </div>
                 </div>
             </div>
@@ -479,7 +479,7 @@
                         <p class="mb-1">TAKORADI</p>
                         <h4 class="card-title mb-3 text-white"> {{ $employeeTakoradiActive }} </h4>
                         <small class="fw-medium"> TERMINATED : {{ $employeeTakoradiTerminated }} </small> <br> <hr>
-                        <small class="fw-medium"> TOTAL EMPLOYEES : {{ count($employeeTakoradi) }} </small> 
+                        <small class="fw-medium"> TOTAL EMPLOYEES : {{ $employeeTakoradiActive + $employeeTakoradiTerminated }} </small> 
                     </div>
                 </div>
             </div>
@@ -498,7 +498,7 @@
                         <p class="mb-1"> <strong> KOFORIDUA </strong> </p>
                         <h4 class="card-title mb-3 text-white"> {{ $employeeKoforiduaActive }} </h4>
                         <small class="fw-medium"> TERMINATED : {{ $employeeKoforiduaTerminated }} </small> <br> <hr>
-                        <small class="fw-medium"> TOTAL EMPLOYEES : {{ count($employeeKoforidua) }} </small> 
+                        <small class="fw-medium"> TOTAL EMPLOYEES : {{ $employeeKoforiduaActive + $employeeKoforiduaTerminated }} </small> 
                     </div>
                 </div>
             </div>
@@ -518,7 +518,7 @@
                         <p class="mb-1"><strong> KUMASI </strong> </p>
                         <h4 class="card-title mb-3 text-white"> {{ $employeeKumasiActive }} </h4>
                         <small class="fw-medium"> TERMINATED : {{ $employeeKumasiTerminated }} </small> <br> <hr>
-                        <small class="fw-medium"> TOTAL EMPLOYEES : {{ count($employeeKumasi) }} </small> 
+                        <small class="fw-medium"> TOTAL EMPLOYEES : {{ $employeeKumasiActive + $employeeKumasiTerminated }} </small> 
                     </div>
                 </div>
             </div>
@@ -541,7 +541,7 @@
                         <p class="mb-1"><strong> ACCRA </strong> </p>
                         <h4 class="card-title mb-3 text-white"><strong> {{ $employeeAccraActive }}  </strong> </h4>
                         <small class="fw-medium"> TERMINATED : {{ $employeeAccraTerminated }} </small>  <br> <hr>
-                        <small class="fw-medium"> TOTAL EMPLOYEES : {{ count($employeeAccra) }} </small> 
+                        <small class="fw-medium"> TOTAL EMPLOYEES : {{ $employeeAccraActive + $employeeAccraTerminated }} </small> 
                     </div>
                 </div>
             </div>
@@ -564,7 +564,7 @@
                         <p class="mb-1"><strong> BOTWE </strong> </p>
                         <h4 class="card-title mb-3 text-white"><strong> {{ $employeeBotweActive }} </strong> </h4>
                         <small class="fw-medium"> TERMINATED : {{ $employeeBotweTerminated }} </small>  <br> <hr>
-                        <small class="fw-medium"> TOTAL EMPLOYEES : {{ count($employeeBotwe) }} </small>
+                        <small class="fw-medium"> TOTAL EMPLOYEES : {{ $employeeBotweActive + $employeeBotweTerminated }} </small>
                     </div>
                 </div>
             </div>
@@ -588,7 +588,7 @@
                         <p class="mb-1"><strong> SHAIHILLS </strong></p>
                         <h4 class="card-title mb-3 text-white"><strong> {{ $employeeShyhillsActive }} </strong> </h4>
                         <small class="fw-medium"> TERMINATED : {{ $employeeShyhillsTerminated }} </small> <br> <hr>
-                        <small class="fw-medium"> TOTAL EMPLOYEES : {{ $employeeShyhills->where('field_id', '7')->count() }} </small> 
+                        <small class="fw-medium"> TOTAL EMPLOYEES : {{ $employeeShyhillsActive + $employeeShyhillsTerminated }} </small> 
                     </div>
                 </div>
             </div>
@@ -608,7 +608,7 @@
                         <p class="mb-1"><strong> TEMA </strong></p>
                         <h4 class="card-title mb-3 text-white"><strong> {{ $employeeTemaActive }} </strong> </h4>
                         <small class="fw-medium"> TERMINATED : {{ $employeeTemaTerminated }} </small> <br> <hr>
-                        <small class="fw-medium"> TOTAL EMPLOYEES : {{ $employeeTema->where('field_id', '3')->count() }} </small> 
+                        <small class="fw-medium"> TOTAL EMPLOYEES : {{ $employeeTemaActive + $employeeTemaTerminated }} </small> 
                     </div>
                 </div>
             </div>
@@ -632,7 +632,7 @@
                         <p class="mb-1">TAKORADI</p>
                         <h4 class="card-title mb-3 text-white"> {{ $employeeTakoradiActive }} </h4>
                         <small class="fw-medium"> TERMINATED : {{ $employeeTakoradiTerminated }} </small> <br> <hr>
-                        <small class="fw-medium"> TOTAL EMPLOYEES : {{ count($employeeTakoradi)}} </small> 
+                        <small class="fw-medium"> TOTAL EMPLOYEES : {{ $employeeTakoradiActive + $employeeTakoradiTerminated }} </small> 
                     </div>
                 </div>
             </div>
@@ -656,7 +656,7 @@
                         <p class="mb-1"> <strong> KOFORIDUA </strong> </p>
                         <h4 class="card-title mb-3 text-white"> {{ $employeeKoforiduaActive }} </h4>
                         <small class="fw-medium"> TERMINATED : {{ $employeeKoforiduaTerminated }} </small> <br> <hr>
-                        <small class="fw-medium"> TOTAL EMPLOYEES : {{ count($employeeKoforidua) }} </small> 
+                        <small class="fw-medium"> TOTAL EMPLOYEES : {{ $employeeKoforiduaActive + $employeeKoforiduaTerminated }} </small> 
                     </div>
                 </div>
             </div>
@@ -680,7 +680,7 @@
                         <p class="mb-1"><strong> KUMASI </strong> </p>
                         <h4 class="card-title mb-3 text-white"> {{ $employeeKumasiActive }} </h4>
                         <small class="fw-medium"> TERMINATED : {{ $employeeKumasiTerminated }} </small> <br> <hr>
-                        <small class="fw-medium"> TOTAL EMPLOYEES : {{ count($employeeKumasi) }} </small> 
+                        <small class="fw-medium"> TOTAL EMPLOYEES : {{ $employeeKumasiActive + $employeeKumasiTerminated }} </small> 
                     </div>
                 </div>
             </div>
@@ -733,405 +733,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                         {{-- Rows are loaded by the server-side DataTable. --}}
-                         @if (false)
-                         @if(Auth::user()->hasRole(['Invoice', 'Finance Manager']) || (Auth::user()->department?->name == 'HR' && Auth::user()->role?->name == 'Manager'))
-
-                         @elseif(Auth::user()->field?->name == 'Accra')
-                            @foreach ($employeeAccra as $key => $employee )
-                            <tr>
-                                <td> {{ $key + 1 }} </td>
-                                <td> FWSS {{ $employee->id }}  </td>
-                                <td>{{$employee->name}}  </td>
-                                <td>{{ $employee->gender }}  </td>
-                                <td>{{ $employee->phone_number }}  </td>
-                                <td>{{ $employee->date_of_joining?->format('l F d, Y') }} </td>
-                                <td> {{ $employee->department?->name }} </td>
-                                <td> {{ $employee->role?->name }}  </td>
-                                <td> {{ $employee->field?->name }}   </td>
-                                <td>{{ $employee->client?->name }} {{ $employee->client?->business_name }} </td>
-                                <td> {{ $employee->location }} </td>
-                                <td> {{ $employee->payment_type }}  </td>
-                                <td> {{  $employee->paymentInfo?->bank?->name  }} </td>
-                                <td> {{  $employee->paymentInfo?->acc_number  }} </td>
-                                @if($employee->status == 'Active')
-                                <td><span class="badge bg-label-success">{{$employee->status}}</span></td>
-                                @else
-                                <td><span class="badge bg-label-danger">{{$employee->status}}</span></td>
-                                @endif
-                                <td> {{ $employee->status_date?->format('F, Y') }} </td>
-                                 @if($employee->tax_button == 'on')
-                                <td> <span class="badge bg-label-dark"> {{  $employee->tax_button }} </span> </td>
-                                @else
-                                <td> <span class="badge bg-label-danger"> OFF </span> </td>
-                                @endif
-                                <td> {{  $employee->paymentInfo?->tin_number  }} </td>
-
-                                @if($employee->ssnit_button == 'on')
-                                <td> <span class="badge bg-label-dark"> {{  $employee->ssnit_button }} </span> </td>
-                                @else
-                                <td> <span class="badge bg-label-danger"> OFF </span> </td>
-                                @endif
-                                 <td> {{  $employee->paymentInfo?->ssnit_number  }} </td>
-                                <td> {{$employee->basic_salary}} </td>
-                                <td> {{$employee->allowances}} </td>
-                                <td> {{ $employee->created_at?->format('F, Y') }} </td>
-                                <td> {{ $employee->created_at?->diffForHumans() }} </td>
-                                <td>{{ $employee->updated_at?->format('F, Y') }} </td>
-                                <td>{{ $employee->updated_at?->diffForHumans() }} </td>
-                                <td>{{  $employee->user1?->name }}</td>
-                               <td>
-                                <div class="dropdown">
-                                    <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown">
-                                        <i class="icon-base bx bx-dots-vertical-rounded"></i>
-                                    </button>
-                                    <div class="dropdown-menu">
-                                        <a class="dropdown-item" href="{{url('employees', $employee->id)}}"><i class="icon-base bx bxs-bullseye"></i> view</a>
-                                    @if($employee->ho_status !== 'approved' || Auth::user()->hasRole(['Finance Manager'])  )
-
-                                        <a class="dropdown-item" href="{{url('employees', $employee->id)}}/edit"><i class="icon-base bx bx-edit-alt me-1"></i> Edit</a>
-                                      @endif
-                                        @if(Auth::user()->hasRole(['Manager']))
-                                        <hr>
-                                        <a class="dropdown-item" href="{{url('employeesSalary', $employee->id)}}"><i class="icon-base bx bx-money-withdraw"></i> Salaries</a>
-                                       @endif
-                                    </div>
-                                </div>
-                            </td>
-                            </tr>
-                            @endforeach
-                       @endif
-
-
-                       @if(Auth::user()->field?->name == 'Botwe')
-                            @foreach ($employeeBotwe as $key => $employee )
-                            <tr>
-                                <td> {{ $key + 1 }} </td>
-                                <td> FWSS {{ $employee->id }}  </td>
-                                <td>{{$employee->name}}  </td>
-                                <td>{{ $employee->gender }}  </td>
-                                <td>{{ $employee->phone_number }}  </td>
-                                <td>{{ $employee->date_of_joining?->format('l F d, Y') }} </td>
-                                <td> {{ $employee->department?->name }} </td>
-                                <td> {{ $employee->role?->name }}  </td>
-                                <td> {{ $employee->field?->name }}   </td>
-                                <td>{{ $employee->client?->name }} {{ $employee->client?->business_name }} </td>
-                                <td> {{ $employee->location }} </td>
-                                <td> {{ $employee->payment_type }}  </td>
-                                <td> {{  $employee->paymentInfo?->bank?->name  }} </td>
-                                <td> {{  $employee->paymentInfo?->acc_number  }} </td>
-                                @if($employee->status == 'Active')
-                                <td><span class="badge bg-label-success">{{$employee->status}}</span></td>
-                                @else
-                                <td><span class="badge bg-label-danger">{{$employee->status}}</span></td>
-                                @endif
-                                <td> {{ $employee->status_date?->format('F, Y') }} </td>
-                                 @if($employee->tax_button == 'on')
-                                <td> <span class="badge bg-label-dark"> {{  $employee->tax_button }} </span> </td>
-                                @else
-                                <td> <span class="badge bg-label-danger"> OFF </span> </td>
-                                @endif
-                                <td> {{  $employee->paymentInfo?->tin_number  }} </td>
-
-                                @if($employee->ssnit_button == 'on')
-                                <td> <span class="badge bg-label-dark"> {{  $employee->ssnit_button }} </span> </td>
-                                @else
-                                <td> <span class="badge bg-label-danger"> OFF </span> </td>
-                                @endif
-                                 <td> {{  $employee->paymentInfo?->ssnit_number  }} </td>
-                                <td> {{$employee->basic_salary}} </td>
-                                <td> {{$employee->allowances}} </td>
-                                <td> {{ $employee->created_at?->format('F, Y') }} </td>
-                                <td> {{ $employee->created_at?->diffForHumans() }} </td>
-                                <td>{{ $employee->updated_at?->format('F, Y') }} </td>
-                                <td>{{ $employee->updated_at?->diffForHumans() }} </td>
-                                <td>{{  $employee->user1?->name }}</td>
-                               <td>
-                                <div class="dropdown">
-                                    <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown">
-                                        <i class="icon-base bx bx-dots-vertical-rounded"></i>
-                                    </button>
-                                    <div class="dropdown-menu">
-                                        <a class="dropdown-item" href="{{url('employees', $employee->id)}}"><i class="icon-base bx bxs-bullseye"></i> view</a>
-                                      @if($employee->ho_status !== 'approved' || Auth::user()->hasRole(['Finance Manager'])  )
-                                        <a class="dropdown-item" href="{{url('employees', $employee->id)}}/edit"><i class="icon-base bx bx-edit-alt me-1"></i> Edit</a>
-                                      @endif
-
-                                        @if(Auth::user()->hasRole(['Manager']))
-                                        <hr>
-                                        <a class="dropdown-item" href="{{url('employeesSalary', $employee->id)}}"><i class="icon-base bx bx-money-withdraw"></i> Salaries</a>
-                                       @endif
-                                    </div>
-                                </div>
-                            </td>
-                            </tr>
-                            @endforeach 
-                       @endif
-
-
-                       @if(Auth::user()->field?->name == 'Tema')
-                        @foreach ($employeeTema as $key => $employee )
-                            <tr>
-                                <td> {{ $key + 1 }} </td>
-                                <td> FWSS {{ $employee->id }}  </td>
-                                <td>{{$employee->name}}  </td>
-                                <td>{{ $employee->gender }}  </td>
-                                <td>{{ $employee->phone_number }}  </td>
-                                <td>{{ $employee->date_of_joining?->format('l F d, Y') }} </td>
-                                <td> {{ $employee->department?->name }} </td>
-                                <td> {{ $employee->role?->name }}  </td>
-                                <td> {{ $employee->field?->name }}   </td>
-                                <td>{{ $employee->client?->name }} {{ $employee->client?->business_name }} </td>
-                                <td> {{ $employee->location }} </td>
-                                <td> {{ $employee->payment_type }}  </td>
-                                <td> {{  $employee->paymentInfo?->bank?->name  }} </td>
-                                <td> {{  $employee->paymentInfo?->acc_number  }} </td>
-                                @if($employee->status == 'Active')
-                                <td><span class="badge bg-label-success">{{$employee->status}}</span></td>
-                                @else
-                                <td><span class="badge bg-label-danger">{{$employee->status}}</span></td>
-                                @endif
-                                <td> {{ $employee->status_date?->format('F, Y') }} </td>
-                                 @if($employee->tax_button == 'on')
-                                <td> <span class="badge bg-label-dark"> {{  $employee->tax_button }} </span> </td>
-                                @else
-                                <td> <span class="badge bg-label-danger"> OFF </span> </td>
-                                @endif
-                                <td> {{  $employee->paymentInfo?->tin_number  }} </td>
-
-                                @if($employee->ssnit_button == 'on')
-                                <td> <span class="badge bg-label-dark"> {{  $employee->ssnit_button }} </span> </td>
-                                @else
-                                <td> <span class="badge bg-label-danger"> OFF </span> </td>
-                                @endif
-                                 <td> {{  $employee->paymentInfo?->ssnit_number  }} </td>
-                                <td> {{$employee->basic_salary}} </td>
-                                <td> {{$employee->allowances}} </td>
-                                <td> {{ $employee->created_at?->format('F, Y') }} </td>
-                                <td> {{ $employee->created_at?->diffForHumans() }} </td>
-                                <td>{{ $employee->updated_at?->format('F, Y') }} </td>
-                                <td>{{ $employee->updated_at?->diffForHumans() }} </td>
-                                <td>{{  $employee->user1?->name }}</td>
-                               <td>
-                                <div class="dropdown">
-                                    <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown">
-                                        <i class="icon-base bx bx-dots-vertical-rounded"></i>
-                                    </button>
-                                    <div class="dropdown-menu">
-                                        <a class="dropdown-item" href="{{url('employees', $employee->id)}}"><i class="icon-base bx bxs-bullseye"></i> view</a>
-                                      @if($employee->ho_status !== 'approved' || Auth::user()->hasRole(['Finance Manager'])  )
-                                        <a class="dropdown-item" href="{{url('employees', $employee->id)}}/edit"><i class="icon-base bx bx-edit-alt me-1"></i> Edit</a>
-                                     @endif
-                                        @if(Auth::user()->hasRole(['Manager']))
-                                        <hr>
-                                        <a class="dropdown-item" href="{{url('employeesSalary', $employee->id)}}"><i class="icon-base bx bx-money-withdraw"></i> Salaries</a>
-                                       @endif
-                                    </div>
-                                </div>
-                            </td>
-                            </tr>
-                            @endforeach 
-                       @endif
-                       
-                       
-                      @if(Auth::user()->field?->name == 'Takoradi')
-                        @foreach ($employeeTakoradi as $key => $employee )
-                            <tr>
-                                <td> {{ $key + 1 }} </td>
-                                <td> FWSS {{ $employee->id }}  </td>
-                                <td>{{$employee->name}}  </td>
-                                <td>{{ $employee->gender }}  </td>
-                                <td>{{ $employee->phone_number }}  </td>
-                                <td>{{ $employee->date_of_joining?->format('l F d, Y') }} </td>
-                                <td> {{ $employee->department?->name }} </td>
-                                <td> {{ $employee->role?->name }}  </td>
-                                <td> {{ $employee->field?->name }}   </td>
-                                <td>{{ $employee->client?->name }} {{ $employee->client?->business_name }} </td>
-                                <td> {{ $employee->location }} </td>
-                                <td> {{ $employee->payment_type }}  </td>
-                                <td> {{  $employee->paymentInfo?->bank?->name  }} </td>
-                                <td> {{  $employee->paymentInfo?->acc_number  }} </td>
-                                @if($employee->status == 'Active')
-                                <td><span class="badge bg-label-success">{{$employee->status}}</span></td>
-                                @else
-                                <td><span class="badge bg-label-danger">{{$employee->status}}</span></td>
-                                @endif
-                                <td> {{ $employee->status_date?->format('F, Y') }} </td>
-                                 @if($employee->tax_button == 'on')
-                                <td> <span class="badge bg-label-dark"> {{  $employee->tax_button }} </span> </td>
-                                @else
-                                <td> <span class="badge bg-label-danger"> OFF </span> </td>
-                                @endif
-                                <td> {{  $employee->paymentInfo?->tin_number  }} </td>
-
-                                @if($employee->ssnit_button == 'on')
-                                <td> <span class="badge bg-label-dark"> {{  $employee->ssnit_button }} </span> </td>
-                                @else
-                                <td> <span class="badge bg-label-danger"> OFF </span> </td>
-                                @endif
-                                 <td> {{  $employee->paymentInfo?->ssnit_number  }} </td>
-                                <td> {{$employee->basic_salary}} </td>
-                                <td> {{$employee->allowances}} </td>
-                                <td> {{ $employee->created_at?->format('F, Y') }} </td>
-                                <td> {{ $employee->created_at?->diffForHumans() }} </td>
-                                <td>{{ $employee->updated_at?->format('F, Y') }} </td>
-                                <td>{{ $employee->updated_at?->diffForHumans() }} </td>
-                                <td>{{  $employee->user1?->name }}</td>
-                               <td>
-                                <div class="dropdown">
-                                    <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown">
-                                        <i class="icon-base bx bx-dots-vertical-rounded"></i>
-                                    </button>
-                                    <div class="dropdown-menu">
-                                        <a class="dropdown-item" href="{{url('employees', $employee->id)}}"><i class="icon-base bx bxs-bullseye"></i> view</a>
-                                     @if($employee->ho_status !== 'approved' || Auth::user()->hasRole(['Finance Manager'])  )
-                                        <a class="dropdown-item" href="{{url('employees', $employee->id)}}/edit"><i class="icon-base bx bx-edit-alt me-1"></i> Edit</a>
-                                      @endif
-                                        @if(Auth::user()->hasRole(['Manager']))
-                                        <hr>
-                                        <a class="dropdown-item" href="{{url('employeesSalary', $employee->id)}}"><i class="icon-base bx bx-money-withdraw"></i> Salaries</a>
-                                       @endif
-                                    </div>
-                                </div>
-                            </td>
-                            </tr>
-                            @endforeach 
-                       @endif
-
-
-
-                      @if(Auth::user()->field?->name == 'Koforidua')
-                        @foreach ($employeeKoforidua as $key => $employee )
-                            <tr>
-                                <td> {{ $key + 1 }} </td>
-                                <td> FWSS {{ $employee->id }}  </td>
-                                <td>{{$employee->name}}  </td>
-                                <td>{{ $employee->gender }}  </td>
-                                <td>{{ $employee->phone_number }}  </td>
-                                <td>{{ $employee->date_of_joining?->format('l F d, Y') }} </td>
-                                <td> {{ $employee->department?->name }} </td>
-                                <td> {{ $employee->role?->name }}  </td>
-                                <td> {{ $employee->field?->name }}   </td>
-                                <td>{{ $employee->client?->name }} {{ $employee->client?->business_name }} </td>
-                                <td> {{ $employee->location }} </td>
-                                <td> {{ $employee->payment_type }}  </td>
-                                <td> {{  $employee->paymentInfo?->bank?->name  }} </td>
-                                <td> {{  $employee->paymentInfo?->acc_number  }} </td>
-                                @if($employee->status == 'Active')
-                                <td><span class="badge bg-label-success">{{$employee->status}}</span></td>
-                                @else
-                                <td><span class="badge bg-label-danger">{{$employee->status}}</span></td>
-                                @endif
-                                <td> {{ $employee->status_date?->format('F, Y') }} </td>
-                                 @if($employee->tax_button == 'on')
-                                <td> <span class="badge bg-label-dark"> {{  $employee->tax_button }} </span> </td>
-                                @else
-                                <td> <span class="badge bg-label-danger"> OFF </span> </td>
-                                @endif
-                                <td> {{  $employee->paymentInfo?->tin_number  }} </td>
-
-                                @if($employee->ssnit_button == 'on')
-                                <td> <span class="badge bg-label-dark"> {{  $employee->ssnit_button }} </span> </td>
-                                @else
-                                <td> <span class="badge bg-label-danger"> OFF </span> </td>
-                                @endif
-                                 <td> {{  $employee->paymentInfo?->ssnit_number  }} </td>
-                                <td> {{$employee->basic_salary}} </td>
-                                <td> {{$employee->allowances}} </td>
-                                <td> {{ $employee->created_at?->format('F, Y') }} </td>
-                                <td> {{ $employee->created_at?->diffForHumans() }} </td>
-                                <td>{{ $employee->updated_at?->format('F, Y') }} </td>
-                                <td>{{ $employee->updated_at?->diffForHumans() }} </td>
-                                <td>{{  $employee->user1?->name }}</td>
-                               <td>
-                                <div class="dropdown">
-                                    <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown">
-                                        <i class="icon-base bx bx-dots-vertical-rounded"></i>
-                                    </button>
-                                    <div class="dropdown-menu">
-                                        <a class="dropdown-item" href="{{url('employees', $employee->id)}}"><i class="icon-base bx bxs-bullseye"></i> view</a>
-                                     @if($employee->ho_status !== 'approved' || Auth::user()->hasRole(['Finance Manager'])  )
-                                        <a class="dropdown-item" href="{{url('employees', $employee->id)}}/edit"><i class="icon-base bx bx-edit-alt me-1"></i> Edit</a>
-                                      @endif
-                                        @if(Auth::user()->hasRole(['Manager']))
-                                        <hr>
-                                        <a class="dropdown-item" href="{{url('employeesSalary', $employee->id)}}"><i class="icon-base bx bx-money-withdraw"></i> Salaries</a>
-                                       @endif
-                                    </div>
-                                </div>
-                            </td>
-                            </tr>
-                            @endforeach 
-                       @endif
-
-
-                      @if(Auth::user()->field?->name == 'Kumasi')
-                        @foreach ($employeeKumasi as $key => $employee )
-                            <tr>
-                                <td> {{ $key + 1 }} </td>
-                                <td> FWSS {{ $employee->id }}  </td>
-                                <td>{{$employee->name}}  </td>
-                                <td>{{ $employee->gender }}  </td>
-                                <td>{{ $employee->phone_number }}  </td>
-                                <td>{{ $employee->date_of_joining?->format('l F d, Y') }} </td>
-                                <td> {{ $employee->department?->name }} </td>
-                                <td> {{ $employee->role?->name }}  </td>
-                                <td> {{ $employee->field?->name }}   </td>
-                                <td>{{ $employee->client?->name }} {{ $employee->client?->business_name }} </td>
-                                <td> {{ $employee->location }} </td>
-                                <td> {{ $employee->payment_type }}  </td>
-                                <td> {{  $employee->paymentInfo?->bank?->name  }} </td>
-                                <td> {{  $employee->paymentInfo?->acc_number  }} </td>
-                                @if($employee->status == 'Active')
-                                <td><span class="badge bg-label-success">{{$employee->status}}</span></td>
-                                @else
-                                <td><span class="badge bg-label-danger">{{$employee->status}}</span></td>
-                                @endif
-                                <td> {{ $employee->status_date?->format('F, Y') }} </td>
-                                 @if($employee->tax_button == 'on')
-                                <td> <span class="badge bg-label-dark"> {{  $employee->tax_button }} </span> </td>
-                                @else
-                                <td> <span class="badge bg-label-danger"> OFF </span> </td>
-                                @endif
-                                <td> {{  $employee->paymentInfo?->tin_number  }} </td>
-
-                                @if($employee->ssnit_button == 'on')
-                                <td> <span class="badge bg-label-dark"> {{  $employee->ssnit_button }} </span> </td>
-                                @else
-                                <td> <span class="badge bg-label-danger"> OFF </span> </td>
-                                @endif
-                                 <td> {{  $employee->paymentInfo?->ssnit_number  }} </td>
-                                <td> {{$employee->basic_salary}} </td>
-                                <td> {{$employee->allowances}} </td>
-                                <td> {{ $employee->created_at?->format('F, Y') }} </td>
-                                <td> {{ $employee->created_at?->diffForHumans() }} </td>
-                                <td>{{ $employee->updated_at?->format('F, Y') }} </td>
-                                <td>{{ $employee->updated_at?->diffForHumans() }} </td>
-                                <td>{{  $employee->user1?->name }}</td>
-                               <td>
-                                <div class="dropdown">
-                                    <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown">
-                                        <i class="icon-base bx bx-dots-vertical-rounded"></i>
-                                    </button>
-                                    <div class="dropdown-menu">
-                                        <a class="dropdown-item" href="{{url('employees', $employee->id)}}"><i class="icon-base bx bxs-bullseye"></i> view</a>
-                                     @if($employee->ho_status !== 'approved' || Auth::user()->hasRole(['Finance Manager'])  )
-                                        <a class="dropdown-item" href="{{url('employees', $employee->id)}}/edit"><i class="icon-base bx bx-edit-alt me-1"></i> Edit</a>
-                                        @endif
-                                        @if(Auth::user()->hasRole(['Manager']))
-                                        <hr>
-                                        <a class="dropdown-item" href="{{url('employeesSalary', $employee->id)}}"><i class="icon-base bx bx-money-withdraw"></i> Salaries</a>
-                                       @endif
-                                    </div>
-                                </div>
-                            </td>
-                            </tr>
-                            @endforeach 
-                       @endif
-
-                       
-                       
-                        @endif
+                         {{-- Rows are loaded by the server-side DataTable (employees.data). --}}
                         </tbody>
                     </table>
                     </div>
@@ -1158,56 +760,77 @@
     <script src="https://cdn.datatables.net/columncontrol/1.1.1/js/dataTables.columnControl.min.js"></script>
 
      
-    <script>
+    @include('partials.dt_range')
 
-        new DataTable('#myTable', {
-            responsive: true,
-            processing: true,
-            serverSide: true,
-            pageLength: 25,
-            ajax: {
-                url: $('#myTable').data('source'),
-                type: 'GET',
-                dataSrc: 'data',
-            },
-            order: [[22, 'desc']],
-            columnControl: [{
-                target: 1,
-                content: ['search']
-            }],
-            columns: [
-                { data: 'row_number', orderable: false, searchable: false, render: function (data, type, row, meta) { return meta.row + 1 + meta.settings._iDisplayStart; } },
-                { data: 'employee_id' }, { data: 'name' }, { data: 'gender' }, { data: 'phone_number' },
-                { data: 'date_of_joining' }, { data: 'department' }, { data: 'role' }, { data: 'field' },
-                { data: 'client' }, { data: 'location' }, { data: 'payment_type' }, { data: 'bank' },
-                { data: 'account_number' }, { data: 'status' }, { data: 'status_date' }, { data: 'tax' },
-                { data: 'tin' }, { data: 'ssnit' }, { data: 'ssnit_number' }, { data: 'basic_salary' },
-                { data: 'allowances' }, { data: 'created_at' }, { data: 'created_period' }, { data: 'updated_at' },
-                { data: 'updated_period' }, { data: 'staff' }, { data: 'action', orderable: false, searchable: false }
-            ],
-            layout: {
-                topStart: {
-                    buttons: [ 
-                    {
-                        extend: 'pageLength',
-                        text: 'Show',
-                        className: 'btn btn-secondary',
-                        Options: [10, 25, 50, 100, 250, 500, 1000, 2000], 
-                    },
-                        {
-                            extend: 'excelHtml5',
-                            title: 'Employees',
-                            className: 'btn btn-secondary',
-                            exportOptions: {
-                                columns: ':visible'
-                            }
-                        },
-                    ]
-                }
-            },
+    <script>
+        $(function () {
+            // 1. Mount BEFORE creating the table: it inserts the bar above the table.
+            //    range_by is whitelisted server-side (EMPLOYEE_RANGE_COLUMNS).
+            const range = DtRange.mount('#myTable', {
+                label: 'Date',
+                type: 'date',
+                presets: ['today', 'week', 'month', 'lastmonth', 'year'],
+                exportUrl: '{{ route('employees.export') }}',
+                rangeBy: [
+                    { value: 'date_of_joining', label: 'Employment date' },
+                    { value: 'status_date',     label: 'Status date (terminated / reinstated)' },
+                    { value: 'created_at',      label: 'Date created' },
+                ],
+            });
+
+            const canViewSalary = @json($canViewSalary);
+
+            // 2. Send the range with every request.
+            const table = new DataTable('#myTable', {
+                processing: true,
+                serverSide: true,
+                pageLength: 25,
+                searchDelay: 500,   // date search uses DATE_FORMAT() LIKE (no index): debounce typing
+                ajax: {
+                    url: $('#myTable').data('source'),
+                    type: 'GET',
+                    data: range.append,
+                    dataSrc: 'data',
+                },
+                order: [[22, 'desc']],
+                columnControl: [{
+                    target: 1,
+                    content: ['search']
+                }],
+                columns: [
+                    { data: 'row_number', orderable: false, searchable: false, render: function (data, type, row, meta) { return meta.row + 1 + meta.settings._iDisplayStart; } },
+                    { data: 'employee_id' }, { data: 'name' }, { data: 'gender' }, { data: 'phone_number' },
+                    { data: 'date_of_joining' }, { data: 'department' }, { data: 'role' }, { data: 'field' },
+                    { data: 'client', orderable: true }, { data: 'location' }, { data: 'payment_type' }, { data: 'bank' },
+                    { data: 'account_number' }, { data: 'status' }, { data: 'status_date' },
+                    { data: 'tax', orderable: false }, { data: 'tin', orderable: false },
+                    { data: 'ssnit', orderable: false }, { data: 'ssnit_number', orderable: false },
+                    { data: 'basic_salary', visible: canViewSalary, searchable: canViewSalary, orderable: canViewSalary },
+                    { data: 'allowances',   visible: canViewSalary, searchable: canViewSalary, orderable: canViewSalary },
+                    { data: 'created_at' }, { data: 'created_period', orderable: false },
+                    { data: 'updated_at' }, { data: 'updated_period', orderable: false },
+                    { data: 'staff' }, { data: 'action', orderable: false, searchable: false }
+                ],
+                layout: {
+                    topStart: {
+                        buttons: [
+                            {
+                                extend: 'pageLength',
+                                text: 'Show',
+                                className: 'btn btn-secondary',
+                                Options: [10, 25, 50, 100, 250, 500, 1000, 2000],
+                            },
+                            // The built-in Excel button is intentionally gone: in server-side mode it
+                            // only exports the visible page. Use "Export all (filtered)" in the bar above.
+                        ]
+                    }
+                },
+            });
+
+            // 3. Wire pickers / presets / "filter by" / export button to the table.
+            range.bind(table);
         });
     </script>
-     @include('partials.dt_range')
 
     @endsection
 </x-hr-dashboard>

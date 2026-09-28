@@ -249,127 +249,39 @@ class EmployeeController extends Controller
      */
     public function index()
     {
-        //
-        $employees = employee::where('ho_status', 'approved')->where('status', 'Active')->orwhere('status', 'Terminated')->get();
-        $activeEmployees = employee::where('ho_status', 'approved')->where('status', 'Active')->count();
-        $terminatedEmployees = employee::where('ho_status', 'approved')->where('status', 'Terminated')->count();  
+        // One grouped query instead of loading the whole employees table per field office.
+        // Explicit grouping also fixes the old where(...)->orWhere('status','Terminated')
+        // precedence bug, which counted unapproved terminated staff in every total.
+        $counts = employee::query()
+            ->where('ho_status', 'approved')
+            ->whereIn('status', ['Active', 'Terminated'])
+            ->selectRaw('field_id, status, COUNT(*) as total')
+            ->groupBy('field_id', 'status')
+            ->get();
 
+        $count = function (string $status, ?int $fieldId = null) use ($counts): int {
+            return (int) $counts
+                ->when($fieldId !== null, fn ($c) => $c->where('field_id', $fieldId))
+                ->where('status', $status)
+                ->sum('total');
+        };
 
-        $Accra = employee::where('ho_status', 'approved')->where('field_id', 1)->where('status', 'Active')->orwhere('status', 'Terminated')->get();
-        $employeeAccra=[];
-        foreach($Accra as $accra)
-            {
-                if($accra->field_id == 1)
-                    {
-                        $employeeAccra[] = $accra;
-                    }
-                // echo $data->field_id . " ". "<br>";
-            }
-        $employeeAccraTerminated = employee::where('ho_status', 'approved')->where('field_id', 1)->where('status', 'Terminated')->count();  
-        $employeeAccraActive = employee::where('ho_status', 'approved')->where('field_id', 1)->where('status', 'Active')->count();
+        $offices = ['Accra' => 1, 'Botwe' => 2, 'Tema' => 3, 'Takoradi' => 4, 'Koforidua' => 5, 'Kumasi' => 6, 'Shyhills' => 7];
 
-        $Botwe = employee::where('ho_status', 'approved')->where('field_id', 2)->where('status', 'Active')->orwhere('status', 'Terminated')->get();
-        $employeeBotwe=[];
-        foreach($Botwe as $botw)
-            {
-                if($botw->field_id == 2)
-                    {
-                        $employeeBotwe[] = $botw;
-                    }
-                // echo $data->field_id . " ". "<br>";
-            }
-        $employeeBotweTerminated = employee::where('ho_status', 'approved')->where('field_id', 2)->where('status', 'Terminated')->count();  
-        $employeeBotweActive = employee::where('ho_status', 'approved')->where('field_id', 2)->where('status', 'Active')->count();
-
-        $Tema = employee::where('ho_status', 'approved')->where('field_id', 3)->where('status', 'Active')->orwhere('status', 'Terminated')->get();
-        $employeeTema1= collect();
-        // $employeeTema=[];
-        foreach($Tema as $tem)
-            {
-                if($tem->field_id == 3)
-                    {
-                         $employeeTema1->push($tem);
-                    }
-                // echo $data->field_id . " ". "<br>";
-            }
-        // dd($employeeTema1);
-        $employeeTemaTerminated = employee::where('ho_status', 'approved')->where('field_id', 3)->where('status', 'Terminated')->count();  
-        $employeeTemaActive = employee::where('ho_status', 'approved')->where('field_id', 3)->where('status', 'Active')->count();  
-        
-        $Shyhills = employee::where('ho_status', 'approved')->where('field_id', 7)->where('status', 'Active')->orwhere('status', 'Terminated')->get();
-       
-        $employeeShyhills=collect();
-        foreach($Shyhills as $shai)
-            {
-                if($shai->field_id == 7)
-                    {
-                        $employeeShyhills->push($shai);
-                    }
-                // echo $data->field_id . " ". "<br>";
-            }
-        // dd($employeeShyhills);
-        $employeeTema = $employeeTema1->concat( $employeeShyhills);
-
-        $employeeShyhillsTerminated = employee::where('ho_status', 'approved')->where('field_id', 7)->where('status', 'Terminated')->count();  
-        $employeeShyhillsActive = employee::where('ho_status', 'approved')->where('field_id', 7)->where('status', 'Active')->count();
-        
-        // $employeeTema = employee::where('ho_status', 'approved')->whereIn('field_id', [3,7])->where('status', 'Active')->orwhere('status', 'Terminated')->get();
-
-
-        $Takoradi = employee::where('field_id', 4)->where('ho_status', 'approved')->where('status', 'Active')->orwhere('status', 'Terminated')->get();
-        $employeeTakoradi=[];
-        foreach($Takoradi as $tako)
-            {
-                if($tako->field_id == 4)
-                    {
-                        $employeeTakoradi[] = $tako;
-                    }
-                // echo $data->field_id . " ". "<br>";
-            }
-        // dd($employeeTakoradi);
-
-        $employeeTakoradiTerminated = employee::where('ho_status', 'approved')->where('field_id', 4)->where('status', 'Terminated')->count();  
-        $employeeTakoradiActive = employee::where('ho_status', 'approved')->where('field_id', 4)->where('status', 'Active')->count();
-
-        $Koforidua = employee::where('ho_status', 'approved')->where('field_id', 5)->where('status', 'Active')->orwhere('status', 'Terminated')->get();
-        
-        $employeeKoforidua=[];
-        foreach($Koforidua as $kofo)
-            {
-                if($kofo->field_id == 5)
-                    {
-                        $employeeKoforidua[] = $kofo;
-                    }
-                // echo $data->field_id . " ". "<br>";
-            }
-        // dd($employeeKoforidua);
-
-        $employeeKoforiduaTerminated = employee::where('ho_status', 'approved')->where('field_id', 5)->where('status', 'Terminated')->count();  
-        $employeeKoforiduaActive = employee::where('ho_status', 'approved')->where('field_id', 5)->where('status', 'Active')->count();  
-
-        $Kumasi = employee::where('ho_status', 'approved')->where('field_id', 6)->where('status', 'Active')->orwhere('status', 'Terminated')->get();
-        $employeeKumasi=[];
-        foreach($Kumasi as $kuma)
-            {
-                if($kuma->field_id == 6)
-                    {
-                        $employeeKumasi[] = $kuma;
-                    }
-                // echo $data->field_id . " ". "<br>";
-            }
-        // dd($employeeKumasi);
-       
-        $employeeKumasiTerminated = employee::where('ho_status', 'approved')->where('field_id', 6)->where('status', 'Terminated')->count();  
-        $employeeKumasiActive = employee::where('ho_status', 'approved')->where('field_id', 6)->where('status', 'Active')->count();
-
-
-        return view('employees.index', compact( 'employees', 'activeEmployees', 'terminatedEmployees', 'employeeAccra', 'employeeAccraTerminated', 'employeeAccraActive', 'employeeBotwe', 'employeeBotweTerminated', 'employeeBotweActive', 'employeeTema', 'employeeTemaTerminated', 'employeeTemaActive', 'employeeTakoradiActive', 'employeeTakoradiTerminated','employeeTakoradi', 'employeeKoforiduaActive', 'employeeKoforiduaTerminated','employeeKoforidua', 'employeeKumasiActive', 'employeeKumasiTerminated','employeeKumasi', 'employeeShyhills', 'employeeShyhillsTerminated', 'employeeShyhillsActive'));
-   
+        $data = [
+            'activeEmployees'     => $count('Active'),
+            'terminatedEmployees' => $count('Terminated'),
+            'canViewSalary'       => $this->employeeCanViewSalary(),
+        ];
+        foreach ($offices as $name => $fieldId) {
+            $data["employee{$name}Active"]     = $count('Active', $fieldId);
+            $data["employee{$name}Terminated"] = $count('Terminated', $fieldId);
         }
 
+        return view('employees.index', $data);
+    }
 
-
-        private const EMPLOYEE_RANGE_COLUMNS = [
+    private const EMPLOYEE_RANGE_COLUMNS = [
         'date_of_joining' => 'employees.date_of_joining',
         'created_at'      => 'employees.created_at',
         'status_date'     => 'employees.status_date',
@@ -388,8 +300,8 @@ class EmployeeController extends Controller
         12 => 'banks.name',
         13 => 'payment_infos.acc_number',
         14 => 'employees.status',
-        17 => 'employees.tin_number',
-        19 => 'employees.ssnit_number',
+        17 => 'payment_infos.tin_number',
+        19 => 'payment_infos.ssnit_number',
         26 => 'users.name',
     ];
  
@@ -452,8 +364,8 @@ class EmployeeController extends Controller
             ->select([
                 'employees.id', 'employees.name', 'employees.gender', 'employees.phone_number',
                 'employees.date_of_joining', 'employees.location', 'employees.payment_type',
-                'employees.status', 'employees.status_date', 'employees.tax_button', 'employees.tin_number',
-                'employees.ssnit_button', 'employees.ssnit_number', 'employees.basic_salary',
+                'employees.status', 'employees.status_date', 'employees.tax_button', 'payment_infos.tin_number',
+                'employees.ssnit_button', 'payment_infos.ssnit_number', 'employees.basic_salary',
                 'employees.allowances', 'employees.created_at', 'employees.updated_at', 'employees.ho_status',
                 'departments.name as department_name', 'roles.name as role_name', 'fields.name as field_name',
                 'clients.name as client_name', 'clients.business_name as client_business_name',
@@ -463,7 +375,16 @@ class EmployeeController extends Controller
             ->leftJoin('roles', 'roles.id', '=', 'employees.role_id')
             ->leftJoin('fields', 'fields.id', '=', 'employees.field_id')
             ->leftJoin('clients', 'clients.id', '=', 'employees.client_id')
-            ->leftJoin('payment_infos', 'payment_infos.employee_id', '=', 'employees.id')
+            // payment_infos.employee_id is not unique: join only the first record per employee
+            // (what hasOne() returns) so an extra record can never duplicate a row.
+            ->leftJoinSub(
+                DB::table('payment_infos')->selectRaw('employee_id, MIN(id) as id')->groupBy('employee_id'),
+                'pi_first',
+                'pi_first.employee_id',
+                '=',
+                'employees.id'
+            )
+            ->leftJoin('payment_infos', 'payment_infos.id', '=', 'pi_first.id')
             ->leftJoin('banks', 'banks.id', '=', 'payment_infos.bank_id')
             ->leftJoin('users', 'users.id', '=', 'employees.user_id1')
             ->where('employees.ho_status', 'approved')
@@ -491,6 +412,34 @@ class EmployeeController extends Controller
             $this->requestString($request, 'to')
         );
  
+        // Global search box - same rules as the invoice / receipt lists.
+        $search = trim((string) $this->requestString($request, 'search.value'));
+        if ($search !== '') {
+            $term = $this->likeTerm($search);
+
+            $query->where(function ($q) use ($search, $term) {
+                foreach ([
+                    'employees.name', 'employees.phone_number', 'employees.location', 'employees.status',
+                    'employees.gender', 'employees.payment_type', 'departments.name', 'roles.name',
+                    'fields.name', 'clients.name', 'clients.business_name', 'banks.name',
+                    'payment_infos.acc_number', 'users.name',
+                ] as $column) {
+                    $q->orWhere($column, 'like', $term);
+                }
+
+                foreach (['employees.date_of_joining', 'employees.status_date', 'employees.created_at'] as $column) {
+                    $q->orWhere(function ($w) use ($column, $search) {
+                        $this->whereDateMatches($w, $column, $search);
+                    });
+                }
+
+                // Only treat it as an id when it looks like one ("45", "FWSS 45").
+                if (preg_match('/^(fwss)?\s*#?\d+$/i', $search)) {
+                    $q->orWhere('employees.id', 'like', '%' . preg_replace('/\D/', '', $search) . '%');
+                }
+            });
+        }
+
         $columns = $request->input('columns', []);
         foreach (is_array($columns) ? $columns : [] as $index => $column) {
             $value = $this->columnFilterValue($column);
@@ -561,43 +510,18 @@ class EmployeeController extends Controller
     {
         $query = $this->employeeListBase();
  
-        $recordsTotal = (clone $query)->distinct('employees.id')->count('employees.id');
-
-        $globalSearch = trim((string) $request->input('search.value', ''));
-        if ($globalSearch !== '') {
-            $query->where(function ($q) use ($globalSearch) {
-                $q->where('employees.id', 'like', "%{$globalSearch}%")
-                    ->orWhere('employees.name', 'like', "%{$globalSearch}%")
-                    ->orWhere('employees.phone_number', 'like', "%{$globalSearch}%")
-                    ->orWhere('departments.name', 'like', "%{$globalSearch}%")
-                    ->orWhere('roles.name', 'like', "%{$globalSearch}%")
-                    ->orWhere('fields.name', 'like', "%{$globalSearch}%")
-                    ->orWhere('clients.name', 'like', "%{$globalSearch}%")
-                    ->orWhere('clients.business_name', 'like', "%{$globalSearch}%")
-                    ->orWhere('employees.location', 'like', "%{$globalSearch}%")
-                    ->orWhere('employees.status', 'like', "%{$globalSearch}%")
-                    ->orWhere('banks.name', 'like', "%{$globalSearch}%")
-                    ->orWhere('users.name', 'like', "%{$globalSearch}%")
-                    ->orWhereRaw("DATE_FORMAT(employees.date_of_joining, '%W %M %d, %Y') LIKE ?", ["%{$globalSearch}%"])
-                    ->orWhereRaw("DATE_FORMAT(employees.created_at, '%F, %Y') LIKE ?", ["%{$globalSearch}%"]);
-            });
-        }
-
-        $columns = $request->input('columns', []);
-        foreach ($columns as $index => $column) {
-            // ...existing switch unchanged...
-        }
-
+        $recordsTotal = (clone $query)->count();
 
         $this->employeeListFilters($query, $request);
-        $recordsFiltered = (clone $query)->distinct('employees.id')->count('employees.id');
+        $recordsFiltered = (clone $query)->count();
  
         $this->employeeListOrder($query, $request);
  
-        $rows = $query
-            ->offset(max(0, (int) $request->input('start', 0)))
-            ->limit(max(1, min(2000, (int) $request->input('length', 25))))
-            ->get();
+        $start = max(0, (int) $request->input('start', 0));
+        $length = (int) $request->input('length', 25);
+        $length = $length > 0 ? min($length, 2000) : 25;   // -1 ("All") falls back to 25, as on invoices
+
+        $rows = $query->offset($start)->limit($length)->get();
  
         $user = Auth::user();
         $canViewAll = $this->employeeCanViewAll();
@@ -626,7 +550,7 @@ class EmployeeController extends Controller
                 'status_date' => $employee->status_date ? Carbon::parse($employee->status_date)->format('F, Y') : '',
                 'tax' => $employee->tax_button === 'on' ? '<span class="badge bg-label-dark">on</span>' : '<span class="badge bg-label-danger">OFF</span>',
                 'tin' => $employee->tin_number, 'ssnit' => $employee->ssnit_button === 'on' ? '<span class="badge bg-label-dark">on</span>' : '<span class="badge bg-label-danger">OFF</span>',
-                'ssnit_number' => $employee->ssnit_number, 'basic_salary' => $employee->basic_salary, 'allowances' => $employee->allowances,
+                'ssnit_number' => $employee->ssnit_number, 'basic_salary' => $canViewSalary ? $employee->basic_salary : '', 'allowances' => $canViewSalary ? $employee->allowances : '',
                 'created_at' => $employee->created_at ? Carbon::parse($employee->created_at)->format('F, Y') : '',
                 'created_period' => $employee->created_at ? Carbon::parse($employee->created_at)->diffForHumans() : '',
                 'updated_at' => $employee->updated_at ? Carbon::parse($employee->updated_at)->format('F, Y') : '',

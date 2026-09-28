@@ -50,7 +50,7 @@ class SalaryBankExport implements FromQuery, WithMapping , WithHeadings, WithDra
     
     public function query()
     {
-        return Salary::query()->where('bank_id', $this->bank_id )->where('payment_type', 'Bank')->whereBetween('salary_month', \App\Support\PayrollMonth::span($this->month))->whereIn('payment_status', ['pending', 'approved'])->select([
+        return Salary::query()->where('bank_id', $this->bank_id )->where('payment_type', 'Bank')->whereMonth('salary_month', $this->month->month)->whereIn('payment_status', ['pending', 'approved'])->select([
         'employee_id',
         'payment_status',
         'updated_at',
@@ -71,7 +71,7 @@ class SalaryBankExport implements FromQuery, WithMapping , WithHeadings, WithDra
     */
     public function map($salary): array
     {
-        $categories = category::whereBetween('category_month', \App\Support\PayrollMonth::span($this->month))->get();
+        $categories = category::whereMonth('category_month', $this->month)->get();
 
         return [
              ++$this->rowNumber,

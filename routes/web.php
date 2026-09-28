@@ -63,6 +63,11 @@ Route::resource('category', CategoryController::class);
 Route::post('categoryAssign', [CategoryController::class, 'categoryAssign']); 
 Route::post('categoryReAssign', [CategoryController::class, 'categoryReAssign']); 
 Route::get('categorySearch', [CategoryController::class, 'categorySearch']); 
+Route::get('categoryClients', [CategoryController::class, 'activeClientsByMonth'])->name('category.activeClientsByMonth');
+Route::get('categoryClients/data', [CategoryController::class, 'clientsData'])->name('category.clientsData');
+Route::get('categoryClients/ids', [CategoryController::class, 'clientIds'])->name('category.clientsIds');
+Route::post('categoryBulkAssign', [CategoryController::class, 'bulkAssign'])->name('category.bulkAssign');
+Route::post('categoryFieldAssign', [CategoryController::class, 'fieldAssign'])->name('category.fieldAssign');
 
 Route::resource('service', ServiceController::class);
 
@@ -228,4 +233,4 @@ Route::get('exportCategory/{month}/{category}', [SalaryController::class, 'expor
 //     //     # code...
 //     //     echo $value->name. " / ". $value->business_name ;
 //     // }
-// });  
+// });

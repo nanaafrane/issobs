@@ -53,13 +53,13 @@ class SalaryCategoryExport implements FromQuery, WithMapping , WithHeadings
     {
         
         $CategoryClient = category::with(['salaries' => function ($query) {
-            $query->whereBetween('salary_month', \App\Support\PayrollMonth::span($this->month))->whereIn('payment_status', ['pending', 'approved']);
-        }, 'salaries.client'])->where('name', $this->category)->whereBetween('category_month', \App\Support\PayrollMonth::span($this->month))->pluck('client_id')->toArray();
+            $query->whereMonth('salary_month', $this->month->month)->whereIn('payment_status', ['pending', 'approved']);
+        }, 'salaries.client'])->where('name', $this->category)->whereMonth('category_month', $this->month->month)->pluck('client_id')->toArray();
 
         
-        // $clientEployees = Salary::whereBetween('salary_month', \App\Support\PayrollMonth::span($this->month))->whereIn('payment_status', ['pending', 'approved'])->whereIn('client_id', $CategoryClient)->get();
+        // $clientEployees = Salary::whereMonth('salary_month', $this->month->month)->whereIn('payment_status', ['pending', 'approved'])->whereIn('client_id', $CategoryClient)->get();
         // dd($clientEployees);
-        return Salary::query()->whereBetween('salary_month', \App\Support\PayrollMonth::span($this->month))->whereIn('payment_status', ['pending', 'approved'])->whereIn('client_id', $CategoryClient)->select([
+        return Salary::query()->whereMonth('salary_month', $this->month->month)->whereIn('payment_status', ['pending', 'approved'])->whereIn('client_id', $CategoryClient)->select([
             'employee_id',
             'payment_status',
             'employee_id',

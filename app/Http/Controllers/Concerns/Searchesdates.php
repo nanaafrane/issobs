@@ -120,6 +120,7 @@ trait SearchesDates
         $formats = [
             '%W %e %M %Y',     // Monday 5 January 2026   (receipt list display)
             '%W %d %M %Y',     // Monday 05 January 2026
+            '%W %M %d %Y',     // Monday January 05 2026  (employee join-date display)
             '%e %M %Y',        // 5 January 2026
             '%d %M %Y',        // 05 January 2026
             '%M %d %Y',        // January 05 2026

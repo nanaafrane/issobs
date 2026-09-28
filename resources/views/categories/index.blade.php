@@ -313,6 +313,14 @@
         </div><br>
 
         <div class="row">
+            <div class="col-12">
+                <a href="{{ url('categoryClients') }}" class="btn btn-info">
+                    <i class="icon-base bx bx-list-check"></i> Assign Active Clients For A Month
+                </a>
+            </div>
+        </div><br>
+
+        <div class="row">
                 <form action="/categorySearch" method="GET">
                     @csrf
                     <div class="col">

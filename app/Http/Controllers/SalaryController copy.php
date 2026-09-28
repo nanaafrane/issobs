@@ -1,0 +1,1609 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Exports\SalaryBankExport;
+use App\Exports\SalaryCategoryExport;
+use App\Exports\SalaryExport;
+use App\Http\Requests\InvoiceToPayrollSearchRequest;
+use App\Http\Requests\SalariesUploadRequest;
+use App\Models\Salary;
+use App\Http\Requests\StoreSalaryRequest;
+use App\Http\Requests\UpdateSalaryRequest;
+use Illuminate\Http\Request;
+use App\Models\Bank;
+use App\Models\Client;
+use App\Models\Department;
+use App\Models\employee;
+use App\Models\Field;
+use App\Models\Invoice;
+use App\Models\Role;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Imports\SalaryImport;
+use App\Models\category;
+use App\Models\PaymentInfo;
+use App\Models\SalaryTopUps;
+use Maatwebsite\Excel\Excel as MaatwebsiteExcel;
+use PhpOffice\PhpSpreadsheet\Calculation\MathTrig\Sum;
+use Illuminate\Database\Eloquent\Builder;
+
+use function PHPUnit\Framework\isEmpty;
+
+class SalaryController extends Controller
+{
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
+    /**
+     * Display a listing of the resource.
+     */
+    public function index()
+    {
+        // Pass only active employees to the salaries index view, as it displays salary data for currently active staff.
+        $employees =  employee::where('status', 'Active')->where('ho_status', 'approved')->get();
+        $employeeAccra =  employee::where('field_id', 1)->where('status', 'Active')->where('ho_status', 'approved')->count();
+        $employeeBotwe =  employee::where('field_id', 2)->where('status', 'Active')->where('ho_status', 'approved')->count();
+        $employeeTema =  employee::where('field_id', 3)->where('status', 'Active')->where('ho_status', 'approved')->count();
+        $employeeTakoradi =  employee::where('field_id', 4)->where('status', 'Active')->where('ho_status', 'approved')->count();
+        $employeeKoforidua =  employee::where('field_id', 5)->where('status', 'Active')->where('ho_status', 'approved')->count();
+        $employeeKumasi =  employee::where('field_id', 6)->where('status', 'Active')->where('ho_status', 'approved')->count();
+        $employeeShyhills =  employee::where('field_id', 7)->where('status', 'Active')->where('ho_status', 'approved')->count();
+
+
+        // $Departments = Department::all(); 
+        // $Roles = Role::all();
+        // $Fields = Field::all();
+        // $clients = Client::all();
+        // $banks = Bank::all();
+        return view('salaries.index', compact('employees', 'employeeAccra', 'employeeBotwe', 'employeeTema', 'employeeTakoradi', 'employeeKoforidua', 'employeeKumasi', 'employeeShyhills'));
+    }
+
+    /**
+     * Show the form for creating a new resource.
+     */
+    public function create()
+    {
+        //
+
+        // foreach ($salaries as $salary) {
+        //     echo $salary->paymentInfo ? $salary->paymentInfo->ssnit_number .'<br>' : 'No Payment Info';
+        // }
+        return view('salaries.create_view');
+    }
+
+
+    /**
+     * Show the view for creating a new resource.
+     */
+    public function CreateSalaries (Request $request)
+    {
+        // dd($request->all());
+         $month = Carbon::parse($request->month);
+        // dd($month);
+
+        $salaries =  Salary::whereIn('payment_status', ['pending', 'rejected'])->whereMonth('salary_month', $month->month)->get();
+        $salariesAccra =  Salary::where('field_id', 1)->whereIn('payment_status',  ['pending', 'rejected'])->whereMonth('salary_month', $month->month)->get();
+        $salariesAccraSum = $salariesAccra->sum('cost_to_company');
+        $salariesAccraCount = $salariesAccra->count();
+        // dd( $salariesAccra->sum('cost_to_company'));
+
+        $salariesBotwe =  Salary::where('field_id', 2)->whereIn('payment_status',  ['pending', 'rejected'])->whereMonth('salary_month', $month->month)->get();
+        $salariesBotweSum = $salariesBotwe->sum('cost_to_company');
+        $salariesBotweCount = $salariesBotwe->count();
+
+        $salariesTema =  Salary::where('field_id', 3)->whereIn('payment_status',  ['pending', 'rejected'])->whereMonth('salary_month', $month->month)->get();
+        $salariesTemaSum = $salariesTema->sum('cost_to_company');
+        $salariesTemaCount = $salariesTema->count();
+
+        $salariesTakoradi =  Salary::where('field_id', 4)->whereIn('payment_status',  ['pending', 'rejected'])->whereMonth('salary_month', $month->month)->get();
+        $salariesTakoradiSum = $salariesTakoradi->sum('cost_to_company');
+        $salariesTakoradiCount = $salariesTakoradi->count();
+
+        $salariesKoforidua =  Salary::where('field_id', 5)->whereIn('payment_status',  ['pending', 'rejected'])->whereMonth('salary_month', $month->month)->get();
+        $salariesKoforiduaSum = $salariesKoforidua->sum('cost_to_company');
+        $salariesKoforiduaCount = $salariesKoforidua->count();  
+
+        $salariesKumasi =  Salary::where('field_id', 6)->whereIn('payment_status',  ['pending', 'rejected'])->whereMonth('salary_month', $month->month)->get();
+        $salariesKumasiSum = $salariesKumasi->sum('cost_to_company');
+        $salariesKumasiCount = $salariesKumasi->count();    
+
+        $salariesShyhills =  Salary::where('field_id', 7)->whereIn('payment_status',  ['pending', 'rejected'])->whereMonth('salary_month', $month->month)->get();
+        $salariesShyhillsSum = $salariesShyhills->sum('cost_to_company');
+        $salariesShyhillsCount = $salariesShyhills->count();    
+        // // dd($salaries->paymentInfo());
+        return view('salaries.create', compact('salaries', 'salariesAccraSum', 'salariesAccraCount', 'salariesBotweSum', 'salariesBotweCount', 'salariesTemaSum', 'salariesTemaCount', 'salariesTakoradiSum', 'salariesTakoradiCount', 'salariesKoforiduaSum', 'salariesKoforiduaCount', 'salariesKumasiSum', 'salariesKumasiCount', 'salariesShyhillsSum', 'salariesShyhillsCount', 'month'));
+
+    }
+
+    /**
+     * Display salaries transaction view.
+     */
+    public function salariesMonth(InvoiceToPayrollSearchRequest $request)
+    {
+        //
+        // dd($request->month);
+         $month = Carbon::parse($request->month);
+
+        $banks = Bank::all();
+        $fields = Field::all();
+        $clients = Client::all();
+        // $categories = category::all(); 
+        $categories = category::whereMonth('category_month', $month->month)->get();
+
+
+        $groupedBankSalaries = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved'])->where('payment_type', 'Bank')->whereIn('bank_id', $banks->pluck('id')->toArray())->groupBy('bank_id')->get(['bank_id', DB::raw('SUM(gross_salary) as gross'), DB::raw('SUM(total_deductions) as deductions'),  DB::raw('SUM(net_salary) as paid'),  DB::raw('COUNT(*) as total_employees')]);
+        // // dd($groupedBankSalaries->sum('total_employees'));
+        // $salariesHoldBank = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['hold','rejected'])->where('payment_type', 'Bank')->whereIn('bank_id', $banks->pluck('id')->toArray())->groupBy('bank_id')->get(['bank_id', DB::raw('SUM(gross_salary) as gross'), DB::raw('SUM(total_deductions) as deductions'),  DB::raw('SUM(net_salary) as paid'),  DB::raw('COUNT(*) as total_employees')]);
+
+
+        $groupedCashkSalaries = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved'])->where('payment_type', 'Cash')->whereIn('field_id', $fields->pluck('id')->toArray())->groupBy('field_id')->get(['field_id', DB::raw('SUM(gross_salary) as gross'), DB::raw('SUM(total_deductions) as deductions'),  DB::raw('SUM(net_salary) as paid'),  DB::raw('COUNT(*) as total_employees')]);
+
+        // $salariesHoldCash = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['hold','rejected'])->where('payment_type', 'Cash')->whereIn('field_id', $fields->pluck('id')->toArray())->groupBy('field_id')->get(['field_id', DB::raw('SUM(net_salary) as paid'),  DB::raw('COUNT(*) as total_employees')]);
+
+
+        $salariesTaxes = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved'])->where('tax', '>', 0)->whereIn('field_id', $fields->pluck('id')->toArray())->groupBy('field_id')->get(['field_id', DB::raw('SUM(net_salary) as paid'), DB::raw('SUM(tax) as tax'),  DB::raw('COUNT(*) as total_employees')]);
+
+        $salariesPensions = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved'])->where('ssnit_tobe_paid13_5', '>', 0)->whereIn('field_id', $fields->pluck('id')->toArray())->groupBy('field_id')->get(['field_id', DB::raw('SUM(ssnit_tier1_0_5) as tier1'), DB::raw('SUM(ssnit_tier2_5) as tier2'), DB::raw('SUM(ssnit_comp_cont_13) as cont13'), DB::raw('SUM(ssnit_tobe_paid13_5) as cont13_5'),  DB::raw('SUM(net_salary) as paid'),   DB::raw('COUNT(*) as total_employees')]);
+
+        $salariesOvertime = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved'])->where('overtime', '>', 0)->whereIn('field_id', $fields->pluck('id')->toArray())->groupBy('field_id')->get(['field_id', DB::raw('SUM(net_salary) as paid'), DB::raw('SUM(overtime) as overtime'),  DB::raw('COUNT(*) as total_employees')]);
+
+        $salariesIOU = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved'])->where('iou', '>', 0)->whereIn('field_id', $fields->pluck('id')->toArray())->groupBy('field_id')->get(['field_id', DB::raw('SUM(net_salary) as paid'), DB::raw('SUM(iou) as iou'),  DB::raw('COUNT(*) as total_employees')]);
+       
+        $salariesBoots = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved'])->where('boot', '>', 0)->whereIn('field_id', $fields->pluck('id')->toArray())->groupBy('field_id')->get(['field_id', DB::raw('SUM(net_salary) as paid'), DB::raw('SUM(boot) as boot'),  DB::raw('COUNT(*) as total_employees')]);
+
+        $salariesAbsent = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved'])->where('absent', '>', 0)->whereIn('field_id', $fields->pluck('id')->toArray())->groupBy('field_id')->get(['field_id', DB::raw('SUM(net_salary) as paid'), DB::raw('SUM(absent) as absent'),  DB::raw('COUNT(*) as total_employees')]);
+
+        $salariesAmtdedstart = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved'])->where('amnt_ded_cof_start_date', '>', 0)->whereIn('field_id', $fields->pluck('id')->toArray())->groupBy('field_id')->get(['field_id', DB::raw('SUM(net_salary) as paid'), DB::raw('SUM(amnt_ded_cof_start_date) as sDate_ded'),  DB::raw('COUNT(*) as total_employees')]);
+
+        $salariesOtherDed = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved'])->where('other_deductions', '>', 0)->whereIn('field_id', $fields->pluck('id')->toArray())->groupBy('field_id')->get(['field_id', DB::raw('SUM(net_salary) as paid'), DB::raw('SUM(other_deductions) as odeduct'),  DB::raw('COUNT(*) as total_employees')]);
+
+        $salariesReprimand = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved'])->where('reprimand', '>', 0)->whereIn('field_id', $fields->pluck('id')->toArray())->groupBy('field_id')->get(['field_id', DB::raw('SUM(net_salary) as paid'), DB::raw('SUM(reprimand) as reprimand'),  DB::raw('COUNT(*) as total_employees')]);
+
+        $salariesLoan = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved'])->where('loan', '>', 0)->whereIn('field_id', $fields->pluck('id')->toArray())->groupBy('field_id')->get(['field_id', DB::raw('SUM(net_salary) as paid'), DB::raw('SUM(loan) as loan'),  DB::raw('COUNT(*) as total_employees')]);
+
+        $salariesMaster = Salary::whereMonth('salary_month', $month->month)->get();
+        
+        $salariesClients  = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved'])->whereIn('client_id', $clients->pluck('id')->toArray())->groupBy('client_id')->get(['client_id', DB::raw('SUM(net_salary) as paid'), DB::raw('COUNT(*) as total_employees')]);
+        $salariesClientsHold  = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['hold','rejected'])->whereIn('client_id', $clients->pluck('id')->toArray())->groupBy('client_id')->get(['client_id', DB::raw('SUM(net_salary) as paid'), DB::raw('COUNT(*) as total_employees')]);
+       
+
+        // CLIENTS SALARY GROUPINGS
+
+        // CATEGORY A
+        $CategoryAClient = category::with(['salaries' => function ($query) use ($month) {
+            $query->whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved']);
+        }, 'salaries.client'])->where('name', 'Category A')->whereMonth('category_month', $month->month)->pluck('client_id')->toArray();
+
+        // dd( $CategoryAClient);
+        // SUM ALL INVOICES FOR CLIENTS IN CATEGORY A
+        $clientAInvoices = Invoice::whereIn('client_id', $CategoryAClient)->whereMonth('invoice_month', $month->month)->get();
+        
+
+        $clientAReceipts = [];
+
+        foreach($clientAInvoices as $invoice)
+            {
+                // collect invoices
+               $clientAReceipts['cash'][] =  $invoice->receipt()->pluck('cash_amount');
+               $clientAReceipts['momo'][] =  $invoice->receipt()->pluck('momo_amount');
+               $clientAReceipts['transfer'][] =  $invoice->receipt()->pluck('transfer_amount');
+               $clientAReceipts['cheque'][] =  $invoice->receipt()->pluck('cheque_amount');
+            }
+
+        // dd(collect($clientAReceipts['cheque'])->flatten()->sum());
+
+        $clientAInvoicesGuards = $this->totalInvoiceGuards($clientAInvoices);
+        // SUM ALL SALARIES FOR WITH PAYEMNT STATUS PENDING OR APPROVED AND PAYEMENT TYPE IS CASH FOR CLIENTS IN CATEGORY A
+        $clientACash = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved'])->where('payment_type', 'Cash')->whereIn('client_id', $CategoryAClient)->get();
+       
+        // SUM ALL SALARIES FOR WITH PAYEMNT STATUS PENDING OR APPROVED AND PAYEMENT TYPE IS BANK FOR CLIENTS IN CATEGORY A
+        $clientABank = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved'])->where('payment_type', 'Bank')->whereIn('client_id', $CategoryAClient)->get();
+        
+        
+        $clientA = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved'])->whereIn('client_id', $CategoryAClient)->groupBy('client_id')->get(['client_id', DB::raw('SUM(net_salary) as net_salary'), DB::raw('COUNT(employee_id) as total_employees')]);
+        $clientAHold = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['hold','rejected'])->whereIn('client_id', $CategoryAClient)->groupBy('client_id')->get(['client_id', DB::raw('SUM(net_salary) as net_salary'), DB::raw('COUNT(employee_id) as total_employees')]);
+        // dd( $CategoryAClient, $clientAInvoices, $clientA, $clientACash);
+       
+       
+        // CATEGORY B
+        $CategoryBClient = category::with(['salaries' => function ($query) use ($month) {
+            $query->whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved']);
+        }, 'salaries.client'])->where('name', 'Category B')->whereMonth('category_month', $month->month)->pluck('client_id')->toArray();
+
+        // SUM ALL INVOICES FOR CLIENTS IN CATEGORY B
+        $clientBInvoices = Invoice::whereIn('client_id', $CategoryBClient)->whereMonth('invoice_month', $month->month)->get();
+
+        $clientBReceipts = [];
+
+        foreach($clientBInvoices as $invoice)
+            {
+                // collect invoices
+               $clientBReceipts['cash'][] =  $invoice->receipt()->pluck('cash_amount');
+               $clientBReceipts['momo'][] =  $invoice->receipt()->pluck('momo_amount');
+               $clientBReceipts['transfer'][] =  $invoice->receipt()->pluck('transfer_amount');
+               $clientBReceipts['cheque'][] =  $invoice->receipt()->pluck('cheque_amount');
+            }
+
+        // dd(collect($clientBReceipts['cheque'])->flatten()->sum());
+
+        $clientBInvoicesGuards = $this->totalInvoiceGuards($clientBInvoices);
+       
+        // SUM ALL SALARIES FOR WITH PAYEMNT STATUS PENDING OR APPROVED AND PAYEMENT TYPE IS CASH FOR CLIENTS IN CATEGORY B
+        $clientBCash = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved'])->where('payment_type', 'Cash')->whereIn('client_id', $CategoryBClient)->get();
+       
+        // SUM ALL SALARIES FOR WITH PAYEMNT STATUS PENDING OR APPROVED AND PAYEMENT TYPE IS BANK FOR CLIENTS IN CATEGORY B
+        $clientBBank = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved'])->where('payment_type', 'Bank')->whereIn('client_id', $CategoryBClient)->get();
+
+        // dd( $CategoryBClient);
+        $clientB = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved'])->whereIn('client_id', $CategoryBClient)->groupBy('client_id')->get(['client_id', DB::raw('SUM(net_salary) as net_salary'), DB::raw('COUNT(employee_id) as total_employees')]);
+        $clientBHold = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['hold','rejected'])->whereIn('client_id', $CategoryBClient)->groupBy('client_id')->get(['client_id', DB::raw('SUM(net_salary) as net_salary'), DB::raw('COUNT(employee_id) as total_employees')]);
+       
+       
+        // CATEGORY C
+        $CategoryCClient = category::with(['salaries' => function ($query) use ($month) {
+            $query->whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved']);
+        }, 'salaries.client'])->where('name', 'Category C')->whereMonth('category_month', $month->month)->pluck('client_id')->toArray();
+
+                // SUM ALL INVOICES FOR CLIENTS IN CATEGORY C
+        $clientCInvoices = Invoice::whereIn('client_id', $CategoryCClient)->whereMonth('invoice_month', $month->month)->get();
+
+        $clientCReceipts = [];
+
+        foreach($clientCInvoices as $invoice)
+            {
+                // collect invoices
+               $clientCReceipts['cash'][] =  $invoice->receipt()->pluck('cash_amount');
+               $clientCReceipts['momo'][] =  $invoice->receipt()->pluck('momo_amount');
+               $clientCReceipts['transfer'][] =  $invoice->receipt()->pluck('transfer_amount');
+               $clientCReceipts['cheque'][] =  $invoice->receipt()->pluck('cheque_amount');
+            }
+
+        // dd(collect($clientCReceipts['cheque'])->flatten()->sum());
+
+        $clientCInvoicesGuards = $this->totalInvoiceGuards($clientCInvoices);
+       
+        // SUM ALL SALARIES FOR WITH PAYEMNT STATUS PENDING OR APPROVED AND PAYEMENT TYPE IS CASH FOR CLIENTS IN CATEGORY C
+        $clientCCash = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved'])->where('payment_type', 'Cash')->whereIn('client_id', $CategoryCClient)->get();
+       
+        // SUM ALL SALARIES FOR WITH PAYEMNT STATUS PENDING OR APPROVED AND PAYEMENT TYPE IS BANK FOR CLIENTS IN CATEGORY C
+        $clientCBank = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved'])->where('payment_type', 'Bank')->whereIn('client_id', $CategoryCClient)->get();
+
+        // dd( $CategoryCClient);
+        $clientC = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved'])->whereIn('client_id', $CategoryCClient)->groupBy('client_id')->get(['client_id', DB::raw('SUM(net_salary) as net_salary'), DB::raw('COUNT(employee_id) as total_employees')]);
+        $clientCHold = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['hold','rejected'])->whereIn('client_id', $CategoryCClient)->groupBy('client_id')->get(['client_id', DB::raw('SUM(net_salary) as net_salary'), DB::raw('COUNT(employee_id) as total_employees')]);
+       
+   
+        // CATEGORY D
+        $CategoryDClient = category::with(['salaries' => function ($query) use ($month) {
+            $query->whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved']);
+        }, 'salaries.client'])->where('name', 'Category D')->whereMonth('category_month', $month->month)->pluck('client_id')->toArray();
+
+                // SUM ALL INVOICES FOR CLIENTS IN CATEGORY D
+        $clientDInvoices = Invoice::whereIn('client_id', $CategoryDClient)->whereMonth('invoice_month', $month->month)->get();
+
+        $clientDReceipts = [];
+
+        foreach($clientDInvoices as $invoice)
+            {
+                // collect invoices
+               $clientDReceipts['cash'][] =  $invoice->receipt()->pluck('cash_amount');
+               $clientDReceipts['momo'][] =  $invoice->receipt()->pluck('momo_amount');
+               $clientDReceipts['transfer'][] =  $invoice->receipt()->pluck('transfer_amount');
+               $clientDReceipts['cheque'][] =  $invoice->receipt()->pluck('cheque_amount');
+            }
+
+        // dd(collect($clientDReceipts['cheque'])->flatten()->sum());
+
+        $clientDInvoicesGuards = $this->totalInvoiceGuards($clientDInvoices);
+       
+        // SUM ALL SALARIES FOR WITH PAYEMNT STATUS PENDING OR APPROVED AND PAYEMENT TYPE IS CASH FOR CLIENTS IN CATEGORY D
+        $clientDCash = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved'])->where('payment_type', 'Cash')->whereIn('client_id', $CategoryDClient)->get();
+       
+        // SUM ALL SALARIES FOR WITH PAYEMNT STATUS PENDING OR APPROVED AND PAYEMENT TYPE IS BANK FOR CLIENTS IN CATEGORY D
+        $clientDBank = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved'])->where('payment_type', 'Bank')->whereIn('client_id', $CategoryDClient)->get();
+
+        // dd( $CategoryCClient);
+        $clientD = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved'])->whereIn('client_id', $CategoryDClient)->groupBy('client_id')->get(['client_id', DB::raw('SUM(net_salary) as net_salary'), DB::raw('COUNT(employee_id) as total_employees')]);
+        $clientDHold = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['hold','rejected'])->whereIn('client_id', $CategoryDClient)->groupBy('client_id')->get(['client_id', DB::raw('SUM(net_salary) as net_salary'), DB::raw('COUNT(employee_id) as total_employees')]);
+
+
+        // GET TOP UP SALARIES FOR THE MONTH
+        $topUpSalaries = SalaryTopUps::whereMonth('salary_month', $month->month)->get();
+        // $topUpSalaries = DB::table('salaries_addups')
+        //     ->join('salaries', 'salaries_addups.salary_id', '=', 'salaries.id')
+        //     ->whereMonth('salaries_addups.salary_month', $month->month)
+        //     // ->select('salaries.*', 'salaries_addups.status as topup_status', 'salaries_addups.user_id as topup_user_id', 'salaries_addups.created_at as topup_created_at')
+        //     ->get();
+        // // dd($topUpSalaries);
+
+        return view('salaries.salariesmonth', compact('topUpSalaries', 'salariesAbsent', 'salariesAmtdedstart', 'salariesOtherDed', 'salariesReprimand', 'salariesLoan', 'clientA', 'clientAReceipts', 'clientAInvoices', 'clientAInvoicesGuards', 'clientACash', 'clientABank', 'clientB', 'clientBReceipts', 'clientBInvoices', 'clientBInvoicesGuards', 'clientBCash', 'clientBBank','clientC', 'clientCReceipts', 'clientCInvoices', 'clientCInvoicesGuards', 'clientCCash', 'clientCBank', 'clientD', 'clientDReceipts', 'clientDInvoices', 'clientDInvoicesGuards', 'clientDCash', 'clientDBank', 'clientAHold','clientBHold', 'clientCHold', 'clientDHold','salariesClients', 'salariesClientsHold','groupedBankSalaries','groupedCashkSalaries', 'salariesTaxes', 'salariesPensions', 'month', 'salariesMaster', 'salariesOvertime', 'salariesIOU', 'salariesBoots', 'categories'));
+    }
+
+
+
+        /**
+         * Calculate the total number of guards from a collection of invoices.
+         *
+         * @param iterable $invoices  Collection or array of Invoice models
+         * @return int  Total number of guards across all invoices
+         */
+        public function totalInvoiceGuards($invoices)
+        {
+            $guards = [];
+            foreach($invoices as $invoice) {
+                foreach($invoice->invoice_data as $data) {
+                    $guards[] = $data->quantity;
+                }
+            }
+            return array_sum($guards);
+
+        }
+
+
+    public function transactionSalary()
+    {
+        //
+        // $salaries =  Salary::where('payment_status', 'approved')->get();
+        // $salariesAccra =  Salary::where('field_id', 1)->where('payment_status', 'approved')->get();
+        // $salariesAccraSum = $salariesAccra->sum('cost_to_company');
+        // $salariesAccraCount = $salariesAccra->count();
+        // // dd( $salariesAccra->sum('cost_to_company'));
+
+        // $salariesBotwe =  Salary::where('field_id', 2)->where('payment_status', 'approved')->get();
+        // $salariesBotweSum = $salariesBotwe->sum('cost_to_company');
+        // $salariesBotweCount = $salariesBotwe->count();
+
+        // $salariesTema =  Salary::where('field_id', 3)->where('payment_status', 'approved')->get();
+        // $salariesTemaSum = $salariesTema->sum('cost_to_company');
+        // $salariesTemaCount = $salariesTema->count();
+
+        // $salariesTakoradi =  Salary::where('field_id', 4)->where('payment_status', 'approved')->get();
+        // $salariesTakoradiSum = $salariesTakoradi->sum('cost_to_company');
+        // $salariesTakoradiCount = $salariesTakoradi->count();
+
+        // $salariesKoforidua =  Salary::where('field_id', 5)->where('payment_status', 'approved')->get();
+        // $salariesKoforiduaSum = $salariesKoforidua->sum('cost_to_company');
+        // $salariesKoforiduaCount = $salariesKoforidua->count();  
+
+        // $salariesKumasi =  Salary::where('field_id', 6)->where('payment_status', 'approved')->get();
+        // $salariesKumasiSum = $salariesKumasi->sum('cost_to_company');
+        // $salariesKumasiCount = $salariesKumasi->count();    
+
+        // $salariesShyhills =  Salary::where('field_id', 7)->where('payment_status', 'approved')->get();
+        // $salariesShyhillsSum = $salariesShyhills->sum('cost_to_company');
+        // $salariesShyhillsCount = $salariesShyhills->count(); 
+        // return view('salaries.transaction');
+        // return view('salaries.transaction', compact('salaries', 'salariesAccraSum', 'salariesAccraCount', 'salariesBotweSum', 'salariesBotweCount', 'salariesTemaSum', 'salariesTemaCount', 'salariesTakoradiSum', 'salariesTakoradiCount', 'salariesKoforiduaSum', 'salariesKoforiduaCount', 'salariesKumasiSum', 'salariesKumasiCount', 'salariesShyhillsSum', 'salariesShyhillsCount'));
+        return view('salaries.transaction');
+
+    }
+
+
+    /**
+     * Pick a month to display 
+     */
+    public function BulkCashStore (Request $request)
+    {
+        // dd($request->hold_reason);
+        $action = $request->input('action_type'); 
+        // dd($action);
+        $salaryIds = $request->input('salary', []);
+        // dd($salaryIds);
+        if (empty($salaryIds)) {
+            return back()->with('error', 'No Employee salary selected.');
+        }
+    //    elseif( $action == 'bulk')
+    //     {
+    //         // echo 'Approving';
+            
+    //         Salary::whereIn('id', $salaryIds)->update(['status1' => 'Bulk Cash' , 'user_id1' => Auth::id() ]);
+    //         return back()->with('success', 'Salaries added for BULK CASH PAYMENT: ' . implode(', ', $salaryIds));
+    //     }
+        elseif( $action == 'topup')
+            {
+                // dd($salaryIds);
+                $salaries = Salary::whereIn('id', $salaryIds)->get();
+
+                foreach($salaries as $salary)
+                    {
+                        $exists = Salary::where('id', $salary->id)
+                                ->where('payment_status', '!=' ,'approved')
+                                ->exists();
+                            if ($exists) {
+                                $alreadyProcessed[] =  " salary: " . $salary->id;
+                                continue;
+                            }
+
+                        SalaryTopUps::create([
+                            'salary_id' =>  $salary->id,
+                            'salary_month' =>  $salary->salary_month,
+                            'field_id' =>   $salary->field_id,
+                            'user_id' => Auth::id(),
+                            'status' => 'pending',
+                        ]);
+
+                        Salary::where('id', $salary->id)->update(['status2' => 'Topup Added']);
+
+
+                    }
+
+                // dd($salaries);
+                if(!empty($alreadyProcessed))
+                    {
+                        return back()->with('primary', 'Cant add topup for this salary unless after approval : ' . implode(', ', $alreadyProcessed). ' out of the selected salaries : ' . implode(', ', $salaryIds) );
+
+                    }
+                else {
+                        return back()->with('success', 'Employees salaries have been added for Top Ups : ' . implode(', ', $salaryIds));
+
+                }
+
+            }
+        else{
+
+            $salaries = Salary::whereIn('id', $salaryIds)->get();
+            // dd($salaries);
+            foreach($salaries as $salary)
+            {
+                $salary->payment_status = 'hold';
+                $salary->user_id1 = Auth::id();
+                $salary->hold_reason = $request->hold_reason[$salary->id] ?? 'No reason provided';
+                $salary->save();
+            }
+
+            // Salary::whereIn('id', $salaryIds)->update([
+            //                                             'payment_status' => 'hold', 
+            //                                             'user_id1' => Auth::id(),
+            //                                             'hold_reason' => $request->hold_reason
+            //                                              ]);
+            return back()->with('success', 'Employees salaries have been Held : ' . implode(', ', $salaryIds));
+            // return back()->with('success', 'Employees salaries have been Held.');
+        }
+    }
+
+    /**
+     * Pick a month to display 
+     */
+    public function BulkCash()
+    {
+        return view('salaries.BulkCash');
+    }
+
+
+    /**
+     * Display bulk cash payment for a month.
+     */
+    public function BulkCashMonth(Request $request)
+    {
+    //    dd($request->all());
+        $month = Carbon::parse($request->month);
+        // dd($month->month);
+       $salaries = Salary::where('payment_type', 'Cash')->where('status1', 'Bulk Cash')->whereMonth('salary_month',  $month->month)->orwhere('status1', 'failed')->orwhere('status1', 'Pending')->get();
+    //    dd($salaries);
+       return view('salaries.BulkCashView', compact('salaries'));
+       
+    }
+
+    // public function BulkCashMonthHistory(Request $request)
+    // {
+    // //    dd($request->all());
+    //     $month = Carbon::parse($request->month);
+    
+    //    $salaries = Salary::where('status1', 'success')->whereMonth('salary_month', $month->month)->get();
+    // //    dd($salaries);
+    //    foreach($salaries as $salary)
+    //     {
+    //         $hubtelIDs[] = $salary->hubtel_id;
+    //     }
+
+    //     $hubtel = DB::table('hubtel')->whereIn('id', $hubtelIDs)->get();
+    //     $data = json_decode($hubtel, true);
+    //     // dd($salaries, $data);
+
+    //    return view('salaries.BulkCashView', compact('salaries', 'data'));
+       
+    // }
+
+
+    /**
+     * Display salaries bank month view.
+     */
+    public function bankMonth($bank_id, $month)
+    {
+         $month = Carbon::parse($month);
+
+        $categories = category::whereMonth('category_month', $month->month)->get();
+        // foreach($categories as $category)
+        // {
+        //     echo   $category->name . ' - ' . $category->client_id . '<br>';
+
+        // }
+        // dd($categories);
+        // get all from salaries where payment type is bank and is equal to incoming bank_id and month is in current month
+        $bank = Bank::findOrfail($bank_id);
+        $BankSalariesAll = Salary::whereMonth('salary_month', $month->month)->where('payment_type', 'Bank')->where('bank_id', $bank_id)->get();
+
+        $BankSalaries =  $BankSalariesAll->whereIn('payment_status', ['pending', 'approved']);
+       
+       
+        $BankSalariespending =  $BankSalariesAll->where('payment_status', 'pending');
+        $BankSalariesapproved =  $BankSalariesAll->where('payment_status', 'approved');
+        $BankSalarieshold =  $BankSalariesAll->where('payment_status', 'hold');
+        // dd( $BankSalaries); 
+        return view('salaries.bankmonth', compact('BankSalaries', 'BankSalarieshold','BankSalariespending', 'BankSalariesAll','BankSalariesapproved','bank', 'month', 'categories'));
+    }
+
+
+        /**
+     * Display salaries bank month view.
+     */
+    public function bankholdMonth($bank_id, $month)
+    {
+         $month = Carbon::parse($month);
+        // dd($month);
+        // get all from salaries where payment type is bank and is equal to incoming bank_id and month is in current month
+        $bank = Bank::findOrfail($bank_id);
+        $BankSalaries = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['hold','rejected'])->where('payment_type', 'Bank')->where('bank_id', $bank_id)->get();
+        // dd( $BankSalaries); 
+        return view('salaries.holdbankmonth', compact('BankSalaries', 'bank', 'month'));
+    }
+
+
+
+    /**
+     * Display salaries Cash month view.
+     */
+    public function cashMonth($field_id, $month)
+    {
+         $month = Carbon::parse($month);
+        // get all cash salaries where field office is field_id and month is incoming month
+        $field = Field::findOrfail($field_id);
+        // dd($field->name, $month);
+        $categories = Category::whereMonth('category_month', $month->month)->get();
+
+        $CashSalaries = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved'])->where('payment_type', 'Cash')->where('field_id', $field_id)->get();
+        $CashSalariesAll = Salary::whereMonth('salary_month', $month->month)->where('payment_type', 'Cash')->where('field_id', $field_id)->get();
+        $CashSalariespending = Salary::whereMonth('salary_month', $month->month)->where('payment_status', 'pending')->where('payment_type', 'Cash')->where('field_id', $field_id)->get();
+        $CashSalariesapproved = Salary::whereMonth('salary_month', $month->month)->where('payment_status', 'approved')->where('payment_type', 'Cash')->where('field_id', $field_id)->get();
+        $CashSalarieshold = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['hold', 'rejected'])->where('payment_type', 'Cash')->where('field_id', $field_id)->get();
+        // dd($CashSalaries);
+        return view('salaries.cashmonth', compact('CashSalaries', 'CashSalariesAll', 'CashSalariespending',  'CashSalariesapproved', 'CashSalarieshold','field', 'month','categories'));
+
+    }
+
+
+    /**
+     * Display salaries Cash HOLD month view.
+     */
+    public function cashholdMonth($field_id, $month)
+    {
+         $month = Carbon::parse($month);
+        // get all cash salaries where field office is field_id and month is incoming month
+        $field = Field::findOrfail($field_id);
+        // dd($field->name, $month);
+        $HoldSalaries = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['hold','rejected'])->where('payment_type', 'Cash')->where('field_id', $field_id)->get();
+        // dd($CashSalaries);
+        return view('salaries.holdcashmonth', compact('HoldSalaries', 'field', 'month'));
+
+    }
+
+
+
+    /**
+     * Display salaries Taxes for a month.
+     */
+    public function TaxMonth($field_id, $month)
+    {
+         $month = Carbon::parse($month);
+
+        // dd($field_id, $month);
+        $field = Field::findOrfail($field_id);
+        $salariesTaxes = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved'])->where('tax', '>', 0)->where('field_id', $field_id)->get();
+        return view('salaries.taxmonth', compact('salariesTaxes', 'field', 'month'));
+    }
+
+
+        /**
+     * Display salaries Pensions for a month.
+     */
+    public function PensionMonth($field_id, $month)
+    {
+         $month = Carbon::parse($month);
+        
+        // dd($field_id, $month);
+        $field = Field::findOrfail($field_id);
+        $salariesPensions = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved'])->where('ssnit_tobe_paid13_5', '>', 0)->where('field_id', $field_id)->get();
+        return view('salaries.pensionmonth', compact('salariesPensions', 'field', 'month'));
+    }
+
+
+            /**
+     * Display salaries Overtime for a month.
+     */
+    public function OvertimeMonth($field_id, $month)
+    {
+         $month = Carbon::parse($month);
+        
+        // dd($field_id, $month);
+        $field = Field::findOrfail($field_id);
+        $salariesOvertime = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved'])->where('overtime', '>', 0)->where('field_id', $field_id)->get();
+        return view('salaries.overtimemonth', compact('salariesOvertime', 'field', 'month'));
+    }
+
+
+            /**
+     * Display salaries Iou for a month.
+     */
+    public function IouMonth($field_id, $month)
+    {
+         $month = Carbon::parse($month);
+        
+        // dd($field_id, $month);
+        $field = Field::findOrfail($field_id);
+        $salariesIou = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved'])->where('iou', '>', 0)->where('field_id', $field_id)->get();
+        return view('salaries.ioumonth', compact('salariesIou', 'field', 'month'));
+    }
+
+
+    /**
+     * Display salaries Boot for a month.
+     */
+    public function BootMonth($field_id, $month)
+    {
+         $month = Carbon::parse($month);
+        
+        // dd($field_id, $month);
+        $field = Field::findOrfail($field_id);
+        $salariesBoots = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved'])->where('boot', '>', 0)->where('field_id', $field_id)->get();
+        return view('salaries.bootmonth', compact('salariesBoots', 'field', 'month'));
+    }
+
+
+        /**
+     * Display salaries Boot for a month.
+     */
+    public function AbsentMonth($field_id, $month)
+    {
+         $month = Carbon::parse($month);
+        
+        // dd($field_id, $month);
+        $field = Field::findOrfail($field_id);
+        $salariesAbsent = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved'])->where('absent', '>', 0)->where('field_id', $field_id)->get();
+        return view('salaries.absentmonth', compact('salariesAbsent', 'field', 'month'));
+    }
+
+
+
+        /**
+     * Display salaries Boot for a month.
+     */
+    public function sDateMonth($field_id, $month)
+    {
+         $month = Carbon::parse($month);
+        
+        // dd($field_id, $month);
+        $field = Field::findOrfail($field_id);
+        $salariessDate = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved'])->where('amnt_ded_cof_start_date', '>', 0)->where('field_id', $field_id)->get();
+        return view('salaries.sDatemonth', compact('salariessDate', 'field', 'month'));
+    }
+
+
+
+        /**
+     * Display salaries Boot for a month.
+     */
+    public function oDedMonth($field_id, $month)
+    {
+         $month = Carbon::parse($month);
+        
+        // dd($field_id, $month);
+        $field = Field::findOrfail($field_id);
+        $salariesoDed = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved'])->where('other_deductions', '>', 0)->where('field_id', $field_id)->get();
+        return view('salaries.oDedmonth', compact('salariesoDed', 'field', 'month'));
+    }
+
+
+
+        /**
+     * Display salaries Boot for a month.
+     */
+    public function reprimandMonth($field_id, $month)
+    {
+         $month = Carbon::parse($month);
+        
+        // dd($field_id, $month);
+        $field = Field::findOrfail($field_id);
+        $salariesReprimand = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved'])->where('reprimand', '>', 0)->where('field_id', $field_id)->get();
+        return view('salaries.reprimandmonth', compact('salariesReprimand', 'field', 'month'));
+    }
+
+
+        /**
+     * Display salaries Boot for a month.
+     */
+    public function loanMonth($field_id, $month)
+    {
+         $month = Carbon::parse($month);
+        
+        // dd($field_id, $month);
+        $field = Field::findOrfail($field_id);
+        $salariesLoan = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved'])->where('loan', '>', 0)->where('field_id', $field_id)->get();
+        return view('salaries.loanmonth', compact('salariesLoan', 'field', 'month'));
+    }
+
+
+        /**
+     * Display salaries Client for a month.
+     */
+    public function ClientMonth($client_id, $month)
+    {
+         $month = Carbon::parse($month);
+         $client = Client::findOrfail($client_id);
+        
+        // dd($client_id, $month);
+
+        //  $CashSalaries = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved'])->where('payment_type', 'Cash')->where('client_id', $client_id)->get();
+        $ClientSalariesAll = Salary::whereMonth('salary_month', $month->month)->where('client_id', $client_id)->get();
+       
+        $ClientSalariespending = Salary::whereMonth('salary_month', $month->month)->where('payment_status', 'pending')->where('client_id', $client_id)->get();
+        $ClientSalariesapproved = Salary::whereMonth('salary_month', $month->month)->where('payment_status', 'approved')->where('client_id', $client_id)->get();
+        $ClientSalarieshold = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['hold','rejected'])->where('client_id', $client_id)->get();
+       
+
+
+        $salariesClients = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['pending', 'approved'])->where('client_id', $client_id)->get();
+
+        // dd($salariesClients, $ClientSalarieshold, $ClientSalariesapproved, $ClientSalariespending, $ClientSalariesAll);
+        return view('salaries.clientmonth', compact('ClientSalarieshold','ClientSalariesapproved','ClientSalariespending','ClientSalariesAll','salariesClients', 'client', 'month'));
+    }
+
+
+            /**
+     * Display salaries Client Hold for a month.
+     */
+    public function ClientHoldMonth($client_id, $month)
+    {
+         $month = Carbon::parse($month);
+         $client = Client::findOrfail($client_id);
+        
+        // dd($client_id, $month);
+
+        $ClientSalarieshold = Salary::whereMonth('salary_month', $month->month)->where('payment_status', 'hold')->where('client_id', $client_id)->get();
+        $ClientSalariesrejected = Salary::whereMonth('salary_month', $month->month)->where('payment_status', 'rejected')->where('client_id', $client_id)->get();
+        $ClientSalariesHoldAll = Salary::whereMonth('salary_month', $month->month)->whereIn('payment_status', ['hold','rejected'])->where('client_id', $client_id)->get();
+       
+        return view('salaries.clientholdmonth', compact('ClientSalarieshold','ClientSalariesrejected','ClientSalariesHoldAll', 'client', 'month'));
+    }
+
+
+
+    /**
+     * Show the form for comparing invoices to payroll.
+     */
+    public function InvToParoll()
+    {
+        //
+
+        return view('salaries.invpayroll');
+    }
+
+
+        /**
+     * get all invoices and salaries for incoming month request.
+     */
+    public function InvToParollMonth(InvoiceToPayrollSearchRequest $request)
+    {
+        // dd($request->all()); 
+
+        // get invoices for incoming month
+        $month = Carbon::parse($request->month)->format('F, Y');
+        // $invoices = Invoice::where('invoice_month', Carbon::parse($request->month)->format('Y-m-d'))->get();
+        $invoices = Invoice::select('client_id', DB::raw('SUM(total) as total_invoice'))
+                            ->groupBy('client_id')
+                            ->where('invoice_month', Carbon::parse($request->month)->format('Y-m-d'))->get();
+
+        $invoicesTotal = $invoices->sum('total_invoice');
+        // $invoicesCount = $invoices->count();
+        // dd( $invoices);
+
+        // foreach($invoices as $invoice)
+        //     {
+        //         echo $invoice . "<br>";
+        //     }
+        $Accrainvoices = Invoice::whereRelation('client', 'field_id', '1')->where('invoice_month', Carbon::parse($request->month)->format('Y-m-d'))->get();
+        $AccrainvoicesTotal = $Accrainvoices->sum('total');
+        $AccrainvoicesCount = $Accrainvoices->count();
+        // dd($Accrainvoices->count(), $Accrainvoices->sum('total'));
+
+        $Botweinvoices = Invoice::whereRelation('client', 'field_id', '2')->where('invoice_month', Carbon::parse($request->month)->format('Y-m-d'))->get();
+        $BotweinvoicesTotal = $Botweinvoices->sum('total');
+        $BotweinvoicesCount = $Botweinvoices->count();
+
+        $Temainvoices = Invoice::whereRelation('client', 'field_id', '3')->where('invoice_month', Carbon::parse($request->month)->format('Y-m-d'))->get();
+        $TemainvoicesTotal = $Temainvoices->sum('total');
+        $TemainvoicesCount = $Temainvoices->count();
+
+        $Takoradinvoces = Invoice::whereRelation('client', 'field_id', '4')->where('invoice_month', Carbon::parse($request->month)->format('Y-m-d'))->get();
+        $TakoradinvocesTotal = $Takoradinvoces->sum('total');
+        $TakoradinvocesCount = $Takoradinvoces->count();
+        $Koforiduainvoices = Invoice::whereRelation('client', 'field_id', '5')->where('invoice_month', Carbon::parse($request->month)->format('Y-m-d'))->get();
+        $KoforiduainvoicesTotal = $Koforiduainvoices->sum('total');
+        $KoforiduainvoicesCount = $Koforiduainvoices->count();  
+
+        $Kumasinvoices = Invoice::whereRelation('client', 'field_id', '6')->where('invoice_month', Carbon::parse($request->month)->format('Y-m-d'))->get();
+        $KumasinvoicesTotal = $Kumasinvoices->sum('total');             
+        $KumasinvoicesCount = $Kumasinvoices->count();
+
+        $Shyhillsinvoices = Invoice::whereRelation('client', 'field_id', '7')->where('invoice_month', Carbon::parse($request->month)->format('Y-m-d'))->get();
+        $ShyhillsinvoicesTotal = $Shyhillsinvoices->sum('total');             
+        $ShyhillsinvoicesCount = $Shyhillsinvoices->count();    
+
+
+
+        // get salaries for incoming month
+        $salaries = Salary::select('client_id', DB::raw('SUM(cost_to_company) as total_salary'))
+                            ->groupBy('client_id')
+                            ->where('salary_month', Carbon::parse($request->month)->startOfMonth()->format('Y-m-d H:i:s'))
+                            ->get();
+        $salariesTotal = $salaries->sum('total_salary');
+
+        $Accrasalaries = Salary::select('client_id', DB::raw('SUM(cost_to_company) as total_salary'))
+                        ->groupBy('client_id')
+                        ->where('field_id', 1)
+                        ->where('salary_month', Carbon::parse($request->month)->startOfMonth()->format('Y-m-d H:i:s'))
+                        ->get();
+        // dd( $Accrasalaries);
+        $AccrasalariesTotal = $Accrasalaries->sum('total_salary');
+        $AccrasalariesCount = $Accrasalaries->count();
+
+        $Botwesalaries = Salary::select('client_id', DB::raw('SUM(cost_to_company) as total_salary'))   
+                        ->groupBy('client_id')
+                        ->where('field_id', 2)
+                        ->where('salary_month', Carbon::parse($request->month)->startOfMonth()->format('Y-m-d H:i:s'))
+                        ->get();    
+        $BotwesalariesTotal = $Botwesalaries->sum('total_salary');
+        $BotwesalariesCount = $Botwesalaries->count();
+
+        $Temasalaries = Salary::select('client_id', DB::raw('SUM(cost_to_company) as total_salary'))   
+                        ->groupBy('client_id')
+                        ->where('field_id', 3)
+                        ->where('salary_month', Carbon::parse($request->month)->startOfMonth()->format('Y-m-d H:i:s'))
+                        ->get();
+        $TemasalariesTotal = $Temasalaries->sum('total_salary');
+        $TemasalariesCount = $Temasalaries->count();
+
+        $Takoradisalaries = Salary::select('client_id', DB::raw('SUM(cost_to_company) as total_salary'))   
+                        ->groupBy('client_id')
+                        ->where('field_id', 4)
+                        ->where('salary_month', Carbon::parse($request->month)->startOfMonth()->format('Y-m-d H:i:s'))
+                        ->get();
+        $TakoradisalariesTotal = $Takoradisalaries->sum('total_salary');
+        $TakoradisalariesCount = $Takoradisalaries->count();
+
+
+        $Koforiduasalaries = Salary::select('client_id', DB::raw('SUM(cost_to_company) as total_salary'))   
+                        ->groupBy('client_id')
+                        ->where('field_id', 5)
+                        ->where('salary_month', Carbon::parse($request->month)->startOfMonth()->format('Y-m-d H:i:s'))
+                        ->get();
+        $KoforiduasalariesTotal = $Koforiduasalaries->sum('total_salary');
+        $KoforiduasalariesCount = $Koforiduasalaries->count();
+
+        $Kumasalaries = Salary::select('client_id', DB::raw('SUM(cost_to_company) as total_salary'))   
+                        ->groupBy('client_id')
+                        ->where('field_id', 6)
+                        ->where('salary_month', Carbon::parse($request->month)->startOfMonth()->format('Y-m-d H:i:s'))
+                        ->get();
+        $KumasalariesTotal = $Kumasalaries->sum('total_salary');
+        $KumasalariesCount = $Kumasalaries->count();
+
+        $Shyhillssalaries = Salary::select('client_id', DB::raw('SUM(cost_to_company) as total_salary'))   
+                        ->groupBy('client_id')
+                        ->where('field_id', 7)
+                        ->where('salary_month', Carbon::parse($request->month)->startOfMonth()->format('Y-m-d H:i:s'))
+                        ->get();
+        $ShyhillssalariesTotal = $Shyhillssalaries->sum('total_salary');
+        $ShyhillssalariesCount = $Shyhillssalaries->count();  
+      
+        // dd($salaries);
+        return view('salaries.invpayrollview', compact('month', 'invoices', 'AccrainvoicesTotal', 'AccrainvoicesCount', 'BotweinvoicesTotal', 'BotweinvoicesCount', 'TemainvoicesTotal', 'TemainvoicesCount', 'TakoradinvocesTotal', 'TakoradinvocesCount', 'KoforiduainvoicesTotal', 'KoforiduainvoicesCount', 'KumasinvoicesTotal', 'KumasinvoicesCount', 'ShyhillsinvoicesTotal', 'ShyhillsinvoicesCount',  'salaries',  'invoicesTotal', 'salariesTotal', 'AccrasalariesTotal', 'AccrasalariesCount', 'BotwesalariesTotal', 'BotwesalariesCount', 'TemasalariesTotal', 'TemasalariesCount', 'TakoradisalariesTotal', 'TakoradisalariesCount', 'KoforiduasalariesTotal', 'KoforiduasalariesCount', 'KumasalariesTotal', 'KumasalariesCount', 'ShyhillssalariesTotal', 'ShyhillssalariesCount'));
+    }
+
+
+    /**
+     * Store a newly created resource in storage.
+     */
+    public function store(StoreSalaryRequest $request)
+    {
+
+        $employees = $request->input('employees', []);
+        // dd($employees);
+        if (empty($employees)) {
+            return back()->with('error', 'No employee selected to add to  salaries.');
+        }
+
+
+        // get current month and year
+        $date = Carbon::parse($request->input('salary_month')); 
+        // dd($date->format('Y-m-d'));
+        // Process salary entries for selected employees
+        $alreadyProcessed = [];
+        $employeeInvoices = [];
+        $employees = employee::findOrFail($request->employees);
+       
+        // dd($employees, $date->format('Y-m-d'));
+
+
+        if ($request->has('employees')) 
+            {
+            foreach ($employees as $employee) 
+            {
+                $exists = Salary::where('employee_id', $employee->id)
+                                ->where('salary_month', $date->format('Y-m-d'))
+                                ->exists();
+              
+                if ($exists) {
+                    $alreadyProcessed[] = $employee->id;
+                    continue;
+                }
+
+                $salary = new Salary();
+
+                if($employee->role?->id == 7)
+                    {
+                            
+                        // $employeeInvoices[] = $employee->client?->invoices()->whereMonth('invoice_month', $date->month)->first();
+                        if($employee->client?->invoices()->whereMonth('invoice_month', $date->month)->first() == null)
+                        {
+                                // echo $employee->name . " No Invoice Found". "<br> <br>";
+                                $salary->payment_status = 'rejected';
+
+                        }
+                        // else
+                        //     {
+                        //         echo $employee->name . " Has Invoice". "<br> <br>";
+                        //     }
+                    }
+
+                $salary->employee_id = $employee->id;
+                $salary->salary_month = $request->input('salary_month');
+                $salary->field_id = $employee->field_id;
+                $salary->department_id = $employee->department_id;
+                $salary->role_id = $employee->role_id;
+                $salary->client_id = $employee->client_id;
+                $salary->location = $employee->location;
+                $salary->payment_type = $employee->payment_type;
+                $salary->account_number = $employee->paymentInfo?->acc_number;
+                $salary->bank_id = $employee->paymentInfo?->bank_id;
+                $salary->branch = $employee->paymentInfo?->branch;
+                
+                $salary->basic_salary = $employee->basic_salary;
+                $salary->allowances = $employee->allowances;
+                $salary->user_id = Auth::id();
+                $salary->save();
+            }
+
+            }
+
+            // dd($employeeInvoices, $date->month);
+
+        if (!empty($alreadyProcessed)) {
+            return back()->with('error', 'The employees with the IDs have already been add to salary to be processed for this month: '. implode(', ', $alreadyProcessed)) ;
+        }
+        return back()->with('success', 'Employees added for this month salary to be processed.'); 
+
+    }
+
+
+    /**
+     * Calculating TAX on Basic Salary
+     */
+    public $next1Tax = 0;
+    public $next2Tax = 0;
+    public $next3Tax = 0;
+    public $CummulativeTaxHold = [] ;
+
+    public function taxEmployee($basic_salary)
+    {
+            $next1 = 110;
+            $next2 = 130;
+            // $next3 = 3166.67;
+            $next1Tax = 0.00;
+            $next2Tax = 0.00;
+            $next3Tax = 0.00;
+
+
+            $next1Tax = $this->next1Tax($basic_salary);
+            // return $next1Tax[0]. " -- ". $next1Tax[1];
+            if($next1Tax[0] <= 0 )
+            {
+                return 0;
+            }elseif($next1Tax[0] < 5.5){
+                return $next1Tax[0] ;
+            }
+            else{
+
+                $next2Tax = $this->next2Tax($next1Tax[1]);
+                // return $next2Tax[0] + $next1Tax[0] . " -- ". $next2Tax[1];
+                if($next2Tax[1] < 0)
+                {
+                    return $next2Tax[0] + $next1Tax[0];
+                }
+                else
+                {
+                     
+                    $next3Tax = $this->next3Tax($next2Tax[1]);
+
+                    if($next3Tax[1] < 0)
+                    {
+                       
+                        return $next3Tax[0] + $next2Tax[0] + $next1Tax[0];
+
+                    }
+                    else{
+
+                        return $next3Tax[0] + $next2Tax[0] + $next1Tax[0] + ($next3Tax[1] * 0.25);
+
+                    
+                    }
+
+                }
+
+           
+            }
+
+          
+    }
+
+
+    public function next1Tax($basic_salary)
+    {
+            // $first = 490;
+            $next1 = 110;
+            $next1_rate = 0.05;
+            $next1_amnt = 0;
+            $next1_tax = 0;
+            $balance = 0;
+
+            // subtract 110 of the next1 and find 5% of that
+            $next1_amnt = $basic_salary - 490;
+           
+            if($next1_amnt < $next1)
+            {
+                 $next1_tax =  $next1_amnt * $next1_rate;
+
+                //  return $next1_tax;
+            }else
+                {
+                  $balance =  $next1_amnt -  $next1;
+                  $next1_tax =  $next1 * $next1_rate;
+                }
+
+            return [$next1_tax,  $balance ] ;
+
+    }
+
+    public function next2Tax($balance)
+    {
+            $next2 = 130;
+            $next2_rate = 0.10;
+            $next2_amnt = 0;
+            $next2_tax = 0;
+
+
+        $next2_amnt = $balance - 130;
+
+        if ($balance < $next2)
+            {
+                $next2_tax =  $balance * $next2_rate;
+            }
+        else{
+                // $balance1 =  $next2_amnt -  $next2;
+                $next2_tax  =  $next2 * $next2_rate ;
+            }
+      
+            // $this->CummulativeTaxHold[] =  $next2_tax;
+            return  [$next2_tax ,$next2_amnt] ;
+        
+    }
+
+    public function next3Tax($balance)
+    {
+            $next3 = 3166.67;
+            $next3_rate = 0.175;
+            $next3_amnt = 0;
+            $next3_tax = 0;
+
+
+        $next3_amnt = $balance - $next3;
+
+        if ($balance < $next3)
+            {
+                $next3_tax =  $balance * $next3_rate;
+            }
+        else{
+                // $balance1 =  $next2_amnt -  $next2;
+                $next3_tax  =  $next3 * $next3_rate ;
+            }
+      
+            // $this->CummulativeTaxHold[] =  $next2_tax;
+            return  [$next3_tax ,$next3_amnt] ;
+        
+    }
+
+
+    /**
+     * Display the specified resource.
+     */
+    public function show(Salary $salary)
+    {
+        //
+        // dd($salary);
+        return view('salaries.show', compact('salary'));
+    }
+
+
+        /**
+     * Display the specified resource.
+     */
+    public function printPayslip( $id)
+    {
+        //
+        $salary = Salary::findOrFail($id);
+        return view('salaries.print', compact('salary'));
+    }
+
+
+
+    /**
+     * Show the form for editing the specified resource.
+     */
+    public function edit(Salary $salary)
+    {
+        //
+        // dd($salary);
+        $banks = Bank::all();
+        $clients = Client::all();
+        $Fields = Field::all();
+        
+        return view('salaries.edit', compact('salary', 'clients', 'banks', 'Fields'));
+    }
+
+
+    /**
+     * Upload salaries from Excel file.
+     */
+    public function uploadSalaries(SalariesUploadRequest $request)
+    {
+
+        $collection = (new SalaryImport)->toCollection( $request->file('excelFile'));
+        // dd($collection);
+        foreach ($collection[0] as $row) {
+            // echo 'Updating salary for Employee ID: '. $row['employee_id']. ' -  ' . Carbon::createFromFormat('F, Y', $row['salary_month'])->startOfMonth()->format('Y-m-d H:i:s') . '<br>';   
+        //  change date to start of month format Y-m-d H:i:s
+
+            $salary = Salary::where('employee_id', $row['employee_id'])
+                            ->where('salary_month', Carbon::createFromFormat('F, Y', $row['salary_month'])->startOfMonth()->format('Y-m-d H:i:s'))
+                            ->first();
+          
+        //   echo 'Updating salary for Employees: '. $salary->employee->tax_button. " ---".$row['employee_id'] . " " .$row['basic_salary']. " / ". $row['allowances'] . " / ". $row['airtime_allowance'] . " / ". $row['reimbursements'] . " / ". $row['transport_allowance'] ." / ". $row['welfare'] ." / ". $row['maintenance'] ." / ". $row['absent'] ." / ". $row['boot'] ." / ". $row['iou'] ." / ". $row['hostel'] ." / ". $row['insurance'] ." / ". $row['reprimand'] ." / ". $row['scouter'] ." / ". $row['raincoat'] ." / ". $row['meal'] ." / ". $row['loan'] ." / ". $row['meal']  ." / ". $row['walkin'] ." / ". $row['amnt_ded_cof_start_date'] ." / ". $row['other_deductions'] .'<br>';   
+            
+
+                // Deduct Tax
+                // $ssnitNumber = PaymentInfo::where('employee_id', $employee->id)->whereNotNull('ssnit_number')->get();
+                $ssnit_tier2_5 = 0;
+                $ssnit_tier1_0_5 = 0;
+                $ssnit_13 = 0;
+                $ssnit_13_5 = 0;
+
+                $tax = 0;
+                $employee_basic_taxAmount_minus_ssnt = 0;
+
+                // CHECK IF THE PERSON HAS SSNIT BUTTON TURNED ON
+                if(isset($salary->employee->ssnit_button) == "on")
+                {
+                    if($salary->employee?->ssnit_number !== '' && $salary->employee?->ssnit_number !== null)
+                        {
+                            // echo "Processing salary for Employee SSNIT ID: " . $employee->paymentInfo->ssnit_number . "<br><br>";
+
+                            //  SSNIT transactions HERE
+                            $ssnit_tier2_5 = $row['basic_salary'] * 0.05;
+                            $ssnit_tier1_0_5 = $row['basic_salary'] * 0.005;
+                            $ssnit5_5 = $row['basic_salary'] * 0.055;
+                            $ssnit_13 = $row['basic_salary'] * 0.13;
+                            $ssnit_13_5 = $row['basic_salary'] * 0.135;
+
+                            $employee_basic_taxAmount_minus_ssnt = $row['basic_salary'] - $ssnit5_5  ;
+                            // echo "Processing salary Tier 2 (5%) = " . $ssnit_tier2_5 .  " Tier 1 (0.5%) = ". $ssnit_tier1_0_5 . "  SSNIT (13%) = ".$ssnit_13. " SSNIT (13.5%) = ".  $ssnit_13_5   ."<br><br>";
+                        }
+                }
+
+                 // CHECK IF THE PERSON HAS TAX BUTTON TURNED ON
+                if(isset($salary->employee->tax_button) == "on")
+                {
+                    
+                    if($row['basic_salary'] > 490.00 )
+                    {
+                        // TAX CALCULATIONS
+                            // echo "Employee Basic salary = "  .$row['basic_salary'] ." ----/ TAX === ".  $this->taxEmployee($employee_basic_taxAmount_minus_ssnt)  ."<br>";
+                        if($salary->employee?->ssnit_number !== '' && $salary->employee?->ssnit_number !== null && $employee_basic_taxAmount_minus_ssnt >= 0)
+                            {
+                            $tax = $this->taxEmployee($employee_basic_taxAmount_minus_ssnt) ;
+                            // echo "Employee SSNIT Basic salary ---------------" .  " - " . " - "  .$row['basic_salary'] ."-------------- TAX = ".  $tax  ."<br>";
+
+                            }else{
+                            $tax = $this->taxEmployee($row['basic_salary']) ;
+                            // echo "Employee NO SSNIT Basic salary -----------"  . " - " . " - "   .$row['basic_salary'] ."--------------- TAX = ".  $tax  ."<br>";
+                            }                    
+                    } 
+                }
+
+
+
+
+            $salary->basic_salary = $row['basic_salary'] ?? $salary->basic_salary ;
+            $salary->allowances = $row['allowances'] ?? $salary->allowances ;
+            $salary->airtime_allowance = $row['airtime_allowance'] ?? $salary->airtime_allowance ;
+            $salary->overtime = $row['overtime'] ?? $salary->overtime ;
+            $salary->reimbursements = $row['reimbursements'] ?? $salary->reimbursements ;
+            $salary->transport_allowance = $row['transport_allowance'] ?? $salary->transport_allowance ;
+           
+            $salary->welfare = $row['welfare'] ?? $salary->welfare ;
+            $salary->maintenance = $row['maintenance'] ?? $salary->maintenance ;
+            $salary->absent = $row['absent'] ?? $salary->absent ;
+            $salary->boot = $row['boot'] ?? $salary->boot ;                            
+            $salary->iou = $row['iou'] ?? $salary->iou ;
+            $salary->hostel = $row['hostel'] ?? $salary->hostel ;
+            $salary->insurance = $row['insurance'] ?? $salary->insurance ;
+            $salary->reprimand = $row['reprimand'] ?? $salary->reprimand ;          
+            $salary->scouter = $row['scouter'] ?? $salary->scouter ;
+            $salary->raincoat = $row['raincoat'] ?? $salary->raincoat ;
+            $salary->meal = $row['meal'] ?? $salary->meal ;
+            $salary->loan = $row['loan'] ?? $salary->loan ;
+            $salary->walkin = $row['walkin'] ?? $salary->walkin ;
+            $salary->amnt_ded_cof_start_date = $row['amnt_ded_cof_start_date'] ?? $salary->amnt_ded_cof_start_date ;
+            $salary->other_deductions = $row['other_deductions'] ?? $salary->other_deductions ;
+
+            // // WORK SSNIT
+            $salary->ssnit_tier2_5d = $ssnit_tier2_5  ?? $salary->ssnit_tier2_5d ;
+            $salary->ssnit_tier2_5 = $ssnit_tier2_5 ?? $salary->ssnit_tier2_5 ;
+            $salary->ssnit_tier1_0_5 =  $ssnit_tier1_0_5 ?? $salary->ssnit_tier1_0_5 ;
+
+            // // WORK TAX
+            $salary->tax = $tax ??  $salary->tax;
+
+            // // SUM GROSS, TOTAL DEDUCTTIONS AND NET SALARY
+            $grossSalary = $row['basic_salary'] + $row['allowances'] + $row['airtime_allowance'] + $row['overtime'] + $row['reimbursements'] + $row['transport_allowance'] +  $ssnit_tier2_5;
+            $totalDeduction = $tax + $ssnit_tier2_5 +  $row['welfare'] + $row['maintenance'] + $row['absent']  +  $row['boot'] +  $row['iou'] +  $row['hostel'] + $row['insurance'] + $row['reprimand'] + $row['scouter'] +  $row['raincoat'] +  $row['meal'] + $row['loan'] + $row['walkin'] + $row['amnt_ded_cof_start_date'] + $row['other_deductions'];
+            $netSalay = $grossSalary - $totalDeduction ;
+           
+            $salary->gross_salary = $grossSalary ?? $salary->gross_salary ;
+            $salary->total_deductions = $totalDeduction ?? $salary->total_deductions ;
+            $salary->net_salary = $netSalay ?? $salary->net_salary ;
+
+            // // WORK 
+            $salary->ssnit_comp_cont_13 =  $ssnit_13 ?? $salary->ssnit_comp_cont_13 ;
+            $salary->ssnit_tobe_paid13_5 = $ssnit_13_5 ?? $salary->ssnit_tobe_paid13_5 ;
+            $salary->cost_to_company = $netSalay + $ssnit_13_5 ?? $salary->cost_to_company ;  
+            $salary->user_id1 = Auth::id();
+
+            $salary->save();    
+            
+            }
+
+        return back()->with('success', 'Salaries uploaded and updated successfully.');
+    }
+
+
+
+    /**
+     * Update the specified resource in storage.
+     */
+    public function update(UpdateSalaryRequest $request, Salary $salary)
+    {
+        //
+        // dd($request->all()); 
+
+        // $salary->update($request->all());
+               // Deduct Tax
+                // $ssnitNumber = PaymentInfo::where('employee_id', $employee->id)->whereNotNull('ssnit_number')->get();
+                $ssnit_tier2_5 = 0;
+                $ssnit_tier1_0_5 = 0;
+                $ssnit_13 = 0;
+                $ssnit_13_5 = 0;
+
+                $tax = 0;
+                $employee_basic_taxAmount_minus_ssnt = 0;
+
+                // CHECK IF THE PERSON HAS SSNIT BUTTON TURNED ON
+                if(isset($salary->employee->ssnit_button) == "on")
+                {
+                    if($salary->employee?->ssnit_number !== '' && $salary->employee?->ssnit_number !== null)
+                        {
+                            // echo "Processing salary for Employee SSNIT ID: " . $employee->paymentInfo->ssnit_number . "<br><br>";
+
+                            //  SSNIT transactions HERE
+                            $ssnit_tier2_5 = $request['basic_salary'] * 0.05;
+                            $ssnit_tier1_0_5 = $request['basic_salary'] * 0.005;
+                            $ssnit5_5 = $request['basic_salary'] * 0.055;
+                            $ssnit_13 = $request['basic_salary'] * 0.13;
+                            $ssnit_13_5 = $request['basic_salary'] * 0.135;
+
+                            $employee_basic_taxAmount_minus_ssnt = $request['basic_salary'] - $ssnit5_5  ;
+                            // echo "Processing salary Tier 2 (5%) = " . $ssnit_tier2_5 .  " Tier 1 (0.5%) = ". $ssnit_tier1_0_5 . "  SSNIT (13%) = ".$ssnit_13. " SSNIT (13.5%) = ".  $ssnit_13_5   ."<br><br>";
+                        }
+                }
+
+                 // CHECK IF THE PERSON HAS TAX BUTTON TURNED ON
+                if(isset($salary->employee->tax_button) == "on")
+                {
+                    
+                    if($request['basic_salary'] > 490.00 )
+                    {
+                        // TAX CALCULATIONS
+                            // echo "Employee Basic salary = "  .$request['basic_salary'] ." ----/ TAX === ".  $this->taxEmployee($employee_basic_taxAmount_minus_ssnt)  ."<br>";
+                        if($salary->employee?->ssnit_number !== '' && $salary->employee?->ssnit_number !== null && $employee_basic_taxAmount_minus_ssnt >= 0)
+                            {
+                            $tax = $this->taxEmployee($employee_basic_taxAmount_minus_ssnt) ;
+                            // echo "Employee with SSNIT Basic salary = ".$request['employee_id'] . " / "  .$request['basic_salary'] ." TAX = ".  $tax  ."<br>";
+
+                            }else{
+                            $tax = $this->taxEmployee($request['basic_salary']) ;
+                            // echo "Employee WITHOUT SSNIT Basic salary = ".$request['employee_id'] . " / "  .$request['basic_salary'] ." TAX = ".  $tax  ."<br>";
+                            }                    
+                    } 
+                }
+
+            $salary->basic_salary = $request['basic_salary']  ;
+            $salary->allowances = $request['allowances'] ;
+            $salary->airtime_allowance = $request['airtime_allowance']  ;
+            $salary->overtime = $request['overtime'];
+            $salary->reimbursements = $request['reimbursements'] ;
+            $salary->transport_allowance = $request['transport_allowance'] ;
+           
+            $salary->welfare = $request['welfare'] ;
+            $salary->maintenance = $request['maintenance'] ;
+            $salary->absent = $request['absent'] ;
+            $salary->boot = $request['boot'] ;                            
+            $salary->iou = $request['iou'] ;
+            $salary->hostel = $request['hostel'] ;
+            $salary->insurance = $request['insurance'] ;
+            $salary->reprimand = $request['reprimand'] ;          
+            $salary->scouter = $request['scouter'] ;
+            $salary->raincoat = $request['raincoat'] ;
+            $salary->meal = $request['meal'] ;
+            $salary->loan = $request['loan'] ;
+            $salary->walkin = $request['walkin'] ;
+            $salary->amnt_ded_cof_start_date = $request['amnt_ded_cof_start_date'] ;
+            $salary->other_deductions = $request['other_deductions'] ;
+
+            // // WORK SSNIT
+            $salary->ssnit_tier2_5d = $ssnit_tier2_5   ;
+            $salary->ssnit_tier2_5 = $ssnit_tier2_5  ;
+            $salary->ssnit_tier1_0_5 =  $ssnit_tier1_0_5 ;
+
+            // // WORK TAX
+            $salary->tax = $tax ??  $salary->tax;
+
+            // // SUM GROSS, TOTAL DEDUCTTIONS AND NET SALARY
+            $grossSalary = $request['basic_salary'] + $request['allowances'] + $request['airtime_allowance'] + $request['overtime'] + $request['reimbursements'] + $request['transport_allowance'] + $ssnit_tier2_5;
+            $totalDeduction = $tax + $ssnit_tier2_5 +  $request['welfare'] + $request['maintenance'] + $request['absent']  +  $request['boot'] +  $request['iou'] +  $request['hostel'] + $request['insurance'] + $request['reprimand'] + $request['scouter'] +  $request['raincoat'] +  $request['meal'] + $request['loan'] + $request['walkin'] + $request['amnt_ded_cof_start_date'] + $request['other_deductions'];
+            $netSalay = $grossSalary - $totalDeduction ;
+           
+            $salary->gross_salary = $grossSalary  ;
+            $salary->total_deductions = $totalDeduction  ;
+            $salary->net_salary = $netSalay ;
+
+            // // WORK 
+            $salary->ssnit_comp_cont_13 =  $ssnit_13  ;
+            $salary->ssnit_tobe_paid13_5 = $ssnit_13_5 ;
+            $salary->cost_to_company = $netSalay + $ssnit_13_5  ;
+
+            // UPDATE PAYMENT DETAILS FOR A MONTH SALARY
+            $salary->payment_type = $request['payment_type']  ;
+            $salary->bank_id = $request['bank_id']  ;
+            $salary->account_number = $request['account_number']  ;
+            $salary->branch = $request['branch']  ;
+
+            // UPDATE FIELD ID
+            $salary->field_id = $request['field_id'] ;
+            // UPDATE CLIENT ID
+            $salary->client_id = $request['client_id'] ;
+            // UPDATE LOCATION
+            $salary->location = $request['location'] ;
+            $salary->user_id1 = Auth::id();
+
+            $salary->save(); 
+
+            // // UPDATE EMPLOYEE BASICS AND ALLOWA
+            // $salary->employee->update([
+            //     'basic_salary' => $request['basic_salary'],
+            //     'allowances' => $request['allowances']
+            // ]);
+
+
+            return back()->with('success', 'Salary Updated Successfully');
+
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     */
+    public function destroy(Salary $salary)
+    {
+        //
+        // dd($salary);
+        // $salary->delete();
+    }
+
+    public function deleteMultiple(StoreSalaryRequest $request)
+    {
+
+        $action = $request->input('action_type') ?? $request->input('submit');
+        $salaryIds = $request->input('salary', []);
+        if (empty($salaryIds)) {
+            return back()->with('error', 'No salaries selected');
+        }
+
+        if ($action === 'delete')
+        {
+            Salary::whereIn('id', $salaryIds)->delete();
+            return back()->with('danger', 'Deleted salaries with IDs: ' . implode(', ', $salaryIds));
+        }
+
+       elseif ($action === 'approve')
+        {
+            // echo 'Approving';
+                $salaries = Salary::findOrFail($salaryIds);
+                // dd($salaries);
+                foreach ($salaries as $salary) 
+                {
+                    $exists = Salary::where('id', $salary->id)
+                                    ->where('payment_status', '!=', 'pending')
+                                    ->exists();
+                    if ($exists) {
+                        $alreadyProcessed[] = $salary->employee?->name . " with Salary ID: " . $salary->id;
+                        continue;
+                    }
+
+                    Salary::where('id', $salary->id)->update(['payment_status' => 'approved', 'approval_date' => now() ,'user_id2' => Auth::id()]);
+                }
+            //  dd(count($alreadyProcessed));
+            if (!empty($alreadyProcessed))
+                 {
+                    return back()->with('error', 'Salaries with the IDs have already been Approved: '. implode(', ', $alreadyProcessed). ' The remaining have been Appoved ')  ;
+                }
+            return back()->with('success', 'Approved salaries with IDs: ' . implode(', ', $salaryIds));
+        }
+        elseif ($action === 'unapprove')
+        {
+            // echo 'Approving';
+                $salaries = Salary::findOrFail($salaryIds);
+                // dd($salaries);
+                foreach ($salaries as $salary) 
+                {
+                    $exists = Salary::where('id', $salary->id)
+                                    ->where('payment_status', '!=', 'approved')
+                                    ->exists();
+                    if ($exists) {
+                        $alreadyProcessed[] = $salary->employee?->name . " with Salary ID: " . $salary->id;
+                        continue;
+                    }
+
+                    Salary::where('id', $salary->id)->update(['payment_status' => 'pending', 'approval_date' => now() ,'user_id2' => Auth::id()]);
+                }
+            //  dd(count($alreadyProcessed));
+            if (!empty($alreadyProcessed))
+                 {
+                    return back()->with('error', 'Salaries with the IDs have already been Approved: '. implode(', ', $alreadyProcessed). ' The remaining have been Appoved ')  ;
+                }
+            return back()->with('success', 'Approved salaries with IDs: ' . implode(', ', $salaryIds));
+        }
+        elseif ($action === 'hold')
+            {
+                        $salaries = Salary::findOrFail($salaryIds);
+                    foreach ($salaries as $salary) 
+                    {
+                        $exists = Salary::where('id', $salary->id)
+                                        ->where('payment_status', 'hold')
+                                        ->exists();
+                        if ($exists) {
+                            $alreadyProcessed[] = $salary->employee?->name . " with Salary ID: " . $salary->id;
+                            continue;
+                        }
+
+                        $salary->payment_status = 'hold';
+                        $salary->user_id1 = Auth::id();
+                        $salary->hold_reason = $request->hold_reason[$salary->id] ?? 'No reason provided';
+                        $salary->save();
+                        // Salary::where('id', $salary->id)->update(['payment_status' => 'hold', 'user_id1' => Auth::id()]);
+                    }
+                //  dd(count($alreadyProcessed));
+                if (!empty($alreadyProcessed))
+                    {
+                        return back()->with('error', 'Salaries with the IDs have already been Held : '. implode(', ', $alreadyProcessed). ' The remaining have been Appoved ')  ;
+                    }
+                return back()->with('success', 'Moved salaries with IDs: ' . implode(', ', $salaryIds));
+            }
+        elseif ($action === 'main')
+            {
+                        // return "you are moving from hold to main";
+                    $salaries = Salary::findOrFail($salaryIds);
+                    foreach ($salaries as $salary) 
+                    {
+                        $exists = Salary::where('id', $salary->id)
+                                        ->where('payment_status', 'pending')
+                                        ->exists();
+                        if ($exists) {
+                            $alreadyProcessed[] = $salary->employee?->name . " with Salary ID: " . $salary->id;
+                            continue;
+                        }
+
+                        Salary::where('id', $salary->id)->update(['payment_status' => 'pending', 'user_id1' => Auth::id()]);
+                    }
+                //  dd(count($alreadyProcessed));
+                if (!empty($alreadyProcessed))
+                    {
+                        return back()->with('error', 'Salaries with the IDs have already been Moved to Main: '. implode(', ', $alreadyProcessed). ' The remaining have been Appoved ')  ;
+                    }
+                return back()->with('success', 'Moved salaries with IDs: ' . implode(', ', $salaryIds));
+            }
+
+
+    }
+
+
+    /**
+     * Get all guards with the client ID and Month
+     */
+    public function PayrollGuards ($client_id, $month)
+    {
+
+            // dd($client_id, $month);
+        $date = Carbon::createFromFormat('F, Y',$month)->startOfMonth()->format('Y-m-d H:i:s');
+        // dd($date);
+        $salaries = Salary::where('salary_month', $date)->where('client_id', $client_id)->get();
+        // dd($salaries);
+        return view('salaries.invpayrollGuards', compact('salaries', 'month'));
+
+    }
+
+
+    public function exportMaster($date) 
+    {
+        $month = Carbon::createFromFormat('F, Y',$date)->startOfMonth()->format('Y-m-d H:i:s');
+        // dd($month);
+        return (new SalaryExport($month))->download('Master Salaries For '.$date.'.xlsx');
+      
+    }
+
+    public function exportBank($date, $bank_id)
+    {
+        // dd($date, $bank_id);
+        // GET SALARY MONTH
+         $month = Carbon::parse($date)->format('F, Y');
+        // $month = Carbon::createFromFormat('F, Y',$date)->startOfMonth()->format('Y-m-d H:i:s');
+       
+        // dd($month->month);
+        //GET SALARY BANK
+        $bank = Bank::findOrFail($bank_id);
+        // dd($bank->name);
+
+        return (new SalaryBankExport($date, $bank_id, [ $bank->name, $month]))->download( $bank->name.' Salaries For '.$month.'.xlsx'); 
+    }
+
+
+    public function exportCategory($date, $category)
+    {
+        // dd($date, $category);
+         $month = Carbon::parse($date)->format('F, Y');
+
+        return (new SalaryCategoryExport($date, $category))->download( $category.' Salaries For '.$month.'.xlsx'); 
+    }
+
+
+}

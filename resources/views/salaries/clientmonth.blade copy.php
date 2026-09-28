@@ -3,7 +3,7 @@
     @section('css')
     <link rel="stylesheet" href="https://cdn.datatables.net/2.3.5/css/dataTables.dataTables.css" />
     <link rel="stylesheet" href="https://cdn.datatables.net/buttons/3.2.5/css/buttons.dataTables.css">    
-    <link href="https://cdn.datatables.net/columncontrol/1.1.1/css/columnControl.dataTables.min.css" rel="stylesheet"> 
+    <link href="https://cdn.datatables.net/columncontrol/1.1.1/css/columnControl.dataTables.min.css" rel="stylesheet">
     @endsection
 
 
@@ -313,16 +313,17 @@
                                     class="rounded" />
                             </div>
                         </div>
-                        <p class="mb-1"><strong> CLIENT HOLD NAME :  {{ strtoupper($client->name) }}   {{ strtoupper($client->business_name) }} </strong> </p> <br>
-                        <h4 class="card-title mb-3 text-white"><strong> GH&#x20B5;  {{ number_format($ClientSalarieshold->sum('net_salary'), 2) }} </strong> </h4> <br>
-                         <h6  class="card-title mb-3 text-white">TOTAL REJECTED : GH&#x20B5;  {{ number_format($ClientSalariesrejected->sum('net_salary'), 2) }}   |   REJECTED EMPLOYEES :  {{ $ClientSalariesrejected->count() }}  </h6> 
-                        <h6  class="card-title mb-3 text-white"> TOTAL  : GH&#x20B5; {{ number_format($ClientSalariesHoldAll->sum('net_salary'), 2) }} |   EMPLOYEES :  {{ $ClientSalariesHoldAll->count() }} </h6> 
+                        <p class="mb-1"><strong> CLIENT NAME :  {{ strtoupper($client->name) }}   {{ strtoupper($client->business_name) }} </strong> </p> <br>
+                        <h4 class="card-title mb-3 text-white"><strong> GH&#x20B5;  {{ number_format($salariesClients->sum('net_salary'), 2) }} </strong> </h4> <br>
+                         <h6  class="card-title mb-3 text-white">TOTAL PENDING : GH&#x20B5;  {{ number_format($ClientSalariespending->sum('net_salary'), 2) }}   |   PENDING EMPLOYEES :  {{ $ClientSalariespending->count() }}  </h6> 
+                        <h6  class="card-title mb-3 text-white"> TOTAL APPROVED : GH&#x20B5; {{ number_format($ClientSalariesapproved->sum('net_salary'), 2) }} |   APPROVED EMPLOYEES :  {{ $ClientSalariesapproved->count() }} </h6> 
+                        <h6  class="card-title mb-3 text-white"> TOTAL HOLD : GH&#x20B5; {{ number_format($ClientSalarieshold->sum('net_salary'), 2) }}  |   HOLD EMPLOYEES :  {{ $ClientSalarieshold->count() }} </h6> <hr>
+                        <h6  class="card-title mb-3 text-white"> OVERALL TOTAL  : GH&#x20B5; {{ number_format($ClientSalariesAll->sum('net_salary'), 2) }} |   OVERALL EMPLOYEES :  {{ $ClientSalariesAll->count() }} </h6>
 
                     </div>
                 </div>
             </div>
-
-                        <div class="col-lg-6 mb-4">
+            <div class="col-lg-6 mb-4">
                 <div  class="card h-100 bg-dark text-white">
                     <div class="card-body text-end">
                         <div class="card-title d-flex align-items-end justify-content-between mb-4">
@@ -333,15 +334,16 @@
                                     class="rounded" />
                             </div>
                         </div>
-
-                        <h4 class="card-title mb-3 text-white"><strong> CASH HOLD : GH&#x20B5; {{ number_format($ClientSalarieshold->where('payment_type', 'Cash')->sum('net_salary') ,2) }}  </strong> </h6> <br>
-                        <h4 class="card-title mb-3 text-white"><strong> BANK HOLD : GH&#x20B5; {{ number_format($ClientSalarieshold->where('payment_type', 'Bank')->sum('net_salary') ,2) }}  </strong> </h6> <br>
+                        <h4 class="card-title mb-3 text-white"><strong> CASH : GH&#x20B5; {{ number_format($salariesClients->where('payment_type', 'Cash')->sum('net_salary') ,2) }}   |  {{ $salariesClients->where('payment_type', 'Cash')->count() }} </strong> </h4> <br>
+                        <h4 class="card-title mb-3 text-white"><strong> BANK : GH&#x20B5;  {{ number_format($salariesClients->where('payment_type', 'Bank')->sum('net_salary') ,2) }} |  {{ $salariesClients->where('payment_type', 'Bank')->count() }} </strong> </h4> <br>
+                        <hr>
+                        <h6 class="card-title mb-3 text-white"><strong> CASH HOLD : GH&#x20B5; {{ number_format($ClientSalarieshold->where('payment_type', 'Cash')->sum('net_salary') ,2) }} | {{ $ClientSalarieshold->where('payment_type', 'Cash')->count() }} </strong> </h6> <br>
+                        <h6 class="card-title mb-3 text-white"><strong> BANK HOLD : GH&#x20B5; {{ number_format($ClientSalarieshold->where('payment_type', 'Bank')->sum('net_salary') ,2) }} | {{ $ClientSalarieshold->where('payment_type', 'Bank')->count() }} </strong> </h6> <br>
 
 
                     </div>
                 </div>
             </div>
-
         </div> <br>
         @endif
         
@@ -356,9 +358,13 @@
                     <div class="col-lg-12 mb-4">
                         <input type="hidden" name="action_type" id="salary_action_type" value="" />
                         <input class="form-check-input form-check-inline" type="checkbox" value="" id="options" />
-                         @if(Auth::user()->hasRole(['Finance Manager']))
+                       @if(Auth::user()->hasRole(['Finance Manager']))
                         <div class="form-check form-check-inline">
-                            <button class="btn btn-success" data-action="main" onclick="document.getElementById('salary_action_type').value='main'; return confirm('Kindly Confirm?')" type="submit"> <i class="icon-base bx bx-recycle"> </i> {{ __('Move To Main') }}</button>                   
+                            <button class="btn btn-danger m-4" data-action="hold" onclick="document.getElementById('salary_action_type').value='hold'; return confirm('Kindly Confirm?')" type="submit"> <i class="icon-base bx bx-bxs-file-plus"> </i> {{ __(' Hold') }}</button>                   
+
+                            <button class="btn btn-success" data-action="approve" onclick="document.getElementById('salary_action_type').value='approve'; return confirm('Kindly Confirm?')" type="submit"> <i class="icon-base bx bx-recycle"> </i> {{ __('Approve') }}</button>      
+
+                            <button class="btn btn-primary" data-action="unapprove" onclick="document.getElementById('salary_action_type').value='unapprove'; return confirm('Kindly Confirm?')" type="submit"> <i class="icon-base bx bx-recycle"> </i> {{ __('UnApprove') }}</button>                   
                         </div>
                         @endif
                         <div class="card">
@@ -383,7 +389,6 @@
                                         <th> Client </th>
                                         <th> Location </th>
                                         <th> Inv. Status </th>
-                                        <th> net_salary </th>
                                         <th> SSNIT No.</th>
                                         <th> TIN No.</th>
                                         <th> Payment Type</th>
@@ -417,6 +422,7 @@
                                         <th> other_deductions</th>
                                         <th> gross_salary </th>
                                         <th> total_deductions</th>
+                                        <th> net_salary </th>
                                             <th>CREATED BY</th>
                                             <th>UPDATED</th>
                                             <th>UPDATED BY</th>
@@ -425,22 +431,22 @@
                                         </tr>
                                     </thead>
                                     <tbody class="table-border-bottom-0">
-                                        @foreach($ClientSalariesHoldAll as $key => $salary)
+                                        @foreach($salariesClients as $key => $salary)
                                         <tr>
                                             <td> <input class="checkBoxes form-check-input" type="checkbox" name="salary[]" value="{{ $salary->id }}" /> </td>
                                             <td> {{ $key + 1 }} </td>
                                             <td> FWSS{{ $salary->employee?->id }} </td>
 
                                                     @if ($salary->payment_status == 'pending')
-                                                    <td>  <span class="badge bg-label-info"> {{ $salary->payment_status }} </span> </td>
+                                                    <td>    <span class="badge bg-label-info"> {{ $salary->payment_status }} </span> <br> {{ $salary->status2 }} <br> {{$salary->approval_date?->format('F l d, Y')}} <br> {{  $salary->user2?->name }}  </td>
                                                     @elseif($salary->payment_status == 'hold')
                                                     <td> <span class="badge bg-label-warning"> {{ $salary->payment_status }} </span> </td>
                                                     @elseif($salary->payment_status == 'rejected')
                                                     <td> <span class="badge bg-label-danger"> {{ $salary->payment_status }} </span> </td>
                                                     @else
-                                                    <td> <span class="badge bg-label-success"> {{ $salary->payment_status }} </span> </td>
+                                                    <td>  <br>  <span class="badge bg-label-success"> {{ $salary->payment_status }} </span> <br> {{ $salary->status2 }} <br> {{$salary->approval_date?->format('F l d, Y')}} <br> {{  $salary->user2?->name }}  </td>
                                                     @endif
-                                                    <td>  {{ $salary?->hold_reason }}  </td>
+                                                    <td> <textarea type="text" name="hold_reason[{{ $salary->id }}]" class="form-control"> {{ $salary?->hold_reason }} </textarea> </td>
                                                     <td> {{$salary->salary_month?->format('F, Y')}} </td>
                                                     <td> {{ strtoupper($salary->employee?->name) }} </td>
                                                     <td> {{ $salary->department?->name }} </td>
@@ -449,8 +455,7 @@
                                                     <td> {{ $salary->employee?->worker_type }} </td>
                                                     <td> {{ $salary->client?->name }} {{ $salary->client?->business_name }}</td>
                                                     <td> {{ $salary->location }} </td>
-                                                    <td> {{ $salary->client?->invoices()->whereBetween('invoice_month', \App\Support\PayrollMonth::span($month))->pluck('status') }} </td>
-                                                    <td>  {{ number_format( $salary->net_salary,2) }} </td>  
+                                                    <td> {{ $salary->client?->invoices()->whereMonth('invoice_month', $month->month)->pluck('status') }} </td>
                                                     <td> {{$salary->employee?->ssnit_number}}</td>
                                                     <td> {{$salary->employee?->tin_number}}</td>
                                                     <td> {{$salary->payment_type}}</td>
@@ -484,6 +489,9 @@
                                                     <td> {{$salary->other_deductions}} </td>                            
                                                     <td> {{$salary->gross_salary}} </td>                            
                                                     <td> {{$salary->total_deductions}} </td>                            
+                                                    <td> {{$salary->net_salary}} </td>  
+
+
                                             <td>{{  $salary->user?->name }}</td>
                                             <td> {{$salary->updated_at->format('F l d, Y, H:i A')}} </td>
                                             <td> {{ $salary->user1?->name }} </td>
@@ -532,7 +540,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
 
     <script src="https://cdn.datatables.net/columncontrol/1.1.1/js/dataTables.columnControl.min.js"></script>
-
 
 
     <script>

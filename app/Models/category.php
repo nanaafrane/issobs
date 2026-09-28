@@ -15,6 +15,11 @@ class category extends Model
         'category_month'
     ];
 
+        /** Client ids ticked for Category A every month (only while Active and not yet categorised). */
+    public const DEFAULT_A_CLIENT_IDS = [
+        112, 109, 110, 343, 100, 103, 118, 440, 416, 176, 413, 135,
+    ];
+
     public function user()
     {
         return $this->belongsTo(User::class);
