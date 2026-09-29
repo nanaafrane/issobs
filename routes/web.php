@@ -17,6 +17,7 @@ use App\Http\Controllers\ProformaController;
 use App\Http\Controllers\ReceiptController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SalaryController;
+use App\Http\Controllers\SalaryReportController;
 use App\Http\Controllers\SalaryTopUpsController;
 use App\Http\Controllers\SendMoneyController;
 use App\Http\Controllers\ServiceController;
@@ -167,6 +168,10 @@ Route::get('terminateEmployee/{id}', [EmployeeController::class, 'terminateEmplo
 Route::get('employeeReinstate/{id}', [EmployeeController::class, 'employeeReinstate']);
 Route::post('employeesGuardReAassign', [EmployeeController::class, 'GuardReAassign'])->name('employees.GuardReAassign');
 
+Route::get('salaries/employees-data', [SalaryController::class, 'employeesData'])->name('salaries.employeesData');
+Route::get('salaries-report', [SalaryReportController::class, 'index'])->name('salaries.report');
+Route::get('salaries-month/data', [SalaryController::class, 'salariesMonthData'])->name('salaries.salariesMonthData');
+Route::get('salaries-month/export', [SalaryController::class, 'salariesMonthExport'])->name('salaries.salariesMonthExport');
 Route::resource('salaries', SalaryController::class);
 Route::resource('salariestopups', SalaryTopUpsController::class);
 Route::get('salariesCreate', [SalaryController::class, 'CreateSalaries']);

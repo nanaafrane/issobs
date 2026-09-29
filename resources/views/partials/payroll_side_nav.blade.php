@@ -309,7 +309,7 @@
                 </a>
                 <ul class="menu-sub">
                 @if(Auth::user()->hasRole(['Finance Manager']) )
-                <li @class(['menu-item', 'active' => request()->is('salaries')])>
+                <li @class(['menu-item', 'active' => request()->is('salaries/index')])>
                     <a href="{{ url('salaries') }}" class="menu-link">
                     <i class="menu-icon tf-icons bx bxs-user-account"></i>
                     <div class="text-truncate" data-i18n="Employees">Add to Salaries</div>
