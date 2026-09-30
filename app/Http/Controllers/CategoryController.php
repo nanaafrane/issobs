@@ -7,6 +7,9 @@ use App\Http\Requests\StorecategoryRequest;
 use App\Http\Requests\UpdatecategoryRequest;
 use App\Models\Client;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
+use App\Support\CategoryPayroll;
+use App\Support\PayPriority;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -316,6 +319,9 @@ class CategoryController extends Controller
             'summary'       => $this->fieldSummary($month),
             'defaultIds'    => $defaultIds,
             'allDefaultIds' => $this->defaultCategoryAIds(),
+            // Net salaries per category tile (shared rule with the payroll master).
+            'payroll'       => CategoryPayroll::summary($month),
+            'canViewSalary' => Gate::allows('view-salaries'),
         ]);
     }
 
@@ -357,7 +363,9 @@ class CategoryController extends Controller
                 'select'       => '',
                 'row_number'   => '',
                 'client_id'    => (int) $client->id,
-                'client_name'  => e($label),
+                // Opens the employees panel (the checkbox column still handles selection).
+                'client_name'  => '<a href="#" class="js-client-open fw-semibold" data-id="' . (int) $client->id
+                    . '" data-name="' . e($label) . '" title="Show employees and salaries">' . e($label) . '</a>',
                 'phone_number' => e((string) $client->phone_number),
                 'field_name'   => e((string) $client->field_name),
                 'category'     => $category,
@@ -372,6 +380,57 @@ class CategoryController extends Controller
             'recordsTotal'    => $recordsTotal,
             'recordsFiltered' => $recordsFiltered,
             'data'            => $data,
+        ]);
+    }
+
+    /**
+     * Drill-down panel: the client's employees for the month.
+     * Month's salary rows when payroll exists for this client, otherwise today's
+     * active employees with contract pay (see CategoryPayroll::clientRoster).
+     * Amounts are removed server-side for users who may not see salaries.
+     */
+    public function clientEmployees(Request $request, int $client)
+    {
+        $month = $this->resolveMonth($request);
+
+        $info = $this->clientListBase($month)->where('clients.id', $client)->first();
+        abort_if(! $info, 404);
+
+        $roster = CategoryPayroll::clientRoster($client, $month);
+        $canViewSalary = Gate::allows('view-salaries');
+
+        $rows = array_map(function (array $r) use ($canViewSalary) {
+            $r['badge'] = PayPriority::badge($r['pay_priority'], $r['pay_priority_reason']);
+            $r['name'] = e($r['name']);
+            $r['location'] = e($r['location']);
+            $r['employee_url'] = url('employees/' . $r['employee_id']);
+            if (! $canViewSalary) {
+                $r['amount'] = null;
+            }
+            unset($r['pay_priority_reason']);
+
+            return $r;
+        }, $roster['rows']);
+
+        $totals = $roster['totals'];
+        if (! $canViewSalary) {
+            $totals['net'] = $totals['priority_net'] = $totals['held_net'] = null;
+        }
+
+        return response()->json([
+            'client'          => [
+                'id'       => (int) $info->id,
+                'name'     => e(trim((string) ($info->business_name ?: $info->name))),
+                'field'    => e((string) $info->field_name),
+                'category' => $info->category_name ? e($info->category_name) : null,
+            ],
+            'month'           => $month->format('F Y'),
+            'mode'            => $roster['mode'],
+            'month_has_payroll' => CategoryPayroll::hasPayroll($month),
+            'can_view_salary' => $canViewSalary,
+            'totals'          => $totals,
+            'rows'            => $rows,
+            'payroll_url'     => url('salariesClientMonth/' . $client . '/' . $month->format('Y-m-d')),
         ]);
     }
 

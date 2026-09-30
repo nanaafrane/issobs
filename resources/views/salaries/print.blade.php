@@ -1,3 +1,13 @@
+@php
+    $statusMap = [
+        'approved' => ['label' => 'PAID',     'class' => 'text-success', 'border' => '#198754'],
+        'pending'  => ['label' => 'PENDING',  'class' => 'text-warning', 'border' => '#ffab00'],
+        'hold'     => ['label' => 'ON HOLD',  'class' => 'text-warning', 'border' => '#ffab00'],
+        'rejected' => ['label' => 'REJECTED', 'class' => 'text-danger',  'border' => '#dc3545'],
+    ];
+    $status = $statusMap[$salary->payment_status] ?? ['label' => strtoupper($salary->payment_status ?? 'PENDING'), 'class' => 'text-secondary', 'border' => '#6c757d'];
+@endphp
+
 <!doctype html>
 
 <html>
@@ -65,10 +75,19 @@
                                     <div class="row justify-content-center">
                                         <div style="margin-top: -40px;" class="col-12 col-lg-9 col-xl-8 col-xxl-7">
                                             <div class="row gy-3 mb-3">
-                                                <div class="col-8">
-                                                    <h5 class="text-uppercase text-endx m-0 text-danger"><strong>FIRST WATCH SECURITY SERVICE LIMITED.</strong></h5> <br>
-                                                    <h4>  <strong>PAYSLIP FOR : {{ strtoupper($salary->salary_month?->format('F, Y')) }}  </strong> </h4>
-                                                </div>
+<div class="col-8">
+    <h5 class="text-uppercase text-endx m-0 text-danger"><strong>FIRST WATCH SECURITY SERVICE LIMITED.</strong></h5> <br>
+    <h4><strong>PAYSLIP FOR : {{ strtoupper($salary->salary_month?->format('F, Y')) }}</strong></h4>
+
+    <span class="{{ $status['class'] }}"
+          style="display:inline-block; padding:2px 12px; border:2px solid {{ $status['border'] }}; border-radius:4px; font-weight:700; letter-spacing:.05em;">
+        PAYMENT STATUS : {{ $status['label'] }}
+    </span>
+
+    @if($salary->payment_status === 'approved' && $salary->approval_date)
+        <div><small>Approved on {{ $salary->approval_date->format('l, F d, Y') }}</small></div>
+    @endif
+</div>
                                                 <div class="col-4">
                                                     <a class="d-block text-end">
                                                         <img width="100px" src="{{asset('img/icons/brands/issobs.png')}}" class="img-fluid" alt="BootstrapBrain Logo" width="135" height="44">

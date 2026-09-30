@@ -67,6 +67,7 @@ Route::get('categorySearch', [CategoryController::class, 'categorySearch']);
 Route::get('categoryClients', [CategoryController::class, 'activeClientsByMonth'])->name('category.activeClientsByMonth');
 Route::get('categoryClients/data', [CategoryController::class, 'clientsData'])->name('category.clientsData');
 Route::get('categoryClients/ids', [CategoryController::class, 'clientIds'])->name('category.clientsIds');
+Route::get('categoryClients/{client}/employees', [CategoryController::class, 'clientEmployees'])->whereNumber('client')->name('category.clientEmployees');
 Route::post('categoryBulkAssign', [CategoryController::class, 'bulkAssign'])->name('category.bulkAssign');
 Route::post('categoryFieldAssign', [CategoryController::class, 'fieldAssign'])->name('category.fieldAssign');
 

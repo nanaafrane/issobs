@@ -363,7 +363,7 @@ class EmployeeController extends Controller
     /** Same rule the original list used: Managers do not see salaries. */
     private function employeeCanViewSalary(): bool
     {
-        return ! (Auth::user()?->hasRole(['Manager']) ?? false);
+        return \Illuminate\Support\Facades\Gate::allows('view-salaries'); // shared rule (AppServiceProvider)
     }
  
     private function employeeListBase()

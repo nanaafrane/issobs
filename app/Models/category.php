@@ -25,10 +25,8 @@ class category extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function salaries() 
-    {
-    return $this->hasMany(Salary::class);
-    }
+    // Note: there is no salaries.category_id column. A salary's category is its client's
+    // category for that month - see App\Support\CategoryPayroll.
 
     public function client()
     {

@@ -52,9 +52,8 @@ class SalaryCategoryExport implements FromQuery, WithMapping , WithHeadings
     public function query()
     {
         
-        $CategoryClient = category::with(['salaries' => function ($query) {
-            $query->whereBetween('salary_month', \App\Support\PayrollMonth::span($this->month))->whereIn('payment_status', ['pending', 'approved']);
-        }, 'salaries.client'])->where('name', $this->category)->whereBetween('category_month', \App\Support\PayrollMonth::span($this->month))->pluck('client_id')->toArray();
+        // Same rule as the category page and payroll master: latest category row per client.
+        $CategoryClient = \App\Support\CategoryPayroll::clientIdsByCategory(\App\Support\PayrollMonth::parse($this->month))[$this->category] ?? [];
 
         
         // $clientEployees = Salary::whereBetween('salary_month', \App\Support\PayrollMonth::span($this->month))->whereIn('payment_status', ['pending', 'approved'])->whereIn('client_id', $CategoryClient)->get();

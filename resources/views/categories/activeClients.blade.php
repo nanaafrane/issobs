@@ -366,13 +366,20 @@
                 background: var(--bs-body-bg, #fff); border-top: 1px solid rgba(0,0,0,.1); box-shadow: 0 -4px 16px rgba(0,0,0,.08); }
         </style>
 
-        {{-- Category tiles: click to filter the table by category --}}
+        {{-- Category tiles: click to filter the table by category. Salary figures are for the selected month. --}}
+        <div class="d-flex align-items-center mb-2">
+            <h6 class="mb-0 text-muted text-uppercase">Clients &amp; salaries &mdash; {{ $month->format('F Y') }}</h6>
+            @unless($payroll['has_payroll'])
+                <span class="badge bg-label-secondary ms-2">Payroll not generated for this month</span>
+            @endunless
+        </div>
         <div class="row g-2 mb-3">
             <div class="col-6 col-md-4 col-xl-2">
                 <div class="card cat-tile js-tile bg-label-dark h-100" data-state="" role="button" tabindex="0">
                     <div class="card-body py-3">
                         <div class="small fw-semibold">ACTIVE CLIENTS</div>
                         <div class="fs-3 fw-bold">{{ $totals['all'] }}</div>
+                        @include('categories.partials.tile_payroll', ['t' => $payroll['tiles']['all'], 'hasPayroll' => $payroll['has_payroll']])
                     </div>
                 </div>
             </div>
@@ -382,6 +389,7 @@
                     <div class="card-body py-3">
                         <div class="small fw-semibold">{{ strtoupper($name) }}</div>
                         <div class="fs-3 fw-bold">{{ $totals[$name] }}</div>
+                        @include('categories.partials.tile_payroll', ['t' => $payroll['tiles'][$name], 'hasPayroll' => $payroll['has_payroll']])
                     </div>
                 </div>
             </div>
@@ -391,6 +399,7 @@
                     <div class="card-body py-3">
                         <div class="small fw-semibold">OUTSTANDING</div>
                         <div class="fs-3 fw-bold">{{ $totals['outstanding'] }}</div>
+                        @include('categories.partials.tile_payroll', ['t' => $payroll['tiles']['outstanding'], 'hasPayroll' => $payroll['has_payroll']])
                     </div>
                 </div>
             </div>
@@ -575,6 +584,18 @@
 
     </div>
   <!-- / Content -->
+
+  {{-- Client drill-down: employees + salaries for the selected month (loaded on click). --}}
+        <div class="offcanvas offcanvas-end" tabindex="-1" id="clientPanel" aria-labelledby="clientPanelTitle" style="width:min(720px,100vw)">
+            <div class="offcanvas-header border-bottom">
+                <div>
+                    <h5 class="offcanvas-title mb-0" id="clientPanelTitle">Client</h5>
+                    <div class="small text-muted" id="clientPanelMeta"></div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+            </div>
+            <div class="offcanvas-body" id="clientPanelBody" aria-live="polite"></div>
+        </div>
 
   @endsection
 
@@ -893,5 +914,83 @@
     });
     </script>
 
-    @endsection
+    
+    <script>
+        // Client drill-down panel.
+        (function () {
+            const URL_TMPL = @json(route('category.clientEmployees', ['client' => '__ID__']));
+            const panelEl = document.getElementById('clientPanel');
+            const money = new Intl.NumberFormat('en-GH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            const gh = v => 'GH\u20B5 ' + money.format(v || 0);
+            const esc = v => $('<div>').text(v == null ? '' : String(v)).html();
+            const STATUS = { approved: 'success', pending: 'warning', hold: 'danger', rejected: 'dark', 'not generated': 'secondary' };
+            let request = null;
+
+            function render(r) {
+                const t = r.totals, pay = r.can_view_salary;
+                $('#clientPanelTitle').html(r.client.name);
+                $('#clientPanelMeta').html(esc(r.month) + ' &middot; ' + (r.client.category ? esc($('<div>').html(r.client.category).text()) : 'No category')
+                    + (r.client.field ? ' &middot; ' + r.client.field : ''));
+
+                let html = '';
+                if (r.mode === 'roster') {
+                    html += '<div class="alert alert-secondary py-2 small">'
+                        + (r.month_has_payroll ? 'No salary was generated for this client in ' + esc(r.month) + '.'
+                                               : 'Payroll has not been generated for ' + esc(r.month) + '.')
+                        + ' Showing today\'s active employees' + (pay ? ' with contract pay (basic + allowances).' : '.') + '</div>';
+                }
+
+                html += '<div class="d-flex flex-wrap gap-3 mb-3 small">'
+                    + '<div><div class="text-muted">Staff</div><div class="fs-5 fw-bold">' + t.staff + '</div></div>'
+                    + (pay ? '<div><div class="text-muted">' + (r.mode === 'payroll' ? 'Net salaries' : 'Contract pay') + '</div><div class="fs-5 fw-bold">' + gh(t.net) + '</div></div>' : '')
+                    + '<div><div class="text-muted">Priority</div><div class="fs-5 fw-bold text-danger">' + t.priority_staff
+                    + (pay ? ' <span class="fs-6">&middot; ' + gh(t.priority_net) + '</span>' : '') + '</div></div>'
+                    + (t.held_staff ? '<div><div class="text-muted">On hold / rejected</div><div class="fs-5 fw-bold text-danger">' + t.held_staff
+                        + (pay ? ' <span class="fs-6">&middot; ' + gh(t.held_net) + '</span>' : '') + '</div></div>' : '')
+                    + '</div>';
+
+                if (!r.rows.length) {
+                    html += '<p class="text-muted">No active employees for this client.</p>';
+                } else {
+                    html += '<div class="table-responsive"><table class="table table-sm align-middle"><thead><tr>'
+                        + '<th>ID</th><th>Name</th><th>Location</th>'
+                        + (pay ? '<th class="text-end">' + (r.mode === 'payroll' ? 'Net' : 'Contract') + '</th>' : '')
+                        + '<th>Status</th></tr></thead><tbody>';
+                    r.rows.forEach(e => {
+                        html += '<tr>'
+                            + '<td class="text-nowrap">FWSS ' + e.employee_id + '</td>'
+                            + '<td>' + e.badge + '<a href="' + e.employee_url + '" target="_blank" rel="noopener">' + e.name + '</a></td>'
+                            + '<td>' + e.location + '</td>'
+                            + (pay ? '<td class="text-end text-nowrap">' + gh(e.amount) + '</td>' : '')
+                            + '<td><span class="badge bg-label-' + (STATUS[e.status] || 'secondary') + '">' + esc(e.status) + '</span></td>'
+                            + '</tr>';
+                    });
+                    html += '</tbody></table></div>';
+                }
+
+                if (r.mode === 'payroll') {
+                    html += '<a class="btn btn-sm btn-outline-primary" href="' + r.payroll_url + '">Open client payroll for ' + esc(r.month) + '</a>';
+                }
+                $('#clientPanelBody').html(html);
+                panelEl.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => bootstrap.Tooltip.getOrCreateInstance(el));
+            }
+
+            $(document).on('click', '.js-client-open', function (e) {
+                e.preventDefault();
+                const id = $(this).data('id');
+                $('#clientPanelTitle').text($(this).data('name'));
+                $('#clientPanelMeta').text(MONTH_LABEL);
+                $('#clientPanelBody').html('<div class="text-muted py-4 text-center">Loading employees…</div>');
+                bootstrap.Offcanvas.getOrCreateInstance(panelEl).show();
+
+                if (request) request.abort();
+                request = $.getJSON(URL_TMPL.replace('__ID__', id), { month: MONTH })
+                    .done(render)
+                    .fail((x, s) => { if (s !== 'abort') $('#clientPanelBody').html('<div class="alert alert-danger">Could not load employees. Please try again.</div>'); });
+            });
+
+            document.querySelectorAll('.tile-pay [data-bs-toggle="tooltip"]').forEach(el => bootstrap.Tooltip.getOrCreateInstance(el));
+        })();
+    </script>
+@endsection
 </x-sales-dashboard>

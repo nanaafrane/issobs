@@ -13,6 +13,7 @@ use App\Models\Receipt;
 use App\Exports\FilteredQueryExport;
 use App\Support\PayrollMonth;
 use App\Support\PayPriority;
+use App\Support\CategoryPayroll;
 use App\Http\Controllers\Concerns\SearchesDates;
 use App\Http\Requests\StoreSalaryRequest;
 use App\Http\Requests\UpdateSalaryRequest;
@@ -426,9 +427,9 @@ class SalaryController extends Controller
         // Categories A-D: one loop instead of four copy-pasted blocks, and receipts/guards are
         // summed in SQL (previously 4 receipt queries + 1 invoice_data query PER invoice).
         $categoryVars = [];
+        $idsByCategory = CategoryPayroll::clientIdsByCategory($month);
         foreach (['A', 'B', 'C', 'D'] as $L) {
-            $clientIds = category::where('name', "Category {$L}")->whereBetween('category_month', $span)
-                ->pluck('client_id')->filter()->unique()->values()->all();
+            $clientIds = $idsByCategory["Category {$L}"]; // latest row per client (shared rule)
 
             $invoices = Invoice::whereIn('client_id', $clientIds)->whereBetween('invoice_month', $span)->get();
             $invoiceIds = $invoices->pluck('id');
@@ -524,9 +525,8 @@ class SalaryController extends Controller
 
         // Category and invoice status are pre-aggregated per client ONCE for the month,
         // replacing a categories loop + an invoice query for every row in the old view.
-        $categorySub = DB::table('categories')->whereBetween('category_month', $span)
-            ->selectRaw('client_id, GROUP_CONCAT(DISTINCT name ORDER BY name SEPARATOR ", ") as names')
-            ->groupBy('client_id');
+        // One category per client per month (latest row) - shared rule, see CategoryPayroll.
+        $categorySub = CategoryPayroll::latestCategorySub($month)->select(['cat_row.client_id', 'cat_row.name as names']);
         $invoiceSub = DB::table('invoices')->whereBetween('invoice_month', $span)
             ->selectRaw('client_id, GROUP_CONCAT(DISTINCT status ORDER BY status SEPARATOR ", ") as statuses')
             ->groupBy('client_id');
@@ -590,7 +590,7 @@ class SalaryController extends Controller
 
         $category = $this->requestString($request, 'category');
         if (in_array($category, ['Category A', 'Category B', 'Category C', 'Category D'], true)) {
-            $query->where('cat.names', 'like', $this->likeTerm($category));
+            $query->where('cat.names', $category);
         } elseif ($category === 'none') {
             $query->whereNull('cat.names');
         }

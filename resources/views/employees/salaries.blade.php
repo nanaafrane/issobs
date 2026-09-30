@@ -1,5 +1,12 @@
 <x-hr-dashboard>
 
+    @php
+        $totalGross      = $employee->salaries->sum('gross_salary');
+        $totalDeductions = $employee->salaries->sum('total_deductions');
+        $totalNet        = $employee->salaries->sum('net_salary');
+        $salaryCount     = $employee->salaries->count();
+    @endphp
+
     @section('css')
     <link rel="stylesheet" href="https://cdn.datatables.net/2.3.3/css/dataTables.dataTables.css" />
     <link rel="stylesheet" href="https://cdn.datatables.net/buttons/3.2.4/css/buttons.dataTables.css">
@@ -363,6 +370,37 @@
 
     <div class="row g-4">
 
+    <div class="row g-4 mb-4">
+        <div class="col-md-4">
+            <div class="card bg-dark text-white h-100">
+            <div class="card-body">
+                <p class="mb-1"><strong>TOTAL GROSS SALARY</strong></p>
+                <h4 class="card-title mb-2 text-white"><strong>GH&#x20B5; {{ number_format($totalGross, 2) }}</strong></h4>
+                <small class="fw-medium">PAYSLIPS : {{ $salaryCount }}</small>
+            </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card bg-danger text-white h-100">
+            <div class="card-body">
+                <p class="mb-1"><strong>TOTAL DEDUCTIONS</strong></p>
+                <h4 class="card-title mb-2 text-white"><strong>GH&#x20B5; {{ number_format($totalDeductions, 2) }}</strong></h4>
+                <small class="fw-medium">PAYSLIPS : {{ $salaryCount }}</small>
+            </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card bg-success text-white h-100">
+            <div class="card-body">
+                <p class="mb-1"><strong>TOTAL NET SALARY</strong></p>
+                <h4 class="card-title mb-2 text-white"><strong>GH&#x20B5; {{ number_format($totalNet, 2) }}</strong></h4>
+                <small class="fw-medium">PAYSLIPS : {{ $salaryCount }}</small>
+            </div>
+            </div>
+        </div>
+    </div>
 
       <div class="col-lg-12">
         <div class="card mb-4">
