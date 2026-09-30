@@ -715,11 +715,15 @@ class EmployeeController extends Controller
 
     public function EmpSalary($id)
     {
-        // employee Id to get employee salaries
-        $employee = employee::findOrFail($id);
-        // dd($employee->salaries);
+        if(Auth::user()->role?->id == '2' || Auth::user()->role?->id == '3')
+            {
+                $employee = employee::with('salaries.client')->findOrFail($id);
+                return view('employees.salaries', compact('employee'));
+            }
+        else{
+            return back();
+        }
 
-        return view('employees.salaries', compact('employee'));
     }
 
 

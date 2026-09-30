@@ -17,7 +17,7 @@ class category extends Model
 
         /** Client ids ticked for Category A every month (only while Active and not yet categorised). */
     public const DEFAULT_A_CLIENT_IDS = [
-        112, 109, 110, 343, 100, 103, 118, 440, 416, 176, 413, 135,
+        100, 101, 103, 109, 110, 111, 112, 116, 118, 135, 173,176, 194, 276, 343, 440, 416,  413, 
     ];
 
     public function user()

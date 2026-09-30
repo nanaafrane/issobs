@@ -382,6 +382,7 @@
                   <th>Total</th>
                   <th>Show</th>
                   <th>Edit</th>
+                  <th></th>
                 </tr>
               </thead>
               <tbody>
@@ -400,6 +401,11 @@
                     @else
                       <td></td>
                     @endif
+                    <td>
+                        <a class="btn btn-dark btn-sm" href="{{ url('printPayslip', $salary->id) }}" target="_blank">
+                            <i class="icon-base bx bxs-printer"></i>
+                        </a>
+                    </td>
                   </tr>
                 @endforeach
               </tbody>
@@ -421,26 +427,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
     <script src="https://cdn.datatables.net/buttons/3.2.4/js/buttons.html5.min.js"></script>
 
-            <script>
-            $(document).ready(function() {
-                $('#print').on('click', function() {
-                    $.ajax({
-                        url: '/printPayslip/{{$salary->id}}', // The route to your dedicated print view
-                        method: 'GET',
-                        success: function(response) {
-                            var printWindow = window.open('url', '_parent');
-                            var originalContents = $('body').html();
-                            printWindow.document.write(response);
-                            printWindow.print();
-                            $('body').html(originalContents);
-                        },
-                        error: function(xhr, status, error) {
-                            console.error("Error fetching print content:", error);
-                        }
-                    });
-                });
-            });
-        </script>
 
     <script>
         new DataTable('#myTable', {
