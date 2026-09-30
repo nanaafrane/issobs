@@ -7,6 +7,7 @@ use App\Http\Controllers\ClientController;
 use App\Http\Controllers\CollectionController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\EmployeeController;
+use App\Http\Controllers\EmployeeImportController;
 use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\OvertimeController;
 use App\Http\Controllers\FieldController;
@@ -146,6 +147,13 @@ Route::resource('overtime', OvertimeController::class);
 
 Route::get('employees/export', [EmployeeController::class, 'export'])->name('employees.export');
 Route::get('employees/data', [EmployeeController::class, 'datatable'])->name('employees.data');
+// Bulk employee upload (must stay above Route::resource('employees')).
+Route::get('employees/import', [EmployeeImportController::class, 'index'])->name('employees.import');
+Route::get('employees/import/template', [EmployeeImportController::class, 'template'])->name('employees.import.template');
+Route::post('employees/import/preview', [EmployeeImportController::class, 'preview'])->name('employees.import.preview');
+Route::get('employees/import/{import}', [EmployeeImportController::class, 'show'])->whereNumber('import')->name('employees.import.show');
+Route::post('employees/import/{import}/confirm', [EmployeeImportController::class, 'confirm'])->whereNumber('import')->name('employees.import.confirm');
+Route::get('employees/import/{import}/errors', [EmployeeImportController::class, 'errors'])->whereNumber('import')->name('employees.import.errors');
 Route::resource('employees', EmployeeController::class); 
 Route::get('employee-report', [EmployeeController::class, 'report'])->name('employee.report');
 Route::get('employeesBank', [EmployeeController::class, 'employeesBank'])->name('employees.Bank');

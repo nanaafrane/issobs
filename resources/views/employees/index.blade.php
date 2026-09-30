@@ -374,7 +374,10 @@
 
         <div class="row">
             <div class="col-12">
-                <h3 class="card-header"> <i class="icon-base bx bxs-user-account"></i> All Employees </h3>
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+                    <h3 class="card-header mb-0"> <i class="icon-base bx bxs-user-account"></i> All Employees </h3>
+                    <a href="{{ route('employees.import') }}" class="btn btn-outline-primary"><i class="bx bx-upload me-1"></i> Bulk upload</a>
+                </div>
             </div>
         </div><br>
 

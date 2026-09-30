@@ -790,89 +790,44 @@ class EmployeeController extends Controller
         }
 
         // dd($request->input('tin'), $tin_number, $request->input('ssnit'), $ssnit_number);
-        $staff = $request->input('staff');
-        $employee = new employee();
-        $employee->name = $request->input('name');
-        $employee->user_id = $user_id;
-        $employee->gender = $request->input('gender');
-        $employee->phone_number = $request->input('phone_number');
-        $employee->channel = $request->input('channel');
-        $employee->date_of_birth = $request->input('date_of_birth');
-        $employee->nia_number = $request->input('nia_number');
-        $employee->address = $request->input('address');
-        $employee->marital_status = $request->input('marital_status');
-        $employee->worker_type = $request->input('worker_type');
-        $employee->date_of_joining = $request->input('date_of_joining');
-        $employee->department_id = $request->input('department_id');
-        $employee->role_id = $request->input('role_id');
-        $employee->field_id = $request->input('field_id');
-        $employee->client_id = $request->input('client_id');
-        $employee->location = $request->input('location');
-        $employee->tax_button = $request->input('tin');
-        $employee->tin_number = $tin_number;
-        $employee->ssnit_button = $request->input('ssnit');
-        $employee->ssnit_number = $ssnit_number;
-        $employee->basic_salary = $request->input('basic_salary');
-        $employee->allowances = $request->input('allowances');
-        $employee->payment_type = $request->input('payment_type');
-        $employee->gurantor_name = $request->input('gurantor_name');
-        $employee->gurantor_number = $request->input('gurantor_number');
-        $employee->gurantor_address = $request->input('gurantor_address');
-        $employee->gurantor_nia_number = $request->input('gurantor_nia_number');
-        $employee->relationship = $request->input('relationship');
-        $employee->image = $image;
-
-        if(Auth::user()->role?->id == '1')
-            {
-               $employee->status = 'Active';
-               $employee->ho_status = 'approved';
-               $employee->user_id2 = $user_id;
-            }
-        if(Auth::user()->department?->id == '7' && Auth::user()->role?->id == '3')
-            {
-               $employee->ho_status = 'pending';
-               $employee->user_id2 = $staff;
-               $employee->status = 'Pending';
-
-               $employee->bran_status = 'approved';
-               $employee->user_id1 = $user_id;
-            }
-        if(Auth::user()->department?->id == '7' && Auth::user()->role?->id == '27')
-            {
-               $employee->bran_status = 'pending';
-               $employee->user_id1 = $staff;
-               $employee->status = 'Pending';
-
-               $employee->assit_status = 'pending';
-
-            }
-
-        if(Auth::user()->department?->id == '4' && Auth::user()->role?->id == '27')
-            {
-               $employee->bran_status = 'pending';
-               $employee->user_id1 = $staff;
-               $employee->status = 'Pending';
-
-               $employee->assit_status = 'pending';
-
-            }
-        $employee->save();
-
-        $employee_pay_info = new PaymentInfo();
-        $employee_pay_info->employee_id = $employee->id;
-        $employee_pay_info->bank_id = $payRequest->input('bank_id');
-        $employee_pay_info->acc_number = $payRequest->input('acc_number');
-        $employee_pay_info->branch = $payRequest->input('branch');
-        $employee_pay_info->branch_code = $payRequest->input('branch_code');
-        // $employee_pay_info->tin_number = $payRequest->input('tin_number');
-        // $employee_pay_info->ssnit_number = $payRequest->input('ssnit_number');
-        $employee_pay_info->user_id = $user_id;
-        $employee_pay_info->save();
-
-
-        // LAST STEP: UPDATE EMPLOYEE WITH PAYMENT INFO ID
-        $employee->payment_infos_id = $employee_pay_info->id;
-        $employee->save();
+        // Same creation path as the bulk upload (App\Support\EmployeeCreator): same approval
+        // status by role, employee + payment details in ONE transaction, and TIN / SSNIT
+        // written to every place that has the column.
+        $employee = \App\Support\EmployeeCreator::create([
+            'name' => $request->input('name'),
+            'gender' => $request->input('gender'),
+            'phone_number' => $request->input('phone_number'),
+            'channel' => $request->input('channel'),
+            'date_of_birth' => $request->input('date_of_birth'),
+            'nia_number' => $request->input('nia_number'),
+            'address' => $request->input('address'),
+            'marital_status' => $request->input('marital_status'),
+            'worker_type' => $request->input('worker_type'),
+            'date_of_joining' => $request->input('date_of_joining'),
+            'department_id' => $request->input('department_id'),
+            'role_id' => $request->input('role_id'),
+            'field_id' => $request->input('field_id'),
+            'client_id' => $request->input('client_id'),
+            'location' => $request->input('location'),
+            'tax_button' => $request->input('tin'),
+            'tin_number' => $tin_number,
+            'ssnit_button' => $request->input('ssnit'),
+            'ssnit_number' => $ssnit_number,
+            'basic_salary' => $request->input('basic_salary'),
+            'allowances' => $request->input('allowances'),
+            'payment_type' => $request->input('payment_type'),
+            'gurantor_name' => $request->input('gurantor_name'),
+            'gurantor_number' => $request->input('gurantor_number'),
+            'gurantor_address' => $request->input('gurantor_address'),
+            'gurantor_nia_number' => $request->input('gurantor_nia_number'),
+            'relationship' => $request->input('relationship'),
+            'image' => $image,
+        ], [
+            'bank_id' => $payRequest->input('bank_id'),
+            'acc_number' => $payRequest->input('acc_number'),
+            'branch' => $payRequest->input('branch'),
+            'branch_code' => $payRequest->input('branch_code'),
+        ], Auth::user(), $request->input('staff'));
 
         return redirect()->route('employees.show',['employee' => $employee->id])->with('success', 'Employee created successfully.');
         //return redirect()->route('employees.index')->with('success', 'Employee created successfully.');
