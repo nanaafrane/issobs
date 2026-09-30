@@ -64,6 +64,27 @@ class Salary extends Model
         
     ];
 
+    /**
+     * Priority is taken from this salary's own snapshot (client / field / location) and
+     * frozen once paid, so past payroll keeps showing why someone was paid first.
+     */
+    protected static function booted(): void
+    {
+        static::saving(function (self $salary) {
+            if (in_array($salary->getOriginal('payment_status'), \App\Support\PayPriority::FROZEN_STATUSES, true)) {
+                return;
+            }
+            if (! $salary->exists || $salary->isDirty(['client_id', 'field_id', 'location', 'employee_id'])) {
+                $gender = $salary->employee_id
+                    ? \Illuminate\Support\Facades\DB::table('employees')->where('id', $salary->employee_id)->value('gender')
+                    : null;
+                [$salary->pay_priority, $salary->pay_priority_reason] = \App\Support\PayPriority::evaluate(
+                    $salary->client_id, $salary->field_id, $salary->location, $gender
+                );
+            }
+        });
+    }
+
     protected $casts = [
         'salary_month' => 'date',
         'approval_date' => 'date',

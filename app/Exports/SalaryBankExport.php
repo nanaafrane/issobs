@@ -63,7 +63,7 @@ class SalaryBankExport implements FromQuery, WithMapping , WithHeadings, WithDra
         'branch',
         'account_number',
         'net_salary',
-        ])->orderBy('client_id', 'ASC');
+        ])->orderByDesc('pay_priority')->orderBy('client_id', 'ASC'); // pay-first salaries at the top
     }
 
     /**

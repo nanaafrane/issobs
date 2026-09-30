@@ -26,6 +26,7 @@ window.DtRange = (function () {
             label: 'Date', type: 'date',
             presets: ['today', 'week', 'month', 'year'],
             exportUrl: null, rangeBy: null, hint: true,
+            extraParams: null,   // () => ({ key: value }) added to the export URL (e.g. card filters)
             navigate: u => { window.location.href = u; },   // overridable (used by tests)
         }, options || {});
 
@@ -129,6 +130,9 @@ window.DtRange = (function () {
                         if (toEl.value) q.set('to', toEl.value);
                         if (byEl) q.set('range_by', byEl.value);
                         if (p.search && p.search.value) q.set('search[value]', p.search.value);
+                        if (typeof opts.extraParams === 'function') {
+                            Object.entries(opts.extraParams() || {}).forEach(([k, v]) => { if (v !== '' && v != null) q.set(k, v); });
+                        }
                         if (p.order && p.order[0]) {
                             q.set('order[0][column]', p.order[0].column);
                             q.set('order[0][dir]', p.order[0].dir);

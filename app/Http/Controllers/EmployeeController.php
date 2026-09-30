@@ -12,6 +12,7 @@ use App\Http\Requests\StorePaymentInfoRequest;
 use App\Http\Requests\UpdatePaymentInfoRequest;
 use App\Exports\FilteredQueryExport;
 use App\Http\Controllers\Concerns\SearchesDates;
+use App\Support\PayPriority;
 use App\Models\Bank;
 use App\Models\Client;
 use App\Models\Department;
@@ -273,6 +274,15 @@ class EmployeeController extends Controller
             'terminatedEmployees' => $count('Terminated'),
             'canViewSalary'       => $this->employeeCanViewSalary(),
         ];
+        // Pay-priority cards count ACTIVE employees within what this user may see.
+        $priorityCounts = $this->employeeListBase()->where('employees.status', 'Active')
+            ->reorder()->toBase()
+            ->select(DB::raw('employees.pay_priority as level, COUNT(DISTINCT employees.id) as total')) // replaces the list columns
+            ->groupBy('employees.pay_priority')->pluck('total', 'level');
+        $data['payFirstCount'] = (int) ($priorityCounts[PayPriority::URGENT] ?? 0);
+        $data['payEarlyCount'] = (int) ($priorityCounts[PayPriority::PRIORITY] ?? 0);
+        $data['offices'] = $offices;
+
         foreach ($offices as $name => $fieldId) {
             $data["employee{$name}Active"]     = $count('Active', $fieldId);
             $data["employee{$name}Terminated"] = $count('Terminated', $fieldId);
@@ -367,6 +377,7 @@ class EmployeeController extends Controller
                 'employees.status', 'employees.status_date', 'employees.tax_button', 'payment_infos.tin_number',
                 'employees.ssnit_button', 'payment_infos.ssnit_number', 'employees.basic_salary',
                 'employees.allowances', 'employees.created_at', 'employees.updated_at', 'employees.ho_status',
+                'employees.pay_priority', 'employees.pay_priority_reason',
                 'departments.name as department_name', 'roles.name as role_name', 'fields.name as field_name',
                 'clients.name as client_name', 'clients.business_name as client_business_name',
                 'payment_infos.acc_number', 'banks.name as bank_name', 'users.name as staff_name',
@@ -412,6 +423,23 @@ class EmployeeController extends Controller
             $this->requestString($request, 'to')
         );
  
+        // Summary-card filters (clickable cards on the page). They narrow WITHIN the
+        // user's scope from employeeListBase(), so a card can never widen access.
+        $fieldId = $this->requestString($request, 'field_id');
+        if ($fieldId !== null && ctype_digit($fieldId)) {
+            $query->where('employees.field_id', (int) $fieldId);
+        }
+        $status = $this->requestString($request, 'status');
+        if (in_array($status, ['Active', 'Terminated'], true)) {
+            $query->where('employees.status', $status);
+        }
+        $priority = $this->requestString($request, 'priority');
+        if (isset(PayPriority::FILTERS[$priority])) {
+            $query->where('employees.pay_priority', PayPriority::FILTERS[$priority]);
+        } elseif ($priority === 'flagged') {
+            $query->where('employees.pay_priority', '>', PayPriority::NORMAL);
+        }
+
         // Global search box - same rules as the invoice / receipt lists.
         $search = trim((string) $this->requestString($request, 'search.value'));
         if ($search !== '') {
@@ -540,7 +568,8 @@ class EmployeeController extends Controller
             $actions .= '</div></div>';
  
             return [
-                'row_number' => '', 'employee_id' => 'FWSS ' . $employee->id, 'name' => $employee->name,
+                'row_number' => '', 'employee_id' => 'FWSS ' . $employee->id,
+                'name' => PayPriority::badge($employee->pay_priority, $employee->pay_priority_reason) . e($employee->name),
                 'gender' => $employee->gender, 'phone_number' => $employee->phone_number,
                 'date_of_joining' => $employee->date_of_joining ? Carbon::parse($employee->date_of_joining)->format('l F d, Y') : '',
                 'department' => $employee->department_name, 'role' => $employee->role_name, 'field' => $employee->field_name,
@@ -577,7 +606,7 @@ class EmployeeController extends Controller
         $this->employeeListOrder($query, $request);
  
         $headings = [
-            'Employee ID', 'Name', 'Gender', 'Phone', 'Date Joined', 'Department', 'Role', 'Field Office',
+            'Employee ID', 'Name', 'Pay Priority', 'Gender', 'Phone', 'Date Joined', 'Department', 'Role', 'Field Office',
             'Client', 'Location', 'Payment Type', 'Bank', 'Account No.', 'Status', 'Status Date',
             'TIN', 'SSNIT No.',
         ];
@@ -590,7 +619,7 @@ class EmployeeController extends Controller
             $day = fn ($v) => $v ? Carbon::parse($v)->format('Y-m-d') : '';
  
             $row = [
-                'FWSS ' . $e->id, $e->name, $e->gender, $e->phone_number, $day($e->date_of_joining),
+                'FWSS ' . $e->id, $e->name, $e->pay_priority ? PayPriority::LABELS[(int) $e->pay_priority] : '', $e->gender, $e->phone_number, $day($e->date_of_joining),
                 $e->department_name, $e->role_name, $e->field_name,
                 trim($e->client_name . ' ' . $e->client_business_name), $e->location, $e->payment_type,
                 $e->bank_name, $e->acc_number, $e->status, $day($e->status_date),

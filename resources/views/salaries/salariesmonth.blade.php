@@ -877,6 +877,15 @@
                                 </select>
                             </div>
                             <div class="col-auto">
+                                <label class="form-label small mb-0" for="m_priority">Pay priority</label>
+                                <select id="m_priority" class="form-select form-select-sm master-filter">
+                                    <option value="">All</option>
+                                    <option value="flagged">Pay first + pay early</option>
+                                    <option value="urgent">Pay first only</option>
+                                    <option value="priority">Pay early only</option>
+                                </select>
+                            </div>
+                            <div class="col-auto">
                                 <label class="form-label small mb-0" for="m_type">Payment type</label>
                                 <select id="m_type" class="form-select form-select-sm master-filter">
                                     <option value="">All</option>
@@ -911,6 +920,8 @@
                         </div>
 
                         <div class="small text-muted mb-2" id="masterTotals" aria-live="polite">Loading totals…</div>
+                        {{-- Payment priority summary + alert for pay-first salaries stuck on hold (filled from the data response). --}}
+                        <div class="d-flex flex-wrap align-items-center gap-2 mb-2" id="masterPriority" aria-live="polite"></div>
 
                         @if($canEditMaster)
                         <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
@@ -3532,6 +3543,7 @@
                         d.payment_type = filterVal('m_type');
                         d.field_id = filterVal('m_field');
                         d.category = filterVal('m_category');
+                        d.priority = filterVal('m_priority');
                         lastParams = d;
                         return d;
                     },
@@ -3542,10 +3554,23 @@
                             ' | Deductions GH₵ ' + money.format(t.deductions || 0) +
                             ' | Net GH₵ ' + money.format(t.net || 0) +
                             ' | Cost to company GH₵ ' + money.format(t.ctc || 0));
+
+                        const p = json.priority || {};
+                        const u = p.urgent || {}, pr = p.priority || {};
+                        let html = '';
+                        if (u.total) html += '<button type="button" class="btn btn-sm btn-danger js-priority-pick" data-priority="urgent">'
+                            + '<i class="bx bxs-bolt"></i> Pay first: ' + u.unpaid + ' unpaid of ' + u.total + '</button>';
+                        if (pr.total) html += '<button type="button" class="btn btn-sm btn-warning js-priority-pick" data-priority="priority">'
+                            + '<i class="bx bx-time-five"></i> Pay early: ' + pr.unpaid + ' unpaid of ' + pr.total + '</button>';
+                        if (u.held) html += '<span class="alert alert-danger py-1 px-2 mb-0 small"><i class="bx bx-error"></i> '
+                            + u.held + ' pay-first salar' + (u.held === 1 ? 'y is' : 'ies are') + ' on hold or rejected.</span>';
+                        if (pr.held) html += '<span class="alert alert-warning py-1 px-2 mb-0 small"><i class="bx bx-error"></i> '
+                            + pr.held + ' pay-early salar' + (pr.held === 1 ? 'y is' : 'ies are') + ' on hold or rejected.</span>';
+                        $('#masterPriority').html(html);
                         return json.data;
                     },
                 },
-                order: [[8, 'asc']],
+                order: [],   // no column => server orders pay-first, then pay-early, then by name
                 columnControl: [{ target: 1, content: ['search'] }],
                 lengthMenu: [[25, 50, 100, 250, 500], [25, 50, 100, 250, 500]],
                 columns: [
@@ -3591,6 +3616,12 @@
             });
             $('#masterClear').on('click', function (e) { e.preventDefault(); selected.clear(); table.draw(false); });
             $('.master-filter').on('change', () => table.draw());
+
+            // Priority buttons in the summary toggle the "Pay priority" filter.
+            $('#masterPriority').on('click', '.js-priority-pick', function () {
+                const v = $(this).data('priority');
+                $('#m_priority').val($('#m_priority').val() === v ? '' : v).trigger('change');
+            });
             table.on('draw.dt', refreshSelection);
 
             $('#masterForm [data-action]').on('click', function () {
@@ -3610,7 +3641,7 @@
             // Export every row matching the current filters (compact params keep the URL short).
             $('#masterExport').on('click', function () {
                 const q = new URLSearchParams({ month: $t.data('month') });
-                ['status', 'payment_type', 'field_id', 'category'].forEach(k => { if (lastParams[k]) q.set(k, lastParams[k]); });
+                ['status', 'payment_type', 'field_id', 'category', 'priority'].forEach(k => { if (lastParams[k]) q.set(k, lastParams[k]); });
                 if (lastParams.search && lastParams.search.value) q.set('search[value]', lastParams.search.value);
                 if (lastParams.order && lastParams.order[0]) {
                     q.set('order[0][column]', lastParams.order[0].column);

@@ -71,6 +71,25 @@ class employee extends Model
     ];
 
 
+    /** Keep the stored payment priority in step with client / field / location / gender. */
+    protected static function booted(): void
+    {
+        static::saving(function (self $employee) {
+            if (! $employee->exists || $employee->isDirty(['client_id', 'field_id', 'location', 'gender'])) {
+                [$employee->pay_priority, $employee->pay_priority_reason] = \App\Support\PayPriority::evaluate(
+                    $employee->client_id, $employee->field_id, $employee->location, $employee->gender
+                );
+            }
+        });
+
+        // Salaries snapshot client / field / location, but gender comes from the employee.
+        static::saved(function (self $employee) {
+            if ($employee->wasChanged('gender')) {
+                \App\Support\PayPriority::recomputeSalaries([$employee->id]);
+            }
+        });
+    }
+
     protected $casts = [
         'date_of_birth' => 'date',
         'date_of_joining' => 'date',  

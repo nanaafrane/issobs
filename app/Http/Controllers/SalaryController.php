@@ -12,6 +12,7 @@ use App\Models\InvoiceData;
 use App\Models\Receipt;
 use App\Exports\FilteredQueryExport;
 use App\Support\PayrollMonth;
+use App\Support\PayPriority;
 use App\Http\Controllers\Concerns\SearchesDates;
 use App\Http\Requests\StoreSalaryRequest;
 use App\Http\Requests\UpdateSalaryRequest;
@@ -537,6 +538,7 @@ class SalaryController extends Controller
                 'salaries.id', 'salaries.salary_month', 'salaries.employee_id', 'salaries.client_id', 'salaries.location',
                 'salaries.payment_status', 'salaries.status2', 'salaries.approval_date', 'salaries.hold_reason',
                 'salaries.payment_type', 'salaries.branch', 'salaries.account_number',
+                'salaries.pay_priority', 'salaries.pay_priority_reason',
                 'employees.name as employee_name', 'employees.worker_type',
                 'departments.name as department_name', 'roles.name as role_name', 'fields.name as field_name',
                 'clients.name as client_name', 'clients.business_name as client_business_name',
@@ -566,6 +568,14 @@ class SalaryController extends Controller
             $query->where('salaries.payment_status', $status);
         } elseif ($status === 'outstanding') {
             $query->whereIn('salaries.payment_status', ['pending', 'hold', 'rejected']);
+        }
+
+        // Payment priority: urgent | priority | flagged (either).
+        $priority = $this->requestString($request, 'priority');
+        if (isset(PayPriority::FILTERS[$priority])) {
+            $query->where('salaries.pay_priority', PayPriority::FILTERS[$priority]);
+        } elseif ($priority === 'flagged') {
+            $query->where('salaries.pay_priority', '>', PayPriority::NORMAL);
         }
 
         $type = strtolower((string) $this->requestString($request, 'payment_type'));
@@ -625,6 +635,12 @@ class SalaryController extends Controller
 
     private function masterOrder($query, Request $request): void
     {
+        // No column chosen (the page's default): payment priority first, then name.
+        if ($request->input('order.0.column') === null) {
+            $query->orderByDesc('salaries.pay_priority')->orderBy('employees.name')->orderBy('salaries.id');
+            return;
+        }
+
         $column = (int) $request->input('order.0.column', 8);
         $dir = $request->input('order.0.dir', 'asc') === 'desc' ? 'desc' : 'asc';
 
@@ -649,7 +665,13 @@ class SalaryController extends Controller
         // Totals of the FILTERED set, for the summary strip above the table.
         $totals = (clone $query)->reorder()->toBase()->select(DB::raw(
             'COUNT(*) as rows_count, COALESCE(SUM(salaries.gross_salary),0) as gross, COALESCE(SUM(salaries.total_deductions),0) as deductions,
-             COALESCE(SUM(salaries.net_salary),0) as net, COALESCE(SUM(salaries.cost_to_company),0) as ctc'
+             COALESCE(SUM(salaries.net_salary),0) as net, COALESCE(SUM(salaries.cost_to_company),0) as ctc,
+             COUNT(CASE WHEN salaries.pay_priority = 2 THEN 1 END) as urgent_total,
+             COUNT(CASE WHEN salaries.pay_priority = 2 AND salaries.payment_status <> \'approved\' THEN 1 END) as urgent_unpaid,
+             COUNT(CASE WHEN salaries.pay_priority = 2 AND salaries.payment_status IN (\'hold\', \'rejected\') THEN 1 END) as urgent_held,
+             COUNT(CASE WHEN salaries.pay_priority = 1 THEN 1 END) as priority_total,
+             COUNT(CASE WHEN salaries.pay_priority = 1 AND salaries.payment_status <> \'approved\' THEN 1 END) as priority_unpaid,
+             COUNT(CASE WHEN salaries.pay_priority = 1 AND salaries.payment_status IN (\'hold\', \'rejected\') THEN 1 END) as priority_held'
         ))->first();
         $recordsFiltered = (int) $totals->rows_count;
 
@@ -687,7 +709,7 @@ class SalaryController extends Controller
                 'salary_id' => $s->id,
                 'salary_month' => $s->salary_month?->format('F, Y'),
                 'employee_id' => 'FWSS ' . $s->employee_id,
-                'name' => e(strtoupper((string) $s->employee_name)),
+                'name' => PayPriority::badge($s->pay_priority, $s->pay_priority_reason) . e(strtoupper((string) $s->employee_name)),
                 'department' => e($s->department_name),
                 'role' => e($s->role_name),
                 'field' => e($s->field_name),
@@ -721,6 +743,10 @@ class SalaryController extends Controller
                 'net' => (float) $totals->net,
                 'ctc' => (float) $totals->ctc,
             ],
+            'priority' => [
+                'urgent' => ['total' => (int) $totals->urgent_total, 'unpaid' => (int) $totals->urgent_unpaid, 'held' => (int) $totals->urgent_held],
+                'priority' => ['total' => (int) $totals->priority_total, 'unpaid' => (int) $totals->priority_unpaid, 'held' => (int) $totals->priority_held],
+            ],
             'data' => $data,
         ]);
     }
@@ -735,14 +761,15 @@ class SalaryController extends Controller
         $this->masterOrder($query, $request);
 
         $headings = array_merge([
-            'Salary ID', 'Salary Month', 'Employee ID', 'Name', 'Payment Status', 'Hold Reason', 'Category', 'Department',
+            'Salary ID', 'Salary Month', 'Employee ID', 'Name', 'Pay Priority', 'Payment Status', 'Hold Reason', 'Category', 'Department',
             'Role', 'Field', 'Emp. Type', 'Client', 'Location', 'Invoice Status', 'SSNIT No.', 'TIN No.', 'Payment Type',
             'Bank', 'Branch', 'Account No.',
         ], self::MASTER_MONEY_COLUMNS);
 
         $export = new FilteredQueryExport($query, $headings, function ($s) {
             $row = [
-                $s->id, $s->salary_month?->format('Y-m'), 'FWSS ' . $s->employee_id, $s->employee_name, $s->payment_status,
+                $s->id, $s->salary_month?->format('Y-m'), 'FWSS ' . $s->employee_id, $s->employee_name,
+                $s->pay_priority ? PayPriority::LABELS[(int) $s->pay_priority] : '', $s->payment_status,
                 $s->hold_reason, $s->category_names, $s->department_name, $s->role_name, $s->field_name, $s->worker_type,
                 trim($s->client_name . ' ' . $s->client_business_name), $s->location, $s->invoice_statuses ?? 'no invoice',
                 $s->ssnit_number, $s->tin_number, $s->payment_type, $s->bank_name, $s->branch, $s->account_number,
@@ -942,9 +969,10 @@ class SalaryController extends Controller
         // dd($categories);
         // get all from salaries where payment type is bank and is equal to incoming bank_id and month is in current month
         $bank = Bank::findOrfail($bank_id);
-        $BankSalariesAll = Salary::whereBetween('salary_month', PayrollMonth::span($month))->where('payment_type', 'Bank')->where('bank_id', $bank_id)->get();
+        $BankSalariesAll = Salary::with('employee')->whereBetween('salary_month', PayrollMonth::span($month))->where('payment_type', 'Bank')->where('bank_id', $bank_id)->get();
 
-        $BankSalaries =  $BankSalariesAll->whereIn('payment_status', ['pending', 'approved']);
+        $BankSalaries =  $BankSalariesAll->whereIn('payment_status', ['pending', 'approved'])
+            ->sortBy([['pay_priority', 'desc'], fn ($a, $b) => strcmp((string) $a->employee?->name, (string) $b->employee?->name)])->values(); // payment priority first
        
        
         $BankSalariespending =  $BankSalariesAll->where('payment_status', 'pending');
@@ -982,7 +1010,8 @@ class SalaryController extends Controller
         // dd($field->name, $month);
         $categories = Category::whereBetween('category_month', PayrollMonth::span($month))->get();
 
-        $CashSalaries = Salary::whereBetween('salary_month', PayrollMonth::span($month))->whereIn('payment_status', ['pending', 'approved'])->where('payment_type', 'Cash')->where('field_id', $field_id)->get();
+        $CashSalaries = Salary::with('employee')->whereBetween('salary_month', PayrollMonth::span($month))->whereIn('payment_status', ['pending', 'approved'])->where('payment_type', 'Cash')->where('field_id', $field_id)->get()
+            ->sortBy([['pay_priority', 'desc'], fn ($a, $b) => strcmp((string) $a->employee?->name, (string) $b->employee?->name)])->values(); // payment priority first
         $CashSalariesAll = Salary::whereBetween('salary_month', PayrollMonth::span($month))->where('payment_type', 'Cash')->where('field_id', $field_id)->get();
         $CashSalariespending = Salary::whereBetween('salary_month', PayrollMonth::span($month))->where('payment_status', 'pending')->where('payment_type', 'Cash')->where('field_id', $field_id)->get();
         $CashSalariesapproved = Salary::whereBetween('salary_month', PayrollMonth::span($month))->where('payment_status', 'approved')->where('payment_type', 'Cash')->where('field_id', $field_id)->get();
@@ -1172,7 +1201,8 @@ class SalaryController extends Controller
        
 
 
-        $salariesClients = Salary::whereBetween('salary_month', PayrollMonth::span($month))->whereIn('payment_status', ['pending', 'approved'])->where('client_id', $client_id)->get();
+        $salariesClients = Salary::with('employee')->whereBetween('salary_month', PayrollMonth::span($month))->whereIn('payment_status', ['pending', 'approved'])->where('client_id', $client_id)->get()
+            ->sortBy([['pay_priority', 'desc'], fn ($a, $b) => strcmp((string) $a->employee?->name, (string) $b->employee?->name)])->values(); // payment priority first
 
         // dd($salariesClients, $ClientSalarieshold, $ClientSalariesapproved, $ClientSalariespending, $ClientSalariesAll);
         return view('salaries.clientmonth', compact('ClientSalarieshold','ClientSalariesapproved','ClientSalariespending','ClientSalariesAll','salariesClients', 'client', 'month'));
@@ -1391,6 +1421,10 @@ class SalaryController extends Controller
 
         $now = now();
         $rows = $employees->map(fn ($employee) => [
+            // Salary::insert() skips model events, so payment priority is set here from the snapshot.
+            ...array_combine(['pay_priority', 'pay_priority_reason'], PayPriority::evaluate(
+                $employee->client_id, $employee->field_id, $employee->location, $employee->gender
+            )),
             'employee_id' => $employee->id,
             'salary_month' => $start,
             'field_id' => $employee->field_id,
