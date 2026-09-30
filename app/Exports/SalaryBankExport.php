@@ -39,6 +39,9 @@ class SalaryBankExport implements FromQuery, WithMapping , WithHeadings, WithDra
             // 1. Define the counter property
         private $rowNumber = 0;
 
+        /** client_id => category name for the month (latest row, shared rule). Loaded once. */
+        private ?array $categoryByClient = null;
+
     public function __construct($month, $bank_id, array $headers)
     {
         $this->month = Carbon::parse($month);
@@ -50,7 +53,13 @@ class SalaryBankExport implements FromQuery, WithMapping , WithHeadings, WithDra
     
     public function query()
     {
-        return Salary::query()->where('bank_id', $this->bank_id )->where('payment_type', 'Bank')->whereBetween('salary_month', \App\Support\PayrollMonth::span($this->month))->whereIn('payment_status', ['pending', 'approved'])->select([
+        return Salary::query()
+        // Eager-load what map() prints, instead of several lookups per row.
+        ->with(['employee:id,name', 'field:id,name', 'role:id,name', 'client:id,name,business_name', 'paymentInfo'])
+        ->where('bank_id', $this->bank_id )->where('payment_type', 'Bank')->whereBetween('salary_month', \App\Support\PayrollMonth::span($this->month))->whereIn('payment_status', ['pending', 'approved'])->select([
+        'id',
+        'pay_priority',
+        'pay_priority_reason',
         'employee_id',
         'payment_status',
         'updated_at',
@@ -63,7 +72,7 @@ class SalaryBankExport implements FromQuery, WithMapping , WithHeadings, WithDra
         'branch',
         'account_number',
         'net_salary',
-        ])->orderByDesc('pay_priority')->orderBy('client_id', 'ASC'); // pay-first salaries at the top
+        ])->orderByDesc('pay_priority')->orderBy('client_id', 'ASC')->orderBy('id'); // pay first, pay early, then by client (id keeps chunked export pages stable)
     }
 
     /**
@@ -71,7 +80,8 @@ class SalaryBankExport implements FromQuery, WithMapping , WithHeadings, WithDra
     */
     public function map($salary): array
     {
-        $categories = category::whereBetween('category_month', \App\Support\PayrollMonth::span($this->month))->get();
+        // Same rule as the category page and payroll master: the client's latest category that month.
+        $this->categoryByClient ??= \App\Support\CategoryPayroll::latestCategorySub($this->month)->pluck('name', 'client_id')->all();
 
         return [
              ++$this->rowNumber,
@@ -79,7 +89,7 @@ class SalaryBankExport implements FromQuery, WithMapping , WithHeadings, WithDra
             $salary->payment_status,
             $salary->updated_at->format('F l d, Y, H:i A'),
             $salary->employee?->name,
-            $salary->category($categories, $salary),
+            $this->categoryByClient[$salary->client_id] ?? '',
             $salary->field?->name,
             $salary->role?->name,
             $salary->client?->name . " " .$salary->client?->business_name,
@@ -87,8 +97,9 @@ class SalaryBankExport implements FromQuery, WithMapping , WithHeadings, WithDra
             $salary->paymentInfo?->branch_code,
             $salary->branch,
             $salary->account_number,                            
-            $salary->net_salary
-
+            $salary->net_salary,
+            // Kept as the LAST column so NET stays in column N (the total formula below uses it).
+            $salary->pay_priority ? \App\Support\PayPriority::LABELS[(int) $salary->pay_priority] : '',
         ];
     }
     
@@ -114,7 +125,8 @@ class SalaryBankExport implements FromQuery, WithMapping , WithHeadings, WithDra
         'BRANCH CODE',
         'BRANCH',
         'ACCOUNT NUMBER',
-        'NET'],
+        'NET',
+        'PAY PRIORITY'],
 
         ];
     
@@ -181,6 +193,33 @@ class SalaryBankExport implements FromQuery, WithMapping , WithHeadings, WithDra
                 // Optional: Style the total row (Bold) HOW TO GET DYNAMIC ROW ('J'.$totalRow.':K'.$totalRow)
                 $event->sheet->getStyle('M4:N4')
                     ->getFont()->setBold(true)->setSize(14);
+
+                // Payment priority: subtotals beside the total, and shaded rows (pay first / pay early).
+                if ($lastRow >= 6) {
+                    $range = fn ($col) => $col . '6:' . $col . $lastRow;
+                    $event->sheet->setCellValue('I4', 'Pay first');
+                    $event->sheet->setCellValue('J4', '=SUMIF(' . $range('O') . ',"Pay first",' . $range('N') . ')');
+                    $event->sheet->setCellValue('K4', 'Pay early');
+                    $event->sheet->setCellValue('L4', '=SUMIF(' . $range('O') . ',"Pay early",' . $range('N') . ')');
+                    $event->sheet->getStyle('I4:L4')->getFont()->setBold(true)->setSize(12);
+                    $event->sheet->getStyle('I4:J4')->getFont()->getColor()->setARGB('FF9C0006');
+                    $event->sheet->getStyle('K4:L4')->getFont()->getColor()->setARGB('FF7F6000');
+
+                    $fill = [
+                        \App\Support\PayPriority::LABELS[\App\Support\PayPriority::URGENT] => 'FFF8D7DA',   // light red
+                        \App\Support\PayPriority::LABELS[\App\Support\PayPriority::PRIORITY] => 'FFFFF3CD', // light amber
+                    ];
+                    $sheet = $event->sheet->getDelegate();
+                    for ($row = 6; $row <= $lastRow; $row++) {
+                        $label = (string) $sheet->getCell('O' . $row)->getValue();
+                        if (isset($fill[$label])) {
+                            $sheet->getStyle('A' . $row . ':O' . $row)->getFill()
+                                ->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
+                                ->getStartColor()->setARGB($fill[$label]);
+                            $sheet->getStyle('O' . $row)->getFont()->setBold(true);
+                        }
+                    }
+                }
             },
         ];
     }

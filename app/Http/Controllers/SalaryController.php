@@ -992,7 +992,8 @@ class SalaryController extends Controller
         // dd($month);
         // get all from salaries where payment type is bank and is equal to incoming bank_id and month is in current month
         $bank = Bank::findOrfail($bank_id);
-        $BankSalaries = Salary::whereBetween('salary_month', PayrollMonth::span($month))->whereIn('payment_status', ['hold','rejected'])->where('payment_type', 'Bank')->where('bank_id', $bank_id)->get();
+        $BankSalaries = Salary::with('employee')->whereBetween('salary_month', PayrollMonth::span($month))->whereIn('payment_status', ['hold','rejected'])->where('payment_type', 'Bank')->where('bank_id', $bank_id)->get()
+            ->sortBy([['pay_priority', 'desc'], fn ($a, $b) => strcmp((string) $a->employee?->name, (string) $b->employee?->name)])->values(); // payment priority first
         // dd( $BankSalaries); 
         return view('salaries.holdbankmonth', compact('BankSalaries', 'bank', 'month'));
     }
@@ -1031,7 +1032,8 @@ class SalaryController extends Controller
         // get all cash salaries where field office is field_id and month is incoming month
         $field = Field::findOrfail($field_id);
         // dd($field->name, $month);
-        $HoldSalaries = Salary::whereBetween('salary_month', PayrollMonth::span($month))->whereIn('payment_status', ['hold','rejected'])->where('payment_type', 'Cash')->where('field_id', $field_id)->get();
+        $HoldSalaries = Salary::with('employee')->whereBetween('salary_month', PayrollMonth::span($month))->whereIn('payment_status', ['hold','rejected'])->where('payment_type', 'Cash')->where('field_id', $field_id)->get()
+            ->sortBy([['pay_priority', 'desc'], fn ($a, $b) => strcmp((string) $a->employee?->name, (string) $b->employee?->name)])->values(); // payment priority first
         // dd($CashSalaries);
         return view('salaries.holdcashmonth', compact('HoldSalaries', 'field', 'month'));
 
@@ -1221,7 +1223,8 @@ class SalaryController extends Controller
 
         $ClientSalarieshold = Salary::whereBetween('salary_month', PayrollMonth::span($month))->where('payment_status', 'hold')->where('client_id', $client_id)->get();
         $ClientSalariesrejected = Salary::whereBetween('salary_month', PayrollMonth::span($month))->where('payment_status', 'rejected')->where('client_id', $client_id)->get();
-        $ClientSalariesHoldAll = Salary::whereBetween('salary_month', PayrollMonth::span($month))->whereIn('payment_status', ['hold','rejected'])->where('client_id', $client_id)->get();
+        $ClientSalariesHoldAll = Salary::with('employee')->whereBetween('salary_month', PayrollMonth::span($month))->whereIn('payment_status', ['hold','rejected'])->where('client_id', $client_id)->get()
+            ->sortBy([['pay_priority', 'desc'], fn ($a, $b) => strcmp((string) $a->employee?->name, (string) $b->employee?->name)])->values(); // payment priority first
        
         return view('salaries.clientholdmonth', compact('ClientSalarieshold','ClientSalariesrejected','ClientSalariesHoldAll', 'client', 'month'));
     }

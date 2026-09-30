@@ -312,6 +312,7 @@
         <!-- Table -->  
         <hr> <br>
         <div class="row">
+            @include('partials.pay_priority_summary', ['rows' => $BankSalaries, 'held' => $BankSalaries, 'mode' => 'held'])
             <form action="/salariesDeleteMultiple" method="POST">
                 @csrf
                     <div class="col-lg-12 mb-4">
@@ -334,6 +335,7 @@
                                         <tr>
                                             <th></th>
                                             <th>#</th>
+                                            <th>PAY</th>
                                             <th>STAFF ID</th>
                                             <th>STATUS</th>
                                             <th> NAME </th>
@@ -357,6 +359,7 @@
                                         <tr>
                                             <td> <input class="checkBoxes form-check-input" type="checkbox" name="salary[]" value="{{ $salary->id }}" /> </td>
                                             <td> {{ $key + 1 }} </td>
+                                            <td data-order="{{ (int) $salary->pay_priority }}" data-search="pay-{{ ['normal', 'priority', 'urgent'][(int) $salary->pay_priority] ?? 'normal' }}"><x-pay-priority :level="$salary->pay_priority" :reason="$salary->pay_priority_reason" /></td>
                                             <td> FWSS{{ $salary->employee?->id }} </td>
                                                                                                                                         
                                                     @if($salary->payment_status == 'hold')
@@ -426,6 +429,7 @@
        
 
       new DataTable('#myTable', {
+          order: [[2, 'desc']],   // PAY column: pay first, then pay early (rows arrive name-sorted; sort is stable)
         //  dom: 'Blfrtip',
         //  stateSave: false,
         columnControl: [ ['search'] ],
@@ -464,6 +468,8 @@
             });
         });
     </script>
+
+        @include('partials.pay_priority_script', ['table' => '#myTable', 'col' => 2])
 
     @endsection
 </x-hr-dashboard>
