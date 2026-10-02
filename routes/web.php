@@ -8,6 +8,7 @@ use App\Http\Controllers\CollectionController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\EmployeeImportController;
+use App\Http\Controllers\EmployeeBulkUpdateController;
 use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\OvertimeController;
 use App\Http\Controllers\FieldController;
@@ -154,6 +155,13 @@ Route::post('employees/import/preview', [EmployeeImportController::class, 'previ
 Route::get('employees/import/{import}', [EmployeeImportController::class, 'show'])->whereNumber('import')->name('employees.import.show');
 Route::post('employees/import/{import}/confirm', [EmployeeImportController::class, 'confirm'])->whereNumber('import')->name('employees.import.confirm');
 Route::get('employees/import/{import}/errors', [EmployeeImportController::class, 'errors'])->whereNumber('import')->name('employees.import.errors');
+// Bulk employee update (must stay above Route::resource('employees')).
+Route::get('employees/bulk-update', [EmployeeBulkUpdateController::class, 'index'])->name('employees.bulk-update');
+Route::get('employees/bulk-update/template', [EmployeeBulkUpdateController::class, 'template'])->name('employees.bulk-update.template');
+Route::post('employees/bulk-update/preview', [EmployeeBulkUpdateController::class, 'preview'])->name('employees.bulk-update.preview');
+Route::get('employees/bulk-update/{import}', [EmployeeBulkUpdateController::class, 'show'])->whereNumber('import')->name('employees.bulk-update.show');
+Route::post('employees/bulk-update/{import}/confirm', [EmployeeBulkUpdateController::class, 'confirm'])->whereNumber('import')->name('employees.bulk-update.confirm');
+Route::get('employees/bulk-update/{import}/errors', [EmployeeBulkUpdateController::class, 'errors'])->whereNumber('import')->name('employees.bulk-update.errors');
 Route::resource('employees', EmployeeController::class); 
 Route::get('employee-report', [EmployeeController::class, 'report'])->name('employee.report');
 Route::get('employeesBank', [EmployeeController::class, 'employeesBank'])->name('employees.Bank');

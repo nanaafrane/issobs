@@ -1,11 +1,10 @@
 @php
-    $statusMap = [
-        'approved' => ['label' => 'PAID',     'class' => 'text-success', 'border' => '#198754'],
-        'pending'  => ['label' => 'PENDING',  'class' => 'text-warning', 'border' => '#ffab00'],
-        'hold'     => ['label' => 'ON HOLD',  'class' => 'text-warning', 'border' => '#ffab00'],
-        'rejected' => ['label' => 'REJECTED', 'class' => 'text-danger',  'border' => '#dc3545'],
-    ];
-    $status = $statusMap[$salary->payment_status] ?? ['label' => strtoupper($salary->payment_status ?? 'PENDING'), 'class' => 'text-secondary', 'border' => '#6c757d'];
+    $stamp = match ($salary->payment_status) {
+        'approved' => ['text' => 'PAID',     'color' => '#198754'],
+        'hold'     => ['text' => 'ON HOLD',  'color' => '#ffab00'],
+        'rejected' => ['text' => 'REJECTED', 'color' => '#dc3545'],
+        default    => ['text' => 'PENDING',  'color' => '#ff3e1d'],
+    };
 @endphp
 
 <!doctype html>
@@ -45,6 +44,50 @@
     <link rel="stylesheet" href="{{asset('vendor/libs/apex-charts/apex-charts.css')}}" />
 
     <!-- Page CSS -->
+    <style>
+        #printContent { position: relative; }
+
+        .status-stamp {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-30deg);
+            z-index: 0;
+            pointer-events: none;
+            text-align: center;
+            color: var(--stamp-color);
+            border: 10px double var(--stamp-color);
+            border-radius: 18px;
+            padding: 10px 60px;
+            opacity: 0.18;
+            font-weight: 900;
+            line-height: 1;
+            text-transform: uppercase;
+            white-space: nowrap;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        .status-stamp .stamp-text {
+            display: block;
+            font-size: 120px;
+            letter-spacing: 12px;
+        }
+
+        .status-stamp .stamp-date {
+            display: block;
+            font-size: 28px;
+            letter-spacing: 4px;
+            margin-top: 6px;
+        }
+
+        /* keep payslip content above the stamp */
+        .watermarked { position: relative; z-index: 1; }
+
+        @media print {
+            .status-stamp { position: fixed; opacity: 0.15; }
+        }
+    </style>
 
     <!-- Helpers -->
     <script src="{{asset('vendor/js/helpers.js')}}"></script>
@@ -65,6 +108,12 @@
                 <!-- Content wrapper -->
                 <div class="content-wrapper">
                     <div id="printContent" class="content-wrapper">
+                            <div class="status-stamp" style="--stamp-color: {{ $stamp['color'] }};">
+                                <span class="stamp-text">{{ $stamp['text'] }}</span>
+                                @if($salary->payment_status === 'approved' && $salary->approval_date)
+                                    <span class="stamp-date">{{ $salary->approval_date->format('d M Y') }}</span>
+                                @endif
+                            </div>
                     <div class="watermarked"> 
                             <div class="container-xxl flex-grow-1 container-p-y">
                                 <div class="card-header  ml-2  d-none d-lg-block">
@@ -75,19 +124,10 @@
                                     <div class="row justify-content-center">
                                         <div style="margin-top: -40px;" class="col-12 col-lg-9 col-xl-8 col-xxl-7">
                                             <div class="row gy-3 mb-3">
-<div class="col-8">
-    <h5 class="text-uppercase text-endx m-0 text-danger"><strong>FIRST WATCH SECURITY SERVICE LIMITED.</strong></h5> <br>
-    <h4><strong>PAYSLIP FOR : {{ strtoupper($salary->salary_month?->format('F, Y')) }}</strong></h4>
-
-    <span class="{{ $status['class'] }}"
-          style="display:inline-block; padding:2px 12px; border:2px solid {{ $status['border'] }}; border-radius:4px; font-weight:700; letter-spacing:.05em;">
-        PAYMENT STATUS : {{ $status['label'] }}
-    </span>
-
-    @if($salary->payment_status === 'approved' && $salary->approval_date)
-        <div><small>Approved on {{ $salary->approval_date->format('l, F d, Y') }}</small></div>
-    @endif
-</div>
+                                    <div class="col-8">
+                                        <h5 class="text-uppercase text-endx m-0 text-danger"><strong>FIRST WATCH SECURITY SERVICE LIMITED.</strong></h5> <br>
+                                        <h4><strong>PAYSLIP FOR : {{ strtoupper($salary->salary_month?->format('F, Y')) }}</strong></h4>
+                                    </div>
                                                 <div class="col-4">
                                                     <a class="d-block text-end">
                                                         <img width="100px" src="{{asset('img/icons/brands/issobs.png')}}" class="img-fluid" alt="BootstrapBrain Logo" width="135" height="44">

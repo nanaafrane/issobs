@@ -409,6 +409,26 @@ class EmployeeController extends Controller
         return $query;
     }
  
+    /**
+     * Employees in the list's scope that match the list's current filters (date range,
+     * cards, search box, column filters) - for the bulk update download.
+     */
+    public function bulkUpdateEmployeeIds(Request $request): array
+    {
+        $query = $this->employeeListBase();
+        $this->employeeListFilters($query, $request);
+
+        return $query->reorder()->orderBy('employees.name')->orderBy('employees.id')
+            ->pluck('employees.id')->map(fn ($id) => (int) $id)->unique()->values()->all();
+    }
+
+    /** Which of these employees this user may see (and therefore bulk update). */
+    public function visibleEmployeeIds(array $ids): array
+    {
+        return $this->employeeListBase()->whereIn('employees.id', $ids ?: [0])
+            ->pluck('employees.id')->map(fn ($id) => (int) $id)->unique()->values()->all();
+    }
+
     private function employeeListFilters($query, Request $request): void
     {
         $canViewSalary = $this->employeeCanViewSalary();

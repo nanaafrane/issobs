@@ -376,7 +376,14 @@
             <div class="col-12">
                 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
                     <h3 class="card-header mb-0"> <i class="icon-base bx bxs-user-account"></i> All Employees </h3>
-                    <a href="{{ route('employees.import') }}" class="btn btn-outline-primary"><i class="bx bx-upload me-1"></i> Bulk upload</a>
+                    <div class="d-flex flex-wrap gap-2">
+                        <a href="{{ route('employees.import') }}" class="btn btn-outline-primary"><i class="bx bx-upload me-1"></i> Bulk upload</a>
+                        <a href="{{ route('employees.bulk-update') }}" class="btn btn-outline-primary"><i class="bx bx-edit me-1"></i> Bulk update</a>
+                        <a href="{{ route('employees.bulk-update.template') }}" id="bulkUpdateDownload" class="btn btn-primary"
+                           title="Downloads the employees currently shown (filters, cards, search), ready to edit and upload on Bulk update">
+                            <i class="bx bx-download me-1"></i> Download for bulk update
+                        </a>
+                    </div>
                 </div>
             </div>
         </div><br>
@@ -937,6 +944,20 @@
                 if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $(this).trigger('click'); }
             });
             $('#empFilterClear').on('click', () => setFilters({ field_id: '', status: '', priority: '' }));
+
+            // 5. Bulk update download: the same employees the table shows (all current filters).
+            $('#bulkUpdateDownload').on('click', function (e) {
+                e.preventDefault();
+                const p = table.ajax.params() || {};
+                const q = new URLSearchParams();
+                ['from', 'to', 'range_by', 'field_id', 'status', 'priority'].forEach(k => { if (p[k]) q.set(k, p[k]); });
+                if (p.search && p.search.value) q.set('search[value]', p.search.value);
+                (p.columns || []).forEach(function (c, i) {
+                    const v = (c.columnControl && c.columnControl.search && c.columnControl.search.value) || (c.search && c.search.value);
+                    if (v) q.set('columns[' + i + '][search][value]', v);
+                });
+                window.location = this.href + (q.toString() ? '?' + q.toString() : '');
+            });
         });
     </script>
 

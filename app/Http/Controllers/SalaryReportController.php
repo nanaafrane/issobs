@@ -321,9 +321,9 @@ class SalaryReportController extends Controller
                 'ctc' => $ctc,
                 'invoiced' => $inv,
                 'received' => (float) ($i->received ?? 0),
-                'margin' => (float) $i->received - $ctc,
-                'margin_pct' => (float) $i->received > 0 ? ($i->received - $ctc) / (float) $i->received * 100 : null,
-                'collection_pct' => $inv > 0 ? ((float) ($i->received ?? 0)) / $inv * 100 : null,
+                'margin' => (float) $i?->received - $ctc,
+                'margin_pct' => (float) $i?->received > 0 ? ($i?->received - $ctc) / (float) $i?->received * 100 : null,
+                'collection_pct' => $inv > 0 ? ((float) ($i?->received ?? 0)) / $inv * 100 : null,
             ];
         });
     }

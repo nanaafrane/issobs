@@ -9,12 +9,9 @@ use App\Models\Role;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
-use PhpOffice\PhpSpreadsheet\Cell\DataValidation;
-use PhpOffice\PhpSpreadsheet\IOFactory;
-use PhpOffice\PhpSpreadsheet\NamedRange;
+use App\Imports\EmployeeUploadImport;
+use Maatwebsite\Excel\Imports\HeadingRowFormatter;
 use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
-use PhpOffice\PhpSpreadsheet\Spreadsheet;
-use PhpOffice\PhpSpreadsheet\Style\Fill;
 
 /**
  * Bulk employee upload: read the template, check every row, build the error report
@@ -23,7 +20,9 @@ use PhpOffice\PhpSpreadsheet\Style\Fill;
  */
 class EmployeeBulkImport
 {
-    public const MAX_ROWS = 1000;
+    public const MAX_ROWS = 1000;          // new employees per file
+    public const MAX_UPDATE_ROWS = 5000;   // employees per bulk-update file
+    public const KEY_HEADER = 'Employee ID';
 
     /** Template header (without " *") => key. Order does not matter when reading. */
     public const COLUMNS = [
@@ -45,76 +44,84 @@ class EmployeeBulkImport
     /* ================================================================ reading */
 
     /**
+     * Read an uploaded file with Laravel Excel (App\Imports\EmployeeUploadImport).
+     *
+     * @param string      $path  a path on $disk (or an absolute path when $disk is null)
      * @return array{rows: array<int, array<string, string|null>>, error: ?string, headers: array<int, string>}
-     *   rows keyed by spreadsheet row number
+     *   rows keyed by spreadsheet row number, values keyed by COLUMNS keys
      */
-    public static function read(string $path): array
+    public static function read(string $path, ?string $disk = null, string $mode = 'create'): array
     {
+        // Laravel Excel turns headers into slugs; map those slugs back to our keys.
+        $slugToKey = array_combine(HeadingRowFormatter::format(array_keys(self::COLUMNS)), array_values(self::COLUMNS));
+        $slugToKey[HeadingRowFormatter::format([self::KEY_HEADER])[0]] = 'employee_id';
+        $required = $mode === 'update' ? ['employee_id'] : self::REQUIRED;
+        $maxRows = $mode === 'update' ? self::MAX_UPDATE_ROWS : self::MAX_ROWS;
+
+        $best = null;
         try {
-            $book = IOFactory::load($path);
+            foreach ([2, 1, 3] as $headingRow) {       // 2 = the template; 1/3 = hand-made files
+                $sheets = (new EmployeeUploadImport($headingRow))->toCollection($path, $disk);
+                foreach ($sheets as $sheet) {
+                    $first = $sheet->first();
+                    if (! $first) {
+                        continue;
+                    }
+                    $matched = array_intersect_key($slugToKey, $first->toArray());
+                    if (count($matched) >= 5 && (! $best || count($matched) > count($best['map']))) {
+                        $best = ['map' => $matched, 'rows' => $sheet, 'heading' => $headingRow];
+                    }
+                }
+                if ($best) {
+                    break;
+                }
+            }
         } catch (\Throwable $e) {
             return ['rows' => [], 'headers' => [], 'error' => 'The file could not be read. Upload the .xlsx template.'];
         }
-        $sheet = $book->getSheetByName('Employees') ?? $book->getActiveSheet();
 
-        // Find the header row (row 2 in the template; also accept row 1).
-        $headerRow = null;
-        $map = [];
-        foreach ([2, 1, 3] as $r) {
-            if ($r > $sheet->getHighestRow()) {
-                continue;
-            }
-            $found = [];
-            foreach ($sheet->getRowIterator($r, $r)->current()->getCellIterator() as $cell) {
-                $label = trim(preg_replace('/\s*\*\s*$/', '', (string) $cell->getValue()));
-                if (isset(self::COLUMNS[$label])) {
-                    $found[$cell->getColumn()] = self::COLUMNS[$label];
-                }
-            }
-            if (count($found) >= 5) {
-                $headerRow = $r;
-                $map = $found;
-                break;
-            }
-        }
-        if (! $headerRow) {
+        if (! $best) {
             return ['rows' => [], 'headers' => [], 'error' => 'This is not the employee template: its column headers were not found.'];
         }
-        $missing = array_diff(self::REQUIRED, $map);
+        $missing = array_diff($required, $best['map']);
         if ($missing) {
+            if ($mode === 'update') {
+                return ['rows' => [], 'headers' => [], 'error' => 'This file has no "Employee ID" column. Download the bulk update file from the employee list - it identifies each employee.'];
+            }
             return ['rows' => [], 'headers' => [], 'error' => 'Required columns are missing: ' . implode(', ', array_map(fn ($k) => array_search($k, self::COLUMNS), $missing)) . '.'];
         }
 
         $rows = [];
-        $last = $sheet->getHighestDataRow();
-        for ($r = $headerRow + 1; $r <= $last; $r++) {
+        foreach ($best['rows'] as $index => $row) {
             $values = [];
             $any = false;
-            foreach ($map as $col => $key) {
-                $cell = $sheet->getCell($col . $r);
-                $v = $cell->getValue();
-                if (is_string($v) && str_starts_with($v, '=')) {
-                    $v = $cell->getCalculatedValue();
-                }
+            foreach ($best['map'] as $slug => $key) {
+                $v = $row[$slug] ?? null;
                 if (in_array($key, ['date_of_birth', 'date_of_joining'], true) && is_numeric($v)) {
-                    $v = ExcelDate::excelToDateTimeObject((float) $v)->format('Y-m-d');
-                } elseif (is_float($v) && floor($v) == $v && ! in_array($key, ['basic_salary', 'allowances'], true)) {
+                    $v = ExcelDate::excelToDateTimeObject((float) $v)->format('Y-m-d');   // Excel date serial
+                } elseif ((is_int($v) || (is_float($v) && floor($v) == $v)) && ! in_array($key, ['basic_salary', 'allowances'], true)) {
                     $v = sprintf('%.0f', $v); // numbers typed into text columns (phone, account...)
                 }
                 $v = $v === null ? null : trim((string) $v);
                 $values[$key] = $v === '' ? null : $v;
                 $any = $any || $values[$key] !== null;
             }
+            foreach (array_merge(self::COLUMNS, ['employee_id']) as $key) {
+                $values[$key] ??= null; // optional columns missing from a hand-made file
+            }
             if ($any) {
-                $rows[$r] = $values;
+                $rows[$best['heading'] + 1 + $index] = $values;   // spreadsheet row number
             }
         }
 
-        if (count($rows) > self::MAX_ROWS) {
-            return ['rows' => [], 'headers' => [], 'error' => 'The file has ' . count($rows) . ' employees. The limit is ' . self::MAX_ROWS . ' per upload.'];
+        if (count($rows) > $maxRows) {
+            return ['rows' => [], 'headers' => [], 'error' => 'The file has ' . count($rows) . ' employees. The limit is ' . $maxRows . ' per upload.'];
+        }
+        if ($mode === 'create' && array_filter(array_column($rows, 'employee_id'))) {
+            return ['rows' => [], 'headers' => [], 'error' => 'This is a bulk UPDATE file (it has Employee IDs). Upload it on Employees > Bulk update, or remove the Employee ID column to add new employees.'];
         }
 
-        return ['rows' => $rows, 'headers' => $map, 'error' => null];
+        return ['rows' => $rows, 'headers' => $best['map'], 'error' => null];
     }
 
     /* ============================================================= validation */
@@ -135,16 +142,132 @@ class EmployeeBulkImport
         return $d;
     }
 
+    /** DB attribute => label, for change lists. Employee attributes first, then payment details (pay.*). */
+    public const FIELD_LABELS = [
+        'name' => 'Full Name', 'gender' => 'Gender', 'phone_number' => 'Phone Number', 'channel' => 'MoMo Network',
+        'date_of_birth' => 'Date of Birth', 'nia_number' => 'Ghana Card (NIA) No.', 'address' => 'Address',
+        'marital_status' => 'Marital Status', 'worker_type' => 'Worker Type', 'date_of_joining' => 'Date of Joining',
+        'department_id' => 'Department', 'role_id' => 'Role', 'field_id' => 'Field Office', 'client_id' => 'Client',
+        'location' => 'Location', 'basic_salary' => 'Basic Salary', 'allowances' => 'Allowances',
+        'tax_button' => 'Deduct Tax', 'tin_number' => 'TIN Number', 'ssnit_button' => 'Deduct SSNIT', 'ssnit_number' => 'SSNIT Number',
+        'payment_type' => 'Payment Type', 'gurantor_name' => 'Guarantor Name', 'gurantor_number' => 'Guarantor Phone',
+        'gurantor_address' => 'Guarantor Address', 'gurantor_nia_number' => 'Guarantor NIA No.', 'relationship' => 'Relationship',
+        'pay.bank_id' => 'Bank', 'pay.acc_number' => 'Account Number', 'pay.branch' => 'Branch', 'pay.branch_code' => 'Branch Code',
+    ];
+
+    /** Changing any of these is a payment-detail change (extra confirmation; no re-approval, as on the payment info screen). */
+    public const PAYMENT_FIELDS = ['payment_type', 'pay.bank_id', 'pay.acc_number', 'pay.branch', 'pay.branch_code'];
+
     /**
-     * Check every row. Nothing is saved.
+     * Turn the PROVIDED cells of one row into database values and check their format.
+     * Blank cells are not returned. This is the only place field rules live: create and
+     * update both use it.
      *
-     * @return array{results: array<int, array>, summary: array}
-     *   result: row, name, field, client, priority, errors[], warnings[], employee[], pay[]
+     * @return array<string, mixed> attribute => value ("pay.*" keys are payment details)
      */
-    public static function validate(array $rows, User $user): array
+    private static function convert(array $v, array $lookups, array &$e, array &$w): array
     {
-        $lookups = self::lookups($user);
-        $existing = self::existingValues($rows);
+        $out = [];
+        $text = function (string $key, string $attr, int $max) use ($v, &$out, &$e) {
+            if ($v[$key] !== null) {
+                if (mb_strlen($v[$key]) > $max) $e[] = array_search($key, self::COLUMNS) . " is too long (max $max).";
+                $out[$attr] = $v[$key];
+            }
+        };
+        $choice = function (string $key, string $attr, array $allowed, string $message) use ($v, &$out, &$e) {
+            if ($v[$key] !== null) {
+                $x = strtolower($v[$key]);
+                if (! in_array($x, $allowed, true)) $e[] = $message;
+                $out[$attr] = $x;
+            }
+        };
+
+        $text('full_name', 'name', 255);
+        $choice('gender', 'gender', ['male', 'female'], 'Gender must be Male or Female.');
+
+        if ($v['phone_number'] !== null) {
+            $phone = self::normalisePhone($v['phone_number']);
+            if (! preg_match('/^233\d{9}$/', $phone)) $e[] = 'Phone Number must be a Ghana number, e.g. 233241234567.';
+            $out['phone_number'] = $phone;
+        }
+        if ($v['momo_network'] !== null) {
+            $n = strtoupper($v['momo_network']);
+            if (! isset(self::NETWORKS[$n])) $e[] = 'MoMo Network must be MTN, TELECEL or AIRTELTIGO.';
+            $out['channel'] = self::NETWORKS[$n] ?? null;
+        }
+        foreach (['date_of_birth' => 'Date of Birth', 'date_of_joining' => 'Date of Joining'] as $key => $label) {
+            if ($v[$key] !== null) {
+                $d = self::parseDate($v[$key]);
+                if (! $d) $e[] = "$label is not a valid date.";
+                $out[$key] = $d;
+            }
+        }
+        if (! empty($out['date_of_birth']) && Carbon::parse($out['date_of_birth'])->gt(now()->subYears(16))) {
+            $w[] = 'Date of Birth makes this person younger than 16.';
+        }
+        $text('nia_number', 'nia_number', 50);
+        $text('address', 'address', 500);
+        $choice('marital_status', 'marital_status', ['single', 'married', 'divorced', 'widowed'], 'Marital Status must be Single, Married, Divorced or Widowed.');
+        $choice('worker_type', 'worker_type', ['employee', 'contractor'], 'Worker Type must be Employee or Contractor.');
+
+        if ($v['department'] !== null) $out['department_id'] = self::resolve($v['department'], $lookups['departments'], 'Department', $e);
+        if ($v['role'] !== null) $out['role_id'] = self::resolve($v['role'], $lookups['roles'], 'Role', $e);
+
+        // Field office + client must be within what this user may assign.
+        if ($v['field_office'] !== null) {
+            $fieldId = self::resolve($v['field_office'], $lookups['fields'], 'Field Office', $e);
+            if ($fieldId && ! in_array($fieldId, $lookups['allowed_fields'], true)) {
+                $e[] = 'Field Office "' . $lookups['fields'][$fieldId] . '" is not one you can assign.';
+                $fieldId = null;
+            }
+            $out['field_id'] = $fieldId;
+        }
+        if ($v['client'] !== null) {
+            $out['client_id'] = self::resolve($v['client'], $lookups['clients'], 'Client', $e, 'is not an active, approved client you can assign');
+        }
+        $text('location', 'location', 255);
+
+        foreach (['basic_salary' => 'Basic Salary', 'allowances' => 'Allowances'] as $key => $label) {
+            if ($v[$key] !== null) {
+                $num = str_replace([',', 'GH₵', 'GHS', ' '], '', $v[$key]);
+                if (! is_numeric($num) || (float) $num < 0) $e[] = "$label must be a number of 0 or more.";
+                else $out[$key] = round((float) $num, 2);
+            }
+        }
+
+        // Tax / SSNIT: "Yes" = the form's ticked checkbox ("on").
+        foreach ([['deduct_tax', 'tax_button', 'Deduct Tax'], ['deduct_ssnit', 'ssnit_button', 'Deduct SSNIT']] as [$flag, $button, $label]) {
+            if ($v[$flag] !== null) {
+                $f = strtolower($v[$flag]);
+                if (! in_array($f, ['yes', 'no', 'y', 'n'], true)) $e[] = "$label must be Yes or No.";
+                $out[$button] = in_array($f, ['yes', 'y'], true) ? 'on' : null;
+            }
+        }
+        $text('tin_number', 'tin_number', 50);
+        $text('ssnit_number', 'ssnit_number', 50);
+
+        if ($v['payment_type'] !== null) {
+            $type = ucfirst(strtolower($v['payment_type']));
+            if (! in_array($type, ['Cash', 'Bank'], true)) $e[] = 'Payment Type must be Cash or Bank.';
+            $out['payment_type'] = $type;
+        }
+        if ($v['bank'] !== null) $out['pay.bank_id'] = self::resolve($v['bank'], $lookups['banks'], 'Bank', $e);
+        $text('account_number', 'pay.acc_number', 50);
+        $text('branch', 'pay.branch', 255);
+        $text('branch_code', 'pay.branch_code', 50);
+
+        $text('guarantor_name', 'gurantor_name', 255);
+        $text('guarantor_phone', 'gurantor_number', 20);
+        $text('guarantor_address', 'gurantor_address', 500);
+        $text('guarantor_nia', 'gurantor_nia_number', 50);
+        $text('relationship', 'relationship', 100);
+
+        return $out;
+    }
+
+    /** Values that must be unique, collected per row (only cells that are filled in). */
+    private static function inFileValues(array $rows): array
+    {
         $inFile = [];
         foreach ($rows as $r => $v) {
             foreach (['phone' => self::normalisePhone($v['phone_number']), 'nia' => $v['nia_number'], 'acc' => $v['account_number'],
@@ -154,150 +277,85 @@ class EmployeeBulkImport
                 }
             }
         }
+
+        return $inFile;
+    }
+
+    /** Uniqueness of every value in the row; $self = the employee being updated (its own values are fine). */
+    private static function uniqueChecks(array $v, array $existing, array $inFile, array &$e, ?int $self = null): void
+    {
+        $phone = self::normalisePhone($v['phone_number']);
+        if ($phone !== null && preg_match('/^233\d{9}$/', $phone)) {
+            $owner = $existing['phone'][$phone] ?? null;
+            if ($owner !== null && (int) $owner !== $self) {
+                $e[] = 'Phone Number already belongs to FWSS ' . $owner . '.';
+            } elseif (count($inFile['phone'][mb_strtolower($phone)] ?? []) > 1) {
+                $e[] = 'Phone Number is repeated in this file (rows ' . implode(', ', $inFile['phone'][mb_strtolower($phone)]) . ').';
+            }
+        }
+        foreach ([['nia_number', 'nia', 'Ghana Card (NIA) No.'], ['account_number', 'acc', 'Account Number'], ['tin_number', 'tin', 'TIN Number'],
+                  ['ssnit_number', 'ssnit', 'SSNIT Number'], ['guarantor_nia', 'gnia', 'Guarantor NIA No.']] as [$key, $k, $label]) {
+            self::uniqueCheck($v[$key], $k, $label, $existing, $inFile, $e, $self);
+        }
+    }
+
+    /**
+     * NEW employees: check every row. Nothing is saved.
+     *
+     * @return array{results: array<int, array>, summary: array}
+     *   result: row, name, field, client, priority, errors[], warnings[], employee[], pay[]
+     */
+    public static function validate(array $rows, User $user): array
+    {
+        $lookups = self::lookups($user);
+        $existing = self::existingValues($rows);
+        $inFile = self::inFileValues($rows);
         $workflow = EmployeeCreator::workflowFor($user);
 
         $results = [];
         foreach ($rows as $r => $v) {
             $e = [];
             $w = [];
-            $emp = [];
-            $pay = [];
-
             foreach (self::REQUIRED as $key) {
                 if ($v[$key] === null) {
                     $e[] = array_search($key, self::COLUMNS) . ' is required.';
                 }
             }
+            $c = self::convert($v, $lookups, $e, $w);
+            self::uniqueChecks($v, $existing, $inFile, $e);
 
-            $emp['name'] = $v['full_name'];
-            if ($v['full_name'] !== null && mb_strlen($v['full_name']) > 255) $e[] = 'Full Name is too long (max 255).';
-
-            $g = strtolower((string) $v['gender']);
-            if ($v['gender'] !== null && ! in_array($g, ['male', 'female'], true)) $e[] = 'Gender must be Male or Female.';
-            $emp['gender'] = $g ?: null;
-
-            // Phone: normalised to 233XXXXXXXXX, unique in ISSOBS and in this file.
-            $phone = self::normalisePhone($v['phone_number']);
-            if ($v['phone_number'] !== null) {
-                if (! preg_match('/^233\d{9}$/', $phone)) {
-                    $e[] = 'Phone Number must be a Ghana number, e.g. 233241234567.';
-                } elseif (isset($existing['phone'][$phone])) {
-                    $e[] = 'Phone Number already belongs to FWSS ' . $existing['phone'][$phone] . '.';
-                } elseif (count($inFile['phone'][mb_strtolower($phone)] ?? []) > 1) {
-                    $e[] = 'Phone Number is repeated in this file (rows ' . implode(', ', $inFile['phone'][mb_strtolower($phone)]) . ').';
-                }
-            }
-            $emp['phone_number'] = $phone;
-
-            if ($v['momo_network'] !== null) {
-                $n = strtoupper($v['momo_network']);
-                if (! isset(self::NETWORKS[$n])) $e[] = 'MoMo Network must be MTN, TELECEL or AIRTELTIGO.';
-                $emp['channel'] = self::NETWORKS[$n] ?? null;
-            }
-
-            foreach (['date_of_birth' => 'Date of Birth', 'date_of_joining' => 'Date of Joining'] as $key => $label) {
-                $emp[$key] = null;
-                if ($v[$key] !== null) {
-                    $d = self::parseDate($v[$key]);
-                    if (! $d) $e[] = "$label is not a valid date.";
-                    $emp[$key] = $d;
-                }
-            }
-            if ($emp['date_of_birth'] && Carbon::parse($emp['date_of_birth'])->gt(now()->subYears(16))) {
-                $w[] = 'Date of Birth makes this person younger than 16.';
-            }
-
-            self::uniqueCheck($v['nia_number'], 'nia', 'Ghana Card (NIA) No.', $existing, $inFile, $e);
-            $emp['nia_number'] = $v['nia_number'];
-            if ($v['nia_number'] !== null && mb_strlen($v['nia_number']) > 50) $e[] = 'Ghana Card (NIA) No. is too long (max 50).';
-
-            $emp['address'] = $v['address'];
-            if ($v['address'] !== null && mb_strlen($v['address']) > 500) $e[] = 'Address is too long (max 500).';
-
-            if ($v['marital_status'] !== null) {
-                $m = strtolower($v['marital_status']);
-                if (! in_array($m, ['single', 'married', 'divorced', 'widowed'], true)) $e[] = 'Marital Status must be Single, Married, Divorced or Widowed.';
-                $emp['marital_status'] = $m;
-            }
-            if ($v['worker_type'] !== null) {
-                $t = strtolower($v['worker_type']);
-                if (! in_array($t, ['employee', 'contractor'], true)) $e[] = 'Worker Type must be Employee or Contractor.';
-                $emp['worker_type'] = $t;
-            }
-
-            $emp['department_id'] = self::resolve($v['department'], $lookups['departments'], 'Department', $e);
-            $emp['role_id'] = self::resolve($v['role'], $lookups['roles'], 'Role', $e);
             if ($v['department'] === null) $w[] = 'No Department given.';
             if ($v['role'] === null) $w[] = 'No Role given.';
-
-            // Field office + client must be within what this user may assign.
-            $fieldId = self::resolve($v['field_office'], $lookups['fields'], 'Field Office', $e);
-            if ($fieldId && ! in_array($fieldId, $lookups['allowed_fields'], true)) {
-                $e[] = 'Field Office "' . $lookups['fields'][$fieldId] . '" is not one you can assign.';
-                $fieldId = null;
-            }
-            $emp['field_id'] = $fieldId;
-
-            $clientId = null;
-            if ($v['client'] !== null) {
-                $clientId = self::resolve($v['client'], $lookups['clients'], 'Client', $e, 'is not an active, approved client you can assign');
-                if ($clientId && $fieldId && (int) $lookups['client_field'][$clientId] !== $fieldId) {
-                    $w[] = 'Client belongs to another field office (' . ($lookups['fields'][$lookups['client_field'][$clientId]] ?? '?') . ').';
-                }
-            } else {
-                $w[] = 'No Client given.';
-            }
-            $emp['client_id'] = $clientId;
-
-            $emp['location'] = $v['location'];
-            if ($v['location'] !== null && mb_strlen($v['location']) > 255) $e[] = 'Location is too long (max 255).';
-
-            foreach (['basic_salary' => 'Basic Salary', 'allowances' => 'Allowances'] as $key => $label) {
-                $emp[$key] = null;
-                if ($v[$key] !== null) {
-                    $num = str_replace([',', 'GH₵', 'GHS', ' '], '', $v[$key]);
-                    if (! is_numeric($num) || (float) $num < 0) $e[] = "$label must be a number of 0 or more.";
-                    else $emp[$key] = round((float) $num, 2);
-                }
-            }
+            if ($v['client'] === null) $w[] = 'No Client given.';
             if ($v['basic_salary'] === null) $w[] = 'No Basic Salary given.';
-
-            // Tax / SSNIT: "Yes" = the form's ticked checkbox ("on").
-            foreach ([['deduct_tax', 'tin_number', 'tax_button', 'tin', 'Deduct Tax', 'TIN Number'],
-                      ['deduct_ssnit', 'ssnit_number', 'ssnit_button', 'ssnit', 'Deduct SSNIT', 'SSNIT Number']] as [$flag, $num, $button, $k, $flagLabel, $numLabel]) {
-                $yes = null;
-                if ($v[$flag] !== null) {
-                    $f = strtolower($v[$flag]);
-                    if (! in_array($f, ['yes', 'no', 'y', 'n'], true)) $e[] = "$flagLabel must be Yes or No.";
-                    $yes = in_array($f, ['yes', 'y'], true);
-                }
-                $emp[$button] = $yes ? 'on' : null;
-                if ($yes && $v[$num] === null) $e[] = "$numLabel is required when $flagLabel is Yes.";
-                self::uniqueCheck($v[$num], $k, $numLabel, $existing, $inFile, $e);
-                // As on the form: the number is only kept when the deduction is switched on.
-                $emp[$num] = $yes ? $v[$num] : null;
-                if (! $yes && $v[$num] !== null) $w[] = "$numLabel is ignored because $flagLabel is not Yes.";
+            $fieldId = $c['field_id'] ?? null;
+            $clientId = $c['client_id'] ?? null;
+            if ($clientId && $fieldId && (int) $lookups['client_field'][$clientId] !== $fieldId) {
+                $w[] = 'Client belongs to another field office (' . ($lookups['fields'][$lookups['client_field'][$clientId]] ?? '?') . ').';
             }
 
-            $type = ucfirst(strtolower((string) $v['payment_type']));
-            if ($v['payment_type'] !== null && ! in_array($type, ['Cash', 'Bank'], true)) $e[] = 'Payment Type must be Cash or Bank.';
-            $emp['payment_type'] = $type ?: null;
+            // Cross-field rules (same as the form).
+            if (($c['payment_type'] ?? null) === 'Bank') {
+                if ($v['bank'] === null) $e[] = 'Bank is required when Payment Type is Bank.';
+                if ($v['account_number'] === null) $e[] = 'Account Number is required when Payment Type is Bank.';
+            }
+            foreach ([['tax_button', 'tin_number', 'Deduct Tax', 'TIN Number'], ['ssnit_button', 'ssnit_number', 'Deduct SSNIT', 'SSNIT Number']] as [$button, $num, $flagLabel, $numLabel]) {
+                $yes = ($c[$button] ?? null) === 'on';
+                if ($yes && empty($c[$num])) $e[] = "$numLabel is required when $flagLabel is Yes.";
+                // As on the form: the number is only kept when the deduction is switched on.
+                if (! $yes && ! empty($c[$num])) $w[] = "$numLabel is ignored because $flagLabel is not Yes.";
+                if (! $yes) $c[$num] = null;
+            }
 
-            $pay['bank_id'] = $v['bank'] !== null ? self::resolve($v['bank'], $lookups['banks'], 'Bank', $e) : null;
-            if ($type === 'Bank' && $v['bank'] === null) $e[] = 'Bank is required when Payment Type is Bank.';
-            if ($type === 'Bank' && $v['account_number'] === null) $e[] = 'Account Number is required when Payment Type is Bank.';
-            self::uniqueCheck($v['account_number'], 'acc', 'Account Number', $existing, $inFile, $e);
-            $pay['acc_number'] = $v['account_number'];
-            $pay['branch'] = $v['branch'];
-            $pay['branch_code'] = $v['branch_code'];
-
-            $emp['gurantor_name'] = $v['guarantor_name'];
-            $emp['gurantor_number'] = $v['guarantor_phone'];
-            if ($v['guarantor_phone'] !== null && mb_strlen($v['guarantor_phone']) > 20) $e[] = 'Guarantor Phone is too long (max 20).';
-            $emp['gurantor_address'] = $v['guarantor_address'];
-            self::uniqueCheck($v['guarantor_nia'], 'gnia', 'Guarantor NIA No.', $existing, $inFile, $e);
-            $emp['gurantor_nia_number'] = $v['guarantor_nia'];
-            $emp['relationship'] = $v['relationship'];
+            $emp = [];
+            $pay = [];
+            foreach (array_keys(self::FIELD_LABELS) as $attr) {
+                if (str_starts_with($attr, 'pay.')) {
+                    $pay[substr($attr, 4)] = $c[$attr] ?? null;
+                } else {
+                    $emp[$attr] = $c[$attr] ?? null;
+                }
+            }
 
             [$priority] = PayPriority::evaluate($clientId, $fieldId, $emp['location'], $emp['gender']);
 
@@ -328,6 +386,217 @@ class EmployeeBulkImport
         ];
     }
 
+    /** "FWSS 45", "fwss45", "45" -> 45 */
+    public static function parseEmployeeId(?string $value): ?int
+    {
+        if ($value === null || ! preg_match('/^\s*(?:FWSS\s*)?(\d+)\s*$/i', $value, $m)) {
+            return null;
+        }
+
+        return (int) $m[1];
+    }
+
+    /**
+     * EXISTING employees: compare each row with the employee's current details. Nothing is saved.
+     * Blank cells mean "leave unchanged".
+     *
+     * @param int[] $allowedIds  employees this user may update (the employee list's scope)
+     * @return array{results: array<int, array>, summary: array}
+     *   result: row, employee_id, name, errors[], warnings[], changes[label => [old, new]],
+     *           employee[attr => new], pay[attr => new], payment_change, priority_before, priority_after
+     */
+    public static function validateUpdate(array $rows, User $user, array $allowedIds, bool $canViewSalary): array
+    {
+        $lookups = self::lookups($user);
+        $existing = self::existingValues($rows);
+        $inFile = self::inFileValues($rows);
+        $allowed = array_flip(array_map('intval', $allowedIds));
+
+        $ids = array_values(array_unique(array_filter(array_map(fn ($v) => self::parseEmployeeId($v['employee_id'] ?? null), $rows))));
+        $current = self::currentDetails($ids);
+        $idRows = [];
+        foreach ($rows as $r => $v) {
+            if ($id = self::parseEmployeeId($v['employee_id'] ?? null)) {
+                $idRows[$id][] = $r;
+            }
+        }
+
+        $results = [];
+        foreach ($rows as $r => $v) {
+            $e = [];
+            $w = [];
+            $id = self::parseEmployeeId($v['employee_id'] ?? null);
+            $now = $id ? ($current[$id] ?? null) : null;
+
+            if (($v['employee_id'] ?? null) === null) {
+                $e[] = 'Employee ID is required (it identifies who to update).';
+            } elseif (! $id) {
+                $e[] = 'Employee ID "' . $v['employee_id'] . '" is not valid (use e.g. FWSS 45).';
+            } elseif (! $now || ! isset($allowed[$id])) {
+                $e[] = 'FWSS ' . $id . ' was not found among the employees you can update.';
+            } elseif (count($idRows[$id]) > 1) {
+                $e[] = 'FWSS ' . $id . ' appears more than once in this file (rows ' . implode(', ', $idRows[$id]) . ').';
+            }
+
+            if (! $canViewSalary && ($v['basic_salary'] !== null || $v['allowances'] !== null)) {
+                $w[] = 'Basic Salary and Allowances are ignored: you cannot change salaries.';
+                $v['basic_salary'] = $v['allowances'] = null;
+            }
+
+            $provided = self::convert($v, $lookups, $e, $w);
+            self::uniqueChecks($v, $existing, $inFile, $e, $id);
+
+            $changes = [];
+            $emp = [];
+            $pay = [];
+            $before = $after = 0;
+            if ($now && ! $e) {
+                // The employee as it would be after this row.
+                $merged = array_merge($now, $provided);
+
+                if (($merged['payment_type'] ?? null) === 'Bank') {
+                    if (empty($merged['pay.bank_id'])) $e[] = 'Bank is required when Payment Type is Bank.';
+                    if (empty($merged['pay.acc_number'])) $e[] = 'Account Number is required when Payment Type is Bank.';
+                }
+                foreach ([['tax_button', 'tin_number', 'Deduct Tax', 'TIN Number'], ['ssnit_button', 'ssnit_number', 'Deduct SSNIT', 'SSNIT Number']] as [$button, $num, $flagLabel, $numLabel]) {
+                    if (($merged[$button] ?? null) === 'on' && empty($merged[$num])) $e[] = "$numLabel is required when $flagLabel is Yes.";
+                    // As on the edit form: switching the deduction off clears the number.
+                    if (($merged[$button] ?? null) !== 'on' && ! empty($merged[$num])) {
+                        if (array_key_exists($button, $provided)) {
+                            $merged[$num] = null;
+                        } elseif (array_key_exists($num, $provided)) {
+                            $w[] = "$numLabel is ignored because $flagLabel is not Yes.";
+                            $merged[$num] = $now[$num];
+                        }
+                    }
+                }
+                if (isset($provided['field_id']) || isset($provided['client_id'])) {
+                    $f = $merged['field_id'] ?? null;
+                    $cl = $merged['client_id'] ?? null;
+                    if ($cl && $f && isset($lookups['client_field'][$cl]) && (int) $lookups['client_field'][$cl] !== (int) $f) {
+                        $w[] = 'Client belongs to another field office (' . ($lookups['fields'][$lookups['client_field'][$cl]] ?? '?') . ').';
+                    }
+                }
+
+                foreach (self::FIELD_LABELS as $attr => $label) {
+                    if (! array_key_exists($attr, $merged) || self::same($attr, $now[$attr] ?? null, $merged[$attr])) {
+                        continue;
+                    }
+                    $changes[$attr] = [$label, self::display($attr, $now[$attr] ?? null, $lookups), self::display($attr, $merged[$attr], $lookups)];
+                    if (str_starts_with($attr, 'pay.')) {
+                        $pay[substr($attr, 4)] = $merged[$attr];
+                    } else {
+                        $emp[$attr] = $merged[$attr];
+                    }
+                }
+
+                [$before] = PayPriority::evaluate($now['client_id'] ?? null, $now['field_id'] ?? null, $now['location'] ?? null, $now['gender'] ?? null);
+                [$after] = PayPriority::evaluate($merged['client_id'] ?? null, $merged['field_id'] ?? null, $merged['location'] ?? null, $merged['gender'] ?? null);
+            }
+
+            $results[$r] = [
+                'row' => $r,
+                'employee_id' => $id,
+                'name' => $now['name'] ?? ($v['full_name'] ?? ''),
+                'errors' => $e,
+                'warnings' => $w,
+                'changes' => $e ? [] : $changes,
+                'employee' => $e ? [] : $emp,
+                'pay' => $e ? [] : $pay,
+                'payment_change' => ! $e && (bool) array_intersect(array_keys($changes), self::PAYMENT_FIELDS),
+                'profile_change' => ! $e && (bool) array_diff(array_keys($changes), self::PAYMENT_FIELDS),
+                'priority_before' => $before,
+                'priority_after' => $after,
+            ];
+        }
+
+        $ok = array_filter($results, fn ($x) => ! $x['errors']);
+
+        return [
+            'results' => $results,
+            'summary' => [
+                'total' => count($results),
+                'changed' => count(array_filter($ok, fn ($x) => $x['changes'])),
+                'unchanged' => count(array_filter($ok, fn ($x) => ! $x['changes'])),
+                'errors' => count($results) - count($ok),
+                'payment_changes' => count(array_filter($ok, fn ($x) => $x['payment_change'])),
+                'profile_changes' => count(array_filter($ok, fn ($x) => $x['profile_change'])),
+                'status' => EmployeeCreator::workflowFor($user, true)['status'] ?? null,
+            ],
+        ];
+    }
+
+    /** Current details of employees, in the same attribute names convert() produces. */
+    public static function currentDetails(array $ids): array
+    {
+        if (! $ids) {
+            return [];
+        }
+        $out = [];
+        $cols = ['id', 'name', 'gender', 'phone_number', 'channel', 'date_of_birth', 'nia_number', 'address', 'marital_status',
+            'worker_type', 'date_of_joining', 'department_id', 'role_id', 'field_id', 'client_id', 'location', 'basic_salary',
+            'allowances', 'tax_button', 'ssnit_button', 'payment_type', 'gurantor_name', 'gurantor_number', 'gurantor_address',
+            'gurantor_nia_number', 'relationship'];
+        foreach (['tin_number', 'ssnit_number'] as $c) {
+            if (EmployeeCreator::hasColumn('employees', $c)) $cols[] = $c;
+        }
+        foreach (array_chunk($ids, 500) as $chunk) {
+            $pays = DB::table('payment_infos')->whereIn('employee_id', $chunk)->orderBy('id')->get()->groupBy('employee_id');
+            foreach (DB::table('employees')->whereIn('id', $chunk)->get($cols) as $row) {
+                $d = (array) $row;
+                $p = $pays[$row->id][0] ?? null; // first record = what the app shows
+                foreach (['bank_id', 'acc_number', 'branch', 'branch_code'] as $c) {
+                    $d['pay.' . $c] = $p->$c ?? null;
+                }
+                foreach (['tin_number', 'ssnit_number'] as $c) {
+                    $d[$c] = ($d[$c] ?? null) ?: ($p->$c ?? null); // either place
+                }
+                $out[(int) $row->id] = $d;
+            }
+        }
+
+        return $out;
+    }
+
+    private static function same(string $attr, $old, $new): bool
+    {
+        if (in_array($attr, ['basic_salary', 'allowances'], true)) {
+            return round((float) $old, 2) === round((float) $new, 2) && ($old === null) === ($new === null);
+        }
+        if (in_array($attr, ['date_of_birth', 'date_of_joining'], true)) {
+            return ($old ? substr((string) $old, 0, 10) : null) === ($new ? substr((string) $new, 0, 10) : null);
+        }
+        if (in_array($attr, ['department_id', 'role_id', 'field_id', 'client_id', 'pay.bank_id'], true)) {
+            return (int) $old === (int) $new;
+        }
+        $o = $old === null ? '' : trim((string) $old);
+        $n = $new === null ? '' : trim((string) $new);
+
+        return in_array($attr, ['gender', 'marital_status', 'worker_type'], true) ? strcasecmp($o, $n) === 0 : $o === $n;
+    }
+
+    private static function display(string $attr, $value, array $lookups): string
+    {
+        if (in_array($attr, ['tax_button', 'ssnit_button'], true)) {
+            return $value === 'on' ? 'Yes' : 'No';
+        }
+        if ($value === null || $value === '') {
+            return '(blank)';
+        }
+
+        return match ($attr) {
+            'department_id' => $lookups['departments'][(int) $value] ?? (string) $value,
+            'role_id' => $lookups['roles'][(int) $value] ?? (string) $value,
+            'field_id' => $lookups['fields'][(int) $value] ?? (string) $value,
+            'client_id' => isset($lookups['clients'][(int) $value]) ? ((array) $lookups['clients'][(int) $value])[0] : 'Client ' . $value,
+            'pay.bank_id' => $lookups['banks'][(int) $value] ?? (string) $value,
+            'channel' => array_search($value, ['MTN' => 'mtn-gh', 'TELECEL' => 'vodafone-gh', 'AIRTELTIGO' => 'tigo-gh'], true) ?: (string) $value,
+            'basic_salary', 'allowances' => number_format((float) $value, 2),
+            'date_of_birth', 'date_of_joining' => Carbon::parse($value)->format('d/m/Y'),
+            default => ucfirst((string) $value),
+        };
+    }
+
     /** Accepts 2026-10-01, 01/10/2026, 1/10/2026, 01-10-2026, 01.10.2026. Rejects impossible dates (31/02/2026). */
     private static function parseDate(string $value): ?string
     {
@@ -343,14 +612,15 @@ class EmployeeBulkImport
         return null;
     }
 
-    private static function uniqueCheck(?string $value, string $key, string $label, array $existing, array $inFile, array &$e): void
+    private static function uniqueCheck(?string $value, string $key, string $label, array $existing, array $inFile, array &$e, ?int $self = null): void
     {
         if ($value === null) {
             return;
         }
         $lc = mb_strtolower($value);
-        if (isset($existing[$key][$lc])) {
-            $e[] = "$label already exists in ISSOBS (FWSS " . $existing[$key][$lc] . ').';
+        $owner = $existing[$key][$lc] ?? null;
+        if ($owner !== null && (int) $owner !== $self) {
+            $e[] = "$label already exists in ISSOBS (FWSS " . $owner . ').';
         } elseif (count($inFile[$key][$lc] ?? []) > 1) {
             $e[] = "$label is repeated in this file (rows " . implode(', ', $inFile[$key][$lc]) . ').';
         }
@@ -451,12 +721,14 @@ class EmployeeBulkImport
     }
 
     /* ========================================================= output files */
+    // The template and the error report are Laravel Excel exports:
+    // App\Exports\EmployeeUpload\TemplateExport and App\Exports\EmployeeUpload\ErrorReportExport.
 
     /**
      * Column definitions for the template: header => [required, kind, width, note].
      * kind: text | date | money | list:<NamedRange>. Same order as COLUMNS.
      */
-    private const TEMPLATE_COLUMNS = [
+    public const TEMPLATE_COLUMNS = [
         'Full Name' => [true, 'text', 28, "Employee's full name as on the Ghana Card."],
         'Gender' => [true, 'list:Gender', 10, 'Male or Female.'],
         'Phone Number' => [true, 'text', 16, '12 digits starting 233, e.g. 233241234567 (0241234567 is also accepted). Must not already exist.'],
@@ -489,201 +761,4 @@ class EmployeeBulkImport
         'Guarantor NIA No.' => [false, 'text', 18, 'Must be unique.'],
         'Relationship' => [false, 'text', 14, "Guarantor's relationship to the employee."],
     ];
-
-    /**
-     * The blank template, built from scratch for this user: dropdowns list only the
-     * field offices, clients and banks they can assign. (Built in code rather than by
-     * editing a stored file, so every dropdown is defined exactly once.)
-     */
-    public static function templateFor(User $user): Spreadsheet
-    {
-        $first = 3;
-        $last = $first + self::MAX_ROWS - 1;
-        $headers = array_keys(self::TEMPLATE_COLUMNS);
-        $n = count($headers);
-        $L = fn (int $i) => \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($i);
-        $lastCol = $L($n);
-        $checkCol = $L($n + 1);
-        $colOf = array_combine(array_values(self::COLUMNS), array_map($L, range(1, $n)));
-
-        $fieldNames = Field::pluck('name', 'id');
-        $lists = [
-            'Gender' => ['Male', 'Female'],
-            'MoMoNetwork' => ['MTN', 'TELECEL', 'AIRTELTIGO'],
-            'MaritalStatus' => ['Single', 'Married', 'Divorced', 'Widowed'],
-            'WorkerType' => ['Employee', 'Contractor'],
-            'YesNo' => ['Yes', 'No'],
-            'PaymentType' => ['Cash', 'Bank'],
-            'FieldOffice' => array_map(fn ($id) => $id . ' | ' . ($fieldNames[$id] ?? 'Field ' . $id), EmployeeCreator::allowedFieldIds($user)),
-            'Departments' => Department::orderBy('name')->get(['id', 'name'])->map(fn ($d) => $d->id . ' | ' . $d->name)->all(),
-            'Roles' => Role::orderBy('name')->get(['id', 'name'])->map(fn ($r) => $r->id . ' | ' . $r->name)->all(),
-            'Clients' => EmployeeCreator::allowedClients($user)->map(fn ($c) => $c->id . ' | ' . trim($c->name . ' ' . $c->business_name))->all(),
-            'Banks' => Bank::orderBy('name')->get(['id', 'name'])->map(fn ($b) => $b->id . ' | ' . $b->name)->all(),
-        ];
-        $loose = ['FieldOffice', 'Departments', 'Roles', 'Clients', 'Banks']; // typing an ID is allowed too
-
-        $book = new Spreadsheet();
-        $book->getDefaultStyle()->getFont()->setName('Arial')->setSize(10);
-        $navy = 'FF1F3864';
-        $red = 'FFC00000';
-        $fill = fn ($range, $argb, $sheet) => $sheet->getStyle($range)->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB($argb);
-
-        /* ---- Instructions ---- */
-        $ins = $book->getActiveSheet()->setTitle('Instructions');
-        $ins->getColumnDimension('A')->setWidth(3);
-        $ins->getColumnDimension('B')->setWidth(110);
-        $ins->setShowGridlines(false);
-        $lines = [
-            ['ISSOBS - Bulk employee upload template', 'title'],
-            ['Prepared for ' . $user->name . ' on ' . now()->format('d M Y') . '. The lists only show the field offices and clients you can assign.', 'note'],
-            ['', null],
-            ['How to use', 'h'],
-            ['1.  Fill in the "Employees" sheet, one employee per row, starting at row 3.', null],
-            ['2.  Red column headers are required. Hover over a header to see what it expects.', null],
-            ['3.  Watch the grey "Row check" column: every filled row should say OK before you upload.', null],
-            ['4.  In ISSOBS go to Employees > Bulk upload, choose this file and who to ASSIGN TO, then Preview.', null],
-            ['5.  Nothing is saved at the preview step. Fix any rows shown in red (or download the error report), then Confirm.', null],
-            ['', null],
-            ['Rules checked on upload', 'h'],
-            ['-  Phone, Ghana Card, account, TIN and SSNIT numbers must not already exist in ISSOBS or repeat in this file.', null],
-            ['-  Field office and client must be ones you can assign. Payment Type = Bank needs Bank and Account Number.', null],
-            ['-  Deduct Tax = Yes needs a TIN; Deduct SSNIT = Yes needs an SSNIT number.', null],
-            ['-  Employees get the same approval status as the single "Add employee" form for your role. Payment priority is set automatically.', null],
-            ['', null],
-            ['Tips', 'h'],
-            ['-  Number columns such as phone and account numbers are formatted as text so Excel keeps leading zeros.', null],
-            ['-  Do not rename, reorder or delete columns. Photos are added later from each employee profile. Up to ' . self::MAX_ROWS . ' employees per file.', null],
-        ];
-        foreach ($lines as $i => [$text, $kind]) {
-            $c = 'B' . ($i + 1);
-            $ins->setCellValue($c, $text);
-            $ins->getStyle($c)->getAlignment()->setWrapText(true);
-            if ($kind === 'title') $ins->getStyle($c)->getFont()->setBold(true)->setSize(16)->getColor()->setARGB($navy);
-            if ($kind === 'h') $ins->getStyle($c)->getFont()->setBold(true)->setSize(12)->getColor()->setARGB($red);
-            if ($kind === 'note') $ins->getStyle($c)->getFont()->setItalic(true);
-        }
-
-        /* ---- Lists ---- */
-        $ls = $book->createSheet()->setTitle('Lists');
-        $i = 1;
-        foreach ($lists as $name => $values) {
-            $col = $L($i++);
-            $ls->setCellValue($col . '1', $name);
-            $ls->getStyle($col . '1')->getFont()->setBold(true)->getColor()->setARGB('FFFFFFFF');
-            $fill($col . '1', $navy, $ls);
-            foreach (array_values($values) as $r => $v) {
-                $ls->setCellValueExplicit($col . ($r + 2), $v, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
-            }
-            $ls->getColumnDimension($col)->setWidth($name === 'Clients' ? 40 : 18);
-            $book->addNamedRange(new NamedRange($name, $ls, '$' . $col . '$2:$' . $col . '$' . max(2, count($values) + 1)));
-        }
-
-        /* ---- Employees ---- */
-        $ws = $book->createSheet(1)->setTitle('Employees');
-        $ws->setCellValue('A1', 'Fill in one employee per row from row 3. Red headers are required. Do not rename, move or delete columns. The last column checks each row for you.');
-        $ws->mergeCells('A1:' . $checkCol . '1');
-        $ws->getStyle('A1')->getFont()->setBold(true)->getColor()->setARGB($navy);
-        foreach ($headers as $idx => $header) {
-            [$required, $kind, $width, $note] = self::TEMPLATE_COLUMNS[$header];
-            $col = $L($idx + 1);
-            $ws->setCellValue($col . '2', $header . ($required ? ' *' : ''));
-            $ws->getColumnDimension($col)->setWidth($width);
-            $fill($col . '2', $required ? $red : $navy, $ws);
-            if ($note !== '') {
-                $ws->getComment($col . '2')->getText()->createTextRun($note);
-                $ws->getComment($col . '2')->setWidth('240pt')->setHeight('60pt');
-            }
-
-            $range = $col . $first . ':' . $col . $last;
-            if ($kind === 'text') {
-                $ws->getStyle($range)->getNumberFormat()->setFormatCode('@');
-            } elseif ($kind === 'date') {
-                $ws->getStyle($range)->getNumberFormat()->setFormatCode('dd/mm/yyyy');
-                $ws->setDataValidation($range, (new DataValidation())->setType(DataValidation::TYPE_DATE)
-                    ->setOperator(DataValidation::OPERATOR_BETWEEN)->setFormula1('DATE(1940,1,1)')->setFormula2('DATE(2100,12,31)')
-                    ->setAllowBlank(true)->setShowErrorMessage(true)->setErrorTitle('Date')->setError('Enter a real date, e.g. 14/03/1990.'));
-            } elseif ($kind === 'money') {
-                $ws->getStyle($range)->getNumberFormat()->setFormatCode('#,##0.00');
-                $ws->setDataValidation($range, (new DataValidation())->setType(DataValidation::TYPE_DECIMAL)
-                    ->setOperator(DataValidation::OPERATOR_GREATERTHANOREQUAL)->setFormula1('0')
-                    ->setAllowBlank(true)->setShowErrorMessage(true)->setErrorTitle('Numbers only')->setError('Enter an amount of 0 or more.'));
-            } else {
-                $name = substr($kind, 5);
-                $ws->setDataValidation($range, (new DataValidation())->setType(DataValidation::TYPE_LIST)
-                    ->setErrorStyle(in_array($name, $loose, true) ? DataValidation::STYLE_WARNING : DataValidation::STYLE_STOP)
-                    ->setAllowBlank(true)->setShowDropDown(true)->setShowErrorMessage(true)
-                    ->setErrorTitle('Choose from the list')->setError('Pick a value from the list.')
-                    ->setFormula1($name)); // named range; stored without "=" as Excel expects
-            }
-        }
-        $ws->getStyle('A2:' . $lastCol . '2')->getFont()->setBold(true)->getColor()->setARGB('FFFFFFFF');
-        $ws->getStyle('A2:' . $checkCol . '2')->getAlignment()->setWrapText(true)->setVertical('center')->setHorizontal('center');
-        $ws->getRowDimension(2)->setRowHeight(34);
-        $fill('A' . $first . ':' . $lastCol . $last, 'FFFFF2CC', $ws);   // cells to fill in
-
-        // Row check (not uploaded): same logic as the importer's basic checks.
-        $ws->setCellValue($checkCol . '2', 'Row check (automatic)');
-        $fill($checkCol . '2', 'FFE7E6E6', $ws);
-        $ws->getStyle($checkCol . '2')->getFont()->setBold(true);
-        $ws->getColumnDimension($checkCol)->setWidth(30);
-        $c = $colOf;
-        for ($r = $first; $r <= $last; $r++) {
-            $ws->setCellValue($checkCol . $r,
-                "=IF(COUNTA(A{$r}:{$lastCol}{$r})=0,\"\","
-                . "IF(OR({$c['full_name']}{$r}=\"\",{$c['gender']}{$r}=\"\",{$c['phone_number']}{$r}=\"\",{$c['field_office']}{$r}=\"\",{$c['payment_type']}{$r}=\"\"),\"Missing required field\","
-                . "IF(AND({$c['payment_type']}{$r}=\"Bank\",OR({$c['bank']}{$r}=\"\",{$c['account_number']}{$r}=\"\")),\"Bank and account number required\","
-                . "IF(AND({$c['deduct_tax']}{$r}=\"Yes\",{$c['tin_number']}{$r}=\"\"),\"TIN required (Deduct Tax = Yes)\","
-                . "IF(AND({$c['deduct_ssnit']}{$r}=\"Yes\",{$c['ssnit_number']}{$r}=\"\"),\"SSNIT number required\","
-                . "IF(COUNTIF(\${$c['phone_number']}\${$first}:\${$c['phone_number']}\${$last},{$c['phone_number']}{$r})>1,\"Phone repeated in this file\",\"OK\"))))))");
-        }
-        $fill($checkCol . $first . ':' . $checkCol . $last, 'FFE7E6E6', $ws);
-        $ws->getStyle($checkCol . $first . ':' . $checkCol . $last)->getFont()->setBold(true);
-        $ws->freezePane('B3');
-
-        $book->setActiveSheetIndexByName('Employees');
-
-        return $book;
-    }
-
-    /** The uploaded rows with an "Errors" column, for rows that could not be imported. */
-    public static function errorReport(string $path, array $results): Spreadsheet
-    {
-        $source = IOFactory::load($path);
-        $sheet = $source->getSheetByName('Employees') ?? $source->getActiveSheet();
-
-        $book = new Spreadsheet();
-        $out = $book->getActiveSheet()->setTitle('Employees');
-        $out->setCellValue('A1', 'Rows that were NOT imported. Fix them here (the "Errors" column explains why), delete the Errors and Row columns, and upload again.');
-        $out->getStyle('A1')->getFont()->setBold(true)->getColor()->setARGB('FFC00000');
-
-        $highestCol = $sheet->getHighestDataColumn(2);
-        $headers = $sheet->rangeToArray('A2:' . $highestCol . '2', null, false, false)[0];
-        $headers = array_values(array_filter($headers, fn ($h) => $h !== null && ! str_starts_with((string) $h, 'Row check')));
-        $out->fromArray(array_merge($headers, ['Errors', 'Sheet row']), null, 'A2');
-        $out->getStyle('A2:' . \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex(count($headers) + 2) . '2')->getFont()->setBold(true);
-
-        $r = 3;
-        foreach ($results as $res) {
-            if (! $res['errors']) {
-                continue;
-            }
-            $values = $sheet->rangeToArray('A' . $res['row'] . ':' . $highestCol . $res['row'], null, false, false)[0];
-            $values = array_slice($values, 0, count($headers));
-            foreach ($values as $i => $v) {
-                $out->setCellValueExplicit(\PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($i + 1) . $r, $v === null ? '' : (string) $v,
-                    \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
-            }
-            $errCol = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex(count($headers) + 1);
-            $out->setCellValue($errCol . $r, implode("\n", $res['errors']));
-            $out->getStyle($errCol . $r)->getFont()->getColor()->setARGB('FFC00000');
-            $out->getStyle($errCol . $r)->getAlignment()->setWrapText(true);
-            $out->setCellValue(\PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex(count($headers) + 2) . $r, $res['row']);
-            $r++;
-        }
-        foreach (range(1, count($headers) + 2) as $i) {
-            $out->getColumnDimension(\PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($i))->setWidth($i === count($headers) + 1 ? 60 : 18);
-        }
-
-        return $book;
-    }
 }

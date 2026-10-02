@@ -1,0 +1,2752 @@
+diff --git a/app/Exports/EmployeeUpload/EmployeesSheet.php b/app/Exports/EmployeeUpload/EmployeesSheet.php
+new file mode 100644
+index 0000000..069cba3
+--- /dev/null
++++ b/app/Exports/EmployeeUpload/EmployeesSheet.php
+@@ -0,0 +1,206 @@
++<?php
++
++namespace App\Exports\EmployeeUpload;
++
++use App\Support\EmployeeBulkImport;
++use Maatwebsite\Excel\Concerns\FromArray;
++use Maatwebsite\Excel\Concerns\WithCustomValueBinder;
++use Maatwebsite\Excel\Concerns\WithEvents;
++use Maatwebsite\Excel\Concerns\WithTitle;
++use Maatwebsite\Excel\Events\AfterSheet;
++use PhpOffice\PhpSpreadsheet\Cell\Cell;
++use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
++use PhpOffice\PhpSpreadsheet\Cell\DataType;
++use PhpOffice\PhpSpreadsheet\Cell\DataValidation;
++use PhpOffice\PhpSpreadsheet\Cell\DefaultValueBinder;
++use PhpOffice\PhpSpreadsheet\Style\Fill;
++
++/**
++ * The sheet people fill in: title (row 1), headers (row 2 - read back by
++ * App\Imports\EmployeeUploadImport), then the input rows with dropdowns and an
++ * automatic "Row check" column.
++ *
++ * New employees: empty input rows.
++ * Bulk update:   an "Employee ID" key column first and one pre-filled row per employee.
++ */
++class EmployeesSheet extends DefaultValueBinder implements FromArray, WithTitle, WithEvents, WithCustomValueBinder
++{
++    /** Dropdowns where typing an ID instead of picking is fine (warning, not error). */
++    private const LOOSE = ['FieldOffice', 'Departments', 'Roles', 'Clients', 'Banks'];
++
++    /** @var array<string, array> column key => [header, required, kind, width, note] in sheet order */
++    private array $columns = [];
++
++    /** @var array<string, true> sheet column letters that hold text (kept as text: leading zeros) */
++    private array $textColumns = [];
++
++    /**
++     * @param array<int, array<string, mixed>> $rows       pre-filled rows (column key => value) for bulk update
++     * @param bool                             $withKey    add the "Employee ID" key column
++     * @param string[]                         $hiddenKeys template columns to leave out (e.g. salaries)
++     */
++    public function __construct(private array $rows = [], private bool $withKey = false, array $hiddenKeys = [])
++    {
++        if ($withKey) {
++            $this->columns['employee_id'] = [EmployeeBulkImport::KEY_HEADER, true, 'key', 13, 'Who this row is. Do not change it.'];
++        }
++        foreach (EmployeeBulkImport::TEMPLATE_COLUMNS as $header => [$required, $kind, $width, $note]) {
++            $key = EmployeeBulkImport::COLUMNS[$header];
++            if (! in_array($key, $hiddenKeys, true)) {
++                // In an update file nothing but the key is required: blank = unchanged.
++                $this->columns[$key] = [$header, $withKey ? false : $required, $kind, $width, $note];
++            }
++        }
++        $i = 0;
++        foreach ($this->columns as [, , $kind]) {
++            $i++;
++            if ($kind === 'text' || $kind === 'key') {
++                $this->textColumns[Coordinate::stringFromColumnIndex($i)] = true;
++            }
++        }
++    }
++
++    public function title(): string
++    {
++        return 'Employees';
++    }
++
++    private function inputRows(): int
++    {
++        return $this->withKey ? max(1, count($this->rows)) : EmployeeBulkImport::MAX_ROWS;
++    }
++
++    public function array(): array
++    {
++        $headers = array_map(fn ($c) => $c[0] . ($c[1] ? ' *' : ''), array_values($this->columns));
++        $headers[] = 'Row check (automatic)';
++        $intro = $this->withKey
++            ? 'One row per employee, filled in with their current details. Change only what you want to update - a blank cell means "leave unchanged". Do not change the Employee ID column.'
++            : 'Fill in one employee per row from row 3. Red headers are required. Do not rename, move or delete columns. The last column checks each row for you.';
++
++        $out = [[$intro], $headers];
++        foreach ($this->rows as $row) {
++            $out[] = array_map(fn ($key) => $row[$key] ?? null, array_keys($this->columns));
++        }
++
++        return $out;
++    }
++
++    /** Text columns stay text (phone / account numbers keep leading zeros); dates stay Excel dates. */
++    public function bindValue(Cell $cell, $value)
++    {
++        if ($cell->getRow() >= 3 && isset($this->textColumns[$cell->getColumn()]) && $value !== null && $value !== '') {
++            $cell->setValueExplicit((string) $value, DataType::TYPE_STRING);
++
++            return true;
++        }
++
++        return parent::bindValue($cell, $value);
++    }
++
++    public function registerEvents(): array
++    {
++        return [
++            AfterSheet::class => function (AfterSheet $event) {
++                $ws = $event->sheet->getDelegate();
++                $first = 3;
++                $last = $first + $this->inputRows() - 1;
++                $n = count($this->columns);
++                $L = fn (int $i) => Coordinate::stringFromColumnIndex($i);
++                $lastCol = $L($n);
++                $checkCol = $L($n + 1);
++                $fill = fn ($range, $argb) => $ws->getStyle($range)->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB($argb);
++                $col = array_combine(array_keys($this->columns), array_map($L, range(1, $n)));
++
++                $ws->getParent()->getDefaultStyle()->getFont()->setName('Arial')->setSize(10);
++                $ws->mergeCells('A1:' . $checkCol . '1');
++                $ws->getStyle('A1')->getFont()->setBold(true)->getColor()->setARGB('FF1F3864');
++                $ws->getStyle('A1')->getAlignment()->setWrapText(true);
++                $ws->getRowDimension(1)->setRowHeight(30);
++                $fill('A' . $first . ':' . $lastCol . $last, 'FFFFF2CC');     // cells to fill in
++
++                foreach ($this->columns as $key => [, $required, $kind, $width, $note]) {
++                    $c = $col[$key];
++                    $ws->getColumnDimension($c)->setWidth($width);
++                    $fill($c . '2', $required ? 'FFC00000' : 'FF1F3864');
++                    if ($note !== '') {
++                        $ws->getComment($c . '2')->getText()->createTextRun($note);
++                        $ws->getComment($c . '2')->setWidth('240pt')->setHeight('60pt');
++                    }
++
++                    $range = $c . $first . ':' . $c . $last;
++                    if ($kind === 'key') {
++                        $ws->getStyle($range)->getNumberFormat()->setFormatCode('@');
++                        $fill($range, 'FFD9D9D9');
++                        $ws->getStyle($range)->getFont()->setBold(true);
++                    } elseif ($kind === 'text') {
++                        $ws->getStyle($range)->getNumberFormat()->setFormatCode('@');
++                    } elseif ($kind === 'date') {
++                        $ws->getStyle($range)->getNumberFormat()->setFormatCode('dd/mm/yyyy');
++                        $ws->setDataValidation($range, (new DataValidation())->setType(DataValidation::TYPE_DATE)
++                            ->setOperator(DataValidation::OPERATOR_BETWEEN)->setFormula1('DATE(1940,1,1)')->setFormula2('DATE(2100,12,31)')
++                            ->setAllowBlank(true)->setShowErrorMessage(true)->setErrorTitle('Date')->setError('Enter a real date, e.g. 14/03/1990.'));
++                    } elseif ($kind === 'money') {
++                        $ws->getStyle($range)->getNumberFormat()->setFormatCode('#,##0.00');
++                        $ws->setDataValidation($range, (new DataValidation())->setType(DataValidation::TYPE_DECIMAL)
++                            ->setOperator(DataValidation::OPERATOR_GREATERTHANOREQUAL)->setFormula1('0')
++                            ->setAllowBlank(true)->setShowErrorMessage(true)->setErrorTitle('Numbers only')->setError('Enter an amount of 0 or more.'));
++                    } else {
++                        $name = substr($kind, 5);
++                        // One validation per column range, named range without "=" (as Excel stores it).
++                        $ws->setDataValidation($range, (new DataValidation())->setType(DataValidation::TYPE_LIST)
++                            ->setErrorStyle(in_array($name, self::LOOSE, true) ? DataValidation::STYLE_WARNING : DataValidation::STYLE_STOP)
++                            ->setAllowBlank(true)->setShowDropDown(true)->setShowErrorMessage(true)
++                            ->setErrorTitle('Choose from the list')->setError('Pick a value from the list.')
++                            ->setFormula1($name));
++                    }
++                }
++
++                $ws->getStyle('A2:' . $lastCol . '2')->getFont()->setBold(true)->getColor()->setARGB('FFFFFFFF');
++                $ws->getStyle('A2:' . $checkCol . '2')->getAlignment()->setWrapText(true)->setVertical('center')->setHorizontal('center');
++                $ws->getRowDimension(2)->setRowHeight(34);
++
++                // "Row check": not uploaded; flags the basic problems before upload.
++                $fill($checkCol . '2', 'FFE7E6E6');
++                $ws->getStyle($checkCol . '2')->getFont()->setBold(true);
++                $ws->getColumnDimension($checkCol)->setWidth(32);
++                $required = $this->withKey ? ['employee_id'] : EmployeeBulkImport::REQUIRED;
++                for ($r = $first; $r <= $last; $r++) {
++                    $tests = [];
++                    $missing = array_map(fn ($k) => $col[$k] . $r . '=""', array_filter($required, fn ($k) => isset($col[$k])));
++                    if ($missing) {
++                        $tests[] = ['OR(' . implode(',', $missing) . ')', $this->withKey ? 'Employee ID missing' : 'Missing required field'];
++                    }
++                    if (isset($col['payment_type'], $col['bank'], $col['account_number'])) {
++                        $tests[] = ["AND({$col['payment_type']}{$r}=\"Bank\",OR({$col['bank']}{$r}=\"\",{$col['account_number']}{$r}=\"\"))", 'Bank and account number required'];
++                    }
++                    if (isset($col['deduct_tax'], $col['tin_number'])) {
++                        $tests[] = ["AND({$col['deduct_tax']}{$r}=\"Yes\",{$col['tin_number']}{$r}=\"\")", 'TIN required (Deduct Tax = Yes)'];
++                    }
++                    if (isset($col['deduct_ssnit'], $col['ssnit_number'])) {
++                        $tests[] = ["AND({$col['deduct_ssnit']}{$r}=\"Yes\",{$col['ssnit_number']}{$r}=\"\")", 'SSNIT number required'];
++                    }
++                    if (isset($col['phone_number'])) {
++                        $p = $col['phone_number'];
++                        $tests[] = ["AND({$p}{$r}<>\"\",COUNTIF(\${$p}\${$first}:\${$p}\${$last},{$p}{$r})>1)", 'Phone repeated in this file'];
++                    }
++                    if ($this->withKey) {
++                        $k = $col['employee_id'];
++                        $tests[] = ["COUNTIF(\${$k}\${$first}:\${$k}\${$last},{$k}{$r})>1", 'Employee ID repeated in this file'];
++                    }
++                    $formula = '"OK"';
++                    foreach (array_reverse($tests) as [$test, $message]) {
++                        $formula = "IF({$test},\"{$message}\",{$formula})";
++                    }
++                    $ws->setCellValue($checkCol . $r, "=IF(COUNTA(A{$r}:{$lastCol}{$r})=0,\"\",{$formula})");
++                }
++                $fill($checkCol . $first . ':' . $checkCol . $last, 'FFE7E6E6');
++                $ws->getStyle($checkCol . $first . ':' . $checkCol . $last)->getFont()->setBold(true);
++                $ws->freezePane($this->withKey ? 'C3' : 'B3');
++                if ($this->withKey) {
++                    $ws->setAutoFilter('A2:' . $lastCol . $last);
++                }
++            },
++        ];
++    }
++}
+diff --git a/app/Exports/EmployeeUpload/ErrorReportExport.php b/app/Exports/EmployeeUpload/ErrorReportExport.php
+new file mode 100644
+index 0000000..28a8b89
+--- /dev/null
++++ b/app/Exports/EmployeeUpload/ErrorReportExport.php
+@@ -0,0 +1,97 @@
++<?php
++
++namespace App\Exports\EmployeeUpload;
++
++use App\Support\EmployeeBulkImport;
++use Maatwebsite\Excel\Concerns\Exportable;
++use Maatwebsite\Excel\Concerns\FromArray;
++use Maatwebsite\Excel\Concerns\WithCustomValueBinder;
++use Maatwebsite\Excel\Concerns\WithEvents;
++use Maatwebsite\Excel\Concerns\WithTitle;
++use Maatwebsite\Excel\Events\AfterSheet;
++use PhpOffice\PhpSpreadsheet\Cell\Cell;
++use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
++use PhpOffice\PhpSpreadsheet\Cell\DataType;
++use PhpOffice\PhpSpreadsheet\Cell\DefaultValueBinder;
++
++/**
++ * The rows that could not be imported, in the template's layout (title on row 1,
++ * headers on row 2) plus an "Errors" column - so the file can be fixed and uploaded
++ * again as it is (EmployeeUploadImport ignores the extra columns).
++ */
++class ErrorReportExport extends DefaultValueBinder implements FromArray, WithTitle, WithEvents, WithCustomValueBinder
++{
++    use Exportable;
++
++    /**
++     * @param array<int, array<string, ?string>> $rows    EmployeeBulkImport::read() rows (by sheet row)
++     * @param array<int, array>                  $results EmployeeBulkImport::validate() results to report
++     */
++    public function __construct(private array $rows, private array $results, private bool $withKey = false)
++    {
++    }
++
++    public function title(): string
++    {
++        return 'Employees';
++    }
++
++    public function array(): array
++    {
++        $headers = $this->withKey ? [EmployeeBulkImport::KEY_HEADER . ' *'] : [];
++        foreach (EmployeeBulkImport::TEMPLATE_COLUMNS as $header => [$required]) {
++            $headers[] = $header . ($required ? ' *' : '');
++        }
++        $out = [
++            ['Rows that were NOT imported. Fix them using the Errors column, then upload this file again (the Errors and Sheet row columns are ignored).'],
++            array_merge($headers, ['Errors', 'Sheet row']),
++        ];
++        foreach ($this->results as $result) {
++            if (! $result['errors']) {
++                continue;
++            }
++            $keys = array_values(EmployeeBulkImport::COLUMNS);
++            if ($this->withKey) {
++                array_unshift($keys, 'employee_id');
++            }
++            $values = array_map(fn ($key) => $this->rows[$result['row']][$key] ?? null, $keys);
++            $out[] = array_merge($values, [implode("\n", $result['errors']), (string) $result['row']]);
++        }
++
++        return $out;
++    }
++
++    /** Everything as text: keeps leading zeros in phone / account numbers. */
++    public function bindValue(Cell $cell, $value)
++    {
++        if ($value === null || $value === '') {
++            return parent::bindValue($cell, $value);
++        }
++        $cell->setValueExplicit((string) $value, DataType::TYPE_STRING);
++
++        return true;
++    }
++
++    public function registerEvents(): array
++    {
++        return [
++            AfterSheet::class => function (AfterSheet $event) {
++                $ws = $event->sheet->getDelegate();
++                $n = count(EmployeeBulkImport::TEMPLATE_COLUMNS) + ($this->withKey ? 1 : 0);
++                $errCol = Coordinate::stringFromColumnIndex($n + 1);
++                $rowCol = Coordinate::stringFromColumnIndex($n + 2);
++                $ws->getStyle('A1')->getFont()->setBold(true)->getColor()->setARGB('FFC00000');
++                $ws->getStyle('A2:' . $rowCol . '2')->getFont()->setBold(true);
++                for ($i = 1; $i <= $n + 2; $i++) {
++                    $ws->getColumnDimension(Coordinate::stringFromColumnIndex($i))->setWidth($i === $n + 1 ? 60 : 18);
++                }
++                $last = $ws->getHighestRow();
++                if ($last >= 3) {
++                    $ws->getStyle($errCol . '3:' . $errCol . $last)->getFont()->getColor()->setARGB('FFC00000');
++                    $ws->getStyle($errCol . '3:' . $errCol . $last)->getAlignment()->setWrapText(true);
++                }
++                $ws->freezePane('B3');
++            },
++        ];
++    }
++}
+diff --git a/app/Exports/EmployeeUpload/InstructionsSheet.php b/app/Exports/EmployeeUpload/InstructionsSheet.php
+new file mode 100644
+index 0000000..5c0b889
+--- /dev/null
++++ b/app/Exports/EmployeeUpload/InstructionsSheet.php
+@@ -0,0 +1,98 @@
++<?php
++
++namespace App\Exports\EmployeeUpload;
++
++use App\Models\User;
++use App\Support\EmployeeBulkImport;
++use Maatwebsite\Excel\Concerns\FromArray;
++use Maatwebsite\Excel\Concerns\WithEvents;
++use Maatwebsite\Excel\Concerns\WithTitle;
++use Maatwebsite\Excel\Events\AfterSheet;
++
++class InstructionsSheet implements FromArray, WithTitle, WithEvents
++{
++    private const CREATE_LINES = [
++        ['How to use', 'h'],
++        ['1.  Fill in the "Employees" sheet, one employee per row, starting at row 3.', null],
++        ['2.  Red column headers are required. Hover over a header to see what it expects.', null],
++        ['3.  Watch the grey "Row check" column: every filled row should say OK before you upload.', null],
++        ['4.  In ISSOBS go to Employees > Bulk upload, choose this file and who to ASSIGN TO, then Preview.', null],
++        ['5.  Nothing is saved at the preview step. Fix any rows shown in red (or download the error report), then Confirm.', null],
++        ['', null],
++        ['Rules checked on upload', 'h'],
++        ['-  Phone, Ghana Card, account, TIN and SSNIT numbers must not already exist in ISSOBS or repeat in this file.', null],
++        ['-  Field office and client must be ones you can assign. Payment Type = Bank needs Bank and Account Number.', null],
++        ['-  Deduct Tax = Yes needs a TIN; Deduct SSNIT = Yes needs an SSNIT number.', null],
++        ['-  Employees get the same approval status as the single "Add employee" form for your role. Payment priority is set automatically.', null],
++        ['', null],
++        ['Tips', 'h'],
++        ['-  Number columns such as phone and account numbers are formatted as text so Excel keeps leading zeros.', null],
++        ['-  Do not rename, reorder or delete columns. Photos are added later from each employee profile.', null],
++    ];
++
++    private const UPDATE_LINES = [
++        ['How to use', 'h'],
++        ['1.  Each row is one existing employee, already filled in with their current details. The grey "Employee ID" column says who it is: do not change it.', null],
++        ['2.  Change only the cells you want to update. A BLANK cell means "leave unchanged" - it does not clear the value.', null],
++        ['3.  You can delete rows you do not want to change. Watch the grey "Row check" column.', null],
++        ['4.  In ISSOBS go to Employees > Bulk update, choose this file (and who to ASSIGN TO, if asked), then Preview.', null],
++        ['5.  The preview lists every change, field by field. Nothing is saved until you confirm.', null],
++        ['', null],
++        ['Good to know', 'h'],
++        ['-  Edits follow the same rules as editing one employee: for some roles the employee goes back to Pending for approval.', null],
++        ['-  Bank, account and payment type changes are listed separately and must be ticked before confirming.', null],
++        ['-  Setting Deduct Tax (or Deduct SSNIT) to No clears the TIN (or SSNIT number), as on the edit form.', null],
++        ['-  Phone, Ghana Card, account, TIN and SSNIT numbers must not belong to another employee.', null],
++        ['-  Do not rename, reorder or delete columns.', null],
++    ];
++
++    public function __construct(private User $user, private string $mode = 'create')
++    {
++    }
++
++    private function lines(): array
++    {
++        return $this->mode === 'update' ? self::UPDATE_LINES : self::CREATE_LINES;
++    }
++
++    public function title(): string
++    {
++        return 'Instructions';
++    }
++
++    public function array(): array
++    {
++        $title = $this->mode === 'update' ? 'ISSOBS - Bulk employee UPDATE' : 'ISSOBS - Bulk employee upload template';
++        $limit = $this->mode === 'update' ? EmployeeBulkImport::MAX_UPDATE_ROWS : EmployeeBulkImport::MAX_ROWS;
++        $rows = [
++            ['', $title],
++            ['', 'Prepared for ' . $this->user->name . ' on ' . now()->format('d M Y H:i') . '. The lists only show the field offices and clients you can assign. Up to ' . $limit . ' employees per file.'],
++            ['', ''],
++        ];
++        foreach ($this->lines() as [$text]) {
++            $rows[] = ['', $text];
++        }
++
++        return $rows;
++    }
++
++    public function registerEvents(): array
++    {
++        return [
++            AfterSheet::class => function (AfterSheet $event) {
++                $sheet = $event->sheet->getDelegate();
++                $sheet->setShowGridlines(false);
++                $sheet->getColumnDimension('A')->setWidth(3);
++                $sheet->getColumnDimension('B')->setWidth(110);
++                $sheet->getStyle('B1:B40')->getAlignment()->setWrapText(true);
++                $sheet->getStyle('B1')->getFont()->setBold(true)->setSize(16)->getColor()->setARGB('FF1F3864');
++                $sheet->getStyle('B2')->getFont()->setItalic(true);
++                foreach ($this->lines() as $i => [, $kind]) {
++                    if ($kind === 'h') {
++                        $sheet->getStyle('B' . ($i + 4))->getFont()->setBold(true)->setSize(12)->getColor()->setARGB('FFC00000');
++                    }
++                }
++            },
++        ];
++    }
++}
+diff --git a/app/Exports/EmployeeUpload/ListsSheet.php b/app/Exports/EmployeeUpload/ListsSheet.php
+new file mode 100644
+index 0000000..63ce7d5
+--- /dev/null
++++ b/app/Exports/EmployeeUpload/ListsSheet.php
+@@ -0,0 +1,56 @@
++<?php
++
++namespace App\Exports\EmployeeUpload;
++
++use Maatwebsite\Excel\Concerns\FromArray;
++use Maatwebsite\Excel\Concerns\WithEvents;
++use Maatwebsite\Excel\Concerns\WithTitle;
++use Maatwebsite\Excel\Events\AfterSheet;
++use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
++use PhpOffice\PhpSpreadsheet\NamedRange;
++use PhpOffice\PhpSpreadsheet\Style\Fill;
++
++/** Dropdown values, one column per list, each exposed as a workbook named range. */
++class ListsSheet implements FromArray, WithTitle, WithEvents
++{
++    /** @param array<string, string[]> $lists named range => values */
++    public function __construct(private array $lists)
++    {
++    }
++
++    public function title(): string
++    {
++        return 'Lists';
++    }
++
++    public function array(): array
++    {
++        $names = array_keys($this->lists);
++        $height = max(array_map('count', $this->lists) ?: [0]);
++        $rows = [$names];
++        for ($i = 0; $i < $height; $i++) {
++            $rows[] = array_map(fn ($name) => $this->lists[$name][$i] ?? null, $names);
++        }
++
++        return $rows;
++    }
++
++    public function registerEvents(): array
++    {
++        return [
++            AfterSheet::class => function (AfterSheet $event) {
++                $sheet = $event->sheet->getDelegate();
++                $book = $sheet->getParent();
++                $i = 1;
++                foreach ($this->lists as $name => $values) {
++                    $col = Coordinate::stringFromColumnIndex($i++);
++                    $book->addNamedRange(new NamedRange($name, $sheet, '$' . $col . '$2:$' . $col . '$' . max(2, count($values) + 1)));
++                    $sheet->getColumnDimension($col)->setWidth($name === 'Clients' ? 40 : 18);
++                }
++                $lastCol = Coordinate::stringFromColumnIndex(count($this->lists));
++                $sheet->getStyle('A1:' . $lastCol . '1')->getFont()->setBold(true)->getColor()->setARGB('FFFFFFFF');
++                $sheet->getStyle('A1:' . $lastCol . '1')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('FF1F3864');
++            },
++        ];
++    }
++}
+diff --git a/app/Exports/EmployeeUpload/TemplateExport.php b/app/Exports/EmployeeUpload/TemplateExport.php
+new file mode 100644
+index 0000000..59f21d7
+--- /dev/null
++++ b/app/Exports/EmployeeUpload/TemplateExport.php
+@@ -0,0 +1,71 @@
++<?php
++
++namespace App\Exports\EmployeeUpload;
++
++use App\Models\Bank;
++use App\Models\Department;
++use App\Models\Field;
++use App\Models\Role;
++use App\Models\User;
++use App\Support\EmployeeCreator;
++use Maatwebsite\Excel\Concerns\Exportable;
++use Maatwebsite\Excel\Concerns\WithEvents;
++use Maatwebsite\Excel\Concerns\WithMultipleSheets;
++use Maatwebsite\Excel\Events\BeforeWriting;
++
++/**
++ * Bulk employee upload template, built for one user:
++ *     return (new TemplateExport($user))->download('ISSOBS_Employee_Upload_Template.xlsx');
++ *
++ * Sheets: Instructions, Employees (fill in), Lists (dropdown values). The dropdowns
++ * list only the field offices and clients the user may assign.
++ */
++class TemplateExport implements WithMultipleSheets, WithEvents
++{
++    use Exportable;
++
++    /** @var array<string, string[]> named range => values */
++    private array $lists;
++
++    public function __construct(private User $user)
++    {
++        $this->lists = self::listsFor($user);
++    }
++
++    /** Dropdown values for $user (named range => values). Shared with UpdateTemplateExport. */
++    public static function listsFor(User $user): array
++    {
++        $fieldNames = Field::pluck('name', 'id');
++
++        return [
++            'Gender' => ['Male', 'Female'],
++            'MoMoNetwork' => ['MTN', 'TELECEL', 'AIRTELTIGO'],
++            'MaritalStatus' => ['Single', 'Married', 'Divorced', 'Widowed'],
++            'WorkerType' => ['Employee', 'Contractor'],
++            'YesNo' => ['Yes', 'No'],
++            'PaymentType' => ['Cash', 'Bank'],
++            'FieldOffice' => array_map(fn ($id) => $id . ' | ' . ($fieldNames[$id] ?? 'Field ' . $id), EmployeeCreator::allowedFieldIds($user)),
++            'Departments' => Department::orderBy('name')->get(['id', 'name'])->map(fn ($d) => $d->id . ' | ' . $d->name)->all(),
++            'Roles' => Role::orderBy('name')->get(['id', 'name'])->map(fn ($r) => $r->id . ' | ' . $r->name)->all(),
++            'Clients' => EmployeeCreator::allowedClients($user)->map(fn ($c) => $c->id . ' | ' . trim($c->name . ' ' . $c->business_name))->all(),
++            'Banks' => Bank::orderBy('name')->get(['id', 'name'])->map(fn ($b) => $b->id . ' | ' . $b->name)->all(),
++        ];
++    }
++
++    public function sheets(): array
++    {
++        return [
++            new InstructionsSheet($this->user),
++            new EmployeesSheet(),
++            new ListsSheet($this->lists),
++        ];
++    }
++
++    public function registerEvents(): array
++    {
++        return [
++            // Open the file on the sheet people fill in.
++            BeforeWriting::class => fn (BeforeWriting $event) => $event->writer->getDelegate()->setActiveSheetIndexByName('Employees'),
++        ];
++    }
++}
+diff --git a/app/Exports/EmployeeUpload/UpdateTemplateExport.php b/app/Exports/EmployeeUpload/UpdateTemplateExport.php
+new file mode 100644
+index 0000000..cbbc247
+--- /dev/null
++++ b/app/Exports/EmployeeUpload/UpdateTemplateExport.php
+@@ -0,0 +1,108 @@
++<?php
++
++namespace App\Exports\EmployeeUpload;
++
++use App\Models\User;
++use App\Support\EmployeeBulkImport;
++use Maatwebsite\Excel\Concerns\Exportable;
++use Maatwebsite\Excel\Concerns\WithEvents;
++use Maatwebsite\Excel\Concerns\WithMultipleSheets;
++use Maatwebsite\Excel\Events\BeforeWriting;
++use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
++
++/**
++ * Bulk UPDATE file: the chosen employees, pre-filled with their current details,
++ * keyed by "Employee ID". Same sheets and dropdowns as the new-employee template.
++ *
++ *     return (new UpdateTemplateExport($user, $employeeIds, $canViewSalary))->download('...xlsx');
++ */
++class UpdateTemplateExport implements WithMultipleSheets, WithEvents
++{
++    use Exportable;
++
++    public function __construct(private User $user, private array $employeeIds, private bool $canViewSalary)
++    {
++    }
++
++    public function sheets(): array
++    {
++        $lists = TemplateExport::listsFor($this->user);
++        $hidden = $this->canViewSalary ? [] : ['basic_salary', 'allowances'];
++
++        return [
++            new InstructionsSheet($this->user, 'update'),
++            new EmployeesSheet($this->rows($lists), true, $hidden),
++            new ListsSheet($lists),
++        ];
++    }
++
++    /** Current details as template cells: dropdown values in the lists' "ID | Name" form. */
++    private function rows(array $lists): array
++    {
++        $label = function (string $list, $id) use ($lists) {
++            if ($id === null || $id === '') {
++                return null;
++            }
++            foreach ($lists[$list] as $option) {
++                if (str_starts_with($option, $id . ' | ')) {
++                    return $option;
++                }
++            }
++
++            return (string) $id; // e.g. a client outside the user's list: keep the ID
++        };
++        $networks = ['mtn-gh' => 'MTN', 'vodafone-gh' => 'TELECEL', 'tigo-gh' => 'AIRTELTIGO'];
++        $date = fn ($v) => $v ? ExcelDate::PHPToExcel(substr((string) $v, 0, 10)) : null;
++
++        $out = [];
++        $current = EmployeeBulkImport::currentDetails($this->employeeIds);
++        foreach ($this->employeeIds as $id) {
++            if (! $d = $current[(int) $id] ?? null) {
++                continue;
++            }
++            $out[] = [
++                'employee_id' => 'FWSS ' . $id,
++                'full_name' => $d['name'],
++                'gender' => $d['gender'] ? ucfirst($d['gender']) : null,
++                'phone_number' => $d['phone_number'],
++                'momo_network' => $networks[$d['channel']] ?? $d['channel'],
++                'date_of_birth' => $date($d['date_of_birth']),
++                'nia_number' => $d['nia_number'],
++                'address' => $d['address'],
++                'marital_status' => $d['marital_status'] ? ucfirst($d['marital_status']) : null,
++                'worker_type' => $d['worker_type'] ? ucfirst($d['worker_type']) : null,
++                'date_of_joining' => $date($d['date_of_joining']),
++                'department' => $label('Departments', $d['department_id']),
++                'role' => $label('Roles', $d['role_id']),
++                'field_office' => $label('FieldOffice', $d['field_id']),
++                'client' => $label('Clients', $d['client_id']),
++                'location' => $d['location'],
++                'basic_salary' => $d['basic_salary'] !== null ? (float) $d['basic_salary'] : null,
++                'allowances' => $d['allowances'] !== null ? (float) $d['allowances'] : null,
++                'deduct_tax' => $d['tax_button'] ? 'Yes' : 'No',
++                'tin_number' => $d['tin_number'],
++                'deduct_ssnit' => $d['ssnit_button'] ? 'Yes' : 'No',
++                'ssnit_number' => $d['ssnit_number'],
++                'payment_type' => $d['payment_type'],
++                'bank' => $label('Banks', $d['pay.bank_id']),
++                'account_number' => $d['pay.acc_number'],
++                'branch' => $d['pay.branch'],
++                'branch_code' => $d['pay.branch_code'],
++                'guarantor_name' => $d['gurantor_name'],
++                'guarantor_phone' => $d['gurantor_number'],
++                'guarantor_address' => $d['gurantor_address'],
++                'guarantor_nia' => $d['gurantor_nia_number'],
++                'relationship' => $d['relationship'],
++            ];
++        }
++
++        return $out;
++    }
++
++    public function registerEvents(): array
++    {
++        return [
++            BeforeWriting::class => fn (BeforeWriting $event) => $event->writer->getDelegate()->setActiveSheetIndexByName('Employees'),
++        ];
++    }
++}
+diff --git a/app/Http/Controllers/EmployeeBulkUpdateController.php b/app/Http/Controllers/EmployeeBulkUpdateController.php
+new file mode 100644
+index 0000000..91bf0b2
+--- /dev/null
++++ b/app/Http/Controllers/EmployeeBulkUpdateController.php
+@@ -0,0 +1,195 @@
++<?php
++
++namespace App\Http\Controllers;
++
++use App\Exports\EmployeeUpload\ErrorReportExport;
++use App\Exports\EmployeeUpload\UpdateTemplateExport;
++use App\Models\EmployeeImport;
++use App\Support\EmployeeBulkImport;
++use App\Support\EmployeeCreator;
++use Illuminate\Http\Request;
++use Illuminate\Support\Facades\Auth;
++use Illuminate\Support\Facades\DB;
++use Illuminate\Support\Facades\Gate;
++use Illuminate\Support\Str;
++
++/**
++ * Bulk UPDATE of existing employees:
++ *   1) download the filtered (or full) list from the employee list, pre-filled
++ *   2) upload it back - every change is previewed, field by field (nothing saved)
++ *   3) confirm - rows are checked again, then applied in one transaction
++ * The "Employee ID" column is the key. Blank cells mean "leave unchanged".
++ */
++class EmployeeBulkUpdateController extends Controller
++{
++    public function __construct()
++    {
++        $this->middleware('auth');
++    }
++
++    private function pageData(): array
++    {
++        $user = Auth::user();
++
++        return [
++            'canUpdate' => EmployeeCreator::workflowFor($user, true) !== null,
++            'needsApprover' => EmployeeCreator::needsApprover($user),
++            'approvers' => EmployeeCreator::approversFor($user),
++            'recent' => EmployeeImport::where('user_id', $user->id)->where('mode', 'update')->where('status', 'completed')->latest()->limit(5)->get(),
++        ];
++    }
++
++    public function index()
++    {
++        return view('employees.bulk-update', $this->pageData());
++    }
++
++    /** Download: the employee list's current filters (or everyone in scope when there are none). */
++    public function template(Request $request)
++    {
++        $user = Auth::user();
++        abort_if(EmployeeCreator::workflowFor($user, true) === null, 403, 'Your role cannot edit employees.');
++
++        $ids = app(EmployeeController::class)->bulkUpdateEmployeeIds($request);
++        if (! $ids) {
++            return back()->with('error', 'No employees match the current filters.');
++        }
++        if (count($ids) > EmployeeBulkImport::MAX_UPDATE_ROWS) {
++            return back()->with('error', count($ids) . ' employees match. Narrow the filters to ' . EmployeeBulkImport::MAX_UPDATE_ROWS . ' or fewer (e.g. one field office) and download again.');
++        }
++
++        return (new UpdateTemplateExport($user, $ids, Gate::allows('view-salaries')))
++            ->download('ISSOBS_Employee_Update_' . now()->format('Y-m-d_His') . '.xlsx');
++    }
++
++    public function preview(Request $request)
++    {
++        $user = Auth::user();
++        abort_if(EmployeeCreator::workflowFor($user, true) === null, 403, 'Your role cannot edit employees.');
++
++        $needsApprover = EmployeeCreator::needsApprover($user);
++        $allowedApprovers = EmployeeCreator::approversFor($user)->pluck('id')->map(fn ($id) => (int) $id)->all();
++        $request->validate([
++            'file' => 'required|file|mimes:xlsx|max:10240',
++            'approver_id' => [$needsApprover ? 'required' : 'nullable', 'integer', function ($attr, $value, $fail) use ($allowedApprovers) {
++                if ($value !== null && ! in_array((int) $value, $allowedApprovers, true)) {
++                    $fail('Choose who to assign these changes to from the list.');
++                }
++            }],
++        ], ['approver_id.required' => 'Choose who to assign these changes to.']);
++
++        $stored = $request->file('file')->storeAs('employee-imports', Str::uuid() . '.xlsx', 'local');
++        $import = EmployeeImport::create([
++            'user_id' => $user->id,
++            'mode' => 'update',
++            'approver_id' => $request->input('approver_id'),
++            'original_name' => $request->file('file')->getClientOriginalName(),
++            'stored_path' => $stored,
++        ]);
++
++        return $this->showPreview($import);
++    }
++
++    public function show(EmployeeImport $import)
++    {
++        $this->authorizeImport($import);
++
++        return $this->showPreview($import);
++    }
++
++    private function showPreview(EmployeeImport $import)
++    {
++        [$read, $checked] = $this->check($import);
++        if ($read['error']) {
++            return redirect()->route('employees.bulk-update')->withErrors(['file' => $read['error']]);
++        }
++        $import->update([
++            'total_rows' => $checked['summary']['total'],
++            'valid_rows' => $checked['summary']['changed'],
++            'error_rows' => $checked['summary']['errors'],
++        ]);
++
++        return view('employees.bulk-update', $this->pageData() + [
++            'import' => $import,
++            'results' => $checked['results'],
++            'summary' => $checked['summary'],
++        ]);
++    }
++
++    public function confirm(Request $request, EmployeeImport $import)
++    {
++        $this->authorizeImport($import);
++        abort_if($import->status !== 'previewed', 409, 'This file has already been applied.');
++
++        $user = Auth::user();
++        [$read, $checked] = $this->check($import);   // check again: data may have changed since the preview
++        if ($read['error']) {
++            return redirect()->route('employees.bulk-update')->withErrors(['file' => $read['error']]);
++        }
++
++        $apply = array_filter($checked['results'], fn ($r) => ! $r['errors'] && $r['changes']);
++        if (! $apply) {
++            return redirect()->route('employees.bulk-update.show', $import)->withErrors(['file' => 'There are no changes to apply.']);
++        }
++        $payment = count(array_filter($apply, fn ($r) => $r['payment_change']));
++        if ($payment && ! $request->boolean('confirm_payment_changes')) {
++            return redirect()->route('employees.bulk-update.show', $import)
++                ->withErrors(['confirm_payment_changes' => "Tick the box to confirm the $payment bank / payment changes."]);
++        }
++
++        // All rows in one transaction: either every change is applied or none is.
++        [$updated, $audit] = DB::transaction(function () use ($apply, $user, $import) {
++            $updated = [];
++            $audit = [];
++            foreach ($apply as $row) {
++                EmployeeCreator::update($row['employee_id'], $row['employee'], $row['pay'], $user, $import->approver_id);
++                $updated[(string) $row['row']] = $row['employee_id'];
++                $audit[$row['employee_id']] = array_map(fn ($c) => ['field' => $c[0], 'old' => $c[1], 'new' => $c[2]], $row['changes']);
++            }
++            return [$updated, $audit];
++        });
++
++        $import->update([
++            'status' => 'completed',
++            'created_count' => count($updated),
++            'skipped_count' => $checked['summary']['errors'],
++            'created_ids' => $updated,
++            'changes' => $audit,
++            'completed_at' => now(),
++        ]);
++
++        $message = count($updated) . ' employees updated from ' . $import->original_name . '.';
++        if ($import->skipped_count) {
++            $message .= ' ' . $import->skipped_count . ' rows with errors were skipped.';
++        }
++
++        return redirect()->route('employees.bulk-update')->with('success', $message)->with('completed_import', $import->id);
++    }
++
++    public function errors(EmployeeImport $import)
++    {
++        $this->authorizeImport($import);
++        [$read, $checked] = $this->check($import);
++        abort_if((bool) $read['error'], 422, $read['error'] ?? '');
++
++        return (new ErrorReportExport($read['rows'], $checked['results'], true))
++            ->download('Update_errors_' . pathinfo($import->original_name, PATHINFO_FILENAME) . '.xlsx');
++    }
++
++    private function check(EmployeeImport $import): array
++    {
++        $read = EmployeeBulkImport::read($import->stored_path, 'local', 'update');
++        if ($read['error']) {
++            return [$read, ['results' => [], 'summary' => []]];
++        }
++        $ids = array_values(array_unique(array_filter(array_map(fn ($v) => EmployeeBulkImport::parseEmployeeId($v['employee_id']), $read['rows']))));
++        $allowed = app(EmployeeController::class)->visibleEmployeeIds($ids);
++
++        return [$read, EmployeeBulkImport::validateUpdate($read['rows'], Auth::user(), $allowed, Gate::allows('view-salaries'))];
++    }
++
++    private function authorizeImport(EmployeeImport $import): void
++    {
++        abort_unless((int) $import->user_id === (int) Auth::id() && $import->mode === 'update', 404);
++    }
++}
+diff --git a/app/Http/Controllers/EmployeeController.php b/app/Http/Controllers/EmployeeController.php
+index ee95a12..8d4b6bf 100644
+--- a/app/Http/Controllers/EmployeeController.php
++++ b/app/Http/Controllers/EmployeeController.php
+@@ -409,6 +409,26 @@ private function employeeListBase()
+         return $query;
+     }
+  
++    /**
++     * Employees in the list's scope that match the list's current filters (date range,
++     * cards, search box, column filters) - for the bulk update download.
++     */
++    public function bulkUpdateEmployeeIds(Request $request): array
++    {
++        $query = $this->employeeListBase();
++        $this->employeeListFilters($query, $request);
++
++        return $query->reorder()->orderBy('employees.name')->orderBy('employees.id')
++            ->pluck('employees.id')->map(fn ($id) => (int) $id)->unique()->values()->all();
++    }
++
++    /** Which of these employees this user may see (and therefore bulk update). */
++    public function visibleEmployeeIds(array $ids): array
++    {
++        return $this->employeeListBase()->whereIn('employees.id', $ids ?: [0])
++            ->pluck('employees.id')->map(fn ($id) => (int) $id)->unique()->values()->all();
++    }
++
+     private function employeeListFilters($query, Request $request): void
+     {
+         $canViewSalary = $this->employeeCanViewSalary();
+diff --git a/app/Http/Controllers/EmployeeImportController.php b/app/Http/Controllers/EmployeeImportController.php
+index f5d8574..f660b4a 100644
+--- a/app/Http/Controllers/EmployeeImportController.php
++++ b/app/Http/Controllers/EmployeeImportController.php
+@@ -8,9 +8,9 @@
+ use Illuminate\Http\Request;
+ use Illuminate\Support\Facades\Auth;
+ use Illuminate\Support\Facades\DB;
+-use Illuminate\Support\Facades\Storage;
+ use Illuminate\Support\Str;
+-use PhpOffice\PhpSpreadsheet\IOFactory;
++use App\Exports\EmployeeUpload\ErrorReportExport;
++use App\Exports\EmployeeUpload\TemplateExport;
+ 
+ /**
+  * Bulk employee upload: 1) upload  2) preview (nothing saved)  3) confirm.
+@@ -32,7 +32,7 @@ private function pageData(): array
+             'canCreate' => EmployeeCreator::workflowFor($user) !== null,
+             'needsApprover' => EmployeeCreator::needsApprover($user),
+             'approvers' => EmployeeCreator::approversFor($user),
+-            'recent' => EmployeeImport::where('user_id', $user->id)->where('status', 'completed')->latest()->limit(5)->get(),
++            'recent' => EmployeeImport::where('user_id', $user->id)->where('mode', 'create')->where('status', 'completed')->latest()->limit(5)->get(),
+         ];
+     }
+ 
+@@ -43,11 +43,7 @@ public function index()
+ 
+     public function template()
+     {
+-        $book = EmployeeBulkImport::templateFor(Auth::user());
+-        $path = tempnam(sys_get_temp_dir(), 'tpl') . '.xlsx';
+-        IOFactory::createWriter($book, 'Xlsx')->save($path);
+-
+-        return response()->download($path, 'ISSOBS_Employee_Upload_Template.xlsx')->deleteFileAfterSend();
++        return (new TemplateExport(Auth::user()))->download('ISSOBS_Employee_Upload_Template.xlsx');
+     }
+ 
+     public function preview(Request $request)
+@@ -154,16 +150,14 @@ public function errors(EmployeeImport $import)
+         // After a completed import, the created rows now "already exist" - report only the skipped rows.
+         $created = array_map('intval', array_keys($import->created_ids ?? []));
+         $results = array_filter($checked['results'], fn ($r) => ! in_array((int) $r['row'], $created, true));
+-        $book = EmployeeBulkImport::errorReport(Storage::disk('local')->path($import->stored_path), $results);
+-        $path = tempnam(sys_get_temp_dir(), 'err') . '.xlsx';
+-        IOFactory::createWriter($book, 'Xlsx')->save($path);
+-
+-        return response()->download($path, 'Upload_errors_' . pathinfo($import->original_name, PATHINFO_FILENAME) . '.xlsx')->deleteFileAfterSend();
++        return (new ErrorReportExport($read['rows'], $results))
++            ->download('Upload_errors_' . pathinfo($import->original_name, PATHINFO_FILENAME) . '.xlsx');
+     }
+ 
+     private function check(EmployeeImport $import): array
+     {
+-        $read = EmployeeBulkImport::read(Storage::disk('local')->path($import->stored_path));
++        // Read with Laravel Excel straight from the "local" disk (App\Imports\EmployeeUploadImport).
++        $read = EmployeeBulkImport::read($import->stored_path, 'local');
+         $checked = $read['error'] ? ['results' => [], 'summary' => []] : EmployeeBulkImport::validate($read['rows'], Auth::user());
+ 
+         return [$read, $checked];
+@@ -171,6 +165,6 @@ private function check(EmployeeImport $import): array
+ 
+     private function authorizeImport(EmployeeImport $import): void
+     {
+-        abort_unless((int) $import->user_id === (int) Auth::id(), 404);
++        abort_unless((int) $import->user_id === (int) Auth::id() && ($import->mode ?? 'create') === 'create', 404);
+     }
+ }
+diff --git a/app/Imports/EmployeeUploadImport.php b/app/Imports/EmployeeUploadImport.php
+new file mode 100644
+index 0000000..a8f4197
+--- /dev/null
++++ b/app/Imports/EmployeeUploadImport.php
+@@ -0,0 +1,31 @@
++<?php
++
++namespace App\Imports;
++
++use Maatwebsite\Excel\Concerns\Importable;
++use Maatwebsite\Excel\Concerns\WithHeadingRow;
++
++/**
++ * Reads the bulk employee upload template (same approach as SalaryImport):
++ *
++ *     $sheets = (new EmployeeUploadImport)->toCollection($file);
++ *
++ * The template has a title on row 1 and the column headers on row 2, so the heading
++ * row is 2. Headers are turned into keys by Laravel Excel's "slug" formatter
++ * ("Full Name *" -> full_name, "Ghana Card (NIA) No." -> ghana_card_nia_no).
++ * Checking the rows and creating employees is done by App\Support\EmployeeBulkImport
++ * and App\Support\EmployeeCreator.
++ */
++class EmployeeUploadImport implements WithHeadingRow
++{
++    use Importable;
++
++    public function __construct(private int $headingRow = 2)
++    {
++    }
++
++    public function headingRow(): int
++    {
++        return $this->headingRow;
++    }
++}
+diff --git a/app/Models/EmployeeImport.php b/app/Models/EmployeeImport.php
+index 3427c91..bc9cc78 100644
+--- a/app/Models/EmployeeImport.php
++++ b/app/Models/EmployeeImport.php
+@@ -4,16 +4,17 @@
+ 
+ use Illuminate\Database\Eloquent\Model;
+ 
+-/** One bulk employee upload (see EmployeeImportController). */
++/** One bulk employee upload: new employees (EmployeeImportController) or changes (EmployeeBulkUpdateController). */
+ class EmployeeImport extends Model
+ {
+     protected $fillable = [
+-        'user_id', 'approver_id', 'original_name', 'stored_path', 'status', 'total_rows', 'valid_rows',
+-        'error_rows', 'created_count', 'skipped_count', 'created_ids', 'completed_at',
++        'user_id', 'mode', 'approver_id', 'original_name', 'stored_path', 'status', 'total_rows', 'valid_rows',
++        'error_rows', 'created_count', 'skipped_count', 'created_ids', 'changes', 'completed_at',
+     ];
+ 
+     protected $casts = [
+         'created_ids' => 'array',
++        'changes' => 'array',
+         'completed_at' => 'datetime',
+     ];
+ 
+diff --git a/app/Support/EmployeeBulkImport.php b/app/Support/EmployeeBulkImport.php
+index 164a3a1..839c0b5 100644
+--- a/app/Support/EmployeeBulkImport.php
++++ b/app/Support/EmployeeBulkImport.php
+@@ -9,12 +9,9 @@
+ use App\Models\User;
+ use Carbon\Carbon;
+ use Illuminate\Support\Facades\DB;
+-use PhpOffice\PhpSpreadsheet\Cell\DataValidation;
+-use PhpOffice\PhpSpreadsheet\IOFactory;
+-use PhpOffice\PhpSpreadsheet\NamedRange;
++use App\Imports\EmployeeUploadImport;
++use Maatwebsite\Excel\Imports\HeadingRowFormatter;
+ use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
+-use PhpOffice\PhpSpreadsheet\Spreadsheet;
+-use PhpOffice\PhpSpreadsheet\Style\Fill;
+ 
+ /**
+  * Bulk employee upload: read the template, check every row, build the error report
+@@ -23,7 +20,9 @@
+  */
+ class EmployeeBulkImport
+ {
+-    public const MAX_ROWS = 1000;
++    public const MAX_ROWS = 1000;          // new employees per file
++    public const MAX_UPDATE_ROWS = 5000;   // employees per bulk-update file
++    public const KEY_HEADER = 'Employee ID';
+ 
+     /** Template header (without " *") => key. Order does not matter when reading. */
+     public const COLUMNS = [
+@@ -45,76 +44,84 @@ class EmployeeBulkImport
+     /* ================================================================ reading */
+ 
+     /**
++     * Read an uploaded file with Laravel Excel (App\Imports\EmployeeUploadImport).
++     *
++     * @param string      $path  a path on $disk (or an absolute path when $disk is null)
+      * @return array{rows: array<int, array<string, string|null>>, error: ?string, headers: array<int, string>}
+-     *   rows keyed by spreadsheet row number
++     *   rows keyed by spreadsheet row number, values keyed by COLUMNS keys
+      */
+-    public static function read(string $path): array
++    public static function read(string $path, ?string $disk = null, string $mode = 'create'): array
+     {
++        // Laravel Excel turns headers into slugs; map those slugs back to our keys.
++        $slugToKey = array_combine(HeadingRowFormatter::format(array_keys(self::COLUMNS)), array_values(self::COLUMNS));
++        $slugToKey[HeadingRowFormatter::format([self::KEY_HEADER])[0]] = 'employee_id';
++        $required = $mode === 'update' ? ['employee_id'] : self::REQUIRED;
++        $maxRows = $mode === 'update' ? self::MAX_UPDATE_ROWS : self::MAX_ROWS;
++
++        $best = null;
+         try {
+-            $book = IOFactory::load($path);
++            foreach ([2, 1, 3] as $headingRow) {       // 2 = the template; 1/3 = hand-made files
++                $sheets = (new EmployeeUploadImport($headingRow))->toCollection($path, $disk);
++                foreach ($sheets as $sheet) {
++                    $first = $sheet->first();
++                    if (! $first) {
++                        continue;
++                    }
++                    $matched = array_intersect_key($slugToKey, $first->toArray());
++                    if (count($matched) >= 5 && (! $best || count($matched) > count($best['map']))) {
++                        $best = ['map' => $matched, 'rows' => $sheet, 'heading' => $headingRow];
++                    }
++                }
++                if ($best) {
++                    break;
++                }
++            }
+         } catch (\Throwable $e) {
+             return ['rows' => [], 'headers' => [], 'error' => 'The file could not be read. Upload the .xlsx template.'];
+         }
+-        $sheet = $book->getSheetByName('Employees') ?? $book->getActiveSheet();
+ 
+-        // Find the header row (row 2 in the template; also accept row 1).
+-        $headerRow = null;
+-        $map = [];
+-        foreach ([2, 1, 3] as $r) {
+-            if ($r > $sheet->getHighestRow()) {
+-                continue;
+-            }
+-            $found = [];
+-            foreach ($sheet->getRowIterator($r, $r)->current()->getCellIterator() as $cell) {
+-                $label = trim(preg_replace('/\s*\*\s*$/', '', (string) $cell->getValue()));
+-                if (isset(self::COLUMNS[$label])) {
+-                    $found[$cell->getColumn()] = self::COLUMNS[$label];
+-                }
+-            }
+-            if (count($found) >= 5) {
+-                $headerRow = $r;
+-                $map = $found;
+-                break;
+-            }
+-        }
+-        if (! $headerRow) {
++        if (! $best) {
+             return ['rows' => [], 'headers' => [], 'error' => 'This is not the employee template: its column headers were not found.'];
+         }
+-        $missing = array_diff(self::REQUIRED, $map);
++        $missing = array_diff($required, $best['map']);
+         if ($missing) {
++            if ($mode === 'update') {
++                return ['rows' => [], 'headers' => [], 'error' => 'This file has no "Employee ID" column. Download the bulk update file from the employee list - it identifies each employee.'];
++            }
+             return ['rows' => [], 'headers' => [], 'error' => 'Required columns are missing: ' . implode(', ', array_map(fn ($k) => array_search($k, self::COLUMNS), $missing)) . '.'];
+         }
+ 
+         $rows = [];
+-        $last = $sheet->getHighestDataRow();
+-        for ($r = $headerRow + 1; $r <= $last; $r++) {
++        foreach ($best['rows'] as $index => $row) {
+             $values = [];
+             $any = false;
+-            foreach ($map as $col => $key) {
+-                $cell = $sheet->getCell($col . $r);
+-                $v = $cell->getValue();
+-                if (is_string($v) && str_starts_with($v, '=')) {
+-                    $v = $cell->getCalculatedValue();
+-                }
++            foreach ($best['map'] as $slug => $key) {
++                $v = $row[$slug] ?? null;
+                 if (in_array($key, ['date_of_birth', 'date_of_joining'], true) && is_numeric($v)) {
+-                    $v = ExcelDate::excelToDateTimeObject((float) $v)->format('Y-m-d');
+-                } elseif (is_float($v) && floor($v) == $v && ! in_array($key, ['basic_salary', 'allowances'], true)) {
++                    $v = ExcelDate::excelToDateTimeObject((float) $v)->format('Y-m-d');   // Excel date serial
++                } elseif ((is_int($v) || (is_float($v) && floor($v) == $v)) && ! in_array($key, ['basic_salary', 'allowances'], true)) {
+                     $v = sprintf('%.0f', $v); // numbers typed into text columns (phone, account...)
+                 }
+                 $v = $v === null ? null : trim((string) $v);
+                 $values[$key] = $v === '' ? null : $v;
+                 $any = $any || $values[$key] !== null;
+             }
++            foreach (array_merge(self::COLUMNS, ['employee_id']) as $key) {
++                $values[$key] ??= null; // optional columns missing from a hand-made file
++            }
+             if ($any) {
+-                $rows[$r] = $values;
++                $rows[$best['heading'] + 1 + $index] = $values;   // spreadsheet row number
+             }
+         }
+ 
+-        if (count($rows) > self::MAX_ROWS) {
+-            return ['rows' => [], 'headers' => [], 'error' => 'The file has ' . count($rows) . ' employees. The limit is ' . self::MAX_ROWS . ' per upload.'];
++        if (count($rows) > $maxRows) {
++            return ['rows' => [], 'headers' => [], 'error' => 'The file has ' . count($rows) . ' employees. The limit is ' . $maxRows . ' per upload.'];
++        }
++        if ($mode === 'create' && array_filter(array_column($rows, 'employee_id'))) {
++            return ['rows' => [], 'headers' => [], 'error' => 'This is a bulk UPDATE file (it has Employee IDs). Upload it on Employees > Bulk update, or remove the Employee ID column to add new employees.'];
+         }
+ 
+-        return ['rows' => $rows, 'headers' => $map, 'error' => null];
++        return ['rows' => $rows, 'headers' => $best['map'], 'error' => null];
+     }
+ 
+     /* ============================================================= validation */
+@@ -135,16 +142,132 @@ public static function normalisePhone(?string $phone): ?string
+         return $d;
+     }
+ 
++    /** DB attribute => label, for change lists. Employee attributes first, then payment details (pay.*). */
++    public const FIELD_LABELS = [
++        'name' => 'Full Name', 'gender' => 'Gender', 'phone_number' => 'Phone Number', 'channel' => 'MoMo Network',
++        'date_of_birth' => 'Date of Birth', 'nia_number' => 'Ghana Card (NIA) No.', 'address' => 'Address',
++        'marital_status' => 'Marital Status', 'worker_type' => 'Worker Type', 'date_of_joining' => 'Date of Joining',
++        'department_id' => 'Department', 'role_id' => 'Role', 'field_id' => 'Field Office', 'client_id' => 'Client',
++        'location' => 'Location', 'basic_salary' => 'Basic Salary', 'allowances' => 'Allowances',
++        'tax_button' => 'Deduct Tax', 'tin_number' => 'TIN Number', 'ssnit_button' => 'Deduct SSNIT', 'ssnit_number' => 'SSNIT Number',
++        'payment_type' => 'Payment Type', 'gurantor_name' => 'Guarantor Name', 'gurantor_number' => 'Guarantor Phone',
++        'gurantor_address' => 'Guarantor Address', 'gurantor_nia_number' => 'Guarantor NIA No.', 'relationship' => 'Relationship',
++        'pay.bank_id' => 'Bank', 'pay.acc_number' => 'Account Number', 'pay.branch' => 'Branch', 'pay.branch_code' => 'Branch Code',
++    ];
++
++    /** Changing any of these is a payment-detail change (extra confirmation; no re-approval, as on the payment info screen). */
++    public const PAYMENT_FIELDS = ['payment_type', 'pay.bank_id', 'pay.acc_number', 'pay.branch', 'pay.branch_code'];
++
+     /**
+-     * Check every row. Nothing is saved.
++     * Turn the PROVIDED cells of one row into database values and check their format.
++     * Blank cells are not returned. This is the only place field rules live: create and
++     * update both use it.
+      *
+-     * @return array{results: array<int, array>, summary: array}
+-     *   result: row, name, field, client, priority, errors[], warnings[], employee[], pay[]
++     * @return array<string, mixed> attribute => value ("pay.*" keys are payment details)
+      */
+-    public static function validate(array $rows, User $user): array
++    private static function convert(array $v, array $lookups, array &$e, array &$w): array
++    {
++        $out = [];
++        $text = function (string $key, string $attr, int $max) use ($v, &$out, &$e) {
++            if ($v[$key] !== null) {
++                if (mb_strlen($v[$key]) > $max) $e[] = array_search($key, self::COLUMNS) . " is too long (max $max).";
++                $out[$attr] = $v[$key];
++            }
++        };
++        $choice = function (string $key, string $attr, array $allowed, string $message) use ($v, &$out, &$e) {
++            if ($v[$key] !== null) {
++                $x = strtolower($v[$key]);
++                if (! in_array($x, $allowed, true)) $e[] = $message;
++                $out[$attr] = $x;
++            }
++        };
++
++        $text('full_name', 'name', 255);
++        $choice('gender', 'gender', ['male', 'female'], 'Gender must be Male or Female.');
++
++        if ($v['phone_number'] !== null) {
++            $phone = self::normalisePhone($v['phone_number']);
++            if (! preg_match('/^233\d{9}$/', $phone)) $e[] = 'Phone Number must be a Ghana number, e.g. 233241234567.';
++            $out['phone_number'] = $phone;
++        }
++        if ($v['momo_network'] !== null) {
++            $n = strtoupper($v['momo_network']);
++            if (! isset(self::NETWORKS[$n])) $e[] = 'MoMo Network must be MTN, TELECEL or AIRTELTIGO.';
++            $out['channel'] = self::NETWORKS[$n] ?? null;
++        }
++        foreach (['date_of_birth' => 'Date of Birth', 'date_of_joining' => 'Date of Joining'] as $key => $label) {
++            if ($v[$key] !== null) {
++                $d = self::parseDate($v[$key]);
++                if (! $d) $e[] = "$label is not a valid date.";
++                $out[$key] = $d;
++            }
++        }
++        if (! empty($out['date_of_birth']) && Carbon::parse($out['date_of_birth'])->gt(now()->subYears(16))) {
++            $w[] = 'Date of Birth makes this person younger than 16.';
++        }
++        $text('nia_number', 'nia_number', 50);
++        $text('address', 'address', 500);
++        $choice('marital_status', 'marital_status', ['single', 'married', 'divorced', 'widowed'], 'Marital Status must be Single, Married, Divorced or Widowed.');
++        $choice('worker_type', 'worker_type', ['employee', 'contractor'], 'Worker Type must be Employee or Contractor.');
++
++        if ($v['department'] !== null) $out['department_id'] = self::resolve($v['department'], $lookups['departments'], 'Department', $e);
++        if ($v['role'] !== null) $out['role_id'] = self::resolve($v['role'], $lookups['roles'], 'Role', $e);
++
++        // Field office + client must be within what this user may assign.
++        if ($v['field_office'] !== null) {
++            $fieldId = self::resolve($v['field_office'], $lookups['fields'], 'Field Office', $e);
++            if ($fieldId && ! in_array($fieldId, $lookups['allowed_fields'], true)) {
++                $e[] = 'Field Office "' . $lookups['fields'][$fieldId] . '" is not one you can assign.';
++                $fieldId = null;
++            }
++            $out['field_id'] = $fieldId;
++        }
++        if ($v['client'] !== null) {
++            $out['client_id'] = self::resolve($v['client'], $lookups['clients'], 'Client', $e, 'is not an active, approved client you can assign');
++        }
++        $text('location', 'location', 255);
++
++        foreach (['basic_salary' => 'Basic Salary', 'allowances' => 'Allowances'] as $key => $label) {
++            if ($v[$key] !== null) {
++                $num = str_replace([',', 'GH₵', 'GHS', ' '], '', $v[$key]);
++                if (! is_numeric($num) || (float) $num < 0) $e[] = "$label must be a number of 0 or more.";
++                else $out[$key] = round((float) $num, 2);
++            }
++        }
++
++        // Tax / SSNIT: "Yes" = the form's ticked checkbox ("on").
++        foreach ([['deduct_tax', 'tax_button', 'Deduct Tax'], ['deduct_ssnit', 'ssnit_button', 'Deduct SSNIT']] as [$flag, $button, $label]) {
++            if ($v[$flag] !== null) {
++                $f = strtolower($v[$flag]);
++                if (! in_array($f, ['yes', 'no', 'y', 'n'], true)) $e[] = "$label must be Yes or No.";
++                $out[$button] = in_array($f, ['yes', 'y'], true) ? 'on' : null;
++            }
++        }
++        $text('tin_number', 'tin_number', 50);
++        $text('ssnit_number', 'ssnit_number', 50);
++
++        if ($v['payment_type'] !== null) {
++            $type = ucfirst(strtolower($v['payment_type']));
++            if (! in_array($type, ['Cash', 'Bank'], true)) $e[] = 'Payment Type must be Cash or Bank.';
++            $out['payment_type'] = $type;
++        }
++        if ($v['bank'] !== null) $out['pay.bank_id'] = self::resolve($v['bank'], $lookups['banks'], 'Bank', $e);
++        $text('account_number', 'pay.acc_number', 50);
++        $text('branch', 'pay.branch', 255);
++        $text('branch_code', 'pay.branch_code', 50);
++
++        $text('guarantor_name', 'gurantor_name', 255);
++        $text('guarantor_phone', 'gurantor_number', 20);
++        $text('guarantor_address', 'gurantor_address', 500);
++        $text('guarantor_nia', 'gurantor_nia_number', 50);
++        $text('relationship', 'relationship', 100);
++
++        return $out;
++    }
++
++    /** Values that must be unique, collected per row (only cells that are filled in). */
++    private static function inFileValues(array $rows): array
+     {
+-        $lookups = self::lookups($user);
+-        $existing = self::existingValues($rows);
+         $inFile = [];
+         foreach ($rows as $r => $v) {
+             foreach (['phone' => self::normalisePhone($v['phone_number']), 'nia' => $v['nia_number'], 'acc' => $v['account_number'],
+@@ -154,151 +277,86 @@ public static function validate(array $rows, User $user): array
+                 }
+             }
+         }
++
++        return $inFile;
++    }
++
++    /** Uniqueness of every value in the row; $self = the employee being updated (its own values are fine). */
++    private static function uniqueChecks(array $v, array $existing, array $inFile, array &$e, ?int $self = null): void
++    {
++        $phone = self::normalisePhone($v['phone_number']);
++        if ($phone !== null && preg_match('/^233\d{9}$/', $phone)) {
++            $owner = $existing['phone'][$phone] ?? null;
++            if ($owner !== null && (int) $owner !== $self) {
++                $e[] = 'Phone Number already belongs to FWSS ' . $owner . '.';
++            } elseif (count($inFile['phone'][mb_strtolower($phone)] ?? []) > 1) {
++                $e[] = 'Phone Number is repeated in this file (rows ' . implode(', ', $inFile['phone'][mb_strtolower($phone)]) . ').';
++            }
++        }
++        foreach ([['nia_number', 'nia', 'Ghana Card (NIA) No.'], ['account_number', 'acc', 'Account Number'], ['tin_number', 'tin', 'TIN Number'],
++                  ['ssnit_number', 'ssnit', 'SSNIT Number'], ['guarantor_nia', 'gnia', 'Guarantor NIA No.']] as [$key, $k, $label]) {
++            self::uniqueCheck($v[$key], $k, $label, $existing, $inFile, $e, $self);
++        }
++    }
++
++    /**
++     * NEW employees: check every row. Nothing is saved.
++     *
++     * @return array{results: array<int, array>, summary: array}
++     *   result: row, name, field, client, priority, errors[], warnings[], employee[], pay[]
++     */
++    public static function validate(array $rows, User $user): array
++    {
++        $lookups = self::lookups($user);
++        $existing = self::existingValues($rows);
++        $inFile = self::inFileValues($rows);
+         $workflow = EmployeeCreator::workflowFor($user);
+ 
+         $results = [];
+         foreach ($rows as $r => $v) {
+             $e = [];
+             $w = [];
+-            $emp = [];
+-            $pay = [];
+-
+             foreach (self::REQUIRED as $key) {
+                 if ($v[$key] === null) {
+                     $e[] = array_search($key, self::COLUMNS) . ' is required.';
+                 }
+             }
++            $c = self::convert($v, $lookups, $e, $w);
++            self::uniqueChecks($v, $existing, $inFile, $e);
+ 
+-            $emp['name'] = $v['full_name'];
+-            if ($v['full_name'] !== null && mb_strlen($v['full_name']) > 255) $e[] = 'Full Name is too long (max 255).';
+-
+-            $g = strtolower((string) $v['gender']);
+-            if ($v['gender'] !== null && ! in_array($g, ['male', 'female'], true)) $e[] = 'Gender must be Male or Female.';
+-            $emp['gender'] = $g ?: null;
+-
+-            // Phone: normalised to 233XXXXXXXXX, unique in ISSOBS and in this file.
+-            $phone = self::normalisePhone($v['phone_number']);
+-            if ($v['phone_number'] !== null) {
+-                if (! preg_match('/^233\d{9}$/', $phone)) {
+-                    $e[] = 'Phone Number must be a Ghana number, e.g. 233241234567.';
+-                } elseif (isset($existing['phone'][$phone])) {
+-                    $e[] = 'Phone Number already belongs to FWSS ' . $existing['phone'][$phone] . '.';
+-                } elseif (count($inFile['phone'][mb_strtolower($phone)] ?? []) > 1) {
+-                    $e[] = 'Phone Number is repeated in this file (rows ' . implode(', ', $inFile['phone'][mb_strtolower($phone)]) . ').';
+-                }
+-            }
+-            $emp['phone_number'] = $phone;
+-
+-            if ($v['momo_network'] !== null) {
+-                $n = strtoupper($v['momo_network']);
+-                if (! isset(self::NETWORKS[$n])) $e[] = 'MoMo Network must be MTN, TELECEL or AIRTELTIGO.';
+-                $emp['channel'] = self::NETWORKS[$n] ?? null;
+-            }
+-
+-            foreach (['date_of_birth' => 'Date of Birth', 'date_of_joining' => 'Date of Joining'] as $key => $label) {
+-                $emp[$key] = null;
+-                if ($v[$key] !== null) {
+-                    $d = self::parseDate($v[$key]);
+-                    if (! $d) $e[] = "$label is not a valid date.";
+-                    $emp[$key] = $d;
+-                }
+-            }
+-            if ($emp['date_of_birth'] && Carbon::parse($emp['date_of_birth'])->gt(now()->subYears(16))) {
+-                $w[] = 'Date of Birth makes this person younger than 16.';
+-            }
+-
+-            self::uniqueCheck($v['nia_number'], 'nia', 'Ghana Card (NIA) No.', $existing, $inFile, $e);
+-            $emp['nia_number'] = $v['nia_number'];
+-            if ($v['nia_number'] !== null && mb_strlen($v['nia_number']) > 50) $e[] = 'Ghana Card (NIA) No. is too long (max 50).';
+-
+-            $emp['address'] = $v['address'];
+-            if ($v['address'] !== null && mb_strlen($v['address']) > 500) $e[] = 'Address is too long (max 500).';
+-
+-            if ($v['marital_status'] !== null) {
+-                $m = strtolower($v['marital_status']);
+-                if (! in_array($m, ['single', 'married', 'divorced', 'widowed'], true)) $e[] = 'Marital Status must be Single, Married, Divorced or Widowed.';
+-                $emp['marital_status'] = $m;
+-            }
+-            if ($v['worker_type'] !== null) {
+-                $t = strtolower($v['worker_type']);
+-                if (! in_array($t, ['employee', 'contractor'], true)) $e[] = 'Worker Type must be Employee or Contractor.';
+-                $emp['worker_type'] = $t;
+-            }
+-
+-            $emp['department_id'] = self::resolve($v['department'], $lookups['departments'], 'Department', $e);
+-            $emp['role_id'] = self::resolve($v['role'], $lookups['roles'], 'Role', $e);
+             if ($v['department'] === null) $w[] = 'No Department given.';
+             if ($v['role'] === null) $w[] = 'No Role given.';
+-
+-            // Field office + client must be within what this user may assign.
+-            $fieldId = self::resolve($v['field_office'], $lookups['fields'], 'Field Office', $e);
+-            if ($fieldId && ! in_array($fieldId, $lookups['allowed_fields'], true)) {
+-                $e[] = 'Field Office "' . $lookups['fields'][$fieldId] . '" is not one you can assign.';
+-                $fieldId = null;
++            if ($v['client'] === null) $w[] = 'No Client given.';
++            if ($v['basic_salary'] === null) $w[] = 'No Basic Salary given.';
++            $fieldId = $c['field_id'] ?? null;
++            $clientId = $c['client_id'] ?? null;
++            if ($clientId && $fieldId && (int) $lookups['client_field'][$clientId] !== $fieldId) {
++                $w[] = 'Client belongs to another field office (' . ($lookups['fields'][$lookups['client_field'][$clientId]] ?? '?') . ').';
+             }
+-            $emp['field_id'] = $fieldId;
+ 
+-            $clientId = null;
+-            if ($v['client'] !== null) {
+-                $clientId = self::resolve($v['client'], $lookups['clients'], 'Client', $e, 'is not an active, approved client you can assign');
+-                if ($clientId && $fieldId && (int) $lookups['client_field'][$clientId] !== $fieldId) {
+-                    $w[] = 'Client belongs to another field office (' . ($lookups['fields'][$lookups['client_field'][$clientId]] ?? '?') . ').';
+-                }
+-            } else {
+-                $w[] = 'No Client given.';
++            // Cross-field rules (same as the form).
++            if (($c['payment_type'] ?? null) === 'Bank') {
++                if ($v['bank'] === null) $e[] = 'Bank is required when Payment Type is Bank.';
++                if ($v['account_number'] === null) $e[] = 'Account Number is required when Payment Type is Bank.';
+             }
+-            $emp['client_id'] = $clientId;
+-
+-            $emp['location'] = $v['location'];
+-            if ($v['location'] !== null && mb_strlen($v['location']) > 255) $e[] = 'Location is too long (max 255).';
+-
+-            foreach (['basic_salary' => 'Basic Salary', 'allowances' => 'Allowances'] as $key => $label) {
+-                $emp[$key] = null;
+-                if ($v[$key] !== null) {
+-                    $num = str_replace([',', 'GH₵', 'GHS', ' '], '', $v[$key]);
+-                    if (! is_numeric($num) || (float) $num < 0) $e[] = "$label must be a number of 0 or more.";
+-                    else $emp[$key] = round((float) $num, 2);
+-                }
++            foreach ([['tax_button', 'tin_number', 'Deduct Tax', 'TIN Number'], ['ssnit_button', 'ssnit_number', 'Deduct SSNIT', 'SSNIT Number']] as [$button, $num, $flagLabel, $numLabel]) {
++                $yes = ($c[$button] ?? null) === 'on';
++                if ($yes && empty($c[$num])) $e[] = "$numLabel is required when $flagLabel is Yes.";
++                // As on the form: the number is only kept when the deduction is switched on.
++                if (! $yes && ! empty($c[$num])) $w[] = "$numLabel is ignored because $flagLabel is not Yes.";
++                if (! $yes) $c[$num] = null;
+             }
+-            if ($v['basic_salary'] === null) $w[] = 'No Basic Salary given.';
+ 
+-            // Tax / SSNIT: "Yes" = the form's ticked checkbox ("on").
+-            foreach ([['deduct_tax', 'tin_number', 'tax_button', 'tin', 'Deduct Tax', 'TIN Number'],
+-                      ['deduct_ssnit', 'ssnit_number', 'ssnit_button', 'ssnit', 'Deduct SSNIT', 'SSNIT Number']] as [$flag, $num, $button, $k, $flagLabel, $numLabel]) {
+-                $yes = null;
+-                if ($v[$flag] !== null) {
+-                    $f = strtolower($v[$flag]);
+-                    if (! in_array($f, ['yes', 'no', 'y', 'n'], true)) $e[] = "$flagLabel must be Yes or No.";
+-                    $yes = in_array($f, ['yes', 'y'], true);
++            $emp = [];
++            $pay = [];
++            foreach (array_keys(self::FIELD_LABELS) as $attr) {
++                if (str_starts_with($attr, 'pay.')) {
++                    $pay[substr($attr, 4)] = $c[$attr] ?? null;
++                } else {
++                    $emp[$attr] = $c[$attr] ?? null;
+                 }
+-                $emp[$button] = $yes ? 'on' : null;
+-                if ($yes && $v[$num] === null) $e[] = "$numLabel is required when $flagLabel is Yes.";
+-                self::uniqueCheck($v[$num], $k, $numLabel, $existing, $inFile, $e);
+-                // As on the form: the number is only kept when the deduction is switched on.
+-                $emp[$num] = $yes ? $v[$num] : null;
+-                if (! $yes && $v[$num] !== null) $w[] = "$numLabel is ignored because $flagLabel is not Yes.";
+             }
+ 
+-            $type = ucfirst(strtolower((string) $v['payment_type']));
+-            if ($v['payment_type'] !== null && ! in_array($type, ['Cash', 'Bank'], true)) $e[] = 'Payment Type must be Cash or Bank.';
+-            $emp['payment_type'] = $type ?: null;
+-
+-            $pay['bank_id'] = $v['bank'] !== null ? self::resolve($v['bank'], $lookups['banks'], 'Bank', $e) : null;
+-            if ($type === 'Bank' && $v['bank'] === null) $e[] = 'Bank is required when Payment Type is Bank.';
+-            if ($type === 'Bank' && $v['account_number'] === null) $e[] = 'Account Number is required when Payment Type is Bank.';
+-            self::uniqueCheck($v['account_number'], 'acc', 'Account Number', $existing, $inFile, $e);
+-            $pay['acc_number'] = $v['account_number'];
+-            $pay['branch'] = $v['branch'];
+-            $pay['branch_code'] = $v['branch_code'];
+-
+-            $emp['gurantor_name'] = $v['guarantor_name'];
+-            $emp['gurantor_number'] = $v['guarantor_phone'];
+-            if ($v['guarantor_phone'] !== null && mb_strlen($v['guarantor_phone']) > 20) $e[] = 'Guarantor Phone is too long (max 20).';
+-            $emp['gurantor_address'] = $v['guarantor_address'];
+-            self::uniqueCheck($v['guarantor_nia'], 'gnia', 'Guarantor NIA No.', $existing, $inFile, $e);
+-            $emp['gurantor_nia_number'] = $v['guarantor_nia'];
+-            $emp['relationship'] = $v['relationship'];
+-
+             [$priority] = PayPriority::evaluate($clientId, $fieldId, $emp['location'], $emp['gender']);
+ 
+             $results[$r] = [
+@@ -328,6 +386,217 @@ public static function validate(array $rows, User $user): array
+         ];
+     }
+ 
++    /** "FWSS 45", "fwss45", "45" -> 45 */
++    public static function parseEmployeeId(?string $value): ?int
++    {
++        if ($value === null || ! preg_match('/^\s*(?:FWSS\s*)?(\d+)\s*$/i', $value, $m)) {
++            return null;
++        }
++
++        return (int) $m[1];
++    }
++
++    /**
++     * EXISTING employees: compare each row with the employee's current details. Nothing is saved.
++     * Blank cells mean "leave unchanged".
++     *
++     * @param int[] $allowedIds  employees this user may update (the employee list's scope)
++     * @return array{results: array<int, array>, summary: array}
++     *   result: row, employee_id, name, errors[], warnings[], changes[label => [old, new]],
++     *           employee[attr => new], pay[attr => new], payment_change, priority_before, priority_after
++     */
++    public static function validateUpdate(array $rows, User $user, array $allowedIds, bool $canViewSalary): array
++    {
++        $lookups = self::lookups($user);
++        $existing = self::existingValues($rows);
++        $inFile = self::inFileValues($rows);
++        $allowed = array_flip(array_map('intval', $allowedIds));
++
++        $ids = array_values(array_unique(array_filter(array_map(fn ($v) => self::parseEmployeeId($v['employee_id'] ?? null), $rows))));
++        $current = self::currentDetails($ids);
++        $idRows = [];
++        foreach ($rows as $r => $v) {
++            if ($id = self::parseEmployeeId($v['employee_id'] ?? null)) {
++                $idRows[$id][] = $r;
++            }
++        }
++
++        $results = [];
++        foreach ($rows as $r => $v) {
++            $e = [];
++            $w = [];
++            $id = self::parseEmployeeId($v['employee_id'] ?? null);
++            $now = $id ? ($current[$id] ?? null) : null;
++
++            if (($v['employee_id'] ?? null) === null) {
++                $e[] = 'Employee ID is required (it identifies who to update).';
++            } elseif (! $id) {
++                $e[] = 'Employee ID "' . $v['employee_id'] . '" is not valid (use e.g. FWSS 45).';
++            } elseif (! $now || ! isset($allowed[$id])) {
++                $e[] = 'FWSS ' . $id . ' was not found among the employees you can update.';
++            } elseif (count($idRows[$id]) > 1) {
++                $e[] = 'FWSS ' . $id . ' appears more than once in this file (rows ' . implode(', ', $idRows[$id]) . ').';
++            }
++
++            if (! $canViewSalary && ($v['basic_salary'] !== null || $v['allowances'] !== null)) {
++                $w[] = 'Basic Salary and Allowances are ignored: you cannot change salaries.';
++                $v['basic_salary'] = $v['allowances'] = null;
++            }
++
++            $provided = self::convert($v, $lookups, $e, $w);
++            self::uniqueChecks($v, $existing, $inFile, $e, $id);
++
++            $changes = [];
++            $emp = [];
++            $pay = [];
++            $before = $after = 0;
++            if ($now && ! $e) {
++                // The employee as it would be after this row.
++                $merged = array_merge($now, $provided);
++
++                if (($merged['payment_type'] ?? null) === 'Bank') {
++                    if (empty($merged['pay.bank_id'])) $e[] = 'Bank is required when Payment Type is Bank.';
++                    if (empty($merged['pay.acc_number'])) $e[] = 'Account Number is required when Payment Type is Bank.';
++                }
++                foreach ([['tax_button', 'tin_number', 'Deduct Tax', 'TIN Number'], ['ssnit_button', 'ssnit_number', 'Deduct SSNIT', 'SSNIT Number']] as [$button, $num, $flagLabel, $numLabel]) {
++                    if (($merged[$button] ?? null) === 'on' && empty($merged[$num])) $e[] = "$numLabel is required when $flagLabel is Yes.";
++                    // As on the edit form: switching the deduction off clears the number.
++                    if (($merged[$button] ?? null) !== 'on' && ! empty($merged[$num])) {
++                        if (array_key_exists($button, $provided)) {
++                            $merged[$num] = null;
++                        } elseif (array_key_exists($num, $provided)) {
++                            $w[] = "$numLabel is ignored because $flagLabel is not Yes.";
++                            $merged[$num] = $now[$num];
++                        }
++                    }
++                }
++                if (isset($provided['field_id']) || isset($provided['client_id'])) {
++                    $f = $merged['field_id'] ?? null;
++                    $cl = $merged['client_id'] ?? null;
++                    if ($cl && $f && isset($lookups['client_field'][$cl]) && (int) $lookups['client_field'][$cl] !== (int) $f) {
++                        $w[] = 'Client belongs to another field office (' . ($lookups['fields'][$lookups['client_field'][$cl]] ?? '?') . ').';
++                    }
++                }
++
++                foreach (self::FIELD_LABELS as $attr => $label) {
++                    if (! array_key_exists($attr, $merged) || self::same($attr, $now[$attr] ?? null, $merged[$attr])) {
++                        continue;
++                    }
++                    $changes[$attr] = [$label, self::display($attr, $now[$attr] ?? null, $lookups), self::display($attr, $merged[$attr], $lookups)];
++                    if (str_starts_with($attr, 'pay.')) {
++                        $pay[substr($attr, 4)] = $merged[$attr];
++                    } else {
++                        $emp[$attr] = $merged[$attr];
++                    }
++                }
++
++                [$before] = PayPriority::evaluate($now['client_id'] ?? null, $now['field_id'] ?? null, $now['location'] ?? null, $now['gender'] ?? null);
++                [$after] = PayPriority::evaluate($merged['client_id'] ?? null, $merged['field_id'] ?? null, $merged['location'] ?? null, $merged['gender'] ?? null);
++            }
++
++            $results[$r] = [
++                'row' => $r,
++                'employee_id' => $id,
++                'name' => $now['name'] ?? ($v['full_name'] ?? ''),
++                'errors' => $e,
++                'warnings' => $w,
++                'changes' => $e ? [] : $changes,
++                'employee' => $e ? [] : $emp,
++                'pay' => $e ? [] : $pay,
++                'payment_change' => ! $e && (bool) array_intersect(array_keys($changes), self::PAYMENT_FIELDS),
++                'profile_change' => ! $e && (bool) array_diff(array_keys($changes), self::PAYMENT_FIELDS),
++                'priority_before' => $before,
++                'priority_after' => $after,
++            ];
++        }
++
++        $ok = array_filter($results, fn ($x) => ! $x['errors']);
++
++        return [
++            'results' => $results,
++            'summary' => [
++                'total' => count($results),
++                'changed' => count(array_filter($ok, fn ($x) => $x['changes'])),
++                'unchanged' => count(array_filter($ok, fn ($x) => ! $x['changes'])),
++                'errors' => count($results) - count($ok),
++                'payment_changes' => count(array_filter($ok, fn ($x) => $x['payment_change'])),
++                'profile_changes' => count(array_filter($ok, fn ($x) => $x['profile_change'])),
++                'status' => EmployeeCreator::workflowFor($user, true)['status'] ?? null,
++            ],
++        ];
++    }
++
++    /** Current details of employees, in the same attribute names convert() produces. */
++    public static function currentDetails(array $ids): array
++    {
++        if (! $ids) {
++            return [];
++        }
++        $out = [];
++        $cols = ['id', 'name', 'gender', 'phone_number', 'channel', 'date_of_birth', 'nia_number', 'address', 'marital_status',
++            'worker_type', 'date_of_joining', 'department_id', 'role_id', 'field_id', 'client_id', 'location', 'basic_salary',
++            'allowances', 'tax_button', 'ssnit_button', 'payment_type', 'gurantor_name', 'gurantor_number', 'gurantor_address',
++            'gurantor_nia_number', 'relationship'];
++        foreach (['tin_number', 'ssnit_number'] as $c) {
++            if (EmployeeCreator::hasColumn('employees', $c)) $cols[] = $c;
++        }
++        foreach (array_chunk($ids, 500) as $chunk) {
++            $pays = DB::table('payment_infos')->whereIn('employee_id', $chunk)->orderBy('id')->get()->groupBy('employee_id');
++            foreach (DB::table('employees')->whereIn('id', $chunk)->get($cols) as $row) {
++                $d = (array) $row;
++                $p = $pays[$row->id][0] ?? null; // first record = what the app shows
++                foreach (['bank_id', 'acc_number', 'branch', 'branch_code'] as $c) {
++                    $d['pay.' . $c] = $p->$c ?? null;
++                }
++                foreach (['tin_number', 'ssnit_number'] as $c) {
++                    $d[$c] = ($d[$c] ?? null) ?: ($p->$c ?? null); // either place
++                }
++                $out[(int) $row->id] = $d;
++            }
++        }
++
++        return $out;
++    }
++
++    private static function same(string $attr, $old, $new): bool
++    {
++        if (in_array($attr, ['basic_salary', 'allowances'], true)) {
++            return round((float) $old, 2) === round((float) $new, 2) && ($old === null) === ($new === null);
++        }
++        if (in_array($attr, ['date_of_birth', 'date_of_joining'], true)) {
++            return ($old ? substr((string) $old, 0, 10) : null) === ($new ? substr((string) $new, 0, 10) : null);
++        }
++        if (in_array($attr, ['department_id', 'role_id', 'field_id', 'client_id', 'pay.bank_id'], true)) {
++            return (int) $old === (int) $new;
++        }
++        $o = $old === null ? '' : trim((string) $old);
++        $n = $new === null ? '' : trim((string) $new);
++
++        return in_array($attr, ['gender', 'marital_status', 'worker_type'], true) ? strcasecmp($o, $n) === 0 : $o === $n;
++    }
++
++    private static function display(string $attr, $value, array $lookups): string
++    {
++        if (in_array($attr, ['tax_button', 'ssnit_button'], true)) {
++            return $value === 'on' ? 'Yes' : 'No';
++        }
++        if ($value === null || $value === '') {
++            return '(blank)';
++        }
++
++        return match ($attr) {
++            'department_id' => $lookups['departments'][(int) $value] ?? (string) $value,
++            'role_id' => $lookups['roles'][(int) $value] ?? (string) $value,
++            'field_id' => $lookups['fields'][(int) $value] ?? (string) $value,
++            'client_id' => isset($lookups['clients'][(int) $value]) ? ((array) $lookups['clients'][(int) $value])[0] : 'Client ' . $value,
++            'pay.bank_id' => $lookups['banks'][(int) $value] ?? (string) $value,
++            'channel' => array_search($value, ['MTN' => 'mtn-gh', 'TELECEL' => 'vodafone-gh', 'AIRTELTIGO' => 'tigo-gh'], true) ?: (string) $value,
++            'basic_salary', 'allowances' => number_format((float) $value, 2),
++            'date_of_birth', 'date_of_joining' => Carbon::parse($value)->format('d/m/Y'),
++            default => ucfirst((string) $value),
++        };
++    }
++
+     /** Accepts 2026-10-01, 01/10/2026, 1/10/2026, 01-10-2026, 01.10.2026. Rejects impossible dates (31/02/2026). */
+     private static function parseDate(string $value): ?string
+     {
+@@ -343,14 +612,15 @@ private static function parseDate(string $value): ?string
+         return null;
+     }
+ 
+-    private static function uniqueCheck(?string $value, string $key, string $label, array $existing, array $inFile, array &$e): void
++    private static function uniqueCheck(?string $value, string $key, string $label, array $existing, array $inFile, array &$e, ?int $self = null): void
+     {
+         if ($value === null) {
+             return;
+         }
+         $lc = mb_strtolower($value);
+-        if (isset($existing[$key][$lc])) {
+-            $e[] = "$label already exists in ISSOBS (FWSS " . $existing[$key][$lc] . ').';
++        $owner = $existing[$key][$lc] ?? null;
++        if ($owner !== null && (int) $owner !== $self) {
++            $e[] = "$label already exists in ISSOBS (FWSS " . $owner . ').';
+         } elseif (count($inFile[$key][$lc] ?? []) > 1) {
+             $e[] = "$label is repeated in this file (rows " . implode(', ', $inFile[$key][$lc]) . ').';
+         }
+@@ -451,12 +721,14 @@ private static function existingValues(array $rows): array
+     }
+ 
+     /* ========================================================= output files */
++    // The template and the error report are Laravel Excel exports:
++    // App\Exports\EmployeeUpload\TemplateExport and App\Exports\EmployeeUpload\ErrorReportExport.
+ 
+     /**
+      * Column definitions for the template: header => [required, kind, width, note].
+      * kind: text | date | money | list:<NamedRange>. Same order as COLUMNS.
+      */
+-    private const TEMPLATE_COLUMNS = [
++    public const TEMPLATE_COLUMNS = [
+         'Full Name' => [true, 'text', 28, "Employee's full name as on the Ghana Card."],
+         'Gender' => [true, 'list:Gender', 10, 'Male or Female.'],
+         'Phone Number' => [true, 'text', 16, '12 digits starting 233, e.g. 233241234567 (0241234567 is also accepted). Must not already exist.'],
+@@ -489,201 +761,4 @@ private static function existingValues(array $rows): array
+         'Guarantor NIA No.' => [false, 'text', 18, 'Must be unique.'],
+         'Relationship' => [false, 'text', 14, "Guarantor's relationship to the employee."],
+     ];
+-
+-    /**
+-     * The blank template, built from scratch for this user: dropdowns list only the
+-     * field offices, clients and banks they can assign. (Built in code rather than by
+-     * editing a stored file, so every dropdown is defined exactly once.)
+-     */
+-    public static function templateFor(User $user): Spreadsheet
+-    {
+-        $first = 3;
+-        $last = $first + self::MAX_ROWS - 1;
+-        $headers = array_keys(self::TEMPLATE_COLUMNS);
+-        $n = count($headers);
+-        $L = fn (int $i) => \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($i);
+-        $lastCol = $L($n);
+-        $checkCol = $L($n + 1);
+-        $colOf = array_combine(array_values(self::COLUMNS), array_map($L, range(1, $n)));
+-
+-        $fieldNames = Field::pluck('name', 'id');
+-        $lists = [
+-            'Gender' => ['Male', 'Female'],
+-            'MoMoNetwork' => ['MTN', 'TELECEL', 'AIRTELTIGO'],
+-            'MaritalStatus' => ['Single', 'Married', 'Divorced', 'Widowed'],
+-            'WorkerType' => ['Employee', 'Contractor'],
+-            'YesNo' => ['Yes', 'No'],
+-            'PaymentType' => ['Cash', 'Bank'],
+-            'FieldOffice' => array_map(fn ($id) => $id . ' | ' . ($fieldNames[$id] ?? 'Field ' . $id), EmployeeCreator::allowedFieldIds($user)),
+-            'Departments' => Department::orderBy('name')->get(['id', 'name'])->map(fn ($d) => $d->id . ' | ' . $d->name)->all(),
+-            'Roles' => Role::orderBy('name')->get(['id', 'name'])->map(fn ($r) => $r->id . ' | ' . $r->name)->all(),
+-            'Clients' => EmployeeCreator::allowedClients($user)->map(fn ($c) => $c->id . ' | ' . trim($c->name . ' ' . $c->business_name))->all(),
+-            'Banks' => Bank::orderBy('name')->get(['id', 'name'])->map(fn ($b) => $b->id . ' | ' . $b->name)->all(),
+-        ];
+-        $loose = ['FieldOffice', 'Departments', 'Roles', 'Clients', 'Banks']; // typing an ID is allowed too
+-
+-        $book = new Spreadsheet();
+-        $book->getDefaultStyle()->getFont()->setName('Arial')->setSize(10);
+-        $navy = 'FF1F3864';
+-        $red = 'FFC00000';
+-        $fill = fn ($range, $argb, $sheet) => $sheet->getStyle($range)->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB($argb);
+-
+-        /* ---- Instructions ---- */
+-        $ins = $book->getActiveSheet()->setTitle('Instructions');
+-        $ins->getColumnDimension('A')->setWidth(3);
+-        $ins->getColumnDimension('B')->setWidth(110);
+-        $ins->setShowGridlines(false);
+-        $lines = [
+-            ['ISSOBS - Bulk employee upload template', 'title'],
+-            ['Prepared for ' . $user->name . ' on ' . now()->format('d M Y') . '. The lists only show the field offices and clients you can assign.', 'note'],
+-            ['', null],
+-            ['How to use', 'h'],
+-            ['1.  Fill in the "Employees" sheet, one employee per row, starting at row 3.', null],
+-            ['2.  Red column headers are required. Hover over a header to see what it expects.', null],
+-            ['3.  Watch the grey "Row check" column: every filled row should say OK before you upload.', null],
+-            ['4.  In ISSOBS go to Employees > Bulk upload, choose this file and who to ASSIGN TO, then Preview.', null],
+-            ['5.  Nothing is saved at the preview step. Fix any rows shown in red (or download the error report), then Confirm.', null],
+-            ['', null],
+-            ['Rules checked on upload', 'h'],
+-            ['-  Phone, Ghana Card, account, TIN and SSNIT numbers must not already exist in ISSOBS or repeat in this file.', null],
+-            ['-  Field office and client must be ones you can assign. Payment Type = Bank needs Bank and Account Number.', null],
+-            ['-  Deduct Tax = Yes needs a TIN; Deduct SSNIT = Yes needs an SSNIT number.', null],
+-            ['-  Employees get the same approval status as the single "Add employee" form for your role. Payment priority is set automatically.', null],
+-            ['', null],
+-            ['Tips', 'h'],
+-            ['-  Number columns such as phone and account numbers are formatted as text so Excel keeps leading zeros.', null],
+-            ['-  Do not rename, reorder or delete columns. Photos are added later from each employee profile. Up to ' . self::MAX_ROWS . ' employees per file.', null],
+-        ];
+-        foreach ($lines as $i => [$text, $kind]) {
+-            $c = 'B' . ($i + 1);
+-            $ins->setCellValue($c, $text);
+-            $ins->getStyle($c)->getAlignment()->setWrapText(true);
+-            if ($kind === 'title') $ins->getStyle($c)->getFont()->setBold(true)->setSize(16)->getColor()->setARGB($navy);
+-            if ($kind === 'h') $ins->getStyle($c)->getFont()->setBold(true)->setSize(12)->getColor()->setARGB($red);
+-            if ($kind === 'note') $ins->getStyle($c)->getFont()->setItalic(true);
+-        }
+-
+-        /* ---- Lists ---- */
+-        $ls = $book->createSheet()->setTitle('Lists');
+-        $i = 1;
+-        foreach ($lists as $name => $values) {
+-            $col = $L($i++);
+-            $ls->setCellValue($col . '1', $name);
+-            $ls->getStyle($col . '1')->getFont()->setBold(true)->getColor()->setARGB('FFFFFFFF');
+-            $fill($col . '1', $navy, $ls);
+-            foreach (array_values($values) as $r => $v) {
+-                $ls->setCellValueExplicit($col . ($r + 2), $v, \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
+-            }
+-            $ls->getColumnDimension($col)->setWidth($name === 'Clients' ? 40 : 18);
+-            $book->addNamedRange(new NamedRange($name, $ls, '$' . $col . '$2:$' . $col . '$' . max(2, count($values) + 1)));
+-        }
+-
+-        /* ---- Employees ---- */
+-        $ws = $book->createSheet(1)->setTitle('Employees');
+-        $ws->setCellValue('A1', 'Fill in one employee per row from row 3. Red headers are required. Do not rename, move or delete columns. The last column checks each row for you.');
+-        $ws->mergeCells('A1:' . $checkCol . '1');
+-        $ws->getStyle('A1')->getFont()->setBold(true)->getColor()->setARGB($navy);
+-        foreach ($headers as $idx => $header) {
+-            [$required, $kind, $width, $note] = self::TEMPLATE_COLUMNS[$header];
+-            $col = $L($idx + 1);
+-            $ws->setCellValue($col . '2', $header . ($required ? ' *' : ''));
+-            $ws->getColumnDimension($col)->setWidth($width);
+-            $fill($col . '2', $required ? $red : $navy, $ws);
+-            if ($note !== '') {
+-                $ws->getComment($col . '2')->getText()->createTextRun($note);
+-                $ws->getComment($col . '2')->setWidth('240pt')->setHeight('60pt');
+-            }
+-
+-            $range = $col . $first . ':' . $col . $last;
+-            if ($kind === 'text') {
+-                $ws->getStyle($range)->getNumberFormat()->setFormatCode('@');
+-            } elseif ($kind === 'date') {
+-                $ws->getStyle($range)->getNumberFormat()->setFormatCode('dd/mm/yyyy');
+-                $ws->setDataValidation($range, (new DataValidation())->setType(DataValidation::TYPE_DATE)
+-                    ->setOperator(DataValidation::OPERATOR_BETWEEN)->setFormula1('DATE(1940,1,1)')->setFormula2('DATE(2100,12,31)')
+-                    ->setAllowBlank(true)->setShowErrorMessage(true)->setErrorTitle('Date')->setError('Enter a real date, e.g. 14/03/1990.'));
+-            } elseif ($kind === 'money') {
+-                $ws->getStyle($range)->getNumberFormat()->setFormatCode('#,##0.00');
+-                $ws->setDataValidation($range, (new DataValidation())->setType(DataValidation::TYPE_DECIMAL)
+-                    ->setOperator(DataValidation::OPERATOR_GREATERTHANOREQUAL)->setFormula1('0')
+-                    ->setAllowBlank(true)->setShowErrorMessage(true)->setErrorTitle('Numbers only')->setError('Enter an amount of 0 or more.'));
+-            } else {
+-                $name = substr($kind, 5);
+-                $ws->setDataValidation($range, (new DataValidation())->setType(DataValidation::TYPE_LIST)
+-                    ->setErrorStyle(in_array($name, $loose, true) ? DataValidation::STYLE_WARNING : DataValidation::STYLE_STOP)
+-                    ->setAllowBlank(true)->setShowDropDown(true)->setShowErrorMessage(true)
+-                    ->setErrorTitle('Choose from the list')->setError('Pick a value from the list.')
+-                    ->setFormula1($name)); // named range; stored without "=" as Excel expects
+-            }
+-        }
+-        $ws->getStyle('A2:' . $lastCol . '2')->getFont()->setBold(true)->getColor()->setARGB('FFFFFFFF');
+-        $ws->getStyle('A2:' . $checkCol . '2')->getAlignment()->setWrapText(true)->setVertical('center')->setHorizontal('center');
+-        $ws->getRowDimension(2)->setRowHeight(34);
+-        $fill('A' . $first . ':' . $lastCol . $last, 'FFFFF2CC', $ws);   // cells to fill in
+-
+-        // Row check (not uploaded): same logic as the importer's basic checks.
+-        $ws->setCellValue($checkCol . '2', 'Row check (automatic)');
+-        $fill($checkCol . '2', 'FFE7E6E6', $ws);
+-        $ws->getStyle($checkCol . '2')->getFont()->setBold(true);
+-        $ws->getColumnDimension($checkCol)->setWidth(30);
+-        $c = $colOf;
+-        for ($r = $first; $r <= $last; $r++) {
+-            $ws->setCellValue($checkCol . $r,
+-                "=IF(COUNTA(A{$r}:{$lastCol}{$r})=0,\"\","
+-                . "IF(OR({$c['full_name']}{$r}=\"\",{$c['gender']}{$r}=\"\",{$c['phone_number']}{$r}=\"\",{$c['field_office']}{$r}=\"\",{$c['payment_type']}{$r}=\"\"),\"Missing required field\","
+-                . "IF(AND({$c['payment_type']}{$r}=\"Bank\",OR({$c['bank']}{$r}=\"\",{$c['account_number']}{$r}=\"\")),\"Bank and account number required\","
+-                . "IF(AND({$c['deduct_tax']}{$r}=\"Yes\",{$c['tin_number']}{$r}=\"\"),\"TIN required (Deduct Tax = Yes)\","
+-                . "IF(AND({$c['deduct_ssnit']}{$r}=\"Yes\",{$c['ssnit_number']}{$r}=\"\"),\"SSNIT number required\","
+-                . "IF(COUNTIF(\${$c['phone_number']}\${$first}:\${$c['phone_number']}\${$last},{$c['phone_number']}{$r})>1,\"Phone repeated in this file\",\"OK\"))))))");
+-        }
+-        $fill($checkCol . $first . ':' . $checkCol . $last, 'FFE7E6E6', $ws);
+-        $ws->getStyle($checkCol . $first . ':' . $checkCol . $last)->getFont()->setBold(true);
+-        $ws->freezePane('B3');
+-
+-        $book->setActiveSheetIndexByName('Employees');
+-
+-        return $book;
+-    }
+-
+-    /** The uploaded rows with an "Errors" column, for rows that could not be imported. */
+-    public static function errorReport(string $path, array $results): Spreadsheet
+-    {
+-        $source = IOFactory::load($path);
+-        $sheet = $source->getSheetByName('Employees') ?? $source->getActiveSheet();
+-
+-        $book = new Spreadsheet();
+-        $out = $book->getActiveSheet()->setTitle('Employees');
+-        $out->setCellValue('A1', 'Rows that were NOT imported. Fix them here (the "Errors" column explains why), delete the Errors and Row columns, and upload again.');
+-        $out->getStyle('A1')->getFont()->setBold(true)->getColor()->setARGB('FFC00000');
+-
+-        $highestCol = $sheet->getHighestDataColumn(2);
+-        $headers = $sheet->rangeToArray('A2:' . $highestCol . '2', null, false, false)[0];
+-        $headers = array_values(array_filter($headers, fn ($h) => $h !== null && ! str_starts_with((string) $h, 'Row check')));
+-        $out->fromArray(array_merge($headers, ['Errors', 'Sheet row']), null, 'A2');
+-        $out->getStyle('A2:' . \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex(count($headers) + 2) . '2')->getFont()->setBold(true);
+-
+-        $r = 3;
+-        foreach ($results as $res) {
+-            if (! $res['errors']) {
+-                continue;
+-            }
+-            $values = $sheet->rangeToArray('A' . $res['row'] . ':' . $highestCol . $res['row'], null, false, false)[0];
+-            $values = array_slice($values, 0, count($headers));
+-            foreach ($values as $i => $v) {
+-                $out->setCellValueExplicit(\PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($i + 1) . $r, $v === null ? '' : (string) $v,
+-                    \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
+-            }
+-            $errCol = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex(count($headers) + 1);
+-            $out->setCellValue($errCol . $r, implode("\n", $res['errors']));
+-            $out->getStyle($errCol . $r)->getFont()->getColor()->setARGB('FFC00000');
+-            $out->getStyle($errCol . $r)->getAlignment()->setWrapText(true);
+-            $out->setCellValue(\PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex(count($headers) + 2) . $r, $res['row']);
+-            $r++;
+-        }
+-        foreach (range(1, count($headers) + 2) as $i) {
+-            $out->getColumnDimension(\PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($i))->setWidth($i === count($headers) + 1 ? 60 : 18);
+-        }
+-
+-        return $book;
+-    }
+ }
+diff --git a/app/Support/EmployeeCreator.php b/app/Support/EmployeeCreator.php
+index 2b7fb92..3fec6e0 100644
+--- a/app/Support/EmployeeCreator.php
++++ b/app/Support/EmployeeCreator.php
+@@ -34,13 +34,13 @@ public static function hasColumn(string $table, string $column): bool
+     }
+ 
+     /**
+-     * Approval fields for employees created by $user - the same rules the form has
+-     * always used. Null when the user's role/department matches none of them: such
++     * Approval fields for employees created (or, with $forUpdate, edited) by $user - the
++     * same rules the add / edit forms have always used. Null when the user's role/department matches none of them: such
+      * employees get no status and do not appear in any list.
+      *
+      * @return array<string, mixed>|null  values; 'APPROVER' marks where the chosen approver goes
+      */
+-    public static function workflowFor(User $user): ?array
++    public static function workflowFor(User $user, bool $forUpdate = false): ?array
+     {
+         $role = (string) $user->role?->id;
+         $dept = (string) $user->department?->id;
+@@ -56,6 +56,9 @@ public static function workflowFor(User $user): ?array
+         if (($dept === '7' || $dept === '4') && $role === '27') {
+             $w = array_merge($w, ['bran_status' => 'pending', 'user_id1' => 'APPROVER', 'status' => 'Pending',
+                 'assit_status' => 'pending']);
++            if ($forUpdate) {
++                $w['ho_status'] = null; // as EmployeeController::update() does on an edit
++            }
+         }
+ 
+         return $w ?: null;
+@@ -166,4 +169,64 @@ public static function create(array $data, array $pay, User $user, $approverId =
+             return $employee;
+         });
+     }
++
++    /**
++     * Apply a bulk-update row to one employee, in one transaction. Only the given
++     * (changed) attributes are written.
++     *
++     * - Profile changes re-apply the approval rules exactly as EmployeeController::update()
++     *   does for a single edit (e.g. a branch edit goes back to Pending for the approver).
++     * - Payment-only changes (payment type, bank, account, branch) do not, as on the
++     *   payment information screen (EmployeeController::EmpPayInfoUpdate).
++     *
++     * @param array $emp  employee attribute => new value
++     * @param array $pay  bank_id / acc_number / branch / branch_code => new value
++     */
++    public static function update(int $employeeId, array $emp, array $pay, User $user, $approverId = null): employee
++    {
++        return DB::transaction(function () use ($employeeId, $emp, $pay, $user, $approverId) {
++            $employee = employee::lockForUpdate()->findOrFail($employeeId);
++
++            foreach ($emp as $attr => $value) {
++                if (in_array($attr, ['tin_number', 'ssnit_number'], true) && ! self::hasColumn('employees', $attr)) {
++                    continue; // kept on payment_infos below
++                }
++                $employee->$attr = $value;
++            }
++
++            $profileChange = (bool) array_diff(array_keys($emp), ['payment_type']);
++            if ($profileChange) {
++                foreach (self::workflowFor($user, true) ?? [] as $attr => $value) {
++                    if ($attr === 'assit_status' && ! self::hasColumn('employees', 'assit_status')) {
++                        continue;
++                    }
++                    $employee->$attr = $value === 'APPROVER' ? $approverId : $value;
++                }
++            }
++            $employee->save();
++
++            $tinOrSsnit = array_intersect_key($emp, ['tin_number' => 1, 'ssnit_number' => 1]);
++            if ($pay || $tinOrSsnit) {
++                $info = PaymentInfo::where('employee_id', $employeeId)->orderBy('id')->first() ?? new PaymentInfo();
++                $info->employee_id = $employeeId;
++                foreach ($pay as $attr => $value) {
++                    $info->$attr = $value;
++                }
++                foreach ($tinOrSsnit as $attr => $value) {
++                    if (self::hasColumn('payment_infos', $attr)) {
++                        $info->$attr = $value;
++                    }
++                }
++                $info->user_id = $user->id;
++                $info->save();
++
++                if (! $employee->payment_infos_id) {
++                    $employee->payment_infos_id = $info->id;
++                    $employee->save();
++                }
++            }
++
++            return $employee;
++        });
++    }
+ }
+diff --git a/database/migrations/2026_10_01_100000_add_mode_to_employee_imports_table.php b/database/migrations/2026_10_01_100000_add_mode_to_employee_imports_table.php
+new file mode 100644
+index 0000000..e112f1e
+--- /dev/null
++++ b/database/migrations/2026_10_01_100000_add_mode_to_employee_imports_table.php
+@@ -0,0 +1,28 @@
++<?php
++
++use Illuminate\Database\Migrations\Migration;
++use Illuminate\Database\Schema\Blueprint;
++use Illuminate\Support\Facades\Schema;
++
++/** Bulk uploads log both kinds of upload: new employees ("create") and changes ("update", with an audit of every change). */
++return new class extends Migration
++{
++    public function up(): void
++    {
++        Schema::table('employee_imports', function (Blueprint $table) {
++            if (! Schema::hasColumn('employee_imports', 'mode')) {
++                $table->string('mode')->default('create')->after('user_id');
++            }
++            if (! Schema::hasColumn('employee_imports', 'changes')) {
++                $table->json('changes')->nullable()->after('created_ids'); // employee id => [field => [old, new]]
++            }
++        });
++    }
++
++    public function down(): void
++    {
++        Schema::table('employee_imports', function (Blueprint $table) {
++            $table->dropColumn(['mode', 'changes']);
++        });
++    }
++};
+diff --git a/resources/views/employees/bulk-update.blade.php b/resources/views/employees/bulk-update.blade.php
+new file mode 100644
+index 0000000..50497a5
+--- /dev/null
++++ b/resources/views/employees/bulk-update.blade.php
+@@ -0,0 +1,557 @@
++<x-hr-dashboard>
++
++  @section('css')
++    <style>
++        .imp-step { display:flex; align-items:center; gap:.5rem; font-weight:600; margin:0 0 .5rem; }
++        .imp-step .n { width:1.6rem; height:1.6rem; border-radius:50%; background:rgba(105,108,255,.15); color:#696cff; display:inline-flex; align-items:center; justify-content:center; font-size:.85rem; }
++        .imp-metric { background:#f5f5f9; border-radius:.5rem; padding:.75rem 1rem; }
++        .imp-metric .v { font-size:1.5rem; font-weight:600; }
++        #updRows td { vertical-align: top; }
++        .imp-msg { display:block; font-size:.8rem; }
++        .chg { display:block; font-size:.85rem; }
++        .chg .old { color:#a1acb8; text-decoration: line-through; }
++        .chg.pay { background: rgba(255,171,0,.12); border-radius:.25rem; padding:0 .25rem; }
++        .imp-filter.active { background:#696cff; color:#fff; border-color:#696cff; }
++    </style>
++  @endsection
++  @section('side_nav')
++  <!-- Menu -->
++    <aside id="layout-menu" class="layout-menu menu-vertical menu bg-menu-theme">
++        <div class="app-brand demo">
++            <a href="#" class="app-brand-link">
++                <span class="app-brand-logo demo">
++                    <img width="70px" src="{{asset('img/icons/brands/issobs.png')}}" alt="">
++                    <!-- Logo -->
++                </span>
++                <span class="app-brand-text demo menu-text fw-bold ms-2">ISSOBS</span>
++            </a>
++
++            <a href="javascript:void(0);" class="layout-menu-toggle menu-link text-large ms-auto">
++                <i class="bx bx-chevron-left d-block d-xl-none align-middle"></i>
++            </a>
++        </div>
++
++        <div class="menu-divider mt-0"></div>
++
++        <div class="menu-inner-shadow"></div>
++
++        <ul class="menu-inner py-1">
++            <!-- Dashboards -->
++            <li class="menu-item">
++                <a href="javascript:void(0);" class="menu-link menu-toggle">
++                    <i class="menu-icon tf-icons bx bx-home-smile"></i>
++                    <div class="text-truncate" data-i18n="Dashboards"><strong>Dashboard</strong></div>
++                </a>
++                <ul class="menu-sub">
++                    <li class="menu-item ">
++                        <a href="{{url('home')}}" class="menu-link">
++                            <div class="text-truncate" data-i18n="Dashboard">Dashboard</div>
++                        </a>
++                    </li>
++                </ul>
++            </li>
++
++        @if(Auth::user()->hasPermission('Accounts') || Auth::user()->hasPermission('Administration'))
++            <!-- Apps & Pages -->
++            <li class="menu-header small text-uppercase ">
++                <span class="menu-header-text text-primary">Transactions</span>
++            </li>
++            <!-- Pages -->
++            <li class="menu-item">
++                <a href="{{url('transaction')}}" class="menu-link">
++                    <i class="menu-icon tf-icons bx bx-transfer-alt bg-primary"></i>
++                    <div class="text-truncate" data-i18n="Transaction">Transactions</div>
++                </a>
++            </li>
++
++                @if(Auth::user()->hasRole(['Invoice', 'Finance Manager']))
++                <li class="menu-item">
++                    <a href="{{ url('invoice') }}" class="menu-link">
++                        <i class="menu-icon tf-icons bx bx-bxs-receipt bg-primary"></i>
++                        <div class="text-truncate" data-i18n="Invoices">Invoices</div>
++                    </a>
++                </li>
++                @endif
++
++                @if(Auth::user()->hasRole(['Finance Manager' ,'Manager', 'Admin Assistant']))
++                <li class="menu-item ">
++                    <a href="javascript:void(0);" class="menu-link menu-toggle">
++                    <i class="menu-icon tf-icons bx bx-money-withdraw bg-primary"></i>
++                    <div class="text-truncate" data-i18n="Receipts">Receipts</div>
++                    </a>
++                    <ul class="menu-sub">
++
++                        <li class="menu-item ">
++                            <a href="{{url('receipt')}}" class="menu-link">
++                            <div class="text-truncate" data-i18n="RList">List</div>
++                            </a>
++                        </li>
++                        <li class="menu-item">
++                            <a href="{{url('receiptPending')}}" class="menu-link">
++                            <div class="text-truncate" data-i18n="RPending">Pending </div>
++                            </a>
++                        </li>
++
++                    </ul>
++                </li>
++
++                    <li class="menu-header small text-uppercase"><span class="menu-header-text text-info">Management</span></li>
++            <li class="menu-item ">
++                <a class="menu-link menu-toggle">
++                    <i class="menu-icon tf-icons bx bx-bxs-user-detail"></i>
++                    <div class="text-truncate" data-i18n="Clients"><strong>Clients</strong></div>
++                </a>
++                <ul class="menu-sub">
++                    <li class="menu-item ">
++                        <a href="{{url('client/create')}}" class="menu-link">
++                            <div class="text-truncate" data-i18n="CRegister">Register</div>
++                        </a>
++                    </li>
++                    <li class="menu-item ">
++                        <a href="{{url('client')}}" class="menu-link">
++                            <div class="text-truncate" data-i18n="CList">List</div>
++                        </a>
++                    </li>
++                    <li class="menu-item ">
++                        <a href="{{url('clientTerminated')}}" class="menu-link">
++                            <div class="text-truncate" data-i18n="CList">Terminated</div>
++                        </a>
++                    </li>
++                    <li class="menu-item ">
++                        <a href="{{url('clientPending')}}" class="menu-link">
++                            <div class="text-truncate" data-i18n="CList">Pending</div>
++                        </a>
++                    </li>
++                </ul>
++            </li>
++                    <li class="menu-item active open">
++                        <a href="javascript:void(0);" class="menu-link menu-toggle">
++                        <i class="menu-icon tf-icons bx bxs-user-account"></i>
++                        <div class="text-truncate" data-i18n="Staffs">Employees</div>
++                        </a>
++                        <ul class="menu-sub">
++                        <li class="menu-item active">
++                            <a href="{{url('employees/create')}}" class="menu-link">
++                            <div class="text-truncate" data-i18n="SRegister">Register</div>
++                            </a>
++                        </li>
++                        <li class="menu-item">
++                            <a href="{{url('employees')}}" class="menu-link">
++                            <div class="text-truncate" data-i18n="SList">List</div>
++                            </a>
++                        </li>
++                        <li class="menu-item">
++                            <a href="{{url('employeesPending')}}" class="menu-link">
++                            <div class="text-truncate" data-i18n="SList">Pending</div>
++                            </a>
++                        </li>
++                                <li class="menu-item ">
++                                <a href="{{url('employeesnrrit')}}" class="menu-link">
++                                <div class="text-truncate" data-i18n="SList">Terminate / Recruit</div>
++                                </a>
++                            </li>
++                            <li class="menu-item">
++                                <a href="{{url('employeesBank')}}" class="menu-link">
++                                <div class="text-truncate" data-i18n="SList">Employee Banks</div>
++                                </a>
++                            </li>
++                                <li class="menu-item">
++                                <a href="{{url('employeesCash')}}" class="menu-link">
++                                <div class="text-truncate" data-i18n="SList">Employee Cash</div>
++                                </a>
++                            </li>
++                        </ul>
++                    </li>
++                @endif
++        @endif
++
++        @if(Auth::user()->hasPermission('HR') || Auth::user()->hasRole(['Invoice']))
++            <li class="menu-header small text-uppercase"><span class="menu-header-text text-info">Management</span></li>
++            @if(Auth::user()->hasRole(['Manager']))
++            <li class="menu-item">
++                    <a href="javascript:void(0);" class="menu-link menu-toggle">
++                        <i class="menu-icon tf-icons bx bx-bxs-group"></i>
++                        <div class="text-truncate" data-i18n="Staffs">System Users</div>
++                    </a>
++                    <ul class="menu-sub">
++                        <li class="menu-item">
++                            <a href="{{url('staffAdd')}}" class="menu-link">
++                                <div class="text-truncate" data-i18n="SRegister">Register</div>
++                            </a>
++                        </li>
++                        <li class="menu-item">
++                            <a href="{{url('staff')}}" class="menu-link">
++                                <div class="text-truncate" data-i18n="SList">List</div>
++                            </a>
++                        </li>
++                    </ul>
++            </li>
++            @endif
++            <li class="menu-item active open ">
++                <a href="javascript:void(0);" class="menu-link menu-toggle">
++                <i class="menu-icon tf-icons bx bxs-user-account"></i>
++                <div class="text-truncate" data-i18n="Staffs">Employees</div>
++                </a>
++                <ul class="menu-sub">
++                <li class="menu-item active">
++                    <a href="{{url('employees/create')}}" class="menu-link">
++                    <div class="text-truncate" data-i18n="SRegister">Register</div>
++                    </a>
++                </li>
++                <li class="menu-item">
++                    <a href="{{url('employees')}}" class="menu-link">
++                    <div class="text-truncate" data-i18n="SList">List</div>
++                    </a>
++                </li>
++                <li class="menu-item">
++                    <a href="{{url('employeesPending')}}" class="menu-link">
++                    <div class="text-truncate" data-i18n="SList">Pending</div>
++                    </a>
++                </li>
++                @if(Auth::user()->hasRole(['Manager', 'Invoice']))
++                <li class="menu-item ">
++                    <a href="{{url('employeesnrrit')}}" class="menu-link">
++                    <div class="text-truncate" data-i18n="SList">Terminate / Recruit</div>
++                    </a>
++                </li>
++                <li class="menu-item">
++                    <a href="{{url('employeesBank')}}" class="menu-link">
++                    <div class="text-truncate" data-i18n="SList">Employee Banks</div>
++                    </a>
++                </li>
++                <li class="menu-item">
++                    <a href="{{url('employeesCash')}}" class="menu-link">
++                    <div class="text-truncate" data-i18n="SList">Employee Cash</div>
++                    </a>
++                </li>
++                @endif
++                </ul>
++            </li>
++        
++        @if(Auth::user()->hasRole(['Manager', 'Invoice']))
++            <li class="menu-item ">
++                <a class="menu-link menu-toggle">
++                    <i class="menu-icon tf-icons bx bx-bxs-user-detail"></i>
++                    <div class="text-truncate" data-i18n="Clients"><strong>Clients</strong></div>
++                </a>
++                <ul class="menu-sub">
++                    <li class="menu-item ">
++                        <a href="{{url('client/create')}}" class="menu-link">
++                            <div class="text-truncate" data-i18n="CRegister">Register</div>
++                        </a>
++                    </li>
++                    <li class="menu-item ">
++                        <a href="{{url('client')}}" class="menu-link">
++                            <div class="text-truncate" data-i18n="CList">List</div>
++                        </a>
++                    </li>
++                </ul>
++            </li>
++
++            <li class="menu-item">
++                <a href="{{url('departments')}}" class="menu-link">
++                <i class="menu-icon tf-icons bx bxs-buildings"></i>
++                <div class="text-truncate" data-i18n="depnroles">Department & Roles </div>
++                </a>
++            </li>
++
++            <li class="menu-item">
++                <a href="{{url('field')}}" class="menu-link">
++                <i class="menu-icon tf-icons bx bx-bxs-location-plus"></i>
++                <div class="text-truncate" data-i18n="fOffices">Field Offices</div>
++                </a>
++            </li>
++            @endif
++
++            @endif
++
++            @if((Auth::user()->hasRole(['Finance Manager']) && Auth::user()->hasPermission('Accounts')) )
++
++            <li class="menu-header small text-uppercase"> <span class="menu-header-text text-danger">Accounts</span></li>
++
++            <li class="menu-item">
++                <a href="javascript:void(0);" class="menu-link menu-toggle">
++                    <i class="menu-icon tf-icons bx bxs-analyse bg-danger"></i>
++                    <div class="text-truncate" data-i18n="Accounts"> Accounts</div>
++                </a>
++                <ul class="menu-sub">
++                    <li class="menu-item">
++                        <a href="{{url('collections')}}" class="menu-link">
++                            <i class="menu-icon tf-icons bx bx-add-to-queue bg-danger"></i>
++                            <div class="text-truncate" data-i18n="ARegister">Collections</div>
++                        </a>
++                    </li>
++                    <li class="menu-item">
++                        <a href="" class="menu-link">
++                            <i class="menu-icon tf-icons bx bx-arrow-from-left bg-danger"></i>
++                            <div class="text-truncate" data-i18n="AList">Bank Deposit</div>
++                        </a>
++                    </li>
++                    <li class="menu-item">
++                        <a href="" class="menu-link">
++                            <i class="menu-icon tf-icons bx bxs-bank bg-danger"></i>
++                            <div class="text-truncate" data-i18n="AList">Banks</div>
++                        </a>
++                    </li>
++                </ul>
++            </li>
++
++            <li class="menu-item">
++                <a href="{{url('expense')}}" class="menu-link">
++                <i class="menu-icon tf-icons bx bx-bxs-credit-card bg-secondary"></i>
++                <div class="text-truncate" data-i18n="Expense"> Expense </div>
++                </a>
++            </li>
++
++            @endif
++
++        @if(Auth::user()->hasPermission('Accounts') && Auth::user()->hasRole(['Invoice', 'Officer', 'Director', 'Finance Manager']) )
++
++            <li class="menu-header small text-uppercase"><span class="menu-header-text">PAYROLL</span></li>
++            <li class="menu-item">
++                    <a href="javascript:void(0);" class="menu-link menu-toggle">
++                    <i class="menu-icon tf-icons bx bx-money-withdraw"></i>
++                    <div class="text-truncate" data-i18n="Payroll">Payroll</div>
++                    </a>
++                    <ul class="menu-sub">
++                @if(Auth::user()->hasRole([ 'Finance Manager']))
++
++                    <li class="menu-item">
++                        <a href="{{ url('salaries') }}" class="menu-link">
++                        <i class="menu-icon tf-icons bx bxs-user-account"></i>
++                        <div class="text-truncate" data-i18n="Employees">Add to Salaries</div>
++                        </a>
++                    </li>
++
++                    <li class="menu-item">
++                        <a href="{{ url('salaries/create') }}" class="menu-link">
++                        <i class="menu-icon tf-icons bx bx-money-withdraw"></i>
++                        <div class="text-truncate" data-i18n="Salaries">Salaries</div>
++                        </a>
++                    </li>
++                     @endif
++
++                    <li class="menu-item">
++                        <a href="{{ url('salariesTransaction') }}" class="menu-link">
++                        <i class="menu-icon tf-icons bx bx-transfer-alt"></i>
++                        <div class="text-truncate" data-i18n="Transaction">Transactions</div>
++                        </a>
++                    </li>
++
++
++                    </ul>
++                </li>
++            @endif
++
++        </ul>
++    </aside>
++  <!-- / Menu -->
++  @endsection
++
++  @section('content')
++    <div class="container-xxl flex-grow-1 container-p-y">
++        <h4 class="fw-bold py-3 mb-3"><span class="text-muted fw-light"><i class="bx bxs-user-account"></i> Employee /</span> Bulk update</h4>
++
++        @include('flash-messages')
++        @if(session('completed_import'))
++            @php $done = \App\Models\EmployeeImport::find(session('completed_import')); @endphp
++            @if($done && $done->skipped_count)
++                <div class="alert alert-warning">
++                    {{ $done->skipped_count }} rows were skipped.
++                    <a href="{{ route('employees.bulk-update.errors', $done) }}" class="alert-link">Download the error report</a>, fix those rows and upload them again.
++                </div>
++            @endif
++        @endif
++        @if($errors->any())
++            <div class="alert alert-danger mb-3">@foreach($errors->all() as $error)<div>{{ $error }}</div>@endforeach</div>
++        @endif
++
++        @unless($canUpdate)
++            <div class="alert alert-danger">Your role cannot edit employees, so bulk update is not available to you.</div>
++        @else
++
++        {{-- STEP 1: download + upload --}}
++        <p class="imp-step"><span class="n">1</span> Download, edit, upload</p>
++        <div class="card mb-4">
++            <div class="card-body">
++                <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-3">
++                    <div>
++                        <h5 class="mb-1">Change many employees at once</h5>
++                        <p class="text-muted mb-0 small">
++                            Download your employees already filled in, change only what you need, and upload the file back.
++                            To download a <strong>filtered</strong> list (an office, a client, a status...), filter the
++                            <a href="{{ route('employees.index') }}">employee list</a> and use its <em>Download for bulk update</em> button.
++                            A blank cell means "leave unchanged".
++                        </p>
++                    </div>
++                    <a href="{{ route('employees.bulk-update.template') }}" class="btn btn-outline-primary text-nowrap"><i class="bx bx-download me-1"></i> Download all my employees</a>
++                </div>
++                <form action="{{ route('employees.bulk-update.preview') }}" method="POST" enctype="multipart/form-data" class="row g-3 align-items-end">
++                    @csrf
++                    <div class="col-md-5">
++                        <label class="form-label" for="file"><strong>Edited file (.xlsx) *</strong></label>
++                        <input type="file" name="file" id="file" accept=".xlsx" class="form-control @error('file') is-invalid @enderror" required>
++                    </div>
++                    @if($needsApprover)
++                    <div class="col-md-4">
++                        <label class="form-label" for="approver_id"><strong>Assign to *</strong></label>
++                        <select name="approver_id" id="approver_id" class="form-select @error('approver_id') is-invalid @enderror" required>
++                            <option value="" disabled @selected(! old('approver_id', $import->approver_id ?? null))>Choose...</option>
++                            @foreach($approvers as $approver)
++                                <option value="{{ $approver->id }}" @selected(old('approver_id', $import->approver_id ?? null) == $approver->id)>{{ $approver->name }}</option>
++                            @endforeach
++                        </select>
++                    </div>
++                    @endif
++                    <div class="col-md-3">
++                        <button type="submit" class="btn btn-primary w-100"><i class="bx bx-search-alt me-1"></i> Preview changes</button>
++                    </div>
++                    <div class="col-12"><small class="text-muted">Nothing is saved until you confirm in step 3. Up to {{ \App\Support\EmployeeBulkImport::MAX_UPDATE_ROWS }} employees per file.</small></div>
++                </form>
++            </div>
++        </div>
++
++        @isset($results)
++        {{-- STEP 2: preview every change --}}
++        <p class="imp-step"><span class="n">2</span> Preview <span class="text-muted fw-normal small">&middot; {{ $import->original_name }} &middot; nothing saved yet</span></p>
++        <div class="card mb-4">
++            <div class="card-body">
++                <div class="row g-3 mb-3">
++                    <div class="col-6 col-md"><div class="imp-metric"><div class="text-muted small">Rows</div><div class="v">{{ $summary['total'] }}</div></div></div>
++                    <div class="col-6 col-md"><div class="imp-metric"><div class="text-muted small">Will change</div><div class="v text-primary">{{ $summary['changed'] }}</div></div></div>
++                    <div class="col-6 col-md"><div class="imp-metric"><div class="text-muted small">No change</div><div class="v text-muted">{{ $summary['unchanged'] }}</div></div></div>
++                    <div class="col-6 col-md"><div class="imp-metric"><div class="text-muted small">Errors (skipped)</div><div class="v text-danger">{{ $summary['errors'] }}</div></div></div>
++                    <div class="col-6 col-md"><div class="imp-metric"><div class="text-muted small">Bank / payment changes</div><div class="v text-warning">{{ $summary['payment_changes'] }}</div></div></div>
++                </div>
++
++                <div class="d-flex flex-wrap gap-2 mb-2">
++                    <button type="button" class="btn btn-sm btn-outline-secondary imp-filter active" data-filter="changed">Changes</button>
++                    <button type="button" class="btn btn-sm btn-outline-secondary imp-filter" data-filter="payment">Bank / payment changes</button>
++                    <button type="button" class="btn btn-sm btn-outline-secondary imp-filter" data-filter="error">Errors</button>
++                    <button type="button" class="btn btn-sm btn-outline-secondary imp-filter" data-filter="unchanged">No change</button>
++                    <button type="button" class="btn btn-sm btn-outline-secondary imp-filter" data-filter="all">All rows</button>
++                    @if($summary['errors'])
++                        <a href="{{ route('employees.bulk-update.errors', $import) }}" class="btn btn-sm btn-outline-danger ms-auto"><i class="bx bx-download me-1"></i> Error report</a>
++                    @endif
++                </div>
++
++                <div class="table-responsive">
++                    <table class="table table-sm" id="updRows">
++                        <thead><tr><th>Row</th><th>Employee</th><th>Changes</th></tr></thead>
++                        <tbody>
++                        @foreach($results as $r)
++                            @php
++                                $state = $r['errors'] ? 'error' : ($r['changes'] ? 'changed' : 'unchanged');
++                                $payKeys = \App\Support\EmployeeBulkImport::PAYMENT_FIELDS;
++                            @endphp
++                            <tr data-state="{{ $state }}" data-payment="{{ $r['payment_change'] ? 1 : 0 }}">
++                                <td class="text-nowrap">{{ $r['row'] }}</td>
++                                <td class="text-nowrap">
++                                    @if($r['employee_id'])<span class="text-muted">FWSS {{ $r['employee_id'] }}</span><br>@endif
++                                    {{ $r['name'] }}
++                                </td>
++                                <td>
++                                    @if($r['errors'])
++                                        <span class="badge bg-label-danger mb-1">Will be skipped</span>
++                                        @foreach($r['errors'] as $msg)<span class="imp-msg text-danger">{{ $msg }}</span>@endforeach
++                                    @elseif(! $r['changes'])
++                                        <span class="text-muted small">No change</span>
++                                    @else
++                                        @foreach($r['changes'] as $attr => [$label, $old, $new])
++                                            <span class="chg {{ in_array($attr, $payKeys, true) ? 'pay' : '' }}">
++                                                <strong>{{ $label }}:</strong> <span class="old">{{ $old }}</span> &rarr; {{ $new }}
++                                            </span>
++                                        @endforeach
++                                        @if($r['priority_before'] !== $r['priority_after'])
++                                            <span class="chg"><strong>Pay priority:</strong>
++                                                <span class="old">{{ \App\Support\PayPriority::LABELS[$r['priority_before']] }}</span> &rarr;
++                                                {{ \App\Support\PayPriority::LABELS[$r['priority_after']] }}</span>
++                                        @endif
++                                    @endif
++                                    @foreach($r['warnings'] as $msg)<span class="imp-msg text-warning">{{ $msg }}</span>@endforeach
++                                </td>
++                            </tr>
++                        @endforeach
++                        </tbody>
++                    </table>
++                </div>
++            </div>
++        </div>
++
++        {{-- STEP 3: confirm --}}
++        <p class="imp-step"><span class="n">3</span> Confirm</p>
++        <div class="card mb-4">
++            <div class="card-body">
++                @if($summary['changed'])
++                <form action="{{ route('employees.bulk-update.confirm', $import) }}" method="POST" onsubmit="this.querySelector('button[type=submit]').disabled = true;">
++                    @csrf
++                    <p class="mb-2"><strong>{{ $summary['changed'] }} {{ \Illuminate\Support\Str::plural('employee', $summary['changed']) }} will be updated.</strong>
++                        @if($summary['errors']) <span class="text-muted">{{ $summary['errors'] }} rows with errors will be skipped.</span> @endif
++                    </p>
++                    @if($summary['profile_changes'] && $summary['status'] === 'Pending')
++                        <div class="alert alert-info py-2 small mb-2">
++                            As when editing one employee, the {{ $summary['profile_changes'] }} employees whose details change will go back to
++                            <strong>Pending</strong> for approval{{ $import->approver ? ' by ' . $import->approver->name : '' }}, and will not appear in the employee list until approved.
++                            Bank-only changes do not need approval.
++                        </div>
++                    @endif
++                    @if($summary['payment_changes'])
++                        <div class="form-check mb-3">
++                            <input class="form-check-input @error('confirm_payment_changes') is-invalid @enderror" type="checkbox" value="1" id="confirm_payment_changes" name="confirm_payment_changes" required>
++                            <label class="form-check-label" for="confirm_payment_changes">
++                                I have checked the <strong>{{ $summary['payment_changes'] }}</strong> bank / payment changes highlighted above
++                                (payment type, bank, account number, branch).
++                            </label>
++                        </div>
++                    @endif
++                    <div class="d-flex gap-2">
++                        <a href="{{ route('employees.bulk-update') }}" class="btn btn-outline-secondary">Cancel</a>
++                        <button type="submit" class="btn btn-primary"><i class="bx bx-check me-1"></i> Update {{ $summary['changed'] }} {{ \Illuminate\Support\Str::plural('employee', $summary['changed']) }}</button>
++                    </div>
++                    <small class="text-muted d-block mt-2">Every row is checked again when you confirm. All changes are applied together, or none are.</small>
++                </form>
++                @else
++                    <strong class="text-danger">There are no changes to apply.</strong>
++                    <div class="text-muted small">Edit the file (or fix the rows in the error report) and upload it again.</div>
++                @endif
++            </div>
++        </div>
++        @endisset
++
++        @if($recent->count())
++            <h6 class="text-muted mt-4">Your recent bulk updates</h6>
++            <ul class="list-group mb-4">
++                @foreach($recent as $past)
++                    <li class="list-group-item d-flex justify-content-between align-items-center">
++                        <span>{{ $past->original_name }} <span class="text-muted small">&middot; {{ $past->completed_at?->format('d M Y H:i') }}</span></span>
++                        <span>
++                            <span class="badge bg-label-primary">{{ $past->created_count }} updated</span>
++                            @if($past->skipped_count)
++                                <a href="{{ route('employees.bulk-update.errors', $past) }}" class="badge bg-label-danger">{{ $past->skipped_count }} skipped &middot; report</a>
++                            @endif
++                        </span>
++                    </li>
++                @endforeach
++            </ul>
++        @endif
++        @endunless
++    </div>
++  @endsection
++
++  @section('scripts')
++    <script>
++        (function () {
++            function apply(f) {
++                document.querySelectorAll('.imp-filter').forEach(b => b.classList.toggle('active', b.dataset.filter === f));
++                document.querySelectorAll('#updRows tbody tr').forEach(function (tr) {
++                    const show = f === 'all' || (f === 'payment' ? tr.dataset.payment === '1' : tr.dataset.state === f);
++                    tr.style.display = show ? '' : 'none';
++                });
++            }
++            document.querySelectorAll('.imp-filter').forEach(btn => btn.addEventListener('click', () => apply(btn.dataset.filter)));
++            if (document.getElementById('updRows')) apply('changed');
++        })();
++    </script>
++  @endsection
++
++</x-hr-dashboard>
+diff --git a/resources/views/employees/index.blade.php b/resources/views/employees/index.blade.php
+index 933419b..93355c7 100644
+--- a/resources/views/employees/index.blade.php
++++ b/resources/views/employees/index.blade.php
+@@ -376,7 +376,14 @@
+             <div class="col-12">
+                 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+                     <h3 class="card-header mb-0"> <i class="icon-base bx bxs-user-account"></i> All Employees </h3>
+-                    <a href="{{ route('employees.import') }}" class="btn btn-outline-primary"><i class="bx bx-upload me-1"></i> Bulk upload</a>
++                    <div class="d-flex flex-wrap gap-2">
++                        <a href="{{ route('employees.import') }}" class="btn btn-outline-primary"><i class="bx bx-upload me-1"></i> Bulk upload</a>
++                        <a href="{{ route('employees.bulk-update') }}" class="btn btn-outline-primary"><i class="bx bx-edit me-1"></i> Bulk update</a>
++                        <a href="{{ route('employees.bulk-update.template') }}" id="bulkUpdateDownload" class="btn btn-primary"
++                           title="Downloads the employees currently shown (filters, cards, search), ready to edit and upload on Bulk update">
++                            <i class="bx bx-download me-1"></i> Download for bulk update
++                        </a>
++                    </div>
+                 </div>
+             </div>
+         </div><br>
+@@ -937,6 +944,20 @@ function setFilters(next) {
+                 if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $(this).trigger('click'); }
+             });
+             $('#empFilterClear').on('click', () => setFilters({ field_id: '', status: '', priority: '' }));
++
++            // 5. Bulk update download: the same employees the table shows (all current filters).
++            $('#bulkUpdateDownload').on('click', function (e) {
++                e.preventDefault();
++                const p = table.ajax.params() || {};
++                const q = new URLSearchParams();
++                ['from', 'to', 'range_by', 'field_id', 'status', 'priority'].forEach(k => { if (p[k]) q.set(k, p[k]); });
++                if (p.search && p.search.value) q.set('search[value]', p.search.value);
++                (p.columns || []).forEach(function (c, i) {
++                    const v = (c.columnControl && c.columnControl.search && c.columnControl.search.value) || (c.search && c.search.value);
++                    if (v) q.set('columns[' + i + '][search][value]', v);
++                });
++                window.location = this.href + (q.toString() ? '?' + q.toString() : '');
++            });
+         });
+     </script>
+ 
+diff --git a/routes/web.php b/routes/web.php
+index eb1d793..f925374 100644
+--- a/routes/web.php
++++ b/routes/web.php
+@@ -8,6 +8,7 @@
+ use App\Http\Controllers\DepartmentController;
+ use App\Http\Controllers\EmployeeController;
+ use App\Http\Controllers\EmployeeImportController;
++use App\Http\Controllers\EmployeeBulkUpdateController;
+ use App\Http\Controllers\ExpenseController;
+ use App\Http\Controllers\OvertimeController;
+ use App\Http\Controllers\FieldController;
+@@ -154,6 +155,13 @@
+ Route::get('employees/import/{import}', [EmployeeImportController::class, 'show'])->whereNumber('import')->name('employees.import.show');
+ Route::post('employees/import/{import}/confirm', [EmployeeImportController::class, 'confirm'])->whereNumber('import')->name('employees.import.confirm');
+ Route::get('employees/import/{import}/errors', [EmployeeImportController::class, 'errors'])->whereNumber('import')->name('employees.import.errors');
++// Bulk employee update (must stay above Route::resource('employees')).
++Route::get('employees/bulk-update', [EmployeeBulkUpdateController::class, 'index'])->name('employees.bulk-update');
++Route::get('employees/bulk-update/template', [EmployeeBulkUpdateController::class, 'template'])->name('employees.bulk-update.template');
++Route::post('employees/bulk-update/preview', [EmployeeBulkUpdateController::class, 'preview'])->name('employees.bulk-update.preview');
++Route::get('employees/bulk-update/{import}', [EmployeeBulkUpdateController::class, 'show'])->whereNumber('import')->name('employees.bulk-update.show');
++Route::post('employees/bulk-update/{import}/confirm', [EmployeeBulkUpdateController::class, 'confirm'])->whereNumber('import')->name('employees.bulk-update.confirm');
++Route::get('employees/bulk-update/{import}/errors', [EmployeeBulkUpdateController::class, 'errors'])->whereNumber('import')->name('employees.bulk-update.errors');
+ Route::resource('employees', EmployeeController::class); 
+ Route::get('employee-report', [EmployeeController::class, 'report'])->name('employee.report');
+ Route::get('employeesBank', [EmployeeController::class, 'employeesBank'])->name('employees.Bank');

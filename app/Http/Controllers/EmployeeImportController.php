@@ -8,9 +8,9 @@ use App\Support\EmployeeCreator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use PhpOffice\PhpSpreadsheet\IOFactory;
+use App\Exports\EmployeeUpload\ErrorReportExport;
+use App\Exports\EmployeeUpload\TemplateExport;
 
 /**
  * Bulk employee upload: 1) upload  2) preview (nothing saved)  3) confirm.
@@ -32,7 +32,7 @@ class EmployeeImportController extends Controller
             'canCreate' => EmployeeCreator::workflowFor($user) !== null,
             'needsApprover' => EmployeeCreator::needsApprover($user),
             'approvers' => EmployeeCreator::approversFor($user),
-            'recent' => EmployeeImport::where('user_id', $user->id)->where('status', 'completed')->latest()->limit(5)->get(),
+            'recent' => EmployeeImport::where('user_id', $user->id)->where('mode', 'create')->where('status', 'completed')->latest()->limit(5)->get(),
         ];
     }
 
@@ -43,11 +43,7 @@ class EmployeeImportController extends Controller
 
     public function template()
     {
-        $book = EmployeeBulkImport::templateFor(Auth::user());
-        $path = tempnam(sys_get_temp_dir(), 'tpl') . '.xlsx';
-        IOFactory::createWriter($book, 'Xlsx')->save($path);
-
-        return response()->download($path, 'ISSOBS_Employee_Upload_Template.xlsx')->deleteFileAfterSend();
+        return (new TemplateExport(Auth::user()))->download('ISSOBS_Employee_Upload_Template.xlsx');
     }
 
     public function preview(Request $request)
@@ -154,16 +150,14 @@ class EmployeeImportController extends Controller
         // After a completed import, the created rows now "already exist" - report only the skipped rows.
         $created = array_map('intval', array_keys($import->created_ids ?? []));
         $results = array_filter($checked['results'], fn ($r) => ! in_array((int) $r['row'], $created, true));
-        $book = EmployeeBulkImport::errorReport(Storage::disk('local')->path($import->stored_path), $results);
-        $path = tempnam(sys_get_temp_dir(), 'err') . '.xlsx';
-        IOFactory::createWriter($book, 'Xlsx')->save($path);
-
-        return response()->download($path, 'Upload_errors_' . pathinfo($import->original_name, PATHINFO_FILENAME) . '.xlsx')->deleteFileAfterSend();
+        return (new ErrorReportExport($read['rows'], $results))
+            ->download('Upload_errors_' . pathinfo($import->original_name, PATHINFO_FILENAME) . '.xlsx');
     }
 
     private function check(EmployeeImport $import): array
     {
-        $read = EmployeeBulkImport::read(Storage::disk('local')->path($import->stored_path));
+        // Read with Laravel Excel straight from the "local" disk (App\Imports\EmployeeUploadImport).
+        $read = EmployeeBulkImport::read($import->stored_path, 'local');
         $checked = $read['error'] ? ['results' => [], 'summary' => []] : EmployeeBulkImport::validate($read['rows'], Auth::user());
 
         return [$read, $checked];
@@ -171,6 +165,6 @@ class EmployeeImportController extends Controller
 
     private function authorizeImport(EmployeeImport $import): void
     {
-        abort_unless((int) $import->user_id === (int) Auth::id(), 404);
+        abort_unless((int) $import->user_id === (int) Auth::id() && ($import->mode ?? 'create') === 'create', 404);
     }
 }

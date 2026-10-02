@@ -34,13 +34,13 @@ class EmployeeCreator
     }
 
     /**
-     * Approval fields for employees created by $user - the same rules the form has
-     * always used. Null when the user's role/department matches none of them: such
+     * Approval fields for employees created (or, with $forUpdate, edited) by $user - the
+     * same rules the add / edit forms have always used. Null when the user's role/department matches none of them: such
      * employees get no status and do not appear in any list.
      *
      * @return array<string, mixed>|null  values; 'APPROVER' marks where the chosen approver goes
      */
-    public static function workflowFor(User $user): ?array
+    public static function workflowFor(User $user, bool $forUpdate = false): ?array
     {
         $role = (string) $user->role?->id;
         $dept = (string) $user->department?->id;
@@ -56,6 +56,9 @@ class EmployeeCreator
         if (($dept === '7' || $dept === '4') && $role === '27') {
             $w = array_merge($w, ['bran_status' => 'pending', 'user_id1' => 'APPROVER', 'status' => 'Pending',
                 'assit_status' => 'pending']);
+            if ($forUpdate) {
+                $w['ho_status'] = null; // as EmployeeController::update() does on an edit
+            }
         }
 
         return $w ?: null;
@@ -162,6 +165,66 @@ class EmployeeCreator
 
             $employee->payment_infos_id = $info->id;
             $employee->save();
+
+            return $employee;
+        });
+    }
+
+    /**
+     * Apply a bulk-update row to one employee, in one transaction. Only the given
+     * (changed) attributes are written.
+     *
+     * - Profile changes re-apply the approval rules exactly as EmployeeController::update()
+     *   does for a single edit (e.g. a branch edit goes back to Pending for the approver).
+     * - Payment-only changes (payment type, bank, account, branch) do not, as on the
+     *   payment information screen (EmployeeController::EmpPayInfoUpdate).
+     *
+     * @param array $emp  employee attribute => new value
+     * @param array $pay  bank_id / acc_number / branch / branch_code => new value
+     */
+    public static function update(int $employeeId, array $emp, array $pay, User $user, $approverId = null): employee
+    {
+        return DB::transaction(function () use ($employeeId, $emp, $pay, $user, $approverId) {
+            $employee = employee::lockForUpdate()->findOrFail($employeeId);
+
+            foreach ($emp as $attr => $value) {
+                if (in_array($attr, ['tin_number', 'ssnit_number'], true) && ! self::hasColumn('employees', $attr)) {
+                    continue; // kept on payment_infos below
+                }
+                $employee->$attr = $value;
+            }
+
+            $profileChange = (bool) array_diff(array_keys($emp), ['payment_type']);
+            if ($profileChange) {
+                foreach (self::workflowFor($user, true) ?? [] as $attr => $value) {
+                    if ($attr === 'assit_status' && ! self::hasColumn('employees', 'assit_status')) {
+                        continue;
+                    }
+                    $employee->$attr = $value === 'APPROVER' ? $approverId : $value;
+                }
+            }
+            $employee->save();
+
+            $tinOrSsnit = array_intersect_key($emp, ['tin_number' => 1, 'ssnit_number' => 1]);
+            if ($pay || $tinOrSsnit) {
+                $info = PaymentInfo::where('employee_id', $employeeId)->orderBy('id')->first() ?? new PaymentInfo();
+                $info->employee_id = $employeeId;
+                foreach ($pay as $attr => $value) {
+                    $info->$attr = $value;
+                }
+                foreach ($tinOrSsnit as $attr => $value) {
+                    if (self::hasColumn('payment_infos', $attr)) {
+                        $info->$attr = $value;
+                    }
+                }
+                $info->user_id = $user->id;
+                $info->save();
+
+                if (! $employee->payment_infos_id) {
+                    $employee->payment_infos_id = $info->id;
+                    $employee->save();
+                }
+            }
 
             return $employee;
         });
