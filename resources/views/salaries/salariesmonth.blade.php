@@ -3386,6 +3386,7 @@
 
 
     @section('scripts')
+    @include('partials.dt_compact')
 
      <script src="{{asset('vendor/js/datatables.js')}}"></script>
     <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
@@ -3544,8 +3545,8 @@
                         d.field_id = filterVal('m_field');
                         d.category = filterVal('m_category');
                         d.priority = filterVal('m_priority');
-                        lastParams = d;
-                        return d;
+                        lastParams = DtCompact.request(d);   // 53 columns: full DataTables params exceed the URL limit
+                        return lastParams;
                     },
                     dataSrc: function (json) {
                         const t = json.totals || {};
@@ -3647,10 +3648,7 @@
                     q.set('order[0][column]', lastParams.order[0].column);
                     q.set('order[0][dir]', lastParams.order[0].dir);
                 }
-                (lastParams.columns || []).forEach(function (c, i) {
-                    const v = (c.columnControl && c.columnControl.search && c.columnControl.search.value) || (c.search && c.search.value) || '';
-                    if (v) q.set('columns[' + i + '][columnControl][search][value]', v);
-                });
+                DtCompact.eachSearch(lastParams.columns, (i, v) => q.set('columns[' + i + '][columnControl][search][value]', v));
                 (window.salariesNavigate || (u => { window.location.href = u; }))($t.data('export') + '?' + q.toString()); // overridable by tests, like DtRange.navigate
             });
 

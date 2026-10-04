@@ -810,6 +810,7 @@
 
      
     @include('partials.dt_range')
+    @include('partials.dt_compact')
 
     <script>
         $(function () {
@@ -849,7 +850,7 @@
                         d.field_id = filters.field_id;
                         d.status = filters.status;
                         d.priority = filters.priority;
-                        return d;
+                        return DtCompact.request(d);   // only searched columns: keeps the URL short
                     },
                     dataSrc: 'data',
                 },
@@ -952,10 +953,7 @@
                 const q = new URLSearchParams();
                 ['from', 'to', 'range_by', 'field_id', 'status', 'priority'].forEach(k => { if (p[k]) q.set(k, p[k]); });
                 if (p.search && p.search.value) q.set('search[value]', p.search.value);
-                (p.columns || []).forEach(function (c, i) {
-                    const v = (c.columnControl && c.columnControl.search && c.columnControl.search.value) || (c.search && c.search.value);
-                    if (v) q.set('columns[' + i + '][search][value]', v);
-                });
+                DtCompact.eachSearch(p.columns, (i, v) => q.set('columns[' + i + '][search][value]', v));
                 window.location = this.href + (q.toString() ? '?' + q.toString() : '');
             });
         });

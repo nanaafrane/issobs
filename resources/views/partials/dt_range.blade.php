@@ -137,7 +137,9 @@ window.DtRange = (function () {
                             q.set('order[0][column]', p.order[0].column);
                             q.set('order[0][dir]', p.order[0].dir);
                         }
-                        (p.columns || []).forEach((c, i) => {
+                        // columns may be DataTables' array or DtCompact's {index: {...}} object
+                        Object.keys(p.columns || {}).forEach(i => {
+                            const c = p.columns[i] || {};
                             const v = (c.columnControl && c.columnControl.search && c.columnControl.search.value)
                                    || (c.search && c.search.value) || '';
                             if (v) q.set(`columns[${i}][columnControl][search][value]`, v);
