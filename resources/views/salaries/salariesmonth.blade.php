@@ -3535,9 +3535,9 @@
                 scrollY: 600,
                 scrollCollapse: true,
                 fixedHeader: { header: true },
-                ajax: {
+                // DtCompact.ajax: compacts AFTER ColumnControl adds its column searches (see partial).
+                ajax: DtCompact.ajax({
                     url: $t.data('source'),
-                    type: 'GET',
                     data: function (d) {
                         d.month = $t.data('month');
                         d.status = filterVal('m_status');
@@ -3545,8 +3545,7 @@
                         d.field_id = filterVal('m_field');
                         d.category = filterVal('m_category');
                         d.priority = filterVal('m_priority');
-                        lastParams = DtCompact.request(d);   // 53 columns: full DataTables params exceed the URL limit
-                        return lastParams;
+                        lastParams = d;   // same object: compacted (with the column searches) just before sending
                     },
                     dataSrc: function (json) {
                         const t = json.totals || {};
@@ -3570,7 +3569,7 @@
                         $('#masterPriority').html(html);
                         return json.data;
                     },
-                },
+                }),
                 order: [],   // no column => server orders pay-first, then pay-early, then by name
                 columnControl: [{ target: 1, content: ['search'] }],
                 lengthMenu: [[25, 50, 100, 250, 500], [25, 50, 100, 250, 500]],

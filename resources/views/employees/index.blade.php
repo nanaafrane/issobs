@@ -842,18 +842,16 @@
                 serverSide: true,
                 pageLength: 25,
                 searchDelay: 500,   // date search uses DATE_FORMAT() LIKE (no index): debounce typing
-                ajax: {
+                // DtCompact.ajax: compacts AFTER ColumnControl adds its column searches (see partial).
+                ajax: DtCompact.ajax({
                     url: $('#myTable').data('source'),
-                    type: 'GET',
                     data: function (d) {
                         range.append(d);
                         d.field_id = filters.field_id;
                         d.status = filters.status;
                         d.priority = filters.priority;
-                        return DtCompact.request(d);   // only searched columns: keeps the URL short
                     },
-                    dataSrc: 'data',
-                },
+                }),
                 order: [[22, 'desc']],
                 columnControl: [{
                     target: 1,
