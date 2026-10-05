@@ -422,11 +422,13 @@
                     <div class="col-6 col-md"><div class="imp-metric"><div class="text-muted small">No change</div><div class="v text-muted">{{ $summary['unchanged'] }}</div></div></div>
                     <div class="col-6 col-md"><div class="imp-metric"><div class="text-muted small">Errors (skipped)</div><div class="v text-danger">{{ $summary['errors'] }}</div></div></div>
                     <div class="col-6 col-md"><div class="imp-metric"><div class="text-muted small">Bank / payment changes</div><div class="v text-warning">{{ $summary['payment_changes'] }}</div></div></div>
+                    <div class="col-6 col-md"><div class="imp-metric"><div class="text-muted small">Changes to non-active staff</div><div class="v text-secondary">{{ $summary['inactive_changes'] }}</div></div></div>
                 </div>
 
                 <div class="d-flex flex-wrap gap-2 mb-2">
                     <button type="button" class="btn btn-sm btn-outline-secondary imp-filter active" data-filter="changed">Changes</button>
                     <button type="button" class="btn btn-sm btn-outline-secondary imp-filter" data-filter="payment">Bank / payment changes</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary imp-filter" data-filter="inactive">Non-active staff</button>
                     <button type="button" class="btn btn-sm btn-outline-secondary imp-filter" data-filter="error">Errors</button>
                     <button type="button" class="btn btn-sm btn-outline-secondary imp-filter" data-filter="unchanged">No change</button>
                     <button type="button" class="btn btn-sm btn-outline-secondary imp-filter" data-filter="all">All rows</button>
@@ -444,11 +446,14 @@
                                 $state = $r['errors'] ? 'error' : ($r['changes'] ? 'changed' : 'unchanged');
                                 $payKeys = \App\Support\EmployeeBulkImport::PAYMENT_FIELDS;
                             @endphp
-                            <tr data-state="{{ $state }}" data-payment="{{ $r['payment_change'] ? 1 : 0 }}">
+                            <tr data-state="{{ $state }}" data-payment="{{ $r['payment_change'] ? 1 : 0 }}" data-inactive="{{ $r['status'] && $r['status'] !== 'Active' ? 1 : 0 }}">
                                 <td class="text-nowrap">{{ $r['row'] }}</td>
                                 <td class="text-nowrap">
                                     @if($r['employee_id'])<span class="text-muted">FWSS {{ $r['employee_id'] }}</span><br>@endif
                                     {{ $r['name'] }}
+                                    @if($r['status'])
+                                        <br><span class="badge {{ $r['status'] === 'Active' ? 'bg-label-success' : 'bg-label-secondary' }}">{{ $r['status'] }}</span>
+                                    @endif
                                 </td>
                                 <td>
                                     @if($r['errors'])
@@ -493,6 +498,12 @@
                             As when editing one employee, the {{ $summary['profile_changes'] }} employees whose details change will go back to
                             <strong>Pending</strong> for approval{{ $import->approver ? ' by ' . $import->approver->name : '' }}, and will not appear in the employee list until approved.
                             Bank-only changes do not need approval.
+                        </div>
+                    @endif
+                    @if($summary['inactive_changes'])
+                        <div class="alert alert-secondary py-2 small mb-2">
+                            {{ $summary['inactive_changes'] }} of these employees are not Active (e.g. Terminated). Their details will be updated,
+                            but their status stays the same - use Terminate / Re-instate on the employee page to change status.
                         </div>
                     @endif
                     @if($summary['payment_changes'])
@@ -544,7 +555,10 @@
             function apply(f) {
                 document.querySelectorAll('.imp-filter').forEach(b => b.classList.toggle('active', b.dataset.filter === f));
                 document.querySelectorAll('#updRows tbody tr').forEach(function (tr) {
-                    const show = f === 'all' || (f === 'payment' ? tr.dataset.payment === '1' : tr.dataset.state === f);
+                    const show = f === 'all'
+                        || (f === 'payment' ? tr.dataset.payment === '1'
+                        : f === 'inactive' ? tr.dataset.inactive === '1'
+                        : tr.dataset.state === f);
                     tr.style.display = show ? '' : 'none';
                 });
             }

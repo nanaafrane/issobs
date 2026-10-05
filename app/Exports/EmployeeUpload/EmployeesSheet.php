@@ -43,6 +43,8 @@ class EmployeesSheet extends DefaultValueBinder implements FromArray, WithTitle,
     {
         if ($withKey) {
             $this->columns['employee_id'] = [EmployeeBulkImport::KEY_HEADER, true, 'key', 13, 'Who this row is. Do not change it.'];
+            $this->columns['current_status'] = [EmployeeBulkImport::STATUS_HEADER, false, 'info', 14,
+                'Information only - use it to sort or filter (e.g. Active only). Changing it has no effect: terminate or re-instate on the employee page.'];
         }
         foreach (EmployeeBulkImport::TEMPLATE_COLUMNS as $header => [$required, $kind, $width, $note]) {
             $key = EmployeeBulkImport::COLUMNS[$header];
@@ -54,7 +56,7 @@ class EmployeesSheet extends DefaultValueBinder implements FromArray, WithTitle,
         $i = 0;
         foreach ($this->columns as [, , $kind]) {
             $i++;
-            if ($kind === 'text' || $kind === 'key') {
+            if ($kind === 'text' || $kind === 'key' || $kind === 'info') {
                 $this->textColumns[Coordinate::stringFromColumnIndex($i)] = true;
             }
         }
@@ -129,7 +131,11 @@ class EmployeesSheet extends DefaultValueBinder implements FromArray, WithTitle,
                     }
 
                     $range = $c . $first . ':' . $c . $last;
-                    if ($kind === 'key') {
+                    if ($kind === 'info') {
+                        $ws->getStyle($range)->getNumberFormat()->setFormatCode('@');
+                        $fill($range, 'FFEDEDED');
+                        $ws->getStyle($range)->getFont()->setItalic(true)->getColor()->setARGB('FF595959');
+                    } elseif ($kind === 'key') {
                         $ws->getStyle($range)->getNumberFormat()->setFormatCode('@');
                         $fill($range, 'FFD9D9D9');
                         $ws->getStyle($range)->getFont()->setBold(true);
@@ -196,7 +202,7 @@ class EmployeesSheet extends DefaultValueBinder implements FromArray, WithTitle,
                 }
                 $fill($checkCol . $first . ':' . $checkCol . $last, 'FFE7E6E6');
                 $ws->getStyle($checkCol . $first . ':' . $checkCol . $last)->getFont()->setBold(true);
-                $ws->freezePane($this->withKey ? 'C3' : 'B3');
+                $ws->freezePane($this->withKey ? 'D3' : 'B3');  // keep Employee ID + Current Status (+ name) in view
                 if ($this->withKey) {
                     $ws->setAutoFilter('A2:' . $lastCol . $last);
                 }

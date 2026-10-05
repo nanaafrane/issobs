@@ -23,6 +23,8 @@ class EmployeeBulkImport
     public const MAX_ROWS = 1000;          // new employees per file
     public const MAX_UPDATE_ROWS = 5000;   // employees per bulk-update file
     public const KEY_HEADER = 'Employee ID';
+    /** Bulk update file only: the employee's status, for sorting / filtering. Read back but NEVER written. */
+    public const STATUS_HEADER = 'Current Status';
 
     /** Template header (without " *") => key. Order does not matter when reading. */
     public const COLUMNS = [
@@ -55,6 +57,7 @@ class EmployeeBulkImport
         // Laravel Excel turns headers into slugs; map those slugs back to our keys.
         $slugToKey = array_combine(HeadingRowFormatter::format(array_keys(self::COLUMNS)), array_values(self::COLUMNS));
         $slugToKey[HeadingRowFormatter::format([self::KEY_HEADER])[0]] = 'employee_id';
+        $slugToKey[HeadingRowFormatter::format([self::STATUS_HEADER])[0]] = 'current_status';
         $required = $mode === 'update' ? ['employee_id'] : self::REQUIRED;
         $maxRows = $mode === 'update' ? self::MAX_UPDATE_ROWS : self::MAX_ROWS;
 
@@ -106,7 +109,7 @@ class EmployeeBulkImport
                 $values[$key] = $v === '' ? null : $v;
                 $any = $any || $values[$key] !== null;
             }
-            foreach (array_merge(self::COLUMNS, ['employee_id']) as $key) {
+            foreach (array_merge(self::COLUMNS, ['employee_id', 'current_status']) as $key) {
                 $values[$key] ??= null; // optional columns missing from a hand-made file
             }
             if ($any) {
@@ -443,6 +446,13 @@ class EmployeeBulkImport
                 $v['basic_salary'] = $v['allowances'] = null;
             }
 
+            // "Current Status" is information only (sorting / filtering): it is never changed here.
+            // Terminating / re-instating has its own steps (status month, NRRIT record, approval).
+            if ($now && ($v['current_status'] ?? null) !== null
+                && strcasecmp(trim((string) $v['current_status']), (string) $now['status']) !== 0) {
+                $w[] = 'Current Status is information only and was not changed (still ' . $now['status'] . '). Use Terminate / Re-instate on the employee page.';
+            }
+
             $provided = self::convert($v, $lookups, $e, $w);
             self::uniqueChecks($v, $existing, $inFile, $e, $id);
 
@@ -494,9 +504,15 @@ class EmployeeBulkImport
                 [$after] = PayPriority::evaluate($merged['client_id'] ?? null, $merged['field_id'] ?? null, $merged['location'] ?? null, $merged['gender'] ?? null);
             }
 
+            $status = $now['status'] ?? null;
+            if ($now && ! $e && $changes && $status !== 'Active') {
+                $w[] = 'This employee is ' . ($status ?: 'not active') . ': their details will be updated, but their status stays ' . ($status ?: 'unchanged') . '.';
+            }
+
             $results[$r] = [
                 'row' => $r,
                 'employee_id' => $id,
+                'status' => $status,
                 'name' => $now['name'] ?? ($v['full_name'] ?? ''),
                 'errors' => $e,
                 'warnings' => $w,
@@ -520,6 +536,7 @@ class EmployeeBulkImport
                 'unchanged' => count(array_filter($ok, fn ($x) => ! $x['changes'])),
                 'errors' => count($results) - count($ok),
                 'payment_changes' => count(array_filter($ok, fn ($x) => $x['payment_change'])),
+                'inactive_changes' => count(array_filter($ok, fn ($x) => $x['changes'] && $x['status'] !== 'Active')),
                 'profile_changes' => count(array_filter($ok, fn ($x) => $x['profile_change'])),
                 'status' => EmployeeCreator::workflowFor($user, true)['status'] ?? null,
             ],
@@ -533,7 +550,7 @@ class EmployeeBulkImport
             return [];
         }
         $out = [];
-        $cols = ['id', 'name', 'gender', 'phone_number', 'channel', 'date_of_birth', 'nia_number', 'address', 'marital_status',
+        $cols = ['id', 'status', 'name', 'gender', 'phone_number', 'channel', 'date_of_birth', 'nia_number', 'address', 'marital_status',
             'worker_type', 'date_of_joining', 'department_id', 'role_id', 'field_id', 'client_id', 'location', 'basic_salary',
             'allowances', 'tax_button', 'ssnit_button', 'payment_type', 'gurantor_name', 'gurantor_number', 'gurantor_address',
             'gurantor_nia_number', 'relationship'];

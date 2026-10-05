@@ -1018,6 +1018,11 @@ class EmployeeController extends Controller
         $employee->relationship = $request->input('relationship');
 
 
+        // A Terminated employee stays Terminated when edited: the approval rules below set
+        // "Active" / "Pending", which would silently re-instate them (no status month, no NRRIT
+        // record). Re-instating is done with "Re-instate". Same rule as bulk update.
+        $statusBeforeEdit = $employee->getOriginal('status');
+
         if(Auth::user()->role?->id == '1')
             {
                 $employee->status = 'Active';
@@ -1056,6 +1061,10 @@ class EmployeeController extends Controller
             }
 
         // $employee->user_id1 = Auth::id();
+
+        if (\App\Support\EmployeeCreator::keepsStatus($statusBeforeEdit)) {
+            $employee->status = $statusBeforeEdit;
+        }
 
         $employee->save();
 

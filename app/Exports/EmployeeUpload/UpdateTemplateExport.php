@@ -62,6 +62,7 @@ class UpdateTemplateExport implements WithMultipleSheets, WithEvents
             }
             $out[] = [
                 'employee_id' => 'FWSS ' . $id,
+                'current_status' => $d['status'],
                 'full_name' => $d['name'],
                 'gender' => $d['gender'] ? ucfirst($d['gender']) : null,
                 'phone_number' => $d['phone_number'],

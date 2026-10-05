@@ -70,6 +70,18 @@ class EmployeeCreator
         return in_array('APPROVER', self::workflowFor($user) ?? [], true);
     }
 
+    /**
+     * Statuses an EDIT must never change (single edit form and bulk update).
+     * The approval rules set status to "Active" / "Pending"; applied to a Terminated
+     * employee that silently re-instates them, skipping Re-instate's status month and
+     * NRRIT record. Pending / Re-Instate are left to the approval rules on purpose:
+     * for them an edit by head office still acts as the approval, as before.
+     */
+    public static function keepsStatus(?string $status): bool
+    {
+        return $status === 'Terminated';
+    }
+
     /** "Assign to" choices - same as the form. */
     public static function approversFor(User $user): Collection
     {
@@ -195,9 +207,14 @@ class EmployeeCreator
             }
 
             $profileChange = (bool) array_diff(array_keys($emp), ['payment_type']);
+            // Never re-instate by editing (see keepsStatus()); same rule as the single edit form.
+            $keepStatus = self::keepsStatus($employee->status);
             if ($profileChange) {
                 foreach (self::workflowFor($user, true) ?? [] as $attr => $value) {
                     if ($attr === 'assit_status' && ! self::hasColumn('employees', 'assit_status')) {
+                        continue;
+                    }
+                    if ($attr === 'status' && $keepStatus) {
                         continue;
                     }
                     $employee->$attr = $value === 'APPROVER' ? $approverId : $value;

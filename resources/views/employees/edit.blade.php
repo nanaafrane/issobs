@@ -343,6 +343,13 @@
         <div>
           <h4 class="fw-bold mb-1">Edit employee</h4>
           <p class="text-muted mb-0">Update profile and payroll settings for {{ $employee->name }}.</p>
+          @if(\App\Support\EmployeeCreator::keepsStatus($employee->status))
+            <div class="alert alert-secondary py-2 px-3 mt-2 mb-0 small">
+              <i class="bx bx-info-circle me-1"></i>
+              This employee is <strong>{{ $employee->status }}</strong>. Saving changes keeps them {{ $employee->status }};
+              use <strong>Re-instate</strong> to bring them back.
+            </div>
+          @endif
         </div>
         <div class="text-md-end">
           <a href="{{ url('employees', $employee->id) }}" class="btn btn-outline-secondary btn-sm mb-2">

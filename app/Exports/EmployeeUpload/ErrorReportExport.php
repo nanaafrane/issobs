@@ -38,7 +38,7 @@ class ErrorReportExport extends DefaultValueBinder implements FromArray, WithTit
 
     public function array(): array
     {
-        $headers = $this->withKey ? [EmployeeBulkImport::KEY_HEADER . ' *'] : [];
+        $headers = $this->withKey ? [EmployeeBulkImport::KEY_HEADER . ' *', EmployeeBulkImport::STATUS_HEADER] : [];
         foreach (EmployeeBulkImport::TEMPLATE_COLUMNS as $header => [$required]) {
             $headers[] = $header . ($required ? ' *' : '');
         }
@@ -52,7 +52,7 @@ class ErrorReportExport extends DefaultValueBinder implements FromArray, WithTit
             }
             $keys = array_values(EmployeeBulkImport::COLUMNS);
             if ($this->withKey) {
-                array_unshift($keys, 'employee_id');
+                array_unshift($keys, 'employee_id', 'current_status');
             }
             $values = array_map(fn ($key) => $this->rows[$result['row']][$key] ?? null, $keys);
             $out[] = array_merge($values, [implode("\n", $result['errors']), (string) $result['row']]);
@@ -77,7 +77,7 @@ class ErrorReportExport extends DefaultValueBinder implements FromArray, WithTit
         return [
             AfterSheet::class => function (AfterSheet $event) {
                 $ws = $event->sheet->getDelegate();
-                $n = count(EmployeeBulkImport::TEMPLATE_COLUMNS) + ($this->withKey ? 1 : 0);
+                $n = count(EmployeeBulkImport::TEMPLATE_COLUMNS) + ($this->withKey ? 2 : 0);
                 $errCol = Coordinate::stringFromColumnIndex($n + 1);
                 $rowCol = Coordinate::stringFromColumnIndex($n + 2);
                 $ws->getStyle('A1')->getFont()->setBold(true)->getColor()->setARGB('FFC00000');
