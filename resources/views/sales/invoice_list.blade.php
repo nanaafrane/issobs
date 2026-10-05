@@ -479,6 +479,7 @@
 <script src="https://cdn.datatables.net/columncontrol/1.1.1/js/dataTables.columnControl.min.js"></script>
  
 @include('partials.dt_range')
+    @include('partials.dt_compact')
  
 <script>
     $(function () {
@@ -499,13 +500,11 @@
             ordering: true,
             searching: true,
             searchDelay: 500,
-            ajax: {
+            // DtCompact.ajax: sends only searched columns, after ColumnControl adds them (partials/dt_compact).
+            ajax: DtCompact.ajax({
                 url: $('#myTable').data('source'),
-                type: 'GET',
-                dataType: 'json',
                 data: range.append,
-                dataSrc: 'data'
-            },
+            }),
             order: [[7, 'desc']],
             columnControl: [{
                 target: 1,

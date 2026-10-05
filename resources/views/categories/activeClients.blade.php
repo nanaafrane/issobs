@@ -600,6 +600,7 @@
   @endsection
 
     @section('scripts')
+    @include('partials.dt_compact')
 
     <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
     <script src="https://cdn.datatables.net/2.3.3/js/dataTables.js"></script>
@@ -662,17 +663,15 @@
             ordering: true,
             searching: true,
             searchDelay: 500,
-            ajax: {
+            // DtCompact.ajax: sends only searched columns, after ColumnControl adds them (partials/dt_compact).
+            ajax: DtCompact.ajax({
                 url: $table.data('source'),
-                type: 'GET',
-                dataType: 'json',
                 data: function (d) {
                     d.month = MONTH;
                     d.state = filters.state;
                     d.field_id = filters.field_id;
                 },
-                dataSrc: 'data'
-            },
+            }),
             order: [[3, 'asc']],
             columnControl: [{
                 target: 1,

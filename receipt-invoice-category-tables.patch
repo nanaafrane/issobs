@@ -1,0 +1,90 @@
+diff --git a/resources/views/categories/activeClients.blade.php b/resources/views/categories/activeClients.blade.php
+index 4cc2761..23e8b2f 100644
+--- a/resources/views/categories/activeClients.blade.php
++++ b/resources/views/categories/activeClients.blade.php
+@@ -600,6 +600,7 @@
+   @endsection
+ 
+     @section('scripts')
++    @include('partials.dt_compact')
+ 
+     <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
+     <script src="https://cdn.datatables.net/2.3.3/js/dataTables.js"></script>
+@@ -662,17 +663,15 @@ function syncPageBoxes() {
+             ordering: true,
+             searching: true,
+             searchDelay: 500,
+-            ajax: {
++            // DtCompact.ajax: sends only searched columns, after ColumnControl adds them (partials/dt_compact).
++            ajax: DtCompact.ajax({
+                 url: $table.data('source'),
+-                type: 'GET',
+-                dataType: 'json',
+                 data: function (d) {
+                     d.month = MONTH;
+                     d.state = filters.state;
+                     d.field_id = filters.field_id;
+                 },
+-                dataSrc: 'data'
+-            },
++            }),
+             order: [[3, 'asc']],
+             columnControl: [{
+                 target: 1,
+diff --git a/resources/views/sales/invoice_list.blade.php b/resources/views/sales/invoice_list.blade.php
+index 116f449..d9d8618 100644
+--- a/resources/views/sales/invoice_list.blade.php
++++ b/resources/views/sales/invoice_list.blade.php
+@@ -479,6 +479,7 @@
+ <script src="https://cdn.datatables.net/columncontrol/1.1.1/js/dataTables.columnControl.min.js"></script>
+  
+ @include('partials.dt_range')
++    @include('partials.dt_compact')
+  
+ <script>
+     $(function () {
+@@ -499,13 +500,11 @@
+             ordering: true,
+             searching: true,
+             searchDelay: 500,
+-            ajax: {
++            // DtCompact.ajax: sends only searched columns, after ColumnControl adds them (partials/dt_compact).
++            ajax: DtCompact.ajax({
+                 url: $('#myTable').data('source'),
+-                type: 'GET',
+-                dataType: 'json',
+                 data: range.append,
+-                dataSrc: 'data'
+-            },
++            }),
+             order: [[7, 'desc']],
+             columnControl: [{
+                 target: 1,
+diff --git a/resources/views/sales/receipt_list.blade.php b/resources/views/sales/receipt_list.blade.php
+index b45de5e..7dd1ea2 100644
+--- a/resources/views/sales/receipt_list.blade.php
++++ b/resources/views/sales/receipt_list.blade.php
+@@ -711,6 +711,7 @@ class="rounded" />
+ <script src="https://cdn.datatables.net/columncontrol/1.1.1/js/dataTables.columnControl.min.js"></script>
+  
+ @include('partials.dt_range')
++    @include('partials.dt_compact')
+  
+ <script>
+     // 1. Mount BEFORE creating the table: it inserts the bar above the table.
+@@ -727,12 +728,11 @@ class="rounded" />
+         serverSide: true,
+         pageLength: 25,
+         searchDelay: 500,   // date filters use DATE_FORMAT() LIKE (no index): debounce typing
+-        ajax: {
++        // DtCompact.ajax: sends only searched columns, after ColumnControl adds them (partials/dt_compact).
++        ajax: DtCompact.ajax({
+             url: $('#myTable').data('source'),
+-            type: 'GET',
+             data: range.append,
+-            dataSrc: 'data'
+-        },
++        }),
+         order: [[8, 'desc']],
+         columnControl: [{
+             target: 1,

@@ -711,6 +711,7 @@
 <script src="https://cdn.datatables.net/columncontrol/1.1.1/js/dataTables.columnControl.min.js"></script>
  
 @include('partials.dt_range')
+    @include('partials.dt_compact')
  
 <script>
     // 1. Mount BEFORE creating the table: it inserts the bar above the table.
@@ -727,12 +728,11 @@
         serverSide: true,
         pageLength: 25,
         searchDelay: 500,   // date filters use DATE_FORMAT() LIKE (no index): debounce typing
-        ajax: {
+        // DtCompact.ajax: sends only searched columns, after ColumnControl adds them (partials/dt_compact).
+        ajax: DtCompact.ajax({
             url: $('#myTable').data('source'),
-            type: 'GET',
             data: range.append,
-            dataSrc: 'data'
-        },
+        }),
         order: [[8, 'desc']],
         columnControl: [{
             target: 1,
