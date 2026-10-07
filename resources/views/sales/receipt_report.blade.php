@@ -355,78 +355,105 @@
     @endsection
 
     @section('content')
+    @php
+        $ghs = fn ($v) => 'GH₵ ' . number_format((float) $v, 2);
+        // Change vs the previous window; receipts going UP is good (green).
+        $delta = function ($cur, $prev) {
+            $cur = (float) $cur; $prev = (float) $prev;
+            if ($prev == 0.0) {
+                return $cur > 0 ? '<span class="text-muted">nothing in previous period</span>' : '';
+            }
+            $c = ($cur - $prev) / $prev * 100;
+            $cls = abs($c) < 0.05 ? 'text-muted' : ($c > 0 ? 'text-success' : 'text-danger');
+            return '<span class="' . $cls . '">' . ($c > 0 ? '+' : '') . number_format($c, 1) . '% vs previous</span>';
+        };
+        $t = $totals;
+        $methods = ['Cash' => $t->cash, 'MoMo' => $t->momo, 'Cheque' => $t->cheque, 'Transfer' => $t->transfer, 'Other' => $t->other];
+        $periodWord = $period === 'custom' ? $report->days . '-day period' : strtolower(\App\Support\ReceiptReport::PERIODS[$period]) . ' period';
+    @endphp
     <div class="container-xxl flex-grow-1 container-p-y">
 
-        <div class="row mb-4">
+        <div class="row mb-3">
             <div class="col-12"><h3 class="mb-0"><i class="bx bx-bar-chart-alt-2"></i> Receipts Reports</h3></div>
         </div>
 
-        <form method="GET" action="{{ url('receipt-report') }}" class="row g-2 align-items-end mb-4">
+        {{-- Window: a named period around a date, or any range between two dates --}}
+        <form method="GET" action="{{ url('receipt-report') }}" class="row g-2 align-items-end mb-2" id="rcpt-window">
             <div class="col-auto">
-                <label class="form-label small mb-0">Period</label>
-                <select name="period" class="form-select form-select-sm" onchange="this.form.submit()">
-                    @foreach(['daily'=>'Daily','weekly'=>'Weekly','monthly'=>'Monthly','quarterly'=>'Quarterly','semiannual'=>'Semiannual','yearly'=>'Yearly'] as $val=>$label)
-                        <option value="{{ $val }}" @selected($period == $val)>{{ $label }}</option>
+                <label class="form-label small mb-0" for="rcpt-period">Period</label>
+                <select name="period" id="rcpt-period" class="form-select form-select-sm">
+                    @foreach(\App\Support\ReceiptReport::PERIODS as $val => $label)
+                        <option value="{{ $val }}" @selected($period === $val)>{{ $label }}</option>
                     @endforeach
                 </select>
             </div>
-            <div class="col-auto">
-                <label class="form-label small mb-0">Anchor Date</label>
-                <input type="date" name="date" value="{{ $anchor->format('Y-m-d') }}" class="form-control form-control-sm" onchange="this.form.submit()">
+            <div class="col-auto rcpt-named" @if($period === 'custom') hidden @endif>
+                <label class="form-label small mb-0" for="rcpt-date">Date in period</label>
+                <input type="date" name="date" id="rcpt-date" value="{{ $anchor->format('Y-m-d') }}" class="form-control form-control-sm" @disabled($period === 'custom')>
             </div>
-            <div class="col-auto text-muted small pb-1">Showing: {{ $from->format('d M Y') }} &ndash; {{ $to->format('d M Y') }}</div>
+            <div class="col-auto rcpt-range" @if($period !== 'custom') hidden @endif>
+                <label class="form-label small mb-0" for="rcpt-from">From</label>
+                <input type="date" name="from" id="rcpt-from" value="{{ $from->format('Y-m-d') }}" class="form-control form-control-sm" @disabled($period !== 'custom')>
+            </div>
+            <div class="col-auto rcpt-range" @if($period !== 'custom') hidden @endif>
+                <label class="form-label small mb-0" for="rcpt-to">To</label>
+                <input type="date" name="to" id="rcpt-to" value="{{ $to->format('Y-m-d') }}" class="form-control form-control-sm" @disabled($period !== 'custom')>
+            </div>
+            <div class="col-auto rcpt-range" @if($period !== 'custom') hidden @endif>
+                <button type="submit" class="btn btn-sm btn-dark">Show</button>
+            </div>
+            <div class="col-auto rcpt-range d-flex flex-wrap gap-1 pb-1" @if($period !== 'custom') hidden @endif>
+                @foreach(['last7' => 'Last 7 days', 'last30' => 'Last 30 days', 'month' => 'This month', 'lastmonth' => 'Last month', 'quarter' => 'This quarter', 'year' => 'This year'] as $key => $label)
+                    <button type="button" class="btn btn-xs btn-sm btn-outline-secondary py-0 js-rcpt-preset" data-preset="{{ $key }}">{{ $label }}</button>
+                @endforeach
+            </div>
         </form>
+        <div class="text-muted small mb-4">
+            Showing <strong>{{ $report->label() }}</strong> ({{ $report->days }} {{ \Illuminate\Support\Str::plural('day', $report->days) }}),
+            compared with {{ $previous->label() }}.
+            @if($period === 'custom' && $report->days >= \App\Support\ReceiptReport::MAX_RANGE_DAYS)
+                <span class="text-warning">Ranges are limited to {{ \App\Support\ReceiptReport::MAX_RANGE_DAYS }} days.</span>
+            @endif
+        </div>
+
+        <div class="row g-3 mb-3">
+            <div class="col-lg-3 col-6"><div class="rep-kpi h-100"><small class="text-muted">MONEY RECEIVED</small><div class="value">{{ $ghs($t->received) }}</div><div class="sub">{!! $delta($t->received, $prevTotals->received) !!}</div></div></div>
+            <div class="col-lg-3 col-6"><div class="rep-kpi h-100"><small class="text-muted">RECEIPTS</small><div class="value">{{ number_format($t->cnt) }}</div><div class="sub">{{ number_format($t->clients) }} {{ \Illuminate\Support\Str::plural('client', (int) $t->clients) }} &middot; {!! $delta($t->cnt, $prevTotals->cnt) !!}</div></div></div>
+            <div class="col-lg-3 col-6"><div class="rep-kpi h-100"><small class="text-muted">AVG PER RECEIPT</small><div class="value">{{ $ghs($t->avg) }}</div><div class="sub">{!! $delta($t->avg, $prevTotals->avg) !!}</div></div></div>
+            <div class="col-lg-3 col-6"><div class="rep-kpi h-100"><small class="text-muted">PROJECTED NEXT {{ strtoupper($periodWord) }}</small><div class="value text-primary">{{ $ghs($projection['value']) }}</div>
+                <div class="sub">average of the previous 4 {{ $periodWord }}s</div>
+            </div></div>
+        </div>
 
         <div class="row g-3 mb-4">
-            <div class="col-lg-3 col-6"><div class="rep-kpi"><small class="text-muted">TOTAL RECEIPTS (NET)</small><div class="value">GH&#x20B5; {{ number_format($total,2) }}</div></div></div>
-            <div class="col-lg-3 col-6"><div class="rep-kpi"><small class="text-muted">RECEIPTS</small><div class="value">{{ $count }}</div></div></div>
-            <div class="col-lg-3 col-6"><div class="rep-kpi"><small class="text-muted">AVG PER RECEIPT</small><div class="value">GH&#x20B5; {{ $count ? number_format($total / $count, 2) : '0.00' }}</div></div></div>
-            <div class="col-lg-3 col-6"><div class="rep-kpi"><small class="text-muted">PROJECTED NEXT {{ strtoupper($period) }}</small><div class="value text-primary">GH&#x20B5; {{ number_format($projection,2) }}</div>
-                <small class="text-muted">avg of last 4 {{ $period }} periods</small>
-            </div></div>
+            <div class="col-lg-3 col-6"><div class="rep-kpi h-100"><small class="text-muted">TAX WITHHELD BY CLIENTS</small><div class="value">{{ $ghs($t->wht + $t->vat) }}</div><div class="sub">WHT {{ $ghs($t->wht) }} &middot; VAT {{ $ghs($t->vat) }}</div></div></div>
+            <div class="col-lg-3 col-6"><div class="rep-kpi h-100"><small class="text-muted">DEDUCTIONS ALLOWED</small><div class="value">{{ $ghs($t->deductions) }}</div></div></div>
+            <div class="col-lg-3 col-6"><div class="rep-kpi h-100"><small class="text-muted">CLEARED OFF INVOICES</small><div class="value">{{ $ghs($t->settled) }}</div><div class="sub">received + tax withheld + deductions</div></div></div>
+            <div class="col-lg-3 col-6"><div class="rep-kpi h-100 @if($pending->cnt) border-warning @endif"><small class="text-muted">AWAITING HO APPROVAL</small><div class="value {{ $pending->cnt ? 'text-warning' : '' }}">{{ $ghs($pending->received) }}</div><div class="sub">{{ $pending->cnt }} {{ \Illuminate\Support\Str::plural('receipt', $pending->cnt) }}, not in the figures above</div></div></div>
         </div>
 
         <div class="row g-3 mb-4">
             <div class="col-lg-8">
                 <div class="card rep-card h-100">
-                    <div class="card-header">Receipts Trend</div>
+                    <div class="card-header">Receipts trend <span class="text-muted fw-normal small">by {{ $trend['bucket'] }}</span></div>
                     <div class="card-body"><div id="rcpt-trend-chart"></div></div>
                 </div>
             </div>
             <div class="col-lg-4">
                 <div class="card rep-card h-100">
-                    <div class="card-header">By Payment Method</div>
+                    <div class="card-header">By payment method</div>
                     <div class="card-body">
-                        @php
-                            $statusTotals = ($byStatus->sum('total') ?? 0) ?: 0;
-                            $statusMap = ($byStatus->keyBy('status') ?? collect());
-                            $ordered = ['completed','uncompleted','unpaid'];
-                        @endphp
-
-                        <div class="row text-center mb-3">
-                            @foreach($ordered as $st)
-                                @php
-                                    $r = $statusMap[$st] ?? (object)['cnt'=>0,'total'=>0];
-                                    $pct = $statusTotals ? round(($r->total / $statusTotals) * 100, 1) : 0;
-                                @endphp
-                                <div class="col-12 col-md-4 mb-2">
-                                    <div class="rep-kpi">
-                                        <div class="small text-muted">{{ ucfirst($st) }}</div>
-                                        <div class="pct">{{ $pct }}%</div>
-                                        <div class="sub">{{ $r->cnt }} · GH&#x20B5; {{ number_format($r->total,2) }}</div>
-                                    </div>
-                                </div>
+                        <div id="rcpt-method-chart" style="min-height:260px"></div>
+                        <table class="table table-sm mb-3">
+                            @foreach($methods as $label => $amount)
+                                <tr><td>{{ $label }}</td><td class="text-end">{{ $ghs($amount) }}</td><td class="text-end text-muted small">{{ $t->received > 0 ? number_format($amount / $t->received * 100, 1) : '0.0' }}%</td></tr>
                             @endforeach
+                            <tr class="fw-semibold"><td>Total</td><td class="text-end">{{ $ghs($t->received) }}</td><td></td></tr>
+                        </table>
+                        <div class="row text-center g-2">
+                            <div class="col-6"><div class="rep-kpi"><div class="small text-muted">Full payments</div><div class="pct">{{ number_format($t->full_cnt) }}</div><div class="sub">{{ $ghs($t->full_amount) }}</div></div></div>
+                            <div class="col-6"><div class="rep-kpi"><div class="small text-muted">Part payments</div><div class="pct">{{ number_format($t->part_cnt) }}</div><div class="sub">{{ $ghs($t->part_amount) }}</div></div></div>
                         </div>
-
-                        <div id="rcpt-method-chart" style="height:300px"></div>
-                        <hr />
-                        <ul class="list-unstyled mb-0">
-                            <li>Cash: GH&#x20B5; {{ number_format($modes->cash ?? 0, 2) }}</li>
-                            <li>MoMo: GH&#x20B5; {{ number_format($modes->momo ?? 0, 2) }}</li>
-                            <li>Cheque: GH&#x20B5; {{ number_format($modes->cheque ?? 0, 2) }}</li>
-                            <li>Transfer: GH&#x20B5; {{ number_format($modes->transfer ?? 0, 2) }}</li>
-                        </ul>
                     </div>
                 </div>
             </div>
@@ -435,32 +462,38 @@
         <div class="row g-3 mb-4">
             <div class="col-lg-6">
                 <div class="card rep-card h-100">
-                    <div class="card-header">By Field Office</div>
+                    <div class="card-header">By field office</div>
                     <div class="table-responsive">
                         <table class="table table-sm mb-0">
-                            <thead><tr><th>Office</th><th>Receipts</th><th>Total</th></tr></thead>
+                            <thead><tr><th>Office</th><th class="text-end">Receipts</th><th class="text-end">Received</th><th class="text-end">Share</th></tr></thead>
                             <tbody>
                                 @forelse($byField as $row)
-                                <tr class="rcpt-drill-row" data-type="field" data-field-id="{{ $row->field_id }}"><td>{{ $row->field_name }}</td><td>{{ $row->cnt }}</td><td>GH&#x20B5; {{ number_format($row->total,2) }}</td></tr>
+                                <tr @if($row->field_id) class="rcpt-drill-row" data-type="field" data-field-id="{{ $row->field_id }}" @endif>
+                                    <td>{{ $row->field_name }}</td><td class="text-end">{{ $row->cnt }}</td><td class="text-end">{{ $ghs($row->total) }}</td>
+                                    <td class="text-end text-muted">{{ $t->received > 0 ? number_format($row->total / $t->received * 100, 1) : '0.0' }}%</td>
+                                </tr>
                                 @empty
-                                <tr><td colspan="3" class="text-muted text-center py-3">No data for this period.</td></tr>
+                                <tr><td colspan="4" class="text-muted text-center py-3">No receipts in this period.</td></tr>
                                 @endforelse
                             </tbody>
+                            @if($byField->isNotEmpty())
+                            <tfoot><tr class="fw-semibold"><td>Total</td><td class="text-end">{{ $byField->sum('cnt') }}</td><td class="text-end">{{ $ghs($byField->sum('total')) }}</td><td></td></tr></tfoot>
+                            @endif
                         </table>
                     </div>
                 </div>
             </div>
             <div class="col-lg-6">
                 <div class="card rep-card h-100">
-                    <div class="card-header">Top 10 Clients (by receipts)</div>
+                    <div class="card-header">Top 10 clients <span class="text-muted fw-normal small">by money received</span></div>
                     <div class="table-responsive">
                         <table class="table table-sm mb-0">
-                            <thead><tr><th>Client</th><th>Receipts</th><th>Total</th></tr></thead>
+                            <thead><tr><th>Client</th><th class="text-end">Receipts</th><th class="text-end">Received</th></tr></thead>
                             <tbody>
                                 @forelse($topClients as $row)
-                                <tr class="rcpt-drill-row" data-type="client" data-client-id="{{ $row->id }}"><td>{{ $row->business_name ?: $row->name }}</td><td>{{ $row->cnt }}</td><td>GH&#x20B5; {{ number_format($row->total,2) }}</td></tr>
+                                <tr class="rcpt-drill-row" data-type="client" data-client-id="{{ $row->id }}"><td>{{ $row->business_name ?: $row->name }}</td><td class="text-end">{{ $row->cnt }}</td><td class="text-end">{{ $ghs($row->total) }}</td></tr>
                                 @empty
-                                <tr><td colspan="3" class="text-muted text-center py-3">No data for this period.</td></tr>
+                                <tr><td colspan="3" class="text-muted text-center py-3">No receipts in this period.</td></tr>
                                 @endforelse
                             </tbody>
                         </table>
@@ -472,15 +505,15 @@
         <div class="row g-3 mb-4">
             <div class="col-lg-6">
                 <div class="card rep-card h-100">
-                    <div class="card-header">Top 10 Collectors (by amount)</div>
+                    <div class="card-header">Top 10 collectors <span class="text-muted fw-normal small">by money received</span></div>
                     <div class="table-responsive">
                         <table class="table table-sm mb-0">
-                            <thead><tr><th>Collector</th><th>Receipts</th><th>Total</th></tr></thead>
+                            <thead><tr><th>Collector</th><th class="text-end">Receipts</th><th class="text-end">Received</th></tr></thead>
                             <tbody>
                                 @forelse($topCollectors as $row)
-                                <tr class="rcpt-drill-row" data-type="collector" data-collector-id="{{ $row->id }}"><td>{{ $row->name }}</td><td>{{ $row->cnt }}</td><td>GH&#x20B5; {{ number_format($row->total,2) }}</td></tr>
+                                <tr @if($row->id) class="rcpt-drill-row" data-type="collector" data-collector-id="{{ $row->id }}" @endif><td>{{ $row->name }}</td><td class="text-end">{{ $row->cnt }}</td><td class="text-end">{{ $ghs($row->total) }}</td></tr>
                                 @empty
-                                <tr><td colspan="3" class="text-muted text-center py-3">No data for this period.</td></tr>
+                                <tr><td colspan="3" class="text-muted text-center py-3">No receipts in this period.</td></tr>
                                 @endforelse
                             </tbody>
                         </table>
@@ -488,8 +521,16 @@
                 </div>
             </div>
             <div class="col-lg-6">
-                <div class="alert alert-info">
-                    <i class="bx bx-info-circle"></i> This report uses `receipt_month` and only includes receipts with <strong>ho_status = approved</strong>.
+                <div class="alert alert-info small mb-0">
+                    <i class="bx bx-info-circle"></i>
+                    Only receipts approved by head office are counted. <strong>Money received</strong> is cash + MoMo + cheque + transfer + other,
+                    as entered on each receipt. Receipts are dated by their receipt date
+                    @if($t->undated)
+                        ; <strong>{{ (int) $t->undated }}</strong> {{ (int) $t->undated === 1 ? 'receipt has' : 'receipts have' }} no receipt date and {{ (int) $t->undated === 1 ? 'is' : 'are' }} dated by when {{ (int) $t->undated === 1 ? 'it was' : 'they were' }} entered.
+                    @else
+                        .
+                    @endif
+                    Click a row for its breakdown.
                 </div>
             </div>
         </div>
@@ -500,49 +541,82 @@
     @section('scripts')
     <script src="{{asset('vendor/libs/apex-charts/apexcharts.js')}}"></script>
     <script>
-        const rawTrendLabels = @json($trend->pluck('receipt_month')) || [];
-        const rawTrendValues = @json($trend->pluck('total')) || [];
+        const trend = @json($trend);
         const reportPeriod = @json($period);
+        const reportQuery = @json($report->query());
+        const methodLabels = ['Cash', 'MoMo', 'Cheque', 'Transfer', 'Other'];
+        const methodValues = @json(array_map('floatval', array_values($methods)));
+        const fmtMoney = v => Number(v || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-        const trendLabels = rawTrendLabels.map(l => {
-            if (!l) return '-';
-            const d = new Date(l);
-            // choose friendly format based on period
-            if (reportPeriod === 'daily') return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
-            if (reportPeriod === 'weekly') return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
-            if (reportPeriod === 'yearly') return d.getFullYear().toString();
-            // monthly
-            return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short' });
-        });
-
-        const trendValues = rawTrendValues.map(v => (typeof v === 'number' ? v : Number(v) || 0));
-
-        new ApexCharts(document.querySelector('#rcpt-trend-chart'), {
-            chart: { type: 'area', height: 300, toolbar: { show: false } },
-            series: [{ name: 'Receipts (GHS)', data: trendValues }],
-            xaxis: { categories: trendLabels, labels: { rotate: -45 } },
-            dataLabels: { enabled: false },
-            colors: ['#0ea5a4'],
-            stroke: { curve: 'smooth', width: 2 },
-            tooltip: {
-                y: { formatter: val => val ? Number(val).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00' }
-            }
-        }).render();
-
-        // Payment method donut
-        const methodLabels = ['Cash','MoMo','Cheque','Transfer'];
-        const methodValues = [@json((float)($modes->cash ?? 0)), @json((float)($modes->momo ?? 0)), @json((float)($modes->cheque ?? 0)), @json((float)($modes->transfer ?? 0))];
-
-        if (methodValues.some(v => v > 0)) {
-            new ApexCharts(document.querySelector('#rcpt-method-chart'), {
-                chart: { type: 'donut', height: 300 },
-                series: methodValues,
-                labels: methodLabels,
-                colors: ['#10b981', '#06b6d4', '#f59e0b', '#6366f1'],
+        function renderReceiptCharts() {
+            new ApexCharts(document.querySelector('#rcpt-trend-chart'), {
+                chart: { type: trend.labels.length > 1 ? 'area' : 'bar', height: 300, toolbar: { show: false } },
+                series: [{ name: 'Received (GH₵)', data: trend.values }],
+                xaxis: { categories: trend.labels, labels: { rotate: -45, hideOverlappingLabels: true } },
+                yaxis: { labels: { formatter: v => Intl.NumberFormat(undefined, { notation: 'compact' }).format(v) } },
+                dataLabels: { enabled: false },
+                colors: ['#0ea5a4'],
+                stroke: { curve: 'smooth', width: 2 },
+                tooltip: { y: { formatter: (v, o) => 'GH₵ ' + fmtMoney(v) + ' · ' + trend.counts[o.dataPointIndex] + ' receipt(s)' } },
             }).render();
-        } else {
-            document.querySelector('#rcpt-method-chart').innerHTML = '<div class="text-muted p-4">No payment method data for this period.</div>';
+
+            if (methodValues.some(v => v > 0)) {
+                new ApexCharts(document.querySelector('#rcpt-method-chart'), {
+                    chart: { type: 'donut', height: 260 },
+                    series: methodValues,
+                    labels: methodLabels,
+                    colors: ['#10b981', '#06b6d4', '#f59e0b', '#6366f1', '#94a3b8'],
+                    legend: { position: 'bottom' },
+                    tooltip: { y: { formatter: v => 'GH₵ ' + fmtMoney(v) } },
+                }).render();
+            } else {
+                document.querySelector('#rcpt-method-chart').innerHTML = '<div class="text-muted p-4">No receipts in this period.</div>';
+            }
         }
+        if (window.ApexCharts) { renderReceiptCharts(); }
+        else { // vendor asset missing: fall back to the CDN
+            const s = document.createElement('script');
+            s.src = 'https://cdnjs.cloudflare.com/ajax/libs/apexcharts/3.54.1/apexcharts.min.js';
+            s.onload = renderReceiptCharts;
+            document.head.appendChild(s);
+        }
+
+        // Period selector: named periods submit at once; "Date range" shows From / To.
+        (function () {
+            const form = document.getElementById('rcpt-window');
+            const sel = document.getElementById('rcpt-period');
+            const fromEl = document.getElementById('rcpt-from'), toEl = document.getElementById('rcpt-to');
+            const pad = n => String(n).padStart(2, '0');
+            const ymd = d => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); // local date, never UTC
+
+            function mode(custom) {
+                form.querySelectorAll('.rcpt-range').forEach(el => { el.hidden = !custom; });
+                form.querySelectorAll('.rcpt-named').forEach(el => { el.hidden = custom; });
+                fromEl.disabled = toEl.disabled = !custom;
+                document.getElementById('rcpt-date').disabled = custom;
+            }
+            sel.addEventListener('change', function () {
+                const custom = sel.value === 'custom';
+                mode(custom);
+                if (!custom) form.submit(); // custom waits for From / To + Show
+            });
+            document.getElementById('rcpt-date').addEventListener('change', () => form.submit());
+            toEl.addEventListener('change', () => { if (fromEl.value && toEl.value) form.submit(); });
+
+            const PRESETS = {
+                last7:     n => [new Date(n.getFullYear(), n.getMonth(), n.getDate() - 6), n],
+                last30:    n => [new Date(n.getFullYear(), n.getMonth(), n.getDate() - 29), n],
+                month:     n => [new Date(n.getFullYear(), n.getMonth(), 1), new Date(n.getFullYear(), n.getMonth() + 1, 0)],
+                lastmonth: n => [new Date(n.getFullYear(), n.getMonth() - 1, 1), new Date(n.getFullYear(), n.getMonth(), 0)],
+                quarter:   n => { const q = Math.floor(n.getMonth() / 3) * 3; return [new Date(n.getFullYear(), q, 1), new Date(n.getFullYear(), q + 3, 0)]; },
+                year:      n => [new Date(n.getFullYear(), 0, 1), new Date(n.getFullYear(), 11, 31)],
+            };
+            form.querySelectorAll('.js-rcpt-preset').forEach(btn => btn.addEventListener('click', function () {
+                const [a, b] = PRESETS[btn.dataset.preset](new Date());
+                fromEl.value = ymd(a); toEl.value = ymd(b);
+                form.submit();
+            }));
+        })();
 
         // (status donut removed) status summary is shown as KPI cards above
 
@@ -607,7 +681,7 @@
             });
             body.innerHTML = '';
             if (!rows.length) {
-                body.innerHTML = `<tr><td colspan="${headers.length}" class="text-center text-muted py-3">No receipts for this period.</td></tr>`;
+                body.innerHTML = `<tr><td colspan="${headers.length}" class="text-center text-muted py-3">No receipts in this period.</td></tr>`;
                 return false;
             }
             rows.forEach(values => {
@@ -647,7 +721,7 @@
             else if (type === 'collector') url = `/receipt/collector/${encodeURIComponent(key)}/details`;
             else return;
 
-            url += `?period=${encodeURIComponent(reportPeriod)}&date=${encodeURIComponent(@json($anchor->format('Y-m-d')))}`;
+            url += '?' + new URLSearchParams(reportQuery).toString(); // same window as the report (period+date, or from+to)
 
             fetch(url, { headers: { 'Accept': 'application/json' } })
                 .then(r => r.json())
