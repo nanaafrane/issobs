@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use App\Support\CategoryPayroll;
 use App\Support\PayPriority;
+use App\Support\ClientInvoiceStatus;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -33,7 +34,8 @@ class CategoryController extends Controller
         4 => 'clients.phone_number',
         5 => 'fields.name',
         6 => 'categories.name',
-        7 => 'categories.updated_at',
+        // 7 = invoice payments (computed, not sortable)
+        8 => 'categories.updated_at',
     ];
 
     public function __construct()
@@ -167,6 +169,12 @@ class CategoryController extends Controller
             $query->where('categories.name', $state);
         }
 
+        // Payment record (on time / late / owing / no invoices) over the last months.
+        $payment = $this->requestString($request, 'payment');
+        if ($payment !== null && isset(ClientInvoiceStatus::RECORD_LABELS[$payment])) {
+            $this->wherePaymentRecord($query, $payment, $this->resolveMonth($request));
+        }
+
         // Field office (0 = clients with no field office)
         $fieldId = $this->requestString($request, 'field_id');
         if ($fieldId !== null && ctype_digit($fieldId)) {
@@ -226,12 +234,53 @@ class CategoryController extends Controller
                         ? $query->whereNull('categories.id')
                         : $query->where('categories.name', 'like', $this->likeTerm($value));
                     break;
-                case 7:
+                case 8:
                     $this->whereDateMatches($query, 'categories.updated_at', $value);
                     break;
-                // 0 (checkbox) and 1 (row number) are not filterable.
+                // 0 (checkbox), 1 (row number) and 7 (invoice payments) are not filterable.
             }
         }
+    }
+
+    /** client_id => payment history (cached per request: the filter and the rows share it). */
+    private array $recordCache = [];
+
+    /** Payment record of every client invoiced in the window ending at $month. */
+    private function paymentHistory(Carbon $month): array
+    {
+        return $this->recordCache[$month->format('Y-m')] ??= ClientInvoiceStatus::history(null, $month);
+    }
+
+    /** Restrict the client list to one payment record grade. */
+    private function wherePaymentRecord($query, string $grade, Carbon $month): void
+    {
+        $ids = [];
+        foreach ($this->paymentHistory($month) as $clientId => $h) {
+            $ids[$h['record']['grade']][] = (int) $clientId;
+        }
+
+        if ($grade === ClientInvoiceStatus::RECORD_NONE) {
+            // Not invoiced in the window, or only invoices that are not due yet.
+            $graded = array_merge([0], $ids[ClientInvoiceStatus::RECORD_ON_TIME] ?? [], $ids[ClientInvoiceStatus::RECORD_LATE] ?? [], $ids[ClientInvoiceStatus::RECORD_OWING] ?? []);
+            $query->whereNotIn('clients.id', $graded);
+        } else {
+            $query->whereIn('clients.id', $ids[$grade] ?? [0]);
+        }
+    }
+
+    /** Payment history for these clients; clients never invoiced get an empty history. */
+    private function paymentRecordsFor(array $clientIds, Carbon $month): array
+    {
+        $all = $this->paymentHistory($month);
+        $missing = array_values(array_diff(array_map('intval', $clientIds), array_keys($all)));
+        $empty = $missing ? ClientInvoiceStatus::history($missing, $month) : [];
+
+        $out = [];
+        foreach ($clientIds as $id) {
+            $out[(int) $id] = $all[(int) $id] ?? $empty[(int) $id];
+        }
+
+        return $out;
     }
 
     private function clientListOrder($query, Request $request): void
@@ -313,7 +362,19 @@ class CategoryController extends Controller
                 ->all();
         }
 
+        // Payment record of the default Category A clients: they are ticked every month,
+        // so make it obvious which of them actually pay their invoices, and when.
+        $defaultPayments = [];
+        foreach ($this->paymentRecordsFor($this->defaultCategoryAIds(), $month) as $clientId => $h) {
+            $defaultPayments[$clientId] = $h['record'] + ['months' => $h['months']];
+        }
+        $defaultNames = Client::whereIn('id', $this->defaultCategoryAIds() ?: [0])->get(['id', 'name', 'business_name'])
+            ->mapWithKeys(fn ($c) => [(int) $c->id => trim((string) ($c->business_name ?: $c->name))])->all();
+
         return view('categories.activeClients', [
+            'defaultPayments' => $defaultPayments,
+            'defaultNames'  => $defaultNames,
+            'recordLabels'  => ClientInvoiceStatus::RECORD_LABELS,
             'month'         => $month,
             'categories'    => self::CATEGORIES,
             'summary'       => $this->fieldSummary($month),
@@ -347,8 +408,10 @@ class CategoryController extends Controller
         $rows = $query->offset($start)->limit($length)->get();
 
         $defaults = $this->defaultCategoryAIds();
+        $payments = $this->paymentRecordsFor($rows->pluck('id')->all(), $month);
 
-        $data = $rows->map(function ($client) use ($defaults) {
+        $data = $rows->map(function ($client) use ($defaults, $payments) {
+            $history = $payments[(int) $client->id];
             $label = trim((string) ($client->business_name ?: $client->name));
 
             $category = $client->category_row_id
@@ -369,6 +432,9 @@ class CategoryController extends Controller
                 'phone_number' => e((string) $client->phone_number),
                 'field_name'   => e((string) $client->field_name),
                 'category'     => $category,
+                // Last 6 invoice months, oldest -> selected month, plus what kind of payer the client is.
+                'payments'     => ClientInvoiceStatus::recordBadge($history['record'])
+                    . '<div class="mt-1">' . ClientInvoiceStatus::strip($history['months']) . '</div>',
                 'assigned_at'  => $client->assigned_at
                     ? e(Carbon::parse($client->assigned_at)->format('d M Y, H:i'))
                     : '',
@@ -431,6 +497,19 @@ class CategoryController extends Controller
             'totals'          => $totals,
             'rows'            => $rows,
             'payroll_url'     => url('salariesClientMonth/' . $client . '/' . $month->format('Y-m-d')),
+            // Invoice payments, last 12 months: which months were paid, and when.
+            'invoices'        => array_map(fn ($i) => [
+                'invoice_id'  => $i['invoice_id'],
+                'month'       => Carbon::parse($i['month'] . '-01')->format('M Y'),
+                'invoiced'    => $i['invoiced'],
+                'outstanding' => $i['outstanding'],
+                'due'         => $i['due'] ? Carbon::parse($i['due'])->format('d M Y') : '',
+                'paid_on'     => $i['paid_on'] ? Carbon::parse($i['paid_on'])->format('d M Y') : '',
+                'badge'       => ClientInvoiceStatus::badge($i, false),
+                'detail'      => e(ClientInvoiceStatus::detail($i)),
+                'url'         => url('invoice/' . $i['invoice_id']),
+            ], ClientInvoiceStatus::invoices($client, $month)),
+            'payment_record'  => ClientInvoiceStatus::history([$client], $month)[$client]['record'],
         ]);
     }
 

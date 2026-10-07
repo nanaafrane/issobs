@@ -12,6 +12,7 @@ use App\Models\InvoiceData;
 use App\Models\Receipt;
 use App\Exports\FilteredQueryExport;
 use App\Support\PayrollMonth;
+use App\Support\ClientInvoiceStatus;
 use App\Support\PayPriority;
 use App\Support\CategoryPayroll;
 use App\Http\Controllers\Concerns\SearchesDates;
@@ -954,6 +955,21 @@ class SalaryController extends Controller
 
 
     /**
+     * client_id => ['status' => this month's invoice status, 'record' => last 6 months] for the
+     * clients of these salaries. See App\Support\ClientInvoiceStatus.
+     */
+    private function clientPayments($salaries, Carbon $month): array
+    {
+        $clientIds = collect($salaries)->pluck('client_id')->filter()->unique()->values()->all();
+        $out = [];
+        foreach (ClientInvoiceStatus::history($clientIds, $month) as $clientId => $h) {
+            $out[$clientId] = ['status' => end($h['months']), 'record' => $h['record']];
+        }
+
+        return $out;
+    }
+
+    /**
      * Display salaries bank month view.
      */
     public function bankMonth($bank_id, $month)
@@ -969,7 +985,8 @@ class SalaryController extends Controller
         // dd($categories);
         // get all from salaries where payment type is bank and is equal to incoming bank_id and month is in current month
         $bank = Bank::findOrfail($bank_id);
-        $BankSalariesAll = Salary::with('employee')->whereBetween('salary_month', PayrollMonth::span($month))->where('payment_type', 'Bank')->where('bank_id', $bank_id)->get();
+        $BankSalariesAll = Salary::with(['employee.role', 'field', 'client', 'paymentInfo', 'user', 'user1', 'user2']) // everything the table prints, loaded once
+            ->whereBetween('salary_month', PayrollMonth::span($month))->where('payment_type', 'Bank')->where('bank_id', $bank_id)->get();
 
         $BankSalaries =  $BankSalariesAll->whereIn('payment_status', ['pending', 'approved'])
             ->sortBy([['pay_priority', 'desc'], fn ($a, $b) => strcmp((string) $a->employee?->name, (string) $b->employee?->name)])->values(); // payment priority first
@@ -979,7 +996,10 @@ class SalaryController extends Controller
         $BankSalariesapproved =  $BankSalariesAll->where('payment_status', 'approved');
         $BankSalarieshold =  $BankSalariesAll->where('payment_status', 'hold');
         // dd( $BankSalaries); 
-        return view('salaries.bankmonth', compact('BankSalaries', 'BankSalarieshold','BankSalariespending', 'BankSalariesAll','BankSalariesapproved','bank', 'month', 'categories'));
+        // Has each client paid its invoice for this month, and when? (one lookup for the whole page)
+        $clientPayments = $this->clientPayments($BankSalariesAll, $month);
+
+        return view('salaries.bankmonth', compact('BankSalaries', 'BankSalarieshold','BankSalariespending', 'BankSalariesAll','BankSalariesapproved','bank', 'month', 'categories', 'clientPayments'));
     }
 
 
@@ -1011,14 +1031,18 @@ class SalaryController extends Controller
         // dd($field->name, $month);
         $categories = Category::whereBetween('category_month', PayrollMonth::span($month))->get();
 
-        $CashSalaries = Salary::with('employee')->whereBetween('salary_month', PayrollMonth::span($month))->whereIn('payment_status', ['pending', 'approved'])->where('payment_type', 'Cash')->where('field_id', $field_id)->get()
+        $CashSalaries = Salary::with(['employee.role', 'field', 'client', 'paymentInfo', 'user', 'user1', 'user2']) // everything the table prints, loaded once
+            ->whereBetween('salary_month', PayrollMonth::span($month))->whereIn('payment_status', ['pending', 'approved'])->where('payment_type', 'Cash')->where('field_id', $field_id)->get()
             ->sortBy([['pay_priority', 'desc'], fn ($a, $b) => strcmp((string) $a->employee?->name, (string) $b->employee?->name)])->values(); // payment priority first
         $CashSalariesAll = Salary::whereBetween('salary_month', PayrollMonth::span($month))->where('payment_type', 'Cash')->where('field_id', $field_id)->get();
         $CashSalariespending = Salary::whereBetween('salary_month', PayrollMonth::span($month))->where('payment_status', 'pending')->where('payment_type', 'Cash')->where('field_id', $field_id)->get();
         $CashSalariesapproved = Salary::whereBetween('salary_month', PayrollMonth::span($month))->where('payment_status', 'approved')->where('payment_type', 'Cash')->where('field_id', $field_id)->get();
         $CashSalarieshold = Salary::whereBetween('salary_month', PayrollMonth::span($month))->whereIn('payment_status', ['hold', 'rejected'])->where('payment_type', 'Cash')->where('field_id', $field_id)->get();
         // dd($CashSalaries);
-        return view('salaries.cashmonth', compact('CashSalaries', 'CashSalariesAll', 'CashSalariespending',  'CashSalariesapproved', 'CashSalarieshold','field', 'month','categories'));
+        // Has each client paid its invoice for this month, and when? (one lookup for the whole page)
+        $clientPayments = $this->clientPayments($CashSalariesAll, $month);
+
+        return view('salaries.cashmonth', compact('CashSalaries', 'CashSalariesAll', 'CashSalariespending',  'CashSalariesapproved', 'CashSalarieshold','field', 'month','categories', 'clientPayments'));
 
     }
 

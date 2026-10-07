@@ -333,6 +333,7 @@
         <hr> <br>
         <div class="row">
             @include('partials.pay_priority_summary', ['rows' => $CashSalaries, 'held' => $CashSalarieshold, 'holdUrl' => route('salaries.cashholdMonth', [$field->id, \Carbon\Carbon::parse($month)->format('Y-m-d')])])
+            @include('partials.invoice_status_summary', ['rows' => $CashSalaries, 'clientPayments' => $clientPayments, 'month' => $month])
             <form action="/salariesDeleteMultiple" method="POST">
                 @csrf
                     <div class="col-lg-12 mb-4">
@@ -365,6 +366,7 @@
                                             <th>FIELD</th>
                                             <th> ROLE</th>
                                             <th>CLIENT</th>
+                                            <th>CLIENT INVOICE</th>
                                             <th>LOCATION </th>
                                             <th> NET SALARY </th>
                                             <th>CREATED BY</th>
@@ -398,6 +400,16 @@
                                             <td> {{ strtoupper($salary->field?->name) }} </td>
                                             <td> {{ $salary->employee?->role?->name }} </td>
                                             <td> {{ $salary->client?->name || $salary->client?->business_name ? $salary->client?->name . $salary->client?->business_name :  $salary->location }} </td>
+                                            @php $inv = $clientPayments[$salary->client_id] ?? null; @endphp
+                                            <td data-search="{{ $inv ? \App\Support\ClientInvoiceStatus::searchKey($inv['status']) : 'inv-noclient' }}"
+                                                data-order="{{ $inv ? ['paid' => 0, 'paid_late' => 1, 'part' => 2, 'unpaid' => 3, 'none' => 4][$inv['status']['status']] + ($inv['status']['overdue'] ? 1 : 0) : 9 }}">
+                                                @if($inv)
+                                                    {!! \App\Support\ClientInvoiceStatus::badge($inv['status']) !!}
+                                                    <div class="mt-1">{!! \App\Support\ClientInvoiceStatus::recordBadge($inv['record']) !!}</div>
+                                                @else
+                                                    <span class="text-muted small">No client</span>
+                                                @endif
+                                            </td>
                                             <td> {{  strtoupper($salary?->location) }} </td>
                                             <td> GH&#x20B5; {{ number_format($salary->net_salary, 2) }} </td>
                                             <td>{{  $salary->user?->name }}</td>
@@ -493,6 +505,7 @@
     </script>
 
         @include('partials.pay_priority_script', ['table' => '#myTable', 'col' => 2])
+        @include('partials.invoice_status_script', ['table' => '#myTable', 'col' => 10])
 
     @endsection
 </x-hr-dashboard>

@@ -362,6 +362,12 @@
             .chip { display: inline-flex; align-items: center; gap: .3rem; padding: .15rem .55rem; border-radius: 50rem; font-size: .75rem; cursor: pointer; border: 1px solid transparent; }
             .chip.zero { opacity: .45; }
             .chip.active { border-color: currentColor; font-weight: 700; }
+            /* Invoice payments: one square per month, oldest -> selected month */
+            .inv-strip { display: inline-flex; gap: 2px; }
+            .inv-sq { width: 1.15rem; height: 1.15rem; border-radius: 3px; font-size: .62rem; line-height: 1.15rem; text-align: center; color: #fff; font-weight: 600; cursor: help; }
+            .inv-sq-success { background: #2e7d32; } .inv-sq-info { background: #0277bd; } .inv-sq-warning { background: #ef8f00; }
+            .inv-sq-danger { background: #c62828; } .inv-sq-secondary { background: #8592a3; }
+            .inv-sq-none { background: transparent; color: #a1acb8; border: 1px dashed #c4cdd5; line-height: 1rem; }
             .sticky-apply { position: fixed; bottom: 0; left: 0; right: 0; z-index: 1040; padding: .6rem 1.25rem;
                 background: var(--bs-body-bg, #fff); border-top: 1px solid rgba(0,0,0,.1); box-shadow: 0 -4px 16px rgba(0,0,0,.08); }
         </style>
@@ -518,6 +524,13 @@
                                 <option value="{{ $option }}">{{ $option }} only</option>
                             @endforeach
                         </select>
+                        <label for="paymentFilter" class="mb-0 small text-muted ms-2">Payment record</label>
+                        <select id="paymentFilter" class="form-select form-select-sm" style="width:auto" title="Invoice payments over the last {{ \App\Support\ClientInvoiceStatus::HISTORY_MONTHS }} months">
+                            <option value="">Any</option>
+                            @foreach($recordLabels as $key => $label)
+                                <option value="{{ $key }}">{{ $label }}</option>
+                            @endforeach
+                        </select>
                     </div>
                 </div>
                 <div id="selectionNote" class="small text-muted mt-2">
@@ -528,6 +541,56 @@
                 </div>
             </div>
         </div>
+
+        {{-- Default Category A clients: are they actually paying their invoices? --}}
+        @php
+            $dp = collect($defaultPayments);
+            $byGrade = $dp->groupBy('grade');
+            $attention = $dp->filter(fn ($r) => in_array($r['grade'], ['owing', 'late'], true))
+                ->sortBy(fn ($r) => [$r['grade'] === 'owing' ? 0 : 1, -$r['owing_amount']]);
+            $owingDefaultIds = $dp->filter(fn ($r) => $r['grade'] === 'owing')->keys()->map(fn ($id) => (int) $id)->values();
+        @endphp
+        @if($dp->isNotEmpty())
+        <div class="card mb-3" id="defaultPaymentsCard">
+            <div class="card-body py-3">
+                <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+                    <h6 class="mb-0 me-2">Default Category A clients &mdash; invoice payments, last {{ \App\Support\ClientInvoiceStatus::HISTORY_MONTHS }} months to {{ $month->format('M Y') }}</h6>
+                    @foreach(['on_time' => 'success', 'late' => 'warning', 'owing' => 'danger', 'none' => 'secondary'] as $grade => $color)
+                        <span class="badge bg-label-{{ $color }}">{{ $recordLabels[$grade] }}: {{ $byGrade->get($grade, collect())->count() }}</span>
+                    @endforeach
+                    @if($owingDefaultIds->isNotEmpty())
+                        <a type="button" id="btnUntickOwing" class="btn btn-sm btn-outline-danger ms-auto"
+                           data-ids='@json($owingDefaultIds)'>Untick the {{ $owingDefaultIds->count() }} default client(s) that owe</a>
+                    @endif
+                </div>
+                @if($attention->isNotEmpty())
+                    <div class="table-responsive">
+                        <table class="table table-sm mb-0 small align-middle">
+                            <thead><tr><th>Client</th><th>Record</th><th>Last {{ \App\Support\ClientInvoiceStatus::HISTORY_MONTHS }} months</th><th>{{ $month->format('M Y') }} invoice</th></tr></thead>
+                            <tbody>
+                            @foreach($attention as $clientId => $r)
+                                <tr>
+                                    <td><a href="#" class="js-client-open" data-id="{{ $clientId }}" data-name="{{ $defaultNames[$clientId] ?? 'Client '.$clientId }}">{{ $defaultNames[$clientId] ?? 'Client '.$clientId }}</a></td>
+                                    <td>{!! \App\Support\ClientInvoiceStatus::recordBadge($r) !!}<div class="text-muted">{{ $r['summary'] }}</div></td>
+                                    <td>{!! \App\Support\ClientInvoiceStatus::strip($r['months']) !!}</td>
+                                    <td>{!! \App\Support\ClientInvoiceStatus::badge(end($r['months'])) !!}</td>
+                                </tr>
+                            @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                @else
+                    <div class="small text-success">Every default Category A client with an invoice due has paid it.</div>
+                @endif
+                <div class="small text-muted mt-2">
+                    Squares are months, oldest first: <span class="text-success fw-semibold">green</span> paid on time
+                    (within {{ \App\Support\ClientInvoiceStatus::GRACE_DAYS }} days of the due date), <span class="text-info fw-semibold">blue</span> paid late,
+                    <span class="text-warning fw-semibold">amber</span> part paid, <span class="text-danger fw-semibold">red</span> unpaid and overdue,
+                    grey unpaid but not due yet, dashed no invoice. Hover a square for the dates.
+                </div>
+            </div>
+        </div>
+        @endif
 
         {{-- Table (rows come from the server) --}}
         <div class="row">
@@ -543,6 +606,7 @@
                                 <th>Phone</th>
                                 <th>Field</th>
                                 <th>Category ({{ $month->format('M Y') }})</th>
+                                <th>Invoice payments</th>
                                 <th>Assigned On</th>
                             </tr>
                         </thead>
@@ -620,7 +684,8 @@
         let panelVisible = true; // is the main apply panel on screen? (see sticky bar)
 
         // Filters driven by the tiles / field cards / dropdown.
-        const filters = { state: '', field_id: '' };
+        const filters = { state: '', field_id: '', payment: '' };
+        const PAYMENT_LABELS = @json($recordLabels);
         const FIELD_NAMES = {};
         $('.js-field-card').each(function () { FIELD_NAMES[$(this).data('field')] = $(this).data('name'); });
 
@@ -670,6 +735,7 @@
                     d.month = MONTH;
                     d.state = filters.state;
                     d.field_id = filters.field_id;
+                    d.payment = filters.payment;
                 },
             }),
             order: [[3, 'asc']],
@@ -691,6 +757,7 @@
                 { data: 'phone_number' },
                 { data: 'field_name' },
                 { data: 'category' },
+                { data: 'payments', orderable: false, searchable: false },
                 { data: 'assigned_at' }
             ]
         });
@@ -698,6 +765,9 @@
         table.on('draw.dt', function () {
             $('select[name="myTableActiveClients_length"]').addClass('form-select form-select-sm');
             syncPageBoxes();
+            if (window.bootstrap) {
+                $table[0].querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => bootstrap.Tooltip.getOrCreateInstance(el));
+            }
         });
 
         // Row checkbox
@@ -728,7 +798,7 @@
 
         // Fetch ids for EVERY row matching the current search / column filters (all pages).
         function tickAllMatching(overrides, $btn) {
-            const params = Object.assign({}, table.ajax.params() || {}, { month: MONTH, state: filters.state, field_id: filters.field_id }, overrides || {});
+            const params = Object.assign({}, table.ajax.params() || {}, { month: MONTH, state: filters.state, field_id: filters.field_id, payment: filters.payment }, overrides || {});
             const label = $btn.text();
             $btn.prop('disabled', true).text('Loading...');
 
@@ -772,15 +842,19 @@
                     String($(this).data('state')) === filters.state);
             });
             $('#stateFilter').val(filters.state);
+            $('#paymentFilter').val(filters.payment);
 
             const $bar = $('#activeFilters').empty();
-            if (filters.field_id !== '' || filters.state !== '') {
+            if (filters.field_id !== '' || filters.state !== '' || filters.payment !== '') {
                 $bar.append('<span class="text-muted">Showing:</span>');
                 if (filters.field_id !== '') {
                     $bar.append($('<span class="badge bg-label-dark">').text('Field: ' + (FIELD_NAMES[filters.field_id] || '')).append(' <a href="#" class="js-clear" data-what="field">&times;</a>'));
                 }
                 if (filters.state !== '') {
                     $bar.append($('<span class="badge bg-label-dark">').text('Category: ' + stateLabel(filters.state)).append(' <a href="#" class="js-clear" data-what="state">&times;</a>'));
+                }
+                if (filters.payment !== '') {
+                    $bar.append($('<span class="badge bg-label-dark">').text('Payments: ' + (PAYMENT_LABELS[filters.payment] || '')).append(' <a href="#" class="js-clear" data-what="payment">&times;</a>'));
                 }
                 $bar.append('<a href="#" class="js-clear" data-what="all">Clear filters</a>');
             }
@@ -826,10 +900,17 @@
         $(document).on('click', '.js-clear', function (e) {
             e.preventDefault();
             const what = $(this).data('what');
-            setFilters(what === 'field' ? { field_id: '' } : what === 'state' ? { state: '' } : { field_id: '', state: '' });
+            setFilters(what === 'field' ? { field_id: '' } : what === 'state' ? { state: '' } : what === 'payment' ? { payment: '' } : { field_id: '', state: '', payment: '' });
         });
 
         $('#stateFilter').on('change', function () { setFilters({ state: $(this).val() }); });
+        $('#paymentFilter').on('change', function () { setFilters({ payment: $(this).val() }); });
+
+        // Default A clients that owe: take them out of the selection (nothing is saved until Apply).
+        $('#btnUntickOwing').on('click', function () {
+            ($(this).data('ids') || []).forEach(function (id) { selected.delete(parseInt(id, 10)); });
+            syncPageBoxes();
+        });
 
         // The two category dropdowns (main panel + sticky bar) stay in step.
         $category.on('change', function () { $barCategory.val($(this).val()); refreshUi(); });
@@ -918,6 +999,9 @@
         // Client drill-down panel.
         (function () {
             const URL_TMPL = @json(route('category.clientEmployees', ['client' => '__ID__']));
+            // Own copies: the page script declares MONTH / MONTH_LABEL inside its $(function) scope.
+            const MONTH = @json($month->format('Y-m'));
+            const MONTH_LABEL = @json($month->format('F Y'));
             const panelEl = document.getElementById('clientPanel');
             const money = new Intl.NumberFormat('en-GH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
             const gh = v => 'GH\u20B5 ' + money.format(v || 0);
@@ -962,6 +1046,30 @@
                             + '<td>' + e.location + '</td>'
                             + (pay ? '<td class="text-end text-nowrap">' + gh(e.amount) + '</td>' : '')
                             + '<td><span class="badge bg-label-' + (STATUS[e.status] || 'secondary') + '">' + esc(e.status) + '</span></td>'
+                            + '</tr>';
+                    });
+                    html += '</tbody></table></div>';
+                }
+
+                // Invoice payments, last 12 months
+                const rec = r.payment_record || {};
+                html += '<h6 class="mt-4 mb-1">Invoice payments, last 12 months</h6>'
+                    + '<div class="small text-muted mb-2">' + esc(rec.label || '') + (rec.summary ? ' &middot; ' + esc(rec.summary) : '') + '</div>';
+                if (!(r.invoices || []).length) {
+                    html += '<p class="text-muted small">No invoices in the last 12 months.</p>';
+                } else {
+                    html += '<div class="table-responsive"><table class="table table-sm align-middle small"><thead><tr>'
+                        + '<th>Month</th><th>Invoice</th><th class="text-end">Amount</th><th>Due</th><th>Status</th><th>Paid on</th><th class="text-end">Owed</th>'
+                        + '</tr></thead><tbody>';
+                    r.invoices.forEach(i => {
+                        html += '<tr title="' + i.detail + '">'
+                            + '<td class="text-nowrap">' + esc(i.month) + '</td>'
+                            + '<td><a href="' + i.url + '" target="_blank" rel="noopener">#' + i.invoice_id + '</a></td>'
+                            + '<td class="text-end text-nowrap">' + gh(i.invoiced) + '</td>'
+                            + '<td class="text-nowrap">' + esc(i.due) + '</td>'
+                            + '<td>' + i.badge + '</td>'
+                            + '<td class="text-nowrap">' + esc(i.paid_on) + '</td>'
+                            + '<td class="text-end text-nowrap">' + (i.outstanding > 0 ? gh(i.outstanding) : '') + '</td>'
                             + '</tr>';
                     });
                     html += '</tbody></table></div>';
