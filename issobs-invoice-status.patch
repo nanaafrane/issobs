@@ -1,0 +1,1194 @@
+From b8843b3b982b92acd991d5ac0a7d3f14818460bb Mon Sep 17 00:00:00 2001
+From: Claude <claude@anthropic.com>
+Date: Wed, 7 Oct 2026 21:51:36 +0100
+Subject: [PATCH] Show client invoice payment status on category, bank and cash
+ payroll screens
+
+Payment priority decides whose salaries go first; this shows which clients
+actually pay their invoices, and when, so default categories (Category A is
+pre-ticked every month) can be judged on payment behaviour.
+
+App\Support\ClientInvoiceStatus is the single rule, read by every screen:
+- Month status: Paid (within 7 days of due date), Paid late, Part paid,
+  Unpaid (not due yet), Overdue, No invoice. Uses invoices.status/due_date
+  and receipts.receipt_month (payment date). Several invoices in a month are
+  combined. One query per page.
+- Payment record over the last 6 months: Pays on time / Pays late / Owing /
+  No invoices. Invoices not yet due never count against a client.
+
+Category page (categoryClients)
+- "Invoice payments" column: record badge + one square per month with dates
+  on hover. "Payment record" filter, also honoured by "Tick all matching".
+- Default Category A card: lists defaults that are owing or pay late, with a
+  button to untick the ones that owe before applying.
+- Client panel: invoice history for 12 months (amount, due, paid on, owed).
+- Fix: clicking a client name threw "MONTH_LABEL is not defined" (the panel
+  script could not see the page script's constants), so the panel never
+  loaded.
+
+Bank / cash month pages
+- CLIENT INVOICE column (status, when paid / days overdue, record) and chips
+  that filter the table by client invoice status, alongside pay priority.
+- Eager-load the relations the table prints: bank page 368 -> 13 queries.
+
+Bank Excel export
+- Columns P-R: client invoice status, paid/due detail, payment record
+  (NET stays in N, PAY PRIORITY in O). "Client not paid" subtotal in Q4.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_012JNaQA2L7G8o3PVzUXZMzs
+---
+ app/Exports/SalaryBankExport.php              |  55 ++-
+ app/Http/Controllers/CategoryController.php   |  87 +++-
+ app/Http/Controllers/SalaryController.php     |  32 +-
+ app/Support/ClientInvoiceStatus.php           | 393 ++++++++++++++++++
+ .../views/categories/activeClients.blade.php  | 116 +++++-
+ .../partials/invoice_status_script.blade.php  |  27 ++
+ .../partials/invoice_status_summary.blade.php |  57 +++
+ resources/views/salaries/bankmonth.blade.php  |  13 +
+ resources/views/salaries/cashmonth.blade.php  |  13 +
+ 9 files changed, 779 insertions(+), 14 deletions(-)
+ create mode 100644 app/Support/ClientInvoiceStatus.php
+ create mode 100644 resources/views/partials/invoice_status_script.blade.php
+ create mode 100644 resources/views/partials/invoice_status_summary.blade.php
+
+diff --git a/app/Exports/SalaryBankExport.php b/app/Exports/SalaryBankExport.php
+index 5effd6c..6201201 100644
+--- a/app/Exports/SalaryBankExport.php
++++ b/app/Exports/SalaryBankExport.php
+@@ -42,6 +42,9 @@ class SalaryBankExport implements FromQuery, WithMapping , WithHeadings, WithDra
+         /** client_id => category name for the month (latest row, shared rule). Loaded once. */
+         private ?array $categoryByClient = null;
+ 
++        /** client_id => ['status' => month invoice status, 'record' => last 6 months]. Loaded once. */
++        private ?array $paymentsByClient = null;
++
+     public function __construct($month, $bank_id, array $headers)
+     {
+         $this->month = Carbon::parse($month);
+@@ -98,8 +101,35 @@ public function map($salary): array
+             $salary->branch,
+             $salary->account_number,                            
+             $salary->net_salary,
+-            // Kept as the LAST column so NET stays in column N (the total formula below uses it).
++            // Kept after NET so NET stays in column N (the total formula below uses it).
+             $salary->pay_priority ? \App\Support\PayPriority::LABELS[(int) $salary->pay_priority] : '',
++            // P, Q, R: has the client paid its invoice for this month, and when?
++            ...$this->invoiceColumns($salary->client_id),
++        ];
++    }
++
++    /** [status, detail, payment record] of the salary's client for the export month. */
++    private function invoiceColumns($clientId): array
++    {
++        if ($this->paymentsByClient === null) {
++            $this->paymentsByClient = [];
++            foreach (\App\Support\ClientInvoiceStatus::history(null, $this->month) as $id => $h) {
++                $this->paymentsByClient[$id] = ['status' => end($h['months']), 'record' => $h['record']];
++            }
++        }
++
++        if (! $clientId) {
++            return ['No client', '', ''];
++        }
++        $p = $this->paymentsByClient[(int) $clientId] ?? null;
++        if ($p === null) { // not invoiced in the last months at all
++            return [\App\Support\ClientInvoiceStatus::LABELS[\App\Support\ClientInvoiceStatus::NONE], '', \App\Support\ClientInvoiceStatus::RECORD_LABELS[\App\Support\ClientInvoiceStatus::RECORD_NONE]];
++        }
++
++        return [
++            \App\Support\ClientInvoiceStatus::label($p['status']),
++            $p['status']['status'] === \App\Support\ClientInvoiceStatus::NONE ? '' : \App\Support\ClientInvoiceStatus::detail($p['status']),
++            $p['record']['label'] . ' - ' . $p['record']['summary'],
+         ];
+     }
+     
+@@ -126,7 +156,10 @@ public function headings(): array
+         'BRANCH',
+         'ACCOUNT NUMBER',
+         'NET',
+-        'PAY PRIORITY'],
++        'PAY PRIORITY',
++        'CLIENT INVOICE',
++        'INVOICE PAID / DUE',
++        'CLIENT PAYMENT RECORD'],
+ 
+         ];
+     
+@@ -209,6 +242,12 @@ public function registerEvents(): array
+                         \App\Support\PayPriority::LABELS[\App\Support\PayPriority::URGENT] => 'FFF8D7DA',   // light red
+                         \App\Support\PayPriority::LABELS[\App\Support\PayPriority::PRIORITY] => 'FFFFF3CD', // light amber
+                     ];
++                    // Net salaries of clients whose invoice for the month is not fully paid ("Paid" and "Paid late" count as paid).
++                    $event->sheet->setCellValue('P4', 'Client not paid');
++                    $event->sheet->setCellValue('Q4', '=N4-SUMIF(' . $range('P') . ',"Paid*",' . $range('N') . ')');
++                    $event->sheet->getStyle('P4:Q4')->getFont()->setBold(true)->setSize(12);
++                    $event->sheet->getStyle('P4:Q4')->getFont()->getColor()->setARGB('FF9C0006');
++
+                     $sheet = $event->sheet->getDelegate();
+                     for ($row = 6; $row <= $lastRow; $row++) {
+                         $label = (string) $sheet->getCell('O' . $row)->getValue();
+@@ -218,6 +257,18 @@ public function registerEvents(): array
+                                 ->getStartColor()->setARGB($fill[$label]);
+                             $sheet->getStyle('O' . $row)->getFont()->setBold(true);
+                         }
++
++                        // Client invoice status: coloured text in column P.
++                        $invColor = [
++                            'Paid' => 'FF2E7D32', 'Paid late' => 'FF0277BD', 'Part paid' => 'FFB26A00',
++                            'Overdue' => 'FFC62828', 'Unpaid' => 'FF5F6B7A', 'No invoice' => 'FF5F6B7A',
++                        ][(string) $sheet->getCell('P' . $row)->getValue()] ?? null;
++                        if ($invColor) {
++                            $sheet->getStyle('P' . $row)->getFont()->setBold(true)->getColor()->setARGB($invColor);
++                        }
++                    }
++                    foreach (['P' => 14, 'Q' => 48, 'R' => 60] as $col => $width) {
++                        $sheet->getColumnDimension($col)->setWidth($width);
+                     }
+                 }
+             },
+diff --git a/app/Http/Controllers/CategoryController.php b/app/Http/Controllers/CategoryController.php
+index d9090bf..eb841e2 100644
+--- a/app/Http/Controllers/CategoryController.php
++++ b/app/Http/Controllers/CategoryController.php
+@@ -10,6 +10,7 @@
+ use Illuminate\Support\Facades\Gate;
+ use App\Support\CategoryPayroll;
+ use App\Support\PayPriority;
++use App\Support\ClientInvoiceStatus;
+ use Carbon\Carbon;
+ use Illuminate\Support\Facades\Auth;
+ use Illuminate\Support\Facades\DB;
+@@ -33,7 +34,8 @@ class CategoryController extends Controller
+         4 => 'clients.phone_number',
+         5 => 'fields.name',
+         6 => 'categories.name',
+-        7 => 'categories.updated_at',
++        // 7 = invoice payments (computed, not sortable)
++        8 => 'categories.updated_at',
+     ];
+ 
+     public function __construct()
+@@ -167,6 +169,12 @@ private function clientListFilters($query, Request $request): void
+             $query->where('categories.name', $state);
+         }
+ 
++        // Payment record (on time / late / owing / no invoices) over the last months.
++        $payment = $this->requestString($request, 'payment');
++        if ($payment !== null && isset(ClientInvoiceStatus::RECORD_LABELS[$payment])) {
++            $this->wherePaymentRecord($query, $payment, $this->resolveMonth($request));
++        }
++
+         // Field office (0 = clients with no field office)
+         $fieldId = $this->requestString($request, 'field_id');
+         if ($fieldId !== null && ctype_digit($fieldId)) {
+@@ -226,14 +234,55 @@ private function clientListFilters($query, Request $request): void
+                         ? $query->whereNull('categories.id')
+                         : $query->where('categories.name', 'like', $this->likeTerm($value));
+                     break;
+-                case 7:
++                case 8:
+                     $this->whereDateMatches($query, 'categories.updated_at', $value);
+                     break;
+-                // 0 (checkbox) and 1 (row number) are not filterable.
++                // 0 (checkbox), 1 (row number) and 7 (invoice payments) are not filterable.
+             }
+         }
+     }
+ 
++    /** client_id => payment history (cached per request: the filter and the rows share it). */
++    private array $recordCache = [];
++
++    /** Payment record of every client invoiced in the window ending at $month. */
++    private function paymentHistory(Carbon $month): array
++    {
++        return $this->recordCache[$month->format('Y-m')] ??= ClientInvoiceStatus::history(null, $month);
++    }
++
++    /** Restrict the client list to one payment record grade. */
++    private function wherePaymentRecord($query, string $grade, Carbon $month): void
++    {
++        $ids = [];
++        foreach ($this->paymentHistory($month) as $clientId => $h) {
++            $ids[$h['record']['grade']][] = (int) $clientId;
++        }
++
++        if ($grade === ClientInvoiceStatus::RECORD_NONE) {
++            // Not invoiced in the window, or only invoices that are not due yet.
++            $graded = array_merge([0], $ids[ClientInvoiceStatus::RECORD_ON_TIME] ?? [], $ids[ClientInvoiceStatus::RECORD_LATE] ?? [], $ids[ClientInvoiceStatus::RECORD_OWING] ?? []);
++            $query->whereNotIn('clients.id', $graded);
++        } else {
++            $query->whereIn('clients.id', $ids[$grade] ?? [0]);
++        }
++    }
++
++    /** Payment history for these clients; clients never invoiced get an empty history. */
++    private function paymentRecordsFor(array $clientIds, Carbon $month): array
++    {
++        $all = $this->paymentHistory($month);
++        $missing = array_values(array_diff(array_map('intval', $clientIds), array_keys($all)));
++        $empty = $missing ? ClientInvoiceStatus::history($missing, $month) : [];
++
++        $out = [];
++        foreach ($clientIds as $id) {
++            $out[(int) $id] = $all[(int) $id] ?? $empty[(int) $id];
++        }
++
++        return $out;
++    }
++
+     private function clientListOrder($query, Request $request): void
+     {
+         $orderColumn = (int) $request->input('order.0.column', 3);
+@@ -313,7 +362,19 @@ public function activeClientsByMonth(Request $request)
+                 ->all();
+         }
+ 
++        // Payment record of the default Category A clients: they are ticked every month,
++        // so make it obvious which of them actually pay their invoices, and when.
++        $defaultPayments = [];
++        foreach ($this->paymentRecordsFor($this->defaultCategoryAIds(), $month) as $clientId => $h) {
++            $defaultPayments[$clientId] = $h['record'] + ['months' => $h['months']];
++        }
++        $defaultNames = Client::whereIn('id', $this->defaultCategoryAIds() ?: [0])->get(['id', 'name', 'business_name'])
++            ->mapWithKeys(fn ($c) => [(int) $c->id => trim((string) ($c->business_name ?: $c->name))])->all();
++
+         return view('categories.activeClients', [
++            'defaultPayments' => $defaultPayments,
++            'defaultNames'  => $defaultNames,
++            'recordLabels'  => ClientInvoiceStatus::RECORD_LABELS,
+             'month'         => $month,
+             'categories'    => self::CATEGORIES,
+             'summary'       => $this->fieldSummary($month),
+@@ -347,8 +408,10 @@ public function clientsData(Request $request)
+         $rows = $query->offset($start)->limit($length)->get();
+ 
+         $defaults = $this->defaultCategoryAIds();
++        $payments = $this->paymentRecordsFor($rows->pluck('id')->all(), $month);
+ 
+-        $data = $rows->map(function ($client) use ($defaults) {
++        $data = $rows->map(function ($client) use ($defaults, $payments) {
++            $history = $payments[(int) $client->id];
+             $label = trim((string) ($client->business_name ?: $client->name));
+ 
+             $category = $client->category_row_id
+@@ -369,6 +432,9 @@ public function clientsData(Request $request)
+                 'phone_number' => e((string) $client->phone_number),
+                 'field_name'   => e((string) $client->field_name),
+                 'category'     => $category,
++                // Last 6 invoice months, oldest -> selected month, plus what kind of payer the client is.
++                'payments'     => ClientInvoiceStatus::recordBadge($history['record'])
++                    . '<div class="mt-1">' . ClientInvoiceStatus::strip($history['months']) . '</div>',
+                 'assigned_at'  => $client->assigned_at
+                     ? e(Carbon::parse($client->assigned_at)->format('d M Y, H:i'))
+                     : '',
+@@ -431,6 +497,19 @@ public function clientEmployees(Request $request, int $client)
+             'totals'          => $totals,
+             'rows'            => $rows,
+             'payroll_url'     => url('salariesClientMonth/' . $client . '/' . $month->format('Y-m-d')),
++            // Invoice payments, last 12 months: which months were paid, and when.
++            'invoices'        => array_map(fn ($i) => [
++                'invoice_id'  => $i['invoice_id'],
++                'month'       => Carbon::parse($i['month'] . '-01')->format('M Y'),
++                'invoiced'    => $i['invoiced'],
++                'outstanding' => $i['outstanding'],
++                'due'         => $i['due'] ? Carbon::parse($i['due'])->format('d M Y') : '',
++                'paid_on'     => $i['paid_on'] ? Carbon::parse($i['paid_on'])->format('d M Y') : '',
++                'badge'       => ClientInvoiceStatus::badge($i, false),
++                'detail'      => e(ClientInvoiceStatus::detail($i)),
++                'url'         => url('invoice/' . $i['invoice_id']),
++            ], ClientInvoiceStatus::invoices($client, $month)),
++            'payment_record'  => ClientInvoiceStatus::history([$client], $month)[$client]['record'],
+         ]);
+     }
+ 
+diff --git a/app/Http/Controllers/SalaryController.php b/app/Http/Controllers/SalaryController.php
+index 567bd80..67410b7 100644
+--- a/app/Http/Controllers/SalaryController.php
++++ b/app/Http/Controllers/SalaryController.php
+@@ -12,6 +12,7 @@
+ use App\Models\Receipt;
+ use App\Exports\FilteredQueryExport;
+ use App\Support\PayrollMonth;
++use App\Support\ClientInvoiceStatus;
+ use App\Support\PayPriority;
+ use App\Support\CategoryPayroll;
+ use App\Http\Controllers\Concerns\SearchesDates;
+@@ -953,6 +954,21 @@ public function BulkCashMonth(Request $request)
+     // }
+ 
+ 
++    /**
++     * client_id => ['status' => this month's invoice status, 'record' => last 6 months] for the
++     * clients of these salaries. See App\Support\ClientInvoiceStatus.
++     */
++    private function clientPayments($salaries, Carbon $month): array
++    {
++        $clientIds = collect($salaries)->pluck('client_id')->filter()->unique()->values()->all();
++        $out = [];
++        foreach (ClientInvoiceStatus::history($clientIds, $month) as $clientId => $h) {
++            $out[$clientId] = ['status' => end($h['months']), 'record' => $h['record']];
++        }
++
++        return $out;
++    }
++
+     /**
+      * Display salaries bank month view.
+      */
+@@ -969,7 +985,8 @@ public function bankMonth($bank_id, $month)
+         // dd($categories);
+         // get all from salaries where payment type is bank and is equal to incoming bank_id and month is in current month
+         $bank = Bank::findOrfail($bank_id);
+-        $BankSalariesAll = Salary::with('employee')->whereBetween('salary_month', PayrollMonth::span($month))->where('payment_type', 'Bank')->where('bank_id', $bank_id)->get();
++        $BankSalariesAll = Salary::with(['employee.role', 'field', 'client', 'paymentInfo', 'user', 'user1', 'user2']) // everything the table prints, loaded once
++            ->whereBetween('salary_month', PayrollMonth::span($month))->where('payment_type', 'Bank')->where('bank_id', $bank_id)->get();
+ 
+         $BankSalaries =  $BankSalariesAll->whereIn('payment_status', ['pending', 'approved'])
+             ->sortBy([['pay_priority', 'desc'], fn ($a, $b) => strcmp((string) $a->employee?->name, (string) $b->employee?->name)])->values(); // payment priority first
+@@ -979,7 +996,10 @@ public function bankMonth($bank_id, $month)
+         $BankSalariesapproved =  $BankSalariesAll->where('payment_status', 'approved');
+         $BankSalarieshold =  $BankSalariesAll->where('payment_status', 'hold');
+         // dd( $BankSalaries); 
+-        return view('salaries.bankmonth', compact('BankSalaries', 'BankSalarieshold','BankSalariespending', 'BankSalariesAll','BankSalariesapproved','bank', 'month', 'categories'));
++        // Has each client paid its invoice for this month, and when? (one lookup for the whole page)
++        $clientPayments = $this->clientPayments($BankSalariesAll, $month);
++
++        return view('salaries.bankmonth', compact('BankSalaries', 'BankSalarieshold','BankSalariespending', 'BankSalariesAll','BankSalariesapproved','bank', 'month', 'categories', 'clientPayments'));
+     }
+ 
+ 
+@@ -1011,14 +1031,18 @@ public function cashMonth($field_id, $month)
+         // dd($field->name, $month);
+         $categories = Category::whereBetween('category_month', PayrollMonth::span($month))->get();
+ 
+-        $CashSalaries = Salary::with('employee')->whereBetween('salary_month', PayrollMonth::span($month))->whereIn('payment_status', ['pending', 'approved'])->where('payment_type', 'Cash')->where('field_id', $field_id)->get()
++        $CashSalaries = Salary::with(['employee.role', 'field', 'client', 'paymentInfo', 'user', 'user1', 'user2']) // everything the table prints, loaded once
++            ->whereBetween('salary_month', PayrollMonth::span($month))->whereIn('payment_status', ['pending', 'approved'])->where('payment_type', 'Cash')->where('field_id', $field_id)->get()
+             ->sortBy([['pay_priority', 'desc'], fn ($a, $b) => strcmp((string) $a->employee?->name, (string) $b->employee?->name)])->values(); // payment priority first
+         $CashSalariesAll = Salary::whereBetween('salary_month', PayrollMonth::span($month))->where('payment_type', 'Cash')->where('field_id', $field_id)->get();
+         $CashSalariespending = Salary::whereBetween('salary_month', PayrollMonth::span($month))->where('payment_status', 'pending')->where('payment_type', 'Cash')->where('field_id', $field_id)->get();
+         $CashSalariesapproved = Salary::whereBetween('salary_month', PayrollMonth::span($month))->where('payment_status', 'approved')->where('payment_type', 'Cash')->where('field_id', $field_id)->get();
+         $CashSalarieshold = Salary::whereBetween('salary_month', PayrollMonth::span($month))->whereIn('payment_status', ['hold', 'rejected'])->where('payment_type', 'Cash')->where('field_id', $field_id)->get();
+         // dd($CashSalaries);
+-        return view('salaries.cashmonth', compact('CashSalaries', 'CashSalariesAll', 'CashSalariespending',  'CashSalariesapproved', 'CashSalarieshold','field', 'month','categories'));
++        // Has each client paid its invoice for this month, and when? (one lookup for the whole page)
++        $clientPayments = $this->clientPayments($CashSalariesAll, $month);
++
++        return view('salaries.cashmonth', compact('CashSalaries', 'CashSalariesAll', 'CashSalariespending',  'CashSalariesapproved', 'CashSalarieshold','field', 'month','categories', 'clientPayments'));
+ 
+     }
+ 
+diff --git a/app/Support/ClientInvoiceStatus.php b/app/Support/ClientInvoiceStatus.php
+new file mode 100644
+index 0000000..eabb0d3
+--- /dev/null
++++ b/app/Support/ClientInvoiceStatus.php
+@@ -0,0 +1,393 @@
++<?php
++
++namespace App\Support;
++
++use Carbon\Carbon;
++use Carbon\CarbonInterface;
++use Illuminate\Support\Facades\DB;
++
++/**
++ * Has the client paid its invoice for a month, and when?
++ *
++ * The ONE place that answers this. The category page, the bank / cash payroll
++ * screens and the bank Excel export all read it, so they always agree.
++ *
++ * Source of truth (what the invoice screens already show):
++ *   invoices.status   unpaid -> uncompleted (part paid) -> completed (fully paid),
++ *                     set by ReceiptController as soon as a receipt is entered.
++ *   invoices.due_date the due date typed on the invoice.
++ *   receipts.receipt_month  the payment date typed on the receipt
++ *                     (falls back to the receipt's created_at when empty).
++ *
++ * A client can have more than one invoice in a month; they are combined:
++ * paid only when every invoice is completed, paid on = the last payment,
++ * due = the earliest due date.
++ *
++ * Invoices are matched on invoice_month = the payroll month (the same rule
++ * SalaryController::store() uses to reject guards whose client has no invoice).
++ */
++class ClientInvoiceStatus
++{
++    public const PAID = 'paid';          // fully paid by the due date (+ grace)
++    public const PAID_LATE = 'paid_late'; // fully paid, after the due date (+ grace)
++    public const PART = 'part';          // something received, balance still open
++    public const UNPAID = 'unpaid';      // nothing received
++    public const NONE = 'none';          // no invoice for the month
++
++    /** Days after the due date that still count as "on time" (bank transfers clear slowly). */
++    public const GRACE_DAYS = 7;
++
++    /** Months of history used for a client's payment record. */
++    public const HISTORY_MONTHS = 6;
++
++    public const LABELS = [
++        self::PAID => 'Paid',
++        self::PAID_LATE => 'Paid late',
++        self::PART => 'Part paid',
++        self::UNPAID => 'Unpaid',
++        self::NONE => 'No invoice',
++    ];
++
++    /** Payment record over the last months: what kind of payer is this client? */
++    public const RECORD_ON_TIME = 'on_time';
++    public const RECORD_LATE = 'late';
++    public const RECORD_OWING = 'owing';
++    public const RECORD_NONE = 'none';
++
++    public const RECORD_LABELS = [
++        self::RECORD_ON_TIME => 'Pays on time',
++        self::RECORD_LATE => 'Pays late',
++        self::RECORD_OWING => 'Owing',
++        self::RECORD_NONE => 'No invoices',
++    ];
++
++    /**
++     * Month-by-month status for the HISTORY_MONTHS months ending at $month, plus a record.
++     *
++     * @param  int[]|null  $clientIds  null = every client invoiced in the window
++     * @return array<int, array{months: array<string, array>, record: array}>
++     */
++    public static function history(?array $clientIds, CarbonInterface $month, int $months = self::HISTORY_MONTHS, ?CarbonInterface $today = null): array
++    {
++        $to = Carbon::instance($month)->startOfMonth();
++        $from = $to->copy()->subMonths($months - 1);
++        $loaded = self::load($clientIds, $from, $to, $today);
++
++        $ids = $clientIds === null ? array_keys($loaded) : array_map('intval', $clientIds);
++        $out = [];
++        foreach ($ids as $clientId) {
++            $series = [];
++            for ($m = $from->copy(); $m <= $to; $m->addMonth()) {
++                $series[$m->format('Y-m')] = $loaded[$clientId][$m->format('Y-m')] ?? self::none($m);
++            }
++            $out[$clientId] = ['months' => $series, 'record' => self::record($series)];
++        }
++
++        return $out;
++    }
++
++    /** Every invoice of one client for the last $months months (newest first), for the client panel. */
++    public static function invoices(int $clientId, CarbonInterface $month, int $months = 12, ?CarbonInterface $today = null): array
++    {
++        $to = Carbon::instance($month)->startOfMonth();
++        $from = $to->copy()->subMonths($months - 1);
++
++        return self::invoiceRows([$clientId], $from, $to)
++            ->map(fn ($r) => self::single($r, $today))
++            ->sortByDesc(fn ($r) => $r['month'] . sprintf('%012d', $r['invoice_id']))
++            ->values()->all();
++    }
++
++    /* ------------------------------------------------------------------
++     | Loading
++     * ------------------------------------------------------------------ */
++
++    /** One query: invoices in the window with their receipts summed per invoice. */
++    private static function invoiceRows(?array $clientIds, Carbon $from, Carbon $to)
++    {
++        $receipts = DB::table('receipts')
++            ->whereNotNull('invoice_id')
++            ->selectRaw('invoice_id, COUNT(*) as receipt_count,
++                MIN(COALESCE(receipt_month, DATE(created_at))) as first_paid_on,
++                MAX(COALESCE(receipt_month, DATE(created_at))) as last_paid_on')
++            ->groupBy('invoice_id');
++
++        return DB::table('invoices')
++            ->leftJoinSub($receipts, 'r', 'r.invoice_id', '=', 'invoices.id')
++            ->whereBetween('invoices.invoice_month', [$from->toDateString(), $to->copy()->endOfMonth()->toDateString()])
++            ->when($clientIds !== null, fn ($q) => $q->whereIn('invoices.client_id', array_map('intval', $clientIds) ?: [0]))
++            ->whereNotNull('invoices.client_id')
++            ->get([
++                'invoices.id', 'invoices.client_id', 'invoices.invoice_month', 'invoices.due_date',
++                'invoices.status', 'invoices.total', 'invoices.balance', 'invoices.amount_received', 'invoices.wht_amount',
++                'r.receipt_count', 'r.first_paid_on', 'r.last_paid_on',
++            ]);
++    }
++
++    /** @return array<int, array<string, array>> client_id => 'Y-m' => combined status */
++    private static function load(?array $clientIds, Carbon $from, Carbon $to, ?CarbonInterface $today): array
++    {
++        $grouped = [];
++        foreach (self::invoiceRows($clientIds, $from, $to) as $row) {
++            $ym = substr((string) $row->invoice_month, 0, 7);
++            $grouped[(int) $row->client_id][$ym][] = self::single($row, $today);
++        }
++
++        $out = [];
++        foreach ($grouped as $clientId => $months) {
++            foreach ($months as $ym => $invoices) {
++                $out[$clientId][$ym] = self::combine($invoices, $today);
++            }
++        }
++
++        return $out;
++    }
++
++    /* ------------------------------------------------------------------
++     | Status rules
++     * ------------------------------------------------------------------ */
++
++    /** Status of one invoice row. */
++    private static function single(object $row, ?CarbonInterface $today): array
++    {
++        $today = Carbon::instance($today ?? now())->startOfDay();
++        $month = Carbon::parse($row->invoice_month)->startOfMonth();
++        $total = (float) $row->total;
++        $state = strtolower(trim((string) $row->status));
++
++        // Old invoices without a due date: treat as due at the end of the following month.
++        $due = $row->due_date ? Carbon::parse($row->due_date)->startOfDay() : $month->copy()->addMonth()->endOfMonth()->startOfDay();
++        $paidOn = $row->last_paid_on ? Carbon::parse($row->last_paid_on)->startOfDay() : null;
++
++        if ($state === 'completed') {
++            $outstanding = 0.0;
++            $paidOn ??= $due; // completed without a receipt date: nothing better to go on
++            $daysLate = (int) $due->diffInDays($paidOn, false);
++            $status = $daysLate > self::GRACE_DAYS ? self::PAID_LATE : self::PAID;
++        } elseif ($state === 'uncompleted' || (int) $row->receipt_count > 0) {
++            // Part payment: ReceiptController keeps the remaining amount in invoices.balance.
++            $outstanding = (float) $row->balance > 0 ? (float) $row->balance : $total;
++            $daysLate = $today->gt($due) ? (int) $due->diffInDays($today) : 0;
++            $status = self::PART;
++        } else {
++            // 'unpaid' (new invoice): invoices.balance is 0 here, so the whole total is owed.
++            $outstanding = $total;
++            $paidOn = null;
++            $daysLate = $today->gt($due) ? (int) $due->diffInDays($today) : 0;
++            $status = self::UNPAID;
++        }
++
++        return [
++            'status' => $status,
++            'invoice_id' => (int) $row->id,
++            'invoice_ids' => [(int) $row->id],
++            'month' => $month->format('Y-m'),
++            'invoiced' => $total,
++            'outstanding' => round($outstanding, 2),
++            'due' => $due->toDateString(),
++            'paid_on' => $paidOn?->toDateString(),
++            'first_paid_on' => $row->first_paid_on ? Carbon::parse($row->first_paid_on)->toDateString() : null,
++            // paid: days after due (negative = early). open: days overdue (0 = not due yet).
++            'days_late' => $daysLate,
++            'overdue' => in_array($status, [self::PART, self::UNPAID], true) && $daysLate > 0,
++            'count' => 1,
++        ];
++    }
++
++    /** Several invoices of one client in one month -> one status. */
++    private static function combine(array $invoices, ?CarbonInterface $today): array
++    {
++        if (count($invoices) === 1) {
++            return $invoices[0];
++        }
++
++        $open = array_filter($invoices, fn ($i) => in_array($i['status'], [self::PART, self::UNPAID], true));
++        $received = array_filter($invoices, fn ($i) => $i['status'] !== self::UNPAID);
++        $dues = array_column($invoices, 'due');
++        $paidDates = array_filter(array_column($invoices, 'paid_on'));
++        $firstDates = array_filter(array_column($invoices, 'first_paid_on'));
++
++        $due = min($dues);
++        $paidOn = $paidDates ? max($paidDates) : null;
++        $todayStr = Carbon::instance($today ?? now())->toDateString();
++
++        if (! $open) {
++            $daysLate = max(array_column($invoices, 'days_late'));
++            $status = $daysLate > self::GRACE_DAYS ? self::PAID_LATE : self::PAID;
++        } else {
++            $status = $received ? self::PART : self::UNPAID;
++            $daysLate = max(array_column($open, 'days_late'));
++            $paidOn = $status === self::PART ? $paidOn : null;
++        }
++
++        return [
++            'status' => $status,
++            'invoice_id' => $invoices[0]['invoice_id'],
++            'invoice_ids' => array_merge(...array_column($invoices, 'invoice_ids')),
++            'month' => $invoices[0]['month'],
++            'invoiced' => array_sum(array_column($invoices, 'invoiced')),
++            'outstanding' => round(array_sum(array_column($invoices, 'outstanding')), 2),
++            'due' => $due,
++            'paid_on' => $paidOn,
++            'first_paid_on' => $firstDates ? min($firstDates) : null,
++            'days_late' => $daysLate,
++            'overdue' => (bool) $open && $todayStr > $due,
++            'count' => count($invoices),
++        ];
++    }
++
++    private static function none(CarbonInterface $month): array
++    {
++        return [
++            'status' => self::NONE, 'invoice_id' => null, 'invoice_ids' => [], 'month' => $month->format('Y-m'),
++            'invoiced' => 0.0, 'outstanding' => 0.0, 'due' => null, 'paid_on' => null, 'first_paid_on' => null,
++            'days_late' => 0, 'overdue' => false, 'count' => 0,
++        ];
++    }
++
++    /**
++     * What kind of payer: owing (an overdue invoice is still open), late (everything due is
++     * paid but on average after due + grace), on time, or no invoices in the window.
++     * Invoices that are open but not yet due do not count against the client.
++     */
++    public static function record(array $series): array
++    {
++        $invoiced = array_filter($series, fn ($s) => $s['status'] !== self::NONE);
++        $owing = array_filter($invoiced, fn ($s) => $s['overdue']);
++        $paid = array_filter($invoiced, fn ($s) => in_array($s['status'], [self::PAID, self::PAID_LATE], true));
++        $late = array_filter($paid, fn ($s) => $s['status'] === self::PAID_LATE);
++        $avgDays = $paid ? (int) round(array_sum(array_column($paid, 'days_late')) / count($paid)) : null;
++
++        $grade = match (true) {
++            ! $invoiced => self::RECORD_NONE,
++            (bool) $owing => self::RECORD_OWING,
++            ! $paid => self::RECORD_NONE, // only invoices that are not due yet
++            $avgDays > self::GRACE_DAYS || count($late) * 2 > count($paid) => self::RECORD_LATE,
++            default => self::RECORD_ON_TIME,
++        };
++
++        return [
++            'grade' => $grade,
++            'label' => self::RECORD_LABELS[$grade],
++            'invoiced' => count($invoiced),
++            'paid' => count($paid),
++            'paid_late' => count($late),
++            'owing' => count($owing),
++            'owing_amount' => round(array_sum(array_column($owing, 'outstanding')), 2),
++            'avg_days' => $avgDays,
++            'summary' => self::recordSummary($grade, count($invoiced), count($paid), count($owing), $avgDays, array_sum(array_column($owing, 'outstanding'))),
++        ];
++    }
++
++    private static function recordSummary(string $grade, int $invoiced, int $paid, int $owing, ?int $avg, float $owed): string
++    {
++        if ($grade === self::RECORD_NONE) {
++            return $invoiced ? 'Invoiced, not due yet' : 'No invoices in the last ' . self::HISTORY_MONTHS . ' months';
++        }
++        $text = "Paid {$paid} of {$invoiced} invoices";
++        if ($avg !== null) {
++            $text .= ', ' . self::daysText($avg, 'on average');
++        }
++        if ($owing) {
++            $text .= "; {$owing} overdue (GH₵ " . number_format($owed, 2) . ')';
++        }
++
++        return $text;
++    }
++
++    private static function daysText(int $days, string $suffix = ''): string
++    {
++        $suffix = $suffix !== '' ? ' ' . $suffix : '';
++        if ($days === 0) {
++            return 'on the due date' . $suffix;
++        }
++
++        return abs($days) . ' day' . (abs($days) === 1 ? '' : 's') . ($days > 0 ? ' after' : ' before') . ' due' . $suffix;
++    }
++
++    /* ------------------------------------------------------------------
++     | Presentation (shared by Blade, JSON endpoints and the Excel export)
++     * ------------------------------------------------------------------ */
++
++    /** Short status word for a cell / filter: Paid, Paid late, Part paid, Unpaid, Overdue, No invoice. */
++    public static function label(array $s): string
++    {
++        if ($s['status'] === self::UNPAID && $s['overdue']) {
++            return 'Overdue';
++        }
++
++        return self::LABELS[$s['status']];
++    }
++
++    /** One plain-text line saying when: "Paid 14 Sep 2026, 5 days after due". */
++    public static function detail(array $s): string
++    {
++        $date = fn (?string $d) => $d ? Carbon::parse($d)->format('d M Y') : '';
++        $money = fn ($v) => 'GH₵ ' . number_format((float) $v, 2);
++
++        return match ($s['status']) {
++            self::NONE => 'No invoice for ' . Carbon::parse($s['month'] . '-01')->format('M Y'),
++            self::PAID, self::PAID_LATE => 'Paid ' . $date($s['paid_on']) . ', ' . self::daysText($s['days_late']),
++            self::PART => 'Part paid (last ' . $date($s['paid_on']) . '), ' . $money($s['outstanding']) . ' owed, '
++                . ($s['overdue'] ? $s['days_late'] . ' days overdue' : 'due ' . $date($s['due'])),
++            default => $money($s['outstanding']) . ' unpaid, '
++                . ($s['overdue'] ? $s['days_late'] . ' days overdue (due ' . $date($s['due']) . ')' : 'due ' . $date($s['due'])),
++        };
++    }
++
++    /** Value for DataTables data-search, so chips can filter a column exactly. */
++    public static function searchKey(array $s): string
++    {
++        return 'inv-' . ($s['status'] === self::UNPAID && $s['overdue'] ? 'overdue' : $s['status']);
++    }
++
++    /** Badge colour per status. */
++    public static function color(array $s): string
++    {
++        return match (true) {
++            $s['status'] === self::PAID => 'success',
++            $s['status'] === self::PAID_LATE => 'info',
++            $s['status'] === self::PART => 'warning',
++            $s['status'] === self::UNPAID && $s['overdue'] => 'danger',
++            $s['status'] === self::UNPAID => 'secondary',
++            default => 'dark',
++        };
++    }
++
++    /** Badge HTML with the detail as a tooltip and an optional second line. */
++    public static function badge(array $s, bool $withDetail = true): string
++    {
++        $detail = e(self::detail($s));
++        $html = '<span class="badge bg-label-' . self::color($s) . ' inv-flag" title="' . $detail . '" data-bs-toggle="tooltip">'
++            . e(self::label($s)) . '</span>';
++
++        if ($withDetail && $s['status'] !== self::NONE) {
++            $html .= '<div class="small text-muted text-wrap" style="min-width:11rem">' . $detail . '</div>';
++        }
++
++        return $html;
++    }
++
++    /** Badge for a payment record (category page). */
++    public static function recordBadge(array $record): string
++    {
++        $color = [self::RECORD_ON_TIME => 'success', self::RECORD_LATE => 'warning', self::RECORD_OWING => 'danger', self::RECORD_NONE => 'secondary'][$record['grade']];
++
++        return '<span class="badge bg-' . $color . ($color === 'warning' ? ' text-dark' : '') . '" title="' . e($record['summary']) . '" data-bs-toggle="tooltip">'
++            . e($record['label']) . '</span>';
++    }
++
++    /** Six small squares, oldest -> newest, each with its own tooltip. */
++    public static function strip(array $months): string
++    {
++        $html = '<span class="inv-strip" aria-label="Invoice payments by month">';
++        foreach ($months as $ym => $s) {
++            $title = Carbon::parse($ym . '-01')->format('M Y') . ': ' . self::label($s)
++                . ($s['status'] === self::NONE ? '' : ' - ' . self::detail($s));
++            $html .= '<span class="inv-sq inv-sq-' . self::color($s) . ($s['status'] === self::NONE ? ' inv-sq-none' : '')
++                . '" title="' . e($title) . '" data-bs-toggle="tooltip">' . e(Carbon::parse($ym . '-01')->format('M')[0]) . '</span>';
++        }
++
++        return $html . '</span>';
++    }
++}
+diff --git a/resources/views/categories/activeClients.blade.php b/resources/views/categories/activeClients.blade.php
+index 23e8b2f..c3be029 100644
+--- a/resources/views/categories/activeClients.blade.php
++++ b/resources/views/categories/activeClients.blade.php
+@@ -362,6 +362,12 @@
+             .chip { display: inline-flex; align-items: center; gap: .3rem; padding: .15rem .55rem; border-radius: 50rem; font-size: .75rem; cursor: pointer; border: 1px solid transparent; }
+             .chip.zero { opacity: .45; }
+             .chip.active { border-color: currentColor; font-weight: 700; }
++            /* Invoice payments: one square per month, oldest -> selected month */
++            .inv-strip { display: inline-flex; gap: 2px; }
++            .inv-sq { width: 1.15rem; height: 1.15rem; border-radius: 3px; font-size: .62rem; line-height: 1.15rem; text-align: center; color: #fff; font-weight: 600; cursor: help; }
++            .inv-sq-success { background: #2e7d32; } .inv-sq-info { background: #0277bd; } .inv-sq-warning { background: #ef8f00; }
++            .inv-sq-danger { background: #c62828; } .inv-sq-secondary { background: #8592a3; }
++            .inv-sq-none { background: transparent; color: #a1acb8; border: 1px dashed #c4cdd5; line-height: 1rem; }
+             .sticky-apply { position: fixed; bottom: 0; left: 0; right: 0; z-index: 1040; padding: .6rem 1.25rem;
+                 background: var(--bs-body-bg, #fff); border-top: 1px solid rgba(0,0,0,.1); box-shadow: 0 -4px 16px rgba(0,0,0,.08); }
+         </style>
+@@ -518,6 +524,13 @@
+                                 <option value="{{ $option }}">{{ $option }} only</option>
+                             @endforeach
+                         </select>
++                        <label for="paymentFilter" class="mb-0 small text-muted ms-2">Payment record</label>
++                        <select id="paymentFilter" class="form-select form-select-sm" style="width:auto" title="Invoice payments over the last {{ \App\Support\ClientInvoiceStatus::HISTORY_MONTHS }} months">
++                            <option value="">Any</option>
++                            @foreach($recordLabels as $key => $label)
++                                <option value="{{ $key }}">{{ $label }}</option>
++                            @endforeach
++                        </select>
+                     </div>
+                 </div>
+                 <div id="selectionNote" class="small text-muted mt-2">
+@@ -529,6 +542,56 @@
+             </div>
+         </div>
+ 
++        {{-- Default Category A clients: are they actually paying their invoices? --}}
++        @php
++            $dp = collect($defaultPayments);
++            $byGrade = $dp->groupBy('grade');
++            $attention = $dp->filter(fn ($r) => in_array($r['grade'], ['owing', 'late'], true))
++                ->sortBy(fn ($r) => [$r['grade'] === 'owing' ? 0 : 1, -$r['owing_amount']]);
++            $owingDefaultIds = $dp->filter(fn ($r) => $r['grade'] === 'owing')->keys()->map(fn ($id) => (int) $id)->values();
++        @endphp
++        @if($dp->isNotEmpty())
++        <div class="card mb-3" id="defaultPaymentsCard">
++            <div class="card-body py-3">
++                <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
++                    <h6 class="mb-0 me-2">Default Category A clients &mdash; invoice payments, last {{ \App\Support\ClientInvoiceStatus::HISTORY_MONTHS }} months to {{ $month->format('M Y') }}</h6>
++                    @foreach(['on_time' => 'success', 'late' => 'warning', 'owing' => 'danger', 'none' => 'secondary'] as $grade => $color)
++                        <span class="badge bg-label-{{ $color }}">{{ $recordLabels[$grade] }}: {{ $byGrade->get($grade, collect())->count() }}</span>
++                    @endforeach
++                    @if($owingDefaultIds->isNotEmpty())
++                        <a type="button" id="btnUntickOwing" class="btn btn-sm btn-outline-danger ms-auto"
++                           data-ids='@json($owingDefaultIds)'>Untick the {{ $owingDefaultIds->count() }} default client(s) that owe</a>
++                    @endif
++                </div>
++                @if($attention->isNotEmpty())
++                    <div class="table-responsive">
++                        <table class="table table-sm mb-0 small align-middle">
++                            <thead><tr><th>Client</th><th>Record</th><th>Last {{ \App\Support\ClientInvoiceStatus::HISTORY_MONTHS }} months</th><th>{{ $month->format('M Y') }} invoice</th></tr></thead>
++                            <tbody>
++                            @foreach($attention as $clientId => $r)
++                                <tr>
++                                    <td><a href="#" class="js-client-open" data-id="{{ $clientId }}" data-name="{{ $defaultNames[$clientId] ?? 'Client '.$clientId }}">{{ $defaultNames[$clientId] ?? 'Client '.$clientId }}</a></td>
++                                    <td>{!! \App\Support\ClientInvoiceStatus::recordBadge($r) !!}<div class="text-muted">{{ $r['summary'] }}</div></td>
++                                    <td>{!! \App\Support\ClientInvoiceStatus::strip($r['months']) !!}</td>
++                                    <td>{!! \App\Support\ClientInvoiceStatus::badge(end($r['months'])) !!}</td>
++                                </tr>
++                            @endforeach
++                            </tbody>
++                        </table>
++                    </div>
++                @else
++                    <div class="small text-success">Every default Category A client with an invoice due has paid it.</div>
++                @endif
++                <div class="small text-muted mt-2">
++                    Squares are months, oldest first: <span class="text-success fw-semibold">green</span> paid on time
++                    (within {{ \App\Support\ClientInvoiceStatus::GRACE_DAYS }} days of the due date), <span class="text-info fw-semibold">blue</span> paid late,
++                    <span class="text-warning fw-semibold">amber</span> part paid, <span class="text-danger fw-semibold">red</span> unpaid and overdue,
++                    grey unpaid but not due yet, dashed no invoice. Hover a square for the dates.
++                </div>
++            </div>
++        </div>
++        @endif
++
+         {{-- Table (rows come from the server) --}}
+         <div class="row">
+             <div class="col-12">
+@@ -543,6 +606,7 @@
+                                 <th>Phone</th>
+                                 <th>Field</th>
+                                 <th>Category ({{ $month->format('M Y') }})</th>
++                                <th>Invoice payments</th>
+                                 <th>Assigned On</th>
+                             </tr>
+                         </thead>
+@@ -620,7 +684,8 @@
+         let panelVisible = true; // is the main apply panel on screen? (see sticky bar)
+ 
+         // Filters driven by the tiles / field cards / dropdown.
+-        const filters = { state: '', field_id: '' };
++        const filters = { state: '', field_id: '', payment: '' };
++        const PAYMENT_LABELS = @json($recordLabels);
+         const FIELD_NAMES = {};
+         $('.js-field-card').each(function () { FIELD_NAMES[$(this).data('field')] = $(this).data('name'); });
+ 
+@@ -670,6 +735,7 @@ function syncPageBoxes() {
+                     d.month = MONTH;
+                     d.state = filters.state;
+                     d.field_id = filters.field_id;
++                    d.payment = filters.payment;
+                 },
+             }),
+             order: [[3, 'asc']],
+@@ -691,6 +757,7 @@ function syncPageBoxes() {
+                 { data: 'phone_number' },
+                 { data: 'field_name' },
+                 { data: 'category' },
++                { data: 'payments', orderable: false, searchable: false },
+                 { data: 'assigned_at' }
+             ]
+         });
+@@ -698,6 +765,9 @@ function syncPageBoxes() {
+         table.on('draw.dt', function () {
+             $('select[name="myTableActiveClients_length"]').addClass('form-select form-select-sm');
+             syncPageBoxes();
++            if (window.bootstrap) {
++                $table[0].querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => bootstrap.Tooltip.getOrCreateInstance(el));
++            }
+         });
+ 
+         // Row checkbox
+@@ -728,7 +798,7 @@ function syncPageBoxes() {
+ 
+         // Fetch ids for EVERY row matching the current search / column filters (all pages).
+         function tickAllMatching(overrides, $btn) {
+-            const params = Object.assign({}, table.ajax.params() || {}, { month: MONTH, state: filters.state, field_id: filters.field_id }, overrides || {});
++            const params = Object.assign({}, table.ajax.params() || {}, { month: MONTH, state: filters.state, field_id: filters.field_id, payment: filters.payment }, overrides || {});
+             const label = $btn.text();
+             $btn.prop('disabled', true).text('Loading...');
+ 
+@@ -772,9 +842,10 @@ function paintFilters() {
+                     String($(this).data('state')) === filters.state);
+             });
+             $('#stateFilter').val(filters.state);
++            $('#paymentFilter').val(filters.payment);
+ 
+             const $bar = $('#activeFilters').empty();
+-            if (filters.field_id !== '' || filters.state !== '') {
++            if (filters.field_id !== '' || filters.state !== '' || filters.payment !== '') {
+                 $bar.append('<span class="text-muted">Showing:</span>');
+                 if (filters.field_id !== '') {
+                     $bar.append($('<span class="badge bg-label-dark">').text('Field: ' + (FIELD_NAMES[filters.field_id] || '')).append(' <a href="#" class="js-clear" data-what="field">&times;</a>'));
+@@ -782,6 +853,9 @@ function paintFilters() {
+                 if (filters.state !== '') {
+                     $bar.append($('<span class="badge bg-label-dark">').text('Category: ' + stateLabel(filters.state)).append(' <a href="#" class="js-clear" data-what="state">&times;</a>'));
+                 }
++                if (filters.payment !== '') {
++                    $bar.append($('<span class="badge bg-label-dark">').text('Payments: ' + (PAYMENT_LABELS[filters.payment] || '')).append(' <a href="#" class="js-clear" data-what="payment">&times;</a>'));
++                }
+                 $bar.append('<a href="#" class="js-clear" data-what="all">Clear filters</a>');
+             }
+         }
+@@ -826,10 +900,17 @@ function setFilters(next) {
+         $(document).on('click', '.js-clear', function (e) {
+             e.preventDefault();
+             const what = $(this).data('what');
+-            setFilters(what === 'field' ? { field_id: '' } : what === 'state' ? { state: '' } : { field_id: '', state: '' });
++            setFilters(what === 'field' ? { field_id: '' } : what === 'state' ? { state: '' } : what === 'payment' ? { payment: '' } : { field_id: '', state: '', payment: '' });
+         });
+ 
+         $('#stateFilter').on('change', function () { setFilters({ state: $(this).val() }); });
++        $('#paymentFilter').on('change', function () { setFilters({ payment: $(this).val() }); });
++
++        // Default A clients that owe: take them out of the selection (nothing is saved until Apply).
++        $('#btnUntickOwing').on('click', function () {
++            ($(this).data('ids') || []).forEach(function (id) { selected.delete(parseInt(id, 10)); });
++            syncPageBoxes();
++        });
+ 
+         // The two category dropdowns (main panel + sticky bar) stay in step.
+         $category.on('change', function () { $barCategory.val($(this).val()); refreshUi(); });
+@@ -918,6 +999,9 @@ function updateBar() {
+         // Client drill-down panel.
+         (function () {
+             const URL_TMPL = @json(route('category.clientEmployees', ['client' => '__ID__']));
++            // Own copies: the page script declares MONTH / MONTH_LABEL inside its $(function) scope.
++            const MONTH = @json($month->format('Y-m'));
++            const MONTH_LABEL = @json($month->format('F Y'));
+             const panelEl = document.getElementById('clientPanel');
+             const money = new Intl.NumberFormat('en-GH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+             const gh = v => 'GH\u20B5 ' + money.format(v || 0);
+@@ -967,6 +1051,30 @@ function render(r) {
+                     html += '</tbody></table></div>';
+                 }
+ 
++                // Invoice payments, last 12 months
++                const rec = r.payment_record || {};
++                html += '<h6 class="mt-4 mb-1">Invoice payments, last 12 months</h6>'
++                    + '<div class="small text-muted mb-2">' + esc(rec.label || '') + (rec.summary ? ' &middot; ' + esc(rec.summary) : '') + '</div>';
++                if (!(r.invoices || []).length) {
++                    html += '<p class="text-muted small">No invoices in the last 12 months.</p>';
++                } else {
++                    html += '<div class="table-responsive"><table class="table table-sm align-middle small"><thead><tr>'
++                        + '<th>Month</th><th>Invoice</th><th class="text-end">Amount</th><th>Due</th><th>Status</th><th>Paid on</th><th class="text-end">Owed</th>'
++                        + '</tr></thead><tbody>';
++                    r.invoices.forEach(i => {
++                        html += '<tr title="' + i.detail + '">'
++                            + '<td class="text-nowrap">' + esc(i.month) + '</td>'
++                            + '<td><a href="' + i.url + '" target="_blank" rel="noopener">#' + i.invoice_id + '</a></td>'
++                            + '<td class="text-end text-nowrap">' + gh(i.invoiced) + '</td>'
++                            + '<td class="text-nowrap">' + esc(i.due) + '</td>'
++                            + '<td>' + i.badge + '</td>'
++                            + '<td class="text-nowrap">' + esc(i.paid_on) + '</td>'
++                            + '<td class="text-end text-nowrap">' + (i.outstanding > 0 ? gh(i.outstanding) : '') + '</td>'
++                            + '</tr>';
++                    });
++                    html += '</tbody></table></div>';
++                }
++
+                 if (r.mode === 'payroll') {
+                     html += '<a class="btn btn-sm btn-outline-primary" href="' + r.payroll_url + '">Open client payroll for ' + esc(r.month) + '</a>';
+                 }
+diff --git a/resources/views/partials/invoice_status_script.blade.php b/resources/views/partials/invoice_status_script.blade.php
+new file mode 100644
+index 0000000..0288d7d
+--- /dev/null
++++ b/resources/views/partials/invoice_status_script.blade.php
+@@ -0,0 +1,27 @@
++{{-- Wires .js-inv-chip buttons to the CLIENT INVOICE column (index $col) of an initialised DataTable. Include AFTER the table is created. --}}
++<script>
++    (function () {
++        const table = $('{{ $table ?? '#myTable' }}').DataTable();
++        const col = {{ $col ?? 10 }};
++        let active = '';
++
++        function apply(value) {
++            active = value;
++            // CLIENT INVOICE cells carry data-search="inv-paid|inv-paid_late|inv-part|inv-overdue|inv-unpaid|inv-none|inv-noclient".
++            table.column(col).search(value ? '^' + value + '$' : '', { regex: true, smart: false }).draw();
++            $('.js-inv-chip').each(function () {
++                const on = $(this).data('inv') === value;
++                $(this).attr('aria-pressed', on ? 'true' : 'false').toggleClass('active', on);
++            });
++            $('.js-inv-chip-clear').toggleClass('d-none', !value);
++        }
++
++        $('.js-inv-chip').on('click', function () { apply(active === $(this).data('inv') ? '' : $(this).data('inv')); });
++        $('.js-inv-chip-clear').on('click', () => apply(''));
++
++        if (window.bootstrap) {
++            document.querySelectorAll('{{ $table ?? '#myTable' }} .inv-flag, {{ $table ?? '#myTable' }} [data-bs-toggle="tooltip"]')
++                .forEach(el => bootstrap.Tooltip.getOrCreateInstance(el));
++        }
++    })();
++</script>
+diff --git a/resources/views/partials/invoice_status_summary.blade.php b/resources/views/partials/invoice_status_summary.blade.php
+new file mode 100644
+index 0000000..46bf75e
+--- /dev/null
++++ b/resources/views/partials/invoice_status_summary.blade.php
+@@ -0,0 +1,57 @@
++{{--
++    Client invoice status summary for a payroll screen (bank / cash month).
++    $rows           : salaries shown in the table
++    $clientPayments : client_id => ['status' => ..., 'record' => ...]  (SalaryController::clientPayments)
++    $month          : the payroll month
++    Chips filter the table's CLIENT INVOICE column (see partials.invoice_status_script).
++--}}
++@php
++    use App\Support\ClientInvoiceStatus as InvStatus;
++    $groups = [
++        'inv-paid'      => ['Client paid', 'success'],
++        'inv-paid_late' => ['Client paid late', 'info'],
++        'inv-part'      => ['Client part paid', 'warning'],
++        'inv-overdue'   => ['Client unpaid, overdue', 'danger'],
++        'inv-unpaid'    => ['Client unpaid, not due yet', 'secondary'],
++        'inv-none'      => ['No invoice', 'dark'],
++        'inv-noclient'  => ['No client on salary', 'dark'],
++    ];
++    $count = array_fill_keys(array_keys($groups), ['staff' => 0, 'net' => 0.0, 'clients' => []]);
++    foreach ($rows as $row) {
++        $p = $clientPayments[$row->client_id] ?? null;
++        $key = $p ? InvStatus::searchKey($p['status']) : 'inv-noclient';
++        $count[$key]['staff']++;
++        $count[$key]['net'] += (float) $row->net_salary;
++        if ($row->client_id) {
++            $count[$key]['clients'][$row->client_id] = true;
++        }
++    }
++    $notPaid = collect(['inv-part', 'inv-overdue', 'inv-unpaid', 'inv-none'])->sum(fn ($k) => $count[$k]['staff']);
++    $notPaidNet = collect(['inv-part', 'inv-overdue', 'inv-unpaid', 'inv-none'])->sum(fn ($k) => $count[$k]['net']);
++@endphp
++@if($rows->isNotEmpty())
++<div class="card mb-3">
++    <div class="card-body py-3">
++        <div class="d-flex flex-wrap align-items-center gap-2">
++            <span class="fw-semibold me-1">Client invoices for {{ \Carbon\Carbon::parse($month)->format('F Y') }}:</span>
++            @foreach($groups as $key => [$label, $color])
++                @if($count[$key]['staff'])
++                    <button type="button" class="btn btn-sm btn-outline-{{ $color }} js-inv-chip" data-inv="{{ $key }}" aria-pressed="false">
++                        {{ $label }}: <strong>{{ $count[$key]['staff'] }}</strong> staff
++                        @if(count($count[$key]['clients'])) / {{ count($count[$key]['clients']) }} {{ \Illuminate\Support\Str::plural('client', count($count[$key]['clients'])) }} @endif
++                        (GH&#x20B5; {{ number_format($count[$key]['net'], 2) }})
++                    </button>
++                @endif
++            @endforeach
++            <button type="button" class="btn btn-sm btn-link js-inv-chip-clear d-none">Show everyone</button>
++        </div>
++        @if($notPaid)
++            <div class="small text-muted mt-2">
++                {{ $notPaid }} {{ \Illuminate\Support\Str::plural('salary', $notPaid) }} (GH&#x20B5; {{ number_format($notPaidNet, 2) }})
++                {{ $notPaid === 1 ? 'is' : 'are' }} for clients whose {{ \Carbon\Carbon::parse($month)->format('F') }} invoice is not fully paid.
++                Paid on time means within {{ InvStatus::GRACE_DAYS }} days of the invoice due date; hover a status for the dates.
++            </div>
++        @endif
++    </div>
++</div>
++@endif
+diff --git a/resources/views/salaries/bankmonth.blade.php b/resources/views/salaries/bankmonth.blade.php
+index 8b10e41..a4132cc 100644
+--- a/resources/views/salaries/bankmonth.blade.php
++++ b/resources/views/salaries/bankmonth.blade.php
+@@ -321,6 +321,7 @@ class="rounded" />
+         <hr> <br>
+         <div class="row">
+             @include('partials.pay_priority_summary', ['rows' => $BankSalaries, 'held' => $BankSalarieshold, 'holdUrl' => route('salaries.bankholdMonth', [$bank->id, \Carbon\Carbon::parse($month)->format('Y-m-d')])])
++            @include('partials.invoice_status_summary', ['rows' => $BankSalaries, 'clientPayments' => $clientPayments, 'month' => $month])
+             <form action="/salariesDeleteMultiple" method="POST">
+                 @csrf
+                     <div class="col-lg-12 mb-4">
+@@ -353,6 +354,7 @@ class="rounded" />
+                                             <th>FIELD</th>
+                                             <th> ROLE</th>
+                                             <th>CLIENT</th>
++                                            <th>CLIENT INVOICE</th>
+                                             <th>LOCATION</th>
+                                             <th>BRANCH CODE</th>
+                                             <th>BRANCH</th>
+@@ -389,6 +391,16 @@ class="rounded" />
+                                             <td> {{ strtoupper($salary->field?->name) }} </td>
+                                             <td> {{ strtoupper( $salary->employee?->role?->name) }} </td>
+                                             <td> {{ $salary->client?->name || $salary->client?->business_name ? strtoupper($salary->client?->name) . strtoupper($salary->client?->business_name) :  strtoupper($salary->location) }} </td>
++                                            @php $inv = $clientPayments[$salary->client_id] ?? null; @endphp
++                                            <td data-search="{{ $inv ? \App\Support\ClientInvoiceStatus::searchKey($inv['status']) : 'inv-noclient' }}"
++                                                data-order="{{ $inv ? ['paid' => 0, 'paid_late' => 1, 'part' => 2, 'unpaid' => 3, 'none' => 4][$inv['status']['status']] + ($inv['status']['overdue'] ? 1 : 0) : 9 }}">
++                                                @if($inv)
++                                                    {!! \App\Support\ClientInvoiceStatus::badge($inv['status']) !!}
++                                                    <div class="mt-1">{!! \App\Support\ClientInvoiceStatus::recordBadge($inv['record']) !!}</div>
++                                                @else
++                                                    <span class="text-muted small">No client</span>
++                                                @endif
++                                            </td>
+                                             <td> {{ strtoupper($salary?->location) }} </td>
+                                             <td> {{ $salary->paymentInfo?->branch_code }} </td>
+                                             <td> {{ strtoupper($salary->branch)}} </td>
+@@ -517,6 +529,7 @@ class="rounded" />
+     </script>
+ 
+         @include('partials.pay_priority_script', ['table' => '#myTable', 'col' => 2])
++        @include('partials.invoice_status_script', ['table' => '#myTable', 'col' => 10])
+ 
+     @endsection
+ </x-hr-dashboard>
+\ No newline at end of file
+diff --git a/resources/views/salaries/cashmonth.blade.php b/resources/views/salaries/cashmonth.blade.php
+index c5b8524..2b71e85 100644
+--- a/resources/views/salaries/cashmonth.blade.php
++++ b/resources/views/salaries/cashmonth.blade.php
+@@ -333,6 +333,7 @@ class="rounded" />
+         <hr> <br>
+         <div class="row">
+             @include('partials.pay_priority_summary', ['rows' => $CashSalaries, 'held' => $CashSalarieshold, 'holdUrl' => route('salaries.cashholdMonth', [$field->id, \Carbon\Carbon::parse($month)->format('Y-m-d')])])
++            @include('partials.invoice_status_summary', ['rows' => $CashSalaries, 'clientPayments' => $clientPayments, 'month' => $month])
+             <form action="/salariesDeleteMultiple" method="POST">
+                 @csrf
+                     <div class="col-lg-12 mb-4">
+@@ -365,6 +366,7 @@ class="rounded" />
+                                             <th>FIELD</th>
+                                             <th> ROLE</th>
+                                             <th>CLIENT</th>
++                                            <th>CLIENT INVOICE</th>
+                                             <th>LOCATION </th>
+                                             <th> NET SALARY </th>
+                                             <th>CREATED BY</th>
+@@ -398,6 +400,16 @@ class="rounded" />
+                                             <td> {{ strtoupper($salary->field?->name) }} </td>
+                                             <td> {{ $salary->employee?->role?->name }} </td>
+                                             <td> {{ $salary->client?->name || $salary->client?->business_name ? $salary->client?->name . $salary->client?->business_name :  $salary->location }} </td>
++                                            @php $inv = $clientPayments[$salary->client_id] ?? null; @endphp
++                                            <td data-search="{{ $inv ? \App\Support\ClientInvoiceStatus::searchKey($inv['status']) : 'inv-noclient' }}"
++                                                data-order="{{ $inv ? ['paid' => 0, 'paid_late' => 1, 'part' => 2, 'unpaid' => 3, 'none' => 4][$inv['status']['status']] + ($inv['status']['overdue'] ? 1 : 0) : 9 }}">
++                                                @if($inv)
++                                                    {!! \App\Support\ClientInvoiceStatus::badge($inv['status']) !!}
++                                                    <div class="mt-1">{!! \App\Support\ClientInvoiceStatus::recordBadge($inv['record']) !!}</div>
++                                                @else
++                                                    <span class="text-muted small">No client</span>
++                                                @endif
++                                            </td>
+                                             <td> {{  strtoupper($salary?->location) }} </td>
+                                             <td> GH&#x20B5; {{ number_format($salary->net_salary, 2) }} </td>
+                                             <td>{{  $salary->user?->name }}</td>
+@@ -493,6 +505,7 @@ className: 'btn btn-secondary',
+     </script>
+ 
+         @include('partials.pay_priority_script', ['table' => '#myTable', 'col' => 2])
++        @include('partials.invoice_status_script', ['table' => '#myTable', 'col' => 10])
+ 
+     @endsection
+ </x-hr-dashboard>
+\ No newline at end of file
+-- 
+2.43.0
+
