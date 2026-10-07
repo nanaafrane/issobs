@@ -17,6 +17,7 @@ use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\ProformaClientController;
 use App\Http\Controllers\ProformaController;
 use App\Http\Controllers\ReceiptController;
+use App\Http\Controllers\MultiInvoiceReceiptController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SalaryController;
 use App\Http\Controllers\PayPriorityRuleController;
@@ -105,6 +106,10 @@ Route::get('receipt-report', [ReceiptController::class, 'report'])->name('receip
 Route::get('receipt/field/{field}/details', [ReceiptController::class, 'fieldDetails']);
 Route::get('receipt/client/{client}/details', [ReceiptController::class, 'clientDetails']);
 Route::get('receipt/collector/{collector}/details', [ReceiptController::class, 'collectorDetails']);
+// One receipt paying several invoices, and applying a receipt's leftover credit later.
+Route::get('receipt-multi/create', [MultiInvoiceReceiptController::class, 'create'])->name('receipt.multi.create');
+Route::post('receipt-multi', [MultiInvoiceReceiptController::class, 'store'])->name('receipt.multi.store');
+Route::post('receipt/{receipt}/apply-credit', [MultiInvoiceReceiptController::class, 'applyCredit'])->name('receipt.applyCredit');
 Route::resource('receipt', ReceiptController::class);
 Route::get('receiptPending', [ReceiptController::class, 'PendingReceipts'])->name('receipt.pending');
 Route::post('receiptChannels', [ReceiptController::class, 'receiptChannels']);

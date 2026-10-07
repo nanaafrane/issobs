@@ -483,6 +483,9 @@
             <div class="card-header  ml-2  d-none d-lg-block">
                 @include('flash-messages')
             </div>
+            @if ($errors->any())
+                <div class="alert alert-danger mt-2"><ul class="mb-0">@foreach ($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>
+            @endif
 
             <div class="row g-3 mt-2">
                 <div class="col-lg-3">
@@ -552,6 +555,9 @@
                             <div class="mt-3">
                                 <div class="amount-display">GH&#8373; {{ number_format($receipt->transfer_amount, 2) }}</div>
                                 <div class="text-white-50 small mt-1">Ref: {{$receipt->transfer_reference}} • {{$receipt->transfer_bank}}</div>
+                                @if($receipt->transferToBank)
+                                <div class="small mt-1"><i class="bx bx-bank"></i> Received into <strong>{{ $receipt->transferToBank->name }}</strong> {{ $receipt->transferToBank->acc_number }}</div>
+                                @endif
                             </div>
                         </div>
                     </div>
@@ -572,6 +578,9 @@
                             <div class="mt-3">
                                 <div class="amount-display">GH&#8373; {{ number_format($receipt->cheque_amount, 2) }}</div>
                                 <div class="text-white-50 small mt-1">Ref: {{$receipt->cheque_reference}} • {{$receipt->cheque_bank}}</div>
+                                @if($receipt->chequeToBank)
+                                <div class="small mt-1"><i class="bx bx-bank"></i> To be deposited into <strong>{{ $receipt->chequeToBank->name }}</strong> {{ $receipt->chequeToBank->acc_number }}</div>
+                                @endif
                             </div>
                         </div>
                         @if($receipt->image)
@@ -660,20 +669,83 @@
                 <div class="col-lg-3">
                     <div class="card bg-dark text-white h-100">
                         <div class="card-body">
-                            <h6 class="text-white">Invoice details <span class="badge bg-danger ms-2">payment {{$receipt->invoice?->status }}</span> </h6>
-                            <hr>
-                            <p class="mb-1">#FWSSi{{$receipt->invoice_id}}</p>
-                            <p class="mb-1">Month : {{$receipt->invoice_id}}</p>
-                            <p class="mb-1">Amount : GH&#8373; {{ number_format($receipt->invoice->total,2) }}</p>
-                            <p class="mb-1">Balance : <strong>GH&#8373; {{ number_format($receipt->invoice->balance,2) }}</strong></p>
-                            <p class="small text-muted">Due: {{$receipt->invoice->due_date->format('F d, Y')}}</p>
+                            @php $allocs = $receipt->allocations; @endphp
+                            @if($allocs->count() > 1 || ($allocs->isEmpty() && ! $receipt->invoice_id))
+                                <h6 class="text-white">Invoices paid <span class="badge bg-primary ms-2">{{ $allocs->unique('invoice_id')->count() }}</span></h6>
+                                <hr>
+                                @forelse($allocs as $alloc)
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <div>
+                                            <a class="text-white" href="{{ url('invoice/' . $alloc->invoice_id) }}">#FWSSi{{ $alloc->invoice_id }}</a>
+                                            <div class="small text-white-50">{{ $alloc->invoice?->invoice_month?->format('M Y') }}
+                                                · {{ $alloc->invoice?->status === 'completed' ? 'paid' : 'bal ' . number_format((float) $alloc->invoice?->balance, 2) }}
+                                                @if($alloc->source === 'credit') · from credit @endif
+                                            </div>
+                                        </div>
+                                        <div class="text-end">
+                                            <strong>{{ number_format($alloc->settled, 2) }}</strong>
+                                            @if($alloc->wht_amount + $alloc->vat7_amount + $alloc->deduction_amount > 0)
+                                            <div class="small text-white-50">cash {{ number_format($alloc->amount_applied, 2) }}</div>
+                                            @endif
+                                        </div>
+                                    </div>
+                                @empty
+                                    <p class="small text-white-50 mb-0">Advance payment — not applied to any invoice yet.</p>
+                                @endforelse
+                            @else
+                                <h6 class="text-white">Invoice details <span class="badge bg-danger ms-2">payment {{$receipt->invoice?->status }}</span> </h6>
+                                <hr>
+                                <p class="mb-1">#FWSSi{{$receipt->invoice_id}}</p>
+                                <p class="mb-1">Month : {{ $receipt->invoice?->invoice_month?->format('F Y') }}</p>
+                                <p class="mb-1">Amount : GH&#8373; {{ number_format((float) $receipt->invoice?->total,2) }}</p>
+                                <p class="mb-1">Balance : <strong>GH&#8373; {{ number_format((float) $receipt->invoice?->balance,2) }}</strong></p>
+                                <p class="small text-muted">Due: {{$receipt->invoice?->due_date?->format('F d, Y')}}</p>
+                            @endif
 
-
+                            @if($receipt->hasUnappliedCredit())
+                                <hr>
+                                <p class="mb-1 text-warning"><i class="bx bx-wallet"></i> Client credit on this receipt</p>
+                                <p class="mb-0 fs-5"><strong>GH&#8373; {{ number_format($receipt->unapplied_amount, 2) }}</strong></p>
+                            @endif
                         </div>
                     </div>
                 </div>
 
             </div>
+
+            @if($receipt->hasUnappliedCredit() && Auth::user()->hasRole(['Finance Manager', 'Manager', 'Admin Assistant']))
+            <div class="card mt-3 border border-warning">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bx bx-wallet text-warning me-1"></i> Apply credit to invoices</h5>
+                    <small class="text-muted">GH&#8373; {{ number_format($receipt->unapplied_amount, 2) }} from this receipt is not yet applied. Tick invoices to settle them from it — no new money is recorded.</small>
+                </div>
+                @if($creditInvoices->isEmpty())
+                    <div class="card-body"><p class="mb-0 text-muted">This client has no unpaid invoices yet. Come back here once the next invoice is raised.</p></div>
+                @else
+                <form method="POST" action="{{ route('receipt.applyCredit', $receipt->id) }}" onsubmit="return confirm('Apply credit to the ticked invoices?')">
+                    @csrf
+                    <div class="table-responsive">
+                        <table class="table table-sm mb-0">
+                            <thead><tr><th></th><th>Invoice</th><th>Month</th><th class="text-end">Outstanding</th><th class="text-end" style="width:180px">Apply <small class="text-muted">(blank = as much as possible)</small></th></tr></thead>
+                            <tbody>
+                            @foreach($creditInvoices as $inv)
+                                @php $owed = max(0, round((float) $inv->total - (float) $inv->settled_sum, 2)); @endphp
+                                <tr>
+                                    <td><input type="checkbox" class="form-check-input" name="invoices[{{ $inv->id }}][selected]" value="1"></td>
+                                    <td>FWSSi{{ $inv->id }}</td>
+                                    <td>{{ $inv->invoice_month?->format('M Y') }}</td>
+                                    <td class="text-end">{{ number_format($owed, 2) }}</td>
+                                    <td><input type="number" step="0.01" min="0" class="form-control form-control-sm text-end" name="invoices[{{ $inv->id }}][applied]" placeholder="auto"></td>
+                                </tr>
+                            @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="card-body pt-3"><button class="btn btn-warning" type="submit"><i class="bx bx-check me-1"></i> Apply credit</button></div>
+                </form>
+                @endif
+            </div>
+            @endif
 
         </div>
 

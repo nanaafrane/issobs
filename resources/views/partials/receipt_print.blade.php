@@ -9,9 +9,9 @@
         ['key' => 'momo',     'label' => 'Mobile Money',  'amount' => $receipt->momo_amount,
          'detail' => $receipt->momo_transactin_id ? 'Transaction ID: ' . $receipt->momo_transactin_id : null],
         ['key' => 'transfer', 'label' => 'Bank transfer', 'amount' => $receipt->transfer_amount,
-         'detail' => trim(($receipt->transfer_reference ? 'Ref: ' . $receipt->transfer_reference : '') . ($receipt->transfer_bank ? ' · ' . $receipt->transfer_bank : ''), ' ·')],
+         'detail' => trim(($receipt->transfer_reference ? 'Ref: ' . $receipt->transfer_reference : '') . ($receipt->transfer_bank ? ' · ' . $receipt->transfer_bank : '') . ($receipt->transferToBank ? ' · into ' . $receipt->transferToBank->name : ''), ' ·')],
         ['key' => 'cheque',   'label' => 'Cheque',        'amount' => $receipt->cheque_amount,
-         'detail' => trim(($receipt->cheque_reference ? 'Ref: ' . $receipt->cheque_reference : '') . ($receipt->cheque_bank ? ' · ' . $receipt->cheque_bank : ''), ' ·')],
+         'detail' => trim(($receipt->cheque_reference ? 'Ref: ' . $receipt->cheque_reference : '') . ($receipt->cheque_bank ? ' · ' . $receipt->cheque_bank : '') . ($receipt->chequeToBank ? ' · to ' . $receipt->chequeToBank->name : ''), ' ·')],
         ['key' => 'other',    'label' => 'Other payment', 'amount' => $receipt->other_payment_amnt,
          'detail' => $receipt->other_payment_descri],
     ])->filter(fn ($p) => (float) $p['amount'] > 0)->values();
@@ -19,6 +19,11 @@
     $whtRate = rtrim(rtrim(number_format(($wht->wht_rate ?? 0) * 100, 2), '0'), '.');
     $client  = $receipt->client;
     $invoice = $receipt->invoice;
+    $allocs  = $receipt->allocations()->with('invoice')->get();
+    $isMulti = $allocs->unique('invoice_id')->count() > 1 || ! $receipt->invoice_id;
+    $invoiceRef = $isMulti
+        ? ($allocs->isEmpty() ? 'Advance' : $allocs->pluck('invoice_id')->unique()->map(fn ($id) => 'FWSSi' . $id)->implode(', '))
+        : 'FWSSi' . $receipt->invoice_id;
 @endphp
 
 <style>
@@ -242,6 +247,21 @@
             <p class="rp-muted">{{ $client->field->name ?? '' }}</p>
             <p class="rp-muted">{{ $client->address }}</p>
         </div>
+        @if($isMulti)
+        <div class="rp-block">
+            <h2>Invoices paid</h2>
+            <dl>
+                @forelse($allocs as $a)
+                    <div><dt>FWSSi{{ $a->invoice_id }} · {{ $a->invoice?->invoice_month?->format('M Y') }}</dt><dd class="rp-num">{!! $fmt($a->settled) !!}</dd></div>
+                @empty
+                    <div><dt>Advance payment</dt><dd>not yet applied</dd></div>
+                @endforelse
+                @if($receipt->hasUnappliedCredit())
+                    <div><dt>Client credit</dt><dd class="rp-num">{!! $fmt($receipt->unapplied_amount) !!}</dd></div>
+                @endif
+            </dl>
+        </div>
+        @else
         <div class="rp-block">
             <h2>Invoice</h2>
             <dl>
@@ -251,6 +271,7 @@
                 <div><dt>Balance</dt><dd class="rp-num">{!! $fmt($invoice?->balance) !!}</dd></div>
             </dl>
         </div>
+        @endif
     </section>
 
     {{-- Payment received --}}
@@ -327,7 +348,7 @@
 
 
     <footer class="rp-foot">
-        <span>FWSSR{{ $receipt->id }} · FWSSi{{ $receipt->invoice_id }}</span>
+        <span>FWSSR{{ $receipt->id }} · {{ $invoiceRef }}</span>
         <span>Printed {{ now()->format('F d, Y, H:i A') }} by {{ Auth::user()->name }}</span>
     </footer>
 </div>

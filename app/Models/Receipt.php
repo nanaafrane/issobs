@@ -19,8 +19,11 @@ class Receipt extends Model
         'cheque_reference',
         'cheque_amount',
         'cheque_bank',
+        'cheque_to_bank_id',
         'transfer_reference',
         'transfer_bank',
+        'transfer_to_bank_id',
+        'unapplied_amount',
         'transfer_amount',
         'momo_transactin_id',
         'other_payment_descri',
@@ -63,6 +66,36 @@ class Receipt extends Model
     public function invoice()
     {
         return $this->belongsTo(Invoice::class);
+    }
+
+    /** Every invoice this receipt paid, with the amount that went to each. */
+    public function allocations()
+    {
+        return $this->hasMany(ReceiptAllocation::class);
+    }
+
+    /** Our bank account the cheque is to be deposited into. */
+    public function chequeToBank()
+    {
+        return $this->belongsTo(Bank::class, 'cheque_to_bank_id');
+    }
+
+    /** Our bank account the transfer was received into. */
+    public function transferToBank()
+    {
+        return $this->belongsTo(Bank::class, 'transfer_to_bank_id');
+    }
+
+    /** True when the receipt pays more than one invoice. */
+    public function isMultiInvoice(): bool
+    {
+        return $this->allocations()->distinct()->count('invoice_id') > 1;
+    }
+
+    /** Money received on this receipt that is still waiting to be applied (client credit). */
+    public function hasUnappliedCredit(): bool
+    {
+        return (float) $this->unapplied_amount > 0.004;
     }
 
     public function client()

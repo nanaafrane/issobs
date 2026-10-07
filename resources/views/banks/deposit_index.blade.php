@@ -437,12 +437,17 @@
                                 <td> {{$collection->field?->name}} </td>
                                 <td><span class="badge bg-label-danger">{{$collection->status}}</span></td>
                                 <td>
-                                    <select name="bank_id[]" class="form-select @error('bank_id') is-invalid @enderror" id="bank_id" value="{{ old('bank_id')}}" required>
-                                        <option selected disabled>Choose...</option>
+                                    @php $suggested = old('bank_id.' . $collection->id, $suggestedBanks[$collection->receipt_id] ?? null); @endphp
+                                    {{-- Keyed by collection id so each row keeps its own bank. --}}
+                                    <select name="bank_id[{{ $collection->id }}]" class="form-select @error('bank_id') is-invalid @enderror">
+                                        <option value="" {{ $suggested ? '' : 'selected' }} disabled>Choose...</option>
                                         @foreach($banks as $bank)
-                                        <option value="{{$bank->id}}">{{$bank->name}}</option>
+                                        <option value="{{$bank->id}}" {{ (string) $suggested === (string) $bank->id ? 'selected' : '' }}>{{$bank->name}}</option>
                                         @endforeach
                                     </select>
+                                    @if(!empty($suggestedBanks[$collection->receipt_id] ?? null))
+                                    <small class="text-muted">from receipt</small>
+                                    @endif
                                 </td>
                                 <!-- <td><button name="deposit_single" value="Deposit" class="btn btn-dark" type="submit"> <i class="icon-base bx bx-arrow-from-left"> </i></button> </td> -->
 

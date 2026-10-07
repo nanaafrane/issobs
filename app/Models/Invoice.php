@@ -59,7 +59,21 @@ class Invoice extends Model
         return $this->hasMany(InvoiceData::class); 
     }
 
-    public function receipt() : HasMany 
+    /** Every receipt line that settled part of this invoice. */
+    public function allocations(): HasMany
+    {
+        return $this->hasMany(ReceiptAllocation::class);
+    }
+
+    /** What is still owed, worked out from the allocation lines (never negative). */
+    public function outstandingAmount(): float
+    {
+        $settled = (float) $this->allocations()->sum('settled');
+
+        return max(0, round((float) $this->total - $settled, 2));
+    }
+
+    public function receipt() : HasMany
     {
         // return $this->hasMany(Receipt::class, 'invoice_id', 'id');
         return $this->hasMany(Receipt::class);

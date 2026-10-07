@@ -105,12 +105,17 @@ class ClientInvoiceStatus
     /** One query: invoices in the window with their receipts summed per invoice. */
     private static function invoiceRows(?array $clientIds, Carbon $from, Carbon $to)
     {
-        $receipts = DB::table('receipts')
-            ->whereNotNull('invoice_id')
-            ->selectRaw('invoice_id, COUNT(*) as receipt_count,
-                MIN(COALESCE(receipt_month, DATE(created_at))) as first_paid_on,
-                MAX(COALESCE(receipt_month, DATE(created_at))) as last_paid_on')
-            ->groupBy('invoice_id');
+        // Linked through receipt_allocations so a receipt that pays several invoices
+        // counts for each of them (receipts.invoice_id only holds the first one).
+        // Credit applied later counts as paid on the day it was applied.
+        $paidOn = "CASE WHEN receipt_allocations.source = 'credit' THEN DATE(receipt_allocations.created_at)
+                ELSE COALESCE(receipts.receipt_month, DATE(receipts.created_at)) END";
+        $receipts = DB::table('receipt_allocations')
+            ->join('receipts', 'receipts.id', '=', 'receipt_allocations.receipt_id')
+            ->selectRaw("receipt_allocations.invoice_id, COUNT(DISTINCT receipt_allocations.receipt_id) as receipt_count,
+                MIN($paidOn) as first_paid_on,
+                MAX($paidOn) as last_paid_on")
+            ->groupBy('receipt_allocations.invoice_id');
 
         return DB::table('invoices')
             ->leftJoinSub($receipts, 'r', 'r.invoice_id', '=', 'invoices.id')

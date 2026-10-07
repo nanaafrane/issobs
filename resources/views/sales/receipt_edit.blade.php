@@ -586,7 +586,7 @@
                                     </div>
 
                                     <div class="col mb-0">
-                                        <label for="cheque_bank" class="form-label"> {{ __('CHEQUE BANK') }} </label>
+                                        <label for="cheque_bank" class="form-label"> {{ __("DRAWN ON (PAYER'S BANK)") }} </label>
                                         <input
                                             type="text"
                                             id="cheque_bank"
@@ -596,6 +596,10 @@
                                             placeholder="Cheque Bank"
                                             autocomplete="cheque_bank"
                                             autofocus>
+                                    </div>
+
+                                    <div class="col mb-0">
+                                        @include('partials.receipt_bank_select', ['name' => 'cheque_to_bank_id', 'label' => 'DEPOSIT INTO (OUR BANK)', 'banks' => $banks, 'selected' => $receipt->cheque_to_bank_id])
                                     </div>
 
                                 </div>
@@ -632,7 +636,7 @@
                                     </div>
 
                                     <div class="col mb-0">
-                                        <label for="transfer_bank" class="form-label"> {{ __('TRANSFER BANK') }} </label>
+                                        <label for="transfer_bank" class="form-label"> {{ __("FROM (PAYER'S BANK)") }} </label>
                                         <input
                                             type="text"
                                             id="transfer_bank"
@@ -642,6 +646,10 @@
                                             placeholder="Cheque Bank"
                                             autocomplete="transfer_bank"
                                             autofocus>
+                                    </div>
+
+                                    <div class="col mb-0">
+                                        @include('partials.receipt_bank_select', ['name' => 'transfer_to_bank_id', 'label' => 'RECEIVED INTO (OUR BANK)', 'banks' => $banks, 'selected' => $receipt->transfer_to_bank_id])
                                     </div>
 
                                 </div>
@@ -842,12 +850,12 @@ $(document).ready(function () {
         'cheque': {
             checkbox: '#mode_cheque',
             row: '#chequerow',
-            required: ['#cheque_reference', '#cheque_amount', '#cheque_bank']
+            required: ['#cheque_reference', '#cheque_amount', '#cheque_bank', '#cheque_to_bank_id']
         },
         'transfer': {
             checkbox: '#mode_transfer',
             row: '#transferrow',
-            required: ['#transfer_reference', '#transfer_amount', '#transfer_bank']
+            required: ['#transfer_reference', '#transfer_amount', '#transfer_bank', '#transfer_to_bank_id']
         },
         'momo': {
             checkbox: '#mode_momo',

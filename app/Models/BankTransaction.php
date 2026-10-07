@@ -15,7 +15,8 @@ class BankTransaction extends Model
         'receipt_id',
         'debit',
         'expense_id',
-        'balance'
+        'balance',
+        'narration',
     ];
 
 

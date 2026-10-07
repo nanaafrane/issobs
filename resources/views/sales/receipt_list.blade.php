@@ -361,6 +361,7 @@
                 </div>
                 <div style="padding-left: 350px;" class="col-6">
                     <a class="btn btn-danger" href="{{url('receipt/create')}}"> <i class="icon-base bx bx-user-plus me-2 text-primary"></i> Create </a>
+                    <a class="btn btn-primary ms-2" href="{{ route('receipt.multi.create') }}"> <i class="icon-base bx bx-layer me-1"></i> Multiple invoices </a>
                 </div>
             </div>
             <br>

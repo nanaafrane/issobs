@@ -19,6 +19,9 @@ use App\Models\Invoice;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Models\Wht;
+use App\Models\Bank;
+use App\Services\Receipts\BankPosting;
+use App\Services\Receipts\InvoiceSettlement;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -316,6 +319,11 @@ class ReceiptController extends Controller
                 'clients.business_name as client_business_name', 'clients.name as client_name',
                 'clients.phone_number', 'fields.name as field_name', 'users.name as staff_name',
             ])
+            // How many invoices this receipt paid (more than one for multi-invoice receipts).
+            ->selectSub(
+                DB::table('receipt_allocations')->selectRaw('COUNT(DISTINCT invoice_id)')->whereColumn('receipt_allocations.receipt_id', 'receipts.id'),
+                'invoice_count'
+            )
             ->leftJoin('invoices', 'invoices.id', '=', 'receipts.invoice_id')
             ->leftJoin('clients', 'clients.id', '=', 'receipts.client_id')
             ->leftJoin('fields', 'fields.id', '=', 'clients.field_id')
@@ -471,7 +479,9 @@ class ReceiptController extends Controller
             return [
                 'receipt_id' => 'FWSSR' . $receipt->id,
                 'receipt_month' => $receipt->receipt_month ? Carbon::parse($receipt->receipt_month)->format('l j, F Y') : '',
-                'invoice_id' => 'FWSSi' . $receipt->invoice_id,
+                'invoice_id' => ! $receipt->invoice_id
+                    ? 'Advance'
+                    : 'FWSSi' . $receipt->invoice_id . ((int) $receipt->invoice_count > 1 ? ' +' . ((int) $receipt->invoice_count - 1) . ' more' : ''),
                 'invoice_month' => $receipt->invoice_month ? Carbon::parse($receipt->invoice_month)->format('F, Y') : '',
                 'client_name' => $clientName, 'phone_number' => $receipt->phone_number,
                 'field_name' => $receipt->field_name, 'staff_name' => $receipt->staff_name,
@@ -485,7 +495,9 @@ class ReceiptController extends Controller
                 'momo_amount' => number_format((float) $receipt->momo_amount, 2), 'cash_amount' => number_format((float) $receipt->cash_amount, 2),
                 'deductions' => number_format((float) $receipt->dAmount, 2), 'other_payment' => number_format((float) $receipt->other_payment_amnt, 2),
                 'wht_amount' => number_format((float) $receipt->wht_amount, 2), 'vat7_value' => number_format((float) $receipt->vat7_value, 2),
-                'balance' => number_format((float) $receipt->invoice_total - (float) $receipt->total - (float) $receipt->dAmount, 2),
+                'balance' => (int) $receipt->invoice_count > 1 || ! $receipt->invoice_id
+                    ? '—'
+                    : number_format((float) $receipt->invoice_total - (float) $receipt->total - (float) $receipt->dAmount, 2),
                 'advance_payment' => $receipt->advance_payment, 'status' => '<span class="badge ' . $statusClass . '">' . e($receipt->status) . '</span>', 'action' => $actions,
             ];
         })->all();
@@ -708,8 +720,8 @@ class ReceiptController extends Controller
             // Every field that belongs to a specific payment mode, grouped by
             // the mode value that "owns" it.
             $modeFields = [
-                'cheque' => ['cheque_reference', 'cheque_amount', 'cheque_bank'],
-                'transfer' => ['transfer_reference', 'transfer_amount', 'transfer_bank'],
+                'cheque' => ['cheque_reference', 'cheque_amount', 'cheque_bank', 'cheque_to_bank_id'],
+                'transfer' => ['transfer_reference', 'transfer_amount', 'transfer_bank', 'transfer_to_bank_id'],
                 'momo' => ['momo_transactin_id', 'momo_amount'],
                 'other payments' => ['other_payment_descri', 'other_payment_amnt'],
                 'cash' => ['cash_amount'],
@@ -1464,7 +1476,19 @@ class ReceiptController extends Controller
     {
         //
         $wht = new Wht();
-        return view('sales.receipt_show', compact('receipt','wht'));
+        $receipt->load(['allocations.invoice', 'chequeToBank', 'transferToBank']);
+
+        // Open invoices of this client, for applying any unapplied credit.
+        $creditInvoices = collect();
+        if ($receipt->hasUnappliedCredit()) {
+            $creditInvoices = Invoice::where('client_id', $receipt->client_id)
+                ->whereIn('status', ['unpaid', 'uncompleted'])
+                ->withSum('allocations as settled_sum', 'settled')
+                ->orderBy('invoice_month')->orderBy('id')
+                ->get();
+        }
+
+        return view('sales.receipt_show', compact('receipt','wht', 'creditInvoices'));
     }
 
     /**
@@ -1474,10 +1498,16 @@ class ReceiptController extends Controller
     {
         //
         // dd($receipt);
+        if ($this->isManagedByMultiInvoiceFlow($receipt)) {
+            return redirect()->route('receipt.show', ['receipt' => $receipt->id])
+                ->with('warning', 'This receipt pays several invoices or holds client credit. To change it, delete it and record it again with "Pay multiple invoices".');
+        }
+
         $mode = DB::table('receipt_mode')->get();
         $status = DB::table('receipt_status')->get();
          $wht = new Wht();
          $invoice = Invoice::findorFail($receipt->invoice_id);
+        $banks = Bank::orderBy('name')->get();
 
         $user = Auth::user();
         $staff =  User::all();
@@ -1496,7 +1526,7 @@ class ReceiptController extends Controller
             }
 
 
-        return view('sales.receipt_edit', compact('receipt','wht','invoice','mode','status', 'assign_staff', 'user'));
+        return view('sales.receipt_edit', compact('receipt','wht','invoice','mode','status', 'assign_staff', 'user', 'banks'));
     }
 
     /**
@@ -1509,9 +1539,14 @@ class ReceiptController extends Controller
         // if receipt has been deposited, do not allow update   
         $collection = Collection::where('receipt_id', $receipt->id)->first();
 
-        if($collection?->status == 'deposited')
+        if(self::isDeposited($collection))
         {
             return redirect()->back()->with('error', 'Receipt has been Deposited and cannot be edited');
+        }
+
+        if ($this->isManagedByMultiInvoiceFlow($receipt)) {
+            return redirect()->route('receipt.show', ['receipt' => $receipt->id])
+                ->with('warning', 'This receipt pays several invoices or holds client credit and cannot be changed from the single-invoice edit form.');
         }
 
         // update receipt 
@@ -1836,7 +1871,9 @@ class ReceiptController extends Controller
             'total_amount' => $total,
         ]); 
 
-        
+        // Keep the allocation line and the transfer's bank posting in step with the edit.
+        app(InvoiceSettlement::class)->syncLegacySingle($receipt->fresh());
+        app(BankPosting::class)->syncTransfer($receipt->fresh());
 
 
         return redirect()->route('receipt.show',['receipt' => $receipt->id])->with('primary', 'Receipt  Updated Successfully');
@@ -1849,45 +1886,29 @@ class ReceiptController extends Controller
      */
     public function destroy(Receipt $receipt)
     {
-        //
-        // dd($receipt);
-        // REMOVE FROM COLLECTIONS
-
-        // if receipt has been deposited, do not allow update   
+        // A receipt whose money has been banked cannot be deleted.
         $collection = Collection::where('receipt_id', $receipt->id)->first();
-        // dd($collection);
-        if($collection?->status == 'deposited')
+        if (self::isDeposited($collection))
         {
             return redirect()->back()->with('error', 'Receipt has been Deposited and cannot be Deleted');
         }
-        // elseif(empty($collection))
-        // {
-        //     // return redirect()->back()->with('error', 'Receipt has No Collection');
-        //     // continue ;
-        // }
 
-       $collection?->delete();
+        DB::transaction(function () use ($receipt, $collection) {
+            // Take a posted transfer back out of the bank (adds a reversal line).
+            app(BankPosting::class)->reverse($receipt);
 
-        //   dd($deleteCollections);
-        // if(isset($deleteCollections) && !empty($deleteCollections))
-        // {
+            $collection?->delete();
 
-        // SET ALL TRANSACTIONS TO EMPTY STRING
-        //  $invoice =  Invoice::where('receipt_id',  $receipt->id)->get();
-        //  dd($invoice);
-         Transaction::where('invoice_id', $receipt->invoice->id)->update(['checks' => '']);
-        // DELETE FROM TRANSACTION
-        Transaction::where('receipt_id', $receipt->id)->delete();
+            // Remove this receipt's allocation lines and ledger rows, then
+            // re-derive every invoice it touched from the receipts that remain.
+            // (Previously the invoice was reset to "unpaid" even when other
+            // receipts had part-paid it.)
+            app(InvoiceSettlement::class)->release($receipt);
 
-        // UPDATE THE INVOICE TO DEFAULT
-         Invoice::where('id', $receipt->invoice->id)->update(['status' => 'unpaid', 'balance' => 0.00 ]); 
-        // }
-
-        // DELETE THE RECEIPT
-         $receipt->delete();
+            $receipt->delete();
+        });
 
         return redirect('receipt')->with('error', 'Receipt Deleted Successfully');
-        
     }
 
 
@@ -1917,7 +1938,9 @@ class ReceiptController extends Controller
             }
 
 
-        return view('sales.receiptCreate', compact('invoice', 'wht_rate', 'mode', 'status', 'assign_staff'));
+        $banks = Bank::orderBy('name')->get();
+
+        return view('sales.receiptCreate', compact('invoice', 'wht_rate', 'mode', 'status', 'assign_staff', 'banks'));
     }
 
 
@@ -2031,9 +2054,40 @@ class ReceiptController extends Controller
 
             }
 
+        // Which of OUR bank accounts the cheque goes to / the transfer landed in.
+        $selectedModes = (array) request()->input('mode', []);
+        $newReceipt->cheque_to_bank_id = in_array('cheque', $selectedModes, true) ? request()->input('cheque_to_bank_id') : null;
+        $newReceipt->transfer_to_bank_id = in_array('transfer', $selectedModes, true) ? request()->input('transfer_to_bank_id') : null;
+
         $newReceipt->save();
 
+        // Record which invoice this receipt settled, and post a transfer to its bank.
+        app(InvoiceSettlement::class)->syncLegacySingle($newReceipt);
+        app(BankPosting::class)->syncTransfer($newReceipt);
+
         return $newReceipt->id;
+    }
+
+    /**
+     * Receipts that pay several invoices, or carry an advance/credit, are
+     * created and maintained by MultiInvoiceReceiptController; the classic
+     * one-invoice edit form would corrupt their allocations.
+     */
+    private function isManagedByMultiInvoiceFlow(Receipt $receipt): bool
+    {
+        if (! $receipt->invoice_id) {
+            return true;
+        }
+
+        return $receipt->allocations()->distinct()->count('invoice_id') > 1
+            || $receipt->allocations()->where('source', 'credit')->exists()
+            || (float) $receipt->unapplied_amount > 0;
+    }
+
+    private static function isDeposited(?Collection $collection): bool
+    {
+        // Deposits save "Deposited"; older code compared against "deposited".
+        return $collection && strcasecmp((string) $collection->status, 'deposited') === 0;
     }
 
 

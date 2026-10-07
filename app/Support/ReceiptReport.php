@@ -24,8 +24,11 @@ use Illuminate\Support\Facades\DB;
  * Only head-office approved receipts count; receipts still awaiting approval are
  * reported separately.
  *
- * Invoice month = invoices.invoice_month of the invoice a receipt pays (every
- * receipt carries invoice_id). The optional invoice-month filter (inv_from /
+ * Invoice month = invoices.invoice_month of the invoice a receipt pays
+ * (receipts.invoice_id). A receipt that pays several invoices is counted under
+ * its first (oldest) invoice here; an advance with no invoice shows as
+ * "No invoice linked". The per-invoice "received to date" figure uses
+ * receipt_allocations, so it is split correctly. The optional invoice-month filter (inv_from /
  * inv_to, either end open) narrows EVERY figure to receipts for those invoices,
  * e.g. "receipts in October for September invoices".
  *
@@ -517,8 +520,13 @@ class ReceiptReport
             $inv->whereIn('clients.field_id', $this->fieldIds ?: [0]);
         }
 
-        $paidToDate = DB::table('receipts')->where('receipts.ho_status', 'approved')
-            ->selectRaw('receipts.invoice_id, SUM(' . self::RECEIVED_SQL . ') as received')->groupBy('receipts.invoice_id');
+        // Per invoice, from receipt_allocations: a multi-invoice receipt's money is split
+        // across the invoices it paid instead of all landing on the first one.
+        $paidToDate = DB::table('receipt_allocations')
+            ->join('receipts', 'receipts.id', '=', 'receipt_allocations.receipt_id')
+            ->where('receipts.ho_status', 'approved')
+            ->selectRaw('receipt_allocations.invoice_id, SUM(receipt_allocations.amount_applied) as received')
+            ->groupBy('receipt_allocations.invoice_id');
 
         $row = $inv->leftJoinSub($paidToDate, 'p', 'p.invoice_id', '=', 'invoices.id')->selectRaw("
             COUNT(*) as invoices, COUNT(DISTINCT invoices.client_id) as clients,
