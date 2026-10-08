@@ -338,6 +338,12 @@
                     <div class="text-truncate" data-i18n="SalariesReport">Salaries Report</div>
                     </a>
                 </li>
+                <li @class(['menu-item', 'active' => request()->is('pay-priority')])>
+                    <a href="{{ route('pay-priority.index') }}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bxs-bolt"></i>
+                    <div class="text-truncate" data-i18n="PayPriority">Pay priority rules</div>
+                    </a>
+                </li>
                 @endif
 
                 </ul>

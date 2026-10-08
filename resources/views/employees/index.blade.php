@@ -377,6 +377,9 @@
                 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
                     <h3 class="card-header mb-0"> <i class="icon-base bx bxs-user-account"></i> All Employees </h3>
                     <div class="d-flex flex-wrap gap-2">
+                        @if(Auth::user()->hasRole(['Finance Manager']))
+                            <a href="{{ route('pay-priority.index') }}" class="btn btn-outline-danger"><i class="bx bxs-bolt me-1"></i> Pay priority rules</a>
+                        @endif
                         <a href="{{ route('employees.import') }}" class="btn btn-outline-primary"><i class="bx bx-upload me-1"></i> Bulk upload</a>
                         <a href="{{ route('employees.bulk-update') }}" class="btn btn-outline-primary"><i class="bx bx-edit me-1"></i> Bulk update</a>
                         <a href="{{ route('employees.bulk-update.template') }}" id="bulkUpdateDownload" class="btn btn-primary"

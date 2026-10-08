@@ -19,7 +19,7 @@ Artisan::command('pay-priority:recompute', function () {
 
 Artisan::command('pay-priority:audit {--unmatched : Only list locations that match no rule}', function () {
     // Every distinct location actually stored for clients that have rules, with the result.
-    // Use it before go-live to spot spellings the rules miss (add them to PayPriority::ALIASES).
+    // Use it to spot spellings the rules miss; add them on Payroll -> Pay priority rules -> Location spellings.
     $clientIds = \App\Support\PayPriority::ruleClientIds();
     $rows = \Illuminate\Support\Facades\DB::table('employees')
         ->whereIn('client_id', $clientIds ?: [0])

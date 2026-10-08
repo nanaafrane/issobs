@@ -45,7 +45,11 @@ class PayPriority
 
     /**
      * Spelling variants seen in free-text locations => the spelling used in rules.
-     * Applied to normalised text as whole words, before matching.
+     * Applied to normalised text as whole words, before matching, in this order.
+     *
+     * Since the Pay priority rules page these live in the pay_priority_aliases table
+     * (pre-filled from this list) and are edited there; this list is only the fallback
+     * used before that migration has run.
      */
     public const ALIASES = [
         'BOLGATANGA' => 'BOLGA',
@@ -64,6 +68,9 @@ class PayPriority
     /** @var array<int, array<int, array>>|null rules grouped by client_id, cached per request */
     private static ?array $rules = null;
 
+    /** @var array<string, string>|null spelling variants, cached per request */
+    private static ?array $aliases = null;
+
     /** The single source of priority clients: the default Category A list. */
     public static function scopeClientIds(): array
     {
@@ -73,6 +80,58 @@ class PayPriority
     public static function flush(): void
     {
         self::$rules = null;
+        self::$aliases = null;
+    }
+
+    /** Spelling variants from the pay_priority_aliases table (fallback: ALIASES). */
+    public static function aliases(): array
+    {
+        if (self::$aliases !== null) {
+            return self::$aliases;
+        }
+
+        try {
+            if (\Illuminate\Support\Facades\Schema::hasTable('pay_priority_aliases')) {
+                return self::$aliases = DB::table('pay_priority_aliases')->orderBy('position')->orderBy('id')
+                    ->pluck('to', 'from')->all();
+            }
+        } catch (\Throwable) {
+            // no database yet (e.g. during install): use the built-in list
+        }
+
+        return self::$aliases = self::ALIASES;
+    }
+
+    /** Uppercase, punctuation to spaces, collapse spaces. No aliases (used to store rule input). */
+    public static function clean(?string $text): string
+    {
+        $text = strtoupper((string) $text);
+        $text = preg_replace('/[^A-Z0-9]+/', ' ', $text);
+
+        return trim(preg_replace('/\s+/', ' ', $text));
+    }
+
+    /**
+     * Run $callback as if the rules were $ruleRows and the spelling variants $aliases
+     * (either may be null = keep the stored ones). Nothing is saved; the stored rules
+     * are restored afterwards. Used by the rules page to preview a change.
+     */
+    public static function simulate(?array $ruleRows, ?array $aliases, callable $callback)
+    {
+        $saved = [self::$rules, self::$aliases];
+        try {
+            if ($aliases !== null) {
+                self::$aliases = $aliases;
+            }
+            self::$rules = $ruleRows !== null ? self::buildRules($ruleRows) : null;
+            if ($ruleRows === null) {
+                self::rules(); // stored rules, normalised with the (possibly simulated) aliases
+            }
+
+            return $callback();
+        } finally {
+            [self::$rules, self::$aliases] = $saved;
+        }
     }
 
     /** Uppercase, punctuation to spaces, collapse spaces, then apply aliases. */
@@ -82,7 +141,7 @@ class PayPriority
         $text = preg_replace('/[^A-Z0-9]+/', ' ', $text);
         $text = trim(preg_replace('/\s+/', ' ', $text));
 
-        foreach (self::ALIASES as $from => $to) {
+        foreach (self::aliases() as $from => $to) {
             $text = preg_replace('/(?<![A-Z0-9])' . preg_quote($from, '/') . '(?![A-Z0-9])/', $to, $text);
         }
 
@@ -96,10 +155,24 @@ class PayPriority
             return self::$rules;
         }
 
-        // Only clients on the default Category A list (see class docblock).
-        $rows = DB::table('pay_priority_rules')->where('active', true)
-            ->whereIn('client_id', self::scopeClientIds() ?: [0])
-            ->get();
+        $rows = DB::table('pay_priority_rules')->where('active', true)->get();
+
+        return self::$rules = self::buildRules($rows->all());
+    }
+
+    /**
+     * Group rule rows (objects or arrays with client_id, level, gender, field_id, locations,
+     * reason, active) by client. Inactive rows and clients off the default Category A list
+     * are left out (see class docblock).
+     *
+     * @return array<int, array<int, array>>
+     */
+    public static function buildRules(iterable $rows): array
+    {
+        $scope = self::scopeClientIds();
+        $rows = collect($rows)->map(fn ($r) => (object) $r)
+            ->filter(fn ($r) => ($r->active ?? true) && in_array((int) $r->client_id, $scope, true))
+            ->values();
 
         $clientIds = $rows->pluck('client_id')->unique()->all();
         $clients = DB::table('clients')->whereIn('id', $clientIds)->get(['id', 'name', 'business_name'])->keyBy('id');
@@ -107,10 +180,8 @@ class PayPriority
 
         $grouped = [];
         foreach ($rows as $row) {
-            $locations = array_values(array_filter(array_map(
-                [self::class, 'normalise'],
-                (array) (json_decode((string) $row->locations, true) ?: [])
-            )));
+            $raw = is_array($row->locations ?? null) ? $row->locations : (json_decode((string) ($row->locations ?? ''), true) ?: []);
+            $locations = array_values(array_filter(array_map([self::class, 'normalise'], (array) $raw)));
 
             $client = $clients[$row->client_id] ?? null;
             $clientName = $client ? trim(($client->business_name ?: $client->name) ?? '') : '';
@@ -121,13 +192,13 @@ class PayPriority
                 'gender' => $row->gender ? strtolower(trim($row->gender)) : null,
                 'field_id' => $row->field_id !== null ? (int) $row->field_id : null,
                 'locations' => $locations,
-                'reason' => $row->reason,
+                'reason' => $row->reason ?? null,
                 'client_name' => $clientName,
                 'field_name' => $row->field_id !== null ? ($fields[$row->field_id] ?? 'field ' . $row->field_id) : null,
             ];
         }
 
-        return self::$rules = $grouped;
+        return $grouped;
     }
 
     /** Client ids that have at least one active rule. */
@@ -153,25 +224,11 @@ class PayPriority
 
         $best = [self::NORMAL, null];
         foreach ($rules as $rule) {
-            if ($rule['gender'] !== null && $rule['gender'] !== $gender) {
+            $matchedLocation = self::matches($rule, $fieldId, $normalised, $gender);
+            if ($matchedLocation === false) {
                 continue;
             }
-            if ($rule['field_id'] !== null && $rule['field_id'] !== (int) $fieldId) {
-                continue;
-            }
-
-            $matchedLocation = null;
-            if ($rule['locations']) {
-                foreach ($rule['locations'] as $key) {
-                    if (preg_match('/(?<![A-Z0-9])' . preg_quote($key, '/') . '(?![A-Z0-9])/', $normalised)) {
-                        $matchedLocation = $key;
-                        break;
-                    }
-                }
-                if ($matchedLocation === null) {
-                    continue;
-                }
-            }
+            $matchedLocation = $matchedLocation === true ? null : $matchedLocation;
 
             if ($rule['level'] > $best[0]) {
                 $best = [$rule['level'], $rule['reason'] ?: self::describe($rule, $matchedLocation)];
@@ -179,6 +236,30 @@ class PayPriority
         }
 
         return $best;
+    }
+
+    /**
+     * Does one built rule match? false = no; true = yes (no location condition);
+     * string = yes, on that location keyword. $normalised must come from normalise().
+     */
+    public static function matches(array $rule, $fieldId, string $normalised, string $gender): bool|string
+    {
+        if ($rule['gender'] !== null && $rule['gender'] !== strtolower(trim($gender))) {
+            return false;
+        }
+        if ($rule['field_id'] !== null && $rule['field_id'] !== (int) $fieldId) {
+            return false;
+        }
+        if (! $rule['locations']) {
+            return true;
+        }
+        foreach ($rule['locations'] as $key) {
+            if (preg_match('/(?<![A-Z0-9])' . preg_quote($key, '/') . '(?![A-Z0-9])/', $normalised)) {
+                return $key;
+            }
+        }
+
+        return false;
     }
 
     /** Neutral, readable reason. Never mentions gender: the label says what to DO. */

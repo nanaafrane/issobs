@@ -19,6 +19,7 @@ use App\Http\Controllers\ProformaController;
 use App\Http\Controllers\ReceiptController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SalaryController;
+use App\Http\Controllers\PayPriorityRuleController;
 use App\Http\Controllers\SalaryReportController;
 use App\Http\Controllers\SalaryTopUpsController;
 use App\Http\Controllers\SendMoneyController;
@@ -189,6 +190,17 @@ Route::get('salaries/employees-data', [SalaryController::class, 'employeesData']
 Route::get('salaries-report', [SalaryReportController::class, 'index'])->name('salaries.report');
 Route::get('salaries-month/data', [SalaryController::class, 'salariesMonthData'])->name('salaries.salariesMonthData');
 Route::get('salaries-month/export', [SalaryController::class, 'salariesMonthExport'])->name('salaries.salariesMonthExport');
+// Pay priority rules (Finance Manager; see PayPriorityRuleController)
+Route::get('pay-priority', [PayPriorityRuleController::class, 'index'])->name('pay-priority.index');
+Route::post('pay-priority/preview', [PayPriorityRuleController::class, 'preview'])->name('pay-priority.preview');
+Route::post('pay-priority/rules', [PayPriorityRuleController::class, 'store'])->name('pay-priority.store');
+Route::put('pay-priority/rules/{rule}', [PayPriorityRuleController::class, 'update'])->whereNumber('rule')->name('pay-priority.update');
+Route::post('pay-priority/rules/{rule}/toggle', [PayPriorityRuleController::class, 'toggle'])->whereNumber('rule')->name('pay-priority.toggle');
+Route::delete('pay-priority/rules/{rule}', [PayPriorityRuleController::class, 'destroy'])->whereNumber('rule')->name('pay-priority.destroy');
+Route::post('pay-priority/aliases/preview', [PayPriorityRuleController::class, 'aliasPreview'])->name('pay-priority.aliases.preview');
+Route::post('pay-priority/aliases', [PayPriorityRuleController::class, 'aliasStore'])->name('pay-priority.aliases.store');
+Route::delete('pay-priority/aliases/{alias}', [PayPriorityRuleController::class, 'aliasDestroy'])->whereNumber('alias')->name('pay-priority.aliases.destroy');
+Route::post('pay-priority/recompute', [PayPriorityRuleController::class, 'recompute'])->name('pay-priority.recompute');
 Route::resource('salaries', SalaryController::class);
 Route::resource('salariestopups', SalaryTopUpsController::class);
 Route::get('salariesCreate', [SalaryController::class, 'CreateSalaries']);
