@@ -402,17 +402,20 @@
                         <button class="btn btn-dark" type="submit"> <i class="icon-base bx bx-arrow-from-left"> </i> {{ __('Deposit') }}</button>
                     </div>
 
+                    <div class="alert alert-info py-2 mb-3">
+                        <i class="bx bx-info-circle me-1"></i> Cheques and transfers now go straight into the bank chosen on the receipt.
+                        Only <strong>cash</strong> (and cheques received before that change) is deposited here.
+                    </div>
                     <table id="myTable1" class="display">
                         <thead>
                             <tr>
                                 <th> </th>
                                 <th>#</th>
                                 <th>Period</th>
-                                <th>Cash Amount</th>
-                                <th>Momo Amount</th>
-                                <th>Cheque Amount </th>
-                                <th> Transfer Amount </th>
-                                <th> Total Amount </th>
+                                <th>Cash to deposit</th>
+                                <th>Old cheque to deposit</th>
+                                <th>To deposit</th>
+                                <th>Receipt total</th>
                                 <th>Date Created</th>
                                 <th>Branch</th>
                                 <th>status</th>
@@ -428,10 +431,9 @@
                                 <td> <input class="checkBoxes form-check-input" type="checkbox" name="collections[]" value="{{$collection->id}}" /></td>
                                 <td> {{$collection->id}}</td>
                                 <td> {{$collection->created_at->diffForHumans()}}</td>
-                                <td>GH&#x20B5; {{number_format($collection->cash_amount, 2)}}</td>
-                                <td>GH&#x20B5; {{number_format($collection->momo_amount, 2)}}</td>
-                                <td>GH&#x20B5; {{number_format($collection->cheque_amount, 2)}}</td>
-                                <td>GH&#x20B5; {{number_format($collection->transfer_amount, 2)}}</td>
+                                <td>GH&#x20B5; {{number_format($collection->deposit_cash, 2)}}</td>
+                                <td>GH&#x20B5; {{number_format($collection->deposit_cheque, 2)}}</td>
+                                <td><strong>GH&#x20B5; {{number_format($collection->deposit_total, 2)}}</strong></td>
                                 <td>GH&#x20B5; {{number_format($collection->total_amount, 2)}}</td>
                                 <td> {{$collection->created_at->format('l F d, Y, H:i A')}}</td>
                                 <td> {{$collection->field?->name}} </td>

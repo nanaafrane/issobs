@@ -26,7 +26,11 @@ class StoreReceiptRequest extends FormRequest
     public function rules(): array
     {
         return array_merge([
-            'status' => ['required', Rule::in(['completed', 'uncompleted'])],
+            // Status is worked out from the payment; anything sent is ignored.
+            'status' => ['nullable', Rule::in(['completed', 'uncompleted'])],
+            'from' => ['required', 'string', 'max:255'],
+            'receipt_month' => ['required', 'date'],
+            'keep_credit' => ['nullable', 'in:1,on'],
             // 'mode' => ['required', Rule::in(['cheque', 'transfer', 'momo', 'cash', 'other payments'])],
             'image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
             'invoice_id' => ['required',
@@ -46,7 +50,7 @@ class StoreReceiptRequest extends FormRequest
         //                     }
         //                 },
         // ],
-        ], $this->paymentModeRules());
+        ], $this->paymentModeRules(), $this->adjustmentRules());
     }
 
     public function attributes(): array

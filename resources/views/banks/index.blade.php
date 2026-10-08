@@ -516,6 +516,7 @@
                             <th>Receipt ID</th>
                             <th>Debit</th>
                             <th>Expense ID</th>
+                            <th>Details</th>
                             <th>Closing Balance</th>
                             <th>Date</th>
                         </tr>
@@ -532,6 +533,7 @@
                             <td> {{$transaction->receipt_id}} </td>
                             <td> {{$transaction->debit}} </td>
                             <td> {{$transaction->expense_id}} </td>
+                            <td> @if($transaction->channel)<span class="badge bg-label-primary">{{ $transaction->channel }}</span>@endif {{ $transaction->narration }} </td>
                             <td> {{$transaction->balance}} </td>
                             <td> {{$transaction->created_at->format('F l d, Y, H:i A')}} </td>
                         </tr>

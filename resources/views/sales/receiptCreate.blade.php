@@ -359,10 +359,6 @@
                         @csrf
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <h5 class="mb-0"> Receipt </h5>
-                            <div class="form-check mt-3">
-                                <input name="advance_payment" class="form-check-input" type="checkbox" value="advance" id="defaultCheck1" />
-                                <label class="form-check-label" for="defaultCheck1"> Tick For Advance Payment </label>
-                            </div>
 
                             <!-- <small class="text-body float-end">Merged input group</small> -->
 
@@ -586,7 +582,7 @@
                                     </div>
 
                                     <div class="col mb-0">
-                                        @include('partials.receipt_bank_select', ['name' => 'cheque_to_bank_id', 'label' => 'DEPOSIT INTO (OUR BANK)', 'banks' => $banks, 'selected' => null])
+                                        @include('partials.receipt_bank_select', ['name' => 'cheque_to_bank_id', 'label' => 'PAID INTO (OUR BANK)', 'banks' => $banks, 'selected' => null])
                                     </div>
 
                                 </div>
@@ -720,21 +716,11 @@
                                     <!-- end of cash value -->
 
                                     <div class="col mt-6">
-                                        <div class="input-group">
-                                            <label class="input-group-text" for="status">{{ __('STATUS') }}</label>
-                                            <select name="status" class="form-select @error('status') is-invalid @enderror" id="status" required>
-                                                <option disabled {{ old('status') ? '' : 'selected' }}>Choose...</option>
-                                               @foreach ( $status as $stat )
-                                                <option value="{{ $stat->name }}" {{ old('status') == $stat->name ? 'selected' : '' }}> {{ $stat->name }}</option>
-                                                @endforeach
-                                            </select>
-                                            @error('status')
-                                            <span class="invalid-feedback" role="alert">
-                                                <strong>{{ $message }}</strong>
-                                            </span>
-                                            @enderror
+                                        <div class="form-check">
+                                            <input name="keep_credit" class="form-check-input" type="checkbox" value="1" id="keep_credit" {{ old('keep_credit') ? 'checked' : '' }}>
+                                            <label class="form-check-label" for="keep_credit"> Keep any extra as client credit (advance) </label>
                                         </div>
-
+                                        <small class="text-muted d-block">Status and balance are worked out from the payment. Paying more than is owed needs this box ticked; the extra can be applied to the client's next invoice.</small>
                                     </div>
                                 </div>
 
@@ -784,8 +770,15 @@
                     <hr>
                     <p class="card-text">Invoice # : FWSSi{{$invoice->id}}</p>
                     <p class="card-text">Invoice Total : GH&#8373;{{number_format($invoice->total, 2)}}</p>
-                    <p style="display: none;" id="amount_payable" class="card-text text-info"> <strong> Amount Payable : GH&#8373; {{ number_format($invoice->total - ($invoice->sub_amount * 0.075), 2)   }} </strong></p>
-                    <p class="card-text text-info">Invoice Balance : <strong> GH&#8373;{{ number_format($invoice->balance, 2)}} </strong> </p>
+                    <p class="card-text text-info">Still owed : <strong> GH&#8373;{{ number_format($outstanding, 2)}} </strong> </p>
+                    <p style="display: none;" id="amount_payable" class="card-text text-info"> <strong> Cash due after {{ $wht_rate->wht_rate * 100 }}% WHT : GH&#8373; {{ number_format(max(0, $outstanding - ($invoice->sub_amount * $wht_rate->wht_rate)), 2) }} </strong></p>
+                    @if($creditReceipts->isNotEmpty())
+                    <div class="alert alert-warning py-2 mt-2 mb-0 small">
+                        Client already has <strong>GH&#8373;{{ number_format($creditReceipts->sum('unapplied_amount'), 2) }}</strong> credit.
+                        Apply it first from
+                        @foreach($creditReceipts as $cr)<a href="{{ route('receipt.show', $cr->id) }}">FWSSR{{ $cr->id }}</a>@if(!$loop->last), @endif @endforeach.
+                    </div>
+                    @endif
                     <p class="card-text">Invoice Issued : {{$invoice->created_at->format('l, F j, Y H:i A')}}</p>
                     <p class="card-text">Invoice Due Date : {{$invoice->due_date->format('l, F j, Y H:i A')}}</p>
 

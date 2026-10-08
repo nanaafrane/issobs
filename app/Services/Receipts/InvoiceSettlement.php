@@ -120,40 +120,4 @@ class InvoiceSettlement
 
         return $invoiceIds;
     }
-
-    /**
-     * Keep the single allocation line of a classic one-invoice receipt in
-     * step after the legacy store/update code has changed the receipt.
-     * Does not touch the invoice — the legacy code already did that.
-     */
-    public function syncLegacySingle(Receipt $receipt): void
-    {
-        if (! $receipt->invoice_id) {
-            return;
-        }
-
-        $invoiceIds = ReceiptAllocation::where('receipt_id', $receipt->id)->pluck('invoice_id')->unique();
-        if ($invoiceIds->count() > 1) {
-            return; // multi-invoice receipts are managed by MultiInvoiceReceiptController
-        }
-
-        $wht = round((float) ($receipt->wht_amount ?? 0), 2);
-        $vat = round((float) ($receipt->vat7_value ?? 0), 2);
-        $ded = round((float) ($receipt->dAmount ?? 0), 2);
-        $applied = round((float) ($receipt->total ?? 0) - $wht - $vat, 2);
-
-        ReceiptAllocation::where('receipt_id', $receipt->id)->delete();
-        ReceiptAllocation::create([
-            'receipt_id' => $receipt->id,
-            'invoice_id' => $receipt->invoice_id,
-            'client_id' => $receipt->client_id,
-            'amount_applied' => $applied,
-            'wht_amount' => $wht,
-            'vat7_amount' => $vat,
-            'deduction_amount' => $ded,
-            'settled' => round($applied + $wht + $vat + $ded, 2),
-            'source' => 'receipt',
-            'user_id' => Auth::id(),
-        ]);
-    }
 }

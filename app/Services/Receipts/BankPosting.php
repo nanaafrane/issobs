@@ -4,56 +4,128 @@ namespace App\Services\Receipts;
 
 use App\Models\Bank;
 use App\Models\BankTransaction;
+use App\Models\Collection;
 use App\Models\Receipt;
 
 /**
- * Posts bank transfers straight to the receiving bank account.
+ * Puts cheque and transfer money straight into the bank account chosen on the
+ * receipt — the moment the receipt is written, not later through Bank Deposit.
  *
- * Cash and cheques reach a bank through Collections -> Bank Deposit, but a
- * transfer is already sitting in our account the moment the receipt is
- * written, so it never went through a deposit and never showed in any bank
- * balance. This posts it (credit) to the bank picked on the receipt, and
- * reverses it (a matching debit line, nothing deleted) if the receipt is
- * edited or deleted, so the bank ledger keeps a full audit trail.
+ *   cash      -> Collections -> Bank Deposit (unchanged)
+ *   cheque    -> credited to receipts.cheque_to_bank_id immediately
+ *   transfer  -> credited to receipts.transfer_to_bank_id immediately
+ *   momo      -> not a bank (unchanged)
  *
- * Ledger rows written here have receipt_id set and deposit_id null.
+ * Editing a receipt re-posts it; deleting it reverses it. Nothing is ever
+ * deleted from the bank ledger: a change adds a reversal line (debit) and a
+ * new posting, so every movement stays visible.
+ *
+ * Ledger rows written here have receipt_id + channel ('cheque' | 'transfer')
+ * and no deposit_id.
  */
 class BankPosting
 {
-    /** Make the bank ledger match the receipt's current transfer amount and bank. */
+    public const CHANNELS = [
+        'cheque' => ['amount' => 'cheque_amount', 'bank' => 'cheque_to_bank_id', 'ref' => 'cheque_reference', 'label' => 'Cheque received'],
+        'transfer' => ['amount' => 'transfer_amount', 'bank' => 'transfer_to_bank_id', 'ref' => 'transfer_reference', 'label' => 'Transfer received'],
+    ];
+
+    /** Make the bank ledger match the receipt's current cheque and transfer. */
+    public function sync(Receipt $receipt): void
+    {
+        foreach (array_keys(self::CHANNELS) as $channel) {
+            $this->syncChannel($receipt, $channel);
+        }
+        $this->syncCollection($receipt);
+    }
+
+    /** @deprecated kept for callers written before cheques posted directly */
     public function syncTransfer(Receipt $receipt): void
     {
-        $wantBank = (int) ($receipt->transfer_to_bank_id ?? 0);
-        $wantAmount = round((float) ($receipt->transfer_amount ?? 0), 2);
-        $wanted = $wantBank && $wantAmount > 0 ? [$wantBank => $wantAmount] : [];
+        $this->sync($receipt);
+    }
 
-        $current = $this->netPostings($receipt);
+    /** Take every cheque/transfer posting of this receipt back out of the bank. */
+    public function reverse(Receipt $receipt, string $why = 'Reversal (receipt deleted)'): void
+    {
+        foreach (array_keys(self::CHANNELS) as $channel) {
+            foreach ($this->netPostings($receipt, $channel) as $bankId => $amount) {
+                $this->post($receipt, $channel, $bankId, -$amount, $why);
+            }
+        }
+    }
+
+    /** True when this receipt's cheque has already gone straight into a bank. */
+    public static function chequePostedDirectly(?int $receiptId): bool
+    {
+        if (! $receiptId) {
+            return false;
+        }
+
+        return BankTransaction::where('receipt_id', $receiptId)->where('channel', 'cheque')->exists();
+    }
+
+    /**
+     * What Bank Deposit still has to take to the bank for a collection:
+     * the cash, plus the cheque only if it was never posted directly
+     * (cheques received before this change).
+     *
+     * @return array{cash: float, cheque: float, total: float}
+     */
+    public static function depositable(Collection $collection): array
+    {
+        $cash = round((float) $collection->cash_amount, 2);
+        $cheque = self::chequePostedDirectly($collection->receipt_id) ? 0.0 : round((float) $collection->cheque_amount, 2);
+
+        return ['cash' => $cash, 'cheque' => $cheque, 'total' => round($cash + $cheque, 2)];
+    }
+
+    private function syncChannel(Receipt $receipt, string $channel): void
+    {
+        $cfg = self::CHANNELS[$channel];
+        $bankId = (int) ($receipt->{$cfg['bank']} ?? 0);
+        $amount = round((float) ($receipt->{$cfg['amount']} ?? 0), 2);
+        $wanted = $bankId && $amount > 0 ? [$bankId => $amount] : [];
+        $current = $this->netPostings($receipt, $channel);
 
         if ($this->same($wanted, $current)) {
             return;
         }
 
-        $this->reverse($receipt, 'Reversal (receipt edited)');
-
-        foreach ($wanted as $bankId => $amount) {
-            $this->post($receipt, $bankId, $amount, 'Transfer received');
+        foreach ($current as $oldBank => $oldAmount) {
+            $this->post($receipt, $channel, $oldBank, -$oldAmount, 'Reversal (receipt edited)');
+        }
+        foreach ($wanted as $newBank => $newAmount) {
+            $this->post($receipt, $channel, $newBank, $newAmount, $cfg['label']);
         }
     }
 
-    /** Take every transfer posting of this receipt back out of the bank. */
-    public function reverse(Receipt $receipt, string $why = 'Reversal (receipt deleted)'): void
+    /**
+     * A cheque that went straight to the bank must not be deposited again,
+     * so a cheque/transfer collection with no cash is marked "Banked".
+     * Anything with cash still to deposit stays "undeposited".
+     */
+    private function syncCollection(Receipt $receipt): void
     {
-        foreach ($this->netPostings($receipt) as $bankId => $amount) {
-            if (abs($amount) > 0.004) {
-                $this->post($receipt, $bankId, -$amount, $why);
-            }
+        $collection = Collection::where('receipt_id', $receipt->id)->first();
+        if (! $collection || strcasecmp((string) $collection->status, 'deposited') === 0) {
+            return;
         }
+
+        $wentToBank = (float) $receipt->cheque_amount > 0 || (float) $receipt->transfer_amount > 0;
+        if (self::depositable($collection)['total'] > 0 || ! $wentToBank) {
+            $collection->status = 'undeposited';   // cash still to deposit (or momo only: never a bank)
+        } else {
+            $collection->status = 'Banked';        // everything already went straight to the bank
+        }
+        $collection->save();
     }
 
-    /** @return array<int, float> bank_id => net amount currently posted for this receipt */
-    private function netPostings(Receipt $receipt): array
+    /** @return array<int, float> bank_id => net amount currently posted for this receipt and channel */
+    private function netPostings(Receipt $receipt, string $channel): array
     {
         return BankTransaction::where('receipt_id', $receipt->id)
+            ->where('channel', $channel)
             ->whereNull('deposit_id')
             ->get()
             ->groupBy('bank_id')
@@ -62,23 +134,24 @@ class BankPosting
             ->all();
     }
 
-    private function post(Receipt $receipt, int $bankId, float $amount, string $what): void
+    private function post(Receipt $receipt, string $channel, int $bankId, float $amount, string $what): void
     {
         $bank = Bank::whereKey($bankId)->lockForUpdate()->first();
-        if (! $bank) {
+        if (! $bank || abs($amount) < 0.005) {
             return;
         }
 
         $newBalance = round((float) $bank->total + $amount, 2);
+        $ref = $receipt->{self::CHANNELS[$channel]['ref']} ?? null;
 
         BankTransaction::create([
             'bank_id' => $bank->id,
             'receipt_id' => $receipt->id,
+            'channel' => $channel,
             'credit' => $amount > 0 ? $amount : null,
             'debit' => $amount < 0 ? abs($amount) : null,
             'balance' => $newBalance,
-            'narration' => $what . ' — receipt FWSSR' . $receipt->id
-                . ($receipt->transfer_reference ? ' (ref ' . $receipt->transfer_reference . ')' : ''),
+            'narration' => $what . ' — receipt FWSSR' . $receipt->id . ($ref ? ' (ref ' . $ref . ')' : ''),
         ]);
 
         $bank->total = $newBalance;

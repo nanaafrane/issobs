@@ -228,7 +228,7 @@
                                         <input type="text" name="cheque_bank" id="cheque_bank" class="form-control" value="{{ old('cheque_bank') }}" placeholder="e.g. GCB">
                                     </div>
                                     <div class="col-md-3">
-                                        @include('partials.receipt_bank_select', ['name' => 'cheque_to_bank_id', 'label' => 'DEPOSIT INTO (OUR BANK)', 'banks' => $banks, 'selected' => null])
+                                        @include('partials.receipt_bank_select', ['name' => 'cheque_to_bank_id', 'label' => 'PAID INTO (OUR BANK)', 'banks' => $banks, 'selected' => null])
                                     </div>
                                 </div>
                             </div>
@@ -251,7 +251,6 @@
                                         @include('partials.receipt_bank_select', ['name' => 'transfer_to_bank_id', 'label' => 'RECEIVED INTO (OUR BANK)', 'banks' => $banks, 'selected' => null])
                                     </div>
                                 </div>
-                                <small class="text-muted d-block mt-1"><i class="bx bx-info-circle"></i> The transfer is credited to this bank account straight away.</small>
                             </div>
 
                             <div id="otherpayrow" class="mi-mode-row" style="display:none">

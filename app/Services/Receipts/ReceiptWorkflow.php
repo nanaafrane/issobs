@@ -46,12 +46,13 @@ class ReceiptWorkflow
     /**
      * Payment-promptness category for the client for the invoice's month
      * (A: paid in the invoice month or earlier; B: 1st-9th of next month;
-     * C: 10th-15th; D: 16th-25th). Skipped if one already exists for that
-     * month, exactly like the single-invoice flow.
+     * C: 10th-15th; D: 16th-25th). When one already exists for that month it
+     * is left alone on a new receipt, and re-graded when a receipt is edited
+     * (its date may have changed) — same as the old create/edit screens.
      *
-     * @return bool true if a new category was assigned
+     * @return bool true if a category was assigned or re-graded
      */
-    public function assignCategory(Receipt $receipt, Invoice $invoice): bool
+    public function assignCategory(Receipt $receipt, Invoice $invoice, bool $updateExisting = false): bool
     {
         if (! $invoice->invoice_month || ! $receipt->receipt_month) {
             return false;
@@ -60,11 +61,11 @@ class ReceiptWorkflow
         $inv = Carbon::parse($invoice->invoice_month);
         $rec = Carbon::parse($receipt->receipt_month);
 
-        $exists = category::where('client_id', $receipt->client_id)
+        $existing = category::where('client_id', $receipt->client_id)
             ->whereYear('category_month', $inv->year)
             ->whereMonth('category_month', $inv->month)
-            ->exists();
-        if ($exists) {
+            ->first();
+        if ($existing && ! $updateExisting) {
             return false;
         }
 
@@ -84,7 +85,7 @@ class ReceiptWorkflow
             return false;
         }
 
-        $category = new category();
+        $category = $existing ?? new category();
         $category->name = $name;
         $category->client_id = $receipt->client_id;
         $category->user_id = Auth::id();

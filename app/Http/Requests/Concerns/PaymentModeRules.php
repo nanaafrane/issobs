@@ -22,7 +22,7 @@ trait PaymentModeRules
             'cheque_reference' => [$when('cheque')],
             'cheque_amount' => [$when('cheque'), 'nullable', 'numeric', 'min:0'],
             'cheque_bank' => [$when('cheque')],
-            // Which of OUR accounts the cheque will be deposited into.
+            // Which of OUR accounts the cheque is paid into (posted straight to that bank).
             'cheque_to_bank_id' => [$when('cheque'), 'nullable', 'integer', 'exists:banks,id'],
 
             'transfer_reference' => [$when('transfer')],
@@ -41,10 +41,22 @@ trait PaymentModeRules
         ];
     }
 
+    /** WHT / 7% VAT / other deductions on the single-invoice form. */
+    protected function adjustmentRules(): array
+    {
+        $when = fn (string $switch) => Rule::requiredIf(fn () => $this->input($switch) === 'on');
+
+        return [
+            'wht_amount' => [$when('wth'), 'nullable', 'numeric', 'min:0'],
+            'vat7_value' => [$when('vat'), 'nullable', 'numeric', 'min:0'],
+            'dAmount' => [$when('deductions'), 'nullable', 'numeric', 'min:0'],
+        ];
+    }
+
     protected function paymentModeAttributes(): array
     {
         return [
-            'cheque_to_bank_id' => 'bank the cheque will be deposited into',
+            'cheque_to_bank_id' => 'bank the cheque is paid into',
             'transfer_to_bank_id' => 'bank the transfer was received into',
             'transfer_bank' => "payer's bank (transfer)",
             'cheque_bank' => "payer's bank (cheque)",

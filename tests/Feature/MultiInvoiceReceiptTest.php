@@ -31,8 +31,7 @@ class MultiInvoiceReceiptTest extends TestCase
         parent::setUp();
 
         $department = Department::create(['name' => 'Finance']);
-        Role::create(['name' => 'Placeholder', 'department_id' => $department->id]);          // id 1
-        $role = Role::create(['name' => 'Finance Manager', 'department_id' => $department->id]); // id 2 = head-office approval
+        $role = Role::forceCreate(['id' => 2, 'name' => 'Finance Manager', 'department_id' => $department->id]); // approval code keys on role id 2
         $this->user = User::factory()->create(['department_id' => $department->id, 'role_id' => $role->id]);
 
         $field = Field::create(['name' => 'Accra', 'user_id' => $this->user->id, 'number' => '0200000000']);
@@ -137,7 +136,7 @@ class MultiInvoiceReceiptTest extends TestCase
 
         $receipt = Receipt::create(['invoice_id' => $inv->id, 'client_id' => $this->client->id, 'total' => 100, 'cash_amount' => 100, 'status' => 'uncompleted', 'mode' => ['cash']]);
         ReceiptAllocation::create(['receipt_id' => $receipt->id, 'invoice_id' => $inv->id, 'amount_applied' => 100, 'settled' => 100]);
-        $this->get(route('receipt.edit', $receipt))->assertOk()->assertSee('DEPOSIT INTO (OUR BANK)', false);
+        $this->get(route('receipt.edit', $receipt))->assertOk()->assertSee('PAID INTO (OUR BANK)', false);
 
         $this->get('/deposit/create')->assertOk();
     }

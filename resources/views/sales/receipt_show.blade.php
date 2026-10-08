@@ -579,7 +579,7 @@
                                 <div class="amount-display">GH&#8373; {{ number_format($receipt->cheque_amount, 2) }}</div>
                                 <div class="text-white-50 small mt-1">Ref: {{$receipt->cheque_reference}} • {{$receipt->cheque_bank}}</div>
                                 @if($receipt->chequeToBank)
-                                <div class="small mt-1"><i class="bx bx-bank"></i> To be deposited into <strong>{{ $receipt->chequeToBank->name }}</strong> {{ $receipt->chequeToBank->acc_number }}</div>
+                                <div class="small mt-1"><i class="bx bx-bank"></i> Paid into <strong>{{ $receipt->chequeToBank->name }}</strong> {{ $receipt->chequeToBank->acc_number }}</div>
                                 @endif
                             </div>
                         </div>

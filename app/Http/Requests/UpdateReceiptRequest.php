@@ -24,7 +24,12 @@ class UpdateReceiptRequest extends FormRequest
      */
     public function rules(): array
     {
-        return $this->paymentModeRules();
+        return array_merge([
+            'from' => ['required', 'string', 'max:255'],
+            'receipt_month' => ['required', 'date'],
+            'keep_credit' => ['nullable', 'in:1,on'],
+            'image' => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:2048'],
+        ], $this->paymentModeRules(), $this->adjustmentRules());
     }
 
     public function attributes(): array

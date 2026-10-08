@@ -5,14 +5,13 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreMultiInvoiceReceiptRequest;
 use App\Models\Bank;
 use App\Models\Client;
-use App\Models\Collection;
 use App\Models\Invoice;
 use App\Models\Receipt;
 use App\Models\User;
 use App\Models\Wht;
-use App\Services\Receipts\BankPosting;
 use App\Services\Receipts\InvoiceSettlement;
 use App\Services\Receipts\ReceiptAllocator;
+use App\Services\Receipts\ReceiptRecorder;
 use App\Services\Receipts\ReceiptWorkflow;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -30,21 +29,9 @@ use Illuminate\Validation\ValidationException;
  */
 class MultiInvoiceReceiptController extends Controller
 {
-    /** Payment fields that belong to each mode. Unticked modes are always stored as null. */
-    private const MODE_FIELDS = [
-        'cheque' => ['cheque_reference', 'cheque_amount', 'cheque_bank', 'cheque_to_bank_id'],
-        'transfer' => ['transfer_reference', 'transfer_amount', 'transfer_bank', 'transfer_to_bank_id'],
-        'momo' => ['momo_transactin_id', 'momo_amount'],
-        'other payments' => ['other_payment_descri', 'other_payment_amnt'],
-        'cash' => ['cash_amount'],
-    ];
-
-    private const AMOUNT_FIELDS = ['cheque_amount', 'transfer_amount', 'momo_amount', 'other_payment_amnt', 'cash_amount'];
-
     public function __construct(
         private ReceiptAllocator $allocator,
         private InvoiceSettlement $settlement,
-        private BankPosting $bankPosting,
         private ReceiptWorkflow $workflow,
     ) {
         $this->middleware('auth');
@@ -81,84 +68,11 @@ class MultiInvoiceReceiptController extends Controller
         ));
     }
 
-    public function store(StoreMultiInvoiceReceiptRequest $request)
+    public function store(StoreMultiInvoiceReceiptRequest $request, ReceiptRecorder $recorder)
     {
-        $client = $this->scopeToUserFields(Client::query())->with('field')->findOrFail($request->integer('client_id'));
-        $selectedModes = (array) $request->input('mode', []);
-        $payment = $this->paymentPayload($request, $selectedModes);
-        $moneyReceived = round(array_sum(array_map(fn ($f) => (float) ($payment[$f] ?? 0), self::AMOUNT_FIELDS)), 2);
+        $client = $this->scopeToUserFields(Client::query())->findOrFail($request->integer('client_id'));
 
-        if ($moneyReceived <= 0) {
-            throw ValidationException::withMessages(['mode' => 'Enter the amount received for the payment mode(s) you ticked.']);
-        }
-
-        $receipt = DB::transaction(function () use ($request, $client, $payment, $moneyReceived) {
-            $invoiceInput = collect((array) $request->input('invoices', []))
-                ->filter(fn ($row) => ($row['selected'] ?? null) === '1');
-
-            // Lock the ticked invoices so two cashiers can't settle the same balance twice.
-            $invoices = $this->openInvoices($client->id)
-                ->whereIn('id', $invoiceInput->keys()->map(fn ($k) => (int) $k)->all())
-                ->lockForUpdate()
-                ->get();
-
-            if ($invoiceInput->isNotEmpty() && $invoices->count() !== $invoiceInput->count()) {
-                throw ValidationException::withMessages(['invoices' => 'One or more ticked invoices are already fully paid or do not belong to this client. Reload the page and try again.']);
-            }
-
-            $plan = $this->allocator->plan($this->planLines($invoices, $invoiceInput), $moneyReceived);
-            $this->guardPlan($plan, $request->input('keep_credit') === '1', $invoices->isEmpty());
-
-            $lines = collect($plan['lines'])->keyBy('invoice_id');
-            $totals = [
-                'wht' => round($lines->sum('wht_amount'), 2),
-                'vat' => round($lines->sum('vat7_amount'), 2),
-                'ded' => round($lines->sum('deduction_amount'), 2),
-            ];
-
-            $receipt = new Receipt();
-            $receipt->fill($payment);
-            $receipt->mode = (array) $request->input('mode');
-            $receipt->client_id = $client->id;
-            $receipt->invoice_id = $invoices->first()?->id;   // primary invoice, for older screens and reports
-            $receipt->from = $request->input('from');
-            $receipt->receipt_month = $request->input('receipt_month');
-            $receipt->advance_payment = $plan['unapplied'] > 0 ? 'advance' : null;
-            $receipt->unapplied_amount = $plan['unapplied'];
-            $receipt->dAmount = $totals['ded'] > 0 ? $totals['ded'] : null;
-            $receipt->description = $totals['ded'] > 0 ? $request->input('description') : null;
-            $receipt->wht_amount = $totals['wht'] > 0 ? $totals['wht'] : null;
-            $receipt->amount_received = $totals['wht'] > 0 ? $moneyReceived : null;
-            $receipt->vat7_value = $totals['vat'] > 0 ? $totals['vat'] : null;
-            $receipt->vat7_amount = $totals['vat'] > 0 ? round(($receipt->amount_received ?? 0) - $totals['vat'], 2) : null;
-            // Same meaning as the single-invoice receipt: money + WHT + VAT (deductions kept in dAmount).
-            $receipt->total = round($moneyReceived + $totals['wht'] + $totals['vat'], 2);
-            $receipt->status = $lines->every(fn ($l) => $l['completes']) ? 'completed' : 'uncompleted';
-            $receipt->user_id = Auth::id();
-            $receipt->image = $request->file('image')?->store('images', 'public_html_disk');
-            $this->workflow->applyApproval($receipt, $request->input('staff'));
-            $receipt->save();
-
-            foreach ($invoices as $invoice) {
-                $this->settlement->allocate($receipt, $invoice, $lines[$invoice->id]);
-                $this->workflow->assignCategory($receipt, $invoice);
-            }
-
-            Collection::create([
-                'user_id' => Auth::id(),
-                'receipt_id' => $receipt->id,
-                'cash_amount' => $receipt->cash_amount,
-                'momo_amount' => $receipt->momo_amount,
-                'cheque_amount' => $receipt->cheque_amount,
-                'transfer_amount' => $receipt->transfer_amount,
-                'total_amount' => $receipt->total,
-                'field_id' => $client->field?->id,
-            ]);
-
-            $this->bankPosting->syncTransfer($receipt);
-
-            return $receipt;
-        });
+        $receipt = $recorder->create($client, ReceiptRecorder::multiInvoiceInput($request), $request->file('image'));
 
         $count = $receipt->allocations()->count();
         $message = 'Receipt FWSSR' . $receipt->id . ' created for ' . $count . ' invoice' . ($count === 1 ? '' : 's') . '.';
@@ -276,23 +190,6 @@ class MultiInvoiceReceiptController extends Controller
         if ($errors) {
             throw ValidationException::withMessages(['invoices' => array_values(array_unique($errors))]);
         }
-    }
-
-    /** Payment fields of ticked modes only; everything else is null. */
-    private function paymentPayload(Request $request, array $selectedModes): array
-    {
-        $payload = [];
-        foreach (self::MODE_FIELDS as $mode => $fields) {
-            $on = in_array($mode, $selectedModes, true);
-            foreach ($fields as $field) {
-                $value = $on ? $request->input($field) : null;
-                $payload[$field] = in_array($field, self::AMOUNT_FIELDS, true) && $value !== null
-                    ? round((float) $value, 2)
-                    : ($value === '' ? null : $value);
-            }
-        }
-
-        return $payload;
     }
 
     /** Same office rules as the receipt list: head office sees all, Tema also sees Shai Hills. */

@@ -56,3 +56,50 @@ Artisan::command('pay-priority:audit {--unmatched : Only list locations that mat
         $this->error('Rules IGNORED because the client is not in DEFAULT_A_CLIENT_IDS: ' . implode(', ', $ignored));
     }
 })->purpose('List stored locations for rule clients and whether they match');
+
+/*
+ | Receipts: re-derive every invoice's status and balance from its receipts.
+ | Dry run by default — prints a summary and writes a CSV of every invoice that
+ | is wrong. Back up the database, review the CSV, then run again with --apply.
+ */
+Artisan::command('receipts:recompute
+        {--apply : Write the corrections (default is a dry run)}
+        {--reopen-short : Also reopen invoices marked completed that receipts do not fully cover}
+        {--overpayments-to-credit : Move overpaid cash off invoices into the receipt\'s client credit}
+        {--client= : Only this client id}', function () {
+    $apply = (bool) $this->option('apply');
+    $result = app(\App\Services\Receipts\BalanceRecompute::class)->run(
+        $apply,
+        (bool) $this->option('reopen-short'),
+        (bool) $this->option('overpayments-to-credit'),
+        $this->option('client') ? (int) $this->option('client') : null,
+    );
+
+    $this->info($apply ? 'APPLIED' : 'DRY RUN — nothing changed. Add --apply to write.');
+    if ($result['missing_allocations']) {
+        $this->warn($result['missing_allocations'] . ' receipt(s) had no allocation line' . ($apply ? ' — created.' : ' — will be created on --apply.'));
+    }
+    $labels = ['ok' => 'Correct already', 'fix' => 'Wrong status/balance', 'closed_short' => 'Completed but not fully paid', 'overpaid' => 'Overpaid'];
+    $this->table(['Invoices', 'Count'], collect($result['summary'])->map(fn ($n, $k) => [$labels[$k], $n])->values()->all());
+
+    if ($result['rows']) {
+        $file = 'receipts-recompute-' . now()->format('Ymd-His') . '.csv';
+        $path = storage_path('app/' . $file);
+        $fh = fopen($path, 'w');
+        fputcsv($fh, array_keys($result['rows'][0]));
+        foreach ($result['rows'] as $row) {
+            fputcsv($fh, $row);
+        }
+        fclose($fh);
+        $this->line('Details: ' . $path);
+        $this->table(['Invoice', 'Client', 'Total', 'Paid', 'Stored', 'Correct', 'Issue', 'Action'],
+            collect($result['rows'])->take(20)->map(fn ($r) => [
+                'FWSSi' . $r['invoice_id'], \Illuminate\Support\Str::limit((string) $r['client'], 24), number_format($r['total'], 2),
+                number_format($r['paid_per_receipts'], 2), $r['stored_status'] . ' / ' . number_format($r['stored_balance'], 2),
+                $r['correct_status'] . ' / ' . number_format($r['correct_balance'], 2), $r['issue'], $r['action'],
+            ])->all());
+        if (count($result['rows']) > 20) {
+            $this->line('… ' . (count($result['rows']) - 20) . ' more in the CSV.');
+        }
+    }
+})->purpose('Re-derive invoice status and balance from receipts (dry run unless --apply)');

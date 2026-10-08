@@ -370,15 +370,6 @@
                         @method('PUT')
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <h5 class="mb-0"> Receipt </h5>
-                            <div class="form-check mt-3">
-                                <input name="advance_payment" class="form-check-input" type="checkbox" value="advance" id="defaultCheck1" @if ($receipt->advance_payment == "advance") checked @endif />
-                                <label class="form-check-label" for="defaultCheck1"> Tick For Advance Payment </label>
-                            </div>
-
-                            <div class="form-check mt-3">
-                                <input name="reset_balance" class="form-check-input" type="checkbox" value="reset" id="reset_balance"  />
-                                <label class="form-check-label" for="reset_balance"> Reset Invoice Balances </label>
-                            </div>
                             <!-- <small class="text-body float-end">Merged input group</small> -->
 
                             <div class="button-wrapper">
@@ -599,7 +590,7 @@
                                     </div>
 
                                     <div class="col mb-0">
-                                        @include('partials.receipt_bank_select', ['name' => 'cheque_to_bank_id', 'label' => 'DEPOSIT INTO (OUR BANK)', 'banks' => $banks, 'selected' => $receipt->cheque_to_bank_id])
+                                        @include('partials.receipt_bank_select', ['name' => 'cheque_to_bank_id', 'label' => 'PAID INTO (OUR BANK)', 'banks' => $banks, 'selected' => $receipt->cheque_to_bank_id])
                                     </div>
 
                                 </div>
@@ -740,20 +731,11 @@
                                     <!-- end of cash value -->
 
                                     <div class="col mt-6">
-                                        <div class="input-group">
-                                            <label class="input-group-text" for="status">{{ __('STATUS') }}</label>
-                                            <select name="status" class="form-select @error('status') is-invalid @enderror" id="status" required>
-                                                @foreach ( $status as $stat )      
-                                                <option @if ($receipt->status == $stat->name ) selected @endif  value="{{ $stat->name }}"> {{ $stat->name }}</option>
-                                                @endforeach
-                                            </select>
-                                            @error('status')
-                                            <span class="invalid-feedback" role="alert">
-                                                <strong>{{ $message }}</strong>
-                                            </span>
-                                            @enderror
+                                        <div class="form-check">
+                                            <input name="keep_credit" class="form-check-input" type="checkbox" value="1" id="keep_credit" {{ old('keep_credit', $receipt->unapplied_amount > 0) ? 'checked' : '' }}>
+                                            <label class="form-check-label" for="keep_credit"> Keep any extra as client credit (advance) </label>
                                         </div>
-
+                                        <small class="text-muted d-block">Status and balance are worked out from the payment. Paying more than is owed needs this box ticked; the extra can be applied to the client's next invoice.</small>
                                     </div>
                                 </div>
 
@@ -799,7 +781,7 @@
                     <p class="card-text">Invoice # : FWSSi{{$invoice->id}}</p>
                     <p class="card-text">Invoice Total : GH&#8373;{{number_format($invoice->total, 2)}}</p>
                     <p style="display: none;" id="amount_payable" class="card-text text-info"> <strong> Amount Payable : GH&#8373; {{ number_format($invoice->total - ($invoice->sub_amount * 0.075), 2)   }} </strong></p>
-                    <p class="card-text text-info">Invoice Balance : <strong> GH&#8373;{{ number_format($invoice->balance, 2)}} </strong> </p>
+                    <p class="card-text text-info">Still owed (other receipts) : <strong> GH&#8373;{{ number_format(max(0, $invoice->total - $invoice->allocations()->where('receipt_id', '!=', $receipt->id)->sum('settled')), 2)}} </strong> </p>
                     <p class="card-text">Invoice Issued : {{$invoice->created_at->format('l, F j, Y H:i A')}}</p>
                     <p class="card-text">Invoice Due Date : {{$invoice->due_date->format('l, F j, Y H:i A')}}</p>
 

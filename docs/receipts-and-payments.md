@@ -1,160 +1,149 @@
-# Receipts & payments — analysis, changes and proposal
-
-Branch: `feature/multi-invoice-receipts-bank-selection`
+# Receipts & payments: analysis, changes and how to run it
 
 ---
 
-## 1. How receipts worked before this change
+## 1. How money flows now
 
-Everything lives in `ReceiptController::store()` (≈650 lines) and `createReceipt()`.
-
-* A receipt is **always tied to exactly one invoice** (`receipts.invoice_id`, required by `StoreReceiptRequest`).
-* The cashier opens *Receipt › Create*, picks one invoice, and fills in the money by mode
-  (cash, momo, cheque, transfer, other — several can be ticked).
-* `total = cash + momo + cheque + transfer + other + WHT + 7% VAT`; other deductions are kept in `dAmount`.
-  The invoice is settled by `total + dAmount`.
-* The cashier **chooses the status by hand** (`completed` / `uncompleted`) and the code picks one of four branches:
-
-| Branch | Condition | What happens to the invoice |
+| Paid by | Where it goes | When |
 |---|---|---|
-| 1. Full, one go | status completed and `total + balance == total paid` | status completed (balance column not updated) |
-| 2. Overpaid | status completed, paid > invoice total, balance 0 | balance goes **negative** (the overpayment is hidden there) |
-| 3. Final part payment | status completed, balance > 0 and fully covered | balance = old balance − paid |
-| 4. Part payment (else) | anything else | balance = (balance or total) − paid, status = what was typed |
+| **Cash** | Collection → *Bank Deposit* → the bank picked on the deposit screen | when someone deposits it |
+| **Cheque** | straight into the bank picked on the receipt (*Paid into (our bank)*) | the moment the receipt is saved |
+| **Transfer** | straight into the bank picked on the receipt (*Received into (our bank)*) | the moment the receipt is saved |
+| MoMo / other | not a bank — stays in Collections | — |
 
-  Every branch then creates a `Transaction` (client ledger), a `Collection` (cash book), and assigns a
-  client payment **category** (A–D). The category block is copied four times.
-* `invoices.balance = 0` means *both* "nothing paid yet" and "fully paid" — status is the only way to tell.
-
-### Advance payments
-* "Tick for advance payment" only stores the word `advance` on the receipt. It is a **label**, nothing more:
-  * you still need an existing invoice to write the receipt against;
-  * money paid ahead is not tracked as client credit anywhere;
-  * an overpayment ends up as a negative invoice balance, not as credit you can use later.
-* Note: the original migration declares `receipts.advance_payment` as `boolean` but the code writes the string `advance`.
-  Check the production column type; on strict MySQL a boolean column would reject it.
-
-### Cheque & transfer
-* `cheque_bank` / `transfer_bank` are free text — the **payer's** bank. There was no record of which of *our*
-  accounts the money went to.
-* Cash and cheques reach a bank only through *Collections › Bank Deposit*, which credits `cash + cheque`.
-  **Transfers were never credited to any bank account**, so bank balances under-reported every transfer.
-
-### Bugs found while tracing the flow
-* **Cheque and transfer details swapped on part payments.** Branch 4 passed cheque details into the transfer slots.
-  Already fixed upstream in `42b16de`.
-
-Fixed on this branch:
-1. **"Deposited" receipts could still be edited/deleted.** Deposit saves `Deposited`, the guard compared with `deposited`.
-2. **Bank deposit paired collections with the wrong bank** when only some rows were ticked
-   (`collections[]` and `bank_id[]` were matched by position). Every row's bank was also mandatory.
-3. **Deleting a receipt reset the whole invoice to "unpaid"**, wiping out other part payments on the same invoice.
-
-### Other things worth knowing
-* All money columns are `decimal(8,2)` — max **999,999.99**. `banks.total` will overflow once an account passes GH₵1m.
-  New columns on this branch use `decimal(15,2)`.
-* The legacy category check uses `whereMonth()` only, so January 2026 blocks January 2027. The new code checks year + month.
-* `collections.total_amount` includes WHT and VAT (not just cash), so it overstates cash to be banked.
-* **Receipts report (`App\Support\ReceiptReport`)**: the invoice-month filter and payment-timing buckets follow
-  `receipts.invoice_id`, so a multi-invoice receipt is counted under its first (oldest) invoice, and an advance with no
-  invoice shows as "No invoice linked". The per-invoice "received to date" figure uses the allocation lines and is
-  split correctly. Splitting the timing buckets per invoice would mean reworking the report's queries.
-* **Payroll invoice status (`App\Support\ClientInvoiceStatus`)** finds receipts through the allocation lines, so every
-  invoice on a multi-invoice receipt gets its paid date; credit applied later counts as paid on the day it was applied.
+* Every bank ledger line now says how the money arrived (`channel`: `cheque`, `transfer`, `deposit`, `expense`) and
+  carries a narration ("Cheque received — receipt FWSSR123 (ref CHQ-9)"), shown under *Accounts › Banks*.
+* Editing a receipt's cheque/transfer amount or bank adds a **reversal line** and a new posting; deleting the receipt
+  adds a reversal. Nothing is ever deleted from the bank ledger.
+* Bank Deposit only lists what still has to be carried to the bank: **cash**, plus cheques received **before** this
+  change (those were never posted). A receipt paid only by cheque/transfer gets collection status **Banked** and
+  never appears on the deposit screen, so a cheque can't be counted twice.
 
 ---
 
-## 2. What this branch adds
+## 2. Balances and advances: what was wrong
 
-### One receipt → many invoices
-*Receipts › Pay Multiple Invoices* (`/receipt-multi/create`, also linked from *Receipt › Create* and the receipt list).
+The old single-invoice receipt code (`ReceiptController::store()` / `update()`, ~900 lines) let the cashier **choose**
+"completed" or "uncompleted" and then patched `invoices.balance` up or down in one of four branches. Balances were
+therefore only as right as every choice and every edit. Each case below was reproduced by posting to the real
+endpoints against the old code, then rerun against the new code:
 
-1. Pick the client (only clients with unpaid invoices, limited to the user's office like the receipt list).
-2. Tick the invoices this payment covers. Each row shows what is **still owed**.
-   Optional per-invoice WHT, 7% VAT and deductions (switches pre-fill the standard amounts).
-3. Enter the money **once** (any mix of modes). It is applied **oldest invoice first**; typing an amount on a row pins it.
-4. A live summary shows money received, applied, credits, and anything left over.
-5. One receipt is created: one `Collection`, one bank posting, one allocation line + one ledger `Transaction` per invoice.
-   Each invoice's status/balance is **worked out automatically** — no manual "completed/uncompleted".
+| # | What the cashier did (GH₵1,000 invoice) | Old result | New result |
+|---|---|---|---|
+| A | Paid 400, then **edited** the receipt to 450 | balance **150** (subtracted twice) | balance 550 |
+| B | Paid 700 but picked "completed" | **completed** with 300 still owed (invoice disappears from the receipt list) | uncompleted, 300 |
+| C | Paid 1000 but picked "uncompleted", then another 200 came in | uncompleted, balance **800** after 1,200 paid | completed after the first; second refused |
+| D | Paid 400, then 800 | completed, balance **−200** (overpayment hidden) | 800 refused unless "keep extra as credit" is ticked; then 200 becomes client credit |
+| F | Edited a receipt without re-attaching the cheque image | image **wiped** | image kept |
+| G | Two receipts with WHT 37.50 each, re-saved the first unchanged | invoice reopened at **500**, WHT total overwritten to **37.50** | still completed, WHT 75 |
 
-### Advance payments that actually work
-* If more money is received than the ticked invoices owe — or no invoice is ticked — the cashier must tick
-  **"Keep the extra as client credit (advance)"**. The extra is stored in `receipts.unapplied_amount`.
-* The receipt page shows the credit and an **Apply credit** form: tick the client's new invoices and settle them from
-  the credit. No new money is recorded (no extra collection or bank posting).
-* The multi-invoice screen warns when the client already holds credit on earlier receipts.
+Root causes:
+1. **Balance was a running number, not a derived one.** Every receipt nudged it; edits nudged it again from the
+   already-nudged value. The "Reset Invoice Balances" tick box on the edit form existed to undo this by hand.
+2. **`balance = 0` meant both "nothing paid" and "fully paid"** — status was the only way to tell, and status was typed.
+3. **Status was chosen, not calculated.**
+4. **Invoice WHT/VAT were overwritten**, not summed, on edit.
+5. **"Advance payment" was a tick box that changed nothing.** There was nowhere to keep money paid ahead, so overpayments
+   became negative balances. Worse, `receipts.advance_payment` was created as a **boolean** column while the code
+   writes the word `advance`: strict MySQL rejects it, non-strict MySQL stores `0` — so the flag was probably never saved.
+6. Editing a receipt replaced its **"received by"** user with whoever edited it.
 
-### Which bank the money goes to
-* Cheque: **Deposit into (our bank)**. Transfer: **Received into (our bank)**. Both are required when the mode is ticked,
-  on the single-invoice create and edit forms and the multi-invoice form. The old free-text fields are relabelled as the
-  **payer's** bank.
-* **Transfers are posted to the chosen bank immediately** (`bank_transactions` credit with `receipt_id`, bank total updated).
-  Editing the receipt re-posts; deleting it adds a **reversal line** (nothing is deleted from the bank ledger).
-* Bank Deposit pre-selects the bank chosen on the receipt for each collection.
-* Receipt page and printout show the receiving bank and every invoice paid.
+---
 
-### Data model
+## 3. Balances and advances: how they work now
+
+**One rule.** For every invoice:
+
 ```
-receipts ─┬─< receipt_allocations >─┬─ invoices
-          │   amount_applied        │
-          │   wht_amount            │   outstanding = invoice.total − SUM(allocations.settled)
-          │   vat7_amount           │
-          │   deduction_amount      │
-          │   settled (sum)         │
-          │   source: receipt | credit | legacy
-          ├─ unapplied_amount   (client credit)
-          ├─ cheque_to_bank_id  → banks
-          └─ transfer_to_bank_id → banks
+outstanding = invoice.total − SUM(receipt_allocations.settled)
+settled     = cash applied + WHT + 7% VAT + other deductions      (per receipt, per invoice)
 ```
-* `receipts.invoice_id` is kept (first invoice paid) so every existing report, dashboard and export still works.
-* The migration **backfills one allocation per existing receipt** (`source = legacy`, settled = `total + dAmount`),
-  so old and new receipts read the same way.
-* Classic single-invoice receipts keep their existing logic and now also write/refresh their allocation line.
-* Multi-invoice / credit receipts can't be opened in the single-invoice edit form (it would corrupt allocations);
-  the user is told to delete and re-record instead.
 
-### Code map
+* Nothing paid → `unpaid`, balance 0 · part paid → `uncompleted`, balance = outstanding · fully paid → `completed`, 0.
+* The single-invoice form, the multi-invoice form and the edit form all go through one service
+  (`ReceiptRecorder`). The status drop-down is gone; the receipt says *completed* when every invoice it pays is settled.
+* **Editing** first removes everything that receipt did (its allocation lines and client-ledger rows), re-derives the
+  invoice from the other receipts, then applies the new amounts. It can't double-count or touch another receipt.
+* **Deleting** does the same without re-applying, so other part payments survive.
+
+**Advances / client credit**
+* Money beyond what the ticked invoice(s) owe is **refused** unless the cashier ticks
+  *"Keep any extra as client credit (advance)"* — so an extra zero is caught instead of becoming credit.
+  When ticked, the extra is stored on the receipt as `unapplied_amount`.
+* A payment with no invoice at all (true advance) is recorded from *Pay Multiple Invoices* with no invoice ticked.
+* Credit is used from the receipt page (**Apply credit**) against the client's later invoices. No new money moves.
+* Both receipt forms warn when the client already holds credit.
+* `advance_payment` is now **set automatically**: `advance` when part of the money is kept as credit, or when the
+  receipt is dated before the month of an invoice it pays. The old tick box is gone.
+
+---
+
+## 4. Repairing balances the old code already got wrong
+
+Fixing the code stops new damage; existing invoices still carry old mistakes. Run:
+
+```bash
+php artisan receipts:recompute                 # dry run: summary + CSV in storage/app, changes nothing
+php artisan receipts:recompute --apply         # write the corrections
+```
+
+Every invoice is re-derived from its receipts and put in one bucket:
+
+| Bucket | Meaning | On `--apply` |
+|---|---|---|
+| Correct already | matches its receipts | nothing |
+| Wrong status/balance | e.g. cases A, C, G above | corrected |
+| Completed but not fully paid | case B — **may be a deliberate write-off/discount** | left alone, listed for review; add `--reopen-short` to reopen |
+| Overpaid | case D — negative balance | recalculated; add `--overpayments-to-credit` to move the extra cash into the latest receipt's client credit |
+
+`--client=<id>` limits it to one client. Running it again after `--apply` should report everything correct except
+the short-closed invoices you chose to keep.
+
+---
+
+## 5. Deploying
+
+1. **Back up the database.**
+2. `php artisan migrate` — adds `bank_transactions.channel`, widens the bank tables' money columns to
+   `decimal(15,2)` (they capped at 999,999.99), and turns `receipts.advance_payment` into text
+   (`1` → `advance`, `0` → empty).
+3. `php artisan receipts:recompute` → review the CSV (especially *Completed but not fully paid*) → `--apply` with the
+   options you want.
+4. Make sure every company account exists under *Accounts › Banks*.
+5. Cheques/transfers received **before** this release are not in any bank balance unless they were deposited.
+   Undeposited old cheques still appear on Bank Deposit as "Old cheque to deposit". Old transfers need a one-off
+   manual bank adjustment if balances should include them.
+
+**Testing note:** the suite (43 tests) passes on SQLite and on MariaDB 10.11. A *fresh* MySQL install of this project
+fails on the existing `create_expenses_table` migration (`->after()` inside `Schema::create`, and a foreign key to a
+table created later). Existing databases are past that migration, so it only matters for new installs/CI.
+
+---
+
+## 6. Still open / suggested next
+
+* **Bounced cheques.** A cheque is now in the bank balance as soon as it is receipted. If it bounces, edit or delete
+  the receipt (that posts the reversal). A "cheque bounced" action that reverses the bank line and reopens the
+  invoice, keeping the receipt for the record, would be cleaner.
+* **Receipts report timing buckets** (`App\Support\ReceiptReport`) still file a multi-invoice receipt under its first
+  invoice's month. Per-invoice "received to date" is already split correctly.
+* **Client statement** showing invoices, allocations and credit in one place; auto-suggest credit when an invoice is raised.
+* **Void instead of delete**, with reason and user, so receipts keep a full audit trail.
+* Widen the remaining money columns (invoices, receipts, collections) to `decimal(15,2)`.
+* `collections.total_amount` includes WHT and VAT, so it overstates cash held.
+
+---
+
+## Code map
+
 | File | Purpose |
 |---|---|
+| `app/Services/Receipts/ReceiptRecorder.php` | The one place receipts are created and edited (all forms) |
 | `app/Services/Receipts/ReceiptAllocator.php` | Pure maths: split money over invoices, validate, leftover credit |
-| `app/Services/Receipts/InvoiceSettlement.php` | Writes allocations + ledger rows; re-derives invoice status/balance; releases on delete |
-| `app/Services/Receipts/BankPosting.php` | Posts / reverses transfers to our bank accounts |
-| `app/Services/Receipts/ReceiptWorkflow.php` | Approval routing and category A–D, shared by both flows |
-| `app/Http/Controllers/MultiInvoiceReceiptController.php` | Multi-invoice create/store, apply credit |
-| `app/Http/Requests/Concerns/PaymentModeRules.php` | One set of payment-mode validation for all receipt forms |
-| `resources/views/sales/receipt_multi_create.blade.php` | The new screen |
-| `tests/Unit/ReceiptAllocatorTest.php`, `tests/Feature/MultiInvoiceReceiptTest.php` | 22 tests covering the flows above |
-
-### Deploying
-1. Back up the database, then `php artisan migrate` (creates `receipt_allocations`, adds the bank/credit columns, backfills).
-2. Make sure every company account exists under *Accounts › Banks* — the new pickers list them.
-3. Spot-check: `SELECT COUNT(*) FROM receipts WHERE invoice_id IS NOT NULL` should equal
-   `SELECT COUNT(DISTINCT receipt_id) FROM receipt_allocations`.
-4. Transfers recorded **before** this release were never posted to a bank. If bank balances should include them,
-   post them once with a manual adjustment rather than re-saving old receipts.
-
----
-
-## 3. Proposal: a simpler way to manage receipts
-
-The branch is built so the system can move to this model step by step without breaking reports.
-
-1. **One rule for invoice status.** Status and balance should always be *derived* from allocation lines
-   (`InvoiceSettlement::recalculate()`), never chosen by the cashier. Next step: route the single-invoice form through
-   the same allocator (it is just the multi-invoice flow with one row) and delete the four-branch `store()` and
-   `update()` logic. That removes ~900 lines and the class of bugs listed above.
-2. **Receipt = money in; allocation = what it paid.** A receipt records only money received and how (modes, bank).
-   What it paid is the allocation lines. Corrections become "reallocate" (move lines) instead of editing totals.
-3. **Client credit as a first-class balance.** `unapplied_amount` per receipt gives a client credit total
-   (`SUM(unapplied_amount)`). Show it on the client page and statement; auto-suggest it when a new invoice is raised.
-   Optionally backfill legacy negative invoice balances (old overpayments) into credit.
-4. **Bank ledger from the source.** Every cedi that reaches a bank should have one ledger line pointing at its
-   source: deposit (cash/cheque), receipt (transfer), expense. Momo could get its own wallet "bank" the same way.
-   Add a simple **bank reconciliation** screen (mark ledger lines as matched against the statement).
-5. **Void instead of delete.** Mark receipts as void (with reason and user) and post reversal lines, so totals,
-   collections and bank ledgers keep a full audit trail.
-6. **Money columns to `decimal(15,2)`** across invoices, receipts, collections, banks.
-7. **Collections = cash actually held.** Store `total_amount` as cash+momo+cheque+transfer only, and keep WHT/VAT
-   as tax receivables in their own report.
-8. **Numbering.** Keep `FWSSR`/`FWSSi` but generate them as stored, unique document numbers per year/office so
-   reprints and deletions don't create gaps that look like missing receipts.
+| `app/Services/Receipts/InvoiceSettlement.php` | Allocation lines + client ledger; re-derives invoice status/balance; release on edit/delete |
+| `app/Services/Receipts/BankPosting.php` | Cheque/transfer straight to bank, reversals, what's left to deposit |
+| `app/Services/Receipts/BalanceRecompute.php` + `routes/console.php` | `receipts:recompute` |
+| `app/Services/Receipts/ReceiptWorkflow.php` | Approval routing and category A–D |
+| `app/Http/Controllers/MultiInvoiceReceiptController.php` | Multi-invoice screen, apply credit |
+| `tests/Feature/ReceiptBalanceAndBankTest.php` | The A–G cases above, cheque posting, deposits |
+| `tests/Feature/ReceiptRecomputeCommandTest.php` | The repair command |

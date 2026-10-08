@@ -18,6 +18,7 @@
         </option>
     @endforeach
 </select>
+<small class="text-muted d-block">Credited to this account as soon as the receipt is saved — no bank deposit needed.</small>
 @if($banks->isEmpty())
     <small class="text-danger d-block">No bank accounts set up yet — add one under Accounts › Banks.</small>
 @endif

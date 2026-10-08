@@ -9,6 +9,7 @@ use App\Models\Bank;
 use App\Models\BankTransaction;
 use App\Models\Collection;
 use App\Models\Receipt;
+use App\Services\Receipts\BankPosting;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 
@@ -46,10 +47,20 @@ class BankDepositController extends Controller
     public function create()
     {
         //
-        $collections = Collection::where('status', 'undeposited')->get();
+        // Cheques and transfers now go straight to the bank from the receipt, so
+        // only cash (and cheques received before that change) is left to deposit.
+        $collections = Collection::where('status', 'undeposited')->get()
+            ->each(function ($c) {
+                $d = BankPosting::depositable($c);
+                $c->deposit_cash = $d['cash'];
+                $c->deposit_cheque = $d['cheque'];
+                $c->deposit_total = $d['total'];
+            })
+            ->filter(fn ($c) => $c->deposit_total > 0)
+            ->values();
         $banks = Bank::all();
 
-        // Pre-select the bank chosen on the receipt for its cheque (or transfer).
+        // Pre-select the bank chosen on the receipt (only matters for old, never-banked cheques).
         $suggestedBanks = Receipt::whereIn('id', $collections->pluck('receipt_id')->filter())
             ->get(['id', 'cheque_to_bank_id', 'transfer_to_bank_id'])
             ->mapWithKeys(fn ($r) => [$r->id => $r->cheque_to_bank_id ?: $r->transfer_to_bank_id]);
@@ -84,13 +95,16 @@ class BankDepositController extends Controller
 
             foreach ($collections as $collection) {
                 $bank = Bank::whereKey($bankIds[$collection->id])->lockForUpdate()->firstOrFail();
+                // Cash, plus the cheque only if it was not already posted from the receipt.
+                $amounts = BankPosting::depositable($collection);
 
-                $current_deposited_id = $this->bank_deposit($collection, $bank->id);
-                $this->bank_transaction($bank, $current_deposited_id, $collection);
+                if ($amounts['total'] > 0) {
+                    $current_deposited_id = $this->bank_deposit($amounts, $bank->id);
+                    $this->bank_transaction($bank, $current_deposited_id, $collection, $amounts);
 
-                // UPDATE THE BANK TOTAL
-                $bank->total = $bank->total + $collection->cash_amount + $collection->cheque_amount;
-                $bank->save();
+                    $bank->total = round((float) $bank->total + $amounts['total'], 2);
+                    $bank->save();
+                }
 
                 $collection->status = 'Deposited';
                 $collection->save();
@@ -101,31 +115,30 @@ class BankDepositController extends Controller
 
     }
 
-    public function bank_deposit ($collection, $bank)
+    /** @param array{cash: float, cheque: float, total: float} $amounts */
+    public function bank_deposit (array $amounts, $bank)
     {
-
-        // dd($collection , $bank);
         // CREATE A BANK DEPOSIT AND RETURN THE DEPOSITED ID
         $deposit = new BankDeposit();
         $deposit->bank_id = $bank;
         $deposit->user_id = Auth::user()->id;
-        $deposit->cash_amount = $collection->cash_amount;
-        $deposit->cheque_amount = $collection->cheque_amount;
-        $deposit->total =  $collection->cash_amount + $collection->cheque_amount;
+        $deposit->cash_amount = $amounts['cash'];
+        $deposit->cheque_amount = $amounts['cheque'];
+        $deposit->total = $amounts['total'];
         $deposit->save();
 
          return $deposit->id;
     }
 
-    public function bank_transaction($bank, $current_deposited_id, $collection)
+    /** @param array{cash: float, cheque: float, total: float} $amounts */
+    public function bank_transaction($bank, $current_deposited_id, $collection, array $amounts)
     {
-        // dd($bank->total);
-        // CREATE A BANK TRANSACTION
         $bank_transaction = new BankTransaction();
         $bank_transaction->bank_id = $bank->id;
-        $bank_transaction->credit = $collection->cash_amount + $collection->cheque_amount;;
+        $bank_transaction->channel = 'deposit';
+        $bank_transaction->credit = $amounts['total'];
         $bank_transaction->deposit_id = $current_deposited_id;
-        $bank_transaction->balance = $bank->total + $collection->cash_amount + $collection->cheque_amount;
+        $bank_transaction->balance = round((float) $bank->total + $amounts['total'], 2);
         $bank_transaction->narration = 'Deposit of collection #' . $collection->id
             . ($collection->receipt_id ? ' (receipt FWSSR' . $collection->receipt_id . ')' : '');
         $bank_transaction->save();
