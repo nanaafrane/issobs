@@ -18,6 +18,11 @@
         .rep-kpi .sub { font-size: .85rem; color: #6b7280; }
         .rep-card { border-radius: 12px; border: 1px solid #e5e7eb; }
         .rep-card .card-header { background: #f9fafb; border-bottom: 1px solid #e5e7eb; font-weight: 600; }
+        .rcpt-timing-bar { display: flex; height: .7rem; border-radius: 4px; overflow: hidden; background: #f1f5f9; }
+        .rcpt-timing-bar span { display: block; height: 100%; }
+        .rcpt-timing-bar span + span { border-left: 1px solid #fff; }
+        .rcpt-swatch { display: inline-block; width: .7rem; height: .7rem; border-radius: 2px; margin-right: .3rem; vertical-align: -1px; }
+        .rcpt-matrix td, .rcpt-matrix th { white-space: nowrap; font-variant-numeric: tabular-nums; }
     </style>
     @endsection
 
@@ -407,21 +412,68 @@
                     <button type="button" class="btn btn-xs btn-sm btn-outline-secondary py-0 js-rcpt-preset" data-preset="{{ $key }}">{{ $label }}</button>
                 @endforeach
             </div>
+            <div class="w-100"></div>
+            <div class="col-auto">
+                <label class="form-label small mb-0" for="rcpt-inv-from">Invoice months <span class="text-muted">(optional)</span> from</label>
+                <input type="month" name="inv_from" id="rcpt-inv-from" value="{{ $report->invFrom?->format('Y-m') }}" class="form-control form-control-sm">
+            </div>
+            <div class="col-auto">
+                <label class="form-label small mb-0" for="rcpt-inv-to">to</label>
+                <input type="month" name="inv_to" id="rcpt-inv-to" value="{{ $report->invTo?->format('Y-m') }}" class="form-control form-control-sm">
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-sm btn-outline-dark">Apply invoice months</button>
+                @if($report->hasInvoiceFilter())
+                    <a href="{{ url('receipt-report') . '?' . http_build_query($report->query(false)) }}" class="btn btn-sm btn-link">Clear</a>
+                @endif
+            </div>
         </form>
-        <div class="text-muted small mb-4">
-            Showing <strong>{{ $report->label() }}</strong> ({{ $report->days }} {{ \Illuminate\Support\Str::plural('day', $report->days) }}),
-            compared with {{ $previous->label() }}.
+        <div class="text-muted small mb-2">
+            Showing receipts dated <strong>{{ $report->label() }}</strong> ({{ $report->days }} {{ \Illuminate\Support\Str::plural('day', $report->days) }}){!! $report->hasInvoiceFilter() ? ' that paid <strong>' . e($report->invoiceFilterLabel()) . '</strong>' : '' !!},
+            compared with {{ $previous->label() }}{{ $report->hasInvoiceFilter() ? ' for the same invoices' : '' }}.
             @if($period === 'custom' && $report->days >= \App\Support\ReceiptReport::MAX_RANGE_DAYS)
                 <span class="text-warning">Ranges are limited to {{ \App\Support\ReceiptReport::MAX_RANGE_DAYS }} days.</span>
             @endif
         </div>
+        @php
+            $reportUrl = fn (array $over = []) => url('receipt-report') . '?' . http_build_query(array_merge($report->query(false), $over));
+            $chipMonths = collect($invoiceMonthChips)->whereNotNull('month')->values();
+            $shownChips = $chipMonths->take(12);
+            $earlierChips = $chipMonths->slice(12);
+            $isOnly = fn ($m) => $report->invFrom && $report->invTo && $report->invFrom->format('Y-m') === $m && $report->invTo->format('Y-m') === $m;
+        @endphp
+        @if($chipMonths->isNotEmpty())
+        <div class="d-flex flex-wrap align-items-center gap-1 mb-4 small" aria-label="Invoice months paid in this period">
+            <span class="text-muted me-1">Paid for invoice months:</span>
+            <a href="{{ $reportUrl() }}" class="btn btn-sm py-0 {{ $report->hasInvoiceFilter() ? 'btn-outline-secondary' : 'btn-dark' }}">All</a>
+            @foreach($shownChips as $c)
+                <a href="{{ $reportUrl(['inv_from' => $c['month'], 'inv_to' => $c['month']]) }}"
+                   class="btn btn-sm py-0 {{ $isOnly($c['month']) ? 'btn-dark' : 'btn-outline-secondary' }}"
+                   title="{{ $c['cnt'] }} {{ \Illuminate\Support\Str::plural('receipt', $c['cnt']) }} from {{ $c['clients'] }} {{ \Illuminate\Support\Str::plural('client', $c['clients']) }}">
+                    {{ $c['label'] }} <span class="opacity-75">&middot; {{ $c['cnt'] }} &middot; {{ $ghs($c['total']) }}</span>
+                </a>
+            @endforeach
+            @if($earlierChips->isNotEmpty())
+                @php $lastShown = \Carbon\Carbon::parse($shownChips->last()['month'] . '-01')->subMonth(); @endphp
+                <a href="{{ $reportUrl(['inv_to' => $lastShown->format('Y-m')]) }}" class="btn btn-sm py-0 btn-outline-secondary">
+                    Earlier ({{ $earlierChips->count() }} months) <span class="opacity-75">&middot; {{ $earlierChips->sum('cnt') }} &middot; {{ $ghs($earlierChips->sum('total')) }}</span>
+                </a>
+            @endif
+        </div>
+        @endif
 
         <div class="row g-3 mb-3">
             <div class="col-lg-3 col-6"><div class="rep-kpi h-100"><small class="text-muted">MONEY RECEIVED</small><div class="value">{{ $ghs($t->received) }}</div><div class="sub">{!! $delta($t->received, $prevTotals->received) !!}</div></div></div>
             <div class="col-lg-3 col-6"><div class="rep-kpi h-100"><small class="text-muted">RECEIPTS</small><div class="value">{{ number_format($t->cnt) }}</div><div class="sub">{{ number_format($t->clients) }} {{ \Illuminate\Support\Str::plural('client', (int) $t->clients) }} &middot; {!! $delta($t->cnt, $prevTotals->cnt) !!}</div></div></div>
             <div class="col-lg-3 col-6"><div class="rep-kpi h-100"><small class="text-muted">AVG PER RECEIPT</small><div class="value">{{ $ghs($t->avg) }}</div><div class="sub">{!! $delta($t->avg, $prevTotals->avg) !!}</div></div></div>
-            <div class="col-lg-3 col-6"><div class="rep-kpi h-100"><small class="text-muted">PROJECTED NEXT {{ strtoupper($periodWord) }}</small><div class="value text-primary">{{ $ghs($projection['value']) }}</div>
-                <div class="sub">average of the previous 4 {{ $periodWord }}s</div>
+            <div class="col-lg-3 col-6"><div class="rep-kpi h-100"><small class="text-muted">PROJECTED NEXT {{ strtoupper($periodWord) }}</small>
+                @if($projection)
+                    <div class="value text-primary">{{ $ghs($projection['value']) }}</div>
+                    <div class="sub">average of the previous 4 {{ $periodWord }}s</div>
+                @else
+                    <div class="value text-muted">–</div>
+                    <div class="sub">not forecast when filtered by invoice month</div>
+                @endif
             </div></div>
         </div>
 
@@ -431,6 +483,126 @@
             <div class="col-lg-3 col-6"><div class="rep-kpi h-100"><small class="text-muted">CLEARED OFF INVOICES</small><div class="value">{{ $ghs($t->settled) }}</div><div class="sub">received + tax withheld + deductions</div></div></div>
             <div class="col-lg-3 col-6"><div class="rep-kpi h-100 @if($pending->cnt) border-warning @endif"><small class="text-muted">AWAITING HO APPROVAL</small><div class="value {{ $pending->cnt ? 'text-warning' : '' }}">{{ $ghs($pending->received) }}</div><div class="sub">{{ $pending->cnt }} {{ \Illuminate\Support\Str::plural('receipt', $pending->cnt) }}, not in the figures above</div></div></div>
         </div>
+
+        {{-- Which invoice months were paid in this period, and how late --}}
+        @php
+            $timingTotal = array_sum(array_column($timing, 'total'));
+            $bar = function (array $parts, float $total) {
+                if ($total <= 0) return '';
+                $html = '<div class="rcpt-timing-bar" role="img" aria-label="Payment timing">';
+                foreach (\App\Support\ReceiptReport::TIMING as $key => [$label, $color]) {
+                    $v = $parts[$key] ?? 0;
+                    if ($v > 0) {
+                        $pct = $v / $total * 100;
+                        $html .= '<span style="width:' . round($pct, 2) . '%;background:' . $color . '" title="' . e($label) . ': GH₵ ' . number_format($v, 2) . ' (' . number_format($pct, 1) . '%)"></span>';
+                    }
+                }
+                return $html . '</div>';
+            };
+        @endphp
+        <div class="card rep-card mb-4">
+            <div class="card-header d-flex flex-wrap justify-content-between gap-2">
+                <span>Paid for which invoice month</span>
+                <span class="text-muted fw-normal small">timing compares the receipt month with the invoice month</span>
+            </div>
+            <div class="card-body pb-2">
+                @if($timingTotal > 0)
+                    {!! $bar(array_map(fn ($t) => $t['total'], $timing), $timingTotal) !!}
+                    <div class="d-flex flex-wrap gap-3 small mt-2 mb-3">
+                        @foreach($timing as $key => $tm)
+                            @if($tm['total'] > 0)
+                                <span><span class="rcpt-swatch" style="background:{{ $tm['color'] }}"></span>{{ $tm['label'] }}:
+                                    <strong>{{ $ghs($tm['total']) }}</strong> <span class="text-muted">({{ number_format($tm['total'] / $timingTotal * 100, 1) }}%, {{ $tm['cnt'] }} {{ \Illuminate\Support\Str::plural('receipt', $tm['cnt']) }})</span></span>
+                            @endif
+                        @endforeach
+                    </div>
+                @endif
+                <div class="table-responsive">
+                    <table class="table table-sm mb-0 align-middle">
+                        <thead><tr>
+                            <th>Invoice month</th><th class="text-end">Invoices</th><th class="text-end">Clients</th><th class="text-end">Receipts</th>
+                            <th class="text-end">Received</th><th class="text-end">Share</th><th style="min-width:9rem">Timing</th>
+                        </tr></thead>
+                        <tbody>
+                        @forelse($byInvoiceMonth as $row)
+                            <tr>
+                                <td>
+                                    @if($row['month'])
+                                        <a href="{{ $reportUrl(['inv_from' => $row['month'], 'inv_to' => $row['month']]) }}" title="Show only receipts for {{ $row['label'] }} invoices">{{ $row['label'] }}</a>
+                                    @else
+                                        <span class="text-muted">{{ $row['label'] }}</span>
+                                    @endif
+                                </td>
+                                <td class="text-end">{{ $row['invoices'] }}</td>
+                                <td class="text-end">{{ $row['clients'] }}</td>
+                                <td class="text-end">{{ $row['cnt'] }}</td>
+                                <td class="text-end">{{ $ghs($row['total']) }}</td>
+                                <td class="text-end text-muted">{{ $t->received > 0 ? number_format($row['total'] / $t->received * 100, 1) : '0.0' }}%</td>
+                                <td>{!! $bar($row['timing'], $row['total']) !!}</td>
+                            </tr>
+                        @empty
+                            <tr><td colspan="7" class="text-muted text-center py-3">No receipts in this period.</td></tr>
+                        @endforelse
+                        </tbody>
+                        @if(count($byInvoiceMonth) > 1)
+                        <tfoot><tr class="fw-semibold">
+                            <td>Total</td><td class="text-end">{{ array_sum(array_column($byInvoiceMonth, 'invoices')) }}</td><td></td>
+                            <td class="text-end">{{ array_sum(array_column($byInvoiceMonth, 'cnt')) }}</td>
+                            <td class="text-end">{{ $ghs(array_sum(array_column($byInvoiceMonth, 'total'))) }}</td><td></td><td></td>
+                        </tr></tfoot>
+                        @endif
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        @if($collection)
+        {{-- With an invoice-month filter: how much of those invoices is collected? --}}
+        <div class="card rep-card mb-4">
+            <div class="card-header">Collection of {{ $report->invoiceFilterLabel() }} <span class="text-muted fw-normal small">all receipts to date, not only this period</span></div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-lg-3 col-6"><div class="rep-kpi h-100"><small class="text-muted">INVOICED</small><div class="value">{{ $ghs($collection['invoiced']) }}</div><div class="sub">{{ $collection['invoices'] }} invoices &middot; {{ $collection['clients'] }} clients</div></div></div>
+                    <div class="col-lg-3 col-6"><div class="rep-kpi h-100"><small class="text-muted">RECEIVED TO DATE</small><div class="value">{{ $ghs($collection['received_to_date']) }}</div><div class="sub">{{ $collection['collected_pct'] === null ? '–' : number_format($collection['collected_pct'], 1) . '% of invoiced' }}</div></div></div>
+                    <div class="col-lg-3 col-6"><div class="rep-kpi h-100"><small class="text-muted">RECEIVED IN THIS PERIOD</small><div class="value">{{ $ghs($collection['received_in_window']) }}</div><div class="sub">{{ $report->label() }}</div></div></div>
+                    <div class="col-lg-3 col-6"><div class="rep-kpi h-100"><small class="text-muted">STILL OWED</small><div class="value {{ $collection['owed'] > 0 ? 'text-danger' : '' }}">{{ $ghs($collection['owed']) }}</div><div class="sub">{{ $collection['paid'] }} paid &middot; {{ $collection['part'] }} part paid &middot; {{ $collection['unpaid'] }} unpaid</div></div></div>
+                </div>
+                <div class="small text-muted mt-2">Received counts head-office approved receipts. Still owed uses each invoice's status: part-paid invoices count their remaining balance, unpaid invoices their full amount.</div>
+            </div>
+        </div>
+        @endif
+
+        @if($matrix)
+        {{-- Receipt month x invoice month --}}
+        <div class="card rep-card mb-4">
+            <div class="card-header">Each month's receipts, by the invoice month they paid</div>
+            <div class="table-responsive">
+                <table class="table table-sm mb-0 rcpt-matrix">
+                    <thead><tr>
+                        <th>Received in</th>
+                        @foreach($matrix['cols'] as $c)<th class="text-end">{{ $c['label'] }}</th>@endforeach
+                        <th class="text-end">Total</th>
+                    </tr></thead>
+                    <tbody>
+                    @php $matrixMax = max(1, collect($matrix['rows'])->flatMap(fn ($r) => array_values($r['cells']))->max()); @endphp
+                    @foreach($matrix['rows'] as $r)
+                        <tr>
+                            <th class="fw-normal">{{ $r['label'] }}</th>
+                            @foreach($matrix['cols'] as $c)
+                                @php $v = $r['cells'][$c['key']]; @endphp
+                                <td class="text-end" @if($v > 0) style="background:rgba(14,165,164,{{ round(0.08 + 0.5 * $v / $matrixMax, 3) }})" @endif>
+                                    {{ $v > 0 ? number_format($v, 0) : '' }}
+                                </td>
+                            @endforeach
+                            <td class="text-end fw-semibold">{{ $r['total'] > 0 ? number_format($r['total'], 0) : '' }}</td>
+                        </tr>
+                    @endforeach
+                    </tbody>
+                </table>
+            </div>
+            <div class="card-body py-2 small text-muted">GH₵, rounded. Read across a row to see which invoices a month's money paid; down a column to see when an invoice month was collected.</div>
+        </div>
+        @endif
 
         <div class="row g-3 mb-4">
             <div class="col-lg-8">
@@ -589,6 +761,17 @@
             const pad = n => String(n).padStart(2, '0');
             const ymd = d => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); // local date, never UTC
 
+            // Leave empty invoice-month fields out of the URL (they are optional).
+            const dropEmpty = () => ['rcpt-inv-from', 'rcpt-inv-to'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.disabled = !el.value;
+            });
+            form.addEventListener('submit', dropEmpty);        // the Show / Apply buttons
+            window.addEventListener('pageshow', () => ['rcpt-inv-from', 'rcpt-inv-to'].forEach(id => { // back button restores the page
+                const el = document.getElementById(id); if (el) el.disabled = false;
+            }));
+            const go = () => { dropEmpty(); form.submit(); };   // automatic submits below
+
             function mode(custom) {
                 form.querySelectorAll('.rcpt-range').forEach(el => { el.hidden = !custom; });
                 form.querySelectorAll('.rcpt-named').forEach(el => { el.hidden = custom; });
@@ -598,10 +781,10 @@
             sel.addEventListener('change', function () {
                 const custom = sel.value === 'custom';
                 mode(custom);
-                if (!custom) form.submit(); // custom waits for From / To + Show
+                if (!custom) go(); // custom waits for From / To + Show
             });
             document.getElementById('rcpt-date').addEventListener('change', () => form.submit());
-            toEl.addEventListener('change', () => { if (fromEl.value && toEl.value) form.submit(); });
+            toEl.addEventListener('change', () => { if (fromEl.value && toEl.value) go(); });
 
             const PRESETS = {
                 last7:     n => [new Date(n.getFullYear(), n.getMonth(), n.getDate() - 6), n],
@@ -614,7 +797,7 @@
             form.querySelectorAll('.js-rcpt-preset').forEach(btn => btn.addEventListener('click', function () {
                 const [a, b] = PRESETS[btn.dataset.preset](new Date());
                 fromEl.value = ymd(a); toEl.value = ymd(b);
-                form.submit();
+                go();
             }));
         })();
 

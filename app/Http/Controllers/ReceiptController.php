@@ -44,22 +44,33 @@ class ReceiptController extends Controller
     }
 
     /**
-     * Receipts report for a period (daily ... yearly) or any date range:
-     * totals, comparison with the previous window, trend, payment methods,
-     * field offices, top clients / collectors. Figures: App\Support\ReceiptReport.
+     * Receipts report for a period (daily ... yearly) or any date range, optionally
+     * narrowed to the invoice months the receipts paid: totals, comparison with the
+     * previous window, which invoice months were paid and how late, trend, payment
+     * methods, field offices, top clients / collectors. Figures: App\Support\ReceiptReport.
      */
     public function report(Request $request)
     {
         $report = ReceiptReport::fromRequest($request, $this->reportAllowedFieldIds());
         $previous = $report->shifted(1);
+        $totals = $report->totals();
+
+        // Invoice months paid in this window, ignoring the invoice-month filter (the picker chips).
+        $allMonths = $report->hasInvoiceFilter() ? (clone $report)->withInvoiceMonths(null, null)->byInvoiceMonth() : null;
+        $byInvoiceMonth = $report->byInvoiceMonth();
 
         return view('sales.receipt_report', [
             'report' => $report,
+            'byInvoiceMonth' => $byInvoiceMonth,
+            'invoiceMonthChips' => $allMonths ?? $byInvoiceMonth,
+            'timing' => $report->timing(),
+            'matrix' => $report->matrix(),
+            'collection' => $report->invoiceCollection($totals->received),
             'period' => $report->period,
             'from' => $report->from,
             'to' => $report->to,
             'anchor' => $report->anchor,
-            'totals' => $report->totals(),
+            'totals' => $totals,
             'prevTotals' => $previous->totals(),
             'previous' => $previous,
             'pending' => $report->awaitingApproval(),
