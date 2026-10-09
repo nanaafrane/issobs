@@ -109,12 +109,20 @@ the short-closed invoices you chose to keep.
    (`1` → `advance`, `0` → empty).
 3. `php artisan receipts:recompute` → review the CSV (especially *Completed but not fully paid*) → `--apply` with the
    options you want.
-4. Make sure every company account exists under *Accounts › Banks*.
-5. Cheques/transfers received **before** this release are not in any bank balance unless they were deposited.
+4. `php artisan client-ledger:sync` — fills the client ledger from all existing invoices and receipts (dated on the
+   documents' own dates). Safe to re-run; afterwards it only posts what changed. It is also scheduled nightly at
+   02:10, so make sure the server cron runs `php artisan schedule:run` every minute.
+5. **PDF statements:** `composer require dompdf/dompdf` on the server. Without it, statements are still emailed (the
+   full statement is in the email body) and can be printed to PDF from the page.
+6. **Email:** set `MAIL_MAILER`, `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_FROM_ADDRESS` and
+   `MAIL_FROM_NAME` in `.env` (the default mailer only writes to the log). `APP_NAME` is printed on statements.
+7. Add client email addresses (client edit form) — or type one when sending; it is remembered.
+8. Make sure every company account exists under *Accounts › Banks*.
+9. Cheques/transfers received **before** this release are not in any bank balance unless they were deposited.
    Undeposited old cheques still appear on Bank Deposit as "Old cheque to deposit". Old transfers need a one-off
    manual bank adjustment if balances should include them.
 
-**Testing note:** the suite (50 tests) passes on SQLite and on MariaDB 10.11. A *fresh* MySQL install of this project
+**Testing note:** the suite (66 tests; the PDF test runs once dompdf is installed) passes on SQLite and on MariaDB 10.11. A *fresh* MySQL install of this project
 fails on the existing `create_expenses_table` migration (`->after()` inside `Schema::create`, and a foreign key to a
 table created later). Existing databases are past that migration, so it only matters for new installs/CI.
 
@@ -123,12 +131,10 @@ table created later). Existing databases are past that migration, so it only mat
 ## 6. Still open / suggested next
 
 * **Bounced cheques.** A cheque is now in the bank balance as soon as it is receipted. If it bounces, edit or delete
-  the receipt (that posts the reversal). A "cheque bounced" action that reverses the bank line and reopens the
+  the receipt (void it, giving the reason; that posts the reversals). A "cheque bounced" action that reverses the bank line and reopens the
   invoice, keeping the receipt for the record, would be cleaner.
 * **Receipts report timing buckets** (`App\Support\ReceiptReport`) still file a multi-invoice receipt under its first
   invoice's month. Per-invoice "received to date" is already split correctly.
-* **Client statement** showing invoices, allocations and credit in one place; auto-suggest credit when an invoice is raised.
-* **Void instead of delete**, with reason and user, so receipts keep a full audit trail.
 * Widen the remaining money columns (invoices, receipts, collections) to `decimal(15,2)`.
 * `collections.total_amount` includes WHT and VAT, so it overstates cash held.
 
@@ -161,7 +167,7 @@ transactions row); only the statement re-read the receipt. Other problems found 
   and credit was invisible.
 
 ### What it does now
-`App\Services\Receipts\ClientStatement` builds the statement from the source documents:
+`App\Services\Receipts\ClientStatement` builds the statement from the client ledger, which is posted from the documents (see "Built" below):
 * **Debit** each invoice. **Credit** each receipt once for the money received, plus separate lines for WHT, 7% VAT
   withheld and deductions.
 * **Credit applied** is an information line with no amount: it moves money between invoices, it doesn't change what the
@@ -173,19 +179,40 @@ transactions row); only the statement re-read the receipt. Other problems found 
   that, the page says by how much and points to `receipts:recompute --client=…`.
 * The client page summary uses the same figures.
 
-### Better approach (proposal)
-1. **One source of truth for the client account.** Retire the `transactions` table as a reporting source: it duplicates
-   the allocation lines and is what the old statement misread. Keep it written for a release, then remove the
-   *Transactions* tab in favour of the statement.
-2. **Post a client ledger, don't recompute it.** When volumes grow, have every document post immutable entries to a
-   `client_ledger` table (invoice → debit; receipt → credit; WHT/VAT/deduction → credit; edit/void → reversal entry).
-   The statement becomes one ordered query, periods can be closed, and nothing can be "re-read" wrongly. The rules in
-   `ClientStatement` are exactly the posting rules, so this is a mechanical next step.
-3. **Apply credit automatically** when an invoice is raised (oldest credit first, switchable per client), so credit
-   never sits unused and "paid on" dates are consistent.
-4. **Send the statement** — PDF/email to the client with the open-invoice list, and a company-wide **aged receivables**
-   report (0–30 / 31–60 / 61–90 / 90+ days) built on the same open-invoice figures.
-5. **Void, don't delete** receipts, so statements already sent never change silently.
+### Built: the better approach
+
+**1. One source of truth — the client ledger** (`client_ledger_entries`, `ClientLedger`).
+Every invoice, receipt, WHT/VAT/deduction and credit application is posted once as a permanent entry. Entries are
+never edited or deleted. When a document changes, the old entry gets a **reversal dated the day of the change** and
+the corrected entry is posted the same day ("Corrected entry, document dated 20 Aug 2026"). So:
+* a statement already sent for August reads exactly the same in December;
+* the correction is visible on the statement for the period it happened in;
+* the ledger is synced at the end of every invoice/receipt change, before every statement is shown, and nightly — it
+  cannot drift from the documents, and the self-check still compares it with the invoice-by-invoice position.
+
+**2. Transactions table retired as a source.** The client page's *Transactions* tab is now *Account*, showing the
+ledger lines. The *Transactions* menu page carries a notice pointing to Aged receivables. Rows are still written for
+one more release, then the table, its page and `TransactionController` can be removed.
+
+**3. Credit applied automatically.** When an invoice is raised (new or duplicated), unused credit is applied to it,
+oldest credit first, and the confirmation message says how much. Each client has a
+*"Use unused credit on new invoices automatically"* switch (on by default) on the client form. The receipt page's
+*Apply credit* form uses the same rules for manual cases.
+
+**4. Statements sent to clients, and aged receivables.**
+* Statement page → **Email**: To (pre-filled from the client's email), Cc, optional message. The email body is the full
+  statement; the PDF is attached when dompdf is installed (and there is a **PDF** download button). Every send is
+  logged (who, to whom, period, balance) and the last five are shown on the page.
+* **Receipts › Aged receivables** (`/receivables/aged`): every client's owed amount split into *not yet due*,
+  *1–30*, *31–60*, *61–90*, *over 90 days* overdue (from the invoice due date), with unused credit netted off, totals,
+  office filter, Excel export and a link to each statement. Branch users see their own office only.
+
+**5. Void, don't delete.** The receipt list's *Delete* is now **Void** (asks for a reason), and the receipt page has a
+*Void* button with a reason box. Voiding keeps a full copy in `receipt_voids` (*Receipts › Voided*), reverses
+cheque/transfer money out of the bank, reopens the invoices it paid and posts ledger reversals dated today with the
+reason. The receipt leaves the receipts table, so every existing report keeps working unchanged.
+Invoices with payments recorded against them can no longer be deleted (void the receipts first), and changing an
+invoice's total re-derives its status and posts the correction.
 
 ---
 
@@ -204,3 +231,10 @@ transactions row); only the statement re-read the receipt. Other problems found 
 | `tests/Feature/ReceiptRecomputeCommandTest.php` | The repair command |
 | `app/Services/Receipts/ClientStatement.php` | Statement of account and client page summary |
 | `tests/Feature/ClientStatementTest.php` | Credit applied once, VAT/WHT credited, CR balance, advances, date range, self-check |
+| `app/Services/Receipts/ClientLedger.php` + `client-ledger:sync` | Permanent client account entries, reversals, nightly safety net |
+| `app/Services/Receipts/CreditApplier.php` | Manual and automatic use of client credit |
+| `app/Services/Receipts/ReceiptVoider.php` | Void with reason, archive, reversals |
+| `app/Services/Receipts/ReceivablesAging.php` | Aged receivables report |
+| `app/Services/Receipts/StatementPdf.php`, `app/Mail/StatementOfAccountMail.php` | Statement PDF and email |
+| `app/Http/Controllers/ClientAccountController.php` | Email/PDF statement, aged receivables |
+| `tests/Feature/ClientLedgerAndReceivablesTest.php`, `tests/Feature/StatementPdfTest.php` | Ledger, corrections, void, auto-credit, email, PDF, aged report, office scope |

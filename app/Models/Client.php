@@ -17,6 +17,8 @@ class Client extends Model
         'name',
         'phone_number',
         'phone_number1',
+        'email',
+        'auto_apply_credit',
         'business_name',
         'branch',
         'address',
@@ -49,6 +51,7 @@ class Client extends Model
     ];
 
     protected $casts = [
+        'auto_apply_credit' => 'boolean',
         'start_date' => 'date',
         'status_date' => 'date',
         'coll_date' => 'date',

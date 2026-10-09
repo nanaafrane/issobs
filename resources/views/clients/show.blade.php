@@ -434,8 +434,8 @@
                                 aria-controls="navs-justified-home"
                                 aria-selected="true">
                                 <span class="d-none d-sm-inline-flex align-items-center">
-                                    <i class="icon-base bx bx-bxs-receipt icon-sm me-1_5"></i>Transactions
-                                    <span class="badge rounded-pill badge-center h-px-20 w-px-20 bg-label-danger ms-1_5">{{$transactionsCount}}</span>
+                                    <i class="icon-base bx bx-bxs-receipt icon-sm me-1_5"></i>Account
+                                    <span class="badge rounded-pill badge-center h-px-20 w-px-20 bg-label-danger ms-1_5">{{ count($account['lines']) }}</span>
                                 </span>
                                 <i class="icon-base bx bx-bxs-receipt icon-sm d-sm-none"></i>
                             </button>
@@ -447,76 +447,30 @@
 
                         <div class="tab-pane fade show active" id="navs-justified-home" role="tabpanel">
                             <div class="table-responsive text-normal-dark"> 
+                                {{-- Account lines from the client ledger (the old transactions table is no longer read here). --}}
                                 <table id="myTabletrans" class="display">
                                     <thead>
                                         <tr>
-                                            <!-- <th>#</th> -->
-                                            <th>Invoice No.</th>
-
-                                            <th>Client Name</th>
-                                            <th>Invoice Amount </th>
-                                            <th> Invoice Month </th>
-
-                                            <th>Receipt No.</th>
-                                            <th>Receipt Amount</th>
-                                            <th>Receipt WHT </th>
-                                            <th> VAT 7% </th>
-                                            <th>Receipt WHT Amount</th>
-                                            <th> Mode </th>
-                                            <th>Receipt Month</th>
-
-                                            <th> Date </th>
+                                            <th>Date</th>
+                                            <th>Type</th>
+                                            <th>Description</th>
+                                            <th>Details</th>
+                                            <th>Debit</th>
+                                            <th>Credit</th>
                                             <th>Balance</th>
-                                            <th> Status </th>
                                         </tr>
                                     </thead>
-                                    <tbody class="table-border-bottom-0">
-                                        @foreach($transactions as $transaction)
-
+                                    <tbody>
+                                        @foreach($account['lines'] as $line)
                                         <tr>
-                                            <td> FWSSi{{$transaction->invoice_id}} </td>
-                                            <td> {{$transaction->client->name}} {{$transaction->client->business_name}}</td>
-                                            <td> {{number_format($transaction->invoice_amount, 2)}} </td>
-                                            <td> {{$transaction->invoice?->invoice_month?->format('F, Y')}} </td>
-
-                                            <td> FWSSR{{$transaction->receipt_id}} </td>
-                                            <td>{{number_format($transaction->receipt_amount, 2 )}} </td>
-                                            <td>{{number_format($transaction->receipt?->wht_amount, 2 )}} </td>
-                                            <td>{{number_format($transaction->receipt?->vat7_value, 2 )}} </td>
-                                            <td>{{number_format($transaction->receipt?->amount_received, 2)}} </td>
-                                            <td> 
-                                                @if ($transaction->receipt?->cheque_amount > 0.00)
-                                                   <strong>  Cheque : {{ $transaction->receipt?->cheque_reference }} {{ $transaction->receipt?->cheque_bank }}  </strong>  
-                                                @endif
-                                                <br>
-
-                                                @if ($transaction->receipt?->transfer_amount > 0.00)
-                                                    <strong> Transfer : {{ $transaction->receipt?->transfer_reference }} {{ $transaction->receipt?->transfer_bank }} </strong>  
-                                                @endif
-                                                <br>
-
-                                                @if ($transaction->receipt?->momo_amount > 0.00)
-                                                    <strong> MoMo : {{ $transaction->receipt?->momo_transactin_id }} </strong>  
-                                                @endif
-                                                <br>
-
-                                                @if ($transaction->receipt?->cash_amount > 0.00)
-                                                    <strong> Cash </strong>  
-                                                @endif
-                                                <br>
-
-                                            </td>
-                                            <td> {{$transaction->receipt?->receipt_month?->format('F, Y')}} </td>
-
-                                            <td> {{$transaction->created_at?->format('F l d, Y, H:i A')}} </td>
-                                            <td> {{number_format($transaction->balance,2)}} </td>
-                                            @if($transaction->status == 'completed')
-                                            <td> <span class="badge bg-label-success"> {{$transaction->status}} </span> </td>
-                                            @else
-                                            <td> <span class="badge bg-label-danger"> {{$transaction->status}} </span> </td>
-                                            @endif
+                                            <td data-order="{{ $line['date']->format('Y-m-d') }}">{{ $line['date']->format('d M Y') }}</td>
+                                            <td>{{ ['invoice' => 'Invoice', 'receipt' => 'Payment', 'wht' => 'WHT', 'vat' => 'VAT 7%', 'deduction' => 'Deduction', 'credit_applied' => 'Credit applied', 'reversal' => 'Correction'][$line['kind']] ?? $line['kind'] }}</td>
+                                            <td>@if($line['link'])<a href="{{ $line['link'] }}">{{ $line['description'] }}</a>@else{{ $line['description'] }}@endif</td>
+                                            <td class="small">{{ $line['details'] }}</td>
+                                            <td class="text-end">{{ $line['debit'] > 0 ? number_format($line['debit'], 2) : '' }}</td>
+                                            <td class="text-end">{{ $line['credit'] > 0 ? number_format($line['credit'], 2) : '' }}</td>
+                                            <td class="text-end">{{ $line['kind'] === 'credit_applied' ? '' : \App\Services\Receipts\ClientStatement::money($line['balance']) }}</td>
                                         </tr>
-
                                         @endforeach
                                     </tbody>
                                 </table>
@@ -551,6 +505,7 @@
     <script>
         new DataTable('#myTabletrans', {
             responsive: true,
+            ordering: false,   // keep date order so the running balance reads correctly
 
             layout: {
                 topStart: {

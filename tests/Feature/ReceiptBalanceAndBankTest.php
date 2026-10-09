@@ -174,7 +174,7 @@ class ReceiptBalanceAndBankTest extends TestCase
         $this->cash($inv, 300);
         $first = Receipt::latest('id')->first();
         $this->cash($inv, 300);
-        $this->delete('/receipt/' . $first->id);
+        $this->delete('/receipt/' . $first->id, ['void_reason' => 'Entered in error']);
         $this->assertInvoice($inv, 'uncompleted', 700);
     }
 
@@ -230,7 +230,7 @@ class ReceiptBalanceAndBankTest extends TestCase
         $this->assertSame(3, BankTransaction::where('receipt_id', $receipt->id)->count());
         $this->assertInvoice($inv, 'uncompleted', 400);
 
-        $this->delete('/receipt/' . $receipt->id);
+        $this->delete('/receipt/' . $receipt->id, ['void_reason' => 'Entered in error']);
         $this->assertEquals(0, $second->fresh()->total);
     }
 

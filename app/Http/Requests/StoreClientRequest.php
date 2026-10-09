@@ -30,6 +30,8 @@ class StoreClientRequest extends FormRequest
                 'rate' => ['required', 'numeric', 'min:1000'],
                 'guards' => 'required',
                 'start_date' => 'required',
+                'email' => ['nullable', 'email', 'max:255'],
+                'auto_apply_credit' => ['nullable', 'boolean'],
         ];
     }
 }

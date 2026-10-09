@@ -23,6 +23,8 @@ use App\Models\Bank;
 use App\Services\Receipts\BankPosting;
 use App\Services\Receipts\InvoiceSettlement;
 use App\Services\Receipts\ReceiptRecorder;
+use App\Services\Receipts\ReceiptVoider;
+use App\Models\ReceiptVoid;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -465,7 +467,9 @@ class ReceiptController extends Controller
             if ($canManage) {
                 $receiptUrl = e(url('receipt/' . $receipt->id));
                 $actions .= '<a class="dropdown-item" href="' . $receiptUrl . '/edit"><i class="icon-base bx bx-edit-alt me-2 text-primary"></i> Edit</a>'
-                    . '<form action="' . $receiptUrl . '" method="POST"><input type="hidden" name="_token" value="' . e(csrf_token()) . '"><input type="hidden" name="_method" value="DELETE"><button class="dropdown-item" type="submit"><i class="icon-base bx bx-trash me-2 text-danger"></i>Delete</button></form>';
+                    . '<form action="' . $receiptUrl . '" method="POST" onsubmit="var r = prompt(\'Reason for voiding FWSSR' . $receipt->id . '?\'); if (!r || r.trim().length < 5) { if (r !== null) alert(\'Please give a reason (at least 5 characters).\'); return false; } this.void_reason.value = r;">'
+                    . '<input type="hidden" name="_token" value="' . e(csrf_token()) . '"><input type="hidden" name="_method" value="DELETE"><input type="hidden" name="void_reason" value="">'
+                    . '<button class="dropdown-item" type="submit"><i class="icon-base bx bx-block me-2 text-danger"></i>Void</button></form>';
             }
             $actions .= '</div></div>';
  
@@ -830,31 +834,28 @@ class ReceiptController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Receipt $receipt)
+    /**
+     * Void a receipt (the DELETE route). A reason is required; the receipt is
+     * archived with who/when/why and everything it did is reversed — see
+     * App\Services\Receipts\ReceiptVoider.
+     */
+    public function destroy(Request $request, Receipt $receipt, ReceiptVoider $voider)
     {
-        // A receipt whose money has been banked cannot be deleted.
-        $collection = Collection::where('receipt_id', $receipt->id)->first();
-        if (self::isDeposited($collection))
-        {
-            return redirect()->back()->with('error', 'Receipt has been Deposited and cannot be Deleted');
-        }
+        $request->validate(['void_reason' => ['required', 'string', 'min:5', 'max:500']], [
+            'void_reason.required' => 'Give a reason for voiding this receipt.',
+        ]);
 
-        DB::transaction(function () use ($receipt, $collection) {
-            // Take a posted transfer back out of the bank (adds a reversal line).
-            app(BankPosting::class)->reverse($receipt);
+        $voider->void($receipt, (string) $request->input('void_reason'));
 
-            $collection?->delete();
+        return redirect('receipt')->with('warning', 'Receipt FWSSR' . $receipt->id . ' voided. It is kept under Receipts › Voided.');
+    }
 
-            // Remove this receipt's allocation lines and ledger rows, then
-            // re-derive every invoice it touched from the receipts that remain.
-            // (Previously the invoice was reset to "unpaid" even when other
-            // receipts had part-paid it.)
-            app(InvoiceSettlement::class)->release($receipt);
+    /** Voided receipts, with reason, who and when. */
+    public function voided()
+    {
+        $voids = ReceiptVoid::with(['client', 'voidedBy'])->latest()->get();
 
-            $receipt->delete();
-        });
-
-        return redirect('receipt')->with('error', 'Receipt Deleted Successfully');
+        return view('sales.receipt_voided', compact('voids'));
     }
 
 

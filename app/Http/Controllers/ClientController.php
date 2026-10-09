@@ -198,6 +198,8 @@ class ClientController extends Controller
            $client->name = $request->name;
            $client->phone_number = $request->phone_number;
            $client->phone_number1 = $request->phone_number1;
+           $client->email = $request->email;
+           $client->auto_apply_credit = $request->boolean('auto_apply_credit', true);
            $client->business_name = $request->business_name;
            $client->address = $request->address;
            $client->field_id = $request->field_id;
@@ -258,8 +260,10 @@ class ClientController extends Controller
         // $receipts = Receipt::where('client_id', $client->id)->get();
         // $receiptsCount = count($receipts);
 
-        $transactions = Transaction::where('client_id', $client->id)->get();
-        $transactionsCount = count($transactions);
+        // The old transactions table is no longer read for the client page: the Account tab
+        // shows the client ledger (same lines as the statement of account).
+        $transactions = collect();
+        $transactionsCount = 0;
 
         // Same figures as the statement of account (invoices, receipts once each, credit).
         $account = app(ClientStatement::class)->summary($client);
@@ -611,7 +615,10 @@ class ClientController extends Controller
             $request->filled('to') ? Carbon::parse($request->input('to')) : null,
         );
 
-        return view('clients.statement', compact('client', 'statement'));
+        $sends = \App\Models\StatementSend::with('user')->where('client_id', $client->id)->latest()->take(5)->get();
+        $pdfAvailable = \App\Services\Receipts\StatementPdf::available();
+
+        return view('clients.statement', compact('client', 'statement', 'sends', 'pdfAvailable'));
     }
 
     /**

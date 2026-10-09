@@ -3,6 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Invoice;
+use App\Services\Receipts\ClientLedger;
+use App\Services\Receipts\CreditApplier;
+use App\Services\Receipts\InvoiceSettlement;
 use App\Http\Requests\StoreInvoiceRequest;
 use App\Http\Requests\UpdateInvoiceRequest;
 use App\Http\Requests\InvoiceToPayrollSearchRequest;
@@ -564,7 +567,7 @@ class InvoiceController extends Controller
             // // select all transactions with this current invoice iD and assign value D to the checks culumn
             // Transaction::where('invoice_id', $invoice_id)->update(['checks' => 'd']);
 
-            return redirect()->route('invoice.show',['invoice' => $invoice_id])->with('primary', 'Invoice Generated Successfully');
+            return redirect()->route('invoice.show',['invoice' => $invoice_id])->with('primary', 'Invoice Generated Successfully' . $this->afterInvoiceRaised($update_invoice));
 
         }
         //    dd($invoice_id);
@@ -797,7 +800,7 @@ class InvoiceController extends Controller
         $transaction->status = 'unpaid';
         $transaction->save();
 
-        return redirect()->route('invoice.show', ['invoice' => $invoice_id])->with('primary', 'Invoice Duplicated Successfully');
+        return redirect()->route('invoice.show', ['invoice' => $invoice_id])->with('primary', 'Invoice Duplicated Successfully' . $this->afterInvoiceRaised($invoice->fresh()));
     }
 
     public function update(UpdateInvoiceRequest $request, Invoice $invoice)
@@ -888,6 +891,10 @@ class InvoiceController extends Controller
             'invoice_amount' => $total,
         ]);
 
+        // A new total can change what is still owed: re-derive status/balance and post the correction.
+        app(InvoiceSettlement::class)->recalculate($invoice->fresh());
+        app(ClientLedger::class)->sync((int) $invoice->client_id);
+
         return redirect()->route('invoice.show',['invoice' => $invoice])->with('primary', 'Invoice  Updated Successfully');
 
     }
@@ -900,8 +907,15 @@ class InvoiceController extends Controller
         //
         // Invoice::transaction()->where('invoice_id', $invoice->id)->destroy();
 
+        // An invoice that has been paid against cannot simply disappear: its receipts would
+        // point at nothing and the client's account would no longer add up.
+        if ($invoice->allocations()->exists()) {
+            return back()->with('error', 'Invoice FWSSi' . $invoice->id . ' has payments recorded against it. Void those receipts first, then delete the invoice.');
+        }
+
           Invoice::destroy($invoice->id);
           Transaction::where('invoice_id', $invoice->id)->delete();
+          app(ClientLedger::class)->sync((int) $invoice->client_id, 'Invoice FWSSi' . $invoice->id . ' deleted');
           DB::table('invoice_data')->where('invoice_id', $invoice->id)->delete();
 
         return redirect('invoice')->with('error', 'Invoices Deleted Successfully');
@@ -1163,4 +1177,23 @@ class InvoiceController extends Controller
 
     }
 
+
+    /**
+     * After a new invoice is saved: use any unused client credit on it (when the
+     * client has automatic credit on) and post it to the client's account.
+     * Returns a note for the confirmation message.
+     */
+    private function afterInvoiceRaised(?Invoice $invoice): string
+    {
+        if (! $invoice) {
+            return '';
+        }
+
+        $applied = app(CreditApplier::class)->autoApply($invoice);
+        app(ClientLedger::class)->sync((int) $invoice->client_id);
+
+        return $applied > 0
+            ? ' — GH₵' . number_format($applied, 2) . ' of the client\'s credit was applied to it automatically.'
+            : '';
+    }
 }

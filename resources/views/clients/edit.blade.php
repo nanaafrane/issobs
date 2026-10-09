@@ -433,6 +433,23 @@
                             @enderror
                         </div>
                     </div>
+                    <div class="row g-6 mt-1">
+                        <div class="col mb-0">
+                            <label for="email" class="form-label"> {{ __('Email (for statements)') }} </label>
+                            <input type="email" id="email" name="email" class="form-control @error('email') is-invalid @enderror"
+                                value="{{ old('email', $client->email) }}" placeholder="accounts@client.com" autocomplete="email">
+                            @error('email')
+                            <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
+                            @enderror
+                        </div>
+                        <div class="col mb-0 d-flex align-items-end">
+                            <div class="form-check">
+                                <input type="hidden" name="auto_apply_credit" value="0">
+                                <input class="form-check-input" type="checkbox" name="auto_apply_credit" value="1" id="auto_apply_credit" {{ old('auto_apply_credit', $client->auto_apply_credit ?? true) ? 'checked' : '' }}>
+                                <label class="form-check-label" for="auto_apply_credit"> Use unused credit on new invoices automatically </label>
+                            </div>
+                        </div>
+                    </div>
                     <div class="row mt-4">
                         <div class="col mb-0">
                             <label for="business_name" class="form-label"> {{ __('Business Name') }} </label>

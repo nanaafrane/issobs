@@ -252,7 +252,7 @@ class MultiInvoiceReceiptTest extends TestCase
         $this->assertEquals(2100, $this->bank->fresh()->total);
         $this->assertEquals(1100, BankTransaction::where('receipt_id', $receipt->id)->value('credit'));
 
-        $this->delete(route('receipt.destroy', $receipt))->assertRedirect();
+        $this->delete(route('receipt.destroy', $receipt), ['void_reason' => 'Entered in error'])->assertRedirect();
 
         $this->assertEquals(1000, $this->bank->fresh()->total);
         $this->assertSame(2, BankTransaction::where('receipt_id', $receipt->id)->count()); // credit + reversal kept

@@ -476,6 +476,7 @@
                 <div class="d-flex gap-2 receipt-header-actions">
                     <a href="/receipt/{{$receipt->id}}/edit" class="btn btn-danger"><i class="bx bx-edit-alt me-1"></i> Edit</a>
                     <button class="btn btn-outline-secondary" onclick="window.print()"><i class="bx bx-printer me-1"></i> Print</button>
+                    <button class="btn btn-outline-danger" type="button" data-bs-toggle="collapse" data-bs-target="#voidBox"><i class="bx bx-block me-1"></i> Void</button>
                 </div>
                 @endif
             </div>
@@ -483,6 +484,20 @@
             <div class="card-header  ml-2  d-none d-lg-block">
                 @include('flash-messages')
             </div>
+            @if(Auth::user()->hasRole(['Finance Manager']))
+            <div class="collapse mt-2" id="voidBox">
+                <div class="card border border-danger"><div class="card-body">
+                    <form method="POST" action="{{ url('receipt/' . $receipt->id) }}" onsubmit="return confirm('Void receipt FWSSR{{ $receipt->id }}? Its payments will be reversed.')">
+                        @csrf
+                        @method('DELETE')
+                        <label class="form-label" for="void_reason">Why is this receipt being voided?</label>
+                        <textarea class="form-control mb-2" name="void_reason" id="void_reason" rows="2" required minlength="5" maxlength="500" placeholder="e.g. Cheque returned unpaid; entered against the wrong client"></textarea>
+                        <small class="text-muted d-block mb-2">The receipt is kept under Receipts › Voided with this reason. Cheque/transfer money is reversed out of the bank, the invoices it paid are reopened, and the client's statement shows the reversal today.</small>
+                        <button class="btn btn-danger" type="submit">Void receipt</button>
+                    </form>
+                </div></div>
+            </div>
+            @endif
             @if ($errors->any())
                 <div class="alert alert-danger mt-2"><ul class="mb-0">@foreach ($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>
             @endif

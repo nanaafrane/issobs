@@ -22,7 +22,8 @@ class UpdateClientRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'email' => ['nullable', 'email', 'max:255'],
+            'auto_apply_credit' => ['nullable', 'boolean'],
         ];
     }
 }

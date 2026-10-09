@@ -100,6 +100,16 @@
                 <div class="text-truncate" data-i18n="RList">List</div>
                 </a>
             </li>
+            <li class="menu-item {{ request()->is('receivables*') ? 'active' : '' }}">
+                <a href="{{ route('receivables.aged') }}" class="menu-link">
+                <div class="text-truncate" data-i18n="RAged">Aged receivables</div>
+                </a>
+            </li>
+            <li class="menu-item {{ request()->is('receipt-voided') ? 'active' : '' }}">
+                <a href="{{ route('receipt.voided') }}" class="menu-link">
+                <div class="text-truncate" data-i18n="RVoided">Voided</div>
+                </a>
+            </li>
             <li class="menu-item {{ request()->is('receipt-multi*') ? 'active' : '' }}">
                 <a href="{{ route('receipt.multi.create') }}" class="menu-link">
                 <div class="text-truncate" data-i18n="RMulti">Pay Multiple Invoices</div>

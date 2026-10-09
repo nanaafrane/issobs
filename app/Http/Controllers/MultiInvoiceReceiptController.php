@@ -9,14 +9,11 @@ use App\Models\Invoice;
 use App\Models\Receipt;
 use App\Models\User;
 use App\Models\Wht;
-use App\Services\Receipts\InvoiceSettlement;
-use App\Services\Receipts\ReceiptAllocator;
 use App\Services\Receipts\ReceiptRecorder;
-use App\Services\Receipts\ReceiptWorkflow;
+use App\Services\Receipts\CreditApplier;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\ValidationException;
 
 /**
  * One receipt, many invoices.
@@ -29,11 +26,8 @@ use Illuminate\Validation\ValidationException;
  */
 class MultiInvoiceReceiptController extends Controller
 {
-    public function __construct(
-        private ReceiptAllocator $allocator,
-        private InvoiceSettlement $settlement,
-        private ReceiptWorkflow $workflow,
-    ) {
+    public function __construct()
+    {
         $this->middleware('auth');
     }
 
@@ -88,7 +82,7 @@ class MultiInvoiceReceiptController extends Controller
      * client's open invoices. No new money moves, so collections and bank
      * balances are untouched.
      */
-    public function applyCredit(Request $request, Receipt $receipt)
+    public function applyCredit(Request $request, Receipt $receipt, CreditApplier $credits)
     {
         $request->validate([
             'invoices' => ['required', 'array'],
@@ -99,44 +93,12 @@ class MultiInvoiceReceiptController extends Controller
         // Only from a client this user may work with.
         $this->scopeToUserFields(Client::query())->findOrFail($receipt->client_id);
 
-        DB::transaction(function () use ($request, $receipt) {
-            $receipt = Receipt::whereKey($receipt->id)->lockForUpdate()->firstOrFail();
-            $credit = round((float) $receipt->unapplied_amount, 2);
+        $invoices = collect((array) $request->input('invoices', []))
+            ->filter(fn ($row) => ($row['selected'] ?? null) === '1')
+            ->map(fn ($row) => $row['applied'] ?? null)
+            ->all();
 
-            if ($credit <= 0) {
-                throw ValidationException::withMessages(['invoices' => 'This receipt has no credit left to apply.']);
-            }
-
-            $invoiceInput = collect((array) $request->input('invoices', []))
-                ->filter(fn ($row) => ($row['selected'] ?? null) === '1')
-                ->map(fn ($row) => ['applied' => $row['applied'] ?? null]);
-
-            $invoices = $this->openInvoices($receipt->client_id)
-                ->whereIn('id', $invoiceInput->keys()->map(fn ($k) => (int) $k)->all())
-                ->lockForUpdate()
-                ->get();
-
-            if ($invoices->isEmpty()) {
-                throw ValidationException::withMessages(['invoices' => 'Tick at least one open invoice to apply the credit to.']);
-            }
-
-            $plan = $this->allocator->plan($this->planLines($invoices, $invoiceInput), $credit);
-            $this->guardPlan($plan, true, false);
-
-            foreach (collect($plan['lines'])->keyBy('invoice_id') as $invoiceId => $line) {
-                $invoice = $invoices->firstWhere('id', $invoiceId);
-                $this->settlement->allocate($receipt, $invoice, $line, 'credit');
-                $this->workflow->assignCategory($receipt, $invoice);
-            }
-
-            $receipt->unapplied_amount = $plan['unapplied'];
-            $receipt->invoice_id = $receipt->invoice_id ?: $invoices->first()->id;
-            $allDone = Invoice::whereIn('id', $receipt->allocations()->pluck('invoice_id'))
-                ->where('status', '!=', 'completed')
-                ->doesntExist();
-            $receipt->status = $allDone ? 'completed' : 'uncompleted';
-            $receipt->save();
-        });
+        $credits->apply($receipt, $invoices);
 
         return redirect()->route('receipt.show', ['receipt' => $receipt->id])
             ->with('primary', 'Credit applied. Remaining credit on this receipt: GH₵' . number_format($receipt->fresh()->unapplied_amount, 2));
@@ -150,46 +112,6 @@ class MultiInvoiceReceiptController extends Controller
             ->withSum('allocations as settled_sum', 'settled')
             ->orderBy('invoice_month')
             ->orderBy('id');
-    }
-
-    private function planLines($invoices, $invoiceInput): array
-    {
-        return $invoices->map(function (Invoice $invoice) use ($invoiceInput) {
-            $row = $invoiceInput[$invoice->id] ?? $invoiceInput[(string) $invoice->id] ?? [];
-
-            return [
-                'invoice_id' => $invoice->id,
-                'outstanding' => max(0, round((float) $invoice->total - (float) $invoice->settled_sum, 2)),
-                'applied' => $row['applied'] ?? null,
-                'wht' => $row['wht'] ?? 0,
-                'vat7' => $row['vat7'] ?? 0,
-                'deduction' => $row['deduction'] ?? 0,
-            ];
-        })->values()->all();
-    }
-
-    private function guardPlan(array $plan, bool $keepCredit, bool $noInvoices): void
-    {
-        $errors = $plan['errors'];
-
-        foreach ($plan['lines'] as $line) {
-            if ($line['settled'] <= 0) {
-                $errors[] = 'Nothing is being paid on invoice FWSSi' . $line['invoice_id'] . ' — enter an amount or untick it.';
-            }
-        }
-
-        if ($plan['unapplied'] > 0 && ! $keepCredit) {
-            $errors[] = 'GH₵' . number_format($plan['unapplied'], 2) . ' of the money is not applied to any invoice. '
-                . 'Tick "Keep the extra as client credit (advance)" or tick more invoices.';
-        }
-
-        if ($noInvoices && ! $keepCredit) {
-            $errors[] = 'Tick at least one invoice, or tick "Keep the extra as client credit (advance)" to record an advance payment.';
-        }
-
-        if ($errors) {
-            throw ValidationException::withMessages(['invoices' => array_values(array_unique($errors))]);
-        }
     }
 
     /** Same office rules as the receipt list: head office sees all, Tema also sees Shai Hills. */

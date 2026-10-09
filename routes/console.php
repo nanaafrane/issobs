@@ -103,3 +103,25 @@ Artisan::command('receipts:recompute
         }
     }
 })->purpose('Re-derive invoice status and balance from receipts (dry run unless --apply)');
+
+/*
+ | Client ledger: post every invoice, receipt and credit application to the
+ | permanent client account. Run once after migrating (fills it from history);
+ | afterwards it only posts what changed. Also runs nightly as a safety net.
+ */
+Artisan::command('client-ledger:sync {--client= : Only this client id}', function () {
+    $ledger = app(\App\Services\Receipts\ClientLedger::class);
+    if ($this->option('client')) {
+        $n = $ledger->sync((int) $this->option('client'));
+        $this->info("Posted {$n} entr" . ($n === 1 ? 'y' : 'ies') . '.');
+
+        return;
+    }
+    $bar = $this->output->createProgressBar();
+    $result = $ledger->syncAll(fn () => $bar->advance());
+    $bar->finish();
+    $this->newLine();
+    $this->info("Checked {$result['clients']} client(s), posted {$result['entries']} entr" . ($result['entries'] === 1 ? 'y' : 'ies') . '.');
+})->purpose('Post invoices, receipts and credit to the client ledger (safe to re-run)');
+
+\Illuminate\Support\Facades\Schedule::command('client-ledger:sync')->dailyAt('02:10')->withoutOverlapping();

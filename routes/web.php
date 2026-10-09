@@ -59,6 +59,9 @@ Route::get('clientPending', [ClientController::class, 'clientPending'])->name('c
 Route::get('clientTerminated', [ClientController::class, 'clientTerminated'])->name('client.terminated');
 
 Route::get('clientStatement/{client}', [ClientController::class, 'statementOfAccount']);
+Route::post('clientStatement/{client}/email', [\App\Http\Controllers\ClientAccountController::class, 'email'])->name('client.statement.email');
+Route::get('clientStatement/{client}/pdf', [\App\Http\Controllers\ClientAccountController::class, 'pdf'])->name('client.statement.pdf');
+Route::get('receivables/aged', [\App\Http\Controllers\ClientAccountController::class, 'aged'])->name('receivables.aged');
 Route::get('clientAttachGuards/{id}', [ClientController::class, 'clientAttachGuards']);
 Route::post('client/{client}/attach-employees', [ClientController::class, 'attachEmployees'])->name('client.attachEmployees');
 Route::post('client/{client}/detach-employees', [ClientController::class, 'detachEmployees'])->name('client.detachEmployees');
@@ -110,6 +113,7 @@ Route::get('receipt/collector/{collector}/details', [ReceiptController::class, '
 Route::get('receipt-multi/create', [MultiInvoiceReceiptController::class, 'create'])->name('receipt.multi.create');
 Route::post('receipt-multi', [MultiInvoiceReceiptController::class, 'store'])->name('receipt.multi.store');
 Route::post('receipt/{receipt}/apply-credit', [MultiInvoiceReceiptController::class, 'applyCredit'])->name('receipt.applyCredit');
+Route::get('receipt-voided', [ReceiptController::class, 'voided'])->name('receipt.voided');
 Route::resource('receipt', ReceiptController::class);
 Route::get('receiptPending', [ReceiptController::class, 'PendingReceipts'])->name('receipt.pending');
 Route::post('receiptChannels', [ReceiptController::class, 'receiptChannels']);

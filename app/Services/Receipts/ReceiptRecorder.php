@@ -58,6 +58,7 @@ class ReceiptRecorder
         private InvoiceSettlement $settlement,
         private BankPosting $bankPosting,
         private ReceiptWorkflow $workflow,
+        private ClientLedger $ledger,
     ) {
     }
 
@@ -143,6 +144,7 @@ class ReceiptRecorder
             $this->allocate($receipt, $invoices, $plan, false);
             $this->writeCollection($receipt, $client);
             $this->bankPosting->sync($receipt);
+            $this->ledger->sync($client->id);
 
             return $receipt;
         });
@@ -175,6 +177,7 @@ class ReceiptRecorder
             $this->allocate($receipt, $invoices, $plan, true);
             $this->writeCollection($receipt, Client::find($receipt->client_id));
             $this->bankPosting->sync($receipt);
+            $this->ledger->sync($receipt->client_id);
 
             return $receipt;
         });

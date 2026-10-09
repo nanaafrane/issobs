@@ -350,6 +350,11 @@
     @section('content')
 
     <div class="container-xxl flex-grow-1 container-p-y">
+        <div class="alert alert-info d-flex flex-wrap justify-content-between align-items-center gap-2">
+            <span><i class="bx bx-info-circle me-1"></i> This list is being retired. What each client owes is now worked out from their receipts — see
+                <strong>Aged receivables</strong> and each client's <strong>statement of account</strong>.</span>
+            <a class="btn btn-sm btn-primary" href="{{ route('receivables.aged') }}">Open aged receivables</a>
+        </div>
 
 
         <div class="row">
