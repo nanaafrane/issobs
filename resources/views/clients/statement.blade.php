@@ -354,85 +354,148 @@
 
 
     @section('content')
+    @php
+        $money = fn ($v) => \App\Services\Receipts\ClientStatement::money((float) $v);
+        $st = $statement;
+        $kindBadge = ['invoice' => 'bg-label-danger', 'receipt' => 'bg-label-success', 'wht' => 'bg-label-info', 'vat' => 'bg-label-info', 'deduction' => 'bg-label-warning', 'credit_applied' => 'bg-label-secondary'];
+        $kindLabel = ['invoice' => 'Invoice', 'receipt' => 'Payment', 'wht' => 'WHT', 'vat' => 'VAT 7%', 'deduction' => 'Deduction', 'credit_applied' => 'Credit applied'];
+    @endphp
+    <style>
+        .st-num { font-variant-numeric: tabular-nums; white-space: nowrap; text-align: right; }
+        .st-note td { color: var(--bs-secondary-color, #8592a3); font-style: italic; }
+        .st-summary dl { display: grid; grid-template-columns: 1fr auto; gap: .35rem 1rem; margin: 0; }
+        .st-summary dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; }
+        @media print {
+            .layout-menu, .layout-navbar, .content-footer, .st-noprint, .dt-layout-row:not(.dt-layout-table) { display: none !important; }
+            .layout-page { padding: 0 !important; }
+            .card { box-shadow: none !important; border: 1px solid #ddd; }
+        }
+    </style>
     <div class="container-xxl flex-grow-1 container-p-y">
-        <div class="row">
-            <div class="col-6 mb-8">
-                <h3 class="card-header text-info"> <i class="icon-base bx bx-bxs-user-detail"></i> Client </h3>
-            </div>
-        </div>
 
-        <div class="row mt-12">
-
-            <div class="col-xl-12">
-                <!-- <h6 class="text-body-secondary">Filled Tabs</h6> -->
-                <div class="nav-align-top nav-tabs-shadow">
-                    <ul class="nav nav-tabs nav-fill" role="tablist">
-                        <li class="nav-item">
-                            <button
-                                type="button"
-                                class="nav-link active"
-                                role="tab"
-                                data-bs-toggle="tab"
-                                data-bs-target="#navs-justified-home"
-                                aria-controls="navs-justified-home"
-                                aria-selected="true">
-                                <span class="d-none d-sm-inline-flex align-items-center">
-                                    <i class="icon-base bx bx-bxs-receipt icon-sm me-1_5"></i>Transactions
-                                    <span class="badge rounded-pill badge-center h-px-20 w-px-20 bg-label-danger ms-1_5"> </span>
-                                </span>
-                                <i class="icon-base bx bx-bxs-receipt icon-sm d-sm-none"></i>
-                            </button>
-                        </li>
-
-                    </ul>
-
-                    <div class="tab-content">
-
-                        <div class="tab-pane fade show active" id="navs-justified-home" role="tabpanel">
-                            <div class="table-responsive text-normal-dark"> 
-                                <table id="myTabletrans" class="display">
-                                    <thead>
-                                        <tr>
-                                            <th>#</th>
-                                            <th>Date</th>
-                                            <th>Description</th>
-                                            <th>Payment Details </th>
-                                            <th>Debit</th>
-                                            <th>Credit</th>
-                                            <th>Balance</th>
-                                            
-                                        </tr>
-                                    </thead>
-                                    <tbody class="table-border-bottom-0">
-                                        @php $grandTotal = 0; @endphp
-                                        @foreach($data['description'] as $key => $statement)
-                                                <tr>
-                                                    <td> {{  $key + 1 }} </td>
-                                                    <td> {{$data['date'][$key] ?? ''}} </td>
-                                                    <td> {!! $statement !!} </td>
-                                                    <td> 
-                                                        @if(isset($data['credit'][$key]))
-                                                           {!! $data['details'][$key] !!}
-                                                        @endif
-                                                    </td>
-                                                    <td>  {{ number_format($data['debit'][$key] ?? 0, 2) }} </td>
-                                                    <td>   {{ number_format($data['credit'][$key] ?? 0, 2) }} </td>
-                                                    <td> 
-                                                        @php $grandTotal += $data['balance'][$key]; @endphp
-                                                        {{  number_format(abs($grandTotal), 2)  }} 
-                                                     </td>
-                                                </tr>                                        
-                                        @endforeach
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-
-                    </div>
+        <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
+            <div>
+                <h3 class="text-info mb-1"><i class="icon-base bx bx-bxs-user-detail"></i> Statement of Account</h3>
+                <div><strong>{{ $client->business_name ?: $client->name }}</strong>@if($client->business_name && $client->name !== $client->business_name) — {{ $client->name }}@endif</div>
+                <div class="text-muted small">{{ $client->phone_number }} · {{ $client->address }} · {{ $client->field?->name }}</div>
+                <div class="text-muted small">
+                    Period: {{ $st['from'] ? $st['from']->format('d M Y') : 'start' }} – {{ $st['to'] ? $st['to']->format('d M Y') : now()->format('d M Y') }}
                 </div>
             </div>
-
+            <form method="GET" class="d-flex flex-wrap gap-2 align-items-end st-noprint">
+                <div><label class="form-label small mb-0" for="from">From</label><input type="date" id="from" name="from" class="form-control form-control-sm" value="{{ request('from') }}"></div>
+                <div><label class="form-label small mb-0" for="to">To</label><input type="date" id="to" name="to" class="form-control form-control-sm" value="{{ request('to') }}"></div>
+                <button class="btn btn-sm btn-primary" type="submit">Apply</button>
+                <a class="btn btn-sm btn-outline-secondary" href="{{ url('clientStatement', $client->id) }}">All</a>
+                <button class="btn btn-sm btn-outline-secondary" type="button" onclick="window.print()"><i class="bx bx-printer"></i> Print</button>
+            </form>
         </div>
+
+        @if ($errors->any())
+            <div class="alert alert-danger st-noprint"><ul class="mb-0">@foreach ($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>
+        @endif
+
+        @unless($st['check']['ok'])
+        <div class="alert alert-warning st-noprint">
+            This statement (GH&#8373;{{ $money($st['check']['statement']) }}) and the invoice-by-invoice balance
+            (GH&#8373;{{ $money($st['check']['per_invoice']) }}) differ by GH&#8373;{{ number_format($st['check']['difference'], 2) }}.
+            This comes from receipts recorded by the old system. Ask an administrator to run
+            <code>php artisan receipts:recompute --client={{ $client->id }}</code>.
+        </div>
+        @endunless
+
+        <div class="row g-4 mb-4">
+            <div class="col-md-6 col-xl-4">
+                <div class="card h-100 st-summary"><div class="card-body">
+                    <dl>
+                        <dt>Opening balance</dt><dd>{{ $money($st['opening']) }}</dd>
+                        <dt>Invoiced</dt><dd>{{ number_format($st['invoiced'], 2) }}</dd>
+                        <dt>Money received</dt><dd>({{ number_format($st['received'], 2) }})</dd>
+                        <dt>WHT / VAT / deductions</dt><dd>({{ number_format($st['withheld'], 2) }})</dd>
+                        <dt class="fw-bold">Closing balance</dt><dd class="fw-bold fs-5">GH&#8373; {{ $money($st['closing']) }}</dd>
+                    </dl>
+                    <small class="text-muted">"CR" means the client has paid ahead and is in credit.</small>
+                </div></div>
+            </div>
+            <div class="col-md-6 col-xl-4">
+                <div class="card h-100"><div class="card-body">
+                    <h6 class="mb-2">Open invoices (today)</h6>
+                    @forelse($st['open_invoices'] as $inv)
+                        <div class="d-flex justify-content-between small">
+                            <a href="{{ url('invoice/' . $inv->id) }}">FWSSi{{ $inv->id }} · {{ $inv->invoice_month?->format('M Y') }}</a>
+                            <span class="st-num">{{ number_format($inv->outstanding, 2) }}@if($inv->days_overdue) <span class="text-danger">· {{ $inv->days_overdue }}d overdue</span>@endif</span>
+                        </div>
+                    @empty
+                        <p class="small text-muted mb-0">Nothing owed.</p>
+                    @endforelse
+                    @if($st['open_invoices']->isNotEmpty())
+                        <hr class="my-2"><div class="d-flex justify-content-between small fw-bold"><span>Total owed</span><span class="st-num">{{ number_format($st['open_invoices']->sum('outstanding'), 2) }}</span></div>
+                    @endif
+                </div></div>
+            </div>
+            <div class="col-md-12 col-xl-4">
+                <div class="card h-100"><div class="card-body">
+                    <h6 class="mb-2">Unused credit</h6>
+                    @forelse($st['credit_receipts'] as $cr)
+                        <div class="d-flex justify-content-between small">
+                            <a href="{{ url('receipt/' . $cr->id) }}">FWSSR{{ $cr->id }} · {{ $cr->receipt_month?->format('d M Y') }}</a>
+                            <span class="st-num">{{ number_format($cr->unapplied_amount, 2) }}</span>
+                        </div>
+                    @empty
+                        <p class="small text-muted mb-0">None.</p>
+                    @endforelse
+                    @if($st['credit_receipts']->isNotEmpty())
+                        <hr class="my-2"><div class="d-flex justify-content-between small fw-bold"><span>Total credit</span><span class="st-num">{{ number_format($st['credit_receipts']->sum('unapplied_amount'), 2) }}</span></div>
+                        <small class="text-muted st-noprint">Apply it from the receipt page.</small>
+                    @endif
+                </div></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="table-responsive">
+                <table id="statementTable" class="table table-sm mb-0">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Type</th>
+                            <th>Description</th>
+                            <th>Details</th>
+                            <th class="text-end">Debit</th>
+                            <th class="text-end">Credit</th>
+                            <th class="text-end">Balance</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="st-note">
+                            <td>{{ $st['from'] ? $st['from']->format('d M Y') : '' }}</td><td></td>
+                            <td>Opening balance</td><td></td><td></td><td></td>
+                            <td class="st-num">{{ $money($st['opening']) }}</td>
+                        </tr>
+                        @foreach($st['lines'] as $line)
+                            <tr class="{{ $line['kind'] === 'credit_applied' ? 'st-note' : '' }}">
+                                <td data-order="{{ $line['date']->format('Y-m-d') }}">{{ $line['date']->format('d M Y') }}</td>
+                                <td><span class="badge {{ $kindBadge[$line['kind']] }}">{{ $kindLabel[$line['kind']] }}</span></td>
+                                <td>@if($line['link'])<a href="{{ $line['link'] }}">{{ $line['description'] }}</a>@else{{ $line['description'] }}@endif</td>
+                                <td class="small">{{ $line['details'] }}</td>
+                                <td class="st-num">{{ $line['debit'] > 0 ? number_format($line['debit'], 2) : '' }}</td>
+                                <td class="st-num">{{ $line['credit'] > 0 ? number_format($line['credit'], 2) : '' }}</td>
+                                <td class="st-num">{{ $line['kind'] === 'credit_applied' ? '' : $money($line['balance']) }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                    <tfoot>
+                        <tr class="fw-bold">
+                            <td colspan="4">Closing balance</td>
+                            <td class="st-num">{{ number_format($st['invoiced'], 2) }}</td>
+                            <td class="st-num">{{ number_format($st['received'] + $st['withheld'], 2) }}</td>
+                            <td class="st-num">{{ $money($st['closing']) }}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+
     </div>
 
     @endsection
@@ -446,46 +509,26 @@
     <script src="https://cdn.datatables.net/buttons/3.2.4/js/dataTables.buttons.js"></script>
     <script src="https://cdn.datatables.net/buttons/3.2.4/js/buttons.dataTables.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
     <script src="https://cdn.datatables.net/buttons/3.2.4/js/buttons.html5.min.js"></script>
 
-    <script src="https://cdn.datatables.net/columncontrol/1.1.1/js/dataTables.columnControl.min.js"></script>
-
-
     <script>
-        new DataTable('#myTabletrans', {
-            responsive: true,
-
-
+        // A running balance only makes sense in date order, so sorting is switched off.
+        new DataTable('#statementTable', {
+            ordering: false,
+            paging: false,
             layout: {
                 topStart: {
-                    
-                    buttons: [
-                        {
-                            extend: 'pageLength',
-                            text: '<i class="bx bxs-bullseye"></i> Show',
-                            className: 'btn btn-secondary',
-                            Options: [10, 25, 50, 100, 500], 
-                        },
-                        {
-                            extend: 'excelHtml5',
-                            text: '<i class="bx bxs-file-export"></i> Export to Excel',
-                            className: 'btn btn-secondary btn-sm',
-                            title: "{{ $client->name . $client->business_name . ' STATEMENT OF ACCOUNTS AS OF ' . now()->format('F j, Y') }}",
-                            exportOptions: {
-                                columns: ':visible'
-                            }   
-                        }
-                    ]
+                    buttons: [{
+                        extend: 'excelHtml5',
+                        text: '<i class="bx bxs-file-export"></i> Export to Excel',
+                        className: 'btn btn-secondary btn-sm',
+                        title: @json(($client->business_name ?: $client->name) . ' — Statement of Account ' . ($statement['from'] ? $statement['from']->format('d M Y') : '') . ' to ' . ($statement['to'] ? $statement['to']->format('d M Y') : now()->format('d M Y'))),
+                        footer: true,
+                    }]
                 }
-            },
-            columnControl: [
-                ['search']
-            ]
+            }
         });
     </script>
-
 
     @endsection
 

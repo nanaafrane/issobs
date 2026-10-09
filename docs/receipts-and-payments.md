@@ -114,7 +114,7 @@ the short-closed invoices you chose to keep.
    Undeposited old cheques still appear on Bank Deposit as "Old cheque to deposit". Old transfers need a one-off
    manual bank adjustment if balances should include them.
 
-**Testing note:** the suite (43 tests) passes on SQLite and on MariaDB 10.11. A *fresh* MySQL install of this project
+**Testing note:** the suite (50 tests) passes on SQLite and on MariaDB 10.11. A *fresh* MySQL install of this project
 fails on the existing `create_expenses_table` migration (`->after()` inside `Schema::create`, and a foreign key to a
 table created later). Existing databases are past that migration, so it only matters for new installs/CI.
 
@@ -134,6 +134,61 @@ table created later). Existing databases are past that migration, so it only mat
 
 ---
 
+## 7. Client credit and the statement of account
+
+### What was wrong
+The statement (`ClientController::statementOfAccount`) read the `transactions` table and, for **every row linked to a
+receipt, credited the receipt's whole amount** (cash + momo + transfer + cheque + other + WHT + deductions). It ignored
+the amount stored on the row. Reproduced with: invoices 1,000 (Aug) + 500 (Sep); receipt 1,300 with 300 kept as
+credit; credit applied to September; 200 transfer. Truth: invoiced 1,500, received 1,500, owes 0.
+
+| Old statement row | Credit shown | Should be |
+|---|---|---|
+| Receipt FWSSR1 → August invoice | 1,300 | 1,300 |
+| Credit from FWSSR1 applied to September | **1,300 again** | nothing new — the money was already counted |
+| Transfer 200 | 200 | 200 |
+| **Final balance** | **1,300** (looks owed) | **0** |
+
+The database itself stored the right figure for the credit application (300 on the allocation and on the
+transactions row); only the statement re-read the receipt. Other problems found the same way:
+* **7% VAT withheld was never credited** — a fully paid invoice still showed 70 owed.
+* A receipt paid only by **"other payments" crashed the page** (HTTP 500).
+* **A client in credit looked like a debtor**: the balance was shown with `abs()`, so −150 printed as 150.
+* **An advance with no invoice never appeared** (no transactions row).
+* A receipt paying two invoices was credited twice (one row per invoice).
+* Rows were in creation order, not date order; no period, no opening balance; sorting the table scrambled the balance.
+* The client page's "Total Amount Paid" was `invoiced − unpaid − part balances`, so short-closed invoices counted as paid
+  and credit was invisible.
+
+### What it does now
+`App\Services\Receipts\ClientStatement` builds the statement from the source documents:
+* **Debit** each invoice. **Credit** each receipt once for the money received, plus separate lines for WHT, 7% VAT
+  withheld and deductions.
+* **Credit applied** is an information line with no amount: it moves money between invoices, it doesn't change what the
+  client owes.
+* Signed running balance: `1,250.00` = client owes, `300.00 CR` = client is in credit.
+* Date range with opening balance; open invoices with days overdue; unused credit by receipt; print and Excel export;
+  sorting disabled so the running balance stays meaningful. Receipts awaiting approval are included and labelled.
+* **Self-check:** closing balance must equal *Σ(invoice total − paid against it) − unused credit*. If old data breaks
+  that, the page says by how much and points to `receipts:recompute --client=…`.
+* The client page summary uses the same figures.
+
+### Better approach (proposal)
+1. **One source of truth for the client account.** Retire the `transactions` table as a reporting source: it duplicates
+   the allocation lines and is what the old statement misread. Keep it written for a release, then remove the
+   *Transactions* tab in favour of the statement.
+2. **Post a client ledger, don't recompute it.** When volumes grow, have every document post immutable entries to a
+   `client_ledger` table (invoice → debit; receipt → credit; WHT/VAT/deduction → credit; edit/void → reversal entry).
+   The statement becomes one ordered query, periods can be closed, and nothing can be "re-read" wrongly. The rules in
+   `ClientStatement` are exactly the posting rules, so this is a mechanical next step.
+3. **Apply credit automatically** when an invoice is raised (oldest credit first, switchable per client), so credit
+   never sits unused and "paid on" dates are consistent.
+4. **Send the statement** — PDF/email to the client with the open-invoice list, and a company-wide **aged receivables**
+   report (0–30 / 31–60 / 61–90 / 90+ days) built on the same open-invoice figures.
+5. **Void, don't delete** receipts, so statements already sent never change silently.
+
+---
+
 ## Code map
 
 | File | Purpose |
@@ -147,3 +202,5 @@ table created later). Existing databases are past that migration, so it only mat
 | `app/Http/Controllers/MultiInvoiceReceiptController.php` | Multi-invoice screen, apply credit |
 | `tests/Feature/ReceiptBalanceAndBankTest.php` | The A–G cases above, cheque posting, deposits |
 | `tests/Feature/ReceiptRecomputeCommandTest.php` | The repair command |
+| `app/Services/Receipts/ClientStatement.php` | Statement of account and client page summary |
+| `tests/Feature/ClientStatementTest.php` | Credit applied once, VAT/WHT credited, CR balance, advances, date range, self-check |

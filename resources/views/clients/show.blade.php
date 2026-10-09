@@ -396,13 +396,19 @@
             <div class="col-md-4 col-xl-4">
                 <div class="card text-bg-danger">
                     <div class="card-body">
-                        <h5 class="card-title text-white"> Client Outstandings </h5>
+                        <h5 class="card-title text-white"> Client Account </h5>
                         <hr>
-                        <p class="card-text">Total Invoice Amount : <strong> GH&#x20B5; {{number_format($total_invoice_amount, 2) }} </strong> </p>
-                        <p class="card-text">Total Amount Paid : <strong> GH&#x20B5; {{number_format($total_invoice_amount - $outstanding - $balance_outstanding, 2) }} </strong> </p>
-                        <p class="card-text">Total Invoice Outstandings : <strong> GH&#x20B5; {{number_format($outstanding, 2) }} </strong> </p>
-                        <p class="card-text">Total Part Payment Outstandings : <strong> GH&#x20B5; {{number_format($balance_outstanding, 2) }} </strong> </p>
-                        <h4 class="card-text text-white"> Total : <strong> GH&#x20B5; {{number_format($outstanding + $balance_outstanding, 2) }} </strong> </h4>
+                        <p class="card-text">Total Invoiced : <strong> GH&#x20B5; {{ number_format($account['invoiced'], 2) }} </strong> </p>
+                        <p class="card-text">Money Received : <strong> GH&#x20B5; {{ number_format($account['received'], 2) }} </strong> </p>
+                        <p class="card-text">WHT / VAT / Deductions : <strong> GH&#x20B5; {{ number_format($account['withheld'], 2) }} </strong> </p>
+                        <p class="card-text">Owed on Invoices : <strong> GH&#x20B5; {{ number_format($account['owed_on_invoices'], 2) }} </strong> </p>
+                        @if($account['credit'] > 0)
+                        <p class="card-text">Unused Credit : <strong> GH&#x20B5; {{ number_format($account['credit'], 2) }} </strong> </p>
+                        @endif
+                        <h4 class="card-text text-white"> Balance : <strong> GH&#x20B5; {{ \App\Services\Receipts\ClientStatement::money($account['balance']) }} </strong> </h4>
+                        @unless($account['check']['ok'])
+                        <small class="text-white-50">Statement and invoice balances differ by GH&#x20B5;{{ number_format($account['check']['difference'], 2) }} — old data, see the statement.</small>
+                        @endunless
                     </div>
                 </div>
             </div>
