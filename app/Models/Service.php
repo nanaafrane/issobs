@@ -10,7 +10,12 @@ class Service extends Model
     //
     protected $fillable = [
         'name',
+        'counts_as_guards',
         'user_id',
+    ];
+
+    protected $casts = [
+        'counts_as_guards' => 'boolean',
     ];
 
 

@@ -12,6 +12,7 @@ use App\Models\InvoiceData;
 use App\Models\Receipt;
 use App\Exports\FilteredQueryExport;
 use App\Support\PayrollMonth;
+use App\Support\InvoiceGuards;
 use App\Support\ClientInvoiceStatus;
 use App\Support\PayPriority;
 use App\Support\CategoryPayroll;
@@ -450,7 +451,7 @@ class SalaryController extends Controller
             $categoryVars["client{$L}Hold"] = $clientTotals($held, $clientIds)->get(['client_id', DB::raw('SUM(net_salary) as net_salary'), DB::raw('COUNT(employee_id) as total_employees')]);
             $categoryVars["client{$L}Invoices"] = $invoices;
             $categoryVars["client{$L}Receipts"] = $receipts;
-            $categoryVars["client{$L}InvoicesGuards"] = (float) InvoiceData::whereIn('invoice_id', $invoiceIds)->sum('quantity');
+            $categoryVars["client{$L}InvoicesGuards"] = (float) InvoiceData::guards()->whereIn('invoice_id', $invoiceIds)->sum('quantity');
             $categoryVars["client{$L}Cash"] = (clone $liveRows)->where('payment_type', 'Cash')->get(['id', 'net_salary']);
             $categoryVars["client{$L}Bank"] = (clone $liveRows)->where('payment_type', 'Bank')->get(['id', 'net_salary']);
         }
@@ -794,13 +795,8 @@ class SalaryController extends Controller
          */
         public function totalInvoiceGuards($invoices)
         {
-            $guards = [];
-            foreach($invoices as $invoice) {
-                foreach($invoice->invoice_data as $data) {
-                    $guards[] = $data->quantity;
-                }
-            }
-            return array_sum($guards);
+            // Deduction lines (ABSENT DEDUCTION etc.) are not guards: see InvoiceGuards.
+            return InvoiceGuards::total($invoices);
 
         }
 

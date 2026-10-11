@@ -305,6 +305,11 @@
                                     @enderror
                                 </div>
                             </div>
+                            <div class="form-check mt-3">
+                                <input class="form-check-input" type="checkbox" name="counts_as_guards" id="counts_as_guards" value="1" {{ $service->counts_as_guards ? 'checked' : '' }}>
+                                <label class="form-check-label" for="counts_as_guards">Quantity counts as guards</label>
+                                <div class="form-text">Untick for deductions such as ABSENT DEDUCTION. Only affects invoices saved from now on.</div>
+                            </div>
                         </div><br>
                         <div class="modal-footer">
                             <button type="submit" class="btn btn-info d-grid w-100">{{ __('Update') }}</button>

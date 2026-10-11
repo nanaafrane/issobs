@@ -11,6 +11,7 @@ use App\Http\Controllers\Concerns\SearchesDates;
 use App\Models\Client;
 use App\Models\Field;
 use App\Models\Service;
+use App\Support\InvoiceGuards;
 use App\Models\Transaction;
 use App\Models\Vat;
 use Illuminate\Http\Request;
@@ -509,11 +510,13 @@ class InvoiceController extends Controller
         // dd($invoice_id, $description, $quantity, $unit_price, $amount, $quantity_count);
         if($quantity_count > 0)
         {
+            $nonHeadcount = InvoiceGuards::nonHeadcountServices();
             for($i=0; $i<$quantity_count; $i++)
             {
                 DB::table('invoice_data')->insert([
                 'invoice_id' => $invoice_id,
                 'service_name' => $service[$i],
+                'counts_as_guards' => InvoiceGuards::flagFor($service[$i], $nonHeadcount),
                 'description' => $description[$i],
                 'quantity' => $quantity[$i],
                 'unit_price' => $unit_price[$i],
@@ -660,18 +663,8 @@ class InvoiceController extends Controller
 
         public function totalInvoiceGuards($invoices)
         {
-            $guards = [];
-
-            foreach($invoices as $invoice)
-            {
-                foreach($invoice->invoice_data as $data)
-                    {
-                        $guards[] =  $data->quantity;
-                        //   $data->quantity . "<br>";
-                    }
-            }
-        return collect($guards)->sum() ;
-
+            // Deduction lines (ABSENT DEDUCTION etc.) are not guards: see InvoiceGuards.
+            return InvoiceGuards::total($invoices);
         }
 
         protected function groupInvoicesByAging($invoices)
@@ -758,10 +751,12 @@ class InvoiceController extends Controller
         $quantity_count = count($quantity);
 
         if ($quantity_count > 0) {
+            $nonHeadcount = InvoiceGuards::nonHeadcountServices();
             for ($i = 0; $i < $quantity_count; $i++) {
                 DB::table('invoice_data')->insert([
                     'invoice_id' => $invoice_id,
                     'service_name' => $service[$i],
+                    'counts_as_guards' => InvoiceGuards::flagFor($service[$i], $nonHeadcount),
                     'description' => $description[$i],
                     'quantity' => $quantity[$i],
                     'unit_price' => $unit_price[$i],
@@ -861,18 +856,14 @@ class InvoiceController extends Controller
         if ($quantity_count > 0)
         {
             DB::table('invoice_data')->where('invoice_id', $invoice->id)->delete();
+            $nonHeadcount = InvoiceGuards::nonHeadcountServices();
             for($i = 0; $i<$quantity_count; $i++) {
 
-                DB::table('invoice_data')->upsert(
-                    [
-                        'invoice_id'=> $invoice->id, 'service_name'=> $service_name[$i], 'description' => $description[$i], 'quantity' => $quantity[$i], 'unit_price' => $unit_price[$i], 'amount' => $amount[$i],
-                    ],
-
-                    ['invoice_id'],
-
-                    ['description','quantity', 'unit_price', 'amount']
-
-            );
+                // The lines were just deleted, so this is a plain insert (invoice_id is not unique,
+                // so the old upsert() was an insert on MySQL and an error on SQLite).
+                DB::table('invoice_data')->insert([
+                    'invoice_id'=> $invoice->id, 'service_name'=> $service_name[$i], 'counts_as_guards' => InvoiceGuards::flagFor($service_name[$i], $nonHeadcount), 'description' => $description[$i], 'quantity' => $quantity[$i], 'unit_price' => $unit_price[$i], 'amount' => $amount[$i],
+                ]);
                 // dd($i );
                 // dd($description[$i], $quantity[$i], $quantity_count, $unit_price[$i], $amount[$i], $sum_amount_from_invoice);
 

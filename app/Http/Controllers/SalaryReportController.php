@@ -300,7 +300,7 @@ class SalaryReportController extends Controller
         $invoiced = DB::table('invoices')
             ->joinSub($catMap, 'c', fn ($j) => $j->on('c.client_id', '=', 'invoices.client_id')->on('c.category_month', '=', 'invoices.invoice_month'))
             ->whereBetween('invoices.invoice_month', $range)
-            ->leftJoinSub(DB::table('invoice_data')->selectRaw('invoice_id, SUM(quantity) as guards')->groupBy('invoice_id'), 'q', 'q.invoice_id', '=', 'invoices.id')
+            ->leftJoinSub(DB::table('invoice_data')->where('counts_as_guards', true)->selectRaw('invoice_id, SUM(quantity) as guards')->groupBy('invoice_id'), 'q', 'q.invoice_id', '=', 'invoices.id')
             ->leftJoinSub(DB::table('receipts')->selectRaw('invoice_id, SUM(COALESCE(cash_amount,0)+COALESCE(momo_amount,0)+COALESCE(transfer_amount,0)+COALESCE(cheque_amount,0)) as received')->groupBy('invoice_id'), 'r', 'r.invoice_id', '=', 'invoices.id')
             ->selectRaw('c.name, COALESCE(SUM(invoices.total),0) as invoiced, COALESCE(SUM(q.guards),0) as guards_invoiced, COALESCE(SUM(r.received),0) as received')
             ->groupBy('c.name')->get()->keyBy('name');

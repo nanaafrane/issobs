@@ -59,6 +59,12 @@ class Invoice extends Model
         return $this->hasMany(InvoiceData::class); 
     }
 
+    /** Guards billed on this invoice; deduction lines (e.g. ABSENT DEDUCTION) are not guards. */
+    public function getGuardCountAttribute(): float
+    {
+        return (float) $this->invoice_data->where('counts_as_guards', true)->sum('quantity');
+    }
+
     /** Every receipt line that settled part of this invoice. */
     public function allocations(): HasMany
     {

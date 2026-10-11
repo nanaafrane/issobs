@@ -695,6 +695,11 @@
                                                 @enderror
                                             </div>
                                         </div>
+                                        <div class="form-check mt-3">
+                                            <input class="form-check-input" type="checkbox" name="counts_as_guards" id="counts_as_guards" value="1" checked>
+                                            <label class="form-check-label" for="counts_as_guards">Quantity counts as guards</label>
+                                            <div class="form-text">Untick for deductions such as ABSENT DEDUCTION, so their quantity is not reported as extra guards.</div>
+                                        </div>
 
                                     </div>
                                     <div class="modal-footer">

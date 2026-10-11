@@ -404,7 +404,7 @@
                                                         @php
                                                             $guardsa = [];
                                                             foreach ($catAinv as $invGuard) {
-                                                                $guardsa[] = $invGuard->invoice_data->sum('quantity');
+                                                                $guardsa[] = $invGuard->guard_count;
                                                             }
                                                         @endphp
                                                         {{ collect($guardsa)->sum() }}
@@ -489,7 +489,7 @@
                                                         @php
                                                             $guardsb = [];
                                                             foreach ($catBinv as $invGuard) {
-                                                                $guardsb[] = $invGuard->invoice_data->sum('quantity');
+                                                                $guardsb[] = $invGuard->guard_count;
                                                             }
                                                         @endphp
                                                         {{ collect($guardsb)->sum() }}
@@ -575,7 +575,7 @@
                                                         @php
                                                             $guardsc = [];
                                                             foreach ($catCinv as $invGuard) {
-                                                                $guardsc[] = $invGuard->invoice_data->sum('quantity');
+                                                                $guardsc[] = $invGuard->guard_count;
                                                             }
                                                         @endphp
                                                         {{ collect($guardsc)->sum() }}
@@ -661,7 +661,7 @@
                                                         @php
                                                             $guardsd = [];
                                                             foreach ($catDinv as $invGuard) {
-                                                                $guardsd[] = $invGuard->invoice_data->sum('quantity');
+                                                                $guardsd[] = $invGuard->guard_count;
                                                             }
                                                         @endphp
                                                         {{ collect($guardsd)->sum() }}
@@ -748,7 +748,7 @@
                                                             @php
                                                                 $guards = [];
                                                                 foreach ($clientInv as $invGuard) {
-                                                                    $guards[] = $invGuard->invoice_data->sum('quantity');
+                                                                    $guards[] = $invGuard->guard_count;
                                                                 }
                                                             @endphp
                                                             {{ collect($guards)->sum() }}

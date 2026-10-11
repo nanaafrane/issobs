@@ -1,0 +1,3670 @@
+From 5ac4d834fb68ed1b3d684af63bd59d43ae0c3483 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Thu, 8 Oct 2026 15:52:12 +0100
+Subject: [PATCH] Receipts: cheques straight to bank; balances derived from
+ receipts
+
+Bank
+- Cheques (like transfers) are credited to the bank chosen on the receipt
+  when it is saved; edits/deletes add reversal lines. Bank Deposit now
+  only carries cash plus cheques received before this change, so nothing
+  is counted twice. Cheque/transfer-only collections are marked Banked.
+- bank_transactions.channel (cheque/transfer/deposit/expense) + narration
+  shown on the bank ledger; bank money columns widened to decimal(15,2).
+
+Balances and advances
+- Single-invoice create and edit go through the same ReceiptRecorder as
+  the multi-invoice screen: invoice status/balance are derived from
+  allocations, never chosen. Fixes edits subtracting twice, "completed"
+  with money owed, fully paid invoices left open, negative balances on
+  overpayment, WHT overwritten on edit, image wiped on edit, cashier
+  replaced on edit.
+- Overpayment refused unless kept as client credit; advance flag set
+  automatically (credit kept, or paid before the invoice month).
+- receipts.advance_payment boolean column made a string (it could never
+  hold "advance" on MySQL).
+- php artisan receipts:recompute [--apply --reopen-short
+  --overpayments-to-credit --client=] repairs historic balances; dry run
+  by default with a CSV report.
+
+Tests: 43 passing on SQLite and MariaDB 10.11.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01QiPGFNQuSfaHtkmjDFbR7A
+---
+ .../Controllers/BankDepositController.php     |   49 +-
+ .../MultiInvoiceReceiptController.php         |  111 +-
+ app/Http/Controllers/ReceiptController.php    | 1267 +----------------
+ .../Requests/Concerns/PaymentModeRules.php    |   16 +-
+ app/Http/Requests/StoreReceiptRequest.php     |    8 +-
+ app/Http/Requests/UpdateReceiptRequest.php    |    7 +-
+ app/Models/BankTransaction.php                |    1 +
+ app/Services/Receipts/BalanceRecompute.php    |  202 +++
+ app/Services/Receipts/BankPosting.php         |  131 +-
+ app/Services/Receipts/InvoiceSettlement.php   |   36 -
+ app/Services/Receipts/ReceiptRecorder.php     |  350 +++++
+ app/Services/Receipts/ReceiptWorkflow.php     |   17 +-
+ ...50000_add_channel_to_bank_transactions.php |   56 +
+ ...make_receipts_advance_payment_a_string.php |   33 +
+ docs/receipts-and-payments.md                 |  281 ++--
+ resources/views/banks/deposit_index.blade.php |   20 +-
+ resources/views/banks/index.blade.php         |    2 +
+ .../partials/receipt_bank_select.blade.php    |    1 +
+ resources/views/sales/receiptCreate.blade.php |   35 +-
+ resources/views/sales/receipt_edit.blade.php  |   30 +-
+ .../sales/receipt_multi_create.blade.php      |    3 +-
+ resources/views/sales/receipt_show.blade.php  |    2 +-
+ routes/console.php                            |   47 +
+ tests/Feature/MultiInvoiceReceiptTest.php     |    5 +-
+ tests/Feature/ReceiptBalanceAndBankTest.php   |  246 ++++
+ tests/Feature/ReceiptRecomputeCommandTest.php |   93 ++
+ 26 files changed, 1421 insertions(+), 1628 deletions(-)
+ create mode 100644 app/Services/Receipts/BalanceRecompute.php
+ create mode 100644 app/Services/Receipts/ReceiptRecorder.php
+ create mode 100644 database/migrations/2026_10_08_150000_add_channel_to_bank_transactions.php
+ create mode 100644 database/migrations/2026_10_08_150100_make_receipts_advance_payment_a_string.php
+ create mode 100644 tests/Feature/ReceiptBalanceAndBankTest.php
+ create mode 100644 tests/Feature/ReceiptRecomputeCommandTest.php
+
+diff --git a/app/Http/Controllers/BankDepositController.php b/app/Http/Controllers/BankDepositController.php
+index 3989983..d1c5bae 100644
+--- a/app/Http/Controllers/BankDepositController.php
++++ b/app/Http/Controllers/BankDepositController.php
+@@ -9,6 +9,7 @@
+ use App\Models\BankTransaction;
+ use App\Models\Collection;
+ use App\Models\Receipt;
++use App\Services\Receipts\BankPosting;
+ use Illuminate\Support\Facades\DB;
+ use Illuminate\Support\Facades\Auth;
+ 
+@@ -46,10 +47,20 @@ public function index()
+     public function create()
+     {
+         //
+-        $collections = Collection::where('status', 'undeposited')->get();
++        // Cheques and transfers now go straight to the bank from the receipt, so
++        // only cash (and cheques received before that change) is left to deposit.
++        $collections = Collection::where('status', 'undeposited')->get()
++            ->each(function ($c) {
++                $d = BankPosting::depositable($c);
++                $c->deposit_cash = $d['cash'];
++                $c->deposit_cheque = $d['cheque'];
++                $c->deposit_total = $d['total'];
++            })
++            ->filter(fn ($c) => $c->deposit_total > 0)
++            ->values();
+         $banks = Bank::all();
+ 
+-        // Pre-select the bank chosen on the receipt for its cheque (or transfer).
++        // Pre-select the bank chosen on the receipt (only matters for old, never-banked cheques).
+         $suggestedBanks = Receipt::whereIn('id', $collections->pluck('receipt_id')->filter())
+             ->get(['id', 'cheque_to_bank_id', 'transfer_to_bank_id'])
+             ->mapWithKeys(fn ($r) => [$r->id => $r->cheque_to_bank_id ?: $r->transfer_to_bank_id]);
+@@ -84,13 +95,16 @@ public function store(StoreBankDepositRequest $request)
+ 
+             foreach ($collections as $collection) {
+                 $bank = Bank::whereKey($bankIds[$collection->id])->lockForUpdate()->firstOrFail();
++                // Cash, plus the cheque only if it was not already posted from the receipt.
++                $amounts = BankPosting::depositable($collection);
+ 
+-                $current_deposited_id = $this->bank_deposit($collection, $bank->id);
+-                $this->bank_transaction($bank, $current_deposited_id, $collection);
++                if ($amounts['total'] > 0) {
++                    $current_deposited_id = $this->bank_deposit($amounts, $bank->id);
++                    $this->bank_transaction($bank, $current_deposited_id, $collection, $amounts);
+ 
+-                // UPDATE THE BANK TOTAL
+-                $bank->total = $bank->total + $collection->cash_amount + $collection->cheque_amount;
+-                $bank->save();
++                    $bank->total = round((float) $bank->total + $amounts['total'], 2);
++                    $bank->save();
++                }
+ 
+                 $collection->status = 'Deposited';
+                 $collection->save();
+@@ -101,31 +115,30 @@ public function store(StoreBankDepositRequest $request)
+ 
+     }
+ 
+-    public function bank_deposit ($collection, $bank)
++    /** @param array{cash: float, cheque: float, total: float} $amounts */
++    public function bank_deposit (array $amounts, $bank)
+     {
+-
+-        // dd($collection , $bank);
+         // CREATE A BANK DEPOSIT AND RETURN THE DEPOSITED ID
+         $deposit = new BankDeposit();
+         $deposit->bank_id = $bank;
+         $deposit->user_id = Auth::user()->id;
+-        $deposit->cash_amount = $collection->cash_amount;
+-        $deposit->cheque_amount = $collection->cheque_amount;
+-        $deposit->total =  $collection->cash_amount + $collection->cheque_amount;
++        $deposit->cash_amount = $amounts['cash'];
++        $deposit->cheque_amount = $amounts['cheque'];
++        $deposit->total = $amounts['total'];
+         $deposit->save();
+ 
+          return $deposit->id;
+     }
+ 
+-    public function bank_transaction($bank, $current_deposited_id, $collection)
++    /** @param array{cash: float, cheque: float, total: float} $amounts */
++    public function bank_transaction($bank, $current_deposited_id, $collection, array $amounts)
+     {
+-        // dd($bank->total);
+-        // CREATE A BANK TRANSACTION
+         $bank_transaction = new BankTransaction();
+         $bank_transaction->bank_id = $bank->id;
+-        $bank_transaction->credit = $collection->cash_amount + $collection->cheque_amount;;
++        $bank_transaction->channel = 'deposit';
++        $bank_transaction->credit = $amounts['total'];
+         $bank_transaction->deposit_id = $current_deposited_id;
+-        $bank_transaction->balance = $bank->total + $collection->cash_amount + $collection->cheque_amount;
++        $bank_transaction->balance = round((float) $bank->total + $amounts['total'], 2);
+         $bank_transaction->narration = 'Deposit of collection #' . $collection->id
+             . ($collection->receipt_id ? ' (receipt FWSSR' . $collection->receipt_id . ')' : '');
+         $bank_transaction->save();
+diff --git a/app/Http/Controllers/MultiInvoiceReceiptController.php b/app/Http/Controllers/MultiInvoiceReceiptController.php
+index 57822db..5ea8c0f 100644
+--- a/app/Http/Controllers/MultiInvoiceReceiptController.php
++++ b/app/Http/Controllers/MultiInvoiceReceiptController.php
+@@ -5,14 +5,13 @@
+ use App\Http\Requests\StoreMultiInvoiceReceiptRequest;
+ use App\Models\Bank;
+ use App\Models\Client;
+-use App\Models\Collection;
+ use App\Models\Invoice;
+ use App\Models\Receipt;
+ use App\Models\User;
+ use App\Models\Wht;
+-use App\Services\Receipts\BankPosting;
+ use App\Services\Receipts\InvoiceSettlement;
+ use App\Services\Receipts\ReceiptAllocator;
++use App\Services\Receipts\ReceiptRecorder;
+ use App\Services\Receipts\ReceiptWorkflow;
+ use Illuminate\Http\Request;
+ use Illuminate\Support\Facades\Auth;
+@@ -30,21 +29,9 @@
+  */
+ class MultiInvoiceReceiptController extends Controller
+ {
+-    /** Payment fields that belong to each mode. Unticked modes are always stored as null. */
+-    private const MODE_FIELDS = [
+-        'cheque' => ['cheque_reference', 'cheque_amount', 'cheque_bank', 'cheque_to_bank_id'],
+-        'transfer' => ['transfer_reference', 'transfer_amount', 'transfer_bank', 'transfer_to_bank_id'],
+-        'momo' => ['momo_transactin_id', 'momo_amount'],
+-        'other payments' => ['other_payment_descri', 'other_payment_amnt'],
+-        'cash' => ['cash_amount'],
+-    ];
+-
+-    private const AMOUNT_FIELDS = ['cheque_amount', 'transfer_amount', 'momo_amount', 'other_payment_amnt', 'cash_amount'];
+-
+     public function __construct(
+         private ReceiptAllocator $allocator,
+         private InvoiceSettlement $settlement,
+-        private BankPosting $bankPosting,
+         private ReceiptWorkflow $workflow,
+     ) {
+         $this->middleware('auth');
+@@ -81,84 +68,11 @@ public function create(Request $request)
+         ));
+     }
+ 
+-    public function store(StoreMultiInvoiceReceiptRequest $request)
++    public function store(StoreMultiInvoiceReceiptRequest $request, ReceiptRecorder $recorder)
+     {
+-        $client = $this->scopeToUserFields(Client::query())->with('field')->findOrFail($request->integer('client_id'));
+-        $selectedModes = (array) $request->input('mode', []);
+-        $payment = $this->paymentPayload($request, $selectedModes);
+-        $moneyReceived = round(array_sum(array_map(fn ($f) => (float) ($payment[$f] ?? 0), self::AMOUNT_FIELDS)), 2);
+-
+-        if ($moneyReceived <= 0) {
+-            throw ValidationException::withMessages(['mode' => 'Enter the amount received for the payment mode(s) you ticked.']);
+-        }
+-
+-        $receipt = DB::transaction(function () use ($request, $client, $payment, $moneyReceived) {
+-            $invoiceInput = collect((array) $request->input('invoices', []))
+-                ->filter(fn ($row) => ($row['selected'] ?? null) === '1');
+-
+-            // Lock the ticked invoices so two cashiers can't settle the same balance twice.
+-            $invoices = $this->openInvoices($client->id)
+-                ->whereIn('id', $invoiceInput->keys()->map(fn ($k) => (int) $k)->all())
+-                ->lockForUpdate()
+-                ->get();
+-
+-            if ($invoiceInput->isNotEmpty() && $invoices->count() !== $invoiceInput->count()) {
+-                throw ValidationException::withMessages(['invoices' => 'One or more ticked invoices are already fully paid or do not belong to this client. Reload the page and try again.']);
+-            }
+-
+-            $plan = $this->allocator->plan($this->planLines($invoices, $invoiceInput), $moneyReceived);
+-            $this->guardPlan($plan, $request->input('keep_credit') === '1', $invoices->isEmpty());
+-
+-            $lines = collect($plan['lines'])->keyBy('invoice_id');
+-            $totals = [
+-                'wht' => round($lines->sum('wht_amount'), 2),
+-                'vat' => round($lines->sum('vat7_amount'), 2),
+-                'ded' => round($lines->sum('deduction_amount'), 2),
+-            ];
++        $client = $this->scopeToUserFields(Client::query())->findOrFail($request->integer('client_id'));
+ 
+-            $receipt = new Receipt();
+-            $receipt->fill($payment);
+-            $receipt->mode = (array) $request->input('mode');
+-            $receipt->client_id = $client->id;
+-            $receipt->invoice_id = $invoices->first()?->id;   // primary invoice, for older screens and reports
+-            $receipt->from = $request->input('from');
+-            $receipt->receipt_month = $request->input('receipt_month');
+-            $receipt->advance_payment = $plan['unapplied'] > 0 ? 'advance' : null;
+-            $receipt->unapplied_amount = $plan['unapplied'];
+-            $receipt->dAmount = $totals['ded'] > 0 ? $totals['ded'] : null;
+-            $receipt->description = $totals['ded'] > 0 ? $request->input('description') : null;
+-            $receipt->wht_amount = $totals['wht'] > 0 ? $totals['wht'] : null;
+-            $receipt->amount_received = $totals['wht'] > 0 ? $moneyReceived : null;
+-            $receipt->vat7_value = $totals['vat'] > 0 ? $totals['vat'] : null;
+-            $receipt->vat7_amount = $totals['vat'] > 0 ? round(($receipt->amount_received ?? 0) - $totals['vat'], 2) : null;
+-            // Same meaning as the single-invoice receipt: money + WHT + VAT (deductions kept in dAmount).
+-            $receipt->total = round($moneyReceived + $totals['wht'] + $totals['vat'], 2);
+-            $receipt->status = $lines->every(fn ($l) => $l['completes']) ? 'completed' : 'uncompleted';
+-            $receipt->user_id = Auth::id();
+-            $receipt->image = $request->file('image')?->store('images', 'public_html_disk');
+-            $this->workflow->applyApproval($receipt, $request->input('staff'));
+-            $receipt->save();
+-
+-            foreach ($invoices as $invoice) {
+-                $this->settlement->allocate($receipt, $invoice, $lines[$invoice->id]);
+-                $this->workflow->assignCategory($receipt, $invoice);
+-            }
+-
+-            Collection::create([
+-                'user_id' => Auth::id(),
+-                'receipt_id' => $receipt->id,
+-                'cash_amount' => $receipt->cash_amount,
+-                'momo_amount' => $receipt->momo_amount,
+-                'cheque_amount' => $receipt->cheque_amount,
+-                'transfer_amount' => $receipt->transfer_amount,
+-                'total_amount' => $receipt->total,
+-                'field_id' => $client->field?->id,
+-            ]);
+-
+-            $this->bankPosting->syncTransfer($receipt);
+-
+-            return $receipt;
+-        });
++        $receipt = $recorder->create($client, ReceiptRecorder::multiInvoiceInput($request), $request->file('image'));
+ 
+         $count = $receipt->allocations()->count();
+         $message = 'Receipt FWSSR' . $receipt->id . ' created for ' . $count . ' invoice' . ($count === 1 ? '' : 's') . '.';
+@@ -278,23 +192,6 @@ private function guardPlan(array $plan, bool $keepCredit, bool $noInvoices): voi
+         }
+     }
+ 
+-    /** Payment fields of ticked modes only; everything else is null. */
+-    private function paymentPayload(Request $request, array $selectedModes): array
+-    {
+-        $payload = [];
+-        foreach (self::MODE_FIELDS as $mode => $fields) {
+-            $on = in_array($mode, $selectedModes, true);
+-            foreach ($fields as $field) {
+-                $value = $on ? $request->input($field) : null;
+-                $payload[$field] = in_array($field, self::AMOUNT_FIELDS, true) && $value !== null
+-                    ? round((float) $value, 2)
+-                    : ($value === '' ? null : $value);
+-            }
+-        }
+-
+-        return $payload;
+-    }
+-
+     /** Same office rules as the receipt list: head office sees all, Tema also sees Shai Hills. */
+     private function scopeToUserFields($query)
+     {
+diff --git a/app/Http/Controllers/ReceiptController.php b/app/Http/Controllers/ReceiptController.php
+index 5da7b23..6e98fde 100644
+--- a/app/Http/Controllers/ReceiptController.php
++++ b/app/Http/Controllers/ReceiptController.php
+@@ -22,6 +22,7 @@
+ use App\Models\Bank;
+ use App\Services\Receipts\BankPosting;
+ use App\Services\Receipts\InvoiceSettlement;
++use App\Services\Receipts\ReceiptRecorder;
+ use Illuminate\Support\Facades\Auth;
+ use Illuminate\Support\Facades\DB;
+ use Illuminate\Validation\Rule;
+@@ -33,8 +34,6 @@ class ReceiptController extends Controller
+ {
+     use SearchesDates;
+ 
+-    public ?float $wht_amount = null;
+-    public ?float $vat7_amount = null;
+ 
+     /**
+      * Create a new controller instance.
+@@ -703,769 +702,38 @@ public function create()
+ 
+ 
+ 
+-        /* -----------------------------------------------------------------------
+-        * 2b. Shared helper — explicitly nulls out the detail fields for any
+-        *     payment mode that is NOT in the submitted mode[] array.
+-        *
+-        *     This does NOT rely on the client clearing fields via JS before
+-        *     submit. Even if JS never ran (disabled, blocked, form submitted
+-        *     programmatically, browser back/forward cache, etc.), whatever
+-        *     the request happens to contain for a mode the user didn't select
+-        *     is discarded here — so a receipt can never end up storing cheque
+-        *     details from a mode that was switched away from three edits ago.
+-        * ---------------------------------------------------------------------*/
+-
+-        function buildModeAwarePayload(\Illuminate\Http\Request $request, array $selectedModes): array
+-        {
+-            // Every field that belongs to a specific payment mode, grouped by
+-            // the mode value that "owns" it.
+-            $modeFields = [
+-                'cheque' => ['cheque_reference', 'cheque_amount', 'cheque_bank', 'cheque_to_bank_id'],
+-                'transfer' => ['transfer_reference', 'transfer_amount', 'transfer_bank', 'transfer_to_bank_id'],
+-                'momo' => ['momo_transactin_id', 'momo_amount'],
+-                'other payments' => ['other_payment_descri', 'other_payment_amnt'],
+-                'cash' => ['cash_amount'],
+-            ];
+-
+-            $payload = [];
+-
+-            foreach ($modeFields as $mode => $fields) {
+-                $isSelected = in_array($mode, $selectedModes, true);
+-                foreach ($fields as $field) {
+-                    // Selected mode -> take whatever was submitted (or null if empty).
+-                    // Unselected mode -> force null, ignoring the request entirely.
+-                    $payload[$field] = $isSelected ? $request->input($field) : null;
+-                }
+-            }
+-
+-            return $payload;
+-        }
+-
+-
+-
+     /**
+-     * Store a newly created resource in storage.
++     * Create a receipt for one invoice.
++     *
++     * Status and balance are no longer chosen on the form: the payment is
++     * applied to what the invoice still owes and the invoice is re-derived
++     * from all of its receipts (see App\Services\Receipts\ReceiptRecorder).
++     * Money beyond what is owed becomes client credit, only when the cashier
++     * ticks "keep as credit".
+      */
+-    public function store(StoreReceiptRequest $request)
++    public function store(StoreReceiptRequest $request, ReceiptRecorder $recorder)
+     {
++        $invoice = Invoice::findOrFail($request->integer('invoice_id'));
++        $client = Client::findOrFail($invoice->client_id);   // the invoice decides the client, not the form
+ 
+-        // // dd($request->all());
+-        // Get all values from receipt form
+-        $status = $request->input('status');
+-        $wth_from_form = $request->input('wth');
+-        $vat_from_form = $request->input('vat');
+-        $deductions_from_form = $request->input('deductions');
+-        $invoice_id = $request->input('invoice_id');
+-        $staff = $request->input('staff');
+-        // dd($invoice_id);
+-        $invoice_data = Invoice::where('id',$invoice_id)->first();
+-        // dd($invoice_data);
+-        $client_id = $request->input('client_id');
+-        $from = $request->input('from');
+-        $mode = $request->input('mode');
+-
+-        $advance_payment = null;
+-         if(isset($request->advance_payment) && $request->input('advance_payment') == "advance")
+-         {
+-            $advance_payment =  "advance";
+-         }
+-        $receipt_date = $request->input('receipt_month');
+-        // $vat7_value = $request->float('vat7_value');
+-
+-        $transfer_reference = $request->input('transfer_reference');
+-        $transfer_amount = $request->float('transfer_amount');
+-        $transfer_bank = $request->input('transfer_bank');
+-
+-        $cheque_reference = $request->input('cheque_reference');
+-        $cheque_amount = $request->float('cheque_amount');
+-        $cheque_bank = $request->input('cheque_bank');
+-
+-        $momo_transactin_id = $request->input('momo_transactin_id');
+-        $momo_amount = $request->float('momo_amount');
+-
+-        $other_payment_descri = $request->input('other_payment_descri');
+-        $other_payment_amnt = $request->float('other_payment_amnt');
+-
+-        $cash_amount = $request->float('cash_amount');
+-        $user_id = Auth::user()->id;
+-
+-        // if receipt has image
+-        $image = null;
+-        if($request->file('image'))
+-        {
+-           $image = ($request->file('image'))->store('images', 'public_html_disk');
+-        }
+-
+-        // sum all input payments
+-        $total = $cheque_amount + $momo_amount + $cash_amount + $transfer_amount + $other_payment_amnt;
+-        $sum_of_amountPaid_minus_wht = null;
+-        $wht_amount = null;
+-        $vat7_value = null;
+-        // dd($mode, $cheque_amount, $transfer_amount);
+-
+-        // if the payment has with holding turned on;
+-        if($wth_from_form == "on")
+-        {
+-            $wht_amount = $request->float('wht_amount');
+-            // dd($wht_amount, $total);
+-            //    $wht = new Wht();
+-               $this->wht_amount = $wht_amount;
+-               $sum_of_amountPaid_minus_wht = $total;
+-               $total = $total + $wht_amount;
+-        }
+-
+-        if($vat_from_form == "on")
+-        {
+-            $vat7_value = $request->float('vat7_value');
+-            $this->vat7_amount = $sum_of_amountPaid_minus_wht - $vat7_value ;
+-            $total = $total + $vat7_value;
+-            
+-        }
+-
+-        $dAmount = null;
+-        $description = null;
+-        if($deductions_from_form == "on")
+-        {
+-            $dAmount = $request->float('dAmount');
+-            $description = $request->input('description');
+-        }
+-        // dd($sum_of_amountPaid_minus_wht, $total);
+-        // end of if the payment has with holding turned on
+-
+-        // dd( $wth_from_form, $vat_from_form, $wht_amount, $this->vat7_amount, $vat7_value); 
+-        $invoiceTotal = Str::of($invoice_data->total)->toFloat();
+-        $invoiceBalance = Str::of($invoice_data->balance)->toFloat();
+-        $check1 =  $invoiceTotal + $invoiceBalance;
+-        $check2 = $invoiceBalance - $total - $dAmount ;
+-
+-         //    $fields = Field::pluck('id');
+-        $client = Client::findOrFail($client_id);
+-        // dd($client->field->id, $fields);
+-        $current_collection = Collection::where('field_id', $client->field->id)->latest()->first();
+-
+-        // dd( $check1, $check2, $total );
+-        // if payment is one time and is complete //
+-        if($status == 'completed' && $check1 == $total + $dAmount )
+-        {
+-            // return "you're here! full payment one time payment" . " - advance - ". $advance_payment. " - " . "deduction ". $dAmount;
+-
+-            // // create Receipt
+-               $receipt_id = $this->createReceipt( $invoice_id, $dAmount, $description, $advance_payment, $receipt_date, $vat7_value, $this->vat7_amount, $client_id, $from, $mode, $transfer_reference, $transfer_amount, $transfer_bank, $cheque_reference, $cheque_amount, $cheque_bank, $momo_transactin_id, $momo_amount, $cash_amount, $other_payment_descri, $other_payment_amnt, $user_id, $status, $total, $wht_amount, $sum_of_amountPaid_minus_wht, $image, $staff);
+-
+-            //     // get balance
+-                $balance =  $invoiceTotal - $total - $dAmount;
+-                // dd($balance);
+-                // update the invoice status to completed and update the balance to 0
+-                $invoice_data->status = $status;
+-                $invoice_data->wht_amount = $invoice_data->wht_amount + $this->wht_amount;
+-                $invoice_data->amount_received = $invoice_data->amount_received + $sum_of_amountPaid_minus_wht;
+-                $invoice_data->vat7_value = $vat7_value;
+-                $invoice_data->vat7_amount = $this->vat7_amount;
+-                $invoiceBalance = $balance;
+-                $invoice_data->save();
+-
+-                $transaction = new Transaction();
+-                $transaction->client_id = $client_id;
+-                $transaction->invoice_id = $invoice_id;
+-                $transaction->invoice_amount =  $invoiceTotal;
+-                $transaction->receipt_id = $receipt_id;
+-                $transaction->receipt_amount = $total + $dAmount;
+-                $transaction->balance = $balance;
+-                $transaction->status = $status;
+-                $transaction->save();
+-
+-            // // CREATE A COLLECTION HERE.................
+-            $this->create_collection($current_collection, $receipt_id, $cash_amount, $momo_amount, $cheque_amount, $transfer_amount, $total, $client->field->id);
+-            // END OF CREATE COLLECTIONS //
+-
+-            //     // select all transactions with this current invoice iD and assign value d to the checks culumn
+-            Transaction::where('invoice_id', $invoice_id)->update(['checks' => 'd']);
+-
+-
+-
+-            // // ASSIGN TO A CATEGORY
+-            // return $invoice->invoice_month?->format('Y-m') . " / ". $receipt->receipt_month?->format('Y-m');
+-            $inv  = Carbon::parse($invoice_data->invoice_month);
+-            $created_receipt = Receipt::findOrfail($receipt_id);
+-
+-                        //  CHECK IF CLIENT CATEGORY ALREADY EXIST FOR THE SAME MONTH
+-            $exists = category::where('client_id', $created_receipt->client_id)
+-                            ->whereMonth('category_month', $inv->month)
+-                            ->exists();
+-
+-            if ($exists) {
+-                    return redirect()->route('receipt.show',['receipt' => $receipt_id])->with('warning', 'Receipt  Craeated Successfully, This Receipt Client Aleady Has an Assigned Category');
+-
+-                    // return back()->with('error', 'This Receipt Client Has Aleady been Assigned a Category, Kindly Remove existing one from Categories Model and Create the Receipt againg : '. $created_receipt->client_id) ;                      
+-                }
+-
+-            $rec  = Carbon::parse($created_receipt->receipt_month);
+-            // $client = Client::findOrFail($receipt->client_id);
+-            $category = new category();
+-            $client = Client::findOrfail($created_receipt->client_id);
+-
+-            // 2. Condition: Same Month
+-            if ($rec->isSameMonth($inv) || $rec->lt($inv)) 
+-                
+-            {
+-                // ASSIGN TO CATEGORY A
+-                $category->name = 'Category A';
+-                $category->client_id = $created_receipt->client_id;
+-                $category->user_id = Auth::id();
+-                $category->category_month = $invoice_data->invoice_month;
+-                $category->save();
+-
+-                // UPDATE CLIENT AND MONTH
+-                $client->category_id = $category->id;
+-                $client->category_name = 'Category A';
+-                $client->category_month = $invoice_data->invoice_month;
+-                $client->user_id = Auth::id();
+-                $client->save();
+-            }
+-
+-            else
+-            {
+-
+-                if ($rec->isSameMonth($inv->copy()->addMonth()) && $rec->day >= 1 && $rec->day <= 9) {
+-                //    ASSIGN TO CATEGORY B
+-                    $category->name = 'Category B';
+-                    $category->client_id = $created_receipt->client_id;
+-                    $category->user_id = Auth::id();
+-                    $category->category_month = $invoice_data->invoice_month;
+-                    $category->save();
+-
+-                    // UPDATE CLIENT AND MONTH
+-                    $client->category_id = $category->id;
+-                    $client->category_name = 'Category B';
+-                    $client->category_month = $invoice_data->invoice_month;
+-                    $client->user_id = Auth::id();
+-                    $client->save();
+-                }
+-
+-                // 4. Condition: 10th to 15th of the following month
+-                if ($rec->isSameMonth($inv->copy()->addMonth()) && $rec->day >= 10 && $rec->day <= 15) {
+-                //    ASSIGN TO CATEGORY C
+-                    $category->name = 'Category C';
+-                    $category->client_id = $created_receipt->client_id;
+-                    $category->user_id = Auth::id();
+-                    $category->category_month = $invoice_data->invoice_month;
+-                    $category->save();  
+-                    
+-                    // UPDATE CLIENT AND MONTH
+-                    $client->category_id = $category->id;
+-                    $client->category_name = 'Category C';
+-                    $client->category_month = $invoice_data->invoice_month;
+-                    $client->user_id = Auth::id();
+-                    $client->save();
+-                }
+-
+-                // 5. Condition: 16th to 20th of the following month
+-                if ($rec->isSameMonth($inv->copy()->addMonth()) && $rec->day >= 16 && $rec->day <= 25) {
+-                //    ASSIGN TO CATEGORY D
+-                    $category->name = 'Category D';
+-                    $category->client_id = $created_receipt->client_id;
+-                    $category->user_id = Auth::id();
+-                    $category->category_month = $invoice_data->invoice_month;
+-                    $category->save();   
+-                    
+-                    // UPDATE CLIENT AND MONTH
+-                    $client->category_id = $category->id;
+-                    $client->category_name = 'Category D';
+-                    $client->category_month = $invoice_data->invoice_month;
+-                    $client->user_id = Auth::id();
+-                    $client->save();
+-                }
+-
+-                // return false; 
+-                
+-            }
+-              // // END ASSIGN TO A CATEGORY
+-
+-
+-
+-                // return redirect('receipt')->with('primary', 'Receipt created Successfully');
+-            return redirect()->route('receipt.show',['receipt' => $receipt_id])->with('primary', 'Receipt  Craeated Successfully');
+-
+-        }
+-        elseif($status == 'completed' && $total - $dAmount > $invoiceTotal &&  $invoiceBalance == 0 )
+-        {
+-            // return "you're here! full payment one time payment" . " - advance - ". $advance_payment. " - " . "deduction ". $dAmount;
+-
+-            // // create Receipt
+-               $receipt_id = $this->createReceipt( $invoice_id, $dAmount, $description, $advance_payment, $receipt_date, $vat7_value, $this->vat7_amount, $client_id, $from, $mode, $transfer_reference, $transfer_amount, $transfer_bank, $cheque_reference, $cheque_amount, $cheque_bank, $momo_transactin_id, $momo_amount, $cash_amount, $other_payment_descri, $other_payment_amnt, $user_id, $status, $total, $wht_amount, $sum_of_amountPaid_minus_wht, $image, $staff);
+-
+-            //     // get balance
+-                $balance =  $invoiceTotal - $total - $dAmount;
+-                // dd($balance);
+-                // update the invoice status to completed and update the balance to 0
+-                $invoice_data->status = $status;
+-                $invoice_data->wht_amount = $invoice_data->wht_amount + $this->wht_amount;
+-                $invoice_data->amount_received = $invoice_data->amount_received + $sum_of_amountPaid_minus_wht;
+-                $invoice_data->vat7_value = $vat7_value;
+-                $invoice_data->vat7_amount = $this->vat7_amount;
+-                $invoiceBalance = $balance;
+-                $invoice_data->save();
+-
+-                $transaction = new Transaction();
+-                $transaction->client_id = $client_id;
+-                $transaction->invoice_id = $invoice_id;
+-                $transaction->invoice_amount =  $invoiceTotal;
+-                $transaction->receipt_id = $receipt_id;
+-                $transaction->receipt_amount = $total + $dAmount;
+-                $transaction->balance = $balance;
+-                $transaction->status = $status;
+-                $transaction->save();
+-
+-            // // CREATE A COLLECTION HERE.................
+-            $this->create_collection($current_collection, $receipt_id, $cash_amount, $momo_amount, $cheque_amount, $transfer_amount, $total, $client->field->id);
+-            // END OF CREATE COLLECTIONS //
+-
+-            //     // select all transactions with this current invoice iD and assign value d to the checks culumn
+-            Transaction::where('invoice_id', $invoice_id)->update(['checks' => 'd']);
+-
+-
+-
+-            // // ASSIGN TO A CATEGORY
+-            // return $invoice->invoice_month?->format('Y-m') . " / ". $receipt->receipt_month?->format('Y-m');
+-            $inv  = Carbon::parse($invoice_data->invoice_month);
+-            $created_receipt = Receipt::findOrfail($receipt_id);
+-
+-                        //  CHECK IF CLIENT CATEGORY ALREADY EXIST FOR THE SAME MONTH
+-            $exists = category::where('client_id', $created_receipt->client_id)
+-                            ->whereMonth('category_month', $inv->month)
+-                            ->exists();
+-
+-            if ($exists) {
+-                    return redirect()->route('receipt.show',['receipt' => $receipt_id])->with('warning', 'Receipt  Craeated Successfully, This Receipt Client Aleady Has an Assigned Category');
+-
+-                    // return back()->with('error', 'This Receipt Client Has Aleady been Assigned a Category, Kindly Remove existing one from Categories Model and Create the Receipt againg : '. $created_receipt->client_id) ;                      
+-                }
+-
+-            $rec  = Carbon::parse($created_receipt->receipt_month);
+-            // $client = Client::findOrFail($receipt->client_id);
+-            $category = new category();
+-            $client = Client::findOrfail($created_receipt->client_id);
+-
+-            // 2. Condition: Same Month
+-            if ($rec->isSameMonth($inv) || $rec->lt($inv)) 
+-                
+-            {
+-                // ASSIGN TO CATEGORY A
+-                $category->name = 'Category A';
+-                $category->client_id = $created_receipt->client_id;
+-                $category->user_id = Auth::id();
+-                $category->category_month = $invoice_data->invoice_month;
+-                $category->save();
+-
+-                // UPDATE CLIENT AND MONTH
+-                $client->category_id = $category->id;
+-                $client->category_name = 'Category A';
+-                $client->category_month = $invoice_data->invoice_month;
+-                $client->user_id = Auth::id();
+-                $client->save();
+-            }
+-
+-            else
+-            {
+-
+-                if ($rec->isSameMonth($inv->copy()->addMonth()) && $rec->day >= 1 && $rec->day <= 9) {
+-                //    ASSIGN TO CATEGORY B
+-                    $category->name = 'Category B';
+-                    $category->client_id = $created_receipt->client_id;
+-                    $category->user_id = Auth::id();
+-                    $category->category_month = $invoice_data->invoice_month;
+-                    $category->save();
+-
+-                    // UPDATE CLIENT AND MONTH
+-                    $client->category_id = $category->id;
+-                    $client->category_name = 'Category B';
+-                    $client->category_month = $invoice_data->invoice_month;
+-                    $client->user_id = Auth::id();
+-                    $client->save();
+-                }
+-
+-                // 4. Condition: 10th to 15th of the following month
+-                if ($rec->isSameMonth($inv->copy()->addMonth()) && $rec->day >= 10 && $rec->day <= 15) {
+-                //    ASSIGN TO CATEGORY C
+-                    $category->name = 'Category C';
+-                    $category->client_id = $created_receipt->client_id;
+-                    $category->user_id = Auth::id();
+-                    $category->category_month = $invoice_data->invoice_month;
+-                    $category->save();  
+-                    
+-                    // UPDATE CLIENT AND MONTH
+-                    $client->category_id = $category->id;
+-                    $client->category_name = 'Category C';
+-                    $client->category_month = $invoice_data->invoice_month;
+-                    $client->user_id = Auth::id();
+-                    $client->save();
+-                }
+-
+-                // 5. Condition: 16th to 20th of the following month
+-                if ($rec->isSameMonth($inv->copy()->addMonth()) && $rec->day >= 16 && $rec->day <= 25) {
+-                //    ASSIGN TO CATEGORY D
+-                    $category->name = 'Category D';
+-                    $category->client_id = $created_receipt->client_id;
+-                    $category->user_id = Auth::id();
+-                    $category->category_month = $invoice_data->invoice_month;
+-                    $category->save();   
+-                    
+-                    // UPDATE CLIENT AND MONTH
+-                    $client->category_id = $category->id;
+-                    $client->category_name = 'Category D';
+-                    $client->category_month = $invoice_data->invoice_month;
+-                    $client->user_id = Auth::id();
+-                    $client->save();
+-                }
+-
+-                // return false; 
+-                
+-            }
+-              // // END ASSIGN TO A CATEGORY
+-
+-
+-
+-                // return redirect('receipt')->with('primary', 'Receipt created Successfully');
+-            return redirect()->route('receipt.show',['receipt' => $receipt_id])->with('primary', 'Receipt  Craeated Successfully');
+-
+-        }
+-        elseif($status == 'completed' && $check2 <= 0  &&  $invoiceBalance > 0 )
+-        {
+-
+-            // return "you're here! full payment after part payment" . "- advance - ". $advance_payment. " - " . "deduction ". $dAmount;
+-            $receipt_id = $this->createReceipt($invoice_id, $dAmount, $description, $advance_payment, $receipt_date, $vat7_value, $this->vat7_amount, $client_id, $from, $mode, $transfer_reference, $transfer_amount, $transfer_bank, $cheque_reference, $cheque_amount, $cheque_bank, $momo_transactin_id, $momo_amount, $cash_amount, $other_payment_descri, $other_payment_amnt, $user_id, $status, $total, $wht_amount, $sum_of_amountPaid_minus_wht, $image, $staff);
+-
+-            // get balance
+-            $balance = $invoiceBalance - ($total + $dAmount); 
+-
+-            // update the invoice status from partpayment(uncomplete) to complete and update the balance to 0
+-            $invoice_data->balance = $balance;
+-            $invoice_data->wht_amount = $invoice_data->wht_amount + $this->wht_amount;
+-            $invoice_data->amount_received = $invoice_data->amount_received + $sum_of_amountPaid_minus_wht;
+-            $invoice_data->status = $status;
+-            $invoice_data->vat7_value = $vat7_value;
+-            $invoice_data->vat7_amount = $this->vat7_amount;
+-            $invoice_data->save();
+-
+-
+-            $transaction = new Transaction();
+-            $transaction->client_id = $client_id;
+-            $transaction->invoice_id = $invoice_id;
+-            $transaction->invoice_amount =  $invoiceTotal;
+-            $transaction->receipt_id = $receipt_id;
+-            $transaction->receipt_amount = $total + $dAmount;
+-            $transaction->balance = $balance;
+-            $transaction->status = $status;
+-            $transaction->save();
+-
+-            // CREATE A COLLECTION HERE.................
+-            $this->create_collection($current_collection, $receipt_id, $cash_amount, $momo_amount, $cheque_amount, $transfer_amount, $total, $client->field->id);
+-
+-            // // select all transactions with this current invoice iD and assign value D to the checks culumn
+-            Transaction::where('invoice_id', $invoice_id)->update(['checks' => 'd']);
+-
+-            // // ASSIGN TO A CATEGORY
+-            // return $invoice->invoice_month?->format('Y-m') . " / ". $receipt->receipt_month?->format('Y-m');
+-            $inv  = Carbon::parse($invoice_data->invoice_month);
+-            $created_receipt = Receipt::findOrfail($receipt_id);
+-            $rec  = Carbon::parse($created_receipt->receipt_month);
+-
+-                        //  CHECK IF CLIENT CATEGORY ALREADY EXIST FOR THE SAME MONTH
+-            $exists = category::where('client_id', $created_receipt->client_id)
+-                            ->whereMonth('category_month', $inv->month)
+-                            ->exists();
+-
+-            if ($exists) {
+-                    return redirect()->route('receipt.show',['receipt' => $receipt_id])->with('warning', 'Receipt  Craeated Successfully, This Receipt Client Aleady Has an Assigned Category');
+-
+-                    // return back()->with('error', 'This Receipt Client Has Aleady been Assigned a Category, Kindly Remove existing one from Categories Model and Create the Receipt againg : '. $created_receipt->client_id) ;           
+-                }
+-
+-
+-            // $client = Client::findOrFail($receipt->client_id);
+-            $category = new category();
+-            $client = Client::findOrfail($created_receipt->client_id);
+-
+-            // 2. Condition: Same Month
+-            if ($rec->isSameMonth($inv) || $rec->lt($inv)) 
+-                
+-            {
+-                // ASSIGN TO CATEGORY A
+-                $category->name = 'Category A';
+-                $category->client_id = $created_receipt->client_id;
+-                $category->user_id = Auth::id();
+-                $category->category_month = $invoice_data->invoice_month;
+-                $category->save();
+-
+-                // UPDATE CLIENT AND MONTH
+-                $client->category_id = $category->id;
+-                $client->category_name = 'Category A';
+-                $client->category_month = $invoice_data->invoice_month;
+-                $client->user_id = Auth::id();
+-                $client->save();
+-            }
+-
+-            else
+-            {
+-
+-                if ($rec->isSameMonth($inv->copy()->addMonth()) && $rec->day >= 1 && $rec->day <= 9) {
+-                //    ASSIGN TO CATEGORY B
+-                    $category->name = 'Category B';
+-                    $category->client_id = $created_receipt->client_id;
+-                    $category->user_id = Auth::id();
+-                    $category->category_month = $invoice_data->invoice_month;
+-                    $category->save();
+-
+-                    // UPDATE CLIENT AND MONTH
+-                    $client->category_id = $category->id;
+-                    $client->category_name = 'Category B';
+-                    $client->category_month = $invoice_data->invoice_month;
+-                    $client->user_id = Auth::id();
+-                    $client->save();
+-                }
+-
+-                // 4. Condition: 10th to 15th of the following month
+-                if ($rec->isSameMonth($inv->copy()->addMonth()) && $rec->day >= 10 && $rec->day <= 15) {
+-                //    ASSIGN TO CATEGORY C
+-                    $category->name = 'Category C';
+-                    $category->client_id = $created_receipt->client_id;
+-                    $category->user_id = Auth::id();
+-                    $category->category_month = $invoice_data->invoice_month;
+-                    $category->save();  
+-                    
+-                    // UPDATE CLIENT AND MONTH
+-                    $client->category_id = $category->id;
+-                    $client->category_name = 'Category C';
+-                    $client->category_month = $invoice_data->invoice_month;
+-                    $client->user_id = Auth::id();
+-                    $client->save();
+-                }
+-
+-                // 5. Condition: 16th to 20th of the following month
+-                if ($rec->isSameMonth($inv->copy()->addMonth()) && $rec->day >= 16 && $rec->day <= 25) {
+-                //    ASSIGN TO CATEGORY D
+-                    $category->name = 'Category D';
+-                    $category->client_id = $created_receipt->client_id;
+-                    $category->user_id = Auth::id();
+-                    $category->category_month = $invoice_data->invoice_month;
+-                    $category->save();   
+-                    
+-                    // UPDATE CLIENT AND MONTH
+-                    $client->category_id = $category->id;
+-                    $client->category_name = 'Category D';
+-                    $client->category_month = $invoice_data->invoice_month;
+-                    $client->user_id = Auth::id();
+-                    $client->save();
+-                }
+-                
+-            }
+-               // // END ASSIGN TO A CATEGORY
+-
+-            // return redirect('receipt')->with('success', 'Receipt created Successfully');
+-            return redirect()->route('receipt.show',['receipt' => $receipt_id])->with('primary', 'Receipt  Craeated Successfully');
+-
+-        }
+-        else {
+-            // return "you're here! part payment " . " - advance - ". $advance_payment. " - " . "deduction ". $dAmount;
+-
+-            // // get the balance of the invoice
+-            if($invoiceBalance > 0.00)
+-            {
+-                $balance = $invoiceBalance - $total - $dAmount ;
+-            }
+-            else{
+-                // get the balance of the invoice
+-                $balance =  $invoiceTotal - $total - $dAmount ;
+-            }
+-
+-
+-            // dd($balance, $invoice_data->balance, $invoice_data->total, $total, $dAmount);
+-
+-            // create a receipt (transfer before cheque: same order as createReceipt()'s parameters -
+-            // part payments used to save cheque details as transfer and vice versa)
+-            // $sum_of_amountPaid_minus_wht = null;
+-            $receipt_id = $this->createReceipt($invoice_id, $dAmount, $description, $advance_payment, $receipt_date, $vat7_value, $this->vat7_amount, $client_id, $from, $mode, $transfer_reference, $transfer_amount, $transfer_bank, $cheque_reference, $cheque_amount, $cheque_bank, $momo_transactin_id, $momo_amount, $cash_amount,$other_payment_descri, $other_payment_amnt, $user_id, $status, $total, $this->wht_amount, $sum_of_amountPaid_minus_wht, $image, $staff);
+-
+-            // update the invoice status to partpayment(uncomplete) and update the balance to current balance
+-            $invoice_data->balance = $balance;
+-            $invoice_data->wht_amount = $invoice_data->wht_amount + $this->wht_amount;
+-            $invoice_data->amount_received = $invoice_data->amount_received + $sum_of_amountPaid_minus_wht;
+-            $invoice_data->status = $status;
+-            $invoice_data->vat7_value = $vat7_value;
+-            $invoice_data->vat7_amount = $this->vat7_amount;
+-            $invoice_data->save();
+-
+-            // create a new transaction
+-            $transaction = new Transaction();
+-            $transaction->client_id = $client_id;
+-            $transaction->invoice_id = $invoice_id;
+-            $transaction->invoice_amount =  $invoiceTotal;
+-            $transaction->receipt_id = $receipt_id;
+-            $transaction->receipt_amount = $total + $dAmount;
+-            $transaction->balance = $balance;
+-            $transaction->status = $status;
+-            $transaction->save();
+-            // // echo "uncompleted " . " " . $invoice_data->total - $total ." ". "Balance is ";
+-
+-            // CREATE A COLLECTION HERE.................
+-            $this->create_collection($current_collection, $receipt_id, $cash_amount, $momo_amount, $cheque_amount, $transfer_amount, $total, $client->field->id );
+-
+-
+-            // // ASSIGN TO A CATEGORY
+-            // return $invoice->invoice_month?->format('Y-m') . " / ". $receipt->receipt_month?->format('Y-m');
+-            $inv  = Carbon::parse($invoice_data->invoice_month);
+-            $created_receipt = Receipt::findOrfail($receipt_id);
+-            $rec  = Carbon::parse($created_receipt->receipt_month);
+-
+-                //  CHECK IF CLIENT CATEGORY ALREADY EXIST FOR THE SAME MONTH
+-            $exists = category::where('client_id', $created_receipt->client_id)
+-                            ->whereMonth('category_month', $inv->month)
+-                            ->exists();
+-
+-            if ($exists) {
+-                    // return back()->with('error', 'This Receipt Client Has Aleady been Assigned a Category, Kindly Remove existing one from Categories Model and update the Receipt : '. $created_receipt->client_id) ;
+-                    return redirect()->route('receipt.show',['receipt' => $receipt_id])->with('warning', 'Receipt  Craeated Successfully, This Receipt Client Aleady Has an Assigned Category');
+-                }
+-
+-            // $client = Client::findOrFail($receipt->client_id);
+-            $category = new category();
+-            $client = Client::findOrfail($created_receipt->client_id);
+-
+-            // 2. Condition: Same Month
+-            if ($rec->isSameMonth($inv) || $rec->lt($inv)) 
+-                
+-            {
+-                // ASSIGN TO CATEGORY A
+-                $category->name = 'Category A';
+-                $category->client_id = $created_receipt->client_id;
+-                $category->user_id = Auth::id();
+-                $category->category_month = $invoice_data->invoice_month;
+-                $category->save();
+-
+-                // UPDATE CLIENT AND MONTH
+-                $client->category_id = $category->id;
+-                $client->category_name = 'Category A';
+-                $client->category_month = $invoice_data->invoice_month;
+-                $client->save();
+-            }
+-
+-            else
+-            {
+-
+-                if ($rec->isSameMonth($inv->copy()->addMonth()) && $rec->day >= 1 && $rec->day <= 9) {
+-                //    ASSIGN TO CATEGORY B
+-                    $category->name = 'Category B';
+-                    $category->client_id = $created_receipt->client_id;
+-                    $category->user_id = Auth::id();
+-                    $category->category_month = $invoice_data->invoice_month;
+-                    $category->save();
+-
+-                    // UPDATE CLIENT AND MONTH
+-                    $client->category_id = $category->id;
+-                    $client->category_name = 'Category B';
+-                    $client->category_month = $invoice_data->invoice_month;
+-                    $client->save();
+-                }
+-
+-                // 4. Condition: 10th to 15th of the following month
+-                if ($rec->isSameMonth($inv->copy()->addMonth()) && $rec->day >= 10 && $rec->day <= 15) {
+-                //    ASSIGN TO CATEGORY C
+-                    $category->name = 'Category C';
+-                    $category->client_id = $created_receipt->client_id;
+-                    $category->user_id = Auth::id();
+-                    $category->category_month = $invoice_data->invoice_month;
+-                    $category->save();  
+-                    
+-                    // UPDATE CLIENT AND MONTH
+-                    $client->category_id = $category->id;
+-                    $client->category_name = 'Category C';
+-                    $client->category_month = $invoice_data->invoice_month;
+-                    $client->save();
+-                }
+-
+-                // 5. Condition: 16th to 20th of the following month
+-                if ($rec->isSameMonth($inv->copy()->addMonth()) && $rec->day >= 16 && $rec->day <= 25) {
+-                //    ASSIGN TO CATEGORY D
+-                    $category->name = 'Category D';
+-                    $category->client_id = $created_receipt->client_id;
+-                    $category->user_id = Auth::id();
+-                    $category->category_month = $invoice_data->invoice_month;
+-                    $category->save();   
+-                    
+-                    // UPDATE CLIENT AND MONTH
+-                    $client->category_id = $category->id;
+-                    $client->category_name = 'Category D';
+-                    $client->category_month = $invoice_data->invoice_month;
+-                    $client->save();
+-                }
+-
+-                // return false; 
+-                
+-            }
+-               // // END ASSIGN TO A CATEGORY
+-
+-            return redirect()->route('receipt.show',['receipt' => $receipt_id])->with('primary', 'Receipt  Craeated Successfully');
+-    
+-        }
++        $receipt = $recorder->create(
++            $client,
++            ReceiptRecorder::singleInvoiceInput($request, $invoice->id),
++            $request->file('image')
++        );
+ 
++        return redirect()->route('receipt.show', ['receipt' => $receipt->id])
++            ->with($recorder->notes ? 'warning' : 'primary', $this->recordedMessage($receipt, $recorder->notes));
+     }
+ 
+-
+-    // public function create_new_Collection($cash_amount, $momo_amount, $cheque_amount, $transfer_amount, $total, $field_id)
+-    // {
+-    //     // create a collection
+-    //     $collection = new Collection();
+-    //     $collection->user_id = Auth::user()->id;
+-    //     $collection->cash_amount = $cash_amount;
+-    //     $collection->momo_amount = $momo_amount;
+-    //     $collection->cheque_amount = $cheque_amount;
+-    //     $collection->transfer_amount = $transfer_amount;
+-    //     $collection->total_amount = $total;
+-    //     $collection->field_id = $field_id;
+-    //     $collection->save();
+-    // }
+-
+-
+-    public function create_collection ($current_collection, $receipt_id, $cash_amount, $momo_amount, $cheque_amount, $transfer_amount, $total, $field_id)
++    private function recordedMessage(Receipt $receipt, array $notes = [], string $verb = 'created'): string
+     {
+-                // create a collection
+-        $collection = new Collection();
+-        $collection->user_id = Auth::user()->id;
+-        $collection->receipt_id = $receipt_id;
+-        $collection->cash_amount = $cash_amount;
+-        $collection->momo_amount = $momo_amount;
+-        $collection->cheque_amount = $cheque_amount;
+-        $collection->transfer_amount = $transfer_amount;
+-        $collection->total_amount = $total;
+-        $collection->field_id = $field_id;
+-        $collection->save();
+-
+-        // if (is_null($current_collection)) {
+-        //     //  create a collection
+-        //     $this->create_new_Collection($cash_amount, $momo_amount, $cheque_amount, $transfer_amount, $total,  $field_id);
+-        // } elseif (!is_null($current_collection)) {
+-        //     // dd($current_collection);
+-        //     // echo $current_collection->created_at->toDateString();
+-        //     // if()
+-        //     $currentTime = Carbon::now();
+-        //     // echo $currentTime->toDateString();
+-        //     if ($currentTime->toDateString() == $current_collection->created_at->toDateString()) {
+-        //         // add current collections to the same day collections
+-        //         // return true;
+-        //         $current_collection->user_id = Auth::user()->id;
+-        //         $current_collection->cash_amount += $cash_amount;
+-        //         $current_collection->momo_amount += $momo_amount;
+-        //         $current_collection->cheque_amount += $cheque_amount;
+-        //         $current_collection->transfer_amount += $transfer_amount;
+-        //         $current_collection->total_amount += $total;
+-        //         $current_collection->field_id =  $field_id;
+-        //         $current_collection->save();
+-        //     } else {
+-        //         // return false;
+-        //         // // create a collection
+-        //         $this->create_new_Collection($cash_amount, $momo_amount, $cheque_amount, $transfer_amount, $total,  $field_id);
+-        //     }
+-        // }
++        $message = 'Receipt FWSSR' . $receipt->id . ' ' . $verb . ' successfully.';
++        if ($receipt->hasUnappliedCredit()) {
++            $message .= ' GH₵' . number_format($receipt->unapplied_amount, 2) . ' kept as client credit.';
++        }
++
++        return trim($message . ' ' . implode(' ', $notes));
+     }
+ 
+ 
+@@ -1530,357 +798,35 @@ public function edit(Receipt $receipt)
+     }
+ 
+     /**
+-     * Update the specified resource in storage.
++     * Edit a receipt. Its old effect on the invoice is removed and the new
++     * amounts applied from scratch, so an edit can never subtract twice,
++     * overwrite another receipt's WHT, or reopen a paid invoice.
+      */
+-    public function update(UpdateReceiptRequest $request, Receipt $receipt)
++    public function update(UpdateReceiptRequest $request, Receipt $receipt, ReceiptRecorder $recorder)
+     {
+-        
+-        // dd($request->all());
+-        // if receipt has been deposited, do not allow update   
++        // Cash already taken to the bank cannot be changed here.
+         $collection = Collection::where('receipt_id', $receipt->id)->first();
+-
+-        if(self::isDeposited($collection))
++        if (self::isDeposited($collection))
+         {
+             return redirect()->back()->with('error', 'Receipt has been Deposited and cannot be edited');
+         }
+ 
+         if ($this->isManagedByMultiInvoiceFlow($receipt)) {
+             return redirect()->route('receipt.show', ['receipt' => $receipt->id])
+-                ->with('warning', 'This receipt pays several invoices or holds client credit and cannot be changed from the single-invoice edit form.');
+-        }
+-
+-        // update receipt 
+-        // $receipt->update($request->all()); 
+-        $image = null;
+-        if($request->file('image'))
+-        {
+-           $image = ($request->file('image'))->store('images', 'public_html_disk');
+-        }
+-
+-             
+-        $validated = $request->validated();
+-
+-
+-
+-
+-        $cheque_amount = $request->float('cheque_amount');
+-        $momo_amount = $request->float('momo_amount');
+-        $cash_amount = $request->float('cash_amount');
+-        $transfer_amount = $request->float('transfer_amount');
+-        $other_payment_amnt = $request->float('other_payment_amnt');
+-        $deductions_from_form = $request->input('deductions');   
+-        
+-        $dAmount = null;
+-        $description = null;
+-        if($deductions_from_form == "on")
+-        {
+-            $dAmount = $request->float('dAmount');
+-            $description = $request->input('description');
+-        }
+-
+-        // sum all input payments
+-        $total = $cheque_amount + $momo_amount + $cash_amount + $transfer_amount + $other_payment_amnt;
+-        // $wht_amount = 0.00;
+-        $vat7_value = 0.00;
+-        $sum_of_amountPaid_minus_wht = 0.00;
+-        $wth_from_form = $request->input('wth');
+-        $vat_from_form = $request->input('vat');
+-        $dAmount = $request->float('dAmount');
+-
+-
+-        // if the payment has with holding turned on;
+-        if($wth_from_form == "on")
+-        {
+-               $this->wht_amount = $request->float('wht_amount');
+-
+-               //  $this->wht_amount = $wht_amount;
+-               $sum_of_amountPaid_minus_wht = $total;
+-               $total = $total +  $this->wht_amount;
+-        }
+-        if($vat_from_form == "on")
+-        {
+-            //  $request->input('vat7_value');
+-            $vat7_value = $request->float('vat7_value');
+-            $this->vat7_amount = $sum_of_amountPaid_minus_wht - $vat7_value ;
+-            $total = $total + $vat7_value;
+-        }
+-
+-        $advance_payment = null;
+-         if(isset($request->advance_payment) && $request->input('advance_payment') == "advance")
+-         {
+-            $advance_payment =  "advance";
+-         }
+-
+-
+-        $receipt->update(array_merge([
+-            // 'from'   => $validated['from'],
+-            'mode'   => $validated['mode'],
+-            // 'status' => $validated['status'],
+-            // 'staff'  => $validated['staff'],
+-        ], $this->buildModeAwarePayload($request, $validated['mode'])));
+-
+-        $receipt->invoice_id = $request->input('invoice_id');
+-        $receipt->client_id = $request->input('client_id');
+-        $receipt->from = $request->input('from');
+-        // $receipt->mode = $request->input('mode');
+-        $receipt->advance_payment = $advance_payment;
+-        $receipt->dAmount = $dAmount;
+-        $receipt->description = $description;
+-        $receipt->receipt_month = $request->input('receipt_month');
+-        $receipt->vat7_value = $vat7_value;
+-        $receipt->vat7_amount = $this->vat7_amount;
+-
+-        // $receipt->transfer_reference = $request->input('transfer_reference');
+-        // $receipt->transfer_bank = $request->input('transfer_bank');
+-
+-        // $receipt->cheque_reference = $request->input('cheque_reference');
+-        // $receipt->cheque_bank = $request->input('cheque_bank');
+-
+-        // $receipt->momo_transactin_id = $request->input('momo_transactin_id');
+-        // $receipt->other_payment_descri = $request->input('other_payment_descri');
+-        $receipt->user_id = Auth::user()->id;
+-        $receipt->status = $request->input('status');
+-        $receipt->total = $total;
+-        $receipt->wht_amount = $this->wht_amount;
+-        $receipt->amount_received = $sum_of_amountPaid_minus_wht;
+-        $receipt->image = $image;
+-        $receipt->save();
+-        // dd($receipt);
+-
+-
+-        // // update the invoice 
+-        $invoice = Invoice::findorFail($receipt->invoice_id);
+-        // $balance = $invoice->balance - $total - $dAmount ;
+-
+-        if($request->input('reset_balance') == 'reset')
+-        {
+-            $invoice->balance = 0;
+-            $invoice->status = 'unpaid';
+-            $invoice->save();
+-
+-            return redirect()->back()->with('info', 'Invoice balances reset completed, update all receipt with #FWSSi'. $invoice->id);
+-        }
+-
+-        $invoiceTotal = Str::of($invoice->total)->toFloat();
+-        $invoiceBalance = Str::of($invoice->balance)->toFloat();
+-        $check1 =   $invoiceTotal  + $invoiceBalance;
+-        $check2 = $invoiceBalance - $total - $dAmount ;
+-
+-        // dd( $invoiceTotal, $invoiceBalance, $check1, $check2, $total, $dAmount);
+-
+-        if($receipt->status == "completed" &&  $check1 == $total + $dAmount )
+-        {
+-
+-            // // get balance
+-            $balance = $invoiceTotal - $total - $dAmount;
+-
+-
+-            $invoice->balance = $balance;
+-            $invoice->status = $request->input('status');
+-            $invoice->wht_amount = $this->wht_amount;
+-            $invoice->amount_received = $sum_of_amountPaid_minus_wht;
+-            $invoice->vat7_value = $vat7_value;
+-            $invoice->vat7_amount = $this->vat7_amount;
+-            $invoice->save();
+-
+-
+-            // update transaction
+-            Transaction::where('receipt_id', $receipt->id)->update([ 
+-                'receipt_amount' => $total + $dAmount,
+-                'status' => $request->input('status'),
+-                'balance' => $balance,
+-                'checks' => 'd',
+-            ]);
+-
+-
+-        }
+-        elseif($receipt->status == "completed" &&  $total - $dAmount > $invoiceTotal &&  $invoiceBalance == 0 )
+-        {
+-                        // // get balance
+-            $balance = $invoiceTotal - $total - $dAmount;
+-
+-
+-            $invoice->balance = $balance;
+-            $invoice->status = $request->input('status');
+-            $invoice->wht_amount = $this->wht_amount;
+-            $invoice->amount_received = $sum_of_amountPaid_minus_wht;
+-            $invoice->vat7_value = $vat7_value;
+-            $invoice->vat7_amount = $this->vat7_amount;
+-            $invoice->save();
+-
+-
+-            // update transaction
+-            Transaction::where('receipt_id', $receipt->id)->update([ 
+-                'receipt_amount' => $total + $dAmount,
+-                'status' => $request->input('status'),
+-                'balance' => $balance,
+-                'checks' => 'd',
+-            ]);
+-        }
+-        elseif($receipt->status == "completed" && $check2 <= 0  &&  $invoiceBalance > 0)
+-        {
+-
+-            // get balance
+-            $balance = $invoiceBalance - ($total + $dAmount); 
+-
+-            $invoice->balance = $balance;
+-            $invoice->status = $request->input('status');
+-            $invoice->wht_amount = $this->wht_amount;
+-            $invoice->amount_received = $sum_of_amountPaid_minus_wht;
+-            $invoice->vat7_value = $vat7_value;
+-            $invoice->vat7_amount = $this->vat7_amount;
+-            $invoice->save();
+-
+-            // update transaction
+-            Transaction::where('receipt_id', $receipt->id)->update([ 
+-                'receipt_amount' => $total + $dAmount,
+-                'status' => $request->input('status'),
+-                'balance' => $balance,
+-                'checks' => 'd',
+-            ]);
+-            
++                ->with('warning', 'This receipt pays several invoices or its credit has been applied to other invoices, so it cannot be changed from the single-invoice edit form.');
+         }
+-        elseif($receipt->status == "uncompleted")
+-        {
+-
+-            // // get the balance of the invoice
+-            $balance = 0;
+-            if($invoiceBalance > 0.00)
+-            {
+-                $balance = $invoiceBalance - $total - $dAmount ;
+-            }
+-            elseif($invoice->status == 'completed')
+-                {
+-                    $balance = $invoiceTotal - $total - $dAmount ;
+-                }
+-            else{
+-                // get the balance of the invoice
+-                $balance = $invoiceTotal - $total - $dAmount ;
+-            }
+-
+-            $invoice->balance = $balance;
+-            $invoice->status = $request->input('status');
+-            $invoice->wht_amount = $this->wht_amount;
+-            $invoice->amount_received = $sum_of_amountPaid_minus_wht;
+-            $invoice->vat7_value = $vat7_value;
+-            $invoice->vat7_amount = $this->vat7_amount;
+-            $invoice->save();
+-
+-            // update transaction
+-            $transaction = Transaction::where('receipt_id', $receipt->id)->first();
+-            $transaction->receipt_amount = $total + $dAmount;
+-            $transaction->status = $request->input('status');
+-            $transaction->balance = $balance;
+-            $transaction->checks = null;
+-            $transaction->save();
+-            
+-        }
+-
+-        // // REASSIGN TO A CATEGORY
+-        // return $invoice->invoice_month?->format('Y-m') . " / ". $receipt->receipt_month?->format('Y-m');
+-        $inv  = Carbon::parse($invoice->invoice_month);
+-        $rec  = Carbon::parse($receipt->receipt_month);
+-        // $client = Client::findOrFail($receipt->client_id);
+-        // dd($receipt->client_id, $receipt->receipt_month?->format('Y-m'));
+-
+-        $category = category::where('client_id', $receipt->client_id)->whereMonth('category_month', $inv->month)->first();
+-        $client = Client::findOrfail($receipt->client_id);
+-
+-        // dd($category);
+-        if($category && isset($category))
+-            {
+-                    // 2. Condition: Same Month
+-                    if ($rec->isSameMonth($inv) || $rec->lt($inv)) 
+-                        
+-                    {
+-                        // ASSIGN TO CATEGORY A
+-                        $category->name = 'Category A';
+-                        $category->client_id = $receipt->client_id;
+-                        $category->user_id = Auth::id();
+-                        $category->category_month = $invoice->invoice_month;
+-                        $category->save();
+-
+-                        // UPDATE CLIENT AND MONTH
+-                        $client->category_name = 'Category A';
+-                        $client->category_month = $invoice->invoice_month;
+-                        $client->save();
+-                    }
+-
+-                    else
+-                    {
+-
+-                        if ($rec->isSameMonth($inv->copy()->addMonth()) && $rec->day >= 1 && $rec->day <= 9) {
+-                        //    ASSIGN TO CATEGORY B
+-                            $category->name = 'Category B';
+-                            $category->client_id = $receipt->client_id;
+-                            $category->user_id = Auth::id();
+-                            $category->category_month = $invoice->invoice_month;
+-                            $category->save();
+-
+-                            // UPDATE CLIENT AND MONTH
+-                            $client->category_name = 'Category B';
+-                            $client->category_month = $invoice->invoice_month;
+-                            $client->save();
+-                        }
+-
+-                        // 4. Condition: 10th to 15th of the following month
+-                        if ($rec->isSameMonth($inv->copy()->addMonth()) && $rec->day >= 10 && $rec->day <= 15) {
+-                        //    ASSIGN TO CATEGORY C
+-                            $category->name = 'Category C';
+-                            $category->client_id = $receipt->client_id;
+-                            $category->user_id = Auth::id();
+-                            $category->category_month = $invoice->invoice_month;
+-                            $category->save();  
+-                            
+-                            // UPDATE CLIENT AND MONTH
+-                            $client->category_name = 'Category C';
+-                            $client->category_month = $invoice->invoice_month;
+-                            $client->save();
+-                        }
+-
+-                        // 5. Condition: 16th to 20th of the following month
+-                        if ($rec->isSameMonth($inv->copy()->addMonth()) && $rec->day >= 16 && $rec->day <= 25) {
+-                        //    ASSIGN TO CATEGORY D
+-                            $category->name = 'Category D';
+-                            $category->client_id = $receipt->client_id;
+-                            $category->user_id = Auth::id();
+-                            $category->category_month = $invoice->invoice_month;
+-                            $category->save();   
+-                            
+-                            // UPDATE CLIENT AND MONTH
+-                            $client->category_name = 'Category D';
+-                            $client->category_month = $invoice->invoice_month;
+-                            $client->save();
+-                        }
+-
+-                        // return false; 
+-                        
+-                    }
+-                // // END ASSIGN TO A CATEGORY
+-            }
+-
+-
+-        // update collection
+-        $collection = Collection::where('receipt_id', $receipt->id);
+-        $collection->update([
+-            'receipt_id' => $receipt->id,
+-            'cash_amount' => $cash_amount,
+-            'momo_amount' => $momo_amount,
+-            'cheque_amount' => $cheque_amount,
+-            'transfer_amount' => $transfer_amount,
+-            'total_amount' => $total,
+-        ]); 
+-
+-        // Keep the allocation line and the transfer's bank posting in step with the edit.
+-        app(InvoiceSettlement::class)->syncLegacySingle($receipt->fresh());
+-        app(BankPosting::class)->syncTransfer($receipt->fresh());
+-
+-
+-        return redirect()->route('receipt.show',['receipt' => $receipt->id])->with('primary', 'Receipt  Updated Successfully');
+ 
++        $receipt = $recorder->revise(
++            $receipt,
++            ReceiptRecorder::singleInvoiceInput($request, (int) $receipt->invoice_id),
++            $request->file('image')
++        );
+ 
++        return redirect()->route('receipt.show', ['receipt' => $receipt->id])
++            ->with('primary', $this->recordedMessage($receipt, [], 'updated'));
+     }
+ 
++
+     /**
+      * Remove the specified resource from storage.
+      */
+@@ -1940,133 +886,15 @@ public function receiptCreate(int $invoice_id)
+ 
+         $banks = Bank::orderBy('name')->get();
+ 
+-        return view('sales.receiptCreate', compact('invoice', 'wht_rate', 'mode', 'status', 'assign_staff', 'banks'));
+-    }
+-
+-
++        // What is really still owed (from the receipts on it), and any credit the client already holds.
++        $outstanding = $invoice->outstandingAmount();
++        $creditReceipts = Receipt::where('client_id', $invoice->client_id)->where('unapplied_amount', '>', 0)->orderBy('id')->get();
+ 
++        return view('sales.receiptCreate', compact('invoice', 'wht_rate', 'mode', 'status', 'assign_staff', 'banks', 'outstanding', 'creditReceipts'));
++    }
+ 
+-    /**
+-     * @param int $invoice_id
+-     * @param float $dAmount
+-     * @param string $description
+-     * @param float $advance_payment
+-     * @param string $receipt_date
+-     * @param float $vat7_value
+-     * @param float $vat7_amount
+-     * @param int $client_id
+-     * @param string $from
+-     * @param string $mode
+-     * @param string $transfer_reference
+-     * @param float $transfer_amount
+-     * @param string $transfer_bank
+-     * @param string $cheque_reference
+-     * @param float $cheque_amount
+-     * @param string $cheque_bank
+-     * @param string $momo_transactin_id
+-     * @param float $momo_amount
+-     * @param float $cash_amount
+-     * @param string $other_payment_descri
+-     * @param float $other_payment_amnt
+-     * @param int $user_id
+-     * @param string $status
+-     * @param float $total
+-     * @param float $wht_amount
+-     * @param float $sum_of_amountPaid_minus_wht
+-     * @param string|null $image
+-     * @return int
+-     */
+-    public function createReceipt($invoice_id, $dAmount, $description, $advance_payment, $receipt_date, $vat7_value, $vat7_amount, $client_id, $from, $mode, $transfer_reference, $transfer_amount, $transfer_bank, $cheque_reference, $cheque_amount, $cheque_bank, $momo_transactin_id, $momo_amount, $cash_amount, $other_payment_descri, $other_payment_amnt, $user_id, $status, $total, $wht_amount, $sum_of_amountPaid_minus_wht, $image, $staff)
+-    {
+-
+-        // dd($mode, $transfer_amount, $transfer_reference, $transfer_bank, $cheque_amount, $cheque_reference, $cheque_bank);
+-        $newReceipt = new Receipt();
+-
+-        $newReceipt->invoice_id = $invoice_id;
+-
+-        $newReceipt->dAmount = $dAmount;
+-        $newReceipt->description = $description;
+-        $newReceipt->advance_payment = $advance_payment;
+-        $newReceipt->receipt_month = $receipt_date;
+-        $newReceipt->vat7_value = $vat7_value;
+-        $newReceipt->vat7_amount = $vat7_amount;
+-
+-        $newReceipt->client_id = $client_id;
+-        $newReceipt->from = $from;
+-        $newReceipt->mode = $mode;
+-
+-
+-        $newReceipt->transfer_reference = $transfer_reference;
+-        $newReceipt->transfer_amount = $transfer_amount;
+-        $newReceipt->transfer_bank = $transfer_bank;
+-
+-        $newReceipt->cheque_reference = $cheque_reference;
+-        $newReceipt->cheque_amount = $cheque_amount;
+-        $newReceipt->cheque_bank = $cheque_bank;
+-
+-        $newReceipt->momo_transactin_id = $momo_transactin_id;
+-        $newReceipt->momo_amount = $momo_amount;
+-        $newReceipt->cash_amount = $cash_amount;
+-
+-        $newReceipt->other_payment_descri = $other_payment_descri;
+-        $newReceipt->other_payment_amnt = $other_payment_amnt;
+-
+-        $newReceipt->user_id = $user_id;
+-        $newReceipt->status = $status;
+-        $newReceipt->total = $total;
+-        $newReceipt->wht_amount = $wht_amount;
+-        $newReceipt->amount_received = $sum_of_amountPaid_minus_wht;
+-        $newReceipt->image = $image;
+-        
+-
+-        // $validated = $request->validated();
+-
+-        // $receipt = Receipt::create(array_merge([
+-        //     // 'invoice_id'    => $request->input('invoice_id'),
+-        //     // 'client_id'     => $request->input('client_id'),
+-        //     // 'from'          => $validated['from'],
+-        //     'mode'          => $validated['mode'],       // array — cast handles JSON encode
+-        //     // 'status'        => $validated['status'],
+-        //     // 'staff'         => $validated['staff'],       // adjust to your actual assignee column, e.g. user2_id2
+-        //     // 'receipt_month' => $validated['receipt_month'],
+-        // ], $this->buildModeAwarePayload($request, $validated['mode'])));
+-
+-
+-        if(Auth::user()->role?->id == '2')
+-            {
+-               $newReceipt->ho_status = 'approved';
+-               $newReceipt->user_id2 = $user_id;
+-            }
+-        if(Auth::user()->department?->id == '7' && Auth::user()->role?->id == '3')
+-            {
+-               $newReceipt->ho_status = 'pending';
+-               $newReceipt->user_id2 = $staff;
+-
+-               $newReceipt->bran_status = 'approved';
+-               $newReceipt->user_id1 = $user_id;
+-            }
+-        if(Auth::user()->department?->id == '7' && Auth::user()->role?->id == '27')
+-            {
+-               $newReceipt->bran_status = 'pending';
+-               $newReceipt->user_id1 = $staff;
+-
+-               $newReceipt->coll_status = 'pending';
+-
+-            }
+-
+-        // Which of OUR bank accounts the cheque goes to / the transfer landed in.
+-        $selectedModes = (array) request()->input('mode', []);
+-        $newReceipt->cheque_to_bank_id = in_array('cheque', $selectedModes, true) ? request()->input('cheque_to_bank_id') : null;
+-        $newReceipt->transfer_to_bank_id = in_array('transfer', $selectedModes, true) ? request()->input('transfer_to_bank_id') : null;
+-
+-        $newReceipt->save();
+ 
+-        // Record which invoice this receipt settled, and post a transfer to its bank.
+-        app(InvoiceSettlement::class)->syncLegacySingle($newReceipt);
+-        app(BankPosting::class)->syncTransfer($newReceipt);
+ 
+-        return $newReceipt->id;
+-    }
+ 
+     /**
+      * Receipts that pay several invoices, or carry an advance/credit, are
+@@ -2079,9 +907,10 @@ private function isManagedByMultiInvoiceFlow(Receipt $receipt): bool
+             return true;
+         }
+ 
++        // A single-invoice receipt holding unused credit can still be edited;
++        // once its credit has been applied to other invoices it cannot.
+         return $receipt->allocations()->distinct()->count('invoice_id') > 1
+-            || $receipt->allocations()->where('source', 'credit')->exists()
+-            || (float) $receipt->unapplied_amount > 0;
++            || $receipt->allocations()->where('source', 'credit')->exists();
+     }
+ 
+     private static function isDeposited(?Collection $collection): bool
+diff --git a/app/Http/Requests/Concerns/PaymentModeRules.php b/app/Http/Requests/Concerns/PaymentModeRules.php
+index 6003ec5..cd68dcc 100644
+--- a/app/Http/Requests/Concerns/PaymentModeRules.php
++++ b/app/Http/Requests/Concerns/PaymentModeRules.php
+@@ -22,7 +22,7 @@ protected function paymentModeRules(): array
+             'cheque_reference' => [$when('cheque')],
+             'cheque_amount' => [$when('cheque'), 'nullable', 'numeric', 'min:0'],
+             'cheque_bank' => [$when('cheque')],
+-            // Which of OUR accounts the cheque will be deposited into.
++            // Which of OUR accounts the cheque is paid into (posted straight to that bank).
+             'cheque_to_bank_id' => [$when('cheque'), 'nullable', 'integer', 'exists:banks,id'],
+ 
+             'transfer_reference' => [$when('transfer')],
+@@ -41,10 +41,22 @@ protected function paymentModeRules(): array
+         ];
+     }
+ 
++    /** WHT / 7% VAT / other deductions on the single-invoice form. */
++    protected function adjustmentRules(): array
++    {
++        $when = fn (string $switch) => Rule::requiredIf(fn () => $this->input($switch) === 'on');
++
++        return [
++            'wht_amount' => [$when('wth'), 'nullable', 'numeric', 'min:0'],
++            'vat7_value' => [$when('vat'), 'nullable', 'numeric', 'min:0'],
++            'dAmount' => [$when('deductions'), 'nullable', 'numeric', 'min:0'],
++        ];
++    }
++
+     protected function paymentModeAttributes(): array
+     {
+         return [
+-            'cheque_to_bank_id' => 'bank the cheque will be deposited into',
++            'cheque_to_bank_id' => 'bank the cheque is paid into',
+             'transfer_to_bank_id' => 'bank the transfer was received into',
+             'transfer_bank' => "payer's bank (transfer)",
+             'cheque_bank' => "payer's bank (cheque)",
+diff --git a/app/Http/Requests/StoreReceiptRequest.php b/app/Http/Requests/StoreReceiptRequest.php
+index 80d3ca9..ca4820e 100644
+--- a/app/Http/Requests/StoreReceiptRequest.php
++++ b/app/Http/Requests/StoreReceiptRequest.php
+@@ -26,7 +26,11 @@ public function authorize(): bool
+     public function rules(): array
+     {
+         return array_merge([
+-            'status' => ['required', Rule::in(['completed', 'uncompleted'])],
++            // Status is worked out from the payment; anything sent is ignored.
++            'status' => ['nullable', Rule::in(['completed', 'uncompleted'])],
++            'from' => ['required', 'string', 'max:255'],
++            'receipt_month' => ['required', 'date'],
++            'keep_credit' => ['nullable', 'in:1,on'],
+             // 'mode' => ['required', Rule::in(['cheque', 'transfer', 'momo', 'cash', 'other payments'])],
+             'image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+             'invoice_id' => ['required',
+@@ -46,7 +50,7 @@ public function rules(): array
+         //                     }
+         //                 },
+         // ],
+-        ], $this->paymentModeRules());
++        ], $this->paymentModeRules(), $this->adjustmentRules());
+     }
+ 
+     public function attributes(): array
+diff --git a/app/Http/Requests/UpdateReceiptRequest.php b/app/Http/Requests/UpdateReceiptRequest.php
+index 3aa50ca..3dbd851 100644
+--- a/app/Http/Requests/UpdateReceiptRequest.php
++++ b/app/Http/Requests/UpdateReceiptRequest.php
+@@ -24,7 +24,12 @@ public function authorize(): bool
+      */
+     public function rules(): array
+     {
+-        return $this->paymentModeRules();
++        return array_merge([
++            'from' => ['required', 'string', 'max:255'],
++            'receipt_month' => ['required', 'date'],
++            'keep_credit' => ['nullable', 'in:1,on'],
++            'image' => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:2048'],
++        ], $this->paymentModeRules(), $this->adjustmentRules());
+     }
+ 
+     public function attributes(): array
+diff --git a/app/Models/BankTransaction.php b/app/Models/BankTransaction.php
+index 3ebd8a0..c4e8129 100644
+--- a/app/Models/BankTransaction.php
++++ b/app/Models/BankTransaction.php
+@@ -13,6 +13,7 @@ class BankTransaction extends Model
+         'credit',
+         'deposit_id',
+         'receipt_id',
++        'channel',
+         'debit',
+         'expense_id',
+         'balance',
+diff --git a/app/Services/Receipts/BalanceRecompute.php b/app/Services/Receipts/BalanceRecompute.php
+new file mode 100644
+index 0000000..d8d9855
+--- /dev/null
++++ b/app/Services/Receipts/BalanceRecompute.php
+@@ -0,0 +1,202 @@
++<?php
++
++namespace App\Services\Receipts;
++
++use App\Models\Invoice;
++use App\Models\Receipt;
++use App\Models\ReceiptAllocation;
++use Illuminate\Support\Facades\DB;
++
++/**
++ * Re-derives every invoice's status and balance from the receipts on it, to
++ * repair what the old receipt code got wrong (edits that subtracted twice,
++ * "completed" chosen while money was still owed, negative balances from
++ * overpayments, WHT overwritten on edit, ...).
++ *
++ * Read-only unless $apply is true. Each invoice is put in one bucket:
++ *
++ *   ok            stored status/balance already match the receipts
++ *   fix           wrong status or balance — corrected on apply
++ *   closed_short  marked completed but receipts don't cover it. Could be a
++ *                 deliberate write-off/discount, so it is only reopened
++ *                 with $reopenShort
++ *   overpaid      receipts exceed the invoice. With $overpaymentsToCredit the
++ *                 extra cash is moved off the invoice into the latest
++ *                 receipt's client credit (unapplied_amount)
++ *
++ * Receipts that never got an allocation line are given one first (same rule
++ * as the backfill migration).
++ */
++class BalanceRecompute
++{
++    public const TOL = 0.01;
++
++    public function __construct(private InvoiceSettlement $settlement)
++    {
++    }
++
++    /**
++     * @return array{rows: array<int, array>, summary: array<string, int>, missing_allocations: int}
++     */
++    public function run(bool $apply = false, bool $reopenShort = false, bool $overpaymentsToCredit = false, ?int $clientId = null): array
++    {
++        $missing = $this->backfillMissing($apply, $clientId);
++
++        $rows = [];
++        $summary = ['ok' => 0, 'fix' => 0, 'closed_short' => 0, 'overpaid' => 0];
++
++        // Paid per invoice = its allocation lines, plus (dry run only) receipts that do not
++        // have a line yet, counted the way the backfill will count them: total + deductions.
++        $lines = DB::table('receipt_allocations')->select('invoice_id', 'settled')
++            ->unionAll(
++                DB::table('receipts')->whereNotNull('invoice_id')
++                    ->whereNotExists(fn ($q) => $q->select(DB::raw(1))->from('receipt_allocations')->whereColumn('receipt_allocations.receipt_id', 'receipts.id'))
++                    ->selectRaw('invoice_id, COALESCE(total, 0) + COALESCE(' . DB::getQueryGrammar()->wrap('receipts.dAmount') . ', 0) as settled')
++            );
++        $settled = DB::query()->fromSub($lines, 'l')->selectRaw('invoice_id, SUM(settled) as settled')->groupBy('invoice_id');
++
++        Invoice::query()
++            ->leftJoinSub($settled, 's', 's.invoice_id', '=', 'invoices.id')
++            ->leftJoin('clients', 'clients.id', '=', 'invoices.client_id')
++            ->when($clientId, fn ($q) => $q->where('invoices.client_id', $clientId))
++            ->select('invoices.*', DB::raw('COALESCE(s.settled, 0) as settled_sum'), 'clients.business_name', 'clients.name as client_name')
++            ->orderBy('invoices.id')
++            ->chunk(500, function ($invoices) use (&$rows, &$summary, $apply, $reopenShort, $overpaymentsToCredit) {
++                foreach ($invoices as $invoice) {
++                    $row = $this->check($invoice);
++                    $summary[$row['issue']]++;
++                    if ($row['issue'] === 'ok') {
++                        continue;
++                    }
++                    $row['action'] = $apply ? $this->repair($invoice, $row, $reopenShort, $overpaymentsToCredit) : 'none (dry run)';
++                    $rows[] = $row;
++                }
++            });
++
++        return ['rows' => $rows, 'summary' => $summary, 'missing_allocations' => $missing];
++    }
++
++    /** What the invoice should look like according to its receipts. */
++    private function check(Invoice $invoice): array
++    {
++        $total = round((float) $invoice->total, 2);
++        $settled = round((float) $invoice->settled_sum, 2);
++        $storedStatus = strtolower(trim((string) $invoice->status));
++        $storedBalance = round((float) $invoice->balance, 2);
++
++        if ($settled <= self::TOL) {
++            [$status, $balance] = ['unpaid', 0.0];
++        } elseif ($total - $settled > self::TOL) {
++            [$status, $balance] = ['uncompleted', round($total - $settled, 2)];
++        } else {
++            $diff = round($total - $settled, 2);
++            [$status, $balance] = ['completed', abs($diff) <= self::TOL ? 0.0 : $diff];
++        }
++
++        $issue = 'ok';
++        if ($settled - $total > self::TOL) {
++            $issue = 'overpaid';
++        } elseif ($storedStatus === 'completed' && $status !== 'completed') {
++            $issue = 'closed_short';
++        } elseif ($storedStatus !== $status || abs($storedBalance - $balance) > self::TOL) {
++            $issue = 'fix';
++        }
++
++        return [
++            'invoice_id' => $invoice->id,
++            'client_id' => $invoice->client_id,
++            'client' => $invoice->business_name ?: $invoice->client_name,
++            'invoice_month' => optional($invoice->invoice_month)->format('Y-m'),
++            'total' => $total,
++            'paid_per_receipts' => $settled,
++            'stored_status' => $storedStatus,
++            'stored_balance' => $storedBalance,
++            'correct_status' => $status,
++            'correct_balance' => $balance,
++            'issue' => $issue,
++            'action' => '',
++        ];
++    }
++
++    private function repair(Invoice $invoice, array $row, bool $reopenShort, bool $overpaymentsToCredit): string
++    {
++        return DB::transaction(function () use ($invoice, $row, $reopenShort, $overpaymentsToCredit) {
++            $invoice = Invoice::whereKey($invoice->id)->lockForUpdate()->first();
++
++            if ($row['issue'] === 'closed_short' && ! $reopenShort) {
++                return 'left closed (review: GH₵' . number_format($row['total'] - $row['paid_per_receipts'], 2) . ' not covered)';
++            }
++
++            $note = '';
++            if ($row['issue'] === 'overpaid') {
++                if (! $overpaymentsToCredit) {
++                    $this->settlement->recalculate($invoice);
++
++                    return 'recalculated; overpayment of GH₵' . number_format(-$row['correct_balance'], 2) . ' left on invoice';
++                }
++                $left = $this->moveExcessToCredit($invoice, round($row['paid_per_receipts'] - $row['total'], 2));
++                $note = $left > 0 ? '; GH₵' . number_format($left, 2) . ' of the excess is WHT/deductions — review' : '';
++            }
++
++            $this->settlement->recalculate($invoice);
++            $invoice->refresh();
++
++            return 'set to ' . $invoice->status . ' / ' . number_format((float) $invoice->balance, 2) . $note;
++        });
++    }
++
++    /** Move overpaid cash from the newest receipts on the invoice into those receipts' client credit. */
++    private function moveExcessToCredit(Invoice $invoice, float $excess): float
++    {
++        $allocations = ReceiptAllocation::where('invoice_id', $invoice->id)->orderByDesc('id')->lockForUpdate()->get();
++
++        foreach ($allocations as $allocation) {
++            if ($excess <= 0) {
++                break;
++            }
++            $take = min((float) $allocation->amount_applied, $excess);
++            if ($take <= 0) {
++                continue;
++            }
++            $allocation->amount_applied = round($allocation->amount_applied - $take, 2);
++            $allocation->settled = round($allocation->settled - $take, 2);
++            $allocation->save();
++
++            $receipt = Receipt::whereKey($allocation->receipt_id)->lockForUpdate()->first();
++            $receipt->unapplied_amount = round((float) $receipt->unapplied_amount + $take, 2);
++            $receipt->advance_payment = 'advance';
++            $receipt->save();
++
++            $excess = round($excess - $take, 2);
++        }
++
++        return max(0.0, $excess);
++    }
++
++    /** Receipts with an invoice but no allocation line (should be none after the migration). */
++    private function backfillMissing(bool $apply, ?int $clientId): int
++    {
++        $query = Receipt::whereNotNull('invoice_id')
++            ->when($clientId, fn ($q) => $q->where('client_id', $clientId))
++            ->whereNotExists(fn ($q) => $q->select(DB::raw(1))->from('receipt_allocations')->whereColumn('receipt_allocations.receipt_id', 'receipts.id'));
++
++        $count = (clone $query)->count();
++        if (! $apply || $count === 0) {
++            return $count;
++        }
++
++        $query->orderBy('id')->each(function (Receipt $r) {
++            $wht = round((float) $r->wht_amount, 2);
++            $vat = round((float) $r->vat7_value, 2);
++            $ded = round((float) $r->dAmount, 2);
++            $applied = round((float) $r->total - $wht - $vat, 2);
++            ReceiptAllocation::create([
++                'receipt_id' => $r->id, 'invoice_id' => $r->invoice_id, 'client_id' => $r->client_id,
++                'amount_applied' => $applied, 'wht_amount' => $wht, 'vat7_amount' => $vat, 'deduction_amount' => $ded,
++                'settled' => round($applied + $wht + $vat + $ded, 2), 'source' => 'legacy', 'user_id' => $r->user_id,
++            ]);
++        });
++
++        return $count;
++    }
++}
+diff --git a/app/Services/Receipts/BankPosting.php b/app/Services/Receipts/BankPosting.php
+index 7ab71ef..c3b961d 100644
+--- a/app/Services/Receipts/BankPosting.php
++++ b/app/Services/Receipts/BankPosting.php
+@@ -4,56 +4,128 @@
+ 
+ use App\Models\Bank;
+ use App\Models\BankTransaction;
++use App\Models\Collection;
+ use App\Models\Receipt;
+ 
+ /**
+- * Posts bank transfers straight to the receiving bank account.
++ * Puts cheque and transfer money straight into the bank account chosen on the
++ * receipt — the moment the receipt is written, not later through Bank Deposit.
+  *
+- * Cash and cheques reach a bank through Collections -> Bank Deposit, but a
+- * transfer is already sitting in our account the moment the receipt is
+- * written, so it never went through a deposit and never showed in any bank
+- * balance. This posts it (credit) to the bank picked on the receipt, and
+- * reverses it (a matching debit line, nothing deleted) if the receipt is
+- * edited or deleted, so the bank ledger keeps a full audit trail.
++ *   cash      -> Collections -> Bank Deposit (unchanged)
++ *   cheque    -> credited to receipts.cheque_to_bank_id immediately
++ *   transfer  -> credited to receipts.transfer_to_bank_id immediately
++ *   momo      -> not a bank (unchanged)
+  *
+- * Ledger rows written here have receipt_id set and deposit_id null.
++ * Editing a receipt re-posts it; deleting it reverses it. Nothing is ever
++ * deleted from the bank ledger: a change adds a reversal line (debit) and a
++ * new posting, so every movement stays visible.
++ *
++ * Ledger rows written here have receipt_id + channel ('cheque' | 'transfer')
++ * and no deposit_id.
+  */
+ class BankPosting
+ {
+-    /** Make the bank ledger match the receipt's current transfer amount and bank. */
++    public const CHANNELS = [
++        'cheque' => ['amount' => 'cheque_amount', 'bank' => 'cheque_to_bank_id', 'ref' => 'cheque_reference', 'label' => 'Cheque received'],
++        'transfer' => ['amount' => 'transfer_amount', 'bank' => 'transfer_to_bank_id', 'ref' => 'transfer_reference', 'label' => 'Transfer received'],
++    ];
++
++    /** Make the bank ledger match the receipt's current cheque and transfer. */
++    public function sync(Receipt $receipt): void
++    {
++        foreach (array_keys(self::CHANNELS) as $channel) {
++            $this->syncChannel($receipt, $channel);
++        }
++        $this->syncCollection($receipt);
++    }
++
++    /** @deprecated kept for callers written before cheques posted directly */
+     public function syncTransfer(Receipt $receipt): void
+     {
+-        $wantBank = (int) ($receipt->transfer_to_bank_id ?? 0);
+-        $wantAmount = round((float) ($receipt->transfer_amount ?? 0), 2);
+-        $wanted = $wantBank && $wantAmount > 0 ? [$wantBank => $wantAmount] : [];
++        $this->sync($receipt);
++    }
++
++    /** Take every cheque/transfer posting of this receipt back out of the bank. */
++    public function reverse(Receipt $receipt, string $why = 'Reversal (receipt deleted)'): void
++    {
++        foreach (array_keys(self::CHANNELS) as $channel) {
++            foreach ($this->netPostings($receipt, $channel) as $bankId => $amount) {
++                $this->post($receipt, $channel, $bankId, -$amount, $why);
++            }
++        }
++    }
+ 
+-        $current = $this->netPostings($receipt);
++    /** True when this receipt's cheque has already gone straight into a bank. */
++    public static function chequePostedDirectly(?int $receiptId): bool
++    {
++        if (! $receiptId) {
++            return false;
++        }
++
++        return BankTransaction::where('receipt_id', $receiptId)->where('channel', 'cheque')->exists();
++    }
++
++    /**
++     * What Bank Deposit still has to take to the bank for a collection:
++     * the cash, plus the cheque only if it was never posted directly
++     * (cheques received before this change).
++     *
++     * @return array{cash: float, cheque: float, total: float}
++     */
++    public static function depositable(Collection $collection): array
++    {
++        $cash = round((float) $collection->cash_amount, 2);
++        $cheque = self::chequePostedDirectly($collection->receipt_id) ? 0.0 : round((float) $collection->cheque_amount, 2);
++
++        return ['cash' => $cash, 'cheque' => $cheque, 'total' => round($cash + $cheque, 2)];
++    }
++
++    private function syncChannel(Receipt $receipt, string $channel): void
++    {
++        $cfg = self::CHANNELS[$channel];
++        $bankId = (int) ($receipt->{$cfg['bank']} ?? 0);
++        $amount = round((float) ($receipt->{$cfg['amount']} ?? 0), 2);
++        $wanted = $bankId && $amount > 0 ? [$bankId => $amount] : [];
++        $current = $this->netPostings($receipt, $channel);
+ 
+         if ($this->same($wanted, $current)) {
+             return;
+         }
+ 
+-        $this->reverse($receipt, 'Reversal (receipt edited)');
+-
+-        foreach ($wanted as $bankId => $amount) {
+-            $this->post($receipt, $bankId, $amount, 'Transfer received');
++        foreach ($current as $oldBank => $oldAmount) {
++            $this->post($receipt, $channel, $oldBank, -$oldAmount, 'Reversal (receipt edited)');
++        }
++        foreach ($wanted as $newBank => $newAmount) {
++            $this->post($receipt, $channel, $newBank, $newAmount, $cfg['label']);
+         }
+     }
+ 
+-    /** Take every transfer posting of this receipt back out of the bank. */
+-    public function reverse(Receipt $receipt, string $why = 'Reversal (receipt deleted)'): void
++    /**
++     * A cheque that went straight to the bank must not be deposited again,
++     * so a cheque/transfer collection with no cash is marked "Banked".
++     * Anything with cash still to deposit stays "undeposited".
++     */
++    private function syncCollection(Receipt $receipt): void
+     {
+-        foreach ($this->netPostings($receipt) as $bankId => $amount) {
+-            if (abs($amount) > 0.004) {
+-                $this->post($receipt, $bankId, -$amount, $why);
+-            }
++        $collection = Collection::where('receipt_id', $receipt->id)->first();
++        if (! $collection || strcasecmp((string) $collection->status, 'deposited') === 0) {
++            return;
++        }
++
++        $wentToBank = (float) $receipt->cheque_amount > 0 || (float) $receipt->transfer_amount > 0;
++        if (self::depositable($collection)['total'] > 0 || ! $wentToBank) {
++            $collection->status = 'undeposited';   // cash still to deposit (or momo only: never a bank)
++        } else {
++            $collection->status = 'Banked';        // everything already went straight to the bank
+         }
++        $collection->save();
+     }
+ 
+-    /** @return array<int, float> bank_id => net amount currently posted for this receipt */
+-    private function netPostings(Receipt $receipt): array
++    /** @return array<int, float> bank_id => net amount currently posted for this receipt and channel */
++    private function netPostings(Receipt $receipt, string $channel): array
+     {
+         return BankTransaction::where('receipt_id', $receipt->id)
++            ->where('channel', $channel)
+             ->whereNull('deposit_id')
+             ->get()
+             ->groupBy('bank_id')
+@@ -62,23 +134,24 @@ private function netPostings(Receipt $receipt): array
+             ->all();
+     }
+ 
+-    private function post(Receipt $receipt, int $bankId, float $amount, string $what): void
++    private function post(Receipt $receipt, string $channel, int $bankId, float $amount, string $what): void
+     {
+         $bank = Bank::whereKey($bankId)->lockForUpdate()->first();
+-        if (! $bank) {
++        if (! $bank || abs($amount) < 0.005) {
+             return;
+         }
+ 
+         $newBalance = round((float) $bank->total + $amount, 2);
++        $ref = $receipt->{self::CHANNELS[$channel]['ref']} ?? null;
+ 
+         BankTransaction::create([
+             'bank_id' => $bank->id,
+             'receipt_id' => $receipt->id,
++            'channel' => $channel,
+             'credit' => $amount > 0 ? $amount : null,
+             'debit' => $amount < 0 ? abs($amount) : null,
+             'balance' => $newBalance,
+-            'narration' => $what . ' — receipt FWSSR' . $receipt->id
+-                . ($receipt->transfer_reference ? ' (ref ' . $receipt->transfer_reference . ')' : ''),
++            'narration' => $what . ' — receipt FWSSR' . $receipt->id . ($ref ? ' (ref ' . $ref . ')' : ''),
+         ]);
+ 
+         $bank->total = $newBalance;
+diff --git a/app/Services/Receipts/InvoiceSettlement.php b/app/Services/Receipts/InvoiceSettlement.php
+index 9cfbc94..97a8adc 100644
+--- a/app/Services/Receipts/InvoiceSettlement.php
++++ b/app/Services/Receipts/InvoiceSettlement.php
+@@ -120,40 +120,4 @@ public function release(Receipt $receipt): array
+ 
+         return $invoiceIds;
+     }
+-
+-    /**
+-     * Keep the single allocation line of a classic one-invoice receipt in
+-     * step after the legacy store/update code has changed the receipt.
+-     * Does not touch the invoice — the legacy code already did that.
+-     */
+-    public function syncLegacySingle(Receipt $receipt): void
+-    {
+-        if (! $receipt->invoice_id) {
+-            return;
+-        }
+-
+-        $invoiceIds = ReceiptAllocation::where('receipt_id', $receipt->id)->pluck('invoice_id')->unique();
+-        if ($invoiceIds->count() > 1) {
+-            return; // multi-invoice receipts are managed by MultiInvoiceReceiptController
+-        }
+-
+-        $wht = round((float) ($receipt->wht_amount ?? 0), 2);
+-        $vat = round((float) ($receipt->vat7_value ?? 0), 2);
+-        $ded = round((float) ($receipt->dAmount ?? 0), 2);
+-        $applied = round((float) ($receipt->total ?? 0) - $wht - $vat, 2);
+-
+-        ReceiptAllocation::where('receipt_id', $receipt->id)->delete();
+-        ReceiptAllocation::create([
+-            'receipt_id' => $receipt->id,
+-            'invoice_id' => $receipt->invoice_id,
+-            'client_id' => $receipt->client_id,
+-            'amount_applied' => $applied,
+-            'wht_amount' => $wht,
+-            'vat7_amount' => $vat,
+-            'deduction_amount' => $ded,
+-            'settled' => round($applied + $wht + $vat + $ded, 2),
+-            'source' => 'receipt',
+-            'user_id' => Auth::id(),
+-        ]);
+-    }
+ }
+diff --git a/app/Services/Receipts/ReceiptRecorder.php b/app/Services/Receipts/ReceiptRecorder.php
+new file mode 100644
+index 0000000..5092681
+--- /dev/null
++++ b/app/Services/Receipts/ReceiptRecorder.php
+@@ -0,0 +1,350 @@
++<?php
++
++namespace App\Services\Receipts;
++
++use App\Models\Client;
++use App\Models\Collection;
++use App\Models\Invoice;
++use App\Models\Receipt;
++use Illuminate\Http\Request;
++use Illuminate\Http\UploadedFile;
++use Illuminate\Support\Facades\Auth;
++use Illuminate\Support\Facades\DB;
++use Illuminate\Validation\ValidationException;
++
++/**
++ * The one place receipts are created and edited — the single-invoice form,
++ * the multi-invoice form and the edit form all come through here.
++ *
++ * Balances are never typed or chosen. For every invoice:
++ *
++ *     outstanding = invoice.total − SUM(receipt_allocations.settled)
++ *
++ * and the invoice's status/balance are re-derived from that after every
++ * change (InvoiceSettlement::recalculate). The cashier's old "completed /
++ * uncompleted" choice is gone: a receipt is "completed" when every invoice it
++ * pays is fully settled.
++ *
++ * Money that is not needed for the invoices (overpayment, or a payment with
++ * no invoice) is kept on the receipt as client credit (unapplied_amount) —
++ * only when the cashier ticks "keep as credit", so a typing mistake (an extra
++ * zero) is caught instead of silently becoming credit.
++ *
++ * Normalised input ($input):
++ *   mode[]                 ticked payment modes
++ *   <payment fields>       cash_amount, cheque_*, transfer_*, momo_*, other_*
++ *   from, receipt_month, staff, description
++ *   keep_credit            bool
++ *   invoices               [invoice_id => ['applied' => ?float, 'wht' => float, 'vat7' => float, 'deduction' => float]]
++ */
++class ReceiptRecorder
++{
++    /** Payment fields that belong to each mode. Unticked modes are always stored as null. */
++    public const MODE_FIELDS = [
++        'cheque' => ['cheque_reference', 'cheque_amount', 'cheque_bank', 'cheque_to_bank_id'],
++        'transfer' => ['transfer_reference', 'transfer_amount', 'transfer_bank', 'transfer_to_bank_id'],
++        'momo' => ['momo_transactin_id', 'momo_amount'],
++        'other payments' => ['other_payment_descri', 'other_payment_amnt'],
++        'cash' => ['cash_amount'],
++    ];
++
++    public const AMOUNT_FIELDS = ['cheque_amount', 'transfer_amount', 'momo_amount', 'other_payment_amnt', 'cash_amount'];
++
++    /** Messages for the cashier collected while recording (e.g. category already set). */
++    public array $notes = [];
++
++    public function __construct(
++        private ReceiptAllocator $allocator,
++        private InvoiceSettlement $settlement,
++        private BankPosting $bankPosting,
++        private ReceiptWorkflow $workflow,
++    ) {
++    }
++
++    /* ------------------------------------------------------------------
++     | Input
++     * ------------------------------------------------------------------ */
++
++    /** Common fields from any receipt form. */
++    public static function baseInput(Request $request): array
++    {
++        $input = [
++            'mode' => array_values((array) $request->input('mode', [])),
++            'from' => $request->input('from'),
++            'receipt_month' => $request->input('receipt_month'),
++            'staff' => $request->input('staff'),
++            'description' => $request->input('description'),
++            'keep_credit' => in_array($request->input('keep_credit'), ['1', 'on', 1, true], true),
++        ];
++        foreach (self::MODE_FIELDS as $fields) {
++            foreach ($fields as $field) {
++                $input[$field] = $request->input($field);
++            }
++        }
++
++        return $input;
++    }
++
++    /**
++     * The single-invoice form (receiptCreate / receipt_edit): WHT, VAT and
++     * deductions are switches + amounts for its one invoice.
++     */
++    public static function singleInvoiceInput(Request $request, int $invoiceId): array
++    {
++        $on = fn (string $name) => $request->input($name) === 'on';
++
++        return self::baseInput($request) + ['invoices' => [
++            $invoiceId => [
++                'applied' => null,
++                'wht' => $on('wth') ? (float) $request->input('wht_amount') : 0,
++                'vat7' => $on('vat') ? (float) $request->input('vat7_value') : 0,
++                'deduction' => $on('deductions') ? (float) $request->input('dAmount') : 0,
++            ],
++        ]];
++    }
++
++    /** The multi-invoice form: only ticked rows. */
++    public static function multiInvoiceInput(Request $request): array
++    {
++        $invoices = collect((array) $request->input('invoices', []))
++            ->filter(fn ($row) => ($row['selected'] ?? null) === '1')
++            ->map(fn ($row) => [
++                'applied' => ($row['applied'] ?? '') === '' ? null : $row['applied'],
++                'wht' => $row['wht'] ?? 0,
++                'vat7' => $row['vat7'] ?? 0,
++                'deduction' => $row['deduction'] ?? 0,
++            ])
++            ->all();
++
++        return self::baseInput($request) + ['invoices' => $invoices];
++    }
++
++    /* ------------------------------------------------------------------
++     | Create / revise
++     * ------------------------------------------------------------------ */
++
++    public function create(Client $client, array $input, ?UploadedFile $image = null): Receipt
++    {
++        $this->notes = [];
++
++        return DB::transaction(function () use ($client, $input, $image) {
++            [$payment, $money] = $this->payment($input);
++            $invoices = $this->lockOpenInvoices($client->id, array_keys($input['invoices']));
++            $plan = $this->plan($invoices, $input, $money);
++
++            $receipt = new Receipt();
++            $receipt->client_id = $client->id;
++            $receipt->user_id = Auth::id();
++            $this->workflow->applyApproval($receipt, $input['staff'] ?? null);
++            $this->fill($receipt, $input, $payment, $money, $plan, $invoices);
++            $receipt->image = $image?->store('images', 'public_html_disk');
++            $receipt->save();
++
++            $this->allocate($receipt, $invoices, $plan, false);
++            $this->writeCollection($receipt, $client);
++            $this->bankPosting->sync($receipt);
++
++            return $receipt;
++        });
++    }
++
++    /**
++     * Edit a receipt: undo what it did to its invoices, then apply the new
++     * amounts from scratch. Other receipts on the same invoices are untouched,
++     * so editing can never double-count or wipe another payment.
++     */
++    public function revise(Receipt $receipt, array $input, ?UploadedFile $image = null): Receipt
++    {
++        $this->notes = [];
++
++        return DB::transaction(function () use ($receipt, $input, $image) {
++            $receipt = Receipt::whereKey($receipt->id)->lockForUpdate()->firstOrFail();
++            [$payment, $money] = $this->payment($input);
++
++            $this->settlement->release($receipt);
++
++            $invoices = $this->lockOpenInvoices($receipt->client_id, array_keys($input['invoices']));
++            $plan = $this->plan($invoices, $input, $money);
++
++            $this->fill($receipt, $input, $payment, $money, $plan, $invoices);
++            if ($image) {
++                $receipt->image = $image->store('images', 'public_html_disk');   // otherwise keep the existing copy
++            }
++            $receipt->save();
++
++            $this->allocate($receipt, $invoices, $plan, true);
++            $this->writeCollection($receipt, Client::find($receipt->client_id));
++            $this->bankPosting->sync($receipt);
++
++            return $receipt;
++        });
++    }
++
++    /* ------------------------------------------------------------------
++     | Steps
++     * ------------------------------------------------------------------ */
++
++    /** @return array{0: array, 1: float} payment fields (ticked modes only) and money received */
++    private function payment(array $input): array
++    {
++        $modes = (array) ($input['mode'] ?? []);
++        $payload = [];
++        foreach (self::MODE_FIELDS as $mode => $fields) {
++            $on = in_array($mode, $modes, true);
++            foreach ($fields as $field) {
++                $value = $on ? ($input[$field] ?? null) : null;
++                if ($value === '') {
++                    $value = null;
++                }
++                if ($value !== null && in_array($field, self::AMOUNT_FIELDS, true)) {
++                    $value = round((float) $value, 2);
++                }
++                $payload[$field] = $value;
++            }
++        }
++
++        $money = round(array_sum(array_map(fn ($f) => (float) ($payload[$f] ?? 0), self::AMOUNT_FIELDS)), 2);
++
++        return [$payload, $money];
++    }
++
++    private function lockOpenInvoices(int $clientId, array $ids)
++    {
++        $ids = array_map('intval', $ids);
++        if (! $ids) {
++            return collect();
++        }
++
++        $invoices = Invoice::where('client_id', $clientId)
++            ->whereIn('id', $ids)
++            ->whereIn('status', ['unpaid', 'uncompleted'])
++            ->withSum('allocations as settled_sum', 'settled')
++            ->orderBy('invoice_month')
++            ->orderBy('id')
++            ->lockForUpdate()
++            ->get();
++
++        if ($invoices->count() !== count(array_unique($ids))) {
++            throw ValidationException::withMessages(['invoices' => 'One or more of the invoices is already fully paid or does not belong to this client. Reload the page and try again.']);
++        }
++
++        return $invoices;
++    }
++
++    private function plan($invoices, array $input, float $money): array
++    {
++        $lines = $invoices->map(function (Invoice $invoice) use ($input) {
++            $row = $input['invoices'][$invoice->id] ?? $input['invoices'][(string) $invoice->id] ?? [];
++
++            return [
++                'invoice_id' => $invoice->id,
++                'outstanding' => max(0, round((float) $invoice->total - (float) $invoice->settled_sum, 2)),
++                'applied' => $row['applied'] ?? null,
++                'wht' => $row['wht'] ?? 0,
++                'vat7' => $row['vat7'] ?? 0,
++                'deduction' => $row['deduction'] ?? 0,
++            ];
++        })->values()->all();
++
++        $plan = $this->allocator->plan($lines, $money);
++        $credits = array_sum(array_column($plan['lines'], 'wht_amount'))
++            + array_sum(array_column($plan['lines'], 'vat7_amount'))
++            + array_sum(array_column($plan['lines'], 'deduction_amount'));
++
++        $errors = $plan['errors'];
++
++        if ($money <= 0 && $credits <= 0) {
++            $errors[] = 'Enter the amount received for the payment mode(s) you ticked.';
++        }
++        foreach ($plan['lines'] as $line) {
++            if ($line['settled'] <= 0) {
++                $errors[] = 'Nothing is being paid on invoice FWSSi' . $line['invoice_id'] . ' — enter an amount or untick it.';
++            }
++        }
++        if ($plan['unapplied'] > 0 && empty($input['keep_credit'])) {
++            $errors[] = $invoices->isEmpty()
++                ? 'Tick at least one invoice, or tick "Keep the extra as client credit (advance)" to record an advance payment.'
++                : 'GH₵' . number_format($plan['unapplied'], 2) . ' is more than the invoice(s) need. '
++                    . 'Check the amount, or tick "Keep the extra as client credit (advance)".';
++        }
++
++        if ($errors) {
++            throw ValidationException::withMessages(['invoices' => array_values(array_unique($errors))]);
++        }
++
++        return $plan;
++    }
++
++    /** Set every computed receipt field. Same meanings the reports already use. */
++    private function fill(Receipt $receipt, array $input, array $payment, float $money, array $plan, $invoices): void
++    {
++        $lines = collect($plan['lines']);
++        $wht = round($lines->sum('wht_amount'), 2);
++        $vat = round($lines->sum('vat7_amount'), 2);
++        $ded = round($lines->sum('deduction_amount'), 2);
++
++        $receipt->fill($payment);
++        $receipt->mode = (array) $input['mode'];
++        $receipt->invoice_id = $invoices->first()?->id;     // first invoice paid, for older screens and reports
++        $receipt->from = $input['from'];
++        $receipt->receipt_month = $input['receipt_month'];
++        $receipt->unapplied_amount = $plan['unapplied'];
++        $receipt->dAmount = $ded > 0 ? $ded : null;
++        $receipt->description = $ded > 0 ? ($input['description'] ?? null) : null;
++        $receipt->wht_amount = $wht > 0 ? $wht : null;
++        // Legacy meaning kept for the dashboards: "after WHT" is only filled when WHT applies.
++        $receipt->amount_received = $wht > 0 ? $money : null;
++        $receipt->vat7_value = $vat > 0 ? $vat : null;
++        $receipt->vat7_amount = $vat > 0 ? round(($wht > 0 ? $money : 0) - $vat, 2) : null;
++        // money + WHT + VAT; deductions kept apart in dAmount (as before).
++        $receipt->total = round($money + $wht + $vat, 2);
++        $receipt->status = $lines->isNotEmpty() && $lines->every(fn ($l) => $l['completes']) ? 'completed' : 'uncompleted';
++        $receipt->advance_payment = $this->isAdvance($receipt, $plan, $invoices) ? 'advance' : null;
++    }
++
++    /**
++     * "Advance" is no longer a box the cashier ticks. A receipt is an advance when
++     *  - part of the money is kept as client credit for future invoices, or
++     *  - it is dated before the month of an invoice it pays (paid ahead of time).
++     */
++    private function isAdvance(Receipt $receipt, array $plan, $invoices): bool
++    {
++        if ($plan['unapplied'] > 0) {
++            return true;
++        }
++        if (! $receipt->receipt_month) {
++            return false;
++        }
++        $paidMonth = \Carbon\Carbon::parse($receipt->receipt_month)->startOfMonth();
++
++        return $invoices->contains(fn ($inv) => $inv->invoice_month && $paidMonth->lt(\Carbon\Carbon::parse($inv->invoice_month)->startOfMonth()));
++    }
++
++    private function allocate(Receipt $receipt, $invoices, array $plan, bool $revising): void
++    {
++        $lines = collect($plan['lines'])->keyBy('invoice_id');
++        foreach ($invoices as $invoice) {
++            $this->settlement->allocate($receipt, $invoice, $lines[$invoice->id]);
++            $assigned = $this->workflow->assignCategory($receipt, $invoice, $revising);
++            if (! $assigned && ! $revising) {
++                $this->notes[] = 'Client already has a category for ' . optional($invoice->invoice_month)->format('F Y') . '.';
++            }
++        }
++    }
++
++    private function writeCollection(Receipt $receipt, ?Client $client): void
++    {
++        $collection = Collection::firstOrNew(['receipt_id' => $receipt->id]);
++        if (! $collection->exists) {
++            $collection->user_id = Auth::id();
++            $collection->status = 'undeposited';
++        }
++        $collection->field_id = $client?->field_id;
++        $collection->cash_amount = $receipt->cash_amount;
++        $collection->momo_amount = $receipt->momo_amount;
++        $collection->cheque_amount = $receipt->cheque_amount;
++        $collection->transfer_amount = $receipt->transfer_amount;
++        $collection->total_amount = $receipt->total;
++        $collection->save();
++    }
++}
+diff --git a/app/Services/Receipts/ReceiptWorkflow.php b/app/Services/Receipts/ReceiptWorkflow.php
+index 9dc29ce..b43a449 100644
+--- a/app/Services/Receipts/ReceiptWorkflow.php
++++ b/app/Services/Receipts/ReceiptWorkflow.php
+@@ -46,12 +46,13 @@ public function applyApproval(Receipt $receipt, $staff = null): void
+     /**
+      * Payment-promptness category for the client for the invoice's month
+      * (A: paid in the invoice month or earlier; B: 1st-9th of next month;
+-     * C: 10th-15th; D: 16th-25th). Skipped if one already exists for that
+-     * month, exactly like the single-invoice flow.
++     * C: 10th-15th; D: 16th-25th). When one already exists for that month it
++     * is left alone on a new receipt, and re-graded when a receipt is edited
++     * (its date may have changed) — same as the old create/edit screens.
+      *
+-     * @return bool true if a new category was assigned
++     * @return bool true if a category was assigned or re-graded
+      */
+-    public function assignCategory(Receipt $receipt, Invoice $invoice): bool
++    public function assignCategory(Receipt $receipt, Invoice $invoice, bool $updateExisting = false): bool
+     {
+         if (! $invoice->invoice_month || ! $receipt->receipt_month) {
+             return false;
+@@ -60,11 +61,11 @@ public function assignCategory(Receipt $receipt, Invoice $invoice): bool
+         $inv = Carbon::parse($invoice->invoice_month);
+         $rec = Carbon::parse($receipt->receipt_month);
+ 
+-        $exists = category::where('client_id', $receipt->client_id)
++        $existing = category::where('client_id', $receipt->client_id)
+             ->whereYear('category_month', $inv->year)
+             ->whereMonth('category_month', $inv->month)
+-            ->exists();
+-        if ($exists) {
++            ->first();
++        if ($existing && ! $updateExisting) {
+             return false;
+         }
+ 
+@@ -84,7 +85,7 @@ public function assignCategory(Receipt $receipt, Invoice $invoice): bool
+             return false;
+         }
+ 
+-        $category = new category();
++        $category = $existing ?? new category();
+         $category->name = $name;
+         $category->client_id = $receipt->client_id;
+         $category->user_id = Auth::id();
+diff --git a/database/migrations/2026_10_08_150000_add_channel_to_bank_transactions.php b/database/migrations/2026_10_08_150000_add_channel_to_bank_transactions.php
+new file mode 100644
+index 0000000..fa05c63
+--- /dev/null
++++ b/database/migrations/2026_10_08_150000_add_channel_to_bank_transactions.php
+@@ -0,0 +1,56 @@
++<?php
++
++use Illuminate\Database\Migrations\Migration;
++use Illuminate\Database\Schema\Blueprint;
++use Illuminate\Support\Facades\DB;
++use Illuminate\Support\Facades\Schema;
++
++/**
++ * Cheques and transfers now go straight into the bank chosen on the receipt,
++ * so every bank ledger line records how the money arrived:
++ *   cheque | transfer   posted by a receipt (receipt_id set)
++ *   deposit             cash (and old, never-banked cheques) via Bank Deposit
++ *   expense             money paid out
++ *
++ * The bank tables' money columns are widened from decimal(8,2) — which tops
++ * out at 999,999.99 — to decimal(15,2): a bank running total passes that
++ * quickly once cheques and transfers post directly.
++ */
++return new class extends Migration
++{
++    public function up(): void
++    {
++        Schema::table('bank_transactions', function (Blueprint $table) {
++            $table->string('channel', 20)->nullable()->after('receipt_id');
++            $table->index(['receipt_id', 'channel']);
++        });
++
++        DB::table('bank_transactions')->whereNotNull('deposit_id')->update(['channel' => 'deposit']);
++        DB::table('bank_transactions')->whereNull('channel')->whereNotNull('expense_id')->update(['channel' => 'expense']);
++        // Receipt postings written before this migration were transfers (cheques went through deposits).
++        DB::table('bank_transactions')->whereNull('channel')->whereNotNull('receipt_id')->update(['channel' => 'transfer']);
++
++        Schema::table('bank_transactions', function (Blueprint $table) {
++            $table->decimal('credit', 15, 2)->nullable()->change();
++            $table->decimal('debit', 15, 2)->nullable()->change();
++            $table->decimal('balance', 15, 2)->nullable()->change();
++        });
++        Schema::table('banks', function (Blueprint $table) {
++            $table->decimal('total', 15, 2)->nullable()->change();
++        });
++        Schema::table('bank_deposits', function (Blueprint $table) {
++            $table->decimal('cash_amount', 15, 2)->nullable()->change();
++            $table->decimal('cheque_amount', 15, 2)->nullable()->change();
++            $table->decimal('total', 15, 2)->nullable()->change();
++        });
++    }
++
++    public function down(): void
++    {
++        Schema::table('bank_transactions', function (Blueprint $table) {
++            $table->dropIndex(['receipt_id', 'channel']);
++            $table->dropColumn('channel');
++        });
++        // Money columns are left at decimal(15,2): narrowing could truncate balances.
++    }
++};
+diff --git a/database/migrations/2026_10_08_150100_make_receipts_advance_payment_a_string.php b/database/migrations/2026_10_08_150100_make_receipts_advance_payment_a_string.php
+new file mode 100644
+index 0000000..6e7e195
+--- /dev/null
++++ b/database/migrations/2026_10_08_150100_make_receipts_advance_payment_a_string.php
+@@ -0,0 +1,33 @@
++<?php
++
++use Illuminate\Database\Migrations\Migration;
++use Illuminate\Database\Schema\Blueprint;
++use Illuminate\Support\Facades\DB;
++use Illuminate\Support\Facades\Schema;
++
++/**
++ * receipts.advance_payment was created as a boolean (tinyint) but the code
++ * has always written the word "advance" into it. Strict MySQL rejects that
++ * write; non-strict MySQL silently stores 0, so the flag was effectively
++ * never saved. Make it a short string and normalise what is there:
++ *   '1' / 'advance'  -> 'advance'
++ *   '0' / ''         -> NULL
++ */
++return new class extends Migration
++{
++    public function up(): void
++    {
++        Schema::table('receipts', function (Blueprint $table) {
++            $table->string('advance_payment', 20)->nullable()->change();
++        });
++
++        DB::table('receipts')->whereIn('advance_payment', ['1', 'advance'])->update(['advance_payment' => 'advance']);
++        DB::table('receipts')->whereIn('advance_payment', ['0', ''])->update(['advance_payment' => null]);
++    }
++
++    public function down(): void
++    {
++        // Left as a string: converting back to boolean would lose nothing useful but
++        // would break every write of "advance" again.
++    }
++};
+diff --git a/docs/receipts-and-payments.md b/docs/receipts-and-payments.md
+index f3bf9ba..9bb13cd 100644
+--- a/docs/receipts-and-payments.md
++++ b/docs/receipts-and-payments.md
+@@ -1,160 +1,149 @@
+-# Receipts & payments — analysis, changes and proposal
+-
+-Branch: `feature/multi-invoice-receipts-bank-selection`
++# Receipts & payments: analysis, changes and how to run it
+ 
+ ---
+ 
+-## 1. How receipts worked before this change
++## 1. How money flows now
+ 
+-Everything lives in `ReceiptController::store()` (≈650 lines) and `createReceipt()`.
++| Paid by | Where it goes | When |
++|---|---|---|
++| **Cash** | Collection → *Bank Deposit* → the bank picked on the deposit screen | when someone deposits it |
++| **Cheque** | straight into the bank picked on the receipt (*Paid into (our bank)*) | the moment the receipt is saved |
++| **Transfer** | straight into the bank picked on the receipt (*Received into (our bank)*) | the moment the receipt is saved |
++| MoMo / other | not a bank — stays in Collections | — |
++
++* Every bank ledger line now says how the money arrived (`channel`: `cheque`, `transfer`, `deposit`, `expense`) and
++  carries a narration ("Cheque received — receipt FWSSR123 (ref CHQ-9)"), shown under *Accounts › Banks*.
++* Editing a receipt's cheque/transfer amount or bank adds a **reversal line** and a new posting; deleting the receipt
++  adds a reversal. Nothing is ever deleted from the bank ledger.
++* Bank Deposit only lists what still has to be carried to the bank: **cash**, plus cheques received **before** this
++  change (those were never posted). A receipt paid only by cheque/transfer gets collection status **Banked** and
++  never appears on the deposit screen, so a cheque can't be counted twice.
+ 
+-* A receipt is **always tied to exactly one invoice** (`receipts.invoice_id`, required by `StoreReceiptRequest`).
+-* The cashier opens *Receipt › Create*, picks one invoice, and fills in the money by mode
+-  (cash, momo, cheque, transfer, other — several can be ticked).
+-* `total = cash + momo + cheque + transfer + other + WHT + 7% VAT`; other deductions are kept in `dAmount`.
+-  The invoice is settled by `total + dAmount`.
+-* The cashier **chooses the status by hand** (`completed` / `uncompleted`) and the code picks one of four branches:
++---
+ 
+-| Branch | Condition | What happens to the invoice |
+-|---|---|---|
+-| 1. Full, one go | status completed and `total + balance == total paid` | status completed (balance column not updated) |
+-| 2. Overpaid | status completed, paid > invoice total, balance 0 | balance goes **negative** (the overpayment is hidden there) |
+-| 3. Final part payment | status completed, balance > 0 and fully covered | balance = old balance − paid |
+-| 4. Part payment (else) | anything else | balance = (balance or total) − paid, status = what was typed |
+-
+-  Every branch then creates a `Transaction` (client ledger), a `Collection` (cash book), and assigns a
+-  client payment **category** (A–D). The category block is copied four times.
+-* `invoices.balance = 0` means *both* "nothing paid yet" and "fully paid" — status is the only way to tell.
+-
+-### Advance payments
+-* "Tick for advance payment" only stores the word `advance` on the receipt. It is a **label**, nothing more:
+-  * you still need an existing invoice to write the receipt against;
+-  * money paid ahead is not tracked as client credit anywhere;
+-  * an overpayment ends up as a negative invoice balance, not as credit you can use later.
+-* Note: the original migration declares `receipts.advance_payment` as `boolean` but the code writes the string `advance`.
+-  Check the production column type; on strict MySQL a boolean column would reject it.
+-
+-### Cheque & transfer
+-* `cheque_bank` / `transfer_bank` are free text — the **payer's** bank. There was no record of which of *our*
+-  accounts the money went to.
+-* Cash and cheques reach a bank only through *Collections › Bank Deposit*, which credits `cash + cheque`.
+-  **Transfers were never credited to any bank account**, so bank balances under-reported every transfer.
+-
+-### Bugs found while tracing the flow
+-* **Cheque and transfer details swapped on part payments.** Branch 4 passed cheque details into the transfer slots.
+-  Already fixed upstream in `42b16de`.
+-
+-Fixed on this branch:
+-1. **"Deposited" receipts could still be edited/deleted.** Deposit saves `Deposited`, the guard compared with `deposited`.
+-2. **Bank deposit paired collections with the wrong bank** when only some rows were ticked
+-   (`collections[]` and `bank_id[]` were matched by position). Every row's bank was also mandatory.
+-3. **Deleting a receipt reset the whole invoice to "unpaid"**, wiping out other part payments on the same invoice.
+-
+-### Other things worth knowing
+-* All money columns are `decimal(8,2)` — max **999,999.99**. `banks.total` will overflow once an account passes GH₵1m.
+-  New columns on this branch use `decimal(15,2)`.
+-* The legacy category check uses `whereMonth()` only, so January 2026 blocks January 2027. The new code checks year + month.
+-* `collections.total_amount` includes WHT and VAT (not just cash), so it overstates cash to be banked.
+-* **Receipts report (`App\Support\ReceiptReport`)**: the invoice-month filter and payment-timing buckets follow
+-  `receipts.invoice_id`, so a multi-invoice receipt is counted under its first (oldest) invoice, and an advance with no
+-  invoice shows as "No invoice linked". The per-invoice "received to date" figure uses the allocation lines and is
+-  split correctly. Splitting the timing buckets per invoice would mean reworking the report's queries.
+-* **Payroll invoice status (`App\Support\ClientInvoiceStatus`)** finds receipts through the allocation lines, so every
+-  invoice on a multi-invoice receipt gets its paid date; credit applied later counts as paid on the day it was applied.
++## 2. Balances and advances: what was wrong
++
++The old single-invoice receipt code (`ReceiptController::store()` / `update()`, ~900 lines) let the cashier **choose**
++"completed" or "uncompleted" and then patched `invoices.balance` up or down in one of four branches. Balances were
++therefore only as right as every choice and every edit. Each case below was reproduced by posting to the real
++endpoints against the old code, then rerun against the new code:
++
++| # | What the cashier did (GH₵1,000 invoice) | Old result | New result |
++|---|---|---|---|
++| A | Paid 400, then **edited** the receipt to 450 | balance **150** (subtracted twice) | balance 550 |
++| B | Paid 700 but picked "completed" | **completed** with 300 still owed (invoice disappears from the receipt list) | uncompleted, 300 |
++| C | Paid 1000 but picked "uncompleted", then another 200 came in | uncompleted, balance **800** after 1,200 paid | completed after the first; second refused |
++| D | Paid 400, then 800 | completed, balance **−200** (overpayment hidden) | 800 refused unless "keep extra as credit" is ticked; then 200 becomes client credit |
++| F | Edited a receipt without re-attaching the cheque image | image **wiped** | image kept |
++| G | Two receipts with WHT 37.50 each, re-saved the first unchanged | invoice reopened at **500**, WHT total overwritten to **37.50** | still completed, WHT 75 |
++
++Root causes:
++1. **Balance was a running number, not a derived one.** Every receipt nudged it; edits nudged it again from the
++   already-nudged value. The "Reset Invoice Balances" tick box on the edit form existed to undo this by hand.
++2. **`balance = 0` meant both "nothing paid" and "fully paid"** — status was the only way to tell, and status was typed.
++3. **Status was chosen, not calculated.**
++4. **Invoice WHT/VAT were overwritten**, not summed, on edit.
++5. **"Advance payment" was a tick box that changed nothing.** There was nowhere to keep money paid ahead, so overpayments
++   became negative balances. Worse, `receipts.advance_payment` was created as a **boolean** column while the code
++   writes the word `advance`: strict MySQL rejects it, non-strict MySQL stores `0` — so the flag was probably never saved.
++6. Editing a receipt replaced its **"received by"** user with whoever edited it.
+ 
+ ---
+ 
+-## 2. What this branch adds
+-
+-### One receipt → many invoices
+-*Receipts › Pay Multiple Invoices* (`/receipt-multi/create`, also linked from *Receipt › Create* and the receipt list).
+-
+-1. Pick the client (only clients with unpaid invoices, limited to the user's office like the receipt list).
+-2. Tick the invoices this payment covers. Each row shows what is **still owed**.
+-   Optional per-invoice WHT, 7% VAT and deductions (switches pre-fill the standard amounts).
+-3. Enter the money **once** (any mix of modes). It is applied **oldest invoice first**; typing an amount on a row pins it.
+-4. A live summary shows money received, applied, credits, and anything left over.
+-5. One receipt is created: one `Collection`, one bank posting, one allocation line + one ledger `Transaction` per invoice.
+-   Each invoice's status/balance is **worked out automatically** — no manual "completed/uncompleted".
+-
+-### Advance payments that actually work
+-* If more money is received than the ticked invoices owe — or no invoice is ticked — the cashier must tick
+-  **"Keep the extra as client credit (advance)"**. The extra is stored in `receipts.unapplied_amount`.
+-* The receipt page shows the credit and an **Apply credit** form: tick the client's new invoices and settle them from
+-  the credit. No new money is recorded (no extra collection or bank posting).
+-* The multi-invoice screen warns when the client already holds credit on earlier receipts.
+-
+-### Which bank the money goes to
+-* Cheque: **Deposit into (our bank)**. Transfer: **Received into (our bank)**. Both are required when the mode is ticked,
+-  on the single-invoice create and edit forms and the multi-invoice form. The old free-text fields are relabelled as the
+-  **payer's** bank.
+-* **Transfers are posted to the chosen bank immediately** (`bank_transactions` credit with `receipt_id`, bank total updated).
+-  Editing the receipt re-posts; deleting it adds a **reversal line** (nothing is deleted from the bank ledger).
+-* Bank Deposit pre-selects the bank chosen on the receipt for each collection.
+-* Receipt page and printout show the receiving bank and every invoice paid.
+-
+-### Data model
++## 3. Balances and advances: how they work now
++
++**One rule.** For every invoice:
++
+ ```
+-receipts ─┬─< receipt_allocations >─┬─ invoices
+-          │   amount_applied        │
+-          │   wht_amount            │   outstanding = invoice.total − SUM(allocations.settled)
+-          │   vat7_amount           │
+-          │   deduction_amount      │
+-          │   settled (sum)         │
+-          │   source: receipt | credit | legacy
+-          ├─ unapplied_amount   (client credit)
+-          ├─ cheque_to_bank_id  → banks
+-          └─ transfer_to_bank_id → banks
++outstanding = invoice.total − SUM(receipt_allocations.settled)
++settled     = cash applied + WHT + 7% VAT + other deductions      (per receipt, per invoice)
+ ```
+-* `receipts.invoice_id` is kept (first invoice paid) so every existing report, dashboard and export still works.
+-* The migration **backfills one allocation per existing receipt** (`source = legacy`, settled = `total + dAmount`),
+-  so old and new receipts read the same way.
+-* Classic single-invoice receipts keep their existing logic and now also write/refresh their allocation line.
+-* Multi-invoice / credit receipts can't be opened in the single-invoice edit form (it would corrupt allocations);
+-  the user is told to delete and re-record instead.
+-
+-### Code map
+-| File | Purpose |
+-|---|---|
+-| `app/Services/Receipts/ReceiptAllocator.php` | Pure maths: split money over invoices, validate, leftover credit |
+-| `app/Services/Receipts/InvoiceSettlement.php` | Writes allocations + ledger rows; re-derives invoice status/balance; releases on delete |
+-| `app/Services/Receipts/BankPosting.php` | Posts / reverses transfers to our bank accounts |
+-| `app/Services/Receipts/ReceiptWorkflow.php` | Approval routing and category A–D, shared by both flows |
+-| `app/Http/Controllers/MultiInvoiceReceiptController.php` | Multi-invoice create/store, apply credit |
+-| `app/Http/Requests/Concerns/PaymentModeRules.php` | One set of payment-mode validation for all receipt forms |
+-| `resources/views/sales/receipt_multi_create.blade.php` | The new screen |
+-| `tests/Unit/ReceiptAllocatorTest.php`, `tests/Feature/MultiInvoiceReceiptTest.php` | 22 tests covering the flows above |
+-
+-### Deploying
+-1. Back up the database, then `php artisan migrate` (creates `receipt_allocations`, adds the bank/credit columns, backfills).
+-2. Make sure every company account exists under *Accounts › Banks* — the new pickers list them.
+-3. Spot-check: `SELECT COUNT(*) FROM receipts WHERE invoice_id IS NOT NULL` should equal
+-   `SELECT COUNT(DISTINCT receipt_id) FROM receipt_allocations`.
+-4. Transfers recorded **before** this release were never posted to a bank. If bank balances should include them,
+-   post them once with a manual adjustment rather than re-saving old receipts.
++
++* Nothing paid → `unpaid`, balance 0 · part paid → `uncompleted`, balance = outstanding · fully paid → `completed`, 0.
++* The single-invoice form, the multi-invoice form and the edit form all go through one service
++  (`ReceiptRecorder`). The status drop-down is gone; the receipt says *completed* when every invoice it pays is settled.
++* **Editing** first removes everything that receipt did (its allocation lines and client-ledger rows), re-derives the
++  invoice from the other receipts, then applies the new amounts. It can't double-count or touch another receipt.
++* **Deleting** does the same without re-applying, so other part payments survive.
++
++**Advances / client credit**
++* Money beyond what the ticked invoice(s) owe is **refused** unless the cashier ticks
++  *"Keep any extra as client credit (advance)"* — so an extra zero is caught instead of becoming credit.
++  When ticked, the extra is stored on the receipt as `unapplied_amount`.
++* A payment with no invoice at all (true advance) is recorded from *Pay Multiple Invoices* with no invoice ticked.
++* Credit is used from the receipt page (**Apply credit**) against the client's later invoices. No new money moves.
++* Both receipt forms warn when the client already holds credit.
++* `advance_payment` is now **set automatically**: `advance` when part of the money is kept as credit, or when the
++  receipt is dated before the month of an invoice it pays. The old tick box is gone.
+ 
+ ---
+ 
+-## 3. Proposal: a simpler way to manage receipts
+-
+-The branch is built so the system can move to this model step by step without breaking reports.
+-
+-1. **One rule for invoice status.** Status and balance should always be *derived* from allocation lines
+-   (`InvoiceSettlement::recalculate()`), never chosen by the cashier. Next step: route the single-invoice form through
+-   the same allocator (it is just the multi-invoice flow with one row) and delete the four-branch `store()` and
+-   `update()` logic. That removes ~900 lines and the class of bugs listed above.
+-2. **Receipt = money in; allocation = what it paid.** A receipt records only money received and how (modes, bank).
+-   What it paid is the allocation lines. Corrections become "reallocate" (move lines) instead of editing totals.
+-3. **Client credit as a first-class balance.** `unapplied_amount` per receipt gives a client credit total
+-   (`SUM(unapplied_amount)`). Show it on the client page and statement; auto-suggest it when a new invoice is raised.
+-   Optionally backfill legacy negative invoice balances (old overpayments) into credit.
+-4. **Bank ledger from the source.** Every cedi that reaches a bank should have one ledger line pointing at its
+-   source: deposit (cash/cheque), receipt (transfer), expense. Momo could get its own wallet "bank" the same way.
+-   Add a simple **bank reconciliation** screen (mark ledger lines as matched against the statement).
+-5. **Void instead of delete.** Mark receipts as void (with reason and user) and post reversal lines, so totals,
+-   collections and bank ledgers keep a full audit trail.
+-6. **Money columns to `decimal(15,2)`** across invoices, receipts, collections, banks.
+-7. **Collections = cash actually held.** Store `total_amount` as cash+momo+cheque+transfer only, and keep WHT/VAT
+-   as tax receivables in their own report.
+-8. **Numbering.** Keep `FWSSR`/`FWSSi` but generate them as stored, unique document numbers per year/office so
+-   reprints and deletions don't create gaps that look like missing receipts.
++## 4. Repairing balances the old code already got wrong
++
++Fixing the code stops new damage; existing invoices still carry old mistakes. Run:
++
++```bash
++php artisan receipts:recompute                 # dry run: summary + CSV in storage/app, changes nothing
++php artisan receipts:recompute --apply         # write the corrections
++```
++
++Every invoice is re-derived from its receipts and put in one bucket:
++
++| Bucket | Meaning | On `--apply` |
++|---|---|---|
++| Correct already | matches its receipts | nothing |
++| Wrong status/balance | e.g. cases A, C, G above | corrected |
++| Completed but not fully paid | case B — **may be a deliberate write-off/discount** | left alone, listed for review; add `--reopen-short` to reopen |
++| Overpaid | case D — negative balance | recalculated; add `--overpayments-to-credit` to move the extra cash into the latest receipt's client credit |
++
++`--client=<id>` limits it to one client. Running it again after `--apply` should report everything correct except
++the short-closed invoices you chose to keep.
++
++---
++
++## 5. Deploying
++
++1. **Back up the database.**
++2. `php artisan migrate` — adds `bank_transactions.channel`, widens the bank tables' money columns to
++   `decimal(15,2)` (they capped at 999,999.99), and turns `receipts.advance_payment` into text
++   (`1` → `advance`, `0` → empty).
++3. `php artisan receipts:recompute` → review the CSV (especially *Completed but not fully paid*) → `--apply` with the
++   options you want.
++4. Make sure every company account exists under *Accounts › Banks*.
++5. Cheques/transfers received **before** this release are not in any bank balance unless they were deposited.
++   Undeposited old cheques still appear on Bank Deposit as "Old cheque to deposit". Old transfers need a one-off
++   manual bank adjustment if balances should include them.
++
++**Testing note:** the suite (43 tests) passes on SQLite and on MariaDB 10.11. A *fresh* MySQL install of this project
++fails on the existing `create_expenses_table` migration (`->after()` inside `Schema::create`, and a foreign key to a
++table created later). Existing databases are past that migration, so it only matters for new installs/CI.
++
++---
++
++## 6. Still open / suggested next
++
++* **Bounced cheques.** A cheque is now in the bank balance as soon as it is receipted. If it bounces, edit or delete
++  the receipt (that posts the reversal). A "cheque bounced" action that reverses the bank line and reopens the
++  invoice, keeping the receipt for the record, would be cleaner.
++* **Receipts report timing buckets** (`App\Support\ReceiptReport`) still file a multi-invoice receipt under its first
++  invoice's month. Per-invoice "received to date" is already split correctly.
++* **Client statement** showing invoices, allocations and credit in one place; auto-suggest credit when an invoice is raised.
++* **Void instead of delete**, with reason and user, so receipts keep a full audit trail.
++* Widen the remaining money columns (invoices, receipts, collections) to `decimal(15,2)`.
++* `collections.total_amount` includes WHT and VAT, so it overstates cash held.
++
++---
++
++## Code map
++
++| File | Purpose |
++|---|---|
++| `app/Services/Receipts/ReceiptRecorder.php` | The one place receipts are created and edited (all forms) |
++| `app/Services/Receipts/ReceiptAllocator.php` | Pure maths: split money over invoices, validate, leftover credit |
++| `app/Services/Receipts/InvoiceSettlement.php` | Allocation lines + client ledger; re-derives invoice status/balance; release on edit/delete |
++| `app/Services/Receipts/BankPosting.php` | Cheque/transfer straight to bank, reversals, what's left to deposit |
++| `app/Services/Receipts/BalanceRecompute.php` + `routes/console.php` | `receipts:recompute` |
++| `app/Services/Receipts/ReceiptWorkflow.php` | Approval routing and category A–D |
++| `app/Http/Controllers/MultiInvoiceReceiptController.php` | Multi-invoice screen, apply credit |
++| `tests/Feature/ReceiptBalanceAndBankTest.php` | The A–G cases above, cheque posting, deposits |
++| `tests/Feature/ReceiptRecomputeCommandTest.php` | The repair command |
+diff --git a/resources/views/banks/deposit_index.blade.php b/resources/views/banks/deposit_index.blade.php
+index 48f28c0..3a307da 100644
+--- a/resources/views/banks/deposit_index.blade.php
++++ b/resources/views/banks/deposit_index.blade.php
+@@ -402,17 +402,20 @@ class="rounded" />
+                         <button class="btn btn-dark" type="submit"> <i class="icon-base bx bx-arrow-from-left"> </i> {{ __('Deposit') }}</button>
+                     </div>
+ 
++                    <div class="alert alert-info py-2 mb-3">
++                        <i class="bx bx-info-circle me-1"></i> Cheques and transfers now go straight into the bank chosen on the receipt.
++                        Only <strong>cash</strong> (and cheques received before that change) is deposited here.
++                    </div>
+                     <table id="myTable1" class="display">
+                         <thead>
+                             <tr>
+                                 <th> </th>
+                                 <th>#</th>
+                                 <th>Period</th>
+-                                <th>Cash Amount</th>
+-                                <th>Momo Amount</th>
+-                                <th>Cheque Amount </th>
+-                                <th> Transfer Amount </th>
+-                                <th> Total Amount </th>
++                                <th>Cash to deposit</th>
++                                <th>Old cheque to deposit</th>
++                                <th>To deposit</th>
++                                <th>Receipt total</th>
+                                 <th>Date Created</th>
+                                 <th>Branch</th>
+                                 <th>status</th>
+@@ -428,10 +431,9 @@ class="rounded" />
+                                 <td> <input class="checkBoxes form-check-input" type="checkbox" name="collections[]" value="{{$collection->id}}" /></td>
+                                 <td> {{$collection->id}}</td>
+                                 <td> {{$collection->created_at->diffForHumans()}}</td>
+-                                <td>GH&#x20B5; {{number_format($collection->cash_amount, 2)}}</td>
+-                                <td>GH&#x20B5; {{number_format($collection->momo_amount, 2)}}</td>
+-                                <td>GH&#x20B5; {{number_format($collection->cheque_amount, 2)}}</td>
+-                                <td>GH&#x20B5; {{number_format($collection->transfer_amount, 2)}}</td>
++                                <td>GH&#x20B5; {{number_format($collection->deposit_cash, 2)}}</td>
++                                <td>GH&#x20B5; {{number_format($collection->deposit_cheque, 2)}}</td>
++                                <td><strong>GH&#x20B5; {{number_format($collection->deposit_total, 2)}}</strong></td>
+                                 <td>GH&#x20B5; {{number_format($collection->total_amount, 2)}}</td>
+                                 <td> {{$collection->created_at->format('l F d, Y, H:i A')}}</td>
+                                 <td> {{$collection->field?->name}} </td>
+diff --git a/resources/views/banks/index.blade.php b/resources/views/banks/index.blade.php
+index 4c397c3..b78e3cb 100644
+--- a/resources/views/banks/index.blade.php
++++ b/resources/views/banks/index.blade.php
+@@ -516,6 +516,7 @@ class="form-control @error('branch') is-invalid @enderror"
+                             <th>Receipt ID</th>
+                             <th>Debit</th>
+                             <th>Expense ID</th>
++                            <th>Details</th>
+                             <th>Closing Balance</th>
+                             <th>Date</th>
+                         </tr>
+@@ -532,6 +533,7 @@ class="form-control @error('branch') is-invalid @enderror"
+                             <td> {{$transaction->receipt_id}} </td>
+                             <td> {{$transaction->debit}} </td>
+                             <td> {{$transaction->expense_id}} </td>
++                            <td> @if($transaction->channel)<span class="badge bg-label-primary">{{ $transaction->channel }}</span>@endif {{ $transaction->narration }} </td>
+                             <td> {{$transaction->balance}} </td>
+                             <td> {{$transaction->created_at->format('F l d, Y, H:i A')}} </td>
+                         </tr>
+diff --git a/resources/views/partials/receipt_bank_select.blade.php b/resources/views/partials/receipt_bank_select.blade.php
+index b99f3b0..85d7628 100644
+--- a/resources/views/partials/receipt_bank_select.blade.php
++++ b/resources/views/partials/receipt_bank_select.blade.php
+@@ -18,6 +18,7 @@
+         </option>
+     @endforeach
+ </select>
++<small class="text-muted d-block">Credited to this account as soon as the receipt is saved — no bank deposit needed.</small>
+ @if($banks->isEmpty())
+     <small class="text-danger d-block">No bank accounts set up yet — add one under Accounts › Banks.</small>
+ @endif
+diff --git a/resources/views/sales/receiptCreate.blade.php b/resources/views/sales/receiptCreate.blade.php
+index 917b9e4..6acd48b 100644
+--- a/resources/views/sales/receiptCreate.blade.php
++++ b/resources/views/sales/receiptCreate.blade.php
+@@ -359,10 +359,6 @@
+                         @csrf
+                         <div class="card-header d-flex justify-content-between align-items-center">
+                             <h5 class="mb-0"> Receipt </h5>
+-                            <div class="form-check mt-3">
+-                                <input name="advance_payment" class="form-check-input" type="checkbox" value="advance" id="defaultCheck1" />
+-                                <label class="form-check-label" for="defaultCheck1"> Tick For Advance Payment </label>
+-                            </div>
+ 
+                             <!-- <small class="text-body float-end">Merged input group</small> -->
+ 
+@@ -586,7 +582,7 @@ class="form-control"
+                                     </div>
+ 
+                                     <div class="col mb-0">
+-                                        @include('partials.receipt_bank_select', ['name' => 'cheque_to_bank_id', 'label' => 'DEPOSIT INTO (OUR BANK)', 'banks' => $banks, 'selected' => null])
++                                        @include('partials.receipt_bank_select', ['name' => 'cheque_to_bank_id', 'label' => 'PAID INTO (OUR BANK)', 'banks' => $banks, 'selected' => null])
+                                     </div>
+ 
+                                 </div>
+@@ -720,21 +716,11 @@ class="form-control"
+                                     <!-- end of cash value -->
+ 
+                                     <div class="col mt-6">
+-                                        <div class="input-group">
+-                                            <label class="input-group-text" for="status">{{ __('STATUS') }}</label>
+-                                            <select name="status" class="form-select @error('status') is-invalid @enderror" id="status" required>
+-                                                <option disabled {{ old('status') ? '' : 'selected' }}>Choose...</option>
+-                                               @foreach ( $status as $stat )
+-                                                <option value="{{ $stat->name }}" {{ old('status') == $stat->name ? 'selected' : '' }}> {{ $stat->name }}</option>
+-                                                @endforeach
+-                                            </select>
+-                                            @error('status')
+-                                            <span class="invalid-feedback" role="alert">
+-                                                <strong>{{ $message }}</strong>
+-                                            </span>
+-                                            @enderror
++                                        <div class="form-check">
++                                            <input name="keep_credit" class="form-check-input" type="checkbox" value="1" id="keep_credit" {{ old('keep_credit') ? 'checked' : '' }}>
++                                            <label class="form-check-label" for="keep_credit"> Keep any extra as client credit (advance) </label>
+                                         </div>
+-
++                                        <small class="text-muted d-block">Status and balance are worked out from the payment. Paying more than is owed needs this box ticked; the extra can be applied to the client's next invoice.</small>
+                                     </div>
+                                 </div>
+ 
+@@ -784,8 +770,15 @@ class="form-control"
+                     <hr>
+                     <p class="card-text">Invoice # : FWSSi{{$invoice->id}}</p>
+                     <p class="card-text">Invoice Total : GH&#8373;{{number_format($invoice->total, 2)}}</p>
+-                    <p style="display: none;" id="amount_payable" class="card-text text-info"> <strong> Amount Payable : GH&#8373; {{ number_format($invoice->total - ($invoice->sub_amount * 0.075), 2)   }} </strong></p>
+-                    <p class="card-text text-info">Invoice Balance : <strong> GH&#8373;{{ number_format($invoice->balance, 2)}} </strong> </p>
++                    <p class="card-text text-info">Still owed : <strong> GH&#8373;{{ number_format($outstanding, 2)}} </strong> </p>
++                    <p style="display: none;" id="amount_payable" class="card-text text-info"> <strong> Cash due after {{ $wht_rate->wht_rate * 100 }}% WHT : GH&#8373; {{ number_format(max(0, $outstanding - ($invoice->sub_amount * $wht_rate->wht_rate)), 2) }} </strong></p>
++                    @if($creditReceipts->isNotEmpty())
++                    <div class="alert alert-warning py-2 mt-2 mb-0 small">
++                        Client already has <strong>GH&#8373;{{ number_format($creditReceipts->sum('unapplied_amount'), 2) }}</strong> credit.
++                        Apply it first from
++                        @foreach($creditReceipts as $cr)<a href="{{ route('receipt.show', $cr->id) }}">FWSSR{{ $cr->id }}</a>@if(!$loop->last), @endif @endforeach.
++                    </div>
++                    @endif
+                     <p class="card-text">Invoice Issued : {{$invoice->created_at->format('l, F j, Y H:i A')}}</p>
+                     <p class="card-text">Invoice Due Date : {{$invoice->due_date->format('l, F j, Y H:i A')}}</p>
+ 
+diff --git a/resources/views/sales/receipt_edit.blade.php b/resources/views/sales/receipt_edit.blade.php
+index f18e05b..3bbf38c 100644
+--- a/resources/views/sales/receipt_edit.blade.php
++++ b/resources/views/sales/receipt_edit.blade.php
+@@ -370,15 +370,6 @@
+                         @method('PUT')
+                         <div class="card-header d-flex justify-content-between align-items-center">
+                             <h5 class="mb-0"> Receipt </h5>
+-                            <div class="form-check mt-3">
+-                                <input name="advance_payment" class="form-check-input" type="checkbox" value="advance" id="defaultCheck1" @if ($receipt->advance_payment == "advance") checked @endif />
+-                                <label class="form-check-label" for="defaultCheck1"> Tick For Advance Payment </label>
+-                            </div>
+-
+-                            <div class="form-check mt-3">
+-                                <input name="reset_balance" class="form-check-input" type="checkbox" value="reset" id="reset_balance"  />
+-                                <label class="form-check-label" for="reset_balance"> Reset Invoice Balances </label>
+-                            </div>
+                             <!-- <small class="text-body float-end">Merged input group</small> -->
+ 
+                             <div class="button-wrapper">
+@@ -599,7 +590,7 @@ class="form-control"
+                                     </div>
+ 
+                                     <div class="col mb-0">
+-                                        @include('partials.receipt_bank_select', ['name' => 'cheque_to_bank_id', 'label' => 'DEPOSIT INTO (OUR BANK)', 'banks' => $banks, 'selected' => $receipt->cheque_to_bank_id])
++                                        @include('partials.receipt_bank_select', ['name' => 'cheque_to_bank_id', 'label' => 'PAID INTO (OUR BANK)', 'banks' => $banks, 'selected' => $receipt->cheque_to_bank_id])
+                                     </div>
+ 
+                                 </div>
+@@ -740,20 +731,11 @@ class="form-control"
+                                     <!-- end of cash value -->
+ 
+                                     <div class="col mt-6">
+-                                        <div class="input-group">
+-                                            <label class="input-group-text" for="status">{{ __('STATUS') }}</label>
+-                                            <select name="status" class="form-select @error('status') is-invalid @enderror" id="status" required>
+-                                                @foreach ( $status as $stat )      
+-                                                <option @if ($receipt->status == $stat->name ) selected @endif  value="{{ $stat->name }}"> {{ $stat->name }}</option>
+-                                                @endforeach
+-                                            </select>
+-                                            @error('status')
+-                                            <span class="invalid-feedback" role="alert">
+-                                                <strong>{{ $message }}</strong>
+-                                            </span>
+-                                            @enderror
++                                        <div class="form-check">
++                                            <input name="keep_credit" class="form-check-input" type="checkbox" value="1" id="keep_credit" {{ old('keep_credit', $receipt->unapplied_amount > 0) ? 'checked' : '' }}>
++                                            <label class="form-check-label" for="keep_credit"> Keep any extra as client credit (advance) </label>
+                                         </div>
+-
++                                        <small class="text-muted d-block">Status and balance are worked out from the payment. Paying more than is owed needs this box ticked; the extra can be applied to the client's next invoice.</small>
+                                     </div>
+                                 </div>
+ 
+@@ -799,7 +781,7 @@ class="form-control"
+                     <p class="card-text">Invoice # : FWSSi{{$invoice->id}}</p>
+                     <p class="card-text">Invoice Total : GH&#8373;{{number_format($invoice->total, 2)}}</p>
+                     <p style="display: none;" id="amount_payable" class="card-text text-info"> <strong> Amount Payable : GH&#8373; {{ number_format($invoice->total - ($invoice->sub_amount * 0.075), 2)   }} </strong></p>
+-                    <p class="card-text text-info">Invoice Balance : <strong> GH&#8373;{{ number_format($invoice->balance, 2)}} </strong> </p>
++                    <p class="card-text text-info">Still owed (other receipts) : <strong> GH&#8373;{{ number_format(max(0, $invoice->total - $invoice->allocations()->where('receipt_id', '!=', $receipt->id)->sum('settled')), 2)}} </strong> </p>
+                     <p class="card-text">Invoice Issued : {{$invoice->created_at->format('l, F j, Y H:i A')}}</p>
+                     <p class="card-text">Invoice Due Date : {{$invoice->due_date->format('l, F j, Y H:i A')}}</p>
+ 
+diff --git a/resources/views/sales/receipt_multi_create.blade.php b/resources/views/sales/receipt_multi_create.blade.php
+index a110ede..05366bb 100644
+--- a/resources/views/sales/receipt_multi_create.blade.php
++++ b/resources/views/sales/receipt_multi_create.blade.php
+@@ -228,7 +228,7 @@
+                                         <input type="text" name="cheque_bank" id="cheque_bank" class="form-control" value="{{ old('cheque_bank') }}" placeholder="e.g. GCB">
+                                     </div>
+                                     <div class="col-md-3">
+-                                        @include('partials.receipt_bank_select', ['name' => 'cheque_to_bank_id', 'label' => 'DEPOSIT INTO (OUR BANK)', 'banks' => $banks, 'selected' => null])
++                                        @include('partials.receipt_bank_select', ['name' => 'cheque_to_bank_id', 'label' => 'PAID INTO (OUR BANK)', 'banks' => $banks, 'selected' => null])
+                                     </div>
+                                 </div>
+                             </div>
+@@ -251,7 +251,6 @@
+                                         @include('partials.receipt_bank_select', ['name' => 'transfer_to_bank_id', 'label' => 'RECEIVED INTO (OUR BANK)', 'banks' => $banks, 'selected' => null])
+                                     </div>
+                                 </div>
+-                                <small class="text-muted d-block mt-1"><i class="bx bx-info-circle"></i> The transfer is credited to this bank account straight away.</small>
+                             </div>
+ 
+                             <div id="otherpayrow" class="mi-mode-row" style="display:none">
+diff --git a/resources/views/sales/receipt_show.blade.php b/resources/views/sales/receipt_show.blade.php
+index be4dc44..be2fc2c 100644
+--- a/resources/views/sales/receipt_show.blade.php
++++ b/resources/views/sales/receipt_show.blade.php
+@@ -579,7 +579,7 @@
+                                 <div class="amount-display">GH&#8373; {{ number_format($receipt->cheque_amount, 2) }}</div>
+                                 <div class="text-white-50 small mt-1">Ref: {{$receipt->cheque_reference}} • {{$receipt->cheque_bank}}</div>
+                                 @if($receipt->chequeToBank)
+-                                <div class="small mt-1"><i class="bx bx-bank"></i> To be deposited into <strong>{{ $receipt->chequeToBank->name }}</strong> {{ $receipt->chequeToBank->acc_number }}</div>
++                                <div class="small mt-1"><i class="bx bx-bank"></i> Paid into <strong>{{ $receipt->chequeToBank->name }}</strong> {{ $receipt->chequeToBank->acc_number }}</div>
+                                 @endif
+                             </div>
+                         </div>
+diff --git a/routes/console.php b/routes/console.php
+index d381a80..4f09a00 100644
+--- a/routes/console.php
++++ b/routes/console.php
+@@ -56,3 +56,50 @@
+         $this->error('Rules IGNORED because the client is not in DEFAULT_A_CLIENT_IDS: ' . implode(', ', $ignored));
+     }
+ })->purpose('List stored locations for rule clients and whether they match');
++
++/*
++ | Receipts: re-derive every invoice's status and balance from its receipts.
++ | Dry run by default — prints a summary and writes a CSV of every invoice that
++ | is wrong. Back up the database, review the CSV, then run again with --apply.
++ */
++Artisan::command('receipts:recompute
++        {--apply : Write the corrections (default is a dry run)}
++        {--reopen-short : Also reopen invoices marked completed that receipts do not fully cover}
++        {--overpayments-to-credit : Move overpaid cash off invoices into the receipt\'s client credit}
++        {--client= : Only this client id}', function () {
++    $apply = (bool) $this->option('apply');
++    $result = app(\App\Services\Receipts\BalanceRecompute::class)->run(
++        $apply,
++        (bool) $this->option('reopen-short'),
++        (bool) $this->option('overpayments-to-credit'),
++        $this->option('client') ? (int) $this->option('client') : null,
++    );
++
++    $this->info($apply ? 'APPLIED' : 'DRY RUN — nothing changed. Add --apply to write.');
++    if ($result['missing_allocations']) {
++        $this->warn($result['missing_allocations'] . ' receipt(s) had no allocation line' . ($apply ? ' — created.' : ' — will be created on --apply.'));
++    }
++    $labels = ['ok' => 'Correct already', 'fix' => 'Wrong status/balance', 'closed_short' => 'Completed but not fully paid', 'overpaid' => 'Overpaid'];
++    $this->table(['Invoices', 'Count'], collect($result['summary'])->map(fn ($n, $k) => [$labels[$k], $n])->values()->all());
++
++    if ($result['rows']) {
++        $file = 'receipts-recompute-' . now()->format('Ymd-His') . '.csv';
++        $path = storage_path('app/' . $file);
++        $fh = fopen($path, 'w');
++        fputcsv($fh, array_keys($result['rows'][0]));
++        foreach ($result['rows'] as $row) {
++            fputcsv($fh, $row);
++        }
++        fclose($fh);
++        $this->line('Details: ' . $path);
++        $this->table(['Invoice', 'Client', 'Total', 'Paid', 'Stored', 'Correct', 'Issue', 'Action'],
++            collect($result['rows'])->take(20)->map(fn ($r) => [
++                'FWSSi' . $r['invoice_id'], \Illuminate\Support\Str::limit((string) $r['client'], 24), number_format($r['total'], 2),
++                number_format($r['paid_per_receipts'], 2), $r['stored_status'] . ' / ' . number_format($r['stored_balance'], 2),
++                $r['correct_status'] . ' / ' . number_format($r['correct_balance'], 2), $r['issue'], $r['action'],
++            ])->all());
++        if (count($result['rows']) > 20) {
++            $this->line('… ' . (count($result['rows']) - 20) . ' more in the CSV.');
++        }
++    }
++})->purpose('Re-derive invoice status and balance from receipts (dry run unless --apply)');
+diff --git a/tests/Feature/MultiInvoiceReceiptTest.php b/tests/Feature/MultiInvoiceReceiptTest.php
+index a26c0d9..a9afd35 100644
+--- a/tests/Feature/MultiInvoiceReceiptTest.php
++++ b/tests/Feature/MultiInvoiceReceiptTest.php
+@@ -31,8 +31,7 @@ protected function setUp(): void
+         parent::setUp();
+ 
+         $department = Department::create(['name' => 'Finance']);
+-        Role::create(['name' => 'Placeholder', 'department_id' => $department->id]);          // id 1
+-        $role = Role::create(['name' => 'Finance Manager', 'department_id' => $department->id]); // id 2 = head-office approval
++        $role = Role::forceCreate(['id' => 2, 'name' => 'Finance Manager', 'department_id' => $department->id]); // approval code keys on role id 2
+         $this->user = User::factory()->create(['department_id' => $department->id, 'role_id' => $role->id]);
+ 
+         $field = Field::create(['name' => 'Accra', 'user_id' => $this->user->id, 'number' => '0200000000']);
+@@ -137,7 +136,7 @@ public function test_single_invoice_screens_render_with_bank_pickers(): void
+ 
+         $receipt = Receipt::create(['invoice_id' => $inv->id, 'client_id' => $this->client->id, 'total' => 100, 'cash_amount' => 100, 'status' => 'uncompleted', 'mode' => ['cash']]);
+         ReceiptAllocation::create(['receipt_id' => $receipt->id, 'invoice_id' => $inv->id, 'amount_applied' => 100, 'settled' => 100]);
+-        $this->get(route('receipt.edit', $receipt))->assertOk()->assertSee('DEPOSIT INTO (OUR BANK)', false);
++        $this->get(route('receipt.edit', $receipt))->assertOk()->assertSee('PAID INTO (OUR BANK)', false);
+ 
+         $this->get('/deposit/create')->assertOk();
+     }
+diff --git a/tests/Feature/ReceiptBalanceAndBankTest.php b/tests/Feature/ReceiptBalanceAndBankTest.php
+new file mode 100644
+index 0000000..6ba5dbb
+--- /dev/null
++++ b/tests/Feature/ReceiptBalanceAndBankTest.php
+@@ -0,0 +1,246 @@
++<?php
++
++namespace Tests\Feature;
++
++use App\Models\Bank;
++use App\Models\BankTransaction;
++use App\Models\Client;
++use App\Models\Collection;
++use App\Models\Department;
++use App\Models\Field;
++use App\Models\Invoice;
++use App\Models\Receipt;
++use App\Models\ReceiptAllocation;
++use App\Models\Role;
++use App\Models\User;
++use Illuminate\Foundation\Testing\RefreshDatabase;
++use Illuminate\Support\Facades\DB;
++use Tests\TestCase;
++
++/**
++ * Single-invoice receipts: balances are derived from what was paid, never
++ * from the status the cashier picks; cheques and transfers go straight into
++ * the chosen bank. Each test is one of the failures the old code produced.
++ */
++class ReceiptBalanceAndBankTest extends TestCase
++{
++    use RefreshDatabase;
++
++    private User $user;
++    private Client $client;
++    private Bank $bank;
++
++    protected function setUp(): void
++    {
++        parent::setUp();
++        $department = Department::create(['name' => 'Finance']);
++        $role = Role::forceCreate(['id' => 2, 'name' => 'Finance Manager', 'department_id' => $department->id]); // approval code keys on role id 2
++        $this->user = User::factory()->create(['department_id' => $department->id, 'role_id' => $role->id]);
++        $field = Field::create(['name' => 'Accra', 'user_id' => $this->user->id, 'number' => '0200000000']);
++        $this->client = Client::create(['name' => 'Kofi Mensah', 'business_name' => 'Alpha Security', 'field_id' => $field->id]);
++        $this->bank = Bank::create(['name' => 'GCB Main', 'branch' => 'Accra', 'acc_number' => '1234567', 'total' => 1000]);
++        foreach (['cash', 'cheque', 'transfer', 'momo', 'other payments'] as $m) {
++            DB::table('receipt_mode')->insert(['name' => $m]);
++        }
++        $this->actingAs($this->user);
++    }
++
++    private function invoice(float $total = 1000): Invoice
++    {
++        return Invoice::create([
++            'client_id' => $this->client->id, 'total' => $total, 'sub_amount' => $total, 'sub_total' => 0,
++            'invoice_month' => '2026-09-01', 'due_date' => now()->addDays(10), 'status' => 'unpaid', 'balance' => 0,
++        ]);
++    }
++
++    private function cash(Invoice $invoice, float $amount, array $extra = [])
++    {
++        return $this->post('/receipt', array_merge([
++            'invoice_id' => $invoice->id, 'client_id' => $this->client->id, 'from' => 'Kofi',
++            'receipt_month' => '2026-09-03', 'mode' => ['cash'], 'cash_amount' => $amount,
++        ], $extra));
++    }
++
++    private function edit(Receipt $receipt, array $fields)
++    {
++        return $this->put('/receipt/' . $receipt->id, array_merge([
++            'invoice_id' => $receipt->invoice_id, 'client_id' => $this->client->id, 'from' => 'Kofi',
++            'receipt_month' => '2026-09-03', 'mode' => ['cash'],
++        ], $fields));
++    }
++
++    private function assertInvoice(Invoice $invoice, string $status, float $balance): void
++    {
++        $fresh = $invoice->fresh();
++        $this->assertSame($status, $fresh->status, 'status');
++        $this->assertEquals($balance, (float) $fresh->balance, 'balance');
++    }
++
++    /* ---------------- balances ---------------- */
++
++    public function test_status_comes_from_the_amount_not_the_form(): void
++    {
++        $inv = $this->invoice();
++        $this->cash($inv, 700, ['status' => 'completed'])->assertSessionHasNoErrors();   // old code closed it with 300 owed
++        $this->assertInvoice($inv, 'uncompleted', 300);
++        $this->assertSame('uncompleted', Receipt::latest('id')->first()->status);
++
++        $this->cash($inv, 300, ['status' => 'uncompleted'])->assertSessionHasNoErrors(); // old code left it open
++        $this->assertInvoice($inv, 'completed', 0);
++        $this->assertSame('completed', Receipt::latest('id')->first()->status);
++    }
++
++    public function test_editing_a_part_payment_does_not_subtract_twice(): void
++    {
++        $inv = $this->invoice();
++        $this->cash($inv, 400);
++        $receipt = Receipt::latest('id')->first();
++        $this->assertInvoice($inv, 'uncompleted', 600);
++
++        $this->edit($receipt, ['cash_amount' => 450])->assertSessionHasNoErrors();   // old code: 150
++        $this->assertInvoice($inv, 'uncompleted', 550);
++
++        $this->edit($receipt, ['cash_amount' => 450])->assertSessionHasNoErrors();   // re-save unchanged
++        $this->assertInvoice($inv, 'uncompleted', 550);
++        $this->assertSame(1, ReceiptAllocation::where('receipt_id', $receipt->id)->count());
++    }
++
++    public function test_resaving_a_completed_receipt_keeps_invoice_paid_and_wht_total(): void
++    {
++        $inv = $this->invoice();
++        $wht = ['wth' => 'on', 'wht_amount' => 37.5];
++        $this->cash($inv, 462.5, $wht);
++        $first = Receipt::latest('id')->first();
++        $this->cash($inv, 462.5, $wht);
++        $this->assertInvoice($inv, 'completed', 0);
++        $this->assertEquals(75, $inv->fresh()->wht_amount);
++
++        $this->edit($first, ['cash_amount' => 462.5] + $wht)->assertSessionHasNoErrors(); // old code reopened at 500, WHT 37.5
++        $this->assertInvoice($inv, 'completed', 0);
++        $this->assertEquals(75, $inv->fresh()->wht_amount);
++    }
++
++    public function test_editing_keeps_the_cheque_image_and_original_cashier(): void
++    {
++        $inv = $this->invoice();
++        $this->cash($inv, 200);
++        $receipt = Receipt::latest('id')->first();
++        DB::table('receipts')->where('id', $receipt->id)->update(['image' => 'images/chq.png']);
++        $other = User::factory()->create(['role_id' => $this->user->role_id, 'department_id' => $this->user->department_id]);
++
++        $this->actingAs($other);
++        $this->edit($receipt, ['cash_amount' => 250])->assertSessionHasNoErrors();
++
++        $this->assertSame('images/chq.png', $receipt->fresh()->image);
++        $this->assertSame($this->user->id, (int) $receipt->fresh()->user_id);
++    }
++
++    public function test_overpayment_is_refused_unless_kept_as_credit(): void
++    {
++        $inv = $this->invoice();
++        $this->cash($inv, 400);
++        $this->cash($inv, 800, ['status' => 'completed'])->assertSessionHasErrors('invoices'); // old code: balance -200
++        $this->assertInvoice($inv, 'uncompleted', 600);
++
++        $this->cash($inv, 800, ['keep_credit' => '1'])->assertSessionHasNoErrors();
++        $receipt = Receipt::latest('id')->first();
++        $this->assertInvoice($inv, 'completed', 0);
++        $this->assertEquals(200, $receipt->unapplied_amount);
++        $this->assertSame('advance', $receipt->advance_payment);
++        $this->assertEquals(600, ReceiptAllocation::where('receipt_id', $receipt->id)->value('settled'));
++    }
++
++    public function test_cannot_pay_an_invoice_that_is_already_paid(): void
++    {
++        $inv = $this->invoice();
++        $this->cash($inv, 1000);
++        $this->cash($inv, 200)->assertSessionHasErrors('invoice_id');
++        $this->assertSame(1, Receipt::count());
++    }
++
++    public function test_advance_flag_is_automatic_for_payment_before_invoice_month(): void
++    {
++        $inv = $this->invoice();
++        $this->cash($inv, 300, ['receipt_month' => '2026-08-20', 'advance_payment' => null])->assertSessionHasNoErrors();
++        $this->assertSame('advance', Receipt::latest('id')->first()->advance_payment);
++
++        $this->cash($inv, 300, ['receipt_month' => '2026-09-10', 'advance_payment' => 'advance'])->assertSessionHasNoErrors();
++        $this->assertNull(Receipt::latest('id')->first()->advance_payment);   // the old tick box is ignored
++    }
++
++    public function test_deleting_one_part_payment_keeps_the_other(): void
++    {
++        $inv = $this->invoice();
++        $this->cash($inv, 300);
++        $first = Receipt::latest('id')->first();
++        $this->cash($inv, 300);
++        $this->delete('/receipt/' . $first->id);
++        $this->assertInvoice($inv, 'uncompleted', 700);
++    }
++
++    /* ---------------- banks ---------------- */
++
++    public function test_cheque_goes_straight_to_the_bank_not_bank_deposit(): void
++    {
++        $inv = $this->invoice();
++        $this->cash($inv, 0, [
++            'mode' => ['cheque', 'cash'], 'cash_amount' => 200,
++            'cheque_amount' => 800, 'cheque_reference' => 'CHQ-9', 'cheque_bank' => 'Stanbic', 'cheque_to_bank_id' => $this->bank->id,
++        ])->assertSessionHasNoErrors();
++        $receipt = Receipt::latest('id')->first();
++
++        $this->assertEquals(1800, $this->bank->fresh()->total);
++        $line = BankTransaction::where('receipt_id', $receipt->id)->first();
++        $this->assertSame('cheque', $line->channel);
++        $this->assertEquals(800, $line->credit);
++
++        // Only the cash is left for Bank Deposit.
++        $collection = Collection::where('receipt_id', $receipt->id)->first();
++        $this->get('/deposit/create')->assertOk()->assertSee('200.00');
++        $this->post('/deposit', ['collections' => [$collection->id], 'bank_id' => [$collection->id => $this->bank->id]])
++            ->assertSessionHas('success');
++        $this->assertEquals(2000, $this->bank->fresh()->total);   // 1000 + 800 cheque + 200 cash, cheque not counted twice
++    }
++
++    public function test_cheque_only_receipt_needs_no_deposit(): void
++    {
++        $inv = $this->invoice();
++        $this->cash($inv, 0, [
++            'mode' => ['cheque'], 'cheque_amount' => 500, 'cheque_reference' => 'C1', 'cheque_bank' => 'GCB', 'cheque_to_bank_id' => $this->bank->id,
++        ])->assertSessionHasNoErrors();
++
++        $collection = Collection::where('receipt_id', Receipt::latest('id')->value('id'))->first();
++        $this->assertSame('Banked', $collection->status);
++        $this->get('/deposit/create')->assertOk()
++            ->assertViewHas('collections', fn ($list) => ! $list->contains('id', $collection->id));
++    }
++
++    public function test_editing_cheque_amount_or_bank_reposts_with_reversal(): void
++    {
++        $second = Bank::create(['name' => 'Ecobank Ops', 'branch' => 'Tema', 'acc_number' => '999', 'total' => 0]);
++        $inv = $this->invoice();
++        $cheque = ['mode' => ['cheque'], 'cheque_reference' => 'C1', 'cheque_bank' => 'GCB'];
++        $this->cash($inv, 0, $cheque + ['cheque_amount' => 500, 'cheque_to_bank_id' => $this->bank->id]);
++        $receipt = Receipt::latest('id')->first();
++
++        $this->edit($receipt, $cheque + ['cheque_amount' => 600, 'cheque_to_bank_id' => $second->id])->assertSessionHasNoErrors();
++
++        $this->assertEquals(1000, $this->bank->fresh()->total);   // 500 posted then reversed
++        $this->assertEquals(600, $second->fresh()->total);
++        $this->assertSame(3, BankTransaction::where('receipt_id', $receipt->id)->count());
++        $this->assertInvoice($inv, 'uncompleted', 400);
++
++        $this->delete('/receipt/' . $receipt->id);
++        $this->assertEquals(0, $second->fresh()->total);
++    }
++
++    public function test_old_unbanked_cheque_is_still_deposited_through_bank_deposit(): void
++    {
++        // A collection from before this change: cheque never posted to any bank.
++        $collection = Collection::create(['cash_amount' => 0, 'cheque_amount' => 350, 'total_amount' => 350, 'status' => 'undeposited']);
++        $this->post('/deposit', ['collections' => [$collection->id], 'bank_id' => [$collection->id => $this->bank->id]])
++            ->assertSessionHas('success');
++        $this->assertEquals(1350, $this->bank->fresh()->total);
++        $this->assertSame('deposit', BankTransaction::latest('id')->value('channel'));
++    }
++}
+diff --git a/tests/Feature/ReceiptRecomputeCommandTest.php b/tests/Feature/ReceiptRecomputeCommandTest.php
+new file mode 100644
+index 0000000..21a6b60
+--- /dev/null
++++ b/tests/Feature/ReceiptRecomputeCommandTest.php
+@@ -0,0 +1,93 @@
++<?php
++
++namespace Tests\Feature;
++
++use App\Models\Client;
++use App\Models\Invoice;
++use App\Models\Receipt;
++use App\Models\ReceiptAllocation;
++use Illuminate\Foundation\Testing\RefreshDatabase;
++use Tests\TestCase;
++
++/** Repairs the invoice balances the old receipt code left behind. */
++class ReceiptRecomputeCommandTest extends TestCase
++{
++    use RefreshDatabase;
++
++    private Client $client;
++
++    protected function setUp(): void
++    {
++        parent::setUp();
++        $this->client = Client::create(['name' => 'Kofi', 'business_name' => 'Alpha']);
++    }
++
++    /** An invoice as the old code stored it, plus its receipts' allocation lines. */
++    private function damaged(string $status, float $balance, array $paid, float $total = 1000): Invoice
++    {
++        $inv = Invoice::create(['client_id' => $this->client->id, 'total' => $total, 'status' => $status, 'balance' => $balance, 'invoice_month' => '2026-08-01']);
++        foreach ($paid as $amount) {
++            $r = Receipt::create(['client_id' => $this->client->id, 'invoice_id' => $inv->id, 'total' => $amount, 'cash_amount' => $amount]);
++            ReceiptAllocation::create(['receipt_id' => $r->id, 'invoice_id' => $inv->id, 'amount_applied' => $amount, 'settled' => $amount, 'source' => 'legacy']);
++        }
++
++        return $inv;
++    }
++
++    public function test_dry_run_reports_without_changing_anything(): void
++    {
++        $doubleSub = $this->damaged('uncompleted', 150, [450]);        // edit subtracted twice
++        $this->damaged('uncompleted', 600, [400]);                     // correct
++
++        $this->artisan('receipts:recompute')->expectsOutputToContain('DRY RUN')->assertSuccessful();
++
++        $this->assertEquals(150, $doubleSub->fresh()->balance);
++    }
++
++    public function test_apply_fixes_wrong_balances_and_statuses(): void
++    {
++        $doubleSub = $this->damaged('uncompleted', 150, [450]);
++        $paidButOpen = $this->damaged('uncompleted', 800, [1000]);   // marked uncompleted, fully paid
++        $neverPaid = $this->damaged('uncompleted', 300, []);
++
++        $this->artisan('receipts:recompute --apply')->assertSuccessful();
++
++        $this->assertSame(['uncompleted', 550.0], [$doubleSub->fresh()->status, (float) $doubleSub->fresh()->balance]);
++        $this->assertSame(['completed', 0.0], [$paidButOpen->fresh()->status, (float) $paidButOpen->fresh()->balance]);
++        $this->assertSame(['unpaid', 0.0], [$neverPaid->fresh()->status, (float) $neverPaid->fresh()->balance]);
++    }
++
++    public function test_short_closed_invoice_is_left_alone_unless_asked(): void
++    {
++        $short = $this->damaged('completed', 300, [700]);
++
++        $this->artisan('receipts:recompute --apply')->assertSuccessful();
++        $this->assertSame('completed', $short->fresh()->status);
++
++        $this->artisan('receipts:recompute --apply --reopen-short')->assertSuccessful();
++        $this->assertSame(['uncompleted', 300.0], [$short->fresh()->status, (float) $short->fresh()->balance]);
++    }
++
++    public function test_overpayment_moves_to_client_credit_when_asked(): void
++    {
++        $over = $this->damaged('completed', -200, [400, 800]);
++        $latest = Receipt::latest('id')->first();
++
++        $this->artisan('receipts:recompute --apply --overpayments-to-credit')->assertSuccessful();
++
++        $this->assertSame(['completed', 0.0], [$over->fresh()->status, (float) $over->fresh()->balance]);
++        $this->assertEquals(200, $latest->fresh()->unapplied_amount);
++        $this->assertEquals(600, ReceiptAllocation::where('receipt_id', $latest->id)->value('settled'));
++    }
++
++    public function test_receipts_missing_an_allocation_line_get_one(): void
++    {
++        $inv = Invoice::create(['client_id' => $this->client->id, 'total' => 500, 'status' => 'unpaid', 'balance' => 0, 'invoice_month' => '2026-08-01']);
++        Receipt::create(['client_id' => $this->client->id, 'invoice_id' => $inv->id, 'total' => 500, 'cash_amount' => 500]);
++
++        $this->artisan('receipts:recompute --apply')->assertSuccessful();
++
++        $this->assertSame('completed', $inv->fresh()->status);
++        $this->assertSame(1, ReceiptAllocation::where('invoice_id', $inv->id)->count());
++    }
++}
+-- 
+2.43.0
+

@@ -33,6 +33,8 @@ class ServiceController extends Controller
         //
         $service = new Service();
         $service->name = $request->input('name');
+        // Unticked checkboxes are not submitted, so absence means "not headcount".
+        $service->counts_as_guards = $request->boolean('counts_as_guards');
         $service->user_id = Auth::user()->id;
         $service->save();
         // $service->create($request->all());
@@ -64,7 +66,9 @@ class ServiceController extends Controller
     public function update(UpdateServiceRequest $request, Service $service)
     {
         //
-        $service->update($request->all());
+        $service->update($request->only(['name', 'user_id']) + [
+            'counts_as_guards' => $request->boolean('counts_as_guards'),
+        ]);
         return redirect('invoice/create')->with('success', 'Service Updated Successfully');
     }
 

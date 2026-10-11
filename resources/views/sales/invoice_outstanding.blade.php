@@ -998,7 +998,7 @@
                                             @if (count($invoice->invoice_data) > 1)
                                             @foreach ( $invoice->invoice_data as $guad => $guards )
                                             
-                                                {{  $guad +1  }}.  {{ $guards->quantity }} <br> <br>
+                                                {{  $guad +1  }}.  {{ $guards->counts_as_guards ? $guards->quantity : '— (deduction)' }} <br> <br>
                                                 
                                             @endforeach
                                         
@@ -1006,7 +1006,7 @@
                                             @else
                                             @foreach ( $invoice->invoice_data as $guards )
                                             
-                                                {{ $guards->quantity }} 
+                                                {{ $guards->counts_as_guards ? $guards->quantity : '— (deduction)' }} 
                                                 
                                             @endforeach
                                         
@@ -1124,7 +1124,7 @@
                                             @if (count($invoice->invoice_data) > 1)
                                             @foreach ( $invoice->invoice_data as $guad => $guards )
                                             
-                                                {{  $guad +1  }}.  {{ $guards->quantity }} <br> <br>
+                                                {{  $guad +1  }}.  {{ $guards->counts_as_guards ? $guards->quantity : '— (deduction)' }} <br> <br>
                                                 
                                             @endforeach
                                         
@@ -1132,7 +1132,7 @@
                                             @else
                                             @foreach ( $invoice->invoice_data as $guards )
                                             
-                                                {{ $guards->quantity }} 
+                                                {{ $guards->counts_as_guards ? $guards->quantity : '— (deduction)' }} 
                                                 
                                             @endforeach
                                         
@@ -1253,7 +1253,7 @@
                                             @if (count($invoice->invoice_data) > 1)
                                             @foreach ( $invoice->invoice_data as $guad => $guards )
                                             
-                                                {{  $guad +1  }}.  {{ $guards->quantity }} <br> <br>
+                                                {{  $guad +1  }}.  {{ $guards->counts_as_guards ? $guards->quantity : '— (deduction)' }} <br> <br>
                                                 
                                             @endforeach
                                         
@@ -1261,7 +1261,7 @@
                                             @else
                                             @foreach ( $invoice->invoice_data as $guards )
                                             
-                                                {{ $guards->quantity }} 
+                                                {{ $guards->counts_as_guards ? $guards->quantity : '— (deduction)' }} 
                                                 
                                             @endforeach
                                         
@@ -1382,7 +1382,7 @@
                                             @if (count($invoice->invoice_data) > 1)
                                             @foreach ( $invoice->invoice_data as $guad => $guards )
                                             
-                                                {{  $guad +1  }}.  {{ $guards->quantity }} <br> <br>
+                                                {{  $guad +1  }}.  {{ $guards->counts_as_guards ? $guards->quantity : '— (deduction)' }} <br> <br>
                                                 
                                             @endforeach
                                         
@@ -1390,7 +1390,7 @@
                                             @else
                                             @foreach ( $invoice->invoice_data as $guards )
                                             
-                                                {{ $guards->quantity }} 
+                                                {{ $guards->counts_as_guards ? $guards->quantity : '— (deduction)' }} 
                                                 
                                             @endforeach
                                         
@@ -1511,7 +1511,7 @@
                                             @if (count($invoice->invoice_data) > 1)
                                             @foreach ( $invoice->invoice_data as $guad => $guards )
                                             
-                                                {{  $guad +1  }}.  {{ $guards->quantity }} <br> <br>
+                                                {{  $guad +1  }}.  {{ $guards->counts_as_guards ? $guards->quantity : '— (deduction)' }} <br> <br>
                                                 
                                             @endforeach
                                         
@@ -1519,7 +1519,7 @@
                                             @else
                                             @foreach ( $invoice->invoice_data as $guards )
                                             
-                                                {{ $guards->quantity }} 
+                                                {{ $guards->counts_as_guards ? $guards->quantity : '— (deduction)' }} 
                                                 
                                             @endforeach
                                         
@@ -1640,7 +1640,7 @@
                                             @if (count($invoice->invoice_data) > 1)
                                             @foreach ( $invoice->invoice_data as $guad => $guards )
                                             
-                                                {{  $guad +1  }}.  {{ $guards->quantity }} <br> <br>
+                                                {{  $guad +1  }}.  {{ $guards->counts_as_guards ? $guards->quantity : '— (deduction)' }} <br> <br>
                                                 
                                             @endforeach
                                         
@@ -1648,7 +1648,7 @@
                                             @else
                                             @foreach ( $invoice->invoice_data as $guards )
                                             
-                                                {{ $guards->quantity }} 
+                                                {{ $guards->counts_as_guards ? $guards->quantity : '— (deduction)' }} 
                                                 
                                             @endforeach
                                         
@@ -1769,7 +1769,7 @@
                                             @if (count($invoice->invoice_data) > 1)
                                             @foreach ( $invoice->invoice_data as $guad => $guards )
                                             
-                                                {{  $guad +1  }}.  {{ $guards->quantity }} <br> <br>
+                                                {{  $guad +1  }}.  {{ $guards->counts_as_guards ? $guards->quantity : '— (deduction)' }} <br> <br>
                                                 
                                             @endforeach
                                         
@@ -1777,7 +1777,7 @@
                                             @else
                                             @foreach ( $invoice->invoice_data as $guards )
                                             
-                                                {{ $guards->quantity }} 
+                                                {{ $guards->counts_as_guards ? $guards->quantity : '— (deduction)' }} 
                                                 
                                             @endforeach
                                         
@@ -1931,7 +1931,7 @@
                                                 @if (count($invoice->invoice_data) > 1)
                                                 @foreach ( $invoice->invoice_data as $guad => $guards )
                                                 
-                                                    {{  $guad +1  }}.  {{ $guards->quantity }} <br> <br>
+                                                    {{  $guad +1  }}.  {{ $guards->counts_as_guards ? $guards->quantity : '— (deduction)' }} <br> <br>
                                                     
                                                 @endforeach
                                             
@@ -1939,7 +1939,7 @@
                                                 @else
                                                 @foreach ( $invoice->invoice_data as $guards )
                                                 
-                                                    {{ $guards->quantity }} 
+                                                    {{ $guards->counts_as_guards ? $guards->quantity : '— (deduction)' }} 
                                                     
                                                 @endforeach
                                             
@@ -2057,7 +2057,7 @@
                                                 @if (count($invoice->invoice_data) > 1)
                                                 @foreach ( $invoice->invoice_data as $guad => $guards )
                                                 
-                                                    {{  $guad +1  }}.  {{ $guards->quantity }} <br> <br>
+                                                    {{  $guad +1  }}.  {{ $guards->counts_as_guards ? $guards->quantity : '— (deduction)' }} <br> <br>
                                                     
                                                 @endforeach
                                             
@@ -2065,7 +2065,7 @@
                                                 @else
                                                 @foreach ( $invoice->invoice_data as $guards )
                                                 
-                                                    {{ $guards->quantity }} 
+                                                    {{ $guards->counts_as_guards ? $guards->quantity : '— (deduction)' }} 
                                                     
                                                 @endforeach
                                             
@@ -2186,7 +2186,7 @@
                                                 @if (count($invoice->invoice_data) > 1)
                                                 @foreach ( $invoice->invoice_data as $guad => $guards )
                                                 
-                                                    {{  $guad +1  }}.  {{ $guards->quantity }} <br> <br>
+                                                    {{  $guad +1  }}.  {{ $guards->counts_as_guards ? $guards->quantity : '— (deduction)' }} <br> <br>
                                                     
                                                 @endforeach
                                             
@@ -2194,7 +2194,7 @@
                                                 @else
                                                 @foreach ( $invoice->invoice_data as $guards )
                                                 
-                                                    {{ $guards->quantity }} 
+                                                    {{ $guards->counts_as_guards ? $guards->quantity : '— (deduction)' }} 
                                                     
                                                 @endforeach
                                             
@@ -2315,7 +2315,7 @@
                                                 @if (count($invoice->invoice_data) > 1)
                                                 @foreach ( $invoice->invoice_data as $guad => $guards )
                                                 
-                                                    {{  $guad +1  }}.  {{ $guards->quantity }} <br> <br>
+                                                    {{  $guad +1  }}.  {{ $guards->counts_as_guards ? $guards->quantity : '— (deduction)' }} <br> <br>
                                                     
                                                 @endforeach
                                             
@@ -2323,7 +2323,7 @@
                                                 @else
                                                 @foreach ( $invoice->invoice_data as $guards )
                                                 
-                                                    {{ $guards->quantity }} 
+                                                    {{ $guards->counts_as_guards ? $guards->quantity : '— (deduction)' }} 
                                                     
                                                 @endforeach
                                             
@@ -2444,7 +2444,7 @@
                                                 @if (count($invoice->invoice_data) > 1)
                                                 @foreach ( $invoice->invoice_data as $guad => $guards )
                                                 
-                                                    {{  $guad +1  }}.  {{ $guards->quantity }} <br> <br>
+                                                    {{  $guad +1  }}.  {{ $guards->counts_as_guards ? $guards->quantity : '— (deduction)' }} <br> <br>
                                                     
                                                 @endforeach
                                             
@@ -2452,7 +2452,7 @@
                                                 @else
                                                 @foreach ( $invoice->invoice_data as $guards )
                                                 
-                                                    {{ $guards->quantity }} 
+                                                    {{ $guards->counts_as_guards ? $guards->quantity : '— (deduction)' }} 
                                                     
                                                 @endforeach
                                             
@@ -2573,7 +2573,7 @@
                                                 @if (count($invoice->invoice_data) > 1)
                                                 @foreach ( $invoice->invoice_data as $guad => $guards )
                                                 
-                                                    {{  $guad +1  }}.  {{ $guards->quantity }} <br> <br>
+                                                    {{  $guad +1  }}.  {{ $guards->counts_as_guards ? $guards->quantity : '— (deduction)' }} <br> <br>
                                                     
                                                 @endforeach
                                             
@@ -2581,7 +2581,7 @@
                                                 @else
                                                 @foreach ( $invoice->invoice_data as $guards )
                                                 
-                                                    {{ $guards->quantity }} 
+                                                    {{ $guards->counts_as_guards ? $guards->quantity : '— (deduction)' }} 
                                                     
                                                 @endforeach
                                             
@@ -2702,7 +2702,7 @@
                                                 @if (count($invoice->invoice_data) > 1)
                                                 @foreach ( $invoice->invoice_data as $guad => $guards )
                                                 
-                                                    {{  $guad +1  }}.  {{ $guards->quantity }} <br> <br>
+                                                    {{  $guad +1  }}.  {{ $guards->counts_as_guards ? $guards->quantity : '— (deduction)' }} <br> <br>
                                                     
                                                 @endforeach
                                             
@@ -2710,7 +2710,7 @@
                                                 @else
                                                 @foreach ( $invoice->invoice_data as $guards )
                                                 
-                                                    {{ $guards->quantity }} 
+                                                    {{ $guards->counts_as_guards ? $guards->quantity : '— (deduction)' }} 
                                                     
                                                 @endforeach
                                             
@@ -2865,7 +2865,7 @@
                                             @if (count($invoice->invoice_data) > 1)
                                             @foreach ( $invoice->invoice_data as $guad => $guards )
                                             
-                                                {{  $guad +1  }}.  {{ $guards->quantity }} <br> <br>
+                                                {{  $guad +1  }}.  {{ $guards->counts_as_guards ? $guards->quantity : '— (deduction)' }} <br> <br>
                                                 
                                             @endforeach
                                         
@@ -2873,7 +2873,7 @@
                                             @else
                                             @foreach ( $invoice->invoice_data as $guards )
                                             
-                                                {{ $guards->quantity }} 
+                                                {{ $guards->counts_as_guards ? $guards->quantity : '— (deduction)' }} 
                                                 
                                             @endforeach
                                         
@@ -2991,7 +2991,7 @@
                                             @if (count($invoice->invoice_data) > 1)
                                             @foreach ( $invoice->invoice_data as $guad => $guards )
                                             
-                                                {{  $guad +1  }}.  {{ $guards->quantity }} <br> <br>
+                                                {{  $guad +1  }}.  {{ $guards->counts_as_guards ? $guards->quantity : '— (deduction)' }} <br> <br>
                                                 
                                             @endforeach
                                         
@@ -2999,7 +2999,7 @@
                                             @else
                                             @foreach ( $invoice->invoice_data as $guards )
                                             
-                                                {{ $guards->quantity }} 
+                                                {{ $guards->counts_as_guards ? $guards->quantity : '— (deduction)' }} 
                                                 
                                             @endforeach
                                         
@@ -3120,7 +3120,7 @@
                                             @if (count($invoice->invoice_data) > 1)
                                             @foreach ( $invoice->invoice_data as $guad => $guards )
                                             
-                                                {{  $guad +1  }}.  {{ $guards->quantity }} <br> <br>
+                                                {{  $guad +1  }}.  {{ $guards->counts_as_guards ? $guards->quantity : '— (deduction)' }} <br> <br>
                                                 
                                             @endforeach
                                         
@@ -3128,7 +3128,7 @@
                                             @else
                                             @foreach ( $invoice->invoice_data as $guards )
                                             
-                                                {{ $guards->quantity }} 
+                                                {{ $guards->counts_as_guards ? $guards->quantity : '— (deduction)' }} 
                                                 
                                             @endforeach
                                         
@@ -3249,7 +3249,7 @@
                                             @if (count($invoice->invoice_data) > 1)
                                             @foreach ( $invoice->invoice_data as $guad => $guards )
                                             
-                                                {{  $guad +1  }}.  {{ $guards->quantity }} <br> <br>
+                                                {{  $guad +1  }}.  {{ $guards->counts_as_guards ? $guards->quantity : '— (deduction)' }} <br> <br>
                                                 
                                             @endforeach
                                         
@@ -3257,7 +3257,7 @@
                                             @else
                                             @foreach ( $invoice->invoice_data as $guards )
                                             
-                                                {{ $guards->quantity }} 
+                                                {{ $guards->counts_as_guards ? $guards->quantity : '— (deduction)' }} 
                                                 
                                             @endforeach
                                         
@@ -3378,7 +3378,7 @@
                                             @if (count($invoice->invoice_data) > 1)
                                             @foreach ( $invoice->invoice_data as $guad => $guards )
                                             
-                                                {{  $guad +1  }}.  {{ $guards->quantity }} <br> <br>
+                                                {{  $guad +1  }}.  {{ $guards->counts_as_guards ? $guards->quantity : '— (deduction)' }} <br> <br>
                                                 
                                             @endforeach
                                         
@@ -3386,7 +3386,7 @@
                                             @else
                                             @foreach ( $invoice->invoice_data as $guards )
                                             
-                                                {{ $guards->quantity }} 
+                                                {{ $guards->counts_as_guards ? $guards->quantity : '— (deduction)' }} 
                                                 
                                             @endforeach
                                         
@@ -3507,7 +3507,7 @@
                                             @if (count($invoice->invoice_data) > 1)
                                             @foreach ( $invoice->invoice_data as $guad => $guards )
                                             
-                                                {{  $guad +1  }}.  {{ $guards->quantity }} <br> <br>
+                                                {{  $guad +1  }}.  {{ $guards->counts_as_guards ? $guards->quantity : '— (deduction)' }} <br> <br>
                                                 
                                             @endforeach
                                         
@@ -3515,7 +3515,7 @@
                                             @else
                                             @foreach ( $invoice->invoice_data as $guards )
                                             
-                                                {{ $guards->quantity }} 
+                                                {{ $guards->counts_as_guards ? $guards->quantity : '— (deduction)' }} 
                                                 
                                             @endforeach
                                         
@@ -3636,7 +3636,7 @@
                                             @if (count($invoice->invoice_data) > 1)
                                             @foreach ( $invoice->invoice_data as $guad => $guards )
                                             
-                                                {{  $guad +1  }}.  {{ $guards->quantity }} <br> <br>
+                                                {{  $guad +1  }}.  {{ $guards->counts_as_guards ? $guards->quantity : '— (deduction)' }} <br> <br>
                                                 
                                             @endforeach
                                         
@@ -3644,7 +3644,7 @@
                                             @else
                                             @foreach ( $invoice->invoice_data as $guards )
                                             
-                                                {{ $guards->quantity }} 
+                                                {{ $guards->counts_as_guards ? $guards->quantity : '— (deduction)' }} 
                                                 
                                             @endforeach
                                         
@@ -3799,7 +3799,7 @@
                                         @if (count($invoice->invoice_data) > 1)
                                         @foreach ( $invoice->invoice_data as $guad => $guards )
                                         
-                                            {{  $guad +1  }}.  {{ $guards->quantity }} <br> <br>
+                                            {{  $guad +1  }}.  {{ $guards->counts_as_guards ? $guards->quantity : '— (deduction)' }} <br> <br>
                                             
                                         @endforeach
                                     
@@ -3807,7 +3807,7 @@
                                         @else
                                         @foreach ( $invoice->invoice_data as $guards )
                                         
-                                            {{ $guards->quantity }} 
+                                            {{ $guards->counts_as_guards ? $guards->quantity : '— (deduction)' }} 
                                             
                                         @endforeach
                                     
@@ -3926,7 +3926,7 @@
                                         @if (count($invoice->invoice_data) > 1)
                                         @foreach ( $invoice->invoice_data as $guad => $guards )
                                         
-                                            {{  $guad +1  }}.  {{ $guards->quantity }} <br> <br>
+                                            {{  $guad +1  }}.  {{ $guards->counts_as_guards ? $guards->quantity : '— (deduction)' }} <br> <br>
                                             
                                         @endforeach
                                     
@@ -3934,7 +3934,7 @@
                                         @else
                                         @foreach ( $invoice->invoice_data as $guards )
                                         
-                                            {{ $guards->quantity }} 
+                                            {{ $guards->counts_as_guards ? $guards->quantity : '— (deduction)' }} 
                                             
                                         @endforeach
                                     
@@ -4056,7 +4056,7 @@
                                         @if (count($invoice->invoice_data) > 1)
                                         @foreach ( $invoice->invoice_data as $guad => $guards )
                                         
-                                            {{  $guad +1  }}.  {{ $guards->quantity }} <br> <br>
+                                            {{  $guad +1  }}.  {{ $guards->counts_as_guards ? $guards->quantity : '— (deduction)' }} <br> <br>
                                             
                                         @endforeach
                                     
@@ -4064,7 +4064,7 @@
                                         @else
                                         @foreach ( $invoice->invoice_data as $guards )
                                         
-                                            {{ $guards->quantity }} 
+                                            {{ $guards->counts_as_guards ? $guards->quantity : '— (deduction)' }} 
                                             
                                         @endforeach
                                     
@@ -4186,7 +4186,7 @@
                                         @if (count($invoice->invoice_data) > 1)
                                         @foreach ( $invoice->invoice_data as $guad => $guards )
                                         
-                                            {{  $guad +1  }}.  {{ $guards->quantity }} <br> <br>
+                                            {{  $guad +1  }}.  {{ $guards->counts_as_guards ? $guards->quantity : '— (deduction)' }} <br> <br>
                                             
                                         @endforeach
                                     
@@ -4194,7 +4194,7 @@
                                         @else
                                         @foreach ( $invoice->invoice_data as $guards )
                                         
-                                            {{ $guards->quantity }} 
+                                            {{ $guards->counts_as_guards ? $guards->quantity : '— (deduction)' }} 
                                             
                                         @endforeach
                                     
@@ -4316,7 +4316,7 @@
                                         @if (count($invoice->invoice_data) > 1)
                                         @foreach ( $invoice->invoice_data as $guad => $guards )
                                         
-                                            {{  $guad +1  }}.  {{ $guards->quantity }} <br> <br>
+                                            {{  $guad +1  }}.  {{ $guards->counts_as_guards ? $guards->quantity : '— (deduction)' }} <br> <br>
                                             
                                         @endforeach
                                     
@@ -4324,7 +4324,7 @@
                                         @else
                                         @foreach ( $invoice->invoice_data as $guards )
                                         
-                                            {{ $guards->quantity }} 
+                                            {{ $guards->counts_as_guards ? $guards->quantity : '— (deduction)' }} 
                                             
                                         @endforeach
                                     
@@ -4446,7 +4446,7 @@
                                         @if (count($invoice->invoice_data) > 1)
                                         @foreach ( $invoice->invoice_data as $guad => $guards )
                                         
-                                            {{  $guad +1  }}.  {{ $guards->quantity }} <br> <br>
+                                            {{  $guad +1  }}.  {{ $guards->counts_as_guards ? $guards->quantity : '— (deduction)' }} <br> <br>
                                             
                                         @endforeach
                                     
@@ -4454,7 +4454,7 @@
                                         @else
                                         @foreach ( $invoice->invoice_data as $guards )
                                         
-                                            {{ $guards->quantity }} 
+                                            {{ $guards->counts_as_guards ? $guards->quantity : '— (deduction)' }} 
                                             
                                         @endforeach
                                     
@@ -4576,7 +4576,7 @@
                                         @if (count($invoice->invoice_data) > 1)
                                         @foreach ( $invoice->invoice_data as $guad => $guards )
                                         
-                                            {{  $guad +1  }}.  {{ $guards->quantity }} <br> <br>
+                                            {{  $guad +1  }}.  {{ $guards->counts_as_guards ? $guards->quantity : '— (deduction)' }} <br> <br>
                                             
                                         @endforeach
                                     
@@ -4584,7 +4584,7 @@
                                         @else
                                         @foreach ( $invoice->invoice_data as $guards )
                                         
-                                            {{ $guards->quantity }} 
+                                            {{ $guards->counts_as_guards ? $guards->quantity : '— (deduction)' }} 
                                             
                                         @endforeach
                                     
@@ -4738,7 +4738,7 @@
                                             @if (count($invoice->invoice_data) > 1)
                                             @foreach ( $invoice->invoice_data as $guad => $guards )
                                             
-                                                {{  $guad +1  }}.  {{ $guards->quantity }} <br> <br>
+                                                {{  $guad +1  }}.  {{ $guards->counts_as_guards ? $guards->quantity : '— (deduction)' }} <br> <br>
                                                 
                                             @endforeach
                                         
@@ -4746,7 +4746,7 @@
                                             @else
                                             @foreach ( $invoice->invoice_data as $guards )
                                             
-                                                {{ $guards->quantity }} 
+                                                {{ $guards->counts_as_guards ? $guards->quantity : '— (deduction)' }} 
                                                 
                                             @endforeach
                                         
@@ -4864,7 +4864,7 @@
                                             @if (count($invoice->invoice_data) > 1)
                                             @foreach ( $invoice->invoice_data as $guad => $guards )
                                             
-                                                {{  $guad +1  }}.  {{ $guards->quantity }} <br> <br>
+                                                {{  $guad +1  }}.  {{ $guards->counts_as_guards ? $guards->quantity : '— (deduction)' }} <br> <br>
                                                 
                                             @endforeach
                                         
@@ -4872,7 +4872,7 @@
                                             @else
                                             @foreach ( $invoice->invoice_data as $guards )
                                             
-                                                {{ $guards->quantity }} 
+                                                {{ $guards->counts_as_guards ? $guards->quantity : '— (deduction)' }} 
                                                 
                                             @endforeach
                                         
@@ -4993,7 +4993,7 @@
                                             @if (count($invoice->invoice_data) > 1)
                                             @foreach ( $invoice->invoice_data as $guad => $guards )
                                             
-                                                {{  $guad +1  }}.  {{ $guards->quantity }} <br> <br>
+                                                {{  $guad +1  }}.  {{ $guards->counts_as_guards ? $guards->quantity : '— (deduction)' }} <br> <br>
                                                 
                                             @endforeach
                                         
@@ -5001,7 +5001,7 @@
                                             @else
                                             @foreach ( $invoice->invoice_data as $guards )
                                             
-                                                {{ $guards->quantity }} 
+                                                {{ $guards->counts_as_guards ? $guards->quantity : '— (deduction)' }} 
                                                 
                                             @endforeach
                                         
@@ -5122,7 +5122,7 @@
                                             @if (count($invoice->invoice_data) > 1)
                                             @foreach ( $invoice->invoice_data as $guad => $guards )
                                             
-                                                {{  $guad +1  }}.  {{ $guards->quantity }} <br> <br>
+                                                {{  $guad +1  }}.  {{ $guards->counts_as_guards ? $guards->quantity : '— (deduction)' }} <br> <br>
                                                 
                                             @endforeach
                                         
@@ -5130,7 +5130,7 @@
                                             @else
                                             @foreach ( $invoice->invoice_data as $guards )
                                             
-                                                {{ $guards->quantity }} 
+                                                {{ $guards->counts_as_guards ? $guards->quantity : '— (deduction)' }} 
                                                 
                                             @endforeach
                                         
@@ -5251,7 +5251,7 @@
                                             @if (count($invoice->invoice_data) > 1)
                                             @foreach ( $invoice->invoice_data as $guad => $guards )
                                             
-                                                {{  $guad +1  }}.  {{ $guards->quantity }} <br> <br>
+                                                {{  $guad +1  }}.  {{ $guards->counts_as_guards ? $guards->quantity : '— (deduction)' }} <br> <br>
                                                 
                                             @endforeach
                                         
@@ -5259,7 +5259,7 @@
                                             @else
                                             @foreach ( $invoice->invoice_data as $guards )
                                             
-                                                {{ $guards->quantity }} 
+                                                {{ $guards->counts_as_guards ? $guards->quantity : '— (deduction)' }} 
                                                 
                                             @endforeach
                                         
@@ -5380,7 +5380,7 @@
                                             @if (count($invoice->invoice_data) > 1)
                                             @foreach ( $invoice->invoice_data as $guad => $guards )
                                             
-                                                {{  $guad +1  }}.  {{ $guards->quantity }} <br> <br>
+                                                {{  $guad +1  }}.  {{ $guards->counts_as_guards ? $guards->quantity : '— (deduction)' }} <br> <br>
                                                 
                                             @endforeach
                                         
@@ -5388,7 +5388,7 @@
                                             @else
                                             @foreach ( $invoice->invoice_data as $guards )
                                             
-                                                {{ $guards->quantity }} 
+                                                {{ $guards->counts_as_guards ? $guards->quantity : '— (deduction)' }} 
                                                 
                                             @endforeach
                                         
@@ -5509,7 +5509,7 @@
                                             @if (count($invoice->invoice_data) > 1)
                                             @foreach ( $invoice->invoice_data as $guad => $guards )
                                             
-                                                {{  $guad +1  }}.  {{ $guards->quantity }} <br> <br>
+                                                {{  $guad +1  }}.  {{ $guards->counts_as_guards ? $guards->quantity : '— (deduction)' }} <br> <br>
                                                 
                                             @endforeach
                                         
@@ -5517,7 +5517,7 @@
                                             @else
                                             @foreach ( $invoice->invoice_data as $guards )
                                             
-                                                {{ $guards->quantity }} 
+                                                {{ $guards->counts_as_guards ? $guards->quantity : '— (deduction)' }} 
                                                 
                                             @endforeach
                                         
