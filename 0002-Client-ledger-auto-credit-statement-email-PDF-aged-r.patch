@@ -1,0 +1,3017 @@
+From 69683d3ab7103a90314db74e6b4c68e0bddc59df Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Sat, 10 Oct 2026 00:14:37 +0100
+Subject: [PATCH 2/2] Client ledger, auto credit, statement email/PDF, aged
+ receivables, void
+
+1. Client ledger (client_ledger_entries): every invoice, receipt,
+   WHT/VAT/deduction and credit application posted once, never edited.
+   Changes post a reversal + corrected entry dated the day of the change,
+   so statements already sent never change. Synced after every
+   invoice/receipt change, before each statement, and nightly;
+   `php artisan client-ledger:sync` fills it from history.
+2. Transactions table no longer read: client page tab shows ledger
+   lines; Transactions page points to aged receivables.
+3. Unused credit applied automatically to new/duplicated invoices
+   (per-client switch, default on); manual apply uses the same service.
+4. Statement emailed from its page (to/cc/message, PDF attached when
+   dompdf is installed, PDF download, send log); client email field.
+   Aged receivables report (not due / 1-30 / 31-60 / 61-90 / 90+,
+   credit netted, office scope, Excel).
+5. Receipts are voided with a reason instead of deleted: archived in
+   receipt_voids, bank and ledger reversals, Voided list. Paid invoices
+   can't be deleted; invoice total changes re-derive status.
+
+Tests: 66 passing on SQLite and MariaDB 10.11 (PDF test skipped
+without dompdf).
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01QiPGFNQuSfaHtkmjDFbR7A
+---
+ .../Controllers/ClientAccountController.php   | 134 +++++++
+ app/Http/Controllers/ClientController.php     |  13 +-
+ app/Http/Controllers/InvoiceController.php    |  39 ++-
+ .../MultiInvoiceReceiptController.php         |  96 +-----
+ app/Http/Controllers/ReceiptController.php    |  43 +--
+ app/Http/Requests/StoreClientRequest.php      |   2 +
+ app/Http/Requests/UpdateClientRequest.php     |   3 +-
+ app/Mail/StatementOfAccountMail.php           |  44 +++
+ app/Models/Client.php                         |   3 +
+ app/Models/ClientLedgerEntry.php              |  28 ++
+ app/Models/ReceiptVoid.php                    |  26 ++
+ app/Models/StatementSend.php                  |  23 ++
+ app/Services/Receipts/ClientLedger.php        | 210 +++++++++++
+ app/Services/Receipts/ClientStatement.php     | 197 ++++-------
+ app/Services/Receipts/CreditApplier.php       | 141 ++++++++
+ app/Services/Receipts/ReceiptRecorder.php     |   3 +
+ app/Services/Receipts/ReceiptVoider.php       |  78 +++++
+ app/Services/Receipts/ReceivablesAging.php    | 100 ++++++
+ app/Services/Receipts/StatementPdf.php        |  38 ++
+ ...e_client_ledger_and_receivables_tables.php | 129 +++++++
+ docs/receipts-and-payments.md                 |  74 ++--
+ resources/views/clients/create.blade.php      |  17 +
+ resources/views/clients/edit.blade.php        |  17 +
+ .../partials/statement_document.blade.php     |  93 +++++
+ resources/views/clients/show.blade.php        |  83 +----
+ resources/views/clients/statement.blade.php   |  51 ++-
+ .../views/clients/statement_pdf.blade.php     |  10 +
+ resources/views/emails/statement.blade.php    |  11 +
+ .../views/partials/receipt_side_nav.blade.php |  10 +
+ resources/views/receivables/aged.blade.php    | 110 ++++++
+ resources/views/sales/receipt_show.blade.php  |  15 +
+ .../views/sales/receipt_voided.blade.php      |  55 +++
+ resources/views/transactions/index.blade.php  |   5 +
+ routes/console.php                            |  22 ++
+ routes/web.php                                |   4 +
+ .../ClientLedgerAndReceivablesTest.php        | 326 ++++++++++++++++++
+ tests/Feature/MultiInvoiceReceiptTest.php     |   2 +-
+ tests/Feature/ReceiptBalanceAndBankTest.php   |   4 +-
+ tests/Feature/StatementPdfTest.php            |  36 ++
+ 39 files changed, 1957 insertions(+), 338 deletions(-)
+ create mode 100644 app/Http/Controllers/ClientAccountController.php
+ create mode 100644 app/Mail/StatementOfAccountMail.php
+ create mode 100644 app/Models/ClientLedgerEntry.php
+ create mode 100644 app/Models/ReceiptVoid.php
+ create mode 100644 app/Models/StatementSend.php
+ create mode 100644 app/Services/Receipts/ClientLedger.php
+ create mode 100644 app/Services/Receipts/CreditApplier.php
+ create mode 100644 app/Services/Receipts/ReceiptVoider.php
+ create mode 100644 app/Services/Receipts/ReceivablesAging.php
+ create mode 100644 app/Services/Receipts/StatementPdf.php
+ create mode 100644 database/migrations/2026_10_10_090000_create_client_ledger_and_receivables_tables.php
+ create mode 100644 resources/views/clients/partials/statement_document.blade.php
+ create mode 100644 resources/views/clients/statement_pdf.blade.php
+ create mode 100644 resources/views/emails/statement.blade.php
+ create mode 100644 resources/views/receivables/aged.blade.php
+ create mode 100644 resources/views/sales/receipt_voided.blade.php
+ create mode 100644 tests/Feature/ClientLedgerAndReceivablesTest.php
+ create mode 100644 tests/Feature/StatementPdfTest.php
+
+diff --git a/app/Http/Controllers/ClientAccountController.php b/app/Http/Controllers/ClientAccountController.php
+new file mode 100644
+index 0000000..3501f83
+--- /dev/null
++++ b/app/Http/Controllers/ClientAccountController.php
+@@ -0,0 +1,134 @@
++<?php
++
++namespace App\Http\Controllers;
++
++use App\Mail\StatementOfAccountMail;
++use App\Models\Client;
++use App\Models\Field;
++use App\Models\StatementSend;
++use App\Services\Receipts\ClientStatement;
++use App\Services\Receipts\ReceivablesAging;
++use App\Services\Receipts\StatementPdf;
++use Carbon\Carbon;
++use Illuminate\Http\Request;
++use Illuminate\Support\Facades\Auth;
++use Illuminate\Support\Facades\Mail;
++
++/**
++ * Sending statements to clients, and the aged receivables report.
++ * (The statement page itself is ClientController::statementOfAccount.)
++ */
++class ClientAccountController extends Controller
++{
++    public function __construct(private ClientStatement $statements)
++    {
++        $this->middleware('auth');
++    }
++
++    /** Email the statement for the chosen period to the client. */
++    public function email(Request $request, Client $client, StatementPdf $pdf)
++    {
++        $this->authorizeClient($client);
++        $data = $request->validate([
++            'to' => ['required', 'string', 'max:500'],
++            'cc' => ['nullable', 'string', 'max:500'],
++            'note' => ['nullable', 'string', 'max:2000'],
++            'from' => ['nullable', 'date'],
++            'period_to' => ['nullable', 'date'],
++        ]);
++
++        $to = $this->addresses($data['to']);
++        $cc = $this->addresses($data['cc'] ?? '');
++        if (! $to || count($to) + count($cc) !== count(array_filter(preg_split('/[,;\s]+/', ($data['to'] ?? '') . ' ' . ($data['cc'] ?? ''))))) {
++            return back()->withInput()->withErrors(['to' => 'Check the email address(es) — separate several with commas.']);
++        }
++
++        $statement = $this->statements->build($client, $this->date($data['from'] ?? null), $this->date($data['period_to'] ?? null));
++        $file = $pdf->render($statement);
++
++        Mail::to($to)->cc($cc)->send(new StatementOfAccountMail($statement, $data['note'] ?? null, $file));
++
++        StatementSend::create([
++            'client_id' => $client->id,
++            'sent_to' => implode(', ', array_merge($to, $cc)),
++            'period_from' => $statement['from'],
++            'period_to' => $statement['to'] ?? now(),
++            'closing_balance' => $statement['closing'],
++            'with_pdf' => $file !== null,
++            'user_id' => Auth::id(),
++        ]);
++
++        // Remember the address for next time if the client had none.
++        if (! $client->email) {
++            $client->email = $to[0];
++            $client->save();
++        }
++
++        return back()->with('primary', 'Statement emailed to ' . implode(', ', $to) . ($file ? ' with PDF attached.' : '.'));
++    }
++
++    /** Download the statement as a PDF (needs dompdf). */
++    public function pdf(Request $request, Client $client, StatementPdf $pdf)
++    {
++        $this->authorizeClient($client);
++        $statement = $this->statements->build($client, $this->date($request->input('from')), $this->date($request->input('to')));
++        $file = $pdf->render($statement);
++        if ($file === null) {
++            return back()->with('warning', 'PDF download needs the dompdf package (composer require dompdf/dompdf). Use Print → Save as PDF meanwhile.');
++        }
++
++        return response($file, 200, [
++            'Content-Type' => 'application/pdf',
++            'Content-Disposition' => 'attachment; filename="' . StatementPdf::filename($statement) . '"',
++        ]);
++    }
++
++    /** Aged receivables: what each client owes, by how overdue. */
++    public function aged(Request $request, ReceivablesAging $aging)
++    {
++        $allowed = $this->allowedFieldIds();
++        $fieldId = $request->integer('field') ?: null;
++        $fieldIds = $fieldId ? [$fieldId] : $allowed;
++        if ($allowed !== null && $fieldId && ! in_array($fieldId, $allowed, true)) {
++            abort(403);
++        }
++
++        $report = $aging->build($fieldIds);
++        $fields = $allowed === null ? Field::orderBy('name')->get() : Field::whereIn('id', $allowed)->orderBy('name')->get();
++
++        return view('receivables.aged', compact('report', 'fields', 'fieldId'));
++    }
++
++    /** Head office sees every office; everyone else only their own (Tema also sees Shai Hills). */
++    private function allowedFieldIds(): ?array
++    {
++        $user = Auth::user();
++        if ($user?->hasRole(['Finance Manager', 'Invoice', 'Director'])) {
++            return null;
++        }
++
++        return $user?->field_id == 3 ? [3, 7] : array_values(array_filter([(int) $user?->field_id]));
++    }
++
++    private function authorizeClient(Client $client): void
++    {
++        $allowed = $this->allowedFieldIds();
++        if ($allowed !== null && ! in_array((int) $client->field_id, $allowed, true)) {
++            abort(403);
++        }
++    }
++
++    /** @return array<int, string> valid addresses only */
++    private function addresses(string $list): array
++    {
++        return array_values(array_filter(
++            array_map('trim', preg_split('/[,;\s]+/', $list) ?: []),
++            fn ($a) => $a !== '' && filter_var($a, FILTER_VALIDATE_EMAIL)
++        ));
++    }
++
++    private function date(?string $value): ?Carbon
++    {
++        return $value ? Carbon::parse($value) : null;
++    }
++}
+diff --git a/app/Http/Controllers/ClientController.php b/app/Http/Controllers/ClientController.php
+index 8aa2088..38e9ded 100644
+--- a/app/Http/Controllers/ClientController.php
++++ b/app/Http/Controllers/ClientController.php
+@@ -198,6 +198,8 @@ public function store(StoreClientRequest $request)
+            $client->name = $request->name;
+            $client->phone_number = $request->phone_number;
+            $client->phone_number1 = $request->phone_number1;
++           $client->email = $request->email;
++           $client->auto_apply_credit = $request->boolean('auto_apply_credit', true);
+            $client->business_name = $request->business_name;
+            $client->address = $request->address;
+            $client->field_id = $request->field_id;
+@@ -258,8 +260,10 @@ public function show(Client $client)
+         // $receipts = Receipt::where('client_id', $client->id)->get();
+         // $receiptsCount = count($receipts);
+ 
+-        $transactions = Transaction::where('client_id', $client->id)->get();
+-        $transactionsCount = count($transactions);
++        // The old transactions table is no longer read for the client page: the Account tab
++        // shows the client ledger (same lines as the statement of account).
++        $transactions = collect();
++        $transactionsCount = 0;
+ 
+         // Same figures as the statement of account (invoices, receipts once each, credit).
+         $account = app(ClientStatement::class)->summary($client);
+@@ -611,7 +615,10 @@ public function statementOfAccount(Request $request, Client $client, ClientState
+             $request->filled('to') ? Carbon::parse($request->input('to')) : null,
+         );
+ 
+-        return view('clients.statement', compact('client', 'statement'));
++        $sends = \App\Models\StatementSend::with('user')->where('client_id', $client->id)->latest()->take(5)->get();
++        $pdfAvailable = \App\Services\Receipts\StatementPdf::available();
++
++        return view('clients.statement', compact('client', 'statement', 'sends', 'pdfAvailable'));
+     }
+ 
+     /**
+diff --git a/app/Http/Controllers/InvoiceController.php b/app/Http/Controllers/InvoiceController.php
+index 2662acb..c37cd84 100644
+--- a/app/Http/Controllers/InvoiceController.php
++++ b/app/Http/Controllers/InvoiceController.php
+@@ -3,6 +3,9 @@
+ namespace App\Http\Controllers;
+ 
+ use App\Models\Invoice;
++use App\Services\Receipts\ClientLedger;
++use App\Services\Receipts\CreditApplier;
++use App\Services\Receipts\InvoiceSettlement;
+ use App\Http\Requests\StoreInvoiceRequest;
+ use App\Http\Requests\UpdateInvoiceRequest;
+ use App\Http\Requests\InvoiceToPayrollSearchRequest;
+@@ -564,7 +567,7 @@ public function store(StoreInvoiceRequest $request)
+             // // select all transactions with this current invoice iD and assign value D to the checks culumn
+             // Transaction::where('invoice_id', $invoice_id)->update(['checks' => 'd']);
+ 
+-            return redirect()->route('invoice.show',['invoice' => $invoice_id])->with('primary', 'Invoice Generated Successfully');
++            return redirect()->route('invoice.show',['invoice' => $invoice_id])->with('primary', 'Invoice Generated Successfully' . $this->afterInvoiceRaised($update_invoice));
+ 
+         }
+         //    dd($invoice_id);
+@@ -797,7 +800,7 @@ public function storeDuplicate(StoreInvoiceRequest $request, Invoice $sourceInvo
+         $transaction->status = 'unpaid';
+         $transaction->save();
+ 
+-        return redirect()->route('invoice.show', ['invoice' => $invoice_id])->with('primary', 'Invoice Duplicated Successfully');
++        return redirect()->route('invoice.show', ['invoice' => $invoice_id])->with('primary', 'Invoice Duplicated Successfully' . $this->afterInvoiceRaised($invoice->fresh()));
+     }
+ 
+     public function update(UpdateInvoiceRequest $request, Invoice $invoice)
+@@ -888,6 +891,10 @@ public function update(UpdateInvoiceRequest $request, Invoice $invoice)
+             'invoice_amount' => $total,
+         ]);
+ 
++        // A new total can change what is still owed: re-derive status/balance and post the correction.
++        app(InvoiceSettlement::class)->recalculate($invoice->fresh());
++        app(ClientLedger::class)->sync((int) $invoice->client_id);
++
+         return redirect()->route('invoice.show',['invoice' => $invoice])->with('primary', 'Invoice  Updated Successfully');
+ 
+     }
+@@ -900,8 +907,15 @@ public function destroy(Invoice $invoice)
+         //
+         // Invoice::transaction()->where('invoice_id', $invoice->id)->destroy();
+ 
++        // An invoice that has been paid against cannot simply disappear: its receipts would
++        // point at nothing and the client's account would no longer add up.
++        if ($invoice->allocations()->exists()) {
++            return back()->with('error', 'Invoice FWSSi' . $invoice->id . ' has payments recorded against it. Void those receipts first, then delete the invoice.');
++        }
++
+           Invoice::destroy($invoice->id);
+           Transaction::where('invoice_id', $invoice->id)->delete();
++          app(ClientLedger::class)->sync((int) $invoice->client_id, 'Invoice FWSSi' . $invoice->id . ' deleted');
+           DB::table('invoice_data')->where('invoice_id', $invoice->id)->delete();
+ 
+         return redirect('invoice')->with('error', 'Invoices Deleted Successfully');
+@@ -1163,4 +1177,23 @@ public function PayrollInvoice ($client_id, $month)
+ 
+     }
+ 
+-}
+\ No newline at end of file
++
++    /**
++     * After a new invoice is saved: use any unused client credit on it (when the
++     * client has automatic credit on) and post it to the client's account.
++     * Returns a note for the confirmation message.
++     */
++    private function afterInvoiceRaised(?Invoice $invoice): string
++    {
++        if (! $invoice) {
++            return '';
++        }
++
++        $applied = app(CreditApplier::class)->autoApply($invoice);
++        app(ClientLedger::class)->sync((int) $invoice->client_id);
++
++        return $applied > 0
++            ? ' — GH₵' . number_format($applied, 2) . ' of the client\'s credit was applied to it automatically.'
++            : '';
++    }
++}
+diff --git a/app/Http/Controllers/MultiInvoiceReceiptController.php b/app/Http/Controllers/MultiInvoiceReceiptController.php
+index 5ea8c0f..bb19b9e 100644
+--- a/app/Http/Controllers/MultiInvoiceReceiptController.php
++++ b/app/Http/Controllers/MultiInvoiceReceiptController.php
+@@ -9,14 +9,11 @@
+ use App\Models\Receipt;
+ use App\Models\User;
+ use App\Models\Wht;
+-use App\Services\Receipts\InvoiceSettlement;
+-use App\Services\Receipts\ReceiptAllocator;
+ use App\Services\Receipts\ReceiptRecorder;
+-use App\Services\Receipts\ReceiptWorkflow;
++use App\Services\Receipts\CreditApplier;
+ use Illuminate\Http\Request;
+ use Illuminate\Support\Facades\Auth;
+ use Illuminate\Support\Facades\DB;
+-use Illuminate\Validation\ValidationException;
+ 
+ /**
+  * One receipt, many invoices.
+@@ -29,11 +26,8 @@
+  */
+ class MultiInvoiceReceiptController extends Controller
+ {
+-    public function __construct(
+-        private ReceiptAllocator $allocator,
+-        private InvoiceSettlement $settlement,
+-        private ReceiptWorkflow $workflow,
+-    ) {
++    public function __construct()
++    {
+         $this->middleware('auth');
+     }
+ 
+@@ -88,7 +82,7 @@ public function store(StoreMultiInvoiceReceiptRequest $request, ReceiptRecorder
+      * client's open invoices. No new money moves, so collections and bank
+      * balances are untouched.
+      */
+-    public function applyCredit(Request $request, Receipt $receipt)
++    public function applyCredit(Request $request, Receipt $receipt, CreditApplier $credits)
+     {
+         $request->validate([
+             'invoices' => ['required', 'array'],
+@@ -99,44 +93,12 @@ public function applyCredit(Request $request, Receipt $receipt)
+         // Only from a client this user may work with.
+         $this->scopeToUserFields(Client::query())->findOrFail($receipt->client_id);
+ 
+-        DB::transaction(function () use ($request, $receipt) {
+-            $receipt = Receipt::whereKey($receipt->id)->lockForUpdate()->firstOrFail();
+-            $credit = round((float) $receipt->unapplied_amount, 2);
+-
+-            if ($credit <= 0) {
+-                throw ValidationException::withMessages(['invoices' => 'This receipt has no credit left to apply.']);
+-            }
+-
+-            $invoiceInput = collect((array) $request->input('invoices', []))
+-                ->filter(fn ($row) => ($row['selected'] ?? null) === '1')
+-                ->map(fn ($row) => ['applied' => $row['applied'] ?? null]);
+-
+-            $invoices = $this->openInvoices($receipt->client_id)
+-                ->whereIn('id', $invoiceInput->keys()->map(fn ($k) => (int) $k)->all())
+-                ->lockForUpdate()
+-                ->get();
+-
+-            if ($invoices->isEmpty()) {
+-                throw ValidationException::withMessages(['invoices' => 'Tick at least one open invoice to apply the credit to.']);
+-            }
++        $invoices = collect((array) $request->input('invoices', []))
++            ->filter(fn ($row) => ($row['selected'] ?? null) === '1')
++            ->map(fn ($row) => $row['applied'] ?? null)
++            ->all();
+ 
+-            $plan = $this->allocator->plan($this->planLines($invoices, $invoiceInput), $credit);
+-            $this->guardPlan($plan, true, false);
+-
+-            foreach (collect($plan['lines'])->keyBy('invoice_id') as $invoiceId => $line) {
+-                $invoice = $invoices->firstWhere('id', $invoiceId);
+-                $this->settlement->allocate($receipt, $invoice, $line, 'credit');
+-                $this->workflow->assignCategory($receipt, $invoice);
+-            }
+-
+-            $receipt->unapplied_amount = $plan['unapplied'];
+-            $receipt->invoice_id = $receipt->invoice_id ?: $invoices->first()->id;
+-            $allDone = Invoice::whereIn('id', $receipt->allocations()->pluck('invoice_id'))
+-                ->where('status', '!=', 'completed')
+-                ->doesntExist();
+-            $receipt->status = $allDone ? 'completed' : 'uncompleted';
+-            $receipt->save();
+-        });
++        $credits->apply($receipt, $invoices);
+ 
+         return redirect()->route('receipt.show', ['receipt' => $receipt->id])
+             ->with('primary', 'Credit applied. Remaining credit on this receipt: GH₵' . number_format($receipt->fresh()->unapplied_amount, 2));
+@@ -152,46 +114,6 @@ private function openInvoices(int $clientId)
+             ->orderBy('id');
+     }
+ 
+-    private function planLines($invoices, $invoiceInput): array
+-    {
+-        return $invoices->map(function (Invoice $invoice) use ($invoiceInput) {
+-            $row = $invoiceInput[$invoice->id] ?? $invoiceInput[(string) $invoice->id] ?? [];
+-
+-            return [
+-                'invoice_id' => $invoice->id,
+-                'outstanding' => max(0, round((float) $invoice->total - (float) $invoice->settled_sum, 2)),
+-                'applied' => $row['applied'] ?? null,
+-                'wht' => $row['wht'] ?? 0,
+-                'vat7' => $row['vat7'] ?? 0,
+-                'deduction' => $row['deduction'] ?? 0,
+-            ];
+-        })->values()->all();
+-    }
+-
+-    private function guardPlan(array $plan, bool $keepCredit, bool $noInvoices): void
+-    {
+-        $errors = $plan['errors'];
+-
+-        foreach ($plan['lines'] as $line) {
+-            if ($line['settled'] <= 0) {
+-                $errors[] = 'Nothing is being paid on invoice FWSSi' . $line['invoice_id'] . ' — enter an amount or untick it.';
+-            }
+-        }
+-
+-        if ($plan['unapplied'] > 0 && ! $keepCredit) {
+-            $errors[] = 'GH₵' . number_format($plan['unapplied'], 2) . ' of the money is not applied to any invoice. '
+-                . 'Tick "Keep the extra as client credit (advance)" or tick more invoices.';
+-        }
+-
+-        if ($noInvoices && ! $keepCredit) {
+-            $errors[] = 'Tick at least one invoice, or tick "Keep the extra as client credit (advance)" to record an advance payment.';
+-        }
+-
+-        if ($errors) {
+-            throw ValidationException::withMessages(['invoices' => array_values(array_unique($errors))]);
+-        }
+-    }
+-
+     /** Same office rules as the receipt list: head office sees all, Tema also sees Shai Hills. */
+     private function scopeToUserFields($query)
+     {
+diff --git a/app/Http/Controllers/ReceiptController.php b/app/Http/Controllers/ReceiptController.php
+index 6e98fde..05f1cef 100644
+--- a/app/Http/Controllers/ReceiptController.php
++++ b/app/Http/Controllers/ReceiptController.php
+@@ -23,6 +23,8 @@
+ use App\Services\Receipts\BankPosting;
+ use App\Services\Receipts\InvoiceSettlement;
+ use App\Services\Receipts\ReceiptRecorder;
++use App\Services\Receipts\ReceiptVoider;
++use App\Models\ReceiptVoid;
+ use Illuminate\Support\Facades\Auth;
+ use Illuminate\Support\Facades\DB;
+ use Illuminate\Validation\Rule;
+@@ -465,7 +467,9 @@ public function datatable(Request $request)
+             if ($canManage) {
+                 $receiptUrl = e(url('receipt/' . $receipt->id));
+                 $actions .= '<a class="dropdown-item" href="' . $receiptUrl . '/edit"><i class="icon-base bx bx-edit-alt me-2 text-primary"></i> Edit</a>'
+-                    . '<form action="' . $receiptUrl . '" method="POST"><input type="hidden" name="_token" value="' . e(csrf_token()) . '"><input type="hidden" name="_method" value="DELETE"><button class="dropdown-item" type="submit"><i class="icon-base bx bx-trash me-2 text-danger"></i>Delete</button></form>';
++                    . '<form action="' . $receiptUrl . '" method="POST" onsubmit="var r = prompt(\'Reason for voiding FWSSR' . $receipt->id . '?\'); if (!r || r.trim().length < 5) { if (r !== null) alert(\'Please give a reason (at least 5 characters).\'); return false; } this.void_reason.value = r;">'
++                    . '<input type="hidden" name="_token" value="' . e(csrf_token()) . '"><input type="hidden" name="_method" value="DELETE"><input type="hidden" name="void_reason" value="">'
++                    . '<button class="dropdown-item" type="submit"><i class="icon-base bx bx-block me-2 text-danger"></i>Void</button></form>';
+             }
+             $actions .= '</div></div>';
+  
+@@ -830,31 +834,28 @@ public function update(UpdateReceiptRequest $request, Receipt $receipt, ReceiptR
+     /**
+      * Remove the specified resource from storage.
+      */
+-    public function destroy(Receipt $receipt)
++    /**
++     * Void a receipt (the DELETE route). A reason is required; the receipt is
++     * archived with who/when/why and everything it did is reversed — see
++     * App\Services\Receipts\ReceiptVoider.
++     */
++    public function destroy(Request $request, Receipt $receipt, ReceiptVoider $voider)
+     {
+-        // A receipt whose money has been banked cannot be deleted.
+-        $collection = Collection::where('receipt_id', $receipt->id)->first();
+-        if (self::isDeposited($collection))
+-        {
+-            return redirect()->back()->with('error', 'Receipt has been Deposited and cannot be Deleted');
+-        }
+-
+-        DB::transaction(function () use ($receipt, $collection) {
+-            // Take a posted transfer back out of the bank (adds a reversal line).
+-            app(BankPosting::class)->reverse($receipt);
++        $request->validate(['void_reason' => ['required', 'string', 'min:5', 'max:500']], [
++            'void_reason.required' => 'Give a reason for voiding this receipt.',
++        ]);
+ 
+-            $collection?->delete();
++        $voider->void($receipt, (string) $request->input('void_reason'));
+ 
+-            // Remove this receipt's allocation lines and ledger rows, then
+-            // re-derive every invoice it touched from the receipts that remain.
+-            // (Previously the invoice was reset to "unpaid" even when other
+-            // receipts had part-paid it.)
+-            app(InvoiceSettlement::class)->release($receipt);
++        return redirect('receipt')->with('warning', 'Receipt FWSSR' . $receipt->id . ' voided. It is kept under Receipts › Voided.');
++    }
+ 
+-            $receipt->delete();
+-        });
++    /** Voided receipts, with reason, who and when. */
++    public function voided()
++    {
++        $voids = ReceiptVoid::with(['client', 'voidedBy'])->latest()->get();
+ 
+-        return redirect('receipt')->with('error', 'Receipt Deleted Successfully');
++        return view('sales.receipt_voided', compact('voids'));
+     }
+ 
+ 
+diff --git a/app/Http/Requests/StoreClientRequest.php b/app/Http/Requests/StoreClientRequest.php
+index 99dc53a..c0bf18a 100644
+--- a/app/Http/Requests/StoreClientRequest.php
++++ b/app/Http/Requests/StoreClientRequest.php
+@@ -30,6 +30,8 @@ public function rules(): array
+                 'rate' => ['required', 'numeric', 'min:1000'],
+                 'guards' => 'required',
+                 'start_date' => 'required',
++                'email' => ['nullable', 'email', 'max:255'],
++                'auto_apply_credit' => ['nullable', 'boolean'],
+         ];
+     }
+ }
+diff --git a/app/Http/Requests/UpdateClientRequest.php b/app/Http/Requests/UpdateClientRequest.php
+index f40fb95..e336cf3 100644
+--- a/app/Http/Requests/UpdateClientRequest.php
++++ b/app/Http/Requests/UpdateClientRequest.php
+@@ -22,7 +22,8 @@ public function authorize(): bool
+     public function rules(): array
+     {
+         return [
+-            //
++            'email' => ['nullable', 'email', 'max:255'],
++            'auto_apply_credit' => ['nullable', 'boolean'],
+         ];
+     }
+ }
+diff --git a/app/Mail/StatementOfAccountMail.php b/app/Mail/StatementOfAccountMail.php
+new file mode 100644
+index 0000000..59ae3ad
+--- /dev/null
++++ b/app/Mail/StatementOfAccountMail.php
+@@ -0,0 +1,44 @@
++<?php
++
++namespace App\Mail;
++
++use App\Services\Receipts\StatementPdf;
++use Illuminate\Bus\Queueable;
++use Illuminate\Mail\Mailable;
++use Illuminate\Mail\Mailables\Attachment;
++use Illuminate\Mail\Mailables\Content;
++use Illuminate\Mail\Mailables\Envelope;
++use Illuminate\Queue\SerializesModels;
++
++/** A client's statement of account: full statement in the body, PDF attached when dompdf is installed. */
++class StatementOfAccountMail extends Mailable
++{
++    use Queueable, SerializesModels;
++
++    public function __construct(public array $statement, public ?string $note = null, public ?string $pdf = null)
++    {
++    }
++
++    public function envelope(): Envelope
++    {
++        $client = $this->statement['client'];
++
++        return new Envelope(
++            subject: 'Statement of account — ' . ($client->business_name ?: $client->name) . ' — ' . ($this->statement['to'] ?? now())->format('d M Y'),
++        );
++    }
++
++    public function content(): Content
++    {
++        return new Content(view: 'emails.statement', with: ['statement' => $this->statement, 'note' => $this->note]);
++    }
++
++    public function attachments(): array
++    {
++        if (! $this->pdf) {
++            return [];
++        }
++
++        return [Attachment::fromData(fn () => $this->pdf, StatementPdf::filename($this->statement))->withMime('application/pdf')];
++    }
++}
+diff --git a/app/Models/Client.php b/app/Models/Client.php
+index 8be3502..9485998 100644
+--- a/app/Models/Client.php
++++ b/app/Models/Client.php
+@@ -17,6 +17,8 @@ class Client extends Model
+         'name',
+         'phone_number',
+         'phone_number1',
++        'email',
++        'auto_apply_credit',
+         'business_name',
+         'branch',
+         'address',
+@@ -49,6 +51,7 @@ class Client extends Model
+     ];
+ 
+     protected $casts = [
++        'auto_apply_credit' => 'boolean',
+         'start_date' => 'date',
+         'status_date' => 'date',
+         'coll_date' => 'date',
+diff --git a/app/Models/ClientLedgerEntry.php b/app/Models/ClientLedgerEntry.php
+new file mode 100644
+index 0000000..c7f20e7
+--- /dev/null
++++ b/app/Models/ClientLedgerEntry.php
+@@ -0,0 +1,28 @@
++<?php
++
++namespace App\Models;
++
++use Illuminate\Database\Eloquent\Model;
++
++/**
++ * One line of a client's account. Never edited or deleted — corrections are
++ * new lines with reverses_id pointing at the line they cancel.
++ */
++class ClientLedgerEntry extends Model
++{
++    protected $fillable = [
++        'client_id', 'entry_date', 'kind', 'source_key', 'invoice_id', 'receipt_id',
++        'debit', 'credit', 'description', 'details', 'reverses_id', 'user_id',
++    ];
++
++    protected $casts = [
++        'entry_date' => 'date',
++        'debit' => 'float',
++        'credit' => 'float',
++    ];
++
++    public function client()
++    {
++        return $this->belongsTo(Client::class);
++    }
++}
+diff --git a/app/Models/ReceiptVoid.php b/app/Models/ReceiptVoid.php
+new file mode 100644
+index 0000000..3ea33b2
+--- /dev/null
++++ b/app/Models/ReceiptVoid.php
+@@ -0,0 +1,26 @@
++<?php
++
++namespace App\Models;
++
++use Illuminate\Database\Eloquent\Model;
++
++/** A receipt that was voided: the reason, who did it, and a copy of everything it recorded. */
++class ReceiptVoid extends Model
++{
++    protected $fillable = ['receipt_id', 'client_id', 'amount', 'reason', 'voided_by', 'snapshot'];
++
++    protected $casts = [
++        'snapshot' => 'array',
++        'amount' => 'float',
++    ];
++
++    public function client()
++    {
++        return $this->belongsTo(Client::class);
++    }
++
++    public function voidedBy()
++    {
++        return $this->belongsTo(User::class, 'voided_by');
++    }
++}
+diff --git a/app/Models/StatementSend.php b/app/Models/StatementSend.php
+new file mode 100644
+index 0000000..b5b7e34
+--- /dev/null
++++ b/app/Models/StatementSend.php
+@@ -0,0 +1,23 @@
++<?php
++
++namespace App\Models;
++
++use Illuminate\Database\Eloquent\Model;
++
++/** A statement of account that was emailed to a client. */
++class StatementSend extends Model
++{
++    protected $fillable = ['client_id', 'sent_to', 'period_from', 'period_to', 'closing_balance', 'with_pdf', 'user_id'];
++
++    protected $casts = [
++        'period_from' => 'date',
++        'period_to' => 'date',
++        'closing_balance' => 'float',
++        'with_pdf' => 'boolean',
++    ];
++
++    public function user()
++    {
++        return $this->belongsTo(User::class);
++    }
++}
+diff --git a/app/Services/Receipts/ClientLedger.php b/app/Services/Receipts/ClientLedger.php
+new file mode 100644
+index 0000000..6720a56
+--- /dev/null
++++ b/app/Services/Receipts/ClientLedger.php
+@@ -0,0 +1,210 @@
++<?php
++
++namespace App\Services\Receipts;
++
++use App\Models\Client;
++use App\Models\ClientLedgerEntry;
++use App\Models\Invoice;
++use App\Models\Receipt;
++use App\Models\ReceiptAllocation;
++use Carbon\Carbon;
++use Illuminate\Support\Facades\Auth;
++use Illuminate\Support\Facades\DB;
++
++/**
++ * The client's account as permanent entries (client_ledger_entries).
++ *
++ * Posting rules — one entry per "source key":
++ *   invoice:{id}            debit  invoice total                  dated invoice month
++ *   receipt:{id}:money      credit money received                  dated receipt date
++ *   receipt:{id}:wht|vat|deduction  credit WHT / 7% VAT withheld / deductions
++ *   allocation:{id}         no amount — credit applied to an invoice (it only moves money)
++ *
++ * sync() compares what the documents say now with what is posted:
++ *   - a posted entry whose document changed or disappeared gets a REVERSAL entry
++ *     (opposite amounts, dated today, pointing at it);
++ *   - the corrected entry is posted — dated the document's own date the first
++ *     time, and today when it corrects an earlier posting.
++ * Nothing is ever updated or deleted, so a statement sent last month reads the
++ * same today; the correction shows up on the day it was made.
++ *
++ * sync() is called at the end of every invoice/receipt change and before a
++ * statement is shown, so the ledger can never drift from the documents.
++ */
++class ClientLedger
++{
++    public const MONEY_FIELDS = ['cash_amount', 'momo_amount', 'cheque_amount', 'transfer_amount', 'other_payment_amnt'];
++
++    /** Bring one client's ledger in line with its documents. Returns the number of entries posted. */
++    public function sync(int $clientId, ?string $reason = null): int
++    {
++        return DB::transaction(function () use ($clientId, $reason) {
++            // One sync per client at a time, so the same change is never posted twice.
++            Client::whereKey($clientId)->lockForUpdate()->first();
++
++            $desired = $this->desired($clientId);
++            $live = $this->live($clientId);
++            $postedKeys = ClientLedgerEntry::where('client_id', $clientId)->whereNull('reverses_id')->distinct()->pluck('source_key')->flip();
++            $today = now()->startOfDay();
++            $count = 0;
++
++            // Reverse what no longer matches its document.
++            foreach ($live as $key => $entry) {
++                if (isset($desired[$key]) && $this->same($entry, $desired[$key])) {
++                    continue;
++                }
++                $why = isset($desired[$key]) ? 'corrected' : ($reason ?: 'removed');
++                ClientLedgerEntry::create([
++                    'client_id' => $clientId,
++                    'entry_date' => $today,
++                    'kind' => 'reversal',
++                    'source_key' => $key,
++                    'invoice_id' => $entry->invoice_id,
++                    'receipt_id' => $entry->receipt_id,
++                    'debit' => $entry->credit,
++                    'credit' => $entry->debit,
++                    'description' => 'Reversal of: ' . $entry->description,
++                    'details' => ucfirst($why) . ' on ' . $today->format('d M Y') . ' (was dated ' . $entry->entry_date->format('d M Y') . ')',
++                    'reverses_id' => $entry->id,
++                    'user_id' => Auth::id(),
++                ]);
++                unset($live[$key]);
++                $count++;
++            }
++
++            // Post what is not posted yet.
++            foreach ($desired as $key => $want) {
++                if (isset($live[$key])) {
++                    continue;
++                }
++                $isCorrection = isset($postedKeys[$key]);
++                // array_merge (not +): the values below must override the document's own date/details.
++                ClientLedgerEntry::create(array_merge($want, [
++                    'client_id' => $clientId,
++                    'source_key' => $key,
++                    'user_id' => Auth::id(),
++                    'entry_date' => $isCorrection ? $today : $want['entry_date'],
++                    'details' => $isCorrection
++                        ? trim(($want['details'] ? $want['details'] . ' · ' : '') . 'Corrected entry, document dated ' . Carbon::parse($want['entry_date'])->format('d M Y'))
++                        : $want['details'],
++                ]));
++                $count++;
++            }
++
++            return $count;
++        });
++    }
++
++    /** Sync every client that has documents (used once after deploying, and as a nightly safety net). */
++    public function syncAll(?callable $progress = null): array
++    {
++        $ids = Invoice::whereNotNull('client_id')->distinct()->pluck('client_id')
++            ->merge(Receipt::whereNotNull('client_id')->distinct()->pluck('client_id'))
++            ->merge(ClientLedgerEntry::distinct()->pluck('client_id'))
++            ->unique()->sort()->values();
++
++        $posted = 0;
++        foreach ($ids as $id) {
++            $posted += $this->sync((int) $id);
++            $progress && $progress($id);
++        }
++
++        return ['clients' => $ids->count(), 'entries' => $posted];
++    }
++
++    /** Entries currently in force (not reversals, not reversed), keyed by source. */
++    private function live(int $clientId): array
++    {
++        $reversed = ClientLedgerEntry::where('client_id', $clientId)->whereNotNull('reverses_id')->pluck('reverses_id')->flip();
++
++        return ClientLedgerEntry::where('client_id', $clientId)->whereNull('reverses_id')->orderBy('id')->get()
++            ->reject(fn ($e) => isset($reversed[$e->id]))
++            ->keyBy('source_key')
++            ->all();
++    }
++
++    private function same(ClientLedgerEntry $posted, array $want): bool
++    {
++        return abs($posted->debit - $want['debit']) < 0.005
++            && abs($posted->credit - $want['credit']) < 0.005
++            && $posted->description === $want['description']
++            // A correction is posted with today's date, so only first postings must match the document date.
++            && ($posted->entry_date->toDateString() === Carbon::parse($want['entry_date'])->toDateString()
++                || str_contains((string) $posted->details, 'Corrected entry'));
++    }
++
++    /** What the documents say the account should contain. */
++    private function desired(int $clientId): array
++    {
++        $out = [];
++
++        foreach (Invoice::where('client_id', $clientId)->orderBy('id')->get() as $inv) {
++            $out['invoice:' . $inv->id] = $this->row('invoice', $inv->invoice_month ?? $inv->created_at,
++                'Invoice FWSSi' . $inv->id . ($inv->invoice_month ? ' — ' . $inv->invoice_month->format('F Y') : ''),
++                null, (float) $inv->total, 0, $inv->id, null);
++        }
++
++        foreach (Receipt::where('client_id', $clientId)->with('allocations')->orderBy('id')->get() as $r) {
++            $date = $r->receipt_month ?? $r->created_at;
++            $money = round(array_sum(array_map(fn ($f) => (float) $r->{$f}, self::MONEY_FIELDS)), 2);
++            $how = $this->how($r);
++            if ($money > 0) {
++                $out['receipt:' . $r->id . ':money'] = $this->row('receipt', $date, 'Receipt FWSSR' . $r->id, $how, 0, $money, $r->invoice_id, $r->id);
++            }
++            foreach ([
++                'wht' => [(float) $r->wht_amount, 'Withholding tax (WHT) on FWSSR' . $r->id],
++                'vat' => [(float) $r->vat7_value, '7% VAT withheld on FWSSR' . $r->id],
++                'deduction' => [(float) $r->dAmount, 'Deduction on FWSSR' . $r->id . ($r->description ? ' — ' . $r->description : '')],
++            ] as $kind => [$amount, $label]) {
++                if ($amount > 0.004) {
++                    $out['receipt:' . $r->id . ':' . $kind] = $this->row($kind, $date, $label, $money > 0 ? null : $how, 0, round($amount, 2), $r->invoice_id, $r->id);
++                }
++            }
++        }
++
++        $allocations = ReceiptAllocation::where('client_id', $clientId)->where('source', 'credit')->orderBy('id')->get();
++        foreach ($allocations as $a) {
++            $out['allocation:' . $a->id] = $this->row('credit_applied', $a->created_at,
++                'Credit from FWSSR' . $a->receipt_id . ' applied to FWSSi' . $a->invoice_id,
++                'GH₵' . number_format($a->settled, 2) . ' moved from the client\'s credit to this invoice', 0, 0, $a->invoice_id, $a->receipt_id);
++        }
++
++        return $out;
++    }
++
++    private function row(string $kind, $date, string $description, ?string $details, float $debit, float $credit, ?int $invoiceId, ?int $receiptId): array
++    {
++        return [
++            'kind' => $kind,
++            'entry_date' => Carbon::parse($date)->startOfDay(),
++            'description' => mb_substr($description, 0, 255),
++            'details' => $details ? mb_substr($details, 0, 500) : null,
++            'debit' => round($debit, 2),
++            'credit' => round($credit, 2),
++            'invoice_id' => $invoiceId,
++            'receipt_id' => $receiptId,
++        ];
++    }
++
++    private function how(Receipt $r): string
++    {
++        $parts = [];
++        if ((float) $r->cash_amount > 0) {
++            $parts[] = 'Cash ' . number_format($r->cash_amount, 2);
++        }
++        if ((float) $r->momo_amount > 0) {
++            $parts[] = 'MoMo ' . number_format($r->momo_amount, 2) . ($r->momo_transactin_id ? ' (' . $r->momo_transactin_id . ')' : '');
++        }
++        if ((float) $r->cheque_amount > 0) {
++            $parts[] = 'Cheque ' . number_format($r->cheque_amount, 2) . rtrim(' ' . trim($r->cheque_bank . ' ' . $r->cheque_reference));
++        }
++        if ((float) $r->transfer_amount > 0) {
++            $parts[] = 'Transfer ' . number_format($r->transfer_amount, 2) . rtrim(' ' . trim($r->transfer_bank . ' ' . $r->transfer_reference));
++        }
++        if ((float) $r->other_payment_amnt > 0) {
++            $parts[] = 'Other ' . number_format($r->other_payment_amnt, 2) . ($r->other_payment_descri ? ' (' . $r->other_payment_descri . ')' : '');
++        }
++
++        return implode(', ', $parts);
++    }
++}
+diff --git a/app/Services/Receipts/ClientStatement.php b/app/Services/Receipts/ClientStatement.php
+index e784f8a..78d00b9 100644
+--- a/app/Services/Receipts/ClientStatement.php
++++ b/app/Services/Receipts/ClientStatement.php
+@@ -3,62 +3,76 @@
+ namespace App\Services\Receipts;
+ 
+ use App\Models\Client;
++use App\Models\ClientLedgerEntry;
+ use App\Models\Invoice;
+ use App\Models\Receipt;
+-use App\Models\ReceiptAllocation;
+ use Carbon\Carbon;
+ use Illuminate\Support\Collection as SupportCollection;
+ 
+ /**
+- * A client's statement of account, built from the source documents.
++ * A client's statement of account, read from the client ledger
++ * (see ClientLedger for the posting rules).
+  *
+- *   Debit   each invoice, for its total
+- *   Credit  each receipt ONCE, for the money received (cash + momo + cheque + transfer + other)
+- *   Credit  WHT, 7% VAT withheld and other deductions on each receipt, as their own lines
+- *   Note    each time unused credit is applied to an invoice — no amount, because
+- *           the money was already credited when it was received; applying it only
+- *           moves it between invoices and does not change what the client owes.
++ *   Debit   each invoice
++ *   Credit  each receipt once (money received) + WHT / VAT withheld / deductions
++ *   Note    credit applied to an invoice (no amount: it only moves money)
++ *   Reversal  a correction or a voided receipt, on the day it happened
+  *
+- * Running balance: positive = client owes us, negative = client is in credit (shown "CR").
+- *
+- * The old statement read the transactions table and credited the WHOLE receipt
+- * on every row for that receipt, so a receipt paying two invoices, or credit
+- * applied later, was counted again (and VAT withheld was never credited).
++ * Running balance: positive = client owes us, negative = in credit ("CR").
+  *
+  * Check: closing balance (all dates) must equal
+- *     SUM(invoice total − allocations settled) − SUM(unapplied credit)
+- * Any difference points at old data that `php artisan receipts:recompute` repairs.
++ *     SUM(invoice total − allocations settled) − SUM(unused credit)
+  */
+ class ClientStatement
+ {
+-    public const MONEY_FIELDS = ['cash_amount', 'momo_amount', 'cheque_amount', 'transfer_amount', 'other_payment_amnt'];
++    public function __construct(private ClientLedger $ledger)
++    {
++    }
+ 
+-    public function build(Client $client, ?Carbon $from = null, ?Carbon $to = null): array
++    public function build(Client $client, ?Carbon $from = null, ?Carbon $to = null, bool $sync = true): array
+     {
++        if ($sync) {
++            $this->ledger->sync($client->id);   // never show a ledger that has drifted from the documents
++        }
++
+         $from = $from?->copy()->startOfDay();
+         $to = $to?->copy()->endOfDay();
++        $order = ['invoice' => 0, 'receipt' => 1, 'wht' => 2, 'vat' => 2, 'deduction' => 2, 'credit_applied' => 3, 'reversal' => -1];   // on a correction day: undo the old line, then post the new one
+ 
+-        $all = $this->entries($client)->sortBy(fn ($e) => [$e['date']->format('Y-m-d'), $e['order'], $e['seq']])->values();
++        $entries = ClientLedgerEntry::where('client_id', $client->id)->get()
++            ->sortBy(fn ($e) => [$e->entry_date->format('Y-m-d'), $order[$e->kind] ?? 9, $e->id])
++            ->values();
++        $notes = $this->receiptNotes($client);
+ 
+-        // Opening balance = everything before the period.
+         $opening = 0.0;
+-        $lines = [];
+         $running = 0.0;
+-        foreach ($all as $e) {
+-            $running = round($running + $e['debit'] - $e['credit'], 2);
+-            if ($from && $e['date']->lt($from)) {
++        $lines = [];
++        foreach ($entries as $e) {
++            $running = round($running + $e->debit - $e->credit, 2);
++            if ($from && $e->entry_date->lt($from)) {
+                 $opening = $running;
+                 continue;
+             }
+-            if ($to && $e['date']->gt($to)) {
++            if ($to && $e->entry_date->gt($to)) {
+                 continue;
+             }
+-            $e['balance'] = $running;
+-            $lines[] = $e;
++            $lines[] = [
++                'id' => $e->id,
++                'date' => $e->entry_date,
++                'kind' => $e->kind,
++                'description' => $e->description,
++                'details' => trim(implode(' · ', array_filter([$e->details, $e->kind === 'receipt' ? ($notes[$e->receipt_id] ?? null) : null]))),
++                'debit' => $e->debit,
++                'credit' => $e->credit,
++                'balance' => $running,
++                'link' => $e->kind === 'invoice' ? url('invoice/' . $e->invoice_id) : ($e->receipt_id && isset($notes[$e->receipt_id]) ? url('receipt/' . $e->receipt_id) : null),
++            ];
+         }
+ 
+         $period = collect($lines);
+         $closing = $period->isNotEmpty() ? $period->last()['balance'] : $opening;
++        $credits = fn (array $kinds) => round($period->whereIn('kind', $kinds)->sum('credit') - $period->whereIn('kind', $kinds)->sum('debit'), 2);
++        $reversals = $period->where('kind', 'reversal');
+ 
+         return [
+             'client' => $client,
+@@ -66,13 +80,14 @@ public function build(Client $client, ?Carbon $from = null, ?Carbon $to = null):
+             'to' => $to,
+             'opening' => $opening,
+             'lines' => $lines,
+-            'invoiced' => round($period->sum('debit'), 2),
+-            'received' => round($period->where('kind', 'receipt')->sum('credit'), 2),
+-            'withheld' => round($period->whereIn('kind', ['wht', 'vat', 'deduction'])->sum('credit'), 2),
++            'invoiced' => round($period->where('kind', 'invoice')->sum('debit'), 2),
++            'received' => $credits(['receipt']),
++            'withheld' => $credits(['wht', 'vat', 'deduction']),
++            'corrections' => round($reversals->sum('debit') - $reversals->sum('credit'), 2),
+             'closing' => $closing,
+             'open_invoices' => $this->openInvoices($client),
+-            'credit_receipts' => $this->creditReceipts($client),
+-            'check' => $this->check($client, $all),
++            'credit_receipts' => Receipt::where('client_id', $client->id)->where('unapplied_amount', '>', 0)->orderBy('id')->get(),
++            'check' => $this->check($client, round($entries->sum('debit') - $entries->sum('credit'), 2)),
+         ];
+     }
+ 
+@@ -85,10 +100,12 @@ public function summary(Client $client): array
+             'invoiced' => $s['invoiced'],
+             'received' => $s['received'],
+             'withheld' => $s['withheld'],
++            'corrections' => $s['corrections'],
+             'balance' => $s['closing'],
+             'owed_on_invoices' => round($s['open_invoices']->sum('outstanding'), 2),
+             'credit' => round($s['credit_receipts']->sum('unapplied_amount'), 2),
+             'check' => $s['check'],
++            'lines' => $s['lines'],
+         ];
+     }
+ 
+@@ -98,102 +115,8 @@ public static function money(float $balance): string
+         return number_format(abs($balance), 2) . ($balance < -0.004 ? ' CR' : '');
+     }
+ 
+-    /* ------------------------------------------------------------------ */
+-
+-    private function entries(Client $client): SupportCollection
+-    {
+-        $entries = collect();
+-        $seq = 0;
+-
+-        foreach (Invoice::where('client_id', $client->id)->orderBy('id')->get() as $inv) {
+-            $entries->push($this->entry(
+-                $inv->invoice_month ?? $inv->created_at, 0, ++$seq, 'invoice',
+-                'Invoice FWSSi' . $inv->id . ($inv->invoice_month ? ' — ' . $inv->invoice_month->format('F Y') : ''),
+-                null, (float) $inv->total, 0, url('invoice/' . $inv->id)
+-            ));
+-        }
+-
+-        $receipts = Receipt::where('client_id', $client->id)->with('allocations')->orderBy('id')->get();
+-        foreach ($receipts as $r) {
+-            $date = $r->receipt_month ?? $r->created_at;
+-            $money = round(array_sum(array_map(fn ($f) => (float) $r->{$f}, self::MONEY_FIELDS)), 2);
+-            $paid = $r->allocations->where('source', '!=', 'credit')
+-                ->map(fn ($a) => 'FWSSi' . $a->invoice_id . ' ' . number_format($a->amount_applied, 2))->implode(', ');
+-            $kept = (float) $r->unapplied_amount + (float) $r->allocations->where('source', 'credit')->sum('amount_applied');
+-            $notes = array_filter([
+-                $this->how($r),
+-                $paid ? 'Paid: ' . $paid : null,
+-                $kept > 0.004 ? 'Kept as credit: ' . number_format($kept, 2) : null,
+-                $r->ho_status !== 'approved' ? 'Awaiting approval' : null,
+-            ]);
+-
+-            if ($money > 0) {
+-                $entries->push($this->entry($date, 1, ++$seq, 'receipt', 'Receipt FWSSR' . $r->id, implode(' · ', $notes), 0, $money, url('receipt/' . $r->id)));
+-            }
+-            foreach ([
+-                'wht' => [(float) $r->wht_amount, 'Withholding tax (WHT) on FWSSR' . $r->id],
+-                'vat' => [(float) $r->vat7_value, '7% VAT withheld on FWSSR' . $r->id],
+-                'deduction' => [(float) $r->dAmount, 'Deduction on FWSSR' . $r->id . ($r->description ? ' — ' . $r->description : '')],
+-            ] as $kind => [$amount, $label]) {
+-                if ($amount > 0.004) {
+-                    $entries->push($this->entry($date, 2, ++$seq, $kind, $label, $money > 0 ? null : implode(' · ', $notes), 0, round($amount, 2), url('receipt/' . $r->id)));
+-                }
+-            }
+-        }
+-
+-        // Credit applied to later invoices: information only, no amount.
+-        $applied = ReceiptAllocation::where('client_id', $client->id)->where('source', 'credit')->orderBy('id')->get();
+-        foreach ($applied as $a) {
+-            $entries->push($this->entry(
+-                $a->created_at, 3, ++$seq, 'credit_applied',
+-                'Credit from FWSSR' . $a->receipt_id . ' applied to FWSSi' . $a->invoice_id,
+-                'GH₵' . number_format($a->settled, 2) . ' moved from the client\'s credit to this invoice', 0, 0, url('receipt/' . $a->receipt_id)
+-            ));
+-        }
+-
+-        return $entries;
+-    }
+-
+-    private function entry($date, int $order, int $seq, string $kind, string $description, ?string $details, float $debit, float $credit, ?string $link): array
+-    {
+-        return [
+-            'date' => Carbon::parse($date)->startOfDay(),
+-            'order' => $order,   // same day: invoices, then receipts, then their deductions, then credit notes
+-            'seq' => $seq,
+-            'kind' => $kind,
+-            'description' => $description,
+-            'details' => $details,
+-            'debit' => round($debit, 2),
+-            'credit' => round($credit, 2),
+-            'link' => $link,
+-            'balance' => 0.0,
+-        ];
+-    }
+-
+-    private function how(Receipt $r): string
+-    {
+-        $parts = [];
+-        if ((float) $r->cash_amount > 0) {
+-            $parts[] = 'Cash ' . number_format($r->cash_amount, 2);
+-        }
+-        if ((float) $r->momo_amount > 0) {
+-            $parts[] = 'MoMo ' . number_format($r->momo_amount, 2) . ($r->momo_transactin_id ? ' (' . $r->momo_transactin_id . ')' : '');
+-        }
+-        if ((float) $r->cheque_amount > 0) {
+-            $parts[] = 'Cheque ' . number_format($r->cheque_amount, 2) . rtrim(' ' . trim($r->cheque_bank . ' ' . $r->cheque_reference));
+-        }
+-        if ((float) $r->transfer_amount > 0) {
+-            $parts[] = 'Transfer ' . number_format($r->transfer_amount, 2) . rtrim(' ' . trim($r->transfer_bank . ' ' . $r->transfer_reference));
+-        }
+-        if ((float) $r->other_payment_amnt > 0) {
+-            $parts[] = 'Other ' . number_format($r->other_payment_amnt, 2) . ($r->other_payment_descri ? ' (' . $r->other_payment_descri . ')' : '');
+-        }
+-
+-        return implode(', ', $parts);
+-    }
+-
+     /** Invoices still owing, worked out from what was paid against them. */
+-    private function openInvoices(Client $client): SupportCollection
++    public function openInvoices(Client $client): SupportCollection
+     {
+         return Invoice::where('client_id', $client->id)
+             ->withSum('allocations as settled_sum', 'settled')
+@@ -210,20 +133,30 @@ private function openInvoices(Client $client): SupportCollection
+             ->values();
+     }
+ 
+-    private function creditReceipts(Client $client): SupportCollection
++    /** Live notes for receipt lines (what it paid, credit kept, approval) — they can change without a posting. */
++    private function receiptNotes(Client $client): array
+     {
+-        return Receipt::where('client_id', $client->id)->where('unapplied_amount', '>', 0)->orderBy('id')->get();
++        return Receipt::where('client_id', $client->id)->with('allocations')->get()->mapWithKeys(function ($r) {
++            $paid = $r->allocations->where('source', '!=', 'credit')
++                ->map(fn ($a) => 'FWSSi' . $a->invoice_id . ' ' . number_format($a->amount_applied, 2))->implode(', ');
++            $kept = (float) $r->unapplied_amount + (float) $r->allocations->where('source', 'credit')->sum('amount_applied');
++
++            return [$r->id => implode(' · ', array_filter([
++                $paid ? 'Paid: ' . $paid : null,
++                $kept > 0.004 ? 'Kept as credit: ' . number_format($kept, 2) : null,
++                $r->ho_status !== 'approved' ? 'Awaiting approval' : null,
++            ]))];
++        })->all();
+     }
+ 
+-    /** Does the statement agree with the invoice-by-invoice position? */
+-    private function check(Client $client, SupportCollection $all): array
++    /** Does the ledger agree with the invoice-by-invoice position? */
++    private function check(Client $client, float $ledgerBalance): array
+     {
+-        $statement = round($all->sum('debit') - $all->sum('credit'), 2);
+         $perInvoice = round((float) Invoice::where('client_id', $client->id)->withSum('allocations as s', 'settled')->get()
+             ->sum(fn ($i) => (float) $i->total - (float) $i->s), 2);
+         $credit = round((float) Receipt::where('client_id', $client->id)->sum('unapplied_amount'), 2);
+         $expected = round($perInvoice - $credit, 2);
+ 
+-        return ['ok' => abs($statement - $expected) < 0.01, 'statement' => $statement, 'per_invoice' => $expected, 'difference' => round($statement - $expected, 2)];
++        return ['ok' => abs($ledgerBalance - $expected) < 0.01, 'statement' => $ledgerBalance, 'per_invoice' => $expected, 'difference' => round($ledgerBalance - $expected, 2)];
+     }
+ }
+diff --git a/app/Services/Receipts/CreditApplier.php b/app/Services/Receipts/CreditApplier.php
+new file mode 100644
+index 0000000..d44ba8d
+--- /dev/null
++++ b/app/Services/Receipts/CreditApplier.php
+@@ -0,0 +1,141 @@
++<?php
++
++namespace App\Services\Receipts;
++
++use App\Models\Client;
++use App\Models\Invoice;
++use App\Models\Receipt;
++use Illuminate\Support\Facades\DB;
++use Illuminate\Validation\ValidationException;
++
++/**
++ * Uses a client's unused credit (receipts.unapplied_amount) to pay invoices.
++ * No money moves — collections and banks are untouched; only allocation lines
++ * (source "credit") are added and the invoices re-derived.
++ *
++ *  apply()      the "Apply credit" form on a receipt: chosen invoices, optional amounts
++ *  autoApply()  a new invoice for a client with auto_apply_credit on: oldest credit first
++ */
++class CreditApplier
++{
++    public function __construct(
++        private ReceiptAllocator $allocator,
++        private InvoiceSettlement $settlement,
++        private ReceiptWorkflow $workflow,
++        private ClientLedger $ledger,
++    ) {
++    }
++
++    /**
++     * @param  array<int, float|string|null>  $invoices  invoice_id => amount (null = as much as possible)
++     */
++    public function apply(Receipt $receipt, array $invoices): Receipt
++    {
++        return DB::transaction(function () use ($receipt, $invoices) {
++            $receipt = Receipt::whereKey($receipt->id)->lockForUpdate()->firstOrFail();
++            $credit = round((float) $receipt->unapplied_amount, 2);
++            if ($credit <= 0) {
++                throw ValidationException::withMessages(['invoices' => 'This receipt has no credit left to apply.']);
++            }
++
++            $open = $this->openInvoices($receipt->client_id, array_keys($invoices));
++            if ($open->isEmpty()) {
++                throw ValidationException::withMessages(['invoices' => 'Tick at least one open invoice to apply the credit to.']);
++            }
++
++            $plan = $this->allocator->plan($open->map(fn (Invoice $inv) => [
++                'invoice_id' => $inv->id,
++                'outstanding' => max(0, round((float) $inv->total - (float) $inv->settled_sum, 2)),
++                'applied' => ($invoices[$inv->id] ?? null) === '' ? null : ($invoices[$inv->id] ?? null),
++            ])->values()->all(), $credit);
++
++            $errors = $plan['errors'];
++            foreach ($plan['lines'] as $line) {
++                if ($line['settled'] <= 0) {
++                    $errors[] = 'Nothing is being applied to invoice FWSSi' . $line['invoice_id'] . ' — enter an amount or untick it.';
++                }
++            }
++            if ($errors) {
++                throw ValidationException::withMessages(['invoices' => array_values(array_unique($errors))]);
++            }
++
++            $this->allocate($receipt, $open, $plan);
++            $this->ledger->sync($receipt->client_id);
++
++            return $receipt;
++        });
++    }
++
++    /**
++     * Pay a newly raised invoice from the client's unused credit, oldest credit
++     * first, if the client has automatic credit switched on.
++     *
++     * @return float amount applied
++     */
++    public function autoApply(Invoice $invoice): float
++    {
++        $client = Client::find($invoice->client_id);
++        if (! $client || ! $client->auto_apply_credit) {
++            return 0.0;
++        }
++
++        return DB::transaction(function () use ($invoice) {
++            $applied = 0.0;
++            $receipts = Receipt::where('client_id', $invoice->client_id)
++                ->where('unapplied_amount', '>', 0)
++                ->orderBy('receipt_month')->orderBy('id')
++                ->lockForUpdate()
++                ->get();
++
++            foreach ($receipts as $receipt) {
++                $open = $this->openInvoices($invoice->client_id, [$invoice->id]);
++                if ($open->isEmpty()) {
++                    break;   // invoice fully paid
++                }
++                $plan = $this->allocator->plan([[
++                    'invoice_id' => $invoice->id,
++                    'outstanding' => max(0, round((float) $open->first()->total - (float) $open->first()->settled_sum, 2)),
++                    'applied' => null,
++                ]], round((float) $receipt->unapplied_amount, 2));
++
++                if ($plan['errors'] || $plan['lines'][0]['settled'] <= 0) {
++                    continue;
++                }
++                $this->allocate($receipt, $open, $plan);
++                $applied += $plan['lines'][0]['amount_applied'];
++            }
++
++            if ($applied > 0) {
++                $this->ledger->sync($invoice->client_id);
++            }
++
++            return round($applied, 2);
++        });
++    }
++
++    private function allocate(Receipt $receipt, $open, array $plan): void
++    {
++        foreach (collect($plan['lines'])->keyBy('invoice_id') as $invoiceId => $line) {
++            $invoice = $open->firstWhere('id', $invoiceId);
++            $this->settlement->allocate($receipt, $invoice, $line, 'credit');
++            $this->workflow->assignCategory($receipt, $invoice);
++        }
++
++        $receipt->unapplied_amount = $plan['unapplied'];
++        $receipt->invoice_id = $receipt->invoice_id ?: $open->first()->id;
++        $receipt->status = Invoice::whereIn('id', $receipt->allocations()->pluck('invoice_id'))
++            ->where('status', '!=', 'completed')->doesntExist() ? 'completed' : 'uncompleted';
++        $receipt->save();
++    }
++
++    private function openInvoices(int $clientId, array $ids)
++    {
++        return Invoice::where('client_id', $clientId)
++            ->whereIn('id', array_map('intval', $ids))
++            ->whereIn('status', ['unpaid', 'uncompleted'])
++            ->withSum('allocations as settled_sum', 'settled')
++            ->orderBy('invoice_month')->orderBy('id')
++            ->lockForUpdate()
++            ->get();
++    }
++}
+diff --git a/app/Services/Receipts/ReceiptRecorder.php b/app/Services/Receipts/ReceiptRecorder.php
+index 5092681..238a495 100644
+--- a/app/Services/Receipts/ReceiptRecorder.php
++++ b/app/Services/Receipts/ReceiptRecorder.php
+@@ -58,6 +58,7 @@ public function __construct(
+         private InvoiceSettlement $settlement,
+         private BankPosting $bankPosting,
+         private ReceiptWorkflow $workflow,
++        private ClientLedger $ledger,
+     ) {
+     }
+ 
+@@ -143,6 +144,7 @@ public function create(Client $client, array $input, ?UploadedFile $image = null
+             $this->allocate($receipt, $invoices, $plan, false);
+             $this->writeCollection($receipt, $client);
+             $this->bankPosting->sync($receipt);
++            $this->ledger->sync($client->id);
+ 
+             return $receipt;
+         });
+@@ -175,6 +177,7 @@ public function revise(Receipt $receipt, array $input, ?UploadedFile $image = nu
+             $this->allocate($receipt, $invoices, $plan, true);
+             $this->writeCollection($receipt, Client::find($receipt->client_id));
+             $this->bankPosting->sync($receipt);
++            $this->ledger->sync($receipt->client_id);
+ 
+             return $receipt;
+         });
+diff --git a/app/Services/Receipts/ReceiptVoider.php b/app/Services/Receipts/ReceiptVoider.php
+new file mode 100644
+index 0000000..baf90c9
+--- /dev/null
++++ b/app/Services/Receipts/ReceiptVoider.php
+@@ -0,0 +1,78 @@
++<?php
++
++namespace App\Services\Receipts;
++
++use App\Models\BankTransaction;
++use App\Models\Collection;
++use App\Models\Receipt;
++use App\Models\ReceiptVoid;
++use Illuminate\Support\Facades\Auth;
++use Illuminate\Support\Facades\DB;
++use Illuminate\Validation\ValidationException;
++
++/**
++ * Voids a receipt instead of silently deleting it.
++ *
++ *  - a reason is required, and who/when is recorded;
++ *  - a full copy (receipt, what it paid, collection, bank lines) is kept in receipt_voids;
++ *  - cheque/transfer money is reversed out of the bank with a visible reversal line;
++ *  - the invoices it paid are re-derived from the receipts that remain;
++ *  - the client ledger gets reversal entries dated today, so a statement already
++ *    sent still reads the same and the next one shows "voided" on the day it happened.
++ *
++ * The receipt then leaves the receipts table, so every existing report, dashboard
++ * and export keeps working without having to filter voided rows out.
++ */
++class ReceiptVoider
++{
++    public function __construct(
++        private BankPosting $bankPosting,
++        private InvoiceSettlement $settlement,
++        private ClientLedger $ledger,
++    ) {
++    }
++
++    public function void(Receipt $receipt, string $reason): ReceiptVoid
++    {
++        $reason = trim($reason);
++        if (mb_strlen($reason) < 5) {
++            throw ValidationException::withMessages(['void_reason' => 'Give a reason for voiding this receipt (at least 5 characters).']);
++        }
++
++        return DB::transaction(function () use ($receipt, $reason) {
++            $receipt = Receipt::whereKey($receipt->id)->lockForUpdate()->firstOrFail();
++            $collection = Collection::where('receipt_id', $receipt->id)->first();
++
++            if ($collection && strcasecmp((string) $collection->status, 'deposited') === 0) {
++                throw ValidationException::withMessages(['void_reason' => 'The cash on this receipt has already been deposited, so it cannot be voided here.']);
++            }
++
++            $money = round(array_sum(array_map(fn ($f) => (float) $receipt->{$f}, ClientLedger::MONEY_FIELDS)), 2);
++            $void = ReceiptVoid::create([
++                'receipt_id' => $receipt->id,
++                'client_id' => $receipt->client_id,
++                'amount' => $money,
++                'reason' => mb_substr($reason, 0, 500),
++                'voided_by' => Auth::id(),
++                'snapshot' => [
++                    'receipt' => $receipt->getAttributes(),
++                    'allocations' => $receipt->allocations()->get()->map->getAttributes()->all(),
++                    'collection' => $collection?->getAttributes(),
++                    'bank_lines' => BankTransaction::where('receipt_id', $receipt->id)->get()->map->getAttributes()->all(),
++                ],
++            ]);
++
++            $this->bankPosting->reverse($receipt, 'Receipt voided: ' . $reason);
++            $collection?->delete();
++            $this->settlement->release($receipt);
++            $clientId = $receipt->client_id;
++            $receipt->delete();
++
++            if ($clientId) {
++                $this->ledger->sync($clientId, 'Receipt FWSSR' . $receipt->id . ' voided: ' . $reason);
++            }
++
++            return $void;
++        });
++    }
++}
+diff --git a/app/Services/Receipts/ReceivablesAging.php b/app/Services/Receipts/ReceivablesAging.php
+new file mode 100644
+index 0000000..1f1ce03
+--- /dev/null
++++ b/app/Services/Receipts/ReceivablesAging.php
+@@ -0,0 +1,100 @@
++<?php
++
++namespace App\Services\Receipts;
++
++use App\Models\Client;
++use App\Models\Receipt;
++use App\Models\ReceiptAllocation;
++use Carbon\Carbon;
++use Illuminate\Support\Facades\DB;
++
++/**
++ * Aged receivables: what every client still owes, by how overdue it is.
++ *
++ * "Owed" on an invoice = invoice total − everything settled against it
++ * (the same figure as the statement of account's open invoices), so this
++ * report and the statements always agree. Overdue days count from the
++ * invoice due date (old invoices with no due date: end of the month after
++ * the invoice month). Unused client credit is shown next to it and netted off.
++ */
++class ReceivablesAging
++{
++    public const BUCKETS = [
++        'current' => 'Not yet due',
++        'd30' => '1–30 days',
++        'd60' => '31–60 days',
++        'd90' => '61–90 days',
++        'd90plus' => 'Over 90 days',
++    ];
++
++    /**
++     * @param  array<int>|null  $fieldIds  limit to these field offices (null = all)
++     */
++    public function build(?array $fieldIds = null, ?Carbon $asOf = null): array
++    {
++        $asOf = ($asOf ?? now())->copy()->startOfDay();
++
++        $settled = ReceiptAllocation::selectRaw('invoice_id, SUM(settled) as settled')->groupBy('invoice_id');
++        $invoices = DB::table('invoices')
++            ->join('clients', 'clients.id', '=', 'invoices.client_id')
++            ->leftJoinSub($settled, 's', 's.invoice_id', '=', 'invoices.id')
++            ->when($fieldIds !== null, fn ($q) => $q->whereIn('clients.field_id', $fieldIds ?: [0]))
++            ->whereRaw('invoices.total - COALESCE(s.settled, 0) > 0.004')
++            ->get(['invoices.id', 'invoices.client_id', 'invoices.total', 'invoices.due_date', 'invoices.invoice_month', DB::raw('COALESCE(s.settled, 0) as settled')]);
++
++        $credit = Receipt::where('unapplied_amount', '>', 0)
++            ->when($fieldIds !== null, fn ($q) => $q->whereHas('client', fn ($c) => $c->whereIn('field_id', $fieldIds ?: [0])))
++            ->selectRaw('client_id, SUM(unapplied_amount) as credit')->groupBy('client_id')
++            ->pluck('credit', 'client_id');
++
++        $rows = [];
++        foreach ($invoices as $inv) {
++            $owed = round((float) $inv->total - (float) $inv->settled, 2);
++            $due = $inv->due_date
++                ? Carbon::parse($inv->due_date)->startOfDay()
++                : Carbon::parse($inv->invoice_month)->addMonthNoOverflow()->endOfMonth()->startOfDay();
++            $days = $asOf->gt($due) ? (int) $due->diffInDays($asOf) : 0;
++            $bucket = match (true) {
++                $days <= 0 => 'current',
++                $days <= 30 => 'd30',
++                $days <= 60 => 'd60',
++                $days <= 90 => 'd90',
++                default => 'd90plus',
++            };
++
++            $row = &$rows[$inv->client_id];
++            $row ??= array_fill_keys(array_keys(self::BUCKETS), 0.0) + ['client_id' => $inv->client_id, 'owed' => 0.0, 'invoices' => 0, 'oldest_days' => 0];
++            $row[$bucket] = round($row[$bucket] + $owed, 2);
++            $row['owed'] = round($row['owed'] + $owed, 2);
++            $row['invoices']++;
++            $row['oldest_days'] = max($row['oldest_days'], $days);
++            unset($row);
++        }
++
++        // Clients with credit but nothing owed still appear (they are owed money back / ahead).
++        foreach ($credit as $clientId => $amount) {
++            $rows[$clientId] ??= array_fill_keys(array_keys(self::BUCKETS), 0.0) + ['client_id' => $clientId, 'owed' => 0.0, 'invoices' => 0, 'oldest_days' => 0];
++        }
++
++        $clients = Client::with('field')->whereIn('id', array_keys($rows))->get()->keyBy('id');
++        foreach ($rows as $id => &$row) {
++            $c = $clients[$id] ?? null;
++            $row['client'] = $c ? ($c->business_name ?: $c->name) : 'Client #' . $id;
++            $row['contact'] = $c?->name;
++            $row['field'] = $c?->field?->name;
++            $row['credit'] = round((float) ($credit[$id] ?? 0), 2);
++            $row['net'] = round($row['owed'] - $row['credit'], 2);
++        }
++        unset($row);
++
++        $rows = collect($rows)->sortByDesc('net')->values();
++        $totals = array_fill_keys(array_merge(array_keys(self::BUCKETS), ['owed', 'credit', 'net']), 0.0);
++        foreach ($rows as $row) {
++            foreach ($totals as $k => $v) {
++                $totals[$k] = round($v + $row[$k], 2);
++            }
++        }
++
++        return ['as_of' => $asOf, 'rows' => $rows, 'totals' => $totals];
++    }
++}
+diff --git a/app/Services/Receipts/StatementPdf.php b/app/Services/Receipts/StatementPdf.php
+new file mode 100644
+index 0000000..0d4aec6
+--- /dev/null
++++ b/app/Services/Receipts/StatementPdf.php
+@@ -0,0 +1,38 @@
++<?php
++
++namespace App\Services\Receipts;
++
++/**
++ * Turns a statement into a PDF with dompdf, when it is installed
++ * (composer require dompdf/dompdf). Without it, statements are still emailed —
++ * the full statement is in the email body — and can be printed to PDF from the page.
++ */
++class StatementPdf
++{
++    public static function available(): bool
++    {
++        return class_exists(\Dompdf\Dompdf::class);
++    }
++
++    public function render(array $statement): ?string
++    {
++        if (! self::available()) {
++            return null;
++        }
++
++        $dompdf = new \Dompdf\Dompdf(['isRemoteEnabled' => false, 'defaultFont' => 'DejaVu Sans']);
++        $dompdf->loadHtml(view('clients.statement_pdf', ['statement' => $statement])->render(), 'UTF-8');
++        $dompdf->setPaper('A4', 'portrait');
++        $dompdf->render();
++
++        return $dompdf->output();
++    }
++
++    public static function filename(array $statement): string
++    {
++        $client = $statement['client'];
++        $name = preg_replace('/[^A-Za-z0-9]+/', '-', $client->business_name ?: $client->name ?: 'client');
++
++        return 'Statement-' . trim($name, '-') . '-' . ($statement['to'] ?? now())->format('Y-m-d') . '.pdf';
++    }
++}
+diff --git a/database/migrations/2026_10_10_090000_create_client_ledger_and_receivables_tables.php b/database/migrations/2026_10_10_090000_create_client_ledger_and_receivables_tables.php
+new file mode 100644
+index 0000000..e1cff5e
+--- /dev/null
++++ b/database/migrations/2026_10_10_090000_create_client_ledger_and_receivables_tables.php
+@@ -0,0 +1,129 @@
++<?php
++
++use Illuminate\Database\Migrations\Migration;
++use Illuminate\Database\Schema\Blueprint;
++use Illuminate\Support\Facades\DB;
++use Illuminate\Support\Facades\Schema;
++
++/**
++ * Client account, done properly.
++ *
++ *  client_ledger_entries  Every invoice, receipt, WHT/VAT/deduction and credit
++ *                         application is posted here once. Entries are never
++ *                         edited or deleted: a change posts a reversal (dated
++ *                         the day of the change) and a replacement, so a
++ *                         statement already sent never changes silently.
++ *                         Fill it after migrating with: php artisan client-ledger:sync
++ *  receipt_voids          A voided receipt's full record (reason, who, when, what it
++ *                         paid) — the receipt itself leaves the receipts table so
++ *                         every existing report stays correct without changes.
++ *  statement_sends        Who emailed which statement to whom.
++ *  clients.email          Where statements are sent.
++ *  clients.auto_apply_credit  Use unused credit on new invoices automatically.
++ *
++ * Safe to re-run: MySQL cannot roll back table changes, so if a previous run
++ * stopped half-way, anything already created is skipped.
++ */
++return new class extends Migration
++{
++    public function up(): void
++    {
++        if (! Schema::hasTable('client_ledger_entries')) {
++        Schema::create('client_ledger_entries', function (Blueprint $table) {
++            $table->id();
++            $table->unsignedBigInteger('client_id')->index();
++            $table->date('entry_date');
++            $table->string('kind', 20);              // invoice | receipt | wht | vat | deduction | credit_applied | reversal
++            $table->string('source_key', 60);        // invoice:12, receipt:7:money, receipt:7:wht, allocation:33 ...
++            $table->unsignedBigInteger('invoice_id')->nullable()->index();
++            $table->unsignedBigInteger('receipt_id')->nullable()->index();
++            $table->decimal('debit', 15, 2)->default(0);
++            $table->decimal('credit', 15, 2)->default(0);
++            $table->string('description');
++            $table->string('details', 500)->nullable();
++            $table->unsignedBigInteger('reverses_id')->nullable()->index();   // the entry this one cancels
++            $table->unsignedBigInteger('user_id')->nullable();
++            $table->timestamps();
++
++            $table->index(['client_id', 'entry_date', 'id']);
++            $table->index(['client_id', 'source_key']);
++        });
++        }
++
++        if (! Schema::hasTable('receipt_voids')) {
++        Schema::create('receipt_voids', function (Blueprint $table) {
++            $table->id();
++            $table->unsignedBigInteger('receipt_id')->index();     // the number it had (FWSSR…)
++            $table->unsignedBigInteger('client_id')->nullable()->index();
++            $table->decimal('amount', 15, 2)->default(0);           // money received on it
++            $table->string('reason', 500);
++            $table->unsignedBigInteger('voided_by')->nullable();
++            $table->json('snapshot');                               // receipt, allocations, collection, bank lines
++            $table->timestamps();
++        });
++        }
++
++        if (! Schema::hasTable('statement_sends')) {
++        Schema::create('statement_sends', function (Blueprint $table) {
++            $table->id();
++            $table->unsignedBigInteger('client_id')->index();
++            $table->string('sent_to', 500);
++            $table->date('period_from')->nullable();
++            $table->date('period_to')->nullable();
++            $table->decimal('closing_balance', 15, 2)->default(0);
++            $table->boolean('with_pdf')->default(false);
++            $table->unsignedBigInteger('user_id')->nullable();
++            $table->timestamps();
++        });
++        }
++
++        $this->withZeroDatesAllowed(function () {
++            Schema::table('clients', function (Blueprint $table) {
++                if (! Schema::hasColumn('clients', 'email')) {
++                    $table->string('email')->nullable()->after('phone_number');
++                }
++                if (! Schema::hasColumn('clients', 'auto_apply_credit')) {
++                    $table->boolean('auto_apply_credit')->default(true)->after('email');
++                }
++            });
++        });
++    }
++
++    public function down(): void
++    {
++        $this->withZeroDatesAllowed(function () {
++            Schema::table('clients', function (Blueprint $table) {
++                $table->dropColumn(['email', 'auto_apply_credit']);
++            });
++        });
++        Schema::dropIfExists('statement_sends');
++        Schema::dropIfExists('receipt_voids');
++        Schema::dropIfExists('client_ledger_entries');
++    }
++
++    /**
++     * Some older rows have created_at = '0000-00-00 00:00:00'. On MySQL/MariaDB
++     * versions that rebuild the table to add a column, strict mode re-checks
++     * every row and rejects those dates (error 1292). Allow them for this
++     * connection while the column is added, then restore the mode. No data
++     * is changed.
++     */
++    private function withZeroDatesAllowed(callable $change): void
++    {
++        $driver = DB::connection()->getDriverName();
++        if (! in_array($driver, ['mysql', 'mariadb'], true)) {
++            $change();
++
++            return;
++        }
++
++        $mode = DB::selectOne('SELECT @@SESSION.sql_mode AS mode')->mode;
++        $relaxed = implode(',', array_diff(explode(',', $mode), ['NO_ZERO_DATE', 'NO_ZERO_IN_DATE']));
++        DB::statement('SET SESSION sql_mode = ?', [$relaxed]);
++        try {
++            $change();
++        } finally {
++            DB::statement('SET SESSION sql_mode = ?', [$mode]);
++        }
++    }
++};
+diff --git a/docs/receipts-and-payments.md b/docs/receipts-and-payments.md
+index 31c8768..e3ce5ed 100644
+--- a/docs/receipts-and-payments.md
++++ b/docs/receipts-and-payments.md
+@@ -109,12 +109,20 @@ ## 5. Deploying
+    (`1` → `advance`, `0` → empty).
+ 3. `php artisan receipts:recompute` → review the CSV (especially *Completed but not fully paid*) → `--apply` with the
+    options you want.
+-4. Make sure every company account exists under *Accounts › Banks*.
+-5. Cheques/transfers received **before** this release are not in any bank balance unless they were deposited.
++4. `php artisan client-ledger:sync` — fills the client ledger from all existing invoices and receipts (dated on the
++   documents' own dates). Safe to re-run; afterwards it only posts what changed. It is also scheduled nightly at
++   02:10, so make sure the server cron runs `php artisan schedule:run` every minute.
++5. **PDF statements:** `composer require dompdf/dompdf` on the server. Without it, statements are still emailed (the
++   full statement is in the email body) and can be printed to PDF from the page.
++6. **Email:** set `MAIL_MAILER`, `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_FROM_ADDRESS` and
++   `MAIL_FROM_NAME` in `.env` (the default mailer only writes to the log). `APP_NAME` is printed on statements.
++7. Add client email addresses (client edit form) — or type one when sending; it is remembered.
++8. Make sure every company account exists under *Accounts › Banks*.
++9. Cheques/transfers received **before** this release are not in any bank balance unless they were deposited.
+    Undeposited old cheques still appear on Bank Deposit as "Old cheque to deposit". Old transfers need a one-off
+    manual bank adjustment if balances should include them.
+ 
+-**Testing note:** the suite (50 tests) passes on SQLite and on MariaDB 10.11. A *fresh* MySQL install of this project
++**Testing note:** the suite (66 tests; the PDF test runs once dompdf is installed) passes on SQLite and on MariaDB 10.11. A *fresh* MySQL install of this project
+ fails on the existing `create_expenses_table` migration (`->after()` inside `Schema::create`, and a foreign key to a
+ table created later). Existing databases are past that migration, so it only matters for new installs/CI.
+ 
+@@ -123,12 +131,10 @@ ## 5. Deploying
+ ## 6. Still open / suggested next
+ 
+ * **Bounced cheques.** A cheque is now in the bank balance as soon as it is receipted. If it bounces, edit or delete
+-  the receipt (that posts the reversal). A "cheque bounced" action that reverses the bank line and reopens the
++  the receipt (void it, giving the reason; that posts the reversals). A "cheque bounced" action that reverses the bank line and reopens the
+   invoice, keeping the receipt for the record, would be cleaner.
+ * **Receipts report timing buckets** (`App\Support\ReceiptReport`) still file a multi-invoice receipt under its first
+   invoice's month. Per-invoice "received to date" is already split correctly.
+-* **Client statement** showing invoices, allocations and credit in one place; auto-suggest credit when an invoice is raised.
+-* **Void instead of delete**, with reason and user, so receipts keep a full audit trail.
+ * Widen the remaining money columns (invoices, receipts, collections) to `decimal(15,2)`.
+ * `collections.total_amount` includes WHT and VAT, so it overstates cash held.
+ 
+@@ -161,7 +167,7 @@ ### What was wrong
+   and credit was invisible.
+ 
+ ### What it does now
+-`App\Services\Receipts\ClientStatement` builds the statement from the source documents:
++`App\Services\Receipts\ClientStatement` builds the statement from the client ledger, which is posted from the documents (see "Built" below):
+ * **Debit** each invoice. **Credit** each receipt once for the money received, plus separate lines for WHT, 7% VAT
+   withheld and deductions.
+ * **Credit applied** is an information line with no amount: it moves money between invoices, it doesn't change what the
+@@ -173,19 +179,40 @@ ### What it does now
+   that, the page says by how much and points to `receipts:recompute --client=…`.
+ * The client page summary uses the same figures.
+ 
+-### Better approach (proposal)
+-1. **One source of truth for the client account.** Retire the `transactions` table as a reporting source: it duplicates
+-   the allocation lines and is what the old statement misread. Keep it written for a release, then remove the
+-   *Transactions* tab in favour of the statement.
+-2. **Post a client ledger, don't recompute it.** When volumes grow, have every document post immutable entries to a
+-   `client_ledger` table (invoice → debit; receipt → credit; WHT/VAT/deduction → credit; edit/void → reversal entry).
+-   The statement becomes one ordered query, periods can be closed, and nothing can be "re-read" wrongly. The rules in
+-   `ClientStatement` are exactly the posting rules, so this is a mechanical next step.
+-3. **Apply credit automatically** when an invoice is raised (oldest credit first, switchable per client), so credit
+-   never sits unused and "paid on" dates are consistent.
+-4. **Send the statement** — PDF/email to the client with the open-invoice list, and a company-wide **aged receivables**
+-   report (0–30 / 31–60 / 61–90 / 90+ days) built on the same open-invoice figures.
+-5. **Void, don't delete** receipts, so statements already sent never change silently.
++### Built: the better approach
++
++**1. One source of truth — the client ledger** (`client_ledger_entries`, `ClientLedger`).
++Every invoice, receipt, WHT/VAT/deduction and credit application is posted once as a permanent entry. Entries are
++never edited or deleted. When a document changes, the old entry gets a **reversal dated the day of the change** and
++the corrected entry is posted the same day ("Corrected entry, document dated 20 Aug 2026"). So:
++* a statement already sent for August reads exactly the same in December;
++* the correction is visible on the statement for the period it happened in;
++* the ledger is synced at the end of every invoice/receipt change, before every statement is shown, and nightly — it
++  cannot drift from the documents, and the self-check still compares it with the invoice-by-invoice position.
++
++**2. Transactions table retired as a source.** The client page's *Transactions* tab is now *Account*, showing the
++ledger lines. The *Transactions* menu page carries a notice pointing to Aged receivables. Rows are still written for
++one more release, then the table, its page and `TransactionController` can be removed.
++
++**3. Credit applied automatically.** When an invoice is raised (new or duplicated), unused credit is applied to it,
++oldest credit first, and the confirmation message says how much. Each client has a
++*"Use unused credit on new invoices automatically"* switch (on by default) on the client form. The receipt page's
++*Apply credit* form uses the same rules for manual cases.
++
++**4. Statements sent to clients, and aged receivables.**
++* Statement page → **Email**: To (pre-filled from the client's email), Cc, optional message. The email body is the full
++  statement; the PDF is attached when dompdf is installed (and there is a **PDF** download button). Every send is
++  logged (who, to whom, period, balance) and the last five are shown on the page.
++* **Receipts › Aged receivables** (`/receivables/aged`): every client's owed amount split into *not yet due*,
++  *1–30*, *31–60*, *61–90*, *over 90 days* overdue (from the invoice due date), with unused credit netted off, totals,
++  office filter, Excel export and a link to each statement. Branch users see their own office only.
++
++**5. Void, don't delete.** The receipt list's *Delete* is now **Void** (asks for a reason), and the receipt page has a
++*Void* button with a reason box. Voiding keeps a full copy in `receipt_voids` (*Receipts › Voided*), reverses
++cheque/transfer money out of the bank, reopens the invoices it paid and posts ledger reversals dated today with the
++reason. The receipt leaves the receipts table, so every existing report keeps working unchanged.
++Invoices with payments recorded against them can no longer be deleted (void the receipts first), and changing an
++invoice's total re-derives its status and posts the correction.
+ 
+ ---
+ 
+@@ -204,3 +231,10 @@ ## Code map
+ | `tests/Feature/ReceiptRecomputeCommandTest.php` | The repair command |
+ | `app/Services/Receipts/ClientStatement.php` | Statement of account and client page summary |
+ | `tests/Feature/ClientStatementTest.php` | Credit applied once, VAT/WHT credited, CR balance, advances, date range, self-check |
++| `app/Services/Receipts/ClientLedger.php` + `client-ledger:sync` | Permanent client account entries, reversals, nightly safety net |
++| `app/Services/Receipts/CreditApplier.php` | Manual and automatic use of client credit |
++| `app/Services/Receipts/ReceiptVoider.php` | Void with reason, archive, reversals |
++| `app/Services/Receipts/ReceivablesAging.php` | Aged receivables report |
++| `app/Services/Receipts/StatementPdf.php`, `app/Mail/StatementOfAccountMail.php` | Statement PDF and email |
++| `app/Http/Controllers/ClientAccountController.php` | Email/PDF statement, aged receivables |
++| `tests/Feature/ClientLedgerAndReceivablesTest.php`, `tests/Feature/StatementPdfTest.php` | Ledger, corrections, void, auto-credit, email, PDF, aged report, office scope |
+diff --git a/resources/views/clients/create.blade.php b/resources/views/clients/create.blade.php
+index 0c6db33..d927374 100644
+--- a/resources/views/clients/create.blade.php
++++ b/resources/views/clients/create.blade.php
+@@ -423,6 +423,23 @@ class="form-control @error('phone_number1') is-invalid @enderror"
+                             @enderror
+                         </div>
+                     </div>
++                    <div class="row g-6 mt-1">
++                        <div class="col mb-0">
++                            <label for="email" class="form-label"> {{ __('Email (for statements)') }} </label>
++                            <input type="email" id="email" name="email" class="form-control @error('email') is-invalid @enderror"
++                                value="{{ old('email', '') }}" placeholder="accounts@client.com" autocomplete="email">
++                            @error('email')
++                            <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
++                            @enderror
++                        </div>
++                        <div class="col mb-0 d-flex align-items-end">
++                            <div class="form-check">
++                                <input type="hidden" name="auto_apply_credit" value="0">
++                                <input class="form-check-input" type="checkbox" name="auto_apply_credit" value="1" id="auto_apply_credit" {{ old('auto_apply_credit', true) ? 'checked' : '' }}>
++                                <label class="form-check-label" for="auto_apply_credit"> Use unused credit on new invoices automatically </label>
++                            </div>
++                        </div>
++                    </div>
+                     <div class="row g-6">
+                         <div class="col mb-0">
+                             <label for="business_name" class="form-label"> {{ __('Business Name') }} </label>
+diff --git a/resources/views/clients/edit.blade.php b/resources/views/clients/edit.blade.php
+index 06540f4..d8b595b 100644
+--- a/resources/views/clients/edit.blade.php
++++ b/resources/views/clients/edit.blade.php
+@@ -433,6 +433,23 @@ class="form-control @error('phone_number') is-invalid @enderror"
+                             @enderror
+                         </div>
+                     </div>
++                    <div class="row g-6 mt-1">
++                        <div class="col mb-0">
++                            <label for="email" class="form-label"> {{ __('Email (for statements)') }} </label>
++                            <input type="email" id="email" name="email" class="form-control @error('email') is-invalid @enderror"
++                                value="{{ old('email', $client->email) }}" placeholder="accounts@client.com" autocomplete="email">
++                            @error('email')
++                            <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
++                            @enderror
++                        </div>
++                        <div class="col mb-0 d-flex align-items-end">
++                            <div class="form-check">
++                                <input type="hidden" name="auto_apply_credit" value="0">
++                                <input class="form-check-input" type="checkbox" name="auto_apply_credit" value="1" id="auto_apply_credit" {{ old('auto_apply_credit', $client->auto_apply_credit ?? true) ? 'checked' : '' }}>
++                                <label class="form-check-label" for="auto_apply_credit"> Use unused credit on new invoices automatically </label>
++                            </div>
++                        </div>
++                    </div>
+                     <div class="row mt-4">
+                         <div class="col mb-0">
+                             <label for="business_name" class="form-label"> {{ __('Business Name') }} </label>
+diff --git a/resources/views/clients/partials/statement_document.blade.php b/resources/views/clients/partials/statement_document.blade.php
+new file mode 100644
+index 0000000..4369670
+--- /dev/null
++++ b/resources/views/clients/partials/statement_document.blade.php
+@@ -0,0 +1,93 @@
++{{--
++    The statement as a plain document (inline styles only) — used for the email
++    body and the PDF, so both always show the same thing as the page.
++--}}
++@php
++    $st = $statement;
++    $c = $st['client'];
++    $money = fn ($v) => \App\Services\Receipts\ClientStatement::money((float) $v);
++    $label = ['invoice' => 'Invoice', 'receipt' => 'Payment', 'wht' => 'WHT', 'vat' => 'VAT 7%', 'deduction' => 'Deduction', 'credit_applied' => 'Credit applied', 'reversal' => 'Correction'];
++    $cell = 'padding:5px 6px;border-bottom:1px solid #e5e7eb;vertical-align:top;';
++    $num = $cell . 'text-align:right;white-space:nowrap;';
++@endphp
++<div style="font-family:'DejaVu Sans',Arial,Helvetica,sans-serif;font-size:11px;color:#1f2937;">
++    <table style="width:100%;border-collapse:collapse;margin-bottom:12px;">
++        <tr>
++            <td style="vertical-align:top;">
++                <div style="font-size:18px;font-weight:bold;">Statement of Account</div>
++                <div style="margin-top:4px;font-weight:bold;">{{ $c->business_name ?: $c->name }}</div>
++                @if($c->business_name && $c->name !== $c->business_name)<div>{{ $c->name }}</div>@endif
++                <div style="color:#6b7280;">{{ $c->address }} {{ $c->phone_number ? '· ' . $c->phone_number : '' }}</div>
++            </td>
++            <td style="vertical-align:top;text-align:right;color:#374151;">
++                <div>{{ config('app.name') }}</div>
++                <div>Period: {{ $st['from'] ? $st['from']->format('d M Y') : 'start' }} – {{ ($st['to'] ?? now())->format('d M Y') }}</div>
++                <div>Issued: {{ now()->format('d M Y') }}</div>
++            </td>
++        </tr>
++    </table>
++
++    <table style="width:100%;border-collapse:collapse;margin-bottom:14px;">
++        <tr>
++            <td style="{{ $cell }}">Opening balance</td><td style="{{ $num }}">{{ $money($st['opening']) }}</td>
++            <td style="{{ $cell }}">Invoiced</td><td style="{{ $num }}">{{ number_format($st['invoiced'], 2) }}</td>
++            <td style="{{ $cell }}">Received</td><td style="{{ $num }}">{{ number_format($st['received'], 2) }}</td>
++            <td style="{{ $cell }}">WHT / VAT / deductions</td><td style="{{ $num }}">{{ number_format($st['withheld'], 2) }}</td>
++        </tr>
++        <tr>
++            <td style="{{ $cell }}font-weight:bold;font-size:13px;" colspan="6">Balance {{ $st['closing'] < 0 ? '(in credit)' : 'due' }}</td>
++            <td style="{{ $num }}font-weight:bold;font-size:13px;" colspan="2">GH₵ {{ $money($st['closing']) }}</td>
++        </tr>
++    </table>
++
++    <table style="width:100%;border-collapse:collapse;">
++        <thead>
++            <tr style="background:#f3f4f6;">
++                <th style="{{ $cell }}text-align:left;">Date</th>
++                <th style="{{ $cell }}text-align:left;">Type</th>
++                <th style="{{ $cell }}text-align:left;">Description</th>
++                <th style="{{ $num }}">Debit</th>
++                <th style="{{ $num }}">Credit</th>
++                <th style="{{ $num }}">Balance</th>
++            </tr>
++        </thead>
++        <tbody>
++            <tr>
++                <td style="{{ $cell }}color:#6b7280;">{{ $st['from'] ? $st['from']->format('d M Y') : '' }}</td>
++                <td style="{{ $cell }}"></td>
++                <td style="{{ $cell }}color:#6b7280;">Opening balance</td>
++                <td style="{{ $num }}"></td><td style="{{ $num }}"></td>
++                <td style="{{ $num }}">{{ $money($st['opening']) }}</td>
++            </tr>
++            @foreach($st['lines'] as $line)
++            <tr>
++                <td style="{{ $cell }}">{{ $line['date']->format('d M Y') }}</td>
++                <td style="{{ $cell }}">{{ $label[$line['kind']] ?? $line['kind'] }}</td>
++                <td style="{{ $cell }}">{{ $line['description'] }}@if($line['details'])<div style="color:#6b7280;font-size:10px;">{{ $line['details'] }}</div>@endif</td>
++                <td style="{{ $num }}">{{ $line['debit'] > 0 ? number_format($line['debit'], 2) : '' }}</td>
++                <td style="{{ $num }}">{{ $line['credit'] > 0 ? number_format($line['credit'], 2) : '' }}</td>
++                <td style="{{ $num }}">{{ $line['kind'] === 'credit_applied' ? '' : $money($line['balance']) }}</td>
++            </tr>
++            @endforeach
++        </tbody>
++    </table>
++
++    @if($st['open_invoices']->isNotEmpty())
++    <div style="margin-top:16px;font-weight:bold;">Invoices still open</div>
++    <table style="width:100%;border-collapse:collapse;margin-top:4px;">
++        @foreach($st['open_invoices'] as $inv)
++        <tr>
++            <td style="{{ $cell }}">FWSSi{{ $inv->id }} — {{ $inv->invoice_month?->format('F Y') }}</td>
++            <td style="{{ $cell }}color:#6b7280;">{{ $inv->due_date ? 'due ' . \Carbon\Carbon::parse($inv->due_date)->format('d M Y') : '' }}{{ $inv->days_overdue ? ' · ' . $inv->days_overdue . ' days overdue' : '' }}</td>
++            <td style="{{ $num }}">{{ number_format($inv->outstanding, 2) }}</td>
++        </tr>
++        @endforeach
++    </table>
++    @endif
++
++    @if($st['credit_receipts']->isNotEmpty())
++    <div style="margin-top:12px;color:#374151;">Unused credit on your account: <strong>GH₵ {{ number_format($st['credit_receipts']->sum('unapplied_amount'), 2) }}</strong> — it will be used on your next invoice.</div>
++    @endif
++
++    <div style="margin-top:16px;color:#6b7280;font-size:10px;">"CR" means you have paid ahead and are in credit. Please contact us if anything on this statement does not match your records.</div>
++</div>
+diff --git a/resources/views/clients/show.blade.php b/resources/views/clients/show.blade.php
+index cd252a2..684508a 100644
+--- a/resources/views/clients/show.blade.php
++++ b/resources/views/clients/show.blade.php
+@@ -434,8 +434,8 @@ class="nav-link active"
+                                 aria-controls="navs-justified-home"
+                                 aria-selected="true">
+                                 <span class="d-none d-sm-inline-flex align-items-center">
+-                                    <i class="icon-base bx bx-bxs-receipt icon-sm me-1_5"></i>Transactions
+-                                    <span class="badge rounded-pill badge-center h-px-20 w-px-20 bg-label-danger ms-1_5">{{$transactionsCount}}</span>
++                                    <i class="icon-base bx bx-bxs-receipt icon-sm me-1_5"></i>Account
++                                    <span class="badge rounded-pill badge-center h-px-20 w-px-20 bg-label-danger ms-1_5">{{ count($account['lines']) }}</span>
+                                 </span>
+                                 <i class="icon-base bx bx-bxs-receipt icon-sm d-sm-none"></i>
+                             </button>
+@@ -447,76 +447,30 @@ class="nav-link active"
+ 
+                         <div class="tab-pane fade show active" id="navs-justified-home" role="tabpanel">
+                             <div class="table-responsive text-normal-dark"> 
++                                {{-- Account lines from the client ledger (the old transactions table is no longer read here). --}}
+                                 <table id="myTabletrans" class="display">
+                                     <thead>
+                                         <tr>
+-                                            <!-- <th>#</th> -->
+-                                            <th>Invoice No.</th>
+-
+-                                            <th>Client Name</th>
+-                                            <th>Invoice Amount </th>
+-                                            <th> Invoice Month </th>
+-
+-                                            <th>Receipt No.</th>
+-                                            <th>Receipt Amount</th>
+-                                            <th>Receipt WHT </th>
+-                                            <th> VAT 7% </th>
+-                                            <th>Receipt WHT Amount</th>
+-                                            <th> Mode </th>
+-                                            <th>Receipt Month</th>
+-
+-                                            <th> Date </th>
++                                            <th>Date</th>
++                                            <th>Type</th>
++                                            <th>Description</th>
++                                            <th>Details</th>
++                                            <th>Debit</th>
++                                            <th>Credit</th>
+                                             <th>Balance</th>
+-                                            <th> Status </th>
+                                         </tr>
+                                     </thead>
+-                                    <tbody class="table-border-bottom-0">
+-                                        @foreach($transactions as $transaction)
+-
++                                    <tbody>
++                                        @foreach($account['lines'] as $line)
+                                         <tr>
+-                                            <td> FWSSi{{$transaction->invoice_id}} </td>
+-                                            <td> {{$transaction->client->name}} {{$transaction->client->business_name}}</td>
+-                                            <td> {{number_format($transaction->invoice_amount, 2)}} </td>
+-                                            <td> {{$transaction->invoice?->invoice_month?->format('F, Y')}} </td>
+-
+-                                            <td> FWSSR{{$transaction->receipt_id}} </td>
+-                                            <td>{{number_format($transaction->receipt_amount, 2 )}} </td>
+-                                            <td>{{number_format($transaction->receipt?->wht_amount, 2 )}} </td>
+-                                            <td>{{number_format($transaction->receipt?->vat7_value, 2 )}} </td>
+-                                            <td>{{number_format($transaction->receipt?->amount_received, 2)}} </td>
+-                                            <td> 
+-                                                @if ($transaction->receipt?->cheque_amount > 0.00)
+-                                                   <strong>  Cheque : {{ $transaction->receipt?->cheque_reference }} {{ $transaction->receipt?->cheque_bank }}  </strong>  
+-                                                @endif
+-                                                <br>
+-
+-                                                @if ($transaction->receipt?->transfer_amount > 0.00)
+-                                                    <strong> Transfer : {{ $transaction->receipt?->transfer_reference }} {{ $transaction->receipt?->transfer_bank }} </strong>  
+-                                                @endif
+-                                                <br>
+-
+-                                                @if ($transaction->receipt?->momo_amount > 0.00)
+-                                                    <strong> MoMo : {{ $transaction->receipt?->momo_transactin_id }} </strong>  
+-                                                @endif
+-                                                <br>
+-
+-                                                @if ($transaction->receipt?->cash_amount > 0.00)
+-                                                    <strong> Cash </strong>  
+-                                                @endif
+-                                                <br>
+-
+-                                            </td>
+-                                            <td> {{$transaction->receipt?->receipt_month?->format('F, Y')}} </td>
+-
+-                                            <td> {{$transaction->created_at?->format('F l d, Y, H:i A')}} </td>
+-                                            <td> {{number_format($transaction->balance,2)}} </td>
+-                                            @if($transaction->status == 'completed')
+-                                            <td> <span class="badge bg-label-success"> {{$transaction->status}} </span> </td>
+-                                            @else
+-                                            <td> <span class="badge bg-label-danger"> {{$transaction->status}} </span> </td>
+-                                            @endif
++                                            <td data-order="{{ $line['date']->format('Y-m-d') }}">{{ $line['date']->format('d M Y') }}</td>
++                                            <td>{{ ['invoice' => 'Invoice', 'receipt' => 'Payment', 'wht' => 'WHT', 'vat' => 'VAT 7%', 'deduction' => 'Deduction', 'credit_applied' => 'Credit applied', 'reversal' => 'Correction'][$line['kind']] ?? $line['kind'] }}</td>
++                                            <td>@if($line['link'])<a href="{{ $line['link'] }}">{{ $line['description'] }}</a>@else{{ $line['description'] }}@endif</td>
++                                            <td class="small">{{ $line['details'] }}</td>
++                                            <td class="text-end">{{ $line['debit'] > 0 ? number_format($line['debit'], 2) : '' }}</td>
++                                            <td class="text-end">{{ $line['credit'] > 0 ? number_format($line['credit'], 2) : '' }}</td>
++                                            <td class="text-end">{{ $line['kind'] === 'credit_applied' ? '' : \App\Services\Receipts\ClientStatement::money($line['balance']) }}</td>
+                                         </tr>
+-
+                                         @endforeach
+                                     </tbody>
+                                 </table>
+@@ -551,6 +505,7 @@ class="nav-link active"
+     <script>
+         new DataTable('#myTabletrans', {
+             responsive: true,
++            ordering: false,   // keep date order so the running balance reads correctly
+ 
+             layout: {
+                 topStart: {
+diff --git a/resources/views/clients/statement.blade.php b/resources/views/clients/statement.blade.php
+index 53c3bd5..0ae7b46 100644
+--- a/resources/views/clients/statement.blade.php
++++ b/resources/views/clients/statement.blade.php
+@@ -357,8 +357,8 @@
+     @php
+         $money = fn ($v) => \App\Services\Receipts\ClientStatement::money((float) $v);
+         $st = $statement;
+-        $kindBadge = ['invoice' => 'bg-label-danger', 'receipt' => 'bg-label-success', 'wht' => 'bg-label-info', 'vat' => 'bg-label-info', 'deduction' => 'bg-label-warning', 'credit_applied' => 'bg-label-secondary'];
+-        $kindLabel = ['invoice' => 'Invoice', 'receipt' => 'Payment', 'wht' => 'WHT', 'vat' => 'VAT 7%', 'deduction' => 'Deduction', 'credit_applied' => 'Credit applied'];
++        $kindBadge = ['invoice' => 'bg-label-danger', 'receipt' => 'bg-label-success', 'wht' => 'bg-label-info', 'vat' => 'bg-label-info', 'deduction' => 'bg-label-warning', 'credit_applied' => 'bg-label-secondary', 'reversal' => 'bg-label-dark'];
++        $kindLabel = ['invoice' => 'Invoice', 'receipt' => 'Payment', 'wht' => 'WHT', 'vat' => 'VAT 7%', 'deduction' => 'Deduction', 'credit_applied' => 'Credit applied', 'reversal' => 'Correction'];
+     @endphp
+     <style>
+         .st-num { font-variant-numeric: tabular-nums; white-space: nowrap; text-align: right; }
+@@ -387,10 +387,50 @@
+                 <div><label class="form-label small mb-0" for="to">To</label><input type="date" id="to" name="to" class="form-control form-control-sm" value="{{ request('to') }}"></div>
+                 <button class="btn btn-sm btn-primary" type="submit">Apply</button>
+                 <a class="btn btn-sm btn-outline-secondary" href="{{ url('clientStatement', $client->id) }}">All</a>
++                <a class="btn btn-sm btn-outline-secondary" href="{{ route('receivables.aged') }}">Aged receivables</a>
+                 <button class="btn btn-sm btn-outline-secondary" type="button" onclick="window.print()"><i class="bx bx-printer"></i> Print</button>
++                @if($pdfAvailable)
++                <a class="btn btn-sm btn-outline-secondary" href="{{ route('client.statement.pdf', ['client' => $client->id, 'from' => request('from'), 'to' => request('to')]) }}"><i class="bx bxs-file-pdf"></i> PDF</a>
++                @endif
++                <button class="btn btn-sm btn-info" type="button" data-bs-toggle="collapse" data-bs-target="#emailBox"><i class="bx bx-envelope"></i> Email</button>
+             </form>
+         </div>
+ 
++        @include('flash-messages')
++
++        <div class="collapse st-noprint mb-4 {{ $errors->has('to') ? 'show' : '' }}" id="emailBox">
++            <div class="card border border-info"><div class="card-body">
++                <form method="POST" action="{{ route('client.statement.email', $client->id) }}" class="row g-3">
++                    @csrf
++                    <input type="hidden" name="from" value="{{ request('from') }}">
++                    <input type="hidden" name="period_to" value="{{ request('to') }}">
++                    <div class="col-md-6">
++                        <label class="form-label" for="st_to">To</label>
++                        <input type="text" class="form-control" id="st_to" name="to" value="{{ old('to', $client->email) }}" placeholder="accounts@client.com" required>
++                    </div>
++                    <div class="col-md-6">
++                        <label class="form-label" for="st_cc">Cc <small class="text-muted">(optional, comma separated)</small></label>
++                        <input type="text" class="form-control" id="st_cc" name="cc" value="{{ old('cc') }}">
++                    </div>
++                    <div class="col-12">
++                        <label class="form-label" for="st_note">Message <small class="text-muted">(optional — a standard greeting is used if empty)</small></label>
++                        <textarea class="form-control" id="st_note" name="note" rows="3">{{ old('note') }}</textarea>
++                    </div>
++                    <div class="col-12 d-flex flex-wrap gap-3 align-items-center">
++                        <button class="btn btn-info" type="submit"><i class="bx bx-send"></i> Send statement for this period</button>
++                        <small class="text-muted">{{ $pdfAvailable ? 'A PDF copy is attached.' : 'The full statement is in the email body (install dompdf to also attach a PDF).' }}</small>
++                    </div>
++                </form>
++                @if($sends->isNotEmpty())
++                <hr>
++                <div class="small text-muted mb-1">Recently sent</div>
++                @foreach($sends as $send)
++                    <div class="small">{{ $send->created_at->format('d M Y H:i') }} — {{ $send->sent_to }} — balance {{ \App\Services\Receipts\ClientStatement::money($send->closing_balance) }} — by {{ $send->user?->name }}</div>
++                @endforeach
++                @endif
++            </div></div>
++        </div>
++
+         @if ($errors->any())
+             <div class="alert alert-danger st-noprint"><ul class="mb-0">@foreach ($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>
+         @endif
+@@ -412,6 +452,9 @@
+                         <dt>Invoiced</dt><dd>{{ number_format($st['invoiced'], 2) }}</dd>
+                         <dt>Money received</dt><dd>({{ number_format($st['received'], 2) }})</dd>
+                         <dt>WHT / VAT / deductions</dt><dd>({{ number_format($st['withheld'], 2) }})</dd>
++                        @if(abs($st['corrections']) > 0.004)
++                        <dt>Corrections / voids</dt><dd>{{ $st['corrections'] < 0 ? '(' . number_format(-$st['corrections'], 2) . ')' : number_format($st['corrections'], 2) }}</dd>
++                        @endif
+                         <dt class="fw-bold">Closing balance</dt><dd class="fw-bold fs-5">GH&#8373; {{ $money($st['closing']) }}</dd>
+                     </dl>
+                     <small class="text-muted">"CR" means the client has paid ahead and is in credit.</small>
+@@ -487,8 +530,8 @@
+                     <tfoot>
+                         <tr class="fw-bold">
+                             <td colspan="4">Closing balance</td>
+-                            <td class="st-num">{{ number_format($st['invoiced'], 2) }}</td>
+-                            <td class="st-num">{{ number_format($st['received'] + $st['withheld'], 2) }}</td>
++                            <td class="st-num">{{ number_format(collect($st['lines'])->sum('debit'), 2) }}</td>
++                            <td class="st-num">{{ number_format(collect($st['lines'])->sum('credit'), 2) }}</td>
+                             <td class="st-num">{{ $money($st['closing']) }}</td>
+                         </tr>
+                     </tfoot>
+diff --git a/resources/views/clients/statement_pdf.blade.php b/resources/views/clients/statement_pdf.blade.php
+new file mode 100644
+index 0000000..f5d1efa
+--- /dev/null
++++ b/resources/views/clients/statement_pdf.blade.php
+@@ -0,0 +1,10 @@
++<!doctype html>
++<html>
++<head>
++    <meta charset="utf-8">
++    <style>@page { margin: 18mm 14mm; } body { margin: 0; }</style>
++</head>
++<body>
++    @include('clients.partials.statement_document', ['statement' => $statement])
++</body>
++</html>
+diff --git a/resources/views/emails/statement.blade.php b/resources/views/emails/statement.blade.php
+new file mode 100644
+index 0000000..7b74c84
+--- /dev/null
++++ b/resources/views/emails/statement.blade.php
+@@ -0,0 +1,11 @@
++<!doctype html>
++<html>
++<body style="margin:0;padding:16px;background:#ffffff;">
++    @if($note)
++        <p style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#1f2937;white-space:pre-line;">{{ $note }}</p>
++    @else
++        <p style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#1f2937;">Dear {{ $statement['client']->name ?: 'Sir/Madam' }},<br><br>Please find your statement of account below{{ \App\Services\Receipts\StatementPdf::available() ? ' and attached as a PDF' : '' }}.</p>
++    @endif
++    @include('clients.partials.statement_document', ['statement' => $statement])
++</body>
++</html>
+diff --git a/resources/views/partials/receipt_side_nav.blade.php b/resources/views/partials/receipt_side_nav.blade.php
+index f92665e..4c5997a 100644
+--- a/resources/views/partials/receipt_side_nav.blade.php
++++ b/resources/views/partials/receipt_side_nav.blade.php
+@@ -100,6 +100,16 @@
+                 <div class="text-truncate" data-i18n="RList">List</div>
+                 </a>
+             </li>
++            <li class="menu-item {{ request()->is('receivables*') ? 'active' : '' }}">
++                <a href="{{ route('receivables.aged') }}" class="menu-link">
++                <div class="text-truncate" data-i18n="RAged">Aged receivables</div>
++                </a>
++            </li>
++            <li class="menu-item {{ request()->is('receipt-voided') ? 'active' : '' }}">
++                <a href="{{ route('receipt.voided') }}" class="menu-link">
++                <div class="text-truncate" data-i18n="RVoided">Voided</div>
++                </a>
++            </li>
+             <li class="menu-item {{ request()->is('receipt-multi*') ? 'active' : '' }}">
+                 <a href="{{ route('receipt.multi.create') }}" class="menu-link">
+                 <div class="text-truncate" data-i18n="RMulti">Pay Multiple Invoices</div>
+diff --git a/resources/views/receivables/aged.blade.php b/resources/views/receivables/aged.blade.php
+new file mode 100644
+index 0000000..6abe1c5
+--- /dev/null
++++ b/resources/views/receivables/aged.blade.php
+@@ -0,0 +1,110 @@
++<x-sales-dashboard>
++
++    @section('side_nav')
++        @include('partials.receipt_side_nav')
++    @endsection
++
++    @section('css')
++    <link rel="stylesheet" href="https://cdn.datatables.net/2.3.3/css/dataTables.dataTables.css" />
++    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/3.2.4/css/buttons.dataTables.css">
++    <style>
++        .ag-num { font-variant-numeric: tabular-nums; white-space: nowrap; text-align: right; }
++        .ag-hot { color: var(--bs-danger, #ff3e1d); font-weight: 600; }
++        .ag-tile { border-left: 3px solid var(--bs-primary, #696cff); }
++        .ag-tile.warn { border-left-color: var(--bs-warning, #ffab00); }
++        .ag-tile.bad { border-left-color: var(--bs-danger, #ff3e1d); }
++    </style>
++    @endsection
++
++    @section('content')
++    @php $b = \App\Services\Receipts\ReceivablesAging::BUCKETS; $t = $report['totals']; @endphp
++    <div class="container-xxl flex-grow-1 container-p-y">
++        <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
++            <div>
++                <h3 class="text-primary mb-1"><i class="bx bx-time-five me-1"></i> Aged receivables</h3>
++                <div class="text-muted small">What each client still owes, by how long it is overdue · as of {{ $report['as_of']->format('d M Y') }}</div>
++            </div>
++            @if($fields->count() > 1)
++            <form method="GET" class="d-flex gap-2 align-items-end">
++                <div>
++                    <label class="form-label small mb-0" for="field">Office</label>
++                    <select class="form-select form-select-sm" name="field" id="field" onchange="this.form.submit()">
++                        <option value="">All offices</option>
++                        @foreach($fields as $f)
++                            <option value="{{ $f->id }}" {{ (int) $fieldId === $f->id ? 'selected' : '' }}>{{ $f->name }}</option>
++                        @endforeach
++                    </select>
++                </div>
++            </form>
++            @endif
++        </div>
++
++        <div class="row g-3 mb-4">
++            <div class="col-6 col-lg"><div class="card ag-tile"><div class="card-body py-3"><div class="small text-muted">Owed in total</div><div class="fs-5 fw-bold ag-num text-start">{{ number_format($t['owed'], 2) }}</div></div></div></div>
++            <div class="col-6 col-lg"><div class="card ag-tile"><div class="card-body py-3"><div class="small text-muted">{{ $b['current'] }}</div><div class="fs-5 ag-num text-start">{{ number_format($t['current'], 2) }}</div></div></div></div>
++            <div class="col-6 col-lg"><div class="card ag-tile warn"><div class="card-body py-3"><div class="small text-muted">Overdue up to 60 days</div><div class="fs-5 ag-num text-start">{{ number_format($t['d30'] + $t['d60'], 2) }}</div></div></div></div>
++            <div class="col-6 col-lg"><div class="card ag-tile bad"><div class="card-body py-3"><div class="small text-muted">Overdue over 60 days</div><div class="fs-5 ag-num text-start ag-hot">{{ number_format($t['d90'] + $t['d90plus'], 2) }}</div></div></div></div>
++            <div class="col-6 col-lg"><div class="card ag-tile"><div class="card-body py-3"><div class="small text-muted">Unused client credit</div><div class="fs-5 ag-num text-start">{{ number_format($t['credit'], 2) }}</div></div></div></div>
++        </div>
++
++        <div class="card">
++            <div class="table-responsive">
++                <table id="agedTable" class="table table-sm mb-0">
++                    <thead>
++                        <tr>
++                            <th>Client</th>
++                            <th>Office</th>
++                            <th class="text-end">Invoices</th>
++                            @foreach($b as $label)<th class="text-end">{{ $label }}</th>@endforeach
++                            <th class="text-end">Owed</th>
++                            <th class="text-end">Credit</th>
++                            <th class="text-end">Net</th>
++                        </tr>
++                    </thead>
++                    <tbody>
++                    @foreach($report['rows'] as $row)
++                        <tr>
++                            <td><a href="{{ url('clientStatement', $row['client_id']) }}">{{ $row['client'] }}</a>@if($row['contact'] && $row['contact'] !== $row['client'])<div class="small text-muted">{{ $row['contact'] }}</div>@endif</td>
++                            <td>{{ $row['field'] }}</td>
++                            <td class="ag-num">{{ $row['invoices'] }}</td>
++                            @foreach(array_keys($b) as $k)
++                                <td class="ag-num {{ in_array($k, ['d90', 'd90plus']) && $row[$k] > 0 ? 'ag-hot' : '' }}" data-order="{{ $row[$k] }}">{{ $row[$k] > 0 ? number_format($row[$k], 2) : '' }}</td>
++                            @endforeach
++                            <td class="ag-num" data-order="{{ $row['owed'] }}">{{ number_format($row['owed'], 2) }}</td>
++                            <td class="ag-num" data-order="{{ $row['credit'] }}">{{ $row['credit'] > 0 ? number_format($row['credit'], 2) : '' }}</td>
++                            <td class="ag-num fw-bold" data-order="{{ $row['net'] }}">{{ \App\Services\Receipts\ClientStatement::money($row['net']) }}</td>
++                        </tr>
++                    @endforeach
++                    </tbody>
++                    <tfoot>
++                        <tr class="fw-bold">
++                            <td colspan="3">Total ({{ $report['rows']->count() }} clients)</td>
++                            @foreach(array_keys($b) as $k)<td class="ag-num">{{ number_format($t[$k], 2) }}</td>@endforeach
++                            <td class="ag-num">{{ number_format($t['owed'], 2) }}</td>
++                            <td class="ag-num">{{ number_format($t['credit'], 2) }}</td>
++                            <td class="ag-num">{{ \App\Services\Receipts\ClientStatement::money($t['net']) }}</td>
++                        </tr>
++                    </tfoot>
++                </table>
++            </div>
++        </div>
++        <p class="small text-muted mt-2">Owed = invoice total less everything paid against it (same figure as the statement of account). Overdue days count from the invoice due date. Click a client for their statement.</p>
++    </div>
++    @endsection
++
++    @section('scripts')
++    <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
++    <script src="https://cdn.datatables.net/2.3.3/js/dataTables.js"></script>
++    <script src="https://cdn.datatables.net/buttons/3.2.4/js/dataTables.buttons.js"></script>
++    <script src="https://cdn.datatables.net/buttons/3.2.4/js/buttons.dataTables.js"></script>
++    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
++    <script src="https://cdn.datatables.net/buttons/3.2.4/js/buttons.html5.min.js"></script>
++    <script>
++        new DataTable('#agedTable', {
++            order: [[{{ 3 + count($b) + 2 }}, 'desc']],
++            pageLength: 50,
++            layout: { topStart: { buttons: [{ extend: 'excelHtml5', text: 'Export to Excel', className: 'btn btn-secondary btn-sm', title: 'Aged receivables {{ $report['as_of']->format('Y-m-d') }}', footer: true }] } }
++        });
++    </script>
++    @endsection
++</x-sales-dashboard>
+diff --git a/resources/views/sales/receipt_show.blade.php b/resources/views/sales/receipt_show.blade.php
+index be2fc2c..7d3780d 100644
+--- a/resources/views/sales/receipt_show.blade.php
++++ b/resources/views/sales/receipt_show.blade.php
+@@ -476,6 +476,7 @@
+                 <div class="d-flex gap-2 receipt-header-actions">
+                     <a href="/receipt/{{$receipt->id}}/edit" class="btn btn-danger"><i class="bx bx-edit-alt me-1"></i> Edit</a>
+                     <button class="btn btn-outline-secondary" onclick="window.print()"><i class="bx bx-printer me-1"></i> Print</button>
++                    <button class="btn btn-outline-danger" type="button" data-bs-toggle="collapse" data-bs-target="#voidBox"><i class="bx bx-block me-1"></i> Void</button>
+                 </div>
+                 @endif
+             </div>
+@@ -483,6 +484,20 @@
+             <div class="card-header  ml-2  d-none d-lg-block">
+                 @include('flash-messages')
+             </div>
++            @if(Auth::user()->hasRole(['Finance Manager']))
++            <div class="collapse mt-2" id="voidBox">
++                <div class="card border border-danger"><div class="card-body">
++                    <form method="POST" action="{{ url('receipt/' . $receipt->id) }}" onsubmit="return confirm('Void receipt FWSSR{{ $receipt->id }}? Its payments will be reversed.')">
++                        @csrf
++                        @method('DELETE')
++                        <label class="form-label" for="void_reason">Why is this receipt being voided?</label>
++                        <textarea class="form-control mb-2" name="void_reason" id="void_reason" rows="2" required minlength="5" maxlength="500" placeholder="e.g. Cheque returned unpaid; entered against the wrong client"></textarea>
++                        <small class="text-muted d-block mb-2">The receipt is kept under Receipts › Voided with this reason. Cheque/transfer money is reversed out of the bank, the invoices it paid are reopened, and the client's statement shows the reversal today.</small>
++                        <button class="btn btn-danger" type="submit">Void receipt</button>
++                    </form>
++                </div></div>
++            </div>
++            @endif
+             @if ($errors->any())
+                 <div class="alert alert-danger mt-2"><ul class="mb-0">@foreach ($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>
+             @endif
+diff --git a/resources/views/sales/receipt_voided.blade.php b/resources/views/sales/receipt_voided.blade.php
+new file mode 100644
+index 0000000..0bfea04
+--- /dev/null
++++ b/resources/views/sales/receipt_voided.blade.php
+@@ -0,0 +1,55 @@
++<x-sales-dashboard>
++
++    @section('side_nav')
++        @include('partials.receipt_side_nav')
++    @endsection
++
++    @section('content')
++    <div class="container-xxl flex-grow-1 container-p-y">
++        <h3 class="text-primary mb-1"><i class="icon-base bx bx-block me-2"></i> Voided receipts</h3>
++        <p class="text-muted">Receipts are voided, not deleted: each one is kept here with the reason. Its payments were reversed on the day shown.</p>
++
++        @include('flash-messages')
++
++        <div class="card">
++            <div class="table-responsive">
++                <table class="table table-sm mb-0">
++                    <thead>
++                        <tr>
++                            <th>Receipt</th>
++                            <th>Client</th>
++                            <th>Receipt date</th>
++                            <th class="text-end">Money</th>
++                            <th>Paid invoices</th>
++                            <th>Reason</th>
++                            <th>Voided by</th>
++                            <th>Voided on</th>
++                        </tr>
++                    </thead>
++                    <tbody>
++                    @forelse($voids as $v)
++                        @php $r = $v->snapshot['receipt'] ?? []; @endphp
++                        <tr>
++                            <td><strong>FWSSR{{ $v->receipt_id }}</strong></td>
++                            <td>
++                                @if($v->client)
++                                    <a href="{{ url('clientStatement', $v->client_id) }}">{{ $v->client->business_name ?: $v->client->name }}</a>
++                                @endif
++                            </td>
++                            <td>{{ !empty($r['receipt_month']) ? \Carbon\Carbon::parse($r['receipt_month'])->format('d M Y') : '' }}</td>
++                            <td class="text-end">{{ number_format($v->amount, 2) }}</td>
++                            <td class="small">{{ collect($v->snapshot['allocations'] ?? [])->map(fn ($a) => 'FWSSi' . $a['invoice_id'] . ' ' . number_format((float) $a['settled'], 2))->implode(', ') ?: '—' }}</td>
++                            <td class="small">{{ $v->reason }}</td>
++                            <td>{{ $v->voidedBy?->name }}</td>
++                            <td>{{ $v->created_at->format('d M Y H:i') }}</td>
++                        </tr>
++                    @empty
++                        <tr><td colspan="8" class="text-muted">No receipts have been voided.</td></tr>
++                    @endforelse
++                    </tbody>
++                </table>
++            </div>
++        </div>
++    </div>
++    @endsection
++</x-sales-dashboard>
+diff --git a/resources/views/transactions/index.blade.php b/resources/views/transactions/index.blade.php
+index 3d51c39..64252b9 100644
+--- a/resources/views/transactions/index.blade.php
++++ b/resources/views/transactions/index.blade.php
+@@ -350,6 +350,11 @@
+     @section('content')
+ 
+     <div class="container-xxl flex-grow-1 container-p-y">
++        <div class="alert alert-info d-flex flex-wrap justify-content-between align-items-center gap-2">
++            <span><i class="bx bx-info-circle me-1"></i> This list is being retired. What each client owes is now worked out from their receipts — see
++                <strong>Aged receivables</strong> and each client's <strong>statement of account</strong>.</span>
++            <a class="btn btn-sm btn-primary" href="{{ route('receivables.aged') }}">Open aged receivables</a>
++        </div>
+ 
+ 
+         <div class="row">
+diff --git a/routes/console.php b/routes/console.php
+index 4f09a00..7f04da8 100644
+--- a/routes/console.php
++++ b/routes/console.php
+@@ -103,3 +103,25 @@
+         }
+     }
+ })->purpose('Re-derive invoice status and balance from receipts (dry run unless --apply)');
++
++/*
++ | Client ledger: post every invoice, receipt and credit application to the
++ | permanent client account. Run once after migrating (fills it from history);
++ | afterwards it only posts what changed. Also runs nightly as a safety net.
++ */
++Artisan::command('client-ledger:sync {--client= : Only this client id}', function () {
++    $ledger = app(\App\Services\Receipts\ClientLedger::class);
++    if ($this->option('client')) {
++        $n = $ledger->sync((int) $this->option('client'));
++        $this->info("Posted {$n} entr" . ($n === 1 ? 'y' : 'ies') . '.');
++
++        return;
++    }
++    $bar = $this->output->createProgressBar();
++    $result = $ledger->syncAll(fn () => $bar->advance());
++    $bar->finish();
++    $this->newLine();
++    $this->info("Checked {$result['clients']} client(s), posted {$result['entries']} entr" . ($result['entries'] === 1 ? 'y' : 'ies') . '.');
++})->purpose('Post invoices, receipts and credit to the client ledger (safe to re-run)');
++
++\Illuminate\Support\Facades\Schedule::command('client-ledger:sync')->dailyAt('02:10')->withoutOverlapping();
+diff --git a/routes/web.php b/routes/web.php
+index 038de25..d6176c9 100644
+--- a/routes/web.php
++++ b/routes/web.php
+@@ -59,6 +59,9 @@
+ Route::get('clientTerminated', [ClientController::class, 'clientTerminated'])->name('client.terminated');
+ 
+ Route::get('clientStatement/{client}', [ClientController::class, 'statementOfAccount']);
++Route::post('clientStatement/{client}/email', [\App\Http\Controllers\ClientAccountController::class, 'email'])->name('client.statement.email');
++Route::get('clientStatement/{client}/pdf', [\App\Http\Controllers\ClientAccountController::class, 'pdf'])->name('client.statement.pdf');
++Route::get('receivables/aged', [\App\Http\Controllers\ClientAccountController::class, 'aged'])->name('receivables.aged');
+ Route::get('clientAttachGuards/{id}', [ClientController::class, 'clientAttachGuards']);
+ Route::post('client/{client}/attach-employees', [ClientController::class, 'attachEmployees'])->name('client.attachEmployees');
+ Route::post('client/{client}/detach-employees', [ClientController::class, 'detachEmployees'])->name('client.detachEmployees');
+@@ -110,6 +113,7 @@
+ Route::get('receipt-multi/create', [MultiInvoiceReceiptController::class, 'create'])->name('receipt.multi.create');
+ Route::post('receipt-multi', [MultiInvoiceReceiptController::class, 'store'])->name('receipt.multi.store');
+ Route::post('receipt/{receipt}/apply-credit', [MultiInvoiceReceiptController::class, 'applyCredit'])->name('receipt.applyCredit');
++Route::get('receipt-voided', [ReceiptController::class, 'voided'])->name('receipt.voided');
+ Route::resource('receipt', ReceiptController::class);
+ Route::get('receiptPending', [ReceiptController::class, 'PendingReceipts'])->name('receipt.pending');
+ Route::post('receiptChannels', [ReceiptController::class, 'receiptChannels']);
+diff --git a/tests/Feature/ClientLedgerAndReceivablesTest.php b/tests/Feature/ClientLedgerAndReceivablesTest.php
+new file mode 100644
+index 0000000..a02fa01
+--- /dev/null
++++ b/tests/Feature/ClientLedgerAndReceivablesTest.php
+@@ -0,0 +1,326 @@
++<?php
++
++namespace Tests\Feature;
++
++use App\Mail\StatementOfAccountMail;
++use App\Models\Bank;
++use App\Models\Client;
++use App\Models\ClientLedgerEntry;
++use App\Models\Department;
++use App\Models\Field;
++use App\Models\Invoice;
++use App\Models\Receipt;
++use App\Models\ReceiptAllocation;
++use App\Models\ReceiptVoid;
++use App\Models\Role;
++use App\Models\Service;
++use App\Models\StatementSend;
++use App\Models\User;
++use App\Services\Receipts\ClientLedger;
++use App\Services\Receipts\ClientStatement;
++use App\Services\Receipts\CreditApplier;
++use Carbon\Carbon;
++use Illuminate\Foundation\Testing\RefreshDatabase;
++use Illuminate\Support\Facades\DB;
++use Illuminate\Support\Facades\Mail;
++use Tests\TestCase;
++
++class ClientLedgerAndReceivablesTest extends TestCase
++{
++    use RefreshDatabase;
++
++    private User $user;
++    private Field $field;
++    private Client $client;
++    private Bank $bank;
++
++    protected function setUp(): void
++    {
++        parent::setUp();
++        Carbon::setTestNow('2026-10-10 10:00:00');
++        $department = Department::create(['name' => 'Finance']);
++        $role = Role::forceCreate(['id' => 2, 'name' => 'Finance Manager', 'department_id' => $department->id]); // approval code keys on role id 2
++        $this->user = User::factory()->create(['department_id' => $department->id, 'role_id' => $role->id]);
++        $this->field = Field::create(['name' => 'Accra', 'user_id' => $this->user->id, 'number' => '1']);
++        $this->client = Client::create(['name' => 'Kofi Mensah', 'business_name' => 'Alpha Security', 'field_id' => $this->field->id, 'phone_number' => '0240000000']);
++        $this->bank = Bank::create(['name' => 'GCB', 'branch' => 'Accra', 'acc_number' => '1', 'total' => 0]);
++        foreach (['cash', 'cheque', 'transfer', 'momo', 'other payments'] as $m) {
++            DB::table('receipt_mode')->insert(['name' => $m]);
++        }
++        $this->actingAs($this->user);
++    }
++
++    protected function tearDown(): void
++    {
++        Carbon::setTestNow();
++        parent::tearDown();
++    }
++
++    private function invoice(float $total, string $month, ?string $due = null, ?Client $client = null): Invoice
++    {
++        return Invoice::create(['client_id' => ($client ?? $this->client)->id, 'total' => $total, 'sub_amount' => $total, 'invoice_month' => $month,
++            'due_date' => $due ?? Carbon::parse($month)->addDays(14), 'status' => 'unpaid', 'balance' => 0]);
++    }
++
++    private function pay(Invoice $invoice, array $fields): Receipt
++    {
++        $this->post('/receipt', array_merge(['invoice_id' => $invoice->id, 'client_id' => $invoice->client_id, 'from' => 'Kofi', 'mode' => ['cash']], $fields))
++            ->assertSessionHasNoErrors();
++
++        return Receipt::latest('id')->first();
++    }
++
++    private function statement(?string $from = null, ?string $to = null): array
++    {
++        return app(ClientStatement::class)->build($this->client->fresh(), $from ? Carbon::parse($from) : null, $to ? Carbon::parse($to) : null);
++    }
++
++    /* ---------------- ledger ---------------- */
++
++    public function test_ledger_posts_each_document_once_and_resync_posts_nothing(): void
++    {
++        $inv = $this->invoice(1000, '2026-08-01');
++        $this->pay($inv, ['receipt_month' => '2026-08-20', 'cash_amount' => 925, 'wth' => 'on', 'wht_amount' => 75]);
++
++        $kinds = ClientLedgerEntry::where('client_id', $this->client->id)->orderBy('id')->pluck('kind')->all();
++        $this->assertSame(['invoice', 'receipt', 'wht'], $kinds);
++        $this->assertSame(0, app(ClientLedger::class)->sync($this->client->id));
++    }
++
++    public function test_history_is_filled_from_existing_documents_by_the_command(): void
++    {
++        // Documents from before the ledger existed (no entries yet).
++        $inv = $this->invoice(500, '2026-07-01');
++        $r = Receipt::create(['client_id' => $this->client->id, 'invoice_id' => $inv->id, 'total' => 500, 'cash_amount' => 500, 'receipt_month' => '2026-07-10']);
++        ReceiptAllocation::create(['receipt_id' => $r->id, 'invoice_id' => $inv->id, 'client_id' => $this->client->id, 'amount_applied' => 500, 'settled' => 500, 'source' => 'legacy']);
++        ClientLedgerEntry::query()->delete();
++
++        $this->artisan('client-ledger:sync')->assertSuccessful();
++
++        $entries = ClientLedgerEntry::where('client_id', $this->client->id)->orderBy('entry_date')->get();
++        $this->assertSame(['2026-07-01', '2026-07-10'], $entries->map(fn ($e) => $e->entry_date->toDateString())->all());
++        $this->artisan('client-ledger:sync')->expectsOutputToContain('posted 0 entries')->assertSuccessful();
++    }
++
++    public function test_a_correction_never_changes_a_statement_already_sent(): void
++    {
++        $inv = $this->invoice(1000, '2026-08-01');
++        $receipt = $this->pay($inv, ['receipt_month' => '2026-08-20', 'cash_amount' => 600]);
++        $august = $this->statement('2026-08-01', '2026-08-31');
++
++        // Two months later the receipt is corrected from 600 to 650.
++        $this->put('/receipt/' . $receipt->id, ['invoice_id' => $inv->id, 'client_id' => $this->client->id, 'from' => 'Kofi', 'receipt_month' => '2026-08-20', 'mode' => ['cash'], 'cash_amount' => 650])
++            ->assertSessionHasNoErrors();
++
++        $augustAgain = $this->statement('2026-08-01', '2026-08-31');
++        $this->assertEquals($august['closing'], $augustAgain['closing']);
++        $this->assertSame(count($august['lines']), count($augustAgain['lines']));
++
++        $october = $this->statement('2026-10-01', '2026-10-31');
++        $this->assertEquals(400, $october['opening']);
++        $this->assertSame(['reversal', 'receipt'], collect($october['lines'])->pluck('kind')->all());
++        $this->assertEquals(350, $october['closing']);
++        $this->assertTrue($october['check']['ok']);
++    }
++
++    public function test_statement_and_client_page_read_the_ledger(): void
++    {
++        $inv = $this->invoice(300, '2026-09-01');
++        $this->pay($inv, ['receipt_month' => '2026-09-05', 'cash_amount' => 100]);
++
++        $this->get('/clientStatement/' . $this->client->id)->assertOk()->assertSee('Receipt FWSSR');
++        $this->get('/client/' . $this->client->id)->assertOk()->assertSee('Account')->assertSee('200.00');
++    }
++
++    /* ---------------- void ---------------- */
++
++    public function test_void_needs_a_reason_and_keeps_a_record(): void
++    {
++        $inv = $this->invoice(1000, '2026-09-01');
++        $receipt = $this->pay($inv, ['receipt_month' => '2026-09-03', 'mode' => ['transfer'], 'transfer_amount' => 400,
++            'transfer_reference' => 'T9', 'transfer_bank' => 'Eco', 'transfer_to_bank_id' => $this->bank->id]);
++        $this->assertEquals(400, $this->bank->fresh()->total);
++
++        $this->delete('/receipt/' . $receipt->id)->assertSessionHasErrors('void_reason');
++        $this->assertNotNull(Receipt::find($receipt->id));
++
++        $this->delete('/receipt/' . $receipt->id, ['void_reason' => 'Transfer bounced back'])->assertRedirect('receipt');
++
++        $this->assertNull(Receipt::find($receipt->id));
++        $void = ReceiptVoid::first();
++        $this->assertSame('Transfer bounced back', $void->reason);
++        $this->assertEquals(400, $void->amount);
++        $this->assertSame($this->user->id, (int) $void->voided_by);
++        $this->assertSame($inv->id, (int) $void->snapshot['allocations'][0]['invoice_id']);
++        $this->assertEquals(0, $this->bank->fresh()->total);
++        $this->assertSame('unpaid', $inv->fresh()->status);
++
++        $st = $this->statement();
++        $this->assertSame(['invoice', 'receipt', 'reversal'], collect($st['lines'])->pluck('kind')->all());
++        $this->assertStringContainsString('Transfer bounced back', collect($st['lines'])->last()['details']);
++        $this->assertEquals(1000, $st['closing']);
++
++        $this->get(route('receipt.voided'))->assertOk()->assertSee('FWSSR' . $receipt->id)->assertSee('Transfer bounced back');
++    }
++
++    public function test_paid_invoice_cannot_be_deleted_but_unpaid_one_can(): void
++    {
++        $paid = $this->invoice(500, '2026-09-01');
++        $this->pay($paid, ['receipt_month' => '2026-09-03', 'cash_amount' => 100]);
++        $this->delete('/invoice/' . $paid->id)->assertSessionHas('error');
++        $this->assertNotNull(Invoice::find($paid->id));
++
++        $unpaid = $this->invoice(200, '2026-10-01');
++        app(ClientLedger::class)->sync($this->client->id);
++        $this->delete('/invoice/' . $unpaid->id);
++        $this->assertNull(Invoice::find($unpaid->id));
++        $this->assertSame(1, ClientLedgerEntry::where('source_key', 'invoice:' . $unpaid->id)->where('kind', 'reversal')->count());
++    }
++
++    public function test_changing_an_invoice_total_re_derives_its_status(): void
++    {
++        $inv = $this->invoice(500, '2026-09-01');
++        $this->pay($inv, ['receipt_month' => '2026-09-03', 'cash_amount' => 500]);
++        $this->assertSame('completed', $inv->fresh()->status);
++
++        // The invoice update screen recalculates totals from its lines; simulate the outcome.
++        $inv->update(['total' => 600]);
++        app(\App\Services\Receipts\InvoiceSettlement::class)->recalculate($inv->fresh());
++        app(ClientLedger::class)->sync($this->client->id);
++
++        $this->assertSame('uncompleted', $inv->fresh()->status);
++        $this->assertEquals(100, $inv->fresh()->balance);
++        $this->assertEquals(100, $this->statement()['closing']);
++    }
++
++    /* ---------------- automatic credit ---------------- */
++
++    public function test_new_invoice_uses_unused_credit_automatically(): void
++    {
++        $this->post(route('receipt.multi.store'), ['client_id' => $this->client->id, 'receipt_month' => '2026-09-01', 'from' => 'K', 'mode' => ['cash'], 'cash_amount' => 700, 'keep_credit' => '1'])
++            ->assertSessionHasNoErrors();
++        $credit = Receipt::latest('id')->first();
++
++        $inv = $this->invoice(500, '2026-10-01');
++        $this->assertEquals(500, app(CreditApplier::class)->autoApply($inv));
++
++        $this->assertSame('completed', $inv->fresh()->status);
++        $this->assertEquals(200, $credit->fresh()->unapplied_amount);
++        $this->assertEquals(-200, $this->statement()['closing']);
++    }
++
++    public function test_duplicated_invoice_gets_credit_through_the_invoice_screen(): void
++    {
++        $this->post(route('receipt.multi.store'), ['client_id' => $this->client->id, 'receipt_month' => '2026-09-01', 'from' => 'K', 'mode' => ['cash'], 'cash_amount' => 50, 'keep_credit' => '1']);
++        $service = Service::create(['name' => 'Patrol', 'user_id' => $this->user->id]);
++        $source = $this->invoice(100, '2026-09-01');
++
++        $this->post(route('invoice.storeDuplicate', ['invoice' => $source->id]), [
++            'client_id' => $this->client->id, 'due_date' => '2026-11-15T09:00', 'invoice_month' => '2026-11',
++            'service' => [$service->name], 'description' => ['Patrol'], 'quantity' => [1], 'unit_price' => [100], 'amount' => [100],
++        ])->assertRedirect()->assertSessionHas('primary', fn ($m) => str_contains($m, 'credit was applied'));
++
++        $new = Invoice::latest('id')->first();
++        $this->assertSame('uncompleted', $new->status);
++        $this->assertEquals(50, ReceiptAllocation::where('invoice_id', $new->id)->where('source', 'credit')->sum('settled'));
++    }
++
++    public function test_automatic_credit_can_be_switched_off_per_client(): void
++    {
++        $this->client->update(['auto_apply_credit' => false]);
++        $this->post(route('receipt.multi.store'), ['client_id' => $this->client->id, 'receipt_month' => '2026-09-01', 'from' => 'K', 'mode' => ['cash'], 'cash_amount' => 700, 'keep_credit' => '1']);
++
++        $inv = $this->invoice(500, '2026-10-01');
++        $this->assertEquals(0, app(CreditApplier::class)->autoApply($inv));
++        $this->assertSame('unpaid', $inv->fresh()->status);
++    }
++
++    public function test_client_form_saves_email_and_credit_switch(): void
++    {
++        $this->put('/client/' . $this->client->id, ['email' => 'accounts@alpha.test', 'auto_apply_credit' => '0'])->assertRedirect();
++        $this->assertSame('accounts@alpha.test', $this->client->fresh()->email);
++        $this->assertFalse($this->client->fresh()->auto_apply_credit);
++
++        $this->put('/client/' . $this->client->id, ['email' => 'not-an-email'])->assertSessionHasErrors('email');
++    }
++
++    /* ---------------- email + PDF ---------------- */
++
++    public function test_statement_is_emailed_and_logged(): void
++    {
++        Mail::fake();
++        $inv = $this->invoice(800, '2026-09-01');
++        $this->pay($inv, ['receipt_month' => '2026-09-03', 'cash_amount' => 300]);
++
++        $this->post(route('client.statement.email', $this->client->id), ['to' => 'accounts@alpha.test', 'cc' => 'md@alpha.test', 'note' => 'Please settle the balance.'])
++            ->assertSessionHas('primary');
++
++        Mail::assertSent(StatementOfAccountMail::class, function ($mail) {
++            $html = $mail->render();
++
++            return $mail->hasTo('accounts@alpha.test') && $mail->hasCc('md@alpha.test')
++                && str_contains($html, 'Please settle the balance.') && str_contains($html, '500.00');
++        });
++        $send = StatementSend::first();
++        $this->assertSame('accounts@alpha.test, md@alpha.test', $send->sent_to);
++        $this->assertEquals(500, $send->closing_balance);
++        $this->assertSame('accounts@alpha.test', $this->client->fresh()->email);   // remembered
++
++        $this->post(route('client.statement.email', $this->client->id), ['to' => 'accounts@alpha.test, nonsense'])->assertSessionHasErrors('to');
++        Mail::assertSentCount(1);
++    }
++
++    public function test_pdf_download_explains_when_dompdf_is_missing(): void
++    {
++        if (\App\Services\Receipts\StatementPdf::available()) {
++            $this->get(route('client.statement.pdf', $this->client->id))->assertOk()->assertHeader('Content-Type', 'application/pdf');
++
++            return;
++        }
++        $this->from('/clientStatement/' . $this->client->id)
++            ->get(route('client.statement.pdf', $this->client->id))
++            ->assertRedirect('/clientStatement/' . $this->client->id)->assertSessionHas('warning');
++    }
++
++    /* ---------------- aged receivables ---------------- */
++
++    public function test_aged_receivables_buckets_and_credit(): void
++    {
++        $this->invoice(100, '2026-10-01', '2026-10-20');   // not yet due
++        $this->invoice(200, '2026-09-01', '2026-09-30');   // 10 days
++        $this->invoice(300, '2026-08-01', '2026-08-26');   // 45 days
++        $old = $this->invoice(400, '2026-06-01', '2026-06-20');   // 112 days
++        $this->pay($old, ['receipt_month' => '2026-07-01', 'cash_amount' => 150]);
++        $other = Client::create(['name' => 'Ama', 'field_id' => $this->field->id]);
++        $this->post(route('receipt.multi.store'), ['client_id' => $other->id, 'receipt_month' => '2026-09-01', 'from' => 'A', 'mode' => ['cash'], 'cash_amount' => 90, 'keep_credit' => '1']);
++
++        $report = app(\App\Services\Receipts\ReceivablesAging::class)->build();
++        $kofi = $report['rows']->firstWhere('client_id', $this->client->id);
++        $this->assertEquals(100, $kofi['current']);
++        $this->assertEquals(200, $kofi['d30']);
++        $this->assertEquals(300, $kofi['d60']);
++        $this->assertEquals(250, $kofi['d90plus']);
++        $this->assertEquals(850, $kofi['owed']);
++        $ama = $report['rows']->firstWhere('client_id', $other->id);
++        $this->assertEquals(-90, $ama['net']);
++        $this->assertEquals(760, $report['totals']['net']);
++
++        $this->get(route('receivables.aged'))->assertOk()->assertSee('Alpha Security')->assertSee('90.00 CR');
++    }
++
++    public function test_branch_users_only_see_their_office(): void
++    {
++        $tema = Field::create(['name' => 'Tema', 'user_id' => $this->user->id, 'number' => '2']);
++        $temaClient = Client::create(['name' => 'Yaw', 'business_name' => 'Tema Port Ltd', 'field_id' => $tema->id]);
++        $this->invoice(100, '2026-09-01', null, $temaClient);
++        $this->invoice(100, '2026-09-01');
++
++        $branchRole = Role::create(['name' => 'Manager', 'department_id' => $this->user->department_id]);
++        $branch = User::factory()->create(['department_id' => $this->user->department_id, 'role_id' => $branchRole->id, 'field_id' => $this->field->id]);
++        $this->actingAs($branch);
++
++        $this->get(route('receivables.aged'))->assertOk()->assertSee('Alpha Security')->assertDontSee('Tema Port Ltd');
++        $this->get(route('receivables.aged', ['field' => $tema->id]))->assertForbidden();
++        $this->post(route('client.statement.email', $temaClient->id), ['to' => 'x@y.test'])->assertForbidden();
++    }
++}
+diff --git a/tests/Feature/MultiInvoiceReceiptTest.php b/tests/Feature/MultiInvoiceReceiptTest.php
+index a9afd35..1a89bbe 100644
+--- a/tests/Feature/MultiInvoiceReceiptTest.php
++++ b/tests/Feature/MultiInvoiceReceiptTest.php
+@@ -252,7 +252,7 @@ public function test_transfer_is_posted_to_the_chosen_bank_and_reversed_on_delet
+         $this->assertEquals(2100, $this->bank->fresh()->total);
+         $this->assertEquals(1100, BankTransaction::where('receipt_id', $receipt->id)->value('credit'));
+ 
+-        $this->delete(route('receipt.destroy', $receipt))->assertRedirect();
++        $this->delete(route('receipt.destroy', $receipt), ['void_reason' => 'Entered in error'])->assertRedirect();
+ 
+         $this->assertEquals(1000, $this->bank->fresh()->total);
+         $this->assertSame(2, BankTransaction::where('receipt_id', $receipt->id)->count()); // credit + reversal kept
+diff --git a/tests/Feature/ReceiptBalanceAndBankTest.php b/tests/Feature/ReceiptBalanceAndBankTest.php
+index 6ba5dbb..70c4e0f 100644
+--- a/tests/Feature/ReceiptBalanceAndBankTest.php
++++ b/tests/Feature/ReceiptBalanceAndBankTest.php
+@@ -174,7 +174,7 @@ public function test_deleting_one_part_payment_keeps_the_other(): void
+         $this->cash($inv, 300);
+         $first = Receipt::latest('id')->first();
+         $this->cash($inv, 300);
+-        $this->delete('/receipt/' . $first->id);
++        $this->delete('/receipt/' . $first->id, ['void_reason' => 'Entered in error']);
+         $this->assertInvoice($inv, 'uncompleted', 700);
+     }
+ 
+@@ -230,7 +230,7 @@ public function test_editing_cheque_amount_or_bank_reposts_with_reversal(): void
+         $this->assertSame(3, BankTransaction::where('receipt_id', $receipt->id)->count());
+         $this->assertInvoice($inv, 'uncompleted', 400);
+ 
+-        $this->delete('/receipt/' . $receipt->id);
++        $this->delete('/receipt/' . $receipt->id, ['void_reason' => 'Entered in error']);
+         $this->assertEquals(0, $second->fresh()->total);
+     }
+ 
+diff --git a/tests/Feature/StatementPdfTest.php b/tests/Feature/StatementPdfTest.php
+new file mode 100644
+index 0000000..ec48480
+--- /dev/null
++++ b/tests/Feature/StatementPdfTest.php
+@@ -0,0 +1,36 @@
++<?php
++namespace Tests\Feature;
++
++use App\Models\{Client, Department, Field, Invoice, Role, User};
++use App\Services\Receipts\{ClientStatement, StatementPdf};
++use Illuminate\Foundation\Testing\RefreshDatabase;
++use Illuminate\Support\Facades\DB;
++use Tests\TestCase;
++
++/** Renders a real statement PDF. Skipped until dompdf is installed (composer require dompdf/dompdf). */
++class StatementPdfTest extends TestCase
++{
++    use RefreshDatabase;
++
++    public function test_statement_renders_as_pdf(): void
++    {
++        if (! StatementPdf::available()) {
++            $this->markTestSkipped('dompdf is not installed.');
++        }
++        $d = Department::create(['name' => 'Finance']);
++        $r = Role::forceCreate(['id' => 2, 'name' => 'Finance Manager', 'department_id' => $d->id]);
++        $u = User::factory()->create(['department_id' => $d->id, 'role_id' => $r->id]);
++        $f = Field::create(['name' => 'Accra', 'user_id' => $u->id, 'number' => '1']);
++        $c = Client::create(['name' => 'Kofi Mensah', 'business_name' => 'Alpha Security Ltd', 'field_id' => $f->id, 'address' => '12 Ring Road, Accra', 'phone_number' => '0240000000']);
++        foreach (['cash','cheque','transfer','momo','other payments'] as $m) DB::table('receipt_mode')->insert(['name' => $m]);
++        $this->actingAs($u);
++        $aug = Invoice::create(['client_id'=>$c->id,'total'=>12500,'sub_amount'=>12500,'invoice_month'=>'2026-08-01','due_date'=>'2026-08-15','status'=>'unpaid','balance'=>0]);
++        $sep = Invoice::create(['client_id'=>$c->id,'total'=>12500,'sub_amount'=>12500,'invoice_month'=>'2026-09-01','due_date'=>'2026-09-15','status'=>'unpaid','balance'=>0]);
++        $this->post('/receipt', ['invoice_id'=>$aug->id,'client_id'=>$c->id,'from'=>'Kofi','receipt_month'=>'2026-08-20','mode'=>['cash'],'cash_amount'=>11562.5,'wth'=>'on','wht_amount'=>937.5])->assertSessionHasNoErrors();
++        $this->post('/receipt', ['invoice_id'=>$sep->id,'client_id'=>$c->id,'from'=>'Kofi','receipt_month'=>'2026-09-25','mode'=>['cash'],'cash_amount'=>5000])->assertSessionHasNoErrors();
++        $st = app(ClientStatement::class)->build($c);
++        $pdf = app(StatementPdf::class)->render($st);
++        $this->assertStringStartsWith('%PDF', $pdf);
++        $this->get(route('client.statement.pdf', $c->id))->assertOk()->assertHeader('Content-Type', 'application/pdf');
++    }
++}
+-- 
+2.43.0
+
