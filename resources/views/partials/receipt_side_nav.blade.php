@@ -115,9 +115,14 @@
                 <div class="text-truncate" data-i18n="RMulti">Pay Multiple Invoices</div>
                 </a>
             </li>
-            <li class="menu-item">
+            <li class="menu-item {{ request()->is('receiptPending') ? 'active' : '' }}">
                 <a href="{{url('receiptPending')}}" class="menu-link">
                 <div class="text-truncate" data-i18n="RPending">Pending </div>
+                </a>
+            </li>
+            <li class="menu-item {{ request()->is('receipt-report') ? 'active' : '' }}">
+                <a href="{{url('receipt-report')}}" class="menu-link">
+                <div class="text-truncate" data-i18n="RPending">Reports </div>
                 </a>
             </li>
 

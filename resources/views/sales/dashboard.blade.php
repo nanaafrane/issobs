@@ -997,6 +997,7 @@
         </div>
       </div>
     </div>
+    @if(Auth::user()?->hasRole(['Finance Manager']))
     <div class="row">
 
       <!-- Transactions -->
@@ -1039,7 +1040,7 @@
         </div>
       </div>
       <!--/ Transactions -->
-
+      @endif
 
 
     </div>
