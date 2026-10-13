@@ -52,7 +52,11 @@ Problems with the sheet that the new code fixes:
 
 1. Operations print the **QR poster** for the client (*Attendance › client › QR poster*) and fix it at the post.
    The QR holds a 32-character secret link. **Replace QR code** makes a new one and the old poster stops working at once.
-2. Operations **issue each guard a 4-digit PIN** (guard row ⋮ › *Issue PIN*). It is shown once and stored hashed.
+2. Operations **issue each guard a 4-digit PIN**. The PIN belongs to the guard, not to the client's QR code.
+   * *Issue PINs & print slips* (top of the grid) gives a PIN to every guard without one (or replaces all) and opens a page of
+     cut-out slips (name, FWSS number, PIN).
+   * The **PIN** column has *Issue* / *Reset* for one guard; the new PIN appears in a banner at the top of the page.
+   * PINs are random (`random_int`), stored hashed, and shown only once. Client pages link here: *Attendance, QR poster & guard PINs*.
 3. The guard scans the poster with any phone camera, enters **FWSS number + PIN**, allows location, presses *Sign in*.
    No app and no login. The phone remembers the FWSS number (never the PIN).
 

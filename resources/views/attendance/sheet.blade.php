@@ -82,6 +82,14 @@
               </div>
               <div class="d-flex gap-2">
                   <button type="button" id="att-refresh" class="btn btn-sm btn-outline-primary d-none" onclick="location.reload()"><i class="bx bx-refresh"></i> Refresh totals</button>
+                  <form method="post" action="{{ route('attendance.pins', $client->id) }}" target="_blank" class="d-flex gap-1">
+                      @csrf
+                      <select name="mode" class="form-select form-select-sm" style="width:auto">
+                          <option value="missing">Guards without a PIN</option>
+                          <option value="all">All guards (replace PINs)</option>
+                      </select>
+                      <button class="btn btn-sm btn-warning" onclick="return this.form.mode.value !== 'all' || confirm('Replace the PIN of every guard at this client? Their old PINs stop working.');"><i class="bx bx-key"></i> Issue PINs &amp; print slips</button>
+                  </form>
                   <form method="post" action="{{ route('attendance.fill', $client->id) }}" onsubmit="return confirm('Mark every unmarked day up to today as Present for every guard with a Day or Night shift?');">
                       @csrf <input type="hidden" name="month" value="{{ $m }}">
                       <button class="btn btn-sm btn-outline-secondary" @disabled($month->isFuture())><i class="bx bx-check-double"></i> Fill blanks as present</button>
@@ -94,6 +102,7 @@
                       <tr>
                           <th class="sticky-col text-start">Guard</th>
                           <th>Shift</th>
+                          <th title="Attendance PIN the guard types with their FWSS number">PIN</th>
                           <th class="tot" title="Present shifts">Wkd</th>
                           <th class="tot" title="Present + Off + Sick + Pass (paid days)">Paid</th>
                           <th class="tot" title="Marked absent">Abs</th>
@@ -148,6 +157,18 @@
                               </select>
                               @endunless
                           </td>
+                          <td>
+                              @unless($row['former'])
+                              <form method="post" action="{{ route('attendance.pin', [$client->id, $e->id]) }}" class="m-0"
+                                    @if($e->attendance_pin) onsubmit="return confirm('Give {{ addslashes($e->name) }} a new PIN? The old one stops working.');" @endif>@csrf
+                                  @if($e->attendance_pin)
+                                      <button class="btn btn-xs btn-sm btn-outline-secondary py-0 px-2" style="font-size:.72rem" title="Guard has a PIN. Click to replace it."><i class="bx bx-check text-success"></i> Reset</button>
+                                  @else
+                                      <button class="btn btn-xs btn-sm btn-warning py-0 px-2" style="font-size:.72rem"><i class="bx bx-key"></i> Issue</button>
+                                  @endif
+                              </form>
+                              @endunless
+                          </td>
                           <td class="tot">{{ $row['worked'] }}</td>
                           <td class="tot">{{ $row['paid'] }}</td>
                           <td class="tot {{ $row['absent'] ? 'text-danger' : '' }}">{{ $row['absent'] }}</td>
@@ -159,7 +180,7 @@
                           @endforeach
                       </tr>
                   @empty
-                      <tr><td colspan="{{ count($sheet->days) + 6 }}" class="text-center text-muted py-4">No guards are posted to this client. Attach guards from the client page.</td></tr>
+                      <tr><td colspan="{{ count($sheet->days) + 7 }}" class="text-center text-muted py-4">No guards are posted to this client. Attach guards from the client page.</td></tr>
                   @endforelse
                   </tbody>
                   @if($sheet->rows)
@@ -167,7 +188,7 @@
                       @foreach(['day' => $t['required_day'], 'night' => $t['required_night']] as $shift => $req)
                       <tr>
                           <td class="sticky-col text-start">{{ ucfirst($shift) }} present{{ $plan ? ' / ' . $req . ' required' : '' }}</td>
-                          <td colspan="5"></td>
+                          <td colspan="6"></td>
                           @foreach($sheet->days as $n => $d)
                               @php($have = $sheet->cover[$n][$shift])
                               <td class="{{ ! $d['future'] && $plan && $have < $req ? 'short' : '' }}">{{ $d['future'] ? '' : $have }}</td>

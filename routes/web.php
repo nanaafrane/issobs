@@ -85,6 +85,7 @@ Route::post('attendance/{client}/shift', [AttendanceController::class, 'setShift
 Route::post('attendance/{client}/plan', [AttendanceController::class, 'savePlan'])->whereNumber('client')->name('attendance.plan');
 Route::post('attendance/{client}/site', [AttendanceController::class, 'saveSite'])->whereNumber('client')->name('attendance.site');
 Route::post('attendance/{client}/token', [AttendanceController::class, 'regenerateToken'])->whereNumber('client')->name('attendance.token');
+Route::post('attendance/{client}/pins', [AttendanceController::class, 'issuePins'])->whereNumber('client')->name('attendance.pins');
 Route::post('attendance/{client}/guard/{employee}/pin', [AttendanceController::class, 'resetPin'])->whereNumber(['client', 'employee'])->name('attendance.pin');
 Route::post('attendance/{client}/guard/{employee}/forget-phone', [AttendanceController::class, 'forgetPhone'])->whereNumber(['client', 'employee'])->name('attendance.forgetPhone');
 // The page the QR poster opens: no login (FWSS number + PIN), no CSRF (no session is used).

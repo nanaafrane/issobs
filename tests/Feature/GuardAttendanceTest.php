@@ -487,4 +487,24 @@ class GuardAttendanceTest extends TestCase
         $this->assertSame(1, Roster::shortage(2, 2, ['day' => 3, 'night' => 0, 'rotate' => 1, 'unset' => 0]));
         $this->assertSame(0, Roster::shortage(1, 0, ['day' => 2, 'night' => 0, 'rotate' => 0, 'unset' => 0]));
     }
+
+    public function test_issue_pins_in_bulk_prints_slips_once(): void
+    {
+        $new = $this->makeGuard('NEW RECRUIT', $this->client, 'day', null);
+
+        $res = $this->actingAs($this->ops)->post("/attendance/{$this->client->id}/pins", ['mode' => 'missing']);
+        $res->assertOk()->assertSee('NEW RECRUIT')->assertDontSee('KOFI MENSAH')->assertSee('FWSS ' . $new->id);
+        $this->assertStringContainsString('no-store', $res->headers->get('Cache-Control'));
+        preg_match('/<div class="val pin">(\d{4})<\/div>/', $res->getContent(), $m);
+        $this->assertTrue(Hash::check($m[1], $new->fresh()->attendance_pin));
+        $this->assertTrue(Hash::check('1234', $this->kofi->fresh()->attendance_pin));   // untouched
+
+        $this->actingAs($this->ops)->post("/attendance/{$this->client->id}/pins", ['mode' => 'missing'])->assertOk()->assertSee('already has a PIN');
+        $this->actingAs($this->ops)->post("/attendance/{$this->client->id}/pins", ['mode' => 'all'])->assertOk()->assertSee('KOFI MENSAH');
+        $this->assertFalse(Hash::check('1234', $this->kofi->fresh()->attendance_pin));
+
+        // The grid shows a PIN button on every row, and client pages link to attendance.
+        $this->actingAs($this->ops)->get("/attendance/{$this->client->id}")->assertOk()->assertSee('Issue PINs')->assertSee('Reset');
+        $this->actingAs($this->headOffice)->get("/client/{$this->client->id}")->assertSee('Attendance, QR poster');
+    }
 }

@@ -740,6 +740,7 @@
                                             <div class="dropdown-menu">
                                                 <a class="dropdown-item" href="{{ url('client', $client->id) }}"><i class="bx bxs-bullseye me-1"></i> View</a>
                                                 <a class="dropdown-item" href="client/{{ $client->id }}/edit"><i class="bx bx-edit-alt me-1"></i> Edit</a>
+                                                <a class="dropdown-item" href="{{ route('attendance.show', $client->id) }}"><i class="bx bx-qr-scan me-1"></i> Attendance, QR &amp; PINs</a>
                                                 @if(Auth::user()->hasPermission('HR') || Auth::user()->hasRole(['Invoice']))
                                                 <form action="client/{{ $client->id }}" method="POST" class="d-inline">
                                                     @csrf
@@ -844,6 +845,7 @@
                                                     <div class="dropdown-menu">
                                                         <a class="dropdown-item" href="{{ url('client', $client->id) }}"><i class="bx bxs-bullseye me-1"></i> View</a>
                                                         <a class="dropdown-item" href="client/{{ $client->id }}/edit"><i class="bx bx-edit-alt me-1"></i> Edit</a>
+                                                <a class="dropdown-item" href="{{ route('attendance.show', $client->id) }}"><i class="bx bx-qr-scan me-1"></i> Attendance, QR &amp; PINs</a>
                                                         @if(Auth::user()->hasPermission('HR') || Auth::user()->hasRole(['Invoice']))
                                                         <form action="client/{{ $client->id }}" method="POST" class="d-inline">
                                                             @csrf

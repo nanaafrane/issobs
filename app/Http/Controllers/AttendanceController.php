@@ -236,6 +236,30 @@ class AttendanceController extends Controller
         return back()->with('new_pin', ['name' => $employee->name, 'id' => $employee->id, 'pin' => $pin]);
     }
 
+    /**
+     * Issue PINs to many guards at once and show printable slips (the only time the PINs are visible).
+     * mode=missing: guards without a PIN; mode=all: every guard posted here (old PINs stop working).
+     */
+    public function issuePins(Request $request, Client $client)
+    {
+        $this->authorizeClient($client);
+        $mode = $request->validate(['mode' => ['required', Rule::in(['missing', 'all'])]])['mode'];
+
+        $guards = Roster::guards($client)->filter(fn ($g) => $mode === 'all' || ! $g->attendance_pin)->values();
+        $slips = [];
+        DB::transaction(function () use ($guards, &$slips) {
+            foreach ($guards as $g) {
+                $pin = (string) random_int(1000, 9999);
+                employee::whereKey($g->id)->update(['attendance_pin' => Hash::make($pin)]);
+                $slips[] = ['id' => $g->id, 'name' => $g->name, 'shift' => $g->attendance_shift, 'pin' => $pin];
+            }
+        });
+
+        return response()
+            ->view('attendance.pin-slips', ['client' => $client, 'slips' => $slips, 'mode' => $mode, 'url' => $client->attendance_token ? route('attend.show', $client->attendance_token) : null])
+            ->header('Cache-Control', 'no-store, private');
+    }
+
     public function forgetPhone(Client $client, employee $employee)
     {
         $this->authorizeClient($client);

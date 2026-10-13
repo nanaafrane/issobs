@@ -416,6 +416,7 @@
         </div><br>
 
         <a href="{{ url('clientStatement', $client->id )}}" class="btn btn-secondary"  type=" button"> Get Statement of Account </a>
+        <a href="{{ route('attendance.show', $client->id) }}" class="btn btn-primary ms-2"><i class="bx bx-qr-scan me-1"></i> Attendance, QR poster &amp; guard PINs</a>
 
 
         <div class="row mt-12">
