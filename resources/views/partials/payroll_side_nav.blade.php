@@ -350,6 +350,12 @@
                     <div class="text-truncate" data-i18n="SalariesReport">Salaries Report</div>
                     </a>
                 </li>
+                <li @class(['menu-item', 'active' => request()->is('absent-deductions')])>
+                    <a href="{{ route('absent-deductions.index') }}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-calendar-x"></i>
+                    <div class="text-truncate" data-i18n="AbsentDeductions">Absent deductions</div>
+                    </a>
+                </li>
                 <li @class(['menu-item', 'active' => request()->is('pay-priority')])>
                     <a href="{{ route('pay-priority.index') }}" class="menu-link">
                     <i class="menu-icon tf-icons bx bxs-bolt"></i>

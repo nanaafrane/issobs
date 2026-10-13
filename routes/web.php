@@ -235,6 +235,10 @@ Route::post('pay-priority/aliases/preview', [PayPriorityRuleController::class, '
 Route::post('pay-priority/aliases', [PayPriorityRuleController::class, 'aliasStore'])->name('pay-priority.aliases.store');
 Route::delete('pay-priority/aliases/{alias}', [PayPriorityRuleController::class, 'aliasDestroy'])->whereNumber('alias')->name('pay-priority.aliases.destroy');
 Route::post('pay-priority/recompute', [PayPriorityRuleController::class, 'recompute'])->name('pay-priority.recompute');
+// Absent deduction from guard attendance (Finance Manager; see AbsentDeductionController)
+Route::get('absent-deductions', [App\Http\Controllers\AbsentDeductionController::class, 'index'])->name('absent-deductions.index');
+Route::post('absent-deductions/settings', [App\Http\Controllers\AbsentDeductionController::class, 'saveSettings'])->name('absent-deductions.settings');
+Route::post('absent-deductions/apply', [App\Http\Controllers\AbsentDeductionController::class, 'apply'])->name('absent-deductions.apply');
 Route::resource('salaries', SalaryController::class);
 Route::resource('salariestopups', SalaryTopUpsController::class);
 Route::get('salariesCreate', [SalaryController::class, 'CreateSalaries']);

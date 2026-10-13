@@ -149,9 +149,42 @@ Tests: `php artisan test --filter=GuardAttendanceTest` (24 tests).
 
 ---
 
-## 7. Next steps (not in this patch)
+## 7. Absent deduction in payroll
 
-* **Payroll**: `salaries.absent` is a money amount. Once the daily rate rule is agreed, absent days per guard per month
-  (*Abs* column) can fill it automatically.
+`salaries.absent` is filled from the attendance sheet.
+
+**Absent deduction = days marked Absent in the salary month × daily rate**, never more than the pay it is worked out from.
+
+| Setting (Payroll › Absent deductions, Finance Manager) | Options | Default |
+|---|---|---|
+| Pay a day is worked out from | Basic salary · Basic + allowances | Basic salary |
+| Divided by | Days in the month (28–31) · 30 · 26 | Days in the month: guards work every day, and the old sheet counted all of them |
+| Fill automatically when salaries are added | on / off | on |
+
+Example: basic GH₵1,550 in October (31 days) gives GH₵50 a day, so 3 absent days come to GH₵150.
+
+* **When a month's salaries are added** (*Add to Salaries*), each guard with absent days gets `absent` filled in, and the
+  success message says how many.
+* **Payroll › Absent deductions** lists, for a month, every salary of an employee with attendance that month. It shows the
+  absent days, the daily rate, the amount on the salary now, the amount from attendance and the change to net pay. Tick and
+  **Apply** to bring salaries in line after late attendance changes (approved or rejected sign-ins, a supervisor fixing the sheet).
+  If the salary's totals are already worked out, `total_deductions`, `net_salary` and `cost_to_company` move by the same
+  difference. Absent is a plain deduction, so tax and SSNIT are unchanged.
+* **What is left alone:**
+  * Employees with no attendance in that month: office staff, and guards at clients not yet on attendance keep the amount typed in.
+  * Paid (*approved*) salaries.
+  * Off, Sick and Pass days (paid), blank days, and sign-ins still awaiting review (**?**, shown as a warning; review them first).
+* Every change is logged in `absent_deduction_changes`: days, rate, old and new amount, who, and whether it happened when salaries
+  were added or on the Apply page. The page shows the month's history.
+* **Salary Excel upload:** a value in the upload's `absent` column still replaces the amount. Leave the column empty to keep
+  the attendance amount. (The upload now uses the saved amount in its totals; before, an empty cell counted as 0 in the totals
+  while the old amount stayed on the salary.)
+
+Tests: `php artisan test --filter=AbsentDeductionTest` (7 tests).
+
+---
+
+## 8. Next steps (not in this patch)
+
 * **Invoicing**: *uncovered guard-shifts* per client is the quantity for an `ABSENT DEDUCTION` line on the client's invoice.
 * **Import** Jan–May from the Excel file if history is wanted in ISSOBS.

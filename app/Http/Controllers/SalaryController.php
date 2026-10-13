@@ -11,6 +11,7 @@ use App\Models\Salary;
 use App\Models\InvoiceData;
 use App\Models\Receipt;
 use App\Exports\FilteredQueryExport;
+use App\Support\Attendance\AbsentDeduction;
 use App\Support\PayrollMonth;
 use App\Support\InvoiceGuards;
 use App\Support\ClientInvoiceStatus;
@@ -1467,14 +1468,25 @@ class SalaryController extends Controller
             'updated_at' => $now,
         ]);
 
-        DB::transaction(function () use ($rows) {
+        // Absent deduction from guard attendance (Payroll > Absent deductions sets how a day is priced).
+        [$rows, $absentFilled] = AbsentDeduction::fillNewRows($rows, $month);
+        if ($absentFilled) {
+            // Salary::insert() needs the same keys on every row.
+            $rows = $rows->map(fn ($r) => $r + ['absent' => null]);
+        }
+
+        DB::transaction(function () use ($rows, $month, $absentFilled) {
             foreach ($rows->chunk(500) as $chunk) {
                 Salary::insert($chunk->values()->all());
             }
+            AbsentDeduction::logNewRows($month, $absentFilled, Auth::id());
         });
 
         $rejected = $rows->where('payment_status', 'rejected')->count();
         $message = $rows->count() . ' employee(s) added to ' . $month->format('F Y') . ' salaries.';
+        if ($absentFilled) {
+            $message .= ' Absent deduction filled from attendance for ' . count($absentFilled) . ' guard(s).';
+        }
         if ($rejected) {
             $message .= " {$rejected} guard(s) were marked 'rejected' because their client has no invoice for the month.";
         }
@@ -1771,7 +1783,7 @@ class SalaryController extends Controller
 
             // // SUM GROSS, TOTAL DEDUCTTIONS AND NET SALARY
             $grossSalary = $row['basic_salary'] + $row['allowances'] + $row['airtime_allowance'] + $row['overtime'] + $row['reimbursements'] + $row['transport_allowance'] +  $ssnit_tier2_5;
-            $totalDeduction = $tax + $ssnit_tier2_5 +  $row['welfare'] + $row['maintenance'] + $row['absent']  +  $row['boot'] +  $row['iou'] +  $row['hostel'] + $row['insurance'] + $row['reprimand'] + $row['scouter'] +  $row['raincoat'] +  $row['meal'] + $row['loan'] + $row['walkin'] + $row['amnt_ded_cof_start_date'] + $row['other_deductions'];
+            $totalDeduction = $tax + $ssnit_tier2_5 +  $row['welfare'] + $row['maintenance'] + (float) $salary->absent  +  $row['boot'] +  $row['iou'] +  $row['hostel'] + $row['insurance'] + $row['reprimand'] + $row['scouter'] +  $row['raincoat'] +  $row['meal'] + $row['loan'] + $row['walkin'] + $row['amnt_ded_cof_start_date'] + $row['other_deductions'];
             $netSalay = $grossSalary - $totalDeduction ;
            
             $salary->gross_salary = $grossSalary ?? $salary->gross_salary ;
