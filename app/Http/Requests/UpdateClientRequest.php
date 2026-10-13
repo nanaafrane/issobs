@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Support\Attendance\ShiftPlans;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateClientRequest extends FormRequest
@@ -21,9 +22,10 @@ class UpdateClientRequest extends FormRequest
      */
     public function rules(): array
     {
+        // Shift plan fields are optional here: leaving both guard counts empty keeps the current plan.
         return [
             'email' => ['nullable', 'email', 'max:255'],
             'auto_apply_credit' => ['nullable', 'boolean'],
-        ];
+        ] + ShiftPlans::rules(false) + ['effective_month' => ['nullable', 'date_format:Y-m']];
     }
 }

@@ -48,6 +48,10 @@ class Client extends Model
         'category_id',
         'category_name',
         'category_month',
+
+        'latitude',
+        'longitude',
+        'attendance_radius_m',
     ];
 
     protected $casts = [
@@ -66,7 +70,18 @@ class Client extends Model
 
     public function employees() : BelongsToMany
     {
-        return $this->belongsToMany(employee::class);
+        return $this->belongsToMany(employee::class)->withPivot('shift', 'location');
+    }
+
+    /** Guards-per-shift plans, newest first (see App\Support\Attendance\ShiftPlans). */
+    public function shiftPlans() : HasMany
+    {
+        return $this->hasMany(ClientShiftPlan::class)->orderByDesc('effective_month');
+    }
+
+    public function attendances() : HasMany
+    {
+        return $this->hasMany(Attendance::class);
     }
 
 

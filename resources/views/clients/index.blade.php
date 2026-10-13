@@ -115,6 +115,11 @@
                             <div class="text-truncate" data-i18n="CList">Pending</div>
                         </a>
                     </li>
+                    <li class="menu-item">
+                        <a href="{{ route('attendance.index') }}" class="menu-link">
+                            <div class="text-truncate" data-i18n="CAttendance">Guard Attendance</div>
+                        </a>
+                    </li>
                 </ul>
             </li>
 
@@ -250,6 +255,11 @@
                     <li class="menu-item ">
                         <a href="{{url('clientPending')}}" class="menu-link">
                             <div class="text-truncate" data-i18n="CList">Pending</div>
+                        </a>
+                    </li>
+                    <li class="menu-item">
+                        <a href="{{ route('attendance.index') }}" class="menu-link">
+                            <div class="text-truncate" data-i18n="CAttendance">Guard Attendance</div>
                         </a>
                     </li>
                 </ul>

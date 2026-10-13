@@ -90,6 +90,9 @@ class employee extends Model
         });
     }
 
+    /** The attendance PIN is a hash; never send it to a view or JSON. */
+    protected $hidden = ['attendance_pin'];
+
     protected $casts = [
         'date_of_birth' => 'date',
         'date_of_joining' => 'date',  
@@ -147,7 +150,12 @@ class employee extends Model
 
     public function clients() : BelongsToMany
     {
-        return $this->belongsToMany(Client::class);
+        return $this->belongsToMany(Client::class)->withPivot('shift', 'location');
+    }
+
+    public function attendances()
+    {
+        return $this->hasMany(Attendance::class);
     }
 
     public function salaries()

@@ -549,27 +549,11 @@
                             @enderror
                         </div>
 
-                        <div class="col mb-0">
-                            <label for="guards" class="form-label"> {{ __('Guards') }} </label>
-                            <input
-                                type="text"
-                                id="guards"
-                                name="guards"
-                                class="form-control @error('guards') is-invalid @enderror"
-                                value="{{ old('guards')}}"
-                                placeholder="Number of guards"
 
-                                autocomplete="guards"
-                                autofocus>
-
-                            @error('guards')
-                            <span class="invalid-feedback" role="alert">
-                                <strong>{{ $message }}</strong>
-                            </span>
-                            @enderror
-
-                        </div>
                     </div>
+
+                    @include('attendance._plan_fields', ['plan' => null, 'editing' => false])
+
 
                     <br>
                     <div class="row g-6">

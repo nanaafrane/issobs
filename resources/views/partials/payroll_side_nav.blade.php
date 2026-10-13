@@ -132,6 +132,12 @@
             <div class="text-truncate" data-i18n="Clients">Clients</div>
             </a>
         </li>
+        <li class="menu-item {{ request()->is('attendance*') ? 'active' : '' }}">
+            <a href="{{ route('attendance.index') }}" class="menu-link">
+            <i class="menu-icon tf-icons bx bx-qr-scan text-info me-2"></i>
+            <div class="text-truncate" data-i18n="Attendance">Guard Attendance</div>
+            </a>
+        </li>
         <li class="menu-item ">
             <a href="javascript:void(0);" class="menu-link menu-toggle">
             <i class="menu-icon tf-icons bx bx-user-circle text-info me-2"></i>
@@ -211,6 +217,12 @@
                     </li>
                 </ul>
             </li>
+        <li class="menu-item {{ request()->is('attendance*') ? 'active' : '' }}">
+            <a href="{{ route('attendance.index') }}" class="menu-link">
+            <i class="menu-icon tf-icons bx bx-qr-scan text-info me-2"></i>
+            <div class="text-truncate" data-i18n="Attendance">Guard Attendance</div>
+            </a>
+        </li>
         <li class="menu-item ">
             <a href="javascript:void(0);" class="menu-link menu-toggle">
             <i class="menu-icon tf-icons bx bx-category text-info me-2"></i>

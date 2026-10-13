@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\AttendanceController;
+use App\Http\Controllers\AttendanceScanController;
 use App\Http\Controllers\BankController;
 use App\Http\Controllers\BankDepositController;
 use App\Http\Controllers\CategoryController;
@@ -67,6 +69,29 @@ Route::post('client/{client}/attach-employees', [ClientController::class, 'attac
 Route::post('client/{client}/detach-employees', [ClientController::class, 'detachEmployees'])->name('client.detachEmployees');
 Route::get('terminateClient/{id}', [ClientController::class, 'terminateClient'])->name('clients.terminateClient');
 Route::get('reinstateClient/{id}', [ClientController::class, 'clientReinstate'])->name('clients.clientReinstate');
+// Guard attendance (operations). See docs/guard-attendance.md.
+Route::get('attendance', [AttendanceController::class, 'index'])->name('attendance.index');
+Route::get('attendance/review', [AttendanceController::class, 'review'])->name('attendance.review');
+Route::post('attendance/review/{attendance}', [AttendanceController::class, 'decide'])->whereNumber('attendance')->name('attendance.decide');
+Route::get('attendance/{client}', [AttendanceController::class, 'show'])->whereNumber('client')->name('attendance.show');
+Route::get('attendance/{client}/export', [AttendanceController::class, 'export'])->whereNumber('client')->name('attendance.export');
+Route::get('attendance/{client}/poster', [AttendanceController::class, 'poster'])->whereNumber('client')->name('attendance.poster');
+Route::get('attendance/{client}/kiosk', [AttendanceController::class, 'kiosk'])->whereNumber('client')->name('attendance.kiosk');
+Route::post('attendance/{client}/kiosk', [AttendanceController::class, 'kioskMark'])->whereNumber('client')->name('attendance.kioskMark');
+Route::get('attendance/{client}/id-cards', [AttendanceController::class, 'idCards'])->whereNumber('client')->name('attendance.idCards');
+Route::post('attendance/{client}/mark', [AttendanceController::class, 'mark'])->whereNumber('client')->name('attendance.mark');
+Route::post('attendance/{client}/fill', [AttendanceController::class, 'fill'])->whereNumber('client')->name('attendance.fill');
+Route::post('attendance/{client}/shift', [AttendanceController::class, 'setShift'])->whereNumber('client')->name('attendance.shift');
+Route::post('attendance/{client}/plan', [AttendanceController::class, 'savePlan'])->whereNumber('client')->name('attendance.plan');
+Route::post('attendance/{client}/site', [AttendanceController::class, 'saveSite'])->whereNumber('client')->name('attendance.site');
+Route::post('attendance/{client}/token', [AttendanceController::class, 'regenerateToken'])->whereNumber('client')->name('attendance.token');
+Route::post('attendance/{client}/guard/{employee}/pin', [AttendanceController::class, 'resetPin'])->whereNumber(['client', 'employee'])->name('attendance.pin');
+Route::post('attendance/{client}/guard/{employee}/forget-phone', [AttendanceController::class, 'forgetPhone'])->whereNumber(['client', 'employee'])->name('attendance.forgetPhone');
+// The page the QR poster opens: no login (FWSS number + PIN), no CSRF (no session is used).
+Route::get('attend/{token}', [AttendanceScanController::class, 'show'])->middleware('throttle:60,1')->name('attend.show');
+Route::post('attend/{token}', [AttendanceScanController::class, 'store'])->middleware('throttle:20,1')
+    ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class, VerifyCsrfToken::class])->name('attend.store');
+
 Route::resource('category', CategoryController::class); 
 Route::post('categoryAssign', [CategoryController::class, 'categoryAssign']); 
 Route::post('categoryReAssign', [CategoryController::class, 'categoryReAssign']); 

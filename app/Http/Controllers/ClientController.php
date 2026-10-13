@@ -14,6 +14,7 @@ use App\Models\Service;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Services\Receipts\ClientStatement;
+use App\Support\Attendance\ShiftPlans;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -240,6 +241,8 @@ class ClientController extends Controller
                 }
             $client->save();
 
+            // Guards required per shift, from the contract's start month.
+            ShiftPlans::save($client, $request->validated(), $client->start_date ?? now(), $user_id);
 
         return redirect('clientPending')->with('info', $client->id. ' '.'Client Added Sucessfully, awaiting approval !.');
     }
@@ -762,7 +765,23 @@ class ClientController extends Controller
     public function update(UpdateClientRequest $request, Client $client)
     {
         // dd($request->all());
-        $client->update($request->all());
+        $client->update($request->except(['day_guards', 'night_guards', 'day_start', 'day_end', 'night_start', 'night_end', 'effective_month', 'plan_note', 'guards']));
+
+        // Shift plan: saved only when the guard numbers were filled in and something changed.
+        if ($request->filled('day_guards') || $request->filled('night_guards')) {
+            $month = $request->input('effective_month') ?: now()->format('Y-m');
+            $current = ShiftPlans::forMonth($client->id, $month);
+            $new = $request->only(['day_guards', 'night_guards', 'day_start', 'day_end', 'night_start', 'night_end']);
+            $changed = ! $current
+                || (int) $current->day_guards !== (int) ($new['day_guards'] ?? 0)
+                || (int) $current->night_guards !== (int) ($new['night_guards'] ?? 0)
+                || collect(['day_start', 'day_end', 'night_start', 'night_end'])
+                    ->contains(fn ($k) => ShiftPlans::time($new[$k] ?? null, $current->{$k}) !== $current->{$k});
+            if ($changed) {
+                ShiftPlans::save($client, $new, $month, Auth::id());
+            }
+        }
+
         return redirect('client')->with('info', $client->id. ' '.'Client Updated Sucessfully');
 
     }
