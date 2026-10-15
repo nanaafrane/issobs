@@ -88,11 +88,11 @@
                           <option value="missing">Guards without a PIN</option>
                           <option value="all">All guards (replace PINs)</option>
                       </select>
-                      <button class="btn btn-sm btn-warning" onclick="return this.form.mode.value !== 'all' || confirm('Replace the PIN of every guard at this client? Their old PINs stop working.');"><i class="bx bx-key"></i> Issue PINs &amp; print slips</button>
+                      <a class="btn btn-sm btn-warning text-white" onclick="return this.form.mode.value !== 'all' || confirm('Replace the PIN of every guard at this client? Their old PINs stop working.');"><i class="bx bx-key"></i> Issue PINs &amp; print slips</a>
                   </form>
                   <form method="post" action="{{ route('attendance.fill', $client->id) }}" onsubmit="return confirm('Mark every unmarked day up to today as Present for every guard with a Day or Night shift?');">
                       @csrf <input type="hidden" name="month" value="{{ $m }}">
-                      <button class="btn btn-sm btn-outline-secondary" @disabled($month->isFuture())><i class="bx bx-check-double"></i> Fill blanks as present</button>
+                      <a class="btn btn-sm btn-outline-secondary" @disabled($month->isFuture())><i class="bx bx-check-double"></i> Fill blanks as present</a>
                   </form>
               </div>
           </div>
@@ -131,7 +131,7 @@
                             </div>
                               @unless($row['former'])
                               <div class="dropdown flex-shrink-0">
-                                  <button class="btn btn-sm p-0 px-1" data-bs-toggle="dropdown" aria-label="Guard actions"><i class="bx bx-dots-vertical-rounded"></i></button>
+                                  <!-- <button class="btn btn-sm p-0 px-1" data-bs-toggle="dropdown" aria-label="Guard actions"><i class="bx bx-dots-vertical-rounded"></i></button> -->
                                   <div class="dropdown-menu dropdown-menu-end">
                                       <form method="post" action="{{ route('attendance.pin', [$client->id, $e->id]) }}" onsubmit="return confirm('Give {{ addslashes($e->name) }} a new PIN? The old one stops working.');">@csrf
                                           <button class="dropdown-item"><i class="bx bx-key me-1"></i> {{ $e->attendance_pin ? 'Reset PIN' : 'Issue PIN' }}</button></form>
@@ -298,12 +298,12 @@
       </div>
       <div id="pop-info" class="small mb-2"></div>
       <div class="d-flex flex-wrap gap-1">
-          <button type="button" class="btn btn-success" data-status="present">P</button>
-          <button type="button" class="btn btn-danger" data-status="absent">A</button>
-          <button type="button" class="btn btn-outline-primary" data-status="off">OFF</button>
-          <button type="button" class="btn btn-outline-primary" data-status="sick">Sick</button>
-          <button type="button" class="btn btn-outline-primary" data-status="pass">Pass</button>
-          <button type="button" class="btn btn-outline-secondary" data-status="clear">Clear</button>
+          <a type="button" class="btn btn-success text-white" data-status="present">P</a>
+          <a type="button" class="btn btn-danger text-white" data-status="absent">A</a>
+          <a type="button" class="btn btn-outline-primary " data-status="off">OFF</a>
+          <a type="button" class="btn btn-outline-primary " data-status="sick">Sick</a>
+          <a type="button" class="btn btn-outline-primary " data-status="pass">Pass</a>
+          <a type="button" class="btn btn-outline-secondary " data-status="clear">Clear</a>
       </div>
       <div id="pop-err" class="text-danger small mt-1"></div>
   </div>

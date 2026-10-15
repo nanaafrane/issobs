@@ -5,6 +5,10 @@
         $totalDeductions = $employee->salaries->sum('total_deductions');
         $totalNet        = $employee->salaries->sum('net_salary');
         $salaryCount     = $employee->salaries->count();
+        $annualTax       = $employee->salaries->sum('tax');
+        $annualSsnit     = $employee->salaries->sum(function ($salary) {
+            return (float) ($salary->ssnit_tier1_0_5 ?? 0) + (float) ($salary->ssnit_tier2_5 ?? 0);
+        });
     @endphp
 
     @section('css')
@@ -104,7 +108,7 @@
                 <ul class="menu-sub">
                     <li class="menu-item ">
                         <a href="{{url('client/create')}}" class="menu-link">
-                            <div class="text-truncate" data-i18n="CRegister">Register</div>
+                            <div class="text-truncate" data-i18n="CRegister">New Contract</div>
                         </a>
                     </li>
                     <li class="menu-item ">
@@ -132,7 +136,7 @@
                         <ul class="menu-sub">
                         <li class="menu-item ">
                             <a href="{{url('employees/create')}}" class="menu-link">
-                            <div class="text-truncate" data-i18n="SRegister">Register</div>
+                            <div class="text-truncate" data-i18n="SRegister">New Recruit</div>
                             </a>
                         </li>
                         <li class="menu-item active">
@@ -195,7 +199,7 @@
                 <ul class="menu-sub">
                 <li class="menu-item ">
                     <a href="{{url('employees/create')}}" class="menu-link">
-                    <div class="text-truncate" data-i18n="SRegister">Register</div>
+                    <div class="text-truncate" data-i18n="SRegister">New Recruit</div>
                     </a>
                 </li>
                 <li class="menu-item active">
@@ -237,7 +241,7 @@
                 <ul class="menu-sub">
                     <li class="menu-item ">
                         <a href="{{url('client/create')}}" class="menu-link">
-                            <div class="text-truncate" data-i18n="CRegister">Register</div>
+                            <div class="text-truncate" data-i18n="CRegister">New Contract</div>
                         </a>
                     </li>
                     <li class="menu-item ">
@@ -371,7 +375,41 @@
     <div class="row g-4">
 
     <div class="row g-4 mb-4">
-        <div class="col-md-4">
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <h5 class="mb-0 fw-bold">Tax & SSNIT</h5>
+                        <span class="badge {{ $employee->tax_button == 'on' || $employee->ssnit_button == 'on' ? 'bg-success' : 'bg-secondary' }}">
+                            {{ $employee->tax_button == 'on' || $employee->ssnit_button == 'on' ? 'Active' : 'None' }}
+                        </span>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="p-3 rounded bg-light">
+                                <small class="text-muted d-block mb-1">Tax</small>
+                                <strong>{{ $employee->tax_button == 'on' ? 'Enabled' : 'Not enabled' }}</strong>
+                                @if($employee->tax_button == 'on')
+                                    <div class="mt-2 small text-muted">TIN: {{ $employee->paymentInfo?->tin_number ?: 'Not available' }}</div>
+                                @endif
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="p-3 rounded bg-light">
+                                <small class="text-muted d-block mb-1">SSNIT</small>
+                                <strong>{{ $employee->ssnit_button == 'on' ? 'Enabled' : 'Not enabled' }}</strong>
+                                @if($employee->ssnit_button == 'on')
+                                    <div class="mt-2 small text-muted">SSNIT #: {{ $employee->paymentInfo?->ssnit_number ?: 'Not available' }}</div>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
             <div class="card bg-dark text-white h-100">
             <div class="card-body">
                 <p class="mb-1"><strong>TOTAL GROSS SALARY</strong></p>
@@ -381,7 +419,7 @@
             </div>
         </div>
 
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="card bg-danger text-white h-100">
             <div class="card-body">
                 <p class="mb-1"><strong>TOTAL DEDUCTIONS</strong></p>
@@ -391,7 +429,7 @@
             </div>
         </div>
 
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="card bg-success text-white h-100">
             <div class="card-body">
                 <p class="mb-1"><strong>TOTAL NET SALARY</strong></p>
@@ -408,6 +446,20 @@
             <strong>Employee salaries</strong>
           </div>
           <div class="card-body">
+            <div class="row g-3 mb-4">
+              <div class="col-md-6">
+                <div class="p-3 rounded bg-warning text-dark h-100">
+                  <small class="text-dark-50 d-block mb-1">Total Tax YTD</small>
+                  <strong class="fs-5">GH₵ {{ number_format((float) $annualTax, 2) }}</strong>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="p-3 rounded bg-info text-dark h-100">
+                  <small class="text-dark-50 d-block mb-1">Total SSNIT YTD</small>
+                  <strong class="fs-5">GH₵ {{ number_format((float) $annualSsnit, 2) }}</strong>
+                </div>
+              </div>
+            </div>
             <table id="myTable" class="display w-100">
               <thead>
                 <tr>
@@ -415,6 +467,8 @@
                   <th>Salary Month</th>
                   <th>Client</th>
                   <th>Location</th>
+                  <th>Tax Deduction</th>
+                  <th>SSNIT Deduction</th>
                   <th>Gross Salary</th>
                   <th>Deductions</th>
                   <th>Total</th>
@@ -430,9 +484,11 @@
                     <td>{{ $salary->salary_month?->format('F, Y') }}</td>
                     <td>{{ $salary->client?->name }}{{ $salary->client?->business_name }}</td>
                     <td>{{ $salary->location }}</td>
-                    <td>GH&#x20B5; {{ $salary->gross_salary }}</td>
-                    <td>GH&#x20B5; {{ $salary->total_deductions }}</td>
-                    <td>GH&#x20B5; {{ $salary->cost_to_company }}</td>
+                    <td>GH&#x20B5; {{ number_format((float) ($salary->tax ?? 0), 2) }}</td>
+                    <td>GH&#x20B5; {{ number_format((float) (($salary->ssnit_tier1_0_5 ?? 0) + ($salary->ssnit_tier2_5 ?? 0)), 2) }}</td>
+                    <td>GH&#x20B5; {{ number_format((float) ($salary->gross_salary ?? 0), 2) }}</td>
+                    <td>GH&#x20B5; {{ number_format((float) ($salary->total_deductions ?? 0), 2) }}</td>
+                    <td>GH&#x20B5; {{ number_format((float) ($salary->cost_to_company ?? 0), 2) }}</td>
                     <td><a class="btn btn-dark btn-sm" href="/salaries/{{ $salary->id }}"><i class="icon-base bx bxs-bullseye"></i></a></td>
                     @if ($employee->status == 'Active')
                       <td><a class="btn btn-dark btn-sm" href="/salaries/{{ $salary->id }}/edit"><i class="icon-base bx bx-edit-alt"></i></a></td>

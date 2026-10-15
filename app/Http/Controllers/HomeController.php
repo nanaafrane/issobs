@@ -183,6 +183,84 @@ class HomeController extends Controller
             return view('hr.dashboard', compact( 'OperationCount','HRCount','AccountsCount','GuardsCount','accraGuardsCount', 'botweGuardsCount', 'temaGuardsCount', 'takoradiGuardsCount', 'koforiduaGuardsCount', 'shyhillsGuardsCount'));
         }
 
+        if($user->department?->name == 'Operations')
+        {
+            $Guards = employee::where('role_id', 7)->get();
+            $GuardsCount = count($Guards);
+
+            $activeGuards = employee::where('role_id', 7)->where('status', 'Active')->get();
+            $activeGuardsCount = count($activeGuards);
+
+            $terminatedGuards = employee::where('role_id', 7)->where('status', 'Terminated')->get();
+            $terminatedGuardsCount = count($terminatedGuards);
+
+            $Operation = employee::where('department_id', 6)->get();
+            $OperationCount = count($Operation);
+
+            $accraGuards = employee::where('field_id', 1)->where('role_id', 7)->get();
+            $accraGuardsCount = count($accraGuards);
+            $accraActiveGuardsCount = employee::where('field_id', 1)->where('role_id', 7)->where('status', 'Active')->count();
+            $accraTerminatedGuardsCount = employee::where('field_id', 1)->where('role_id', 7)->where('status', 'Terminated')->count();
+
+            $botweGuards = employee::where('field_id', 2)->where('role_id', 7)->get();
+            $botweGuardsCount = count($botweGuards);
+            $botweActiveGuardsCount = employee::where('field_id', 2)->where('role_id', 7)->where('status', 'Active')->count();
+            $botweTerminatedGuardsCount = employee::where('field_id', 2)->where('role_id', 7)->where('status', 'Terminated')->count();
+
+            $temaGuards = employee::where('field_id', 3)->where('role_id', 7)->get();
+            $temaGuardsCount = count($temaGuards);
+            $temaActiveGuardsCount = employee::where('field_id', 3)->where('role_id', 7)->where('status', 'Active')->count();
+            $temaTerminatedGuardsCount = employee::where('field_id', 3)->where('role_id', 7)->where('status', 'Terminated')->count();
+
+            $takoradiGuards = employee::where('field_id', 4)->where('role_id', 7)->get();
+            $takoradiGuardsCount = count($takoradiGuards);
+            $takoradiActiveGuardsCount = employee::where('field_id', 4)->where('role_id', 7)->where('status', 'Active')->count();
+            $takoradiTerminatedGuardsCount = employee::where('field_id', 4)->where('role_id', 7)->where('status', 'Terminated')->count();
+
+            $koforiduaGuards = employee::where('field_id', 5)->where('role_id', 7)->get();
+            $koforiduaGuardsCount = count($koforiduaGuards);
+            $koforiduaActiveGuardsCount = employee::where('field_id', 5)->where('role_id', 7)->where('status', 'Active')->count();
+            $koforiduaTerminatedGuardsCount = employee::where('field_id', 5)->where('role_id', 7)->where('status', 'Terminated')->count();
+
+            $kumasiGuards = employee::where('field_id', 6)->where('role_id', 7)->get();
+            $kumasiGuardsCount = count($kumasiGuards);
+            $kumasiActiveGuardsCount = employee::where('field_id', 6)->where('role_id', 7)->where('status', 'Active')->count();
+            $kumasiTerminatedGuardsCount = employee::where('field_id', 6)->where('role_id', 7)->where('status', 'Terminated')->count();
+
+            $shyhillsGuards = employee::where('field_id', 7)->where('role_id', 7)->get();
+            $shyhillsGuardsCount = count($shyhillsGuards);
+            $shyhillsActiveGuardsCount = employee::where('field_id', 7)->where('role_id', 7)->where('status', 'Active')->count();
+            $shyhillsTerminatedGuardsCount = employee::where('field_id', 7)->where('role_id', 7)->where('status', 'Terminated')->count();
+
+            return view('operations.dashboard', compact(
+                'GuardsCount',
+                'activeGuardsCount',
+                'terminatedGuardsCount',
+                'OperationCount',
+                'accraGuardsCount',
+                'accraActiveGuardsCount',
+                'accraTerminatedGuardsCount',
+                'botweGuardsCount',
+                'botweActiveGuardsCount',
+                'botweTerminatedGuardsCount',
+                'temaGuardsCount',
+                'temaActiveGuardsCount',
+                'temaTerminatedGuardsCount',
+                'takoradiGuardsCount',
+                'takoradiActiveGuardsCount',
+                'takoradiTerminatedGuardsCount',
+                'koforiduaGuardsCount',
+                'koforiduaActiveGuardsCount',
+                'koforiduaTerminatedGuardsCount',
+                'kumasiGuardsCount',
+                'kumasiActiveGuardsCount',
+                'kumasiTerminatedGuardsCount',
+                'shyhillsGuardsCount',
+                'shyhillsActiveGuardsCount',
+                'shyhillsTerminatedGuardsCount'
+            ));
+        }
+
         if($user->department?->name == 'System')
         {
             return view('system.dashboard');

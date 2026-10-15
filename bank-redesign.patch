@@ -1,0 +1,1279 @@
+diff --git a/app/Http/Controllers/BankController.php b/app/Http/Controllers/BankController.php
+index 182367f..6b16f68 100644
+--- a/app/Http/Controllers/BankController.php
++++ b/app/Http/Controllers/BankController.php
+@@ -6,6 +6,9 @@ use App\Models\Bank;
+ use App\Http\Requests\StoreBankRequest;
+ use App\Http\Requests\UpdateBankRequest;
+ use App\Models\BankTransaction;
++use App\Support\PeriodSeries;
++use Illuminate\Http\Request;
++use Illuminate\Support\Facades\Auth;
+ 
+ class BankController extends Controller
+ {
+@@ -24,12 +27,57 @@ class BankController extends Controller
+     /**
+      * Display a listing of the resource.
+      */
+-    public function index()
++    public function index(Request $request)
+     {
+-        //
+-        $banks = Bank::all();
+-        $bankTransactions = BankTransaction::all();
+-        return view('banks.index', compact('banks', 'bankTransactions'));
++        [$from, $to, $group] = PeriodSeries::window($request);
++
++        $banks = Bank::orderBy('name')->get();
++        $inRange = fn () => BankTransaction::whereBetween('created_at', [$from, $to]);
++
++        $perBank = $inRange()
++            ->selectRaw('bank_id, COALESCE(SUM(credit),0) AS in_total, COALESCE(SUM(debit),0) AS out_total')
++            ->groupBy('bank_id')->get()->keyBy('bank_id');
++
++        $inTotal = (float) $perBank->sum('in_total');
++        $outTotal = (float) $perBank->sum('out_total');
++        $net = $inTotal - $outTotal;
++        $totalBalance = (float) $banks->sum('total');
++
++        // Capped so the page stays fast; the view warns when it is truncated.
++        $limit = 2000;
++        $transactions = $inRange()->with('bank')->latest()->limit($limit + 1)->get();
++        $truncated = $transactions->count() > $limit;
++        $transactions = $transactions->take($limit);
++
++        $series = collect(PeriodSeries::build(
++            $inRange()->selectRaw('DATE(created_at) AS d, COALESCE(SUM(credit),0) AS i, COALESCE(SUM(debit),0) AS o, COUNT(*) AS c')->groupBy('d')->get(),
++            $group, ['in' => 'i', 'out' => 'o']
++        ))->map(fn ($r) => $r + ['net' => $r['in'] - $r['out']])->all();
++
++        // Last ledger balance per bank, to flag a bank whose stored total has drifted.
++        $latestIds = BankTransaction::selectRaw('MAX(id) AS id')->groupBy('bank_id')->pluck('id');
++        $lastBalances = BankTransaction::whereIn('id', $latestIds)->pluck('balance', 'bank_id');
++
++        $projection = $this->outlook(BankTransaction::query(), $totalBalance);
++
++        return view('banks.index', compact(
++            'banks', 'perBank', 'from', 'to', 'group', 'inTotal', 'outTotal', 'net',
++            'totalBalance', 'transactions', 'truncated', 'series', 'lastBalances', 'projection'
++        ));
++    }
++
++    /** If the last 30 days repeat: balance in 30 days, and days of runway when money is going out faster than in. */
++    private function outlook($ledger, float $balance): array
++    {
++        $last30 = $ledger->where('created_at', '>=', now()->subDays(30))
++            ->selectRaw('COALESCE(SUM(credit),0) AS i, COALESCE(SUM(debit),0) AS o')->first();
++        $avgDailyNet = ((float) $last30->i - (float) $last30->o) / 30;
++
++        return [
++            'avg_daily_net' => $avgDailyNet,
++            'balance' => $balance + $avgDailyNet * 30,
++            'runway_days' => $avgDailyNet < 0 && $balance > 0 ? (int) floor($balance / abs($avgDailyNet)) : null,
++        ];
+     }
+ 
+     /**
+@@ -54,10 +102,49 @@ class BankController extends Controller
+     /**
+      * Display the specified resource.
+      */
+-    public function show(Bank $bank)
++    public function show(Request $request, Bank $bank)
+     {
+-        //
+-        return view('banks.show', compact('bank'));
++        abort_unless(Auth::user()?->hasRole(['Invoice', 'Finance Manager']), 403, 'Bank statements are visible to Finance only.');
++
++        [$from, $to, $group] = PeriodSeries::window($request);
++
++        $ledger = fn () => BankTransaction::where('bank_id', $bank->id);
++        $inRange = fn () => $ledger()->whereBetween('created_at', [$from, $to]);
++
++        // Opening = balance after the last entry before the period; closing = after the last entry in it.
++        $opening = (float) ($ledger()->where('created_at', '<', $from)->orderByDesc('id')->value('balance') ?? 0);
++        $sums = $inRange()->selectRaw('COALESCE(SUM(credit),0) AS i, COALESCE(SUM(debit),0) AS o, COUNT(*) AS c')->first();
++        $inTotal = (float) $sums->i;
++        $outTotal = (float) $sums->o;
++        $net = $inTotal - $outTotal;
++        $entryCount = (int) $sums->c;
++
++        $lastInRange = $inRange()->orderByDesc('id')->value('balance');
++        $closing = $lastInRange !== null ? (float) $lastInRange : $opening;
++        $difference = round($opening + $net - $closing, 2); // 0 when the ledger chains correctly
++
++        $limit = 2000;
++        $transactions = $inRange()->latest('id')->limit($limit + 1)->get();
++        $truncated = $transactions->count() > $limit;
++        $transactions = $transactions->take($limit)->reverse()->values(); // statement order: oldest first
++
++        $series = collect(PeriodSeries::build(
++            $inRange()->selectRaw('DATE(created_at) AS d, COALESCE(SUM(credit),0) AS i, COALESCE(SUM(debit),0) AS o, COUNT(*) AS c')->groupBy('d')->get(),
++            $group, ['in' => 'i', 'out' => 'o']
++        ))->map(fn ($r) => $r + ['net' => $r['in'] - $r['out']])->all();
++
++        $byChannel = $inRange()
++            ->selectRaw("COALESCE(channel, 'other') AS ch, COALESCE(SUM(credit),0) AS i, COALESCE(SUM(debit),0) AS o")
++            ->groupBy('ch')->orderByDesc('i')->get();
++
++        $lastBalance = $ledger()->orderByDesc('id')->value('balance');
++        $drift = $lastBalance !== null && abs((float) $lastBalance - (float) $bank->total) > 0.005;
++        $projection = $this->outlook($ledger(), (float) $bank->total);
++
++        return view('banks.statement', compact(
++            'bank', 'from', 'to', 'group', 'opening', 'closing', 'inTotal', 'outTotal', 'net', 'entryCount',
++            'difference', 'transactions', 'truncated', 'series', 'byChannel', 'projection', 'lastBalance', 'drift'
++        ));
+     }
+ 
+     /**
+@@ -75,7 +162,7 @@ class BankController extends Controller
+     public function update(UpdateBankRequest $request, Bank $bank)
+     {
+         //
+-        $bank->update($request->all());
++        $bank->update($request->only(['name', 'branch', 'acc_number']));
+         return back()->with('success', 'Bank Updated Successfully');
+     }
+ 
+diff --git a/app/Http/Controllers/BankDepositController.php b/app/Http/Controllers/BankDepositController.php
+index f3355f4..8c9c91f 100644
+--- a/app/Http/Controllers/BankDepositController.php
++++ b/app/Http/Controllers/BankDepositController.php
+@@ -10,6 +10,8 @@ use App\Models\BankTransaction;
+ use App\Models\Collection;
+ use App\Models\Receipt;
+ use App\Services\Receipts\BankPosting;
++use App\Support\PeriodSeries;
++use Illuminate\Http\Request;
+ use Illuminate\Support\Facades\DB;
+ use Illuminate\Support\Facades\Auth;
+ 
+@@ -30,15 +32,34 @@ class BankDepositController extends Controller
+     /**
+      * Display a listing of the resource.
+      */
+-    public function index()
++    public function index(Request $request)
+     {
+-        //
+-        // $collections = Collection::where('status', 'undeposited')->get();
+-        $banks = Bank::all();
+-        // return view('banks.deposit_list', compact('collections', 'banks'));
+-        // dd($collections);
+-        $deposits = BankDeposit::all();
+-        return view('banks.deposit_list', compact('deposits', 'banks'));
++        [$from, $to, $group] = PeriodSeries::window($request);
++
++        $banks = Bank::all()->keyBy('id');
++        $inRange = fn () => BankDeposit::whereBetween('created_at', [$from, $to]);
++
++        $deposits = $inRange()->with(['bank', 'user'])->latest()->limit(2000)->get();
++
++        $totals = $inRange()->selectRaw('COUNT(*) AS n, COALESCE(SUM(cash_amount),0) AS cash, COALESCE(SUM(cheque_amount),0) AS cheque, COALESCE(SUM(total),0) AS total')->first();
++        $totals = (object) [
++            'count' => (int) $totals->n, 'cash' => (float) $totals->cash,
++            'cheque' => (float) $totals->cheque, 'total' => (float) $totals->total,
++        ];
++
++        $perBank = $inRange()->selectRaw('bank_id, COUNT(*) AS count, COALESCE(SUM(total),0) AS total')
++            ->groupBy('bank_id')->orderByDesc('total')->get();
++
++        $series = PeriodSeries::build(
++            $inRange()->selectRaw('DATE(created_at) AS d, COALESCE(SUM(cash_amount),0) AS a, COALESCE(SUM(cheque_amount),0) AS b, COALESCE(SUM(total),0) AS t, COUNT(*) AS c')->groupBy('d')->get(),
++            $group, ['cash' => 'a', 'cheque' => 'b', 'total' => 't']
++        );
++
++        // Collections still to be taken to the bank (same rule as the deposit screen).
++        $waiting = (float) Collection::where('status', 'undeposited')->get()
++            ->sum(fn ($c) => BankPosting::depositable($c)['total']);
++
++        return view('banks.deposit_history', compact('deposits', 'banks', 'from', 'to', 'group', 'totals', 'perBank', 'series', 'waiting'));
+     }
+ 
+     /**
+@@ -49,7 +70,7 @@ class BankDepositController extends Controller
+         //
+         // Cheques and transfers now go straight to the bank from the receipt, so
+         // only cash (and cheques received before that change) is left to deposit.
+-        $collections = Collection::where('status', 'undeposited')->get()
++        $collections = Collection::where('status', 'undeposited')->with('field')->get()
+             ->each(function ($c) {
+                 $d = BankPosting::depositable($c);
+                 $c->deposit_cash = $d['cash'];
+@@ -65,7 +86,12 @@ class BankDepositController extends Controller
+             ->get(['id', 'cheque_to_bank_id', 'transfer_to_bank_id'])
+             ->mapWithKeys(fn ($r) => [$r->id => $r->cheque_to_bank_id ?: $r->transfer_to_bank_id]);
+ 
+-        return view('banks.deposit_index', compact('collections', 'banks', 'suggestedBanks'));
++        // Waiting-to-bank totals per branch, for the side panel.
++        $byField = $collections->groupBy(fn ($c) => $c->field?->name ?? 'No branch')
++            ->map(fn ($rows, $name) => ['name' => $name, 'count' => $rows->count(), 'total' => (float) $rows->sum('deposit_total')])
++            ->sortByDesc('total')->values()->all();
++
++        return view('banks.deposit_create', compact('collections', 'banks', 'suggestedBanks', 'byField'));
+     }
+ 
+     /**
+diff --git a/app/Support/PeriodSeries.php b/app/Support/PeriodSeries.php
+new file mode 100644
+index 0000000..82a5535
+--- /dev/null
++++ b/app/Support/PeriodSeries.php
+@@ -0,0 +1,80 @@
++<?php
++
++namespace App\Support;
++
++use Carbon\Carbon;
++use Illuminate\Http\Request;
++
++/**
++ * Shared period handling for the bank screens: read ?from=&to=&group= from the request,
++ * and fold daily rows into day / week / month / year buckets. Done in PHP so it behaves
++ * the same on any database.
++ */
++final class PeriodSeries
++{
++    public const GROUPS = ['day', 'week', 'month', 'year'];
++
++    /** @return array{0: Carbon, 1: Carbon, 2: string} [from (00:00), to (23:59), group] */
++    public static function window(Request $request, string $defaultGroup = 'day'): array
++    {
++        $group = in_array($request->input('group'), self::GROUPS, true) ? $request->input('group') : $defaultGroup;
++
++        $parse = function ($value, Carbon $fallback): Carbon {
++            try {
++                return is_string($value) && $value !== '' ? Carbon::parse($value) : $fallback;
++            } catch (\Throwable) {
++                return $fallback;
++            }
++        };
++
++        $from = $parse($request->input('from'), now()->startOfMonth())->startOfDay();
++        $to = $parse($request->input('to'), now())->endOfDay();
++        if ($from->gt($to)) {
++            [$from, $to] = [$to->copy()->startOfDay(), $from->copy()->endOfDay()];
++        }
++
++        return [$from, $to, $group];
++    }
++
++    public static function key(Carbon $d, string $group): string
++    {
++        return match ($group) {
++            'week' => $d->copy()->startOfWeek()->format('Y-m-d'),
++            'month' => $d->format('Y-m'),
++            'year' => $d->format('Y'),
++            default => $d->format('Y-m-d'),
++        };
++    }
++
++    public static function label(Carbon $d, string $group): string
++    {
++        return match ($group) {
++            'week' => $d->copy()->startOfWeek()->format('d M Y'),
++            'month' => $d->format('M Y'),
++            'year' => $d->format('Y'),
++            default => $d->format('d M Y'),
++        };
++    }
++
++    /**
++     * @param iterable $rows  objects with `d` (date), optional `c` (entry count) and numeric columns
++     * @param array<string,string> $sums  output name => column on the row, e.g. ['in' => 'i', 'out' => 'o']
++     * @return array<int, array>  [['label'=>..., 'count'=>..., <sums>...], ...] oldest first
++     */
++    public static function build(iterable $rows, string $group, array $sums): array
++    {
++        $out = [];
++        foreach ($rows as $r) {
++            $d = Carbon::parse($r->d);
++            $k = self::key($d, $group);
++            $out[$k] ??= ['label' => self::label($d, $group), 'count' => 0] + array_fill_keys(array_keys($sums), 0.0);
++            $out[$k]['count'] += (int) ($r->c ?? 0);
++            foreach ($sums as $name => $column) {
++                $out[$k][$name] += (float) $r->{$column};
++            }
++        }
++        ksort($out);
++
++        return array_values($out);
++    }
++}
+diff --git a/resources/views/banks/deposit_create.blade.php b/resources/views/banks/deposit_create.blade.php
+new file mode 100644
+index 0000000..1429a3f
+--- /dev/null
++++ b/resources/views/banks/deposit_create.blade.php
+@@ -0,0 +1,227 @@
++<x-sales-dashboard>
++
++    @php
++        $canSeeAll = Auth::user()?->hasRole(['Invoice', 'Finance Manager']) ?? false;
++        $money = fn ($v) => 'GH₵ ' . number_format((float) $v, 2);
++        $sumCash = $collections->sum('deposit_cash');
++        $sumCheque = $collections->sum('deposit_cheque');
++        $sumTotal = $collections->sum('deposit_total');
++        $oldest = $collections->min('created_at');
++        $fieldMax = max(1, (float) collect($byField)->max('total'));
++    @endphp
++
++    @section('css')
++    <link rel="stylesheet" href="https://cdn.datatables.net/2.3.3/css/dataTables.dataTables.css" />
++    @include('partials.bank_styles')
++    <style>
++        .dp-actions { background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; padding: .75rem 1rem; position: sticky; top: .5rem; z-index: 5; }
++        .dp-actions .sel { font-weight: 600; }
++        tr.dp-picked td { background: #fff7f7 !important; }
++        select.dp-missing { border-color: #b3261e; }
++    </style>
++    @endsection
++
++    @section('side_nav')
++        @include('partials.bank_side_nav')
++    @endsection
++
++    @section('content')
++    <div class="container-xxl flex-grow-1 container-p-y">
++
++        <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-4">
++            <div>
++                <h3 class="mb-1"><i class="bx bx-arrow-from-left me-1"></i> Deposit collections</h3>
++                <div class="bk-muted small">Tick the cash collections you have taken to the bank, choose the bank, and deposit.</div>
++            </div>
++            <a href="{{ url('deposit') }}" class="btn btn-outline-secondary btn-sm"><i class="bx bx-history"></i> Deposit history</a>
++        </div>
++
++        @include('flash-messages')
++
++        @if(! $canSeeAll)
++            <div class="alert alert-info">Bank deposits are made by Finance. Ask Finance to deposit your branch collections.</div>
++        @else
++
++        <div class="bk-band mb-4">
++            <div>
++                <div class="label">Waiting to be banked</div>
++                <div class="value">{{ $money($sumTotal) }}</div>
++                <div class="note">{{ $collections->count() }} {{ Str::plural('collection', $collections->count()) }}</div>
++            </div>
++            <div>
++                <div class="label">Cash</div>
++                <div class="value">{{ $money($sumCash) }}</div>
++                <div class="note">Collected as cash</div>
++            </div>
++            <div>
++                <div class="label">Older cheques</div>
++                <div class="value">{{ $money($sumCheque) }}</div>
++                <div class="note">Cheques from before they went straight to the bank</div>
++            </div>
++            <div>
++                <div class="label">Oldest not banked</div>
++                <div class="value {{ $oldest && $oldest->diffInDays() > 3 ? 'bk-out' : '' }}">{{ $oldest ? $oldest->diffInDays() . ' ' . Str::plural('day', $oldest->diffInDays()) : '0 days' }}</div>
++                <div class="note">{{ $oldest ? 'Since ' . $oldest->format('d M Y') : 'Nothing waiting' }}</div>
++            </div>
++        </div>
++
++        <div class="row g-3">
++            <div class="col-xl-3 order-xl-2">
++                <div class="bk-panel">
++                    <div class="head">By branch <small>waiting</small></div>
++                    @forelse($byField as $f)
++                        <div class="bk-row">
++                            <div class="d-flex justify-content-between">
++                                <strong>{{ $f['name'] }}</strong>
++                                <span class="bk-num">{{ number_format($f['total'], 2) }}</span>
++                            </div>
++                            <div class="bk-bar"><span style="width: {{ number_format($f['total'] / $fieldMax * 100, 1, '.', '') }}%"></span></div>
++                            <div class="small bk-muted">{{ $f['count'] }} {{ Str::plural('collection', $f['count']) }}</div>
++                        </div>
++                    @empty
++                        <div class="p-4 text-center bk-muted">Everything has been banked.</div>
++                    @endforelse
++                </div>
++            </div>
++
++            <div class="col-xl-9 order-xl-1">
++                <form id="dpForm" action="{{ url('deposit') }}" method="POST">
++                    @csrf
++
++                    <div class="dp-actions mb-3 d-flex flex-wrap align-items-end gap-3">
++                        <div>
++                            <label class="form-label small mb-0" for="dpBulkBank">Use one bank for all ticked rows</label>
++                            <div class="input-group input-group-sm">
++                                <select id="dpBulkBank" class="form-select">
++                                    <option value="">Choose bank...</option>
++                                    @foreach($banks as $bank)<option value="{{ $bank->id }}">{{ $bank->name }}</option>@endforeach
++                                </select>
++                                <button type="button" class="btn btn-outline-secondary" id="dpApplyBank">Apply</button>
++                            </div>
++                        </div>
++                        <div class="ms-auto text-end">
++                            <div class="small bk-muted">Selected</div>
++                            <div class="sel"><span id="dpCount">0</span> · <span id="dpSum">GH₵ 0.00</span></div>
++                        </div>
++                        <button type="submit" class="btn btn-dark" id="dpSubmit" disabled><i class="bx bx-arrow-from-left"></i> Deposit selected</button>
++                    </div>
++
++                    <div class="bk-panel">
++                        <div class="p-3">
++                            <div class="table-responsive">
++                                <table id="dpTable" class="display bk-table w-100">
++                                    <thead>
++                                        <tr>
++                                            <th style="width:32px"><input type="checkbox" class="form-check-input" id="dpAll" aria-label="Select all shown"></th>
++                                            <th>Collection</th>
++                                            <th>Branch</th>
++                                            <th>Collected</th>
++                                            <th class="bk-num">Cash</th>
++                                            <th class="bk-num">Old cheque</th>
++                                            <th class="bk-num">To deposit</th>
++                                            <th style="min-width:170px">Deposit into</th>
++                                        </tr>
++                                    </thead>
++                                    <tbody>
++                                        @foreach($collections as $c)
++                                        @php $suggested = old('bank_id.' . $c->id, $suggestedBanks[$c->receipt_id] ?? null); @endphp
++                                        <tr data-id="{{ $c->id }}">
++                                            <td data-order="0"><input type="checkbox" class="form-check-input dp-pick" data-amount="{{ (float) $c->deposit_total }}" aria-label="Select collection {{ $c->id }}"></td>
++                                            <td data-order="{{ $c->id }}">#{{ $c->id }}
++                                                @if($c->receipt_id)<div class="bk-src"><a href="{{ url('receipt', $c->receipt_id) }}">FWSSR{{ $c->receipt_id }}</a></div>@endif
++                                            </td>
++                                            <td>{{ $c->field?->name }}</td>
++                                            <td data-order="{{ $c->created_at->timestamp }}">{{ $c->created_at->format('d M Y') }}<div class="bk-src bk-muted">{{ $c->created_at->diffForHumans() }}</div></td>
++                                            <td class="bk-num" data-order="{{ (float) $c->deposit_cash }}">{{ $c->deposit_cash > 0 ? number_format($c->deposit_cash, 2) : '' }}</td>
++                                            <td class="bk-num" data-order="{{ (float) $c->deposit_cheque }}">{{ $c->deposit_cheque > 0 ? number_format($c->deposit_cheque, 2) : '' }}</td>
++                                            <td class="bk-num fw-bold" data-order="{{ (float) $c->deposit_total }}">{{ number_format($c->deposit_total, 2) }}</td>
++                                            <td>
++                                                <select class="form-select form-select-sm dp-bank" aria-label="Bank for collection {{ $c->id }}">
++                                                    <option value="">Choose...</option>
++                                                    @foreach($banks as $bank)
++                                                        <option value="{{ $bank->id }}" @selected((string) $suggested === (string) $bank->id)>{{ $bank->name }}</option>
++                                                    @endforeach
++                                                </select>
++                                                @if(! empty($suggestedBanks[$c->receipt_id] ?? null))<div class="bk-src bk-muted">suggested from receipt</div>@endif
++                                            </td>
++                                        </tr>
++                                        @endforeach
++                                    </tbody>
++                                </table>
++                            </div>
++                            @if($collections->isEmpty())
++                                <div class="text-center bk-muted py-4">Nothing is waiting to be deposited.</div>
++                            @endif
++                        </div>
++                    </div>
++                    <div id="dpHidden"></div>
++                </form>
++            </div>
++        </div>
++        @endif
++    </div>
++    @endsection
++
++    @section('scripts')
++    @if($canSeeAll)
++    <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
++    <script src="https://cdn.datatables.net/2.3.3/js/dataTables.js"></script>
++    <script>
++        const dpTable = new DataTable('#dpTable', { paging: false, order: [[3, 'asc']], columnDefs: [{ orderable: false, targets: [0, 7] }], language: { emptyTable: '' } });
++        const dpMoney = v => 'GH₵ ' + v.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
++
++        // Rows hidden by the search box are detached from the page, so always work from every row node.
++        const allRows = () => dpTable.rows().nodes().toArray();
++        const picked = () => allRows().filter(tr => tr.querySelector('.dp-pick').checked);
++
++        function refresh() {
++            const rows = picked();
++            rows.forEach(r => r.classList.add('dp-picked'));
++            allRows().filter(r => !rows.includes(r)).forEach(r => r.classList.remove('dp-picked'));
++            document.getElementById('dpCount').textContent = rows.length + (rows.length === 1 ? ' collection' : ' collections');
++            document.getElementById('dpSum').textContent = dpMoney(rows.reduce((s, r) => s + Number(r.querySelector('.dp-pick').dataset.amount), 0));
++            document.getElementById('dpSubmit').disabled = rows.length === 0;
++        }
++
++        document.getElementById('dpTable').addEventListener('change', e => { if (e.target.matches('.dp-pick, .dp-bank')) refresh(); });
++
++        // Select all = set every SHOWN row to the header's state (the old script flipped each box instead).
++        document.getElementById('dpAll').addEventListener('change', function () {
++            dpTable.rows({ search: 'applied' }).nodes().toArray().forEach(tr => tr.querySelector('.dp-pick').checked = this.checked);
++            refresh();
++        });
++
++        document.getElementById('dpApplyBank').addEventListener('click', () => {
++            const bank = document.getElementById('dpBulkBank').value;
++            if (!bank) return alert('Choose a bank first.');
++            picked().forEach(tr => tr.querySelector('.dp-bank').value = bank);
++        });
++
++        document.getElementById('dpForm').addEventListener('submit', function (e) {
++            const rows = picked();
++            const missing = rows.filter(tr => !tr.querySelector('.dp-bank').value);
++            allRows().forEach(tr => tr.querySelector('.dp-bank').classList.remove('dp-missing'));
++            if (missing.length) {
++                e.preventDefault();
++                missing.forEach(tr => tr.querySelector('.dp-bank').classList.add('dp-missing'));
++                return alert('Choose a bank for every ticked collection (' + missing.length + ' missing).');
++            }
++            const total = rows.reduce((s, r) => s + Number(r.querySelector('.dp-pick').dataset.amount), 0);
++            if (!confirm('Deposit ' + rows.length + ' collection(s) totalling ' + dpMoney(total) + '?')) return e.preventDefault();
++
++            // Submit only what is ticked, keyed by collection id so every bank stays with its own row.
++            const box = document.getElementById('dpHidden');
++            box.innerHTML = '';
++            rows.forEach(tr => {
++                const id = tr.dataset.id;
++                box.insertAdjacentHTML('beforeend',
++                    '<input type="hidden" name="collections[]" value="' + id + '">' +
++                    '<input type="hidden" name="bank_id[' + id + ']" value="' + tr.querySelector('.dp-bank').value + '">');
++            });
++        });
++        refresh();
++    </script>
++    @endif
++    @endsection
++
++</x-sales-dashboard>
+diff --git a/resources/views/banks/deposit_history.blade.php b/resources/views/banks/deposit_history.blade.php
+new file mode 100644
+index 0000000..e50e130
+--- /dev/null
++++ b/resources/views/banks/deposit_history.blade.php
+@@ -0,0 +1,242 @@
++<x-sales-dashboard>
++
++    @php
++        $canSeeAll = Auth::user()?->hasRole(['Invoice', 'Finance Manager']) ?? false;
++        $money = fn ($v) => 'GH₵ ' . number_format((float) $v, 2);
++        $groupName = ['day' => 'Day', 'week' => 'Week starting', 'month' => 'Month', 'year' => 'Year'][$group] ?? 'Period';
++        $link = fn (Carbon\Carbon $a, Carbon\Carbon $b, string $g) => url('deposit') . '?' . http_build_query([
++            'from' => $a->format('Y-m-d'), 'to' => $b->format('Y-m-d'), 'group' => $g,
++        ]);
++        $presets = [
++            'Today'          => $link(now(), now(), 'day'),
++            'This week'      => $link(now()->startOfWeek(), now()->endOfWeek(), 'day'),
++            'This month'     => $link(now()->startOfMonth(), now()->endOfMonth(), 'day'),
++            'This year'      => $link(now()->startOfYear(), now()->endOfYear(), 'month'),
++            'Last 12 months' => $link(now()->subMonths(11)->startOfMonth(), now(), 'month'),
++        ];
++        $period = $from->format('d M Y') . ' to ' . $to->format('d M Y');
++        $bankMax = max(1, (float) collect($perBank)->max('total'));
++    @endphp
++
++    @section('css')
++    <link rel="stylesheet" href="https://cdn.datatables.net/2.3.3/css/dataTables.dataTables.css" />
++    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/3.2.4/css/buttons.dataTables.css">
++    @include('partials.bank_styles')
++    @endsection
++
++    @section('side_nav')
++        @include('partials.bank_side_nav')
++    @endsection
++
++    @section('content')
++    <div class="container-xxl flex-grow-1 container-p-y">
++
++        <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-4">
++            <div>
++                <h3 class="mb-1"><i class="bx bx-history me-1"></i> Bank deposits</h3>
++                <div class="bk-muted small">Every deposit taken to the bank, by period and by bank.</div>
++            </div>
++            @if($canSeeAll)
++            <a href="{{ url('deposit/create') }}" class="btn btn-dark"><i class="bx bx-plus"></i> New deposit</a>
++            @endif
++        </div>
++
++        @include('flash-messages')
++
++        @if(! $canSeeAll)
++            <div class="alert alert-info">Deposit history is visible to Finance only.</div>
++        @else
++
++        <form method="GET" action="{{ url('deposit') }}" class="bk-toolbar d-flex flex-wrap align-items-end gap-3 mb-4">
++            <div><label class="d-block" for="dhFrom">From</label><input type="date" id="dhFrom" name="from" class="form-control form-control-sm" value="{{ $from->format('Y-m-d') }}"></div>
++            <div><label class="d-block" for="dhTo">To</label><input type="date" id="dhTo" name="to" class="form-control form-control-sm" value="{{ $to->format('Y-m-d') }}"></div>
++            <div>
++                <label class="d-block" for="dhGroup">Group by</label>
++                <select id="dhGroup" name="group" class="form-select form-select-sm">
++                    @foreach(['day' => 'Day', 'week' => 'Week', 'month' => 'Month', 'year' => 'Year'] as $v => $l)
++                        <option value="{{ $v }}" @selected($group === $v)>{{ $l }}</option>
++                    @endforeach
++                </select>
++            </div>
++            <button type="submit" class="btn btn-primary btn-sm">Show</button>
++            <div class="btn-group btn-group-sm ms-lg-auto" role="group" aria-label="Quick periods">
++                @foreach($presets as $label => $href)<a href="{{ $href }}" class="btn btn-outline-secondary">{{ $label }}</a>@endforeach
++            </div>
++        </form>
++
++        <div class="bk-band mb-4">
++            <div>
++                <div class="label">Total banked</div>
++                <div class="value">{{ $money($totals->total) }}</div>
++                <div class="note">{{ $totals->count }} {{ Str::plural('deposit', $totals->count) }} · {{ $period }}</div>
++            </div>
++            <div>
++                <div class="label">Cash</div>
++                <div class="value">{{ $money($totals->cash) }}</div>
++                <div class="note">{{ $totals->total > 0 ? number_format($totals->cash / $totals->total * 100, 0) : 0 }}% of the total</div>
++            </div>
++            <div>
++                <div class="label">Cheques</div>
++                <div class="value">{{ $money($totals->cheque) }}</div>
++                <div class="note">{{ $totals->total > 0 ? number_format($totals->cheque / $totals->total * 100, 0) : 0 }}% of the total</div>
++            </div>
++            <div>
++                <div class="label">Average deposit</div>
++                <div class="value">{{ $money($totals->count ? $totals->total / $totals->count : 0) }}</div>
++                <div class="note">
++                    @if($waiting > 0)<a href="{{ url('deposit/create') }}" class="bk-out">{{ $money($waiting) }} still waiting to be banked</a>@else Nothing waiting to be banked @endif
++                </div>
++            </div>
++        </div>
++
++        <div class="row g-3 mb-4">
++            <div class="col-lg-8">
++                <div class="bk-panel h-100">
++                    <div class="head">Deposits <small>by {{ $group }}</small></div>
++                    <div class="p-3"><div id="dhTrend"></div></div>
++                </div>
++            </div>
++            <div class="col-lg-4">
++                <div class="bk-panel h-100">
++                    <div class="head">By bank <small>{{ $period }}</small></div>
++                    @forelse($perBank as $row)
++                        <div class="bk-row">
++                            <div class="d-flex justify-content-between">
++                                <a href="{{ url('banks', $row->bank_id) }}"><strong>{{ $banks[$row->bank_id]->name ?? 'Bank ' . $row->bank_id }}</strong></a>
++                                <span class="bk-num">{{ number_format($row->total, 2) }}</span>
++                            </div>
++                            <div class="bk-bar"><span style="width: {{ number_format($row->total / $bankMax * 100, 1, '.', '') }}%"></span></div>
++                            <div class="small bk-muted">{{ $row->count }} {{ Str::plural('deposit', $row->count) }}</div>
++                        </div>
++                    @empty
++                        <div class="p-4 text-center bk-muted">No deposits in this period.</div>
++                    @endforelse
++                </div>
++            </div>
++        </div>
++
++        <div class="bk-panel mb-4">
++            <div class="px-3 pt-2">
++                <ul class="nav nav-tabs border-0" role="tablist">
++                    <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#dhList" type="button" role="tab">Deposits <span class="badge bg-label-dark ms-1">{{ $deposits->count() }}</span></button></li>
++                    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#dhSummary" type="button" role="tab">Summary by {{ $group }}</button></li>
++                </ul>
++            </div>
++            <div class="tab-content p-3 border-top">
++                <div class="tab-pane fade show active" id="dhList" role="tabpanel">
++                    <div class="table-responsive">
++                        <table id="dhTable" class="display bk-table w-100">
++                            <thead><tr>
++                                <th>Date</th><th>Deposit</th><th>Bank</th><th>Deposited by</th>
++                                <th class="bk-num">Cash</th><th class="bk-num">Cheque</th><th class="bk-num">Total</th>
++                            </tr></thead>
++                            <tbody>
++                                @foreach($deposits as $d)
++                                <tr>
++                                    <td data-order="{{ $d->created_at->timestamp }}">{{ $d->created_at->format('d M Y') }}<div class="bk-src bk-muted">{{ $d->created_at->format('H:i') }}</div></td>
++                                    <td data-order="{{ $d->id }}">#{{ $d->id }}</td>
++                                    <td><a href="{{ url('banks', $d->bank_id) }}">{{ $d->bank?->name }}</a></td>
++                                    <td>{{ $d->user?->name }}</td>
++                                    <td class="bk-num" data-order="{{ (float) $d->cash_amount }}">{{ $d->cash_amount > 0 ? number_format($d->cash_amount, 2) : '' }}</td>
++                                    <td class="bk-num" data-order="{{ (float) $d->cheque_amount }}">{{ $d->cheque_amount > 0 ? number_format($d->cheque_amount, 2) : '' }}</td>
++                                    <td class="bk-num fw-semibold" data-order="{{ (float) $d->total }}">{{ number_format($d->total, 2) }}</td>
++                                </tr>
++                                @endforeach
++                            </tbody>
++                            <tfoot><tr>
++                                <td colspan="4">Totals for the rows shown</td>
++                                <td class="bk-num" id="dhFootCash"></td><td class="bk-num" id="dhFootCheque"></td><td class="bk-num" id="dhFootTotal"></td>
++                            </tr></tfoot>
++                        </table>
++                    </div>
++                </div>
++
++                <div class="tab-pane fade" id="dhSummary" role="tabpanel">
++                    <div class="table-responsive">
++                        <table class="table table-sm bk-table mb-0">
++                            <thead><tr><th>{{ $groupName }}</th><th class="bk-num">Deposits</th><th class="bk-num">Cash</th><th class="bk-num">Cheque</th><th class="bk-num">Total</th></tr></thead>
++                            <tbody>
++                                @forelse($series as $row)
++                                <tr>
++                                    <td>{{ $row['label'] }}</td><td class="bk-num">{{ $row['count'] }}</td>
++                                    <td class="bk-num">{{ number_format($row['cash'], 2) }}</td>
++                                    <td class="bk-num">{{ number_format($row['cheque'], 2) }}</td>
++                                    <td class="bk-num fw-semibold">{{ number_format($row['total'], 2) }}</td>
++                                </tr>
++                                @empty
++                                <tr><td colspan="5" class="text-center bk-muted py-4">No deposits between these dates.</td></tr>
++                                @endforelse
++                            </tbody>
++                            @if(count($series))
++                            <tfoot><tr>
++                                <td>Total</td><td class="bk-num">{{ $totals->count }}</td>
++                                <td class="bk-num">{{ number_format($totals->cash, 2) }}</td>
++                                <td class="bk-num">{{ number_format($totals->cheque, 2) }}</td>
++                                <td class="bk-num">{{ number_format($totals->total, 2) }}</td>
++                            </tr></tfoot>
++                            @endif
++                        </table>
++                    </div>
++                </div>
++            </div>
++        </div>
++        @endif
++    </div>
++    @endsection
++
++    @section('scripts')
++    @if($canSeeAll)
++    <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
++    <script src="https://cdn.datatables.net/2.3.3/js/dataTables.js"></script>
++    <script src="https://cdn.datatables.net/buttons/3.2.4/js/dataTables.buttons.js"></script>
++    <script src="https://cdn.datatables.net/buttons/3.2.4/js/buttons.dataTables.js"></script>
++    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
++    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
++    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
++    <script src="https://cdn.datatables.net/buttons/3.2.4/js/buttons.html5.min.js"></script>
++    <script>
++        const dhSeries = @json($series);
++        const dhMoney = v => 'GH₵ ' + Number(v).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
++        const dhFmt = v => v.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
++
++        new ApexCharts(document.querySelector('#dhTrend'), {
++            chart: { type: 'bar', stacked: true, height: 300, toolbar: { show: false }, fontFamily: 'inherit' },
++            series: [
++                { name: 'Cash',   data: dhSeries.map(r => r.cash) },
++                { name: 'Cheque', data: dhSeries.map(r => r.cheque) },
++            ],
++            colors: ['#1e293b', '#d61c1c'],
++            plotOptions: { bar: { columnWidth: '55%', borderRadius: 2 } },
++            dataLabels: { enabled: false },
++            xaxis: { categories: dhSeries.map(r => r.label), labels: { rotate: -45, hideOverlappingLabels: true } },
++            yaxis: { labels: { formatter: v => Number(v).toLocaleString() } },
++            tooltip: { shared: true, y: { formatter: dhMoney } },
++            legend: { position: 'top', horizontalAlign: 'left' },
++            noData: { text: 'No deposits between these dates.' },
++        }).render();
++
++        new DataTable('#dhTable', {
++            responsive: true,
++            order: [[0, 'desc']],
++            layout: {
++                topStart: {
++                    buttons: [
++                        { extend: 'pageLength', text: 'Show', className: 'btn btn-secondary btn-sm' },
++                        { extend: 'excelHtml5', text: 'Export Excel', title: 'Bank deposits {{ $period }}', className: 'btn btn-secondary btn-sm' },
++                        { extend: 'pdfHtml5', text: 'Export PDF', title: 'Bank deposits {{ $period }}', className: 'btn btn-secondary btn-sm' },
++                    ]
++                }
++            },
++            footerCallback: function () {
++                const api = this.api();
++                const sum = i => api.column(i, { search: 'applied' }).nodes().toArray().reduce((s, td) => s + Number(td.dataset.order || 0), 0);
++                document.getElementById('dhFootCash').textContent = dhFmt(sum(4));
++                document.getElementById('dhFootCheque').textContent = dhFmt(sum(5));
++                document.getElementById('dhFootTotal').textContent = dhFmt(sum(6));
++            },
++        });
++    </script>
++    @endif
++    @endsection
++
++</x-sales-dashboard>
+diff --git a/resources/views/banks/statement.blade.php b/resources/views/banks/statement.blade.php
+new file mode 100644
+index 0000000..33d3304
+--- /dev/null
++++ b/resources/views/banks/statement.blade.php
+@@ -0,0 +1,332 @@
++<x-sales-dashboard>
++
++    @php
++        $canEdit = Auth::user()?->hasRole(['Finance Manager']) ?? false;
++        $money = fn ($v) => 'GH₵ ' . number_format((float) $v, 2);
++        $groupName = ['day' => 'Day', 'week' => 'Week starting', 'month' => 'Month', 'year' => 'Year'][$group] ?? 'Period';
++        $channelNames = ['deposit' => 'Cash deposits', 'cheque' => 'Cheques', 'transfer' => 'Bank transfers', 'other' => 'Other / manual'];
++        $here = fn (Carbon\Carbon $a, Carbon\Carbon $b, string $g) => url('banks', $bank->id) . '?' . http_build_query([
++            'from' => $a->format('Y-m-d'), 'to' => $b->format('Y-m-d'), 'group' => $g,
++        ]);
++        $presets = [
++            'This week'      => $here(now()->startOfWeek(), now()->endOfWeek(), 'day'),
++            'This month'     => $here(now()->startOfMonth(), now()->endOfMonth(), 'day'),
++            'Last month'     => $here(now()->subMonthNoOverflow()->startOfMonth(), now()->subMonthNoOverflow()->endOfMonth(), 'day'),
++            'This year'      => $here(now()->startOfYear(), now()->endOfYear(), 'month'),
++            'Last 12 months' => $here(now()->subMonths(11)->startOfMonth(), now(), 'month'),
++        ];
++        $period = $from->format('d M Y') . ' to ' . $to->format('d M Y');
++        $channelMax = max(1, (float) $byChannel->max(fn ($c) => max($c->i, $c->o)));
++    @endphp
++
++    @section('css')
++    <link rel="stylesheet" href="https://cdn.datatables.net/2.3.3/css/dataTables.dataTables.css" />
++    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/3.2.4/css/buttons.dataTables.css">
++    @include('partials.bank_styles')
++    @endsection
++
++    @section('side_nav')
++        @include('partials.bank_side_nav')
++    @endsection
++
++    @section('content')
++    <div class="container-xxl flex-grow-1 container-p-y">
++
++        <div class="no-print mb-2"><a href="{{ url('banks') }}" class="small"><i class="bx bx-chevron-left"></i> All banks</a></div>
++
++        <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-4">
++            <div>
++                <h3 class="mb-1"><i class="bx bxs-bank me-1"></i> {{ $bank->name }}</h3>
++                <div class="bk-muted small">
++                    {{ $bank->branch }} · Account {{ $bank->acc_number }}
++                </div>
++            </div>
++            <div class="d-flex gap-2 no-print">
++                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="window.print()"><i class="bx bx-printer"></i> Print statement</button>
++                @if($canEdit)
++                <button type="button" class="btn btn-dark btn-sm" data-bs-toggle="modal" data-bs-target="#editBankModal"><i class="bx bx-edit-alt"></i> Edit details</button>
++                @endif
++            </div>
++        </div>
++
++        <div class="bk-print-head">
++            <strong>FIRST WATCH SECURITY SERVICE LIMITED</strong><br>
++            Bank statement: {{ $bank->name }}, {{ $bank->branch }}, account {{ $bank->acc_number }}<br>
++            {{ $period }} · printed {{ now()->format('d M Y, H:i') }}
++        </div>
++
++        <div class="no-print">@include('flash-messages')</div>
++
++        @if($drift)
++            <div class="alert alert-warning no-print">
++                <strong>Check this balance.</strong> The balance held on this bank ({{ $money($bank->total) }}) differs from its last ledger entry ({{ $money($lastBalance) }}).
++                Review the entries below before relying on it.
++            </div>
++        @endif
++
++        {{-- Period --}}
++        <form method="GET" action="{{ url('banks', $bank->id) }}" class="bk-toolbar d-flex flex-wrap align-items-end gap-3 mb-4 no-print">
++            <div>
++                <label class="d-block" for="stFrom">From</label>
++                <input type="date" id="stFrom" name="from" class="form-control form-control-sm" value="{{ $from->format('Y-m-d') }}">
++            </div>
++            <div>
++                <label class="d-block" for="stTo">To</label>
++                <input type="date" id="stTo" name="to" class="form-control form-control-sm" value="{{ $to->format('Y-m-d') }}">
++            </div>
++            <div>
++                <label class="d-block" for="stGroup">Group by</label>
++                <select id="stGroup" name="group" class="form-select form-select-sm">
++                    @foreach(['day' => 'Day', 'week' => 'Week', 'month' => 'Month', 'year' => 'Year'] as $v => $l)
++                        <option value="{{ $v }}" @selected($group === $v)>{{ $l }}</option>
++                    @endforeach
++                </select>
++            </div>
++            <button type="submit" class="btn btn-primary btn-sm">Show</button>
++            <div class="btn-group btn-group-sm ms-lg-auto" role="group" aria-label="Quick periods">
++                @foreach($presets as $label => $href)<a href="{{ $href }}" class="btn btn-outline-secondary">{{ $label }}</a>@endforeach
++            </div>
++        </form>
++
++        {{-- Opening + in - out = closing: the statement proves itself --}}
++        <div class="bk-band mb-4">
++            <div>
++                <div class="label">Opening balance</div>
++                <div class="value">{{ $money($opening) }}</div>
++                <div class="note">Before {{ $from->format('d M Y') }}</div>
++            </div>
++            <div>
++                <div class="label">Money in</div>
++                <div class="value bk-in">+ {{ number_format($inTotal, 2) }}</div>
++                <div class="note">{{ $entryCount }} {{ Str::plural('entry', $entryCount) }} in this period</div>
++            </div>
++            <div>
++                <div class="label">Money out</div>
++                <div class="value bk-out">− {{ number_format($outTotal, 2) }}</div>
++                <div class="note">Net {{ $net >= 0 ? '+' : '−' }}{{ number_format(abs($net), 2) }}</div>
++            </div>
++            <div>
++                <div class="label">Closing balance</div>
++                <div class="value">{{ $money($closing) }}</div>
++                <div class="note">
++                    @if(abs($difference) < 0.005)
++                        <span class="bk-in">Opening + in − out equals closing.</span>
++                    @else
++                        <span class="bk-out">Gap of {{ $money(abs($difference)) }}: entries are missing or out of order.</span>
++                    @endif
++                </div>
++            </div>
++        </div>
++
++        {{-- Chart, channels and outlook --}}
++        <div class="row g-3 mb-4 no-print">
++            <div class="col-lg-8">
++                <div class="bk-panel h-100">
++                    <div class="head">Money in and out <small>by {{ $group }}</small></div>
++                    <div class="p-3"><div id="stTrend"></div></div>
++                </div>
++            </div>
++            <div class="col-lg-4">
++                <div class="bk-panel h-100">
++                    <div class="head">By channel <small>{{ $period }}</small></div>
++                    @forelse($byChannel as $c)
++                        <div class="bk-row">
++                            <div class="d-flex justify-content-between">
++                                <strong>{{ $channelNames[$c->ch] ?? ucfirst($c->ch) }}</strong>
++                                <span class="bk-num small"><span class="bk-in">+{{ number_format($c->i, 2) }}</span> <span class="bk-out ms-2">−{{ number_format($c->o, 2) }}</span></span>
++                            </div>
++                            <div class="bk-bar green"><span style="width: {{ number_format($c->i / $channelMax * 100, 1, '.', '') }}%"></span></div>
++                            <div class="bk-bar"><span style="width: {{ number_format($c->o / $channelMax * 100, 1, '.', '') }}%"></span></div>
++                        </div>
++                    @empty
++                        <div class="p-4 text-center bk-muted">No entries in this period.</div>
++                    @endforelse
++                    <div class="bk-row bg-lighter">
++                        <div class="small bk-muted">Outlook, if the last 30 days repeat</div>
++                        <div class="fw-bold bk-num text-start">{{ $money($projection['balance']) }} <span class="small fw-normal bk-muted">in 30 days</span></div>
++                        @if($projection['runway_days'] !== null)
++                            <div class="small bk-out">Balance would run out in about {{ $projection['runway_days'] }} days.</div>
++                        @endif
++                    </div>
++                </div>
++            </div>
++        </div>
++
++        {{-- Statement and summary --}}
++        <div class="bk-panel mb-4">
++            <div class="px-3 pt-2 no-print">
++                <ul class="nav nav-tabs border-0" role="tablist">
++                    <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#stLedger" type="button" role="tab">Statement <span class="badge bg-label-dark ms-1">{{ $transactions->count() }}</span></button></li>
++                    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#stSummary" type="button" role="tab">Summary by {{ $group }}</button></li>
++                </ul>
++            </div>
++
++            <div class="tab-content p-3 border-top">
++                <div class="tab-pane fade show active" id="stLedger" role="tabpanel">
++                    @if($truncated)
++                        <div class="alert alert-warning py-2 small">Showing the latest {{ number_format($transactions->count()) }} entries. Narrow the dates to see earlier ones.</div>
++                    @endif
++                    <div class="table-responsive">
++                        <table id="stLedgerTable" class="display bk-table w-100">
++                            <thead>
++                                <tr>
++                                    <th>Date</th><th>Details</th><th>Source</th>
++                                    <th class="bk-num">Money in</th><th class="bk-num">Money out</th><th class="bk-num">Balance</th>
++                                </tr>
++                            </thead>
++                            <tbody>
++                                <tr class="bk-muted">
++                                    <td data-order="0">{{ $from->format('d M Y') }}</td>
++                                    <td><em>Opening balance</em></td><td></td><td data-order="0"></td><td data-order="0"></td>
++                                    <td class="bk-num fw-semibold" data-order="{{ $opening }}">{{ number_format($opening, 2) }}</td>
++                                </tr>
++                                @foreach($transactions as $t)
++                                <tr>
++                                    <td data-order="{{ $t->id }}">{{ $t->created_at->format('d M Y') }}<div class="bk-muted bk-src">{{ $t->created_at->format('H:i') }}</div></td>
++                                    <td>@if($t->channel)<span class="badge bg-label-primary me-1">{{ $t->channel }}</span>@endif {{ $t->narration }}</td>
++                                    <td class="bk-src">
++                                        @if($t->receipt_id)<a href="{{ url('receipt', $t->receipt_id) }}">Receipt FWSSR{{ $t->receipt_id }}</a>
++                                        @elseif($t->deposit_id)Deposit #{{ $t->deposit_id }}
++                                        @elseif($t->expense_id)Expense #{{ $t->expense_id }}
++                                        @else <span class="bk-muted">Manual</span>@endif
++                                    </td>
++                                    <td class="bk-num bk-in" data-order="{{ (float) $t->credit }}">{{ $t->credit > 0 ? number_format($t->credit, 2) : '' }}</td>
++                                    <td class="bk-num bk-out" data-order="{{ (float) $t->debit }}">{{ $t->debit > 0 ? number_format($t->debit, 2) : '' }}</td>
++                                    <td class="bk-num fw-semibold" data-order="{{ (float) $t->balance }}">{{ number_format($t->balance, 2) }}</td>
++                                </tr>
++                                @endforeach
++                            </tbody>
++                            <tfoot>
++                                <tr>
++                                    <td colspan="3">Totals for the rows shown</td>
++                                    <td class="bk-num bk-in" id="stFootIn"></td>
++                                    <td class="bk-num bk-out" id="stFootOut"></td>
++                                    <td class="bk-num">{{ number_format($closing, 2) }}</td>
++                                </tr>
++                            </tfoot>
++                        </table>
++                    </div>
++                </div>
++
++                <div class="tab-pane fade" id="stSummary" role="tabpanel">
++                    <div class="table-responsive">
++                        <table class="table table-sm bk-table mb-0">
++                            <thead><tr><th>{{ $groupName }}</th><th class="bk-num">Entries</th><th class="bk-num">Money in</th><th class="bk-num">Money out</th><th class="bk-num">Net</th></tr></thead>
++                            <tbody>
++                                @forelse($series as $row)
++                                <tr>
++                                    <td>{{ $row['label'] }}</td>
++                                    <td class="bk-num">{{ $row['count'] }}</td>
++                                    <td class="bk-num bk-in">{{ number_format($row['in'], 2) }}</td>
++                                    <td class="bk-num bk-out">{{ number_format($row['out'], 2) }}</td>
++                                    <td class="bk-num fw-semibold {{ $row['net'] >= 0 ? 'bk-in' : 'bk-out' }}">{{ number_format($row['net'], 2) }}</td>
++                                </tr>
++                                @empty
++                                <tr><td colspan="5" class="text-center bk-muted py-4">No entries between these dates.</td></tr>
++                                @endforelse
++                            </tbody>
++                            @if(count($series))
++                            <tfoot><tr>
++                                <td>Total</td><td class="bk-num">{{ $entryCount }}</td>
++                                <td class="bk-num bk-in">{{ number_format($inTotal, 2) }}</td>
++                                <td class="bk-num bk-out">{{ number_format($outTotal, 2) }}</td>
++                                <td class="bk-num {{ $net >= 0 ? 'bk-in' : 'bk-out' }}">{{ number_format($net, 2) }}</td>
++                            </tr></tfoot>
++                            @endif
++                        </table>
++                    </div>
++                </div>
++            </div>
++        </div>
++    </div>
++
++    @if($canEdit)
++    <div class="modal fade" id="editBankModal" tabindex="-1" aria-labelledby="editBankTitle" aria-hidden="true">
++        <div class="modal-dialog" role="document">
++            <form class="modal-content" method="POST" action="{{ url('banks', $bank->id) }}">
++                @csrf @method('PUT')
++                <div class="modal-header">
++                    <h5 class="modal-title" id="editBankTitle">Edit bank details</h5>
++                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
++                </div>
++                <div class="modal-body">
++                    <div class="mb-3">
++                        <label for="ebName" class="form-label">Bank name</label>
++                        <input type="text" id="ebName" name="name" class="form-control @error('name') is-invalid @enderror" value="{{ old('name', $bank->name) }}" required>
++                        @error('name')<span class="invalid-feedback"><strong>{{ $message }}</strong></span>@enderror
++                    </div>
++                    <div class="mb-3">
++                        <label for="ebBranch" class="form-label">Branch</label>
++                        <input type="text" id="ebBranch" name="branch" class="form-control" value="{{ old('branch', $bank->branch) }}">
++                    </div>
++                    <div class="mb-3">
++                        <label for="ebAcc" class="form-label">Account number</label>
++                        <input type="text" id="ebAcc" name="acc_number" class="form-control" value="{{ old('acc_number', $bank->acc_number) }}">
++                    </div>
++                    <div class="small bk-muted">The balance cannot be edited here. It changes only through receipts, deposits and expenses, so every movement stays on the ledger.</div>
++                </div>
++                <div class="modal-footer">
++                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
++                    <button type="submit" class="btn btn-dark">Save changes</button>
++                </div>
++            </form>
++        </div>
++    </div>
++    @endif
++    @endsection
++
++    @section('scripts')
++    <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
++    <script src="https://cdn.datatables.net/2.3.3/js/dataTables.js"></script>
++    <script src="https://cdn.datatables.net/buttons/3.2.4/js/dataTables.buttons.js"></script>
++    <script src="https://cdn.datatables.net/buttons/3.2.4/js/buttons.dataTables.js"></script>
++    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
++    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
++    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
++    <script src="https://cdn.datatables.net/buttons/3.2.4/js/buttons.html5.min.js"></script>
++    <script>
++        const stSeries = @json($series);
++        const stMoney = v => 'GH₵ ' + Number(v).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
++        const stFmt = v => v.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
++
++        new ApexCharts(document.querySelector('#stTrend'), {
++            chart: { type: 'line', height: 300, toolbar: { show: false }, fontFamily: 'inherit' },
++            series: [
++                { name: 'Money in',  type: 'column', data: stSeries.map(r => r.in) },
++                { name: 'Money out', type: 'column', data: stSeries.map(r => r.out) },
++                { name: 'Net',       type: 'line',   data: stSeries.map(r => r.net) },
++            ],
++            colors: ['#1a7f45', '#b3261e', '#1e293b'],
++            stroke: { width: [0, 0, 3] },
++            plotOptions: { bar: { columnWidth: '55%', borderRadius: 2 } },
++            dataLabels: { enabled: false },
++            xaxis: { categories: stSeries.map(r => r.label), labels: { rotate: -45, hideOverlappingLabels: true } },
++            yaxis: { labels: { formatter: v => Number(v).toLocaleString() } },
++            tooltip: { shared: true, y: { formatter: stMoney } },
++            legend: { position: 'top', horizontalAlign: 'left' },
++            noData: { text: 'No entries between these dates.' },
++        }).render();
++
++        const stTable = new DataTable('#stLedgerTable', {
++            order: [[0, 'asc']],
++            pageLength: 50,
++            layout: {
++                topStart: {
++                    buttons: [
++                        { extend: 'pageLength', text: 'Show', className: 'btn btn-secondary btn-sm' },
++                        { extend: 'excelHtml5', text: 'Export Excel', title: '{{ addslashes($bank->name) }} statement {{ $period }}', className: 'btn btn-secondary btn-sm' },
++                        { extend: 'pdfHtml5', text: 'Export PDF', title: '{{ addslashes($bank->name) }} statement {{ $period }}', className: 'btn btn-secondary btn-sm' },
++                    ]
++                }
++            },
++            footerCallback: function () {
++                const api = this.api();
++                const sum = i => api.column(i, { search: 'applied' }).nodes().toArray().reduce((s, td) => s + Number(td.dataset.order || 0), 0);
++                document.getElementById('stFootIn').textContent = stFmt(sum(3));
++                document.getElementById('stFootOut').textContent = stFmt(sum(4));
++            },
++        });
++    </script>
++    @endsection
++
++</x-sales-dashboard>
+diff --git a/resources/views/partials/bank_side_nav.blade.php b/resources/views/partials/bank_side_nav.blade.php
+new file mode 100644
+index 0000000..7db5731
+--- /dev/null
++++ b/resources/views/partials/bank_side_nav.blade.php
+@@ -0,0 +1,101 @@
++{{-- Side menu for the bank / accounts screens. Replaces the menu pasted into banks/index, show and deposit_*. --}}
++@php
++    $user = Auth::user();
++    $canViewInvoices = $user?->hasRole(['Invoice', 'Finance Manager', 'Director']) ?? false;
++    $canViewReceipts = $user?->hasRole(['Finance Manager', 'Manager', 'Admin Assistant']) ?? false;
++    $canViewAccounts = $user?->hasRole(['Finance Manager', 'Director', 'Invoice', 'Manager', 'Officer']) ?? false;
++    $canViewPayroll  = ($user?->hasPermission('Accounts') ?? false) && ($user?->hasRole(['Invoice', 'Officer', 'Director', 'Finance Manager']) ?? false);
++@endphp
++
++<aside id="layout-menu" class="layout-menu menu-vertical menu bg-menu-theme">
++    <div class="app-brand demo">
++        <a href="#" class="app-brand-link">
++            <span class="app-brand-logo demo"><img width="70px" src="{{ asset('img/icons/brands/issobs.png') }}" alt=""></span>
++            <span class="app-brand-text demo menu-text fw-bold ms-2">ISSOBS</span>
++        </a>
++        <a href="javascript:void(0);" class="layout-menu-toggle menu-link text-large ms-auto">
++            <i class="bx bx-chevron-left d-block d-xl-none align-middle"></i>
++        </a>
++    </div>
++
++    <div class="menu-divider mt-0"></div>
++    <div class="menu-inner-shadow"></div>
++
++    <ul class="menu-inner py-1">
++        <li class="menu-item">
++            <a href="{{ url('home') }}" class="menu-link">
++                <i class="menu-icon tf-icons bx bx-home-smile text-primary me-2"></i>
++                <div class="text-truncate"><strong>Dashboard</strong></div>
++            </a>
++        </li>
++
++        <li class="menu-header small text-uppercase"><span class="menu-header-text text-primary">Transactions</span></li>
++        <li class="menu-item">
++            <a href="{{ url('transaction') }}" class="menu-link">
++                <i class="menu-icon tf-icons bx bx-transfer-alt bg-primary"></i>
++                <div class="text-truncate">Transactions</div>
++            </a>
++        </li>
++        @if($canViewInvoices)
++        <li class="menu-item">
++            <a href="{{ url('invoice') }}" class="menu-link">
++                <i class="menu-icon tf-icons bx bx-receipt text-primary me-2"></i>
++                <div class="text-truncate">Invoices</div>
++            </a>
++        </li>
++        @endif
++        @if($canViewReceipts)
++        <li class="menu-item">
++            <a href="{{ url('receipt') }}" class="menu-link">
++                <i class="menu-icon tf-icons bx bx-money-withdraw bg-primary"></i>
++                <div class="text-truncate">Receipts</div>
++            </a>
++        </li>
++        @endif
++
++        <li class="menu-header small text-uppercase"><span class="menu-header-text text-info">Management</span></li>
++        <li class="menu-item">
++            <a href="{{ url('client') }}" class="menu-link">
++                <i class="menu-icon tf-icons bx bx-bxs-user-detail text-info me-2"></i>
++                <div class="text-truncate">Clients</div>
++            </a>
++        </li>
++
++        @if($canViewAccounts)
++        <li class="menu-header small text-uppercase"><span class="menu-header-text text-danger">Accounts</span></li>
++        <li class="menu-item active open">
++            <a href="javascript:void(0);" class="menu-link menu-toggle">
++                <i class="menu-icon tf-icons bx bx-chart text-danger me-2"></i>
++                <div class="text-truncate"><strong>Accounts</strong></div>
++            </a>
++            <ul class="menu-sub">
++                <li @class(['menu-item', 'active' => request()->is('collections*')])>
++                    <a href="{{ url('collections') }}" class="menu-link"><div class="text-truncate">Collections</div></a>
++                </li>
++                <li @class(['menu-item', 'active' => request()->is('deposit*')])>
++                    <a href="{{ url('deposit') }}" class="menu-link"><div class="text-truncate">Bank Deposit</div></a>
++                </li>
++                <li @class(['menu-item', 'active' => request()->is('banks*')])>
++                    <a href="{{ url('banks') }}" class="menu-link"><div class="text-truncate">Banks</div></a>
++                </li>
++            </ul>
++        </li>
++        <li class="menu-item">
++            <a href="{{ url('expense') }}" class="menu-link">
++                <i class="menu-icon tf-icons bx bx-credit-card text-secondary me-2"></i>
++                <div class="text-truncate">Expense</div>
++            </a>
++        </li>
++        @endif
++
++        @if($canViewPayroll)
++        <li class="menu-header small text-uppercase"><span class="menu-header-text">Payroll</span></li>
++        <li class="menu-item">
++            <a href="{{ url('salariesTransaction') }}" class="menu-link">
++                <i class="menu-icon tf-icons bx bx-money-withdraw text-primary me-2"></i>
++                <div class="text-truncate">Payroll</div>
++            </a>
++        </li>
++        @endif
++    </ul>
++</aside>
+diff --git a/resources/views/partials/bank_styles.blade.php b/resources/views/partials/bank_styles.blade.php
+new file mode 100644
+index 0000000..4880eec
+--- /dev/null
++++ b/resources/views/partials/bank_styles.blade.php
+@@ -0,0 +1,43 @@
++{{-- Shared look for the bank screens (statement, deposit, deposit history). --}}
++<style>
++    .bk-num { font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
++    .bk-in  { color: #1a7f45; }
++    .bk-out { color: #b3261e; }
++    .bk-muted { color: #6b7280; }
++
++    .bk-band { display: grid; grid-template-columns: repeat(4, 1fr); background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; }
++    .bk-band > div { padding: 1.1rem 1.4rem; border-right: 1px solid #e5e7eb; }
++    .bk-band > div:last-child { border-right: 0; }
++    .bk-band .label { font-size: .8rem; color: #6b7280; margin-bottom: .25rem; }
++    .bk-band .value { font-size: 1.45rem; font-weight: 700; line-height: 1.2; font-variant-numeric: tabular-nums; }
++    .bk-band .note { font-size: .78rem; color: #6b7280; margin-top: .35rem; }
++    @media (max-width: 991px) { .bk-band { grid-template-columns: 1fr 1fr; } .bk-band > div { border-bottom: 1px solid #e5e7eb; } }
++
++    .bk-toolbar { background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; padding: .75rem 1rem; }
++    .bk-toolbar label { font-size: .75rem; color: #6b7280; margin-bottom: .15rem; }
++
++    .bk-panel { background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; }
++    .bk-panel > .head { padding: .9rem 1.25rem; border-bottom: 1px solid #e5e7eb; font-weight: 600; display: flex; justify-content: space-between; align-items: center; gap: .5rem; }
++    .bk-panel > .head small { font-weight: 400; color: #6b7280; }
++
++    .bk-row { padding: .8rem 1.25rem; border-bottom: 1px solid #f0f1f3; }
++    .bk-row:last-child { border-bottom: 0; }
++    .bk-bar { height: 6px; border-radius: 3px; background: #eef0f3; margin: .45rem 0 .25rem; overflow: hidden; }
++    .bk-bar > span { display: block; height: 100%; background: #d61c1c; }
++    .bk-bar.green > span { background: #1a7f45; }
++
++    table.bk-table th { font-size: .78rem; font-weight: 600; color: #6b7280; white-space: nowrap; }
++    table.bk-table td { vertical-align: middle; font-size: .85rem; }
++    table.bk-table tfoot td { font-weight: 700; border-top: 2px solid #1e293b; }
++    .bk-src { font-size: .78rem; }
++    .bk-print-head { display: none; }
++
++    @media print {
++        .layout-menu, .layout-navbar, .layout-overlay, .content-footer, .content-backdrop, .no-print,
++        .dt-buttons, .dt-search, .dt-length, .dt-paging, .dt-info { display: none !important; }
++        .layout-page { padding: 0 !important; }
++        .bk-print-head { display: block; margin-bottom: 1rem; }
++        .bk-panel, .bk-band { break-inside: avoid; border-color: #999; }
++        body { background: #fff !important; }
++    }
++</style>

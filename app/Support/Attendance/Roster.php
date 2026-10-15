@@ -146,7 +146,7 @@ class Roster
     public static function seesAllClients(User $user): bool
     {
         return $user->hasRole(self::HEAD_OFFICE_ROLES)
-            || ($user->hasRole(['Manager']) && $user->hasPermission('HR'));
+            || ( $user->hasPermission('Operations'));
     }
 
     public static function canManage(User $user, Client $client): bool

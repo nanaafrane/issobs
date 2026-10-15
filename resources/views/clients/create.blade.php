@@ -90,7 +90,7 @@
                 <ul class="menu-sub">
                     <li class="menu-item active">
                         <a href="{{url('client/create')}}" class="menu-link">
-                            <div class="text-truncate" data-i18n="CRegister">Register</div>
+                            <div class="text-truncate" data-i18n="CRegister">New Contract</div>
                         </a>
                     </li>
                     <li class="menu-item ">
@@ -227,7 +227,7 @@
                 <ul class="menu-sub">
                     <li class="menu-item active">
                         <a href="{{url('client/create')}}" class="menu-link">
-                            <div class="text-truncate" data-i18n="CRegister">Register</div>
+                            <div class="text-truncate" data-i18n="CRegister">New Contract</div>
                         </a>
                     </li>
                     <li class="menu-item ">

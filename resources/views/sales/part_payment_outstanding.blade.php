@@ -148,7 +148,7 @@
           <ul class="menu-sub">
           <li class="menu-item ">
               <a href="{{url('employees/create')}}" class="menu-link">
-              <div class="text-truncate" data-i18n="SRegister">New Recruit</div>
+              <div class="text-truncate" data-i18n="SRegister">Register</div>
               </a>
           </li>
           <li class="menu-item">
@@ -227,7 +227,7 @@
           <ul class="menu-sub">
           <li class="menu-item ">
               <a href="{{url('employees/create')}}" class="menu-link">
-              <div class="text-truncate" data-i18n="SRegister">New Recruit</div>
+              <div class="text-truncate" data-i18n="SRegister">Register</div>
               </a>
           </li>
           <li class="menu-item">

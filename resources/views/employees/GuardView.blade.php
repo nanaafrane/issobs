@@ -99,7 +99,7 @@
                 <ul class="menu-sub">
                     <li class="menu-item ">
                         <a href="{{url('client/create')}}" class="menu-link">
-                            <div class="text-truncate" data-i18n="CRegister">Register</div>
+                            <div class="text-truncate" data-i18n="CRegister">New Contract</div>
                         </a>
                     </li>
                     <li class="menu-item ">
@@ -127,7 +127,7 @@
                         <ul class="menu-sub">
                         <li class="menu-item ">
                             <a href="{{url('employees/create')}}" class="menu-link">
-                            <div class="text-truncate" data-i18n="SRegister">Register</div>
+                            <div class="text-truncate" data-i18n="SRegister">New Recruit</div>
                             </a>
                         </li>
                         <li class="menu-item active">
@@ -190,7 +190,7 @@
                 <ul class="menu-sub">
                 <li class="menu-item ">
                     <a href="{{url('employees/create')}}" class="menu-link">
-                    <div class="text-truncate" data-i18n="SRegister">Register</div>
+                    <div class="text-truncate" data-i18n="SRegister">New Recruit</div>
                     </a>
                 </li>
                 <li class="menu-item active">
@@ -232,7 +232,7 @@
                 <ul class="menu-sub">
                     <li class="menu-item ">
                         <a href="{{url('client/create')}}" class="menu-link">
-                            <div class="text-truncate" data-i18n="CRegister">Register</div>
+                            <div class="text-truncate" data-i18n="CRegister">New Contract</div>
                         </a>
                     </li>
                     <li class="menu-item ">
@@ -355,16 +355,29 @@
         </div><br>
 
 
+        @php
+            $clientLabel = trim(($client?->name ?? '') . ' ' . ($client?->business_name ?? ''));
+            $guardClientLabel = trim(($guards->first()?->client?->name ?? '') . ' ' . ($guards->first()?->client?->business_name ?? ''));
+            $summaryClient = $clientLabel ?: $guardClientLabel ?: 'Client not assigned';
+        @endphp
+
         <div class="row">
             <div class="col-xxl-12 mb-6 order-0">
                 <div class="card bg-dark">
-                    <div class="d-flex align-items-start row">
-                        <div class="col-sm-7">
-                            <div class="card-body">
-                               <p class="mb-1 text-white"><strong> {{ strtoupper($guards[0]->field?->name) }} </strong> </p>
-                                <h1 class="text-white"> {{ count($guards) }} </h1>
-                                <h6 class="card-title text-white mb-3">TOTAL NUMBER OF GUARDS </h6>
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-md-6">
+                                <p class="mb-1 text-white-50">Field Office</p>
+                                <p class="mb-0 text-white"><strong>{{ strtoupper($guards[0]->field?->name ?? 'Field not assigned') }}</strong></p>
                             </div>
+                            <div class="col-md-6 text-md-end">
+                                <p class="mb-1 text-white-50">Client</p>
+                                <p class="mb-0 text-white"><strong>{{ $summaryClient }}</strong></p>
+                            </div>
+                        </div>
+                        <div class="text-center mt-4">
+                            <h1 class="text-white mb-1">{{ count($guards) }}</h1>
+                            <h6 class="card-title text-white mb-0">TOTAL NUMBER OF GUARDS</h6>
                         </div>
                     </div>
                 </div>
@@ -413,7 +426,7 @@
                       </thead>
                       <tbody>
 
-                            @foreach ($guards as $key => $employee )
+                            @foreach ($guards->sortBy(fn ($employee) => $employee->status === 'Active' ? 0 : 1)->values() as $key => $employee )
                           <tr>
                               <td> <input class="checkBoxes form-check-input" type="checkbox" name="employees[{{ $key + 1 }}]" value="{{ $employee->id }}" /></td>
                               <td> {{ $key + 1 }} </td>
@@ -424,12 +437,19 @@
                               <td> {{ $employee->role?->name }}  </td>
                               <td> {{ $employee->field?->name }}   </td>
 
-                                  <td> 
-                                      <select name="client_id[{{ $key + 1 }}]" class="form-select @error('client_id') is-invalid @enderror" id="client_id">
-                                          @foreach($clients as $client)
-                                          <option  @if($client->id == $employee->client?->id) selected @endif  value="{{$client->id}}">{{$client->name}} {{$client->business_name}}</option>
-                                          @endforeach
-                                      </select>                            
+                                  <td>
+                                      <a type="button" class="btn btn-sm btn-outline-secondary client-reassign-toggle" data-target="#client-panel-{{ $employee->id }}">
+                                          Reassign
+                                        </a>
+
+                                      <div id="client-panel-{{ $employee->id }}" class="mt-2 d-none">
+                                          <label class="small text-muted d-block mb-1">Reassign to</label>
+                                          <select name="client_id[{{ $key + 1 }}]" class="form-select form-select-sm @error('client_id') is-invalid @enderror" id="client_id_{{ $employee->id }}">
+                                              @foreach($clients as $client)
+                                              <option  @if($client->id == $employee->client?->id) selected @endif  value="{{$client->id}}">{{$client->name}} {{$client->business_name}}</option>
+                                              @endforeach
+                                          </select>
+                                      </div>
                                   </td>
                                   <td> <textarea type="text" name="location[{{ $key + 1 }}]" class="form-control"> {{ $employee->location }} </textarea> </td>
                               @if($employee->status == 'Active')
@@ -485,34 +505,41 @@
 
     <script src="https://cdn.datatables.net/columncontrol/1.1.1/js/dataTables.columnControl.min.js"></script>
     <script>
-        new DataTable('#myTable', {
-            responsive: true,
-            columnControl: [ ['search'] ],
-            layout: {
-                topStart: {
-                    buttons: [ 
-                    {
-                        extend: 'pageLength',
-                        text: 'Show',
-                        className: 'btn btn-secondary',
-                        Options: [10, 25, 50, 100, 250, 500, 1000, 2000], 
-                    },
-                        {
-                            extend: 'excelHtml5',
-                            title: 'Employees',
-                            className: 'btn btn-secondary',
-                            exportOptions: {
-                                columns: ':visible'
-                            }
-                        },
-                    ]
-                }
-            },
-        });
-    </script>
+        document.addEventListener('DOMContentLoaded', function () {
+            if (!$.fn.DataTable.isDataTable('#myTable')) {
+                new DataTable('#myTable', {
+                    responsive: true,
+                    order: [[10, 'asc']],
+                    columnControl: [['search']],
+                    layout: {
+                        topStart: {
+                            buttons: [
+                                {
+                                    extend: 'pageLength',
+                                    text: 'Show',
+                                    className: 'btn btn-secondary',
+                                    options: [10, 25, 50, 100, 250, 500, 1000, 2000]
+                                },
+                                {
+                                    extend: 'excelHtml5',
+                                    title: 'Employees',
+                                    className: 'btn btn-secondary',
+                                    exportOptions: {
+                                        columns: ':visible'
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                });
+            }
 
-    <script>
-        new DataTable('#myTable', { responsive: true, });
+            $('.client-reassign-toggle').on('click', function () {
+                const target = $($(this).data('target'));
+                target.toggleClass('d-none');
+                $(this).text(target.hasClass('d-none') ? 'Reassign' : 'Hide');
+            });
+        });
     </script>
 
       <script>

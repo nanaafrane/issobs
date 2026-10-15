@@ -57,6 +57,17 @@
                 </ul>
             </li>
 
+        @if(Auth::user()->hasPermission('Operations'))
+            <li class="menu-header small text-uppercase"><span class="menu-header-text text-info">Operations</span></li>
+            <li class="menu-item active ">
+                <a href="{{url('employees')}}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-bxs-dashboard"></i>
+                    <div class="text-truncate" data-i18n="Operations">Employees</div>
+                </a>
+            </li>
+
+        @endif
+
         @if(Auth::user()->hasPermission('Accounts') || Auth::user()->hasPermission('Administration'))
             <!-- Apps & Pages -->
             <li class="menu-header small text-uppercase ">
@@ -110,7 +121,7 @@
                 <ul class="menu-sub">
                     <li class="menu-item ">
                         <a href="{{url('client/create')}}" class="menu-link">
-                            <div class="text-truncate" data-i18n="CRegister">Register</div>
+                            <div class="text-truncate" data-i18n="CRegister">New Contract</div>
                         </a>
                     </li>
                     <li class="menu-item ">

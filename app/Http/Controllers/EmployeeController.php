@@ -1095,9 +1095,10 @@ class EmployeeController extends Controller
             return back()->with('error', 'Client has no current Guards');
        }
 
-       $clients = $guards->isNotEmpty() ? Client::all() : null ;
+       $client = Client::findOrFail($id);
+       $clients = Client::all();
 
-        return view('employees.GuardView', compact('guards', 'clients'));
+        return view('employees.GuardView', compact('guards', 'clients', 'client'));
     }
 
     public function GuardReAassign(EmployeeClientRequest $request) 

@@ -49,6 +49,16 @@
             <span class="menu-header-text text-primary">Transactions</span>
         </li>
         <!-- Pages -->
+
+        @if(Auth::user()->department?->name == 'Operations')
+        <li class="menu-item {{ request()->is('attendance*') ? 'active' : '' }}">
+            <a href="{{ route('attendance.index') }}" class="menu-link">
+            <i class="menu-icon tf-icons bx bx-calendar-check text-info me-2"></i>
+            <div class="text-truncate" data-i18n="Attendance">Guard Attendance</div>
+            </a>
+        </li>
+        @endif
+
         @if($canViewInvoices)
         <li class="menu-item">
             <a href="javascript:void(0);" class="menu-link menu-toggle">
@@ -146,7 +156,7 @@
             <ul class="menu-sub">
             <li class="menu-item ">
                 <a href="{{url('employees/create')}}" class="menu-link">
-                <div class="text-truncate" data-i18n="SRegister">New Recruit</div>
+                <div class="text-truncate" data-i18n="SRegister">Register</div>
                 </a>
             </li>
             <li class="menu-item">
@@ -231,7 +241,7 @@
             <ul class="menu-sub">
             <li class="menu-item ">
                 <a href="{{url('employees/create')}}" class="menu-link">
-                <div class="text-truncate" data-i18n="SRegister">New Recruit</div>
+                <div class="text-truncate" data-i18n="SRegister">Register</div>
                 </a>
             </li>
             <li class="menu-item">
