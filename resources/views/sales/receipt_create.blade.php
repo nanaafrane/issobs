@@ -345,7 +345,7 @@
                     <h3 class="card-header text-primary"> <i class="icon-base bx bx-receipt text-primary me-2"></i> Receipt <i class="icon-base bx bx-right-arrow-alt mx-1 text-muted"></i> Show Invoices </h3>
                 </div>
                 <div class="col-6 d-flex justify-content-end align-items-center">
-                    <a class="btn btn-primary" href="{{ route('receipt.multi.create') }}"><i class="icon-base bx bx-layer me-1"></i> Pay multiple invoices / advance</a>
+                    <a class="btn btn-primary" href="{{ route('receipt.multi.create') }}"><i class="icon-base bx bx-layer me-1"></i> New receipt (several invoices / advance)</a>
                 </div>
             </div>
             <br>

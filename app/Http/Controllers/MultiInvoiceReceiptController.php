@@ -43,8 +43,13 @@ class MultiInvoiceReceiptController extends Controller
         $invoices = collect();
         $creditReceipts = collect();
 
-        if ($request->filled('client_id')) {
-            $client = $this->scopeToUserFields(Client::query())->with('field')->findOrFail($request->integer('client_id'));
+        // Opened from a particular invoice ("Create receipt" on the invoice list): that
+        // invoice is ticked and its client chosen. ?invoice= can be one id or several.
+        $preselected = array_values(array_filter(array_map('intval', (array) $request->input('invoice', []))));
+        $clientId = $request->integer('client_id') ?: ($preselected ? (int) Invoice::whereKey($preselected[0])->value('client_id') : 0);
+
+        if ($clientId) {
+            $client = $this->scopeToUserFields(Client::query())->with('field')->findOrFail($clientId);
             $invoices = $this->openInvoices($client->id)->get();
             $creditReceipts = Receipt::where('client_id', $client->id)
                 ->where('unapplied_amount', '>', 0)
@@ -58,7 +63,7 @@ class MultiInvoiceReceiptController extends Controller
         $assign_staff = $this->assignableStaff();
 
         return view('sales.receipt_multi_create', compact(
-            'clients', 'client', 'invoices', 'creditReceipts', 'mode', 'banks', 'wht_rate', 'assign_staff'
+            'clients', 'client', 'invoices', 'creditReceipts', 'mode', 'banks', 'wht_rate', 'assign_staff', 'preselected'
         ));
     }
 
@@ -73,8 +78,11 @@ class MultiInvoiceReceiptController extends Controller
         if ($receipt->hasUnappliedCredit()) {
             $message .= ' GH₵' . number_format($receipt->unapplied_amount, 2) . ' kept as client credit.';
         }
+        if ($recorder->notes) {
+            $message .= ' ' . implode(' ', $recorder->notes);
+        }
 
-        return redirect()->route('receipt.show', ['receipt' => $receipt->id])->with('primary', $message);
+        return redirect()->route('receipt.show', ['receipt' => $receipt->id])->with($recorder->notes ? 'warning' : 'primary', $message);
     }
 
     /**
@@ -110,6 +118,8 @@ class MultiInvoiceReceiptController extends Controller
         return Invoice::where('client_id', $clientId)
             ->whereIn('status', ['unpaid', 'uncompleted'])
             ->withSum('allocations as settled_sum', 'settled')
+            ->withSum('allocations as wht_taken', 'wht_amount')     // WHT already withheld on earlier receipts
+            ->withSum('allocations as vat_taken', 'vat7_amount')    // 7% VAT already withheld
             ->orderBy('invoice_month')
             ->orderBy('id');
     }

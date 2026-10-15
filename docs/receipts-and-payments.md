@@ -70,13 +70,28 @@ settled     = cash applied + WHT + 7% VAT + other deductions      (per receipt, 
 * Money beyond what the ticked invoice(s) owe is **refused** unless the cashier ticks
   *"Keep any extra as client credit (advance)"* — so an extra zero is caught instead of becoming credit.
   When ticked, the extra is stored on the receipt as `unapplied_amount`.
-* A payment with no invoice at all (true advance) is recorded from *Pay Multiple Invoices* with no invoice ticked.
+* A payment with no invoice at all (true advance) is recorded from *Receipts › New Receipt* with no invoice ticked.
 * Credit is used from the receipt page (**Apply credit**) against the client's later invoices. No new money moves.
 * Both receipt forms warn when the client already holds credit.
 * `advance_payment` is now **set automatically**: `advance` when part of the money is kept as credit, or when the
   receipt is dated before the month of an invoice it pays. The old tick box is gone.
 
 ---
+
+### One receipt screen
+Paying one invoice and paying several use the **same screen** (*Receipts › New Receipt*, `/receipt-multi/create`).
+*Create receipt* on the unpaid-invoices list (`/receiptCreate/{id}`) opens it with the client chosen and that invoice
+ticked; the client's other open invoices are listed, unticked, in case the payment covers more. So a single payment gets
+exactly the same live totals, oldest-first allocation, credit handling, bank picker, approval routing and checks as a
+multi-invoice one. Differences from the old single form:
+* **WHT / VAT defaults** are the invoice's standard amount **less what earlier receipts already withheld** — the old
+  form proposed the full 7.5% WHT again on every part payment, so ticking WHT twice deducted it twice.
+* Receipt date defaults to today and *From* to the client's name; due dates are shown; the confirmation states the
+  amount and how many invoices it covers.
+* The "keep extra as client credit" tick only appears when there is extra money.
+* The screen is limited to the user's office (the old form would open any invoice by its number).
+* "Client already has a category for that month" is reported, as the old single form did.
+The old `receiptCreate` view is removed. Editing a receipt still uses the single-invoice edit form.
 
 ## 4. Repairing balances the old code already got wrong
 

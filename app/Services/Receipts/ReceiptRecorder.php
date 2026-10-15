@@ -87,7 +87,7 @@ class ReceiptRecorder
     }
 
     /**
-     * The single-invoice form (receiptCreate / receipt_edit): WHT, VAT and
+     * The single-invoice edit form (receipt_edit) and the POST /receipt endpoint: WHT, VAT and
      * deductions are switches + amounts for its one invoice.
      */
     public static function singleInvoiceInput(Request $request, int $invoiceId): array

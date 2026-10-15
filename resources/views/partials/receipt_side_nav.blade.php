@@ -112,7 +112,7 @@
             </li>
             <li class="menu-item {{ request()->is('receipt-multi*') ? 'active' : '' }}">
                 <a href="{{ route('receipt.multi.create') }}" class="menu-link">
-                <div class="text-truncate" data-i18n="RMulti">Pay Multiple Invoices</div>
+                <div class="text-truncate" data-i18n="RMulti">New Receipt</div>
                 </a>
             </li>
             <li class="menu-item {{ request()->is('receiptPending') ? 'active' : '' }}">

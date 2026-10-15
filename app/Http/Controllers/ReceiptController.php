@@ -859,39 +859,20 @@ class ReceiptController extends Controller
     }
 
 
+    /**
+     * "Create receipt" on an invoice. There is one receipt screen for one or
+     * several invoices, so this opens it with this invoice already ticked —
+     * same form, same rules, same totals as paying several invoices at once.
+     */
     public function receiptCreate(int $invoice_id)
     {
-        $invoice = Invoice::findorFail($invoice_id);
+        $invoice = Invoice::findOrFail($invoice_id);
 
-        $wht_rate = new Wht();
-        // dd($wht_rate->wht_rate);
-        $mode = DB::table('receipt_mode')->get();
-        $status = DB::table('receipt_status')->get();
+        if (! in_array($invoice->status, ['unpaid', 'uncompleted'], true)) {
+            return redirect()->back()->with('warning', 'Invoice FWSSi' . $invoice->id . ' is already fully paid.');
+        }
 
-        $user = Auth::user();
-        $staff =  User::all();
-        $manager = $staff->where('department_id', '7')->where('role_id', '3');
-        $finance_manager = $staff->where('department_id', '1')->where('role_id', '2');
-        $assign_staff = [];
-        // dd($manager);
-        if($user->role->name == 'Admin Assistant')
-            {
-                $assign_staff = $manager;
-            }
-
-        if($user->role->name == 'Manager')
-            {
-                $assign_staff = $finance_manager;
-            }
-
-
-        $banks = Bank::orderBy('name')->get();
-
-        // What is really still owed (from the receipts on it), and any credit the client already holds.
-        $outstanding = $invoice->outstandingAmount();
-        $creditReceipts = Receipt::where('client_id', $invoice->client_id)->where('unapplied_amount', '>', 0)->orderBy('id')->get();
-
-        return view('sales.receiptCreate', compact('invoice', 'wht_rate', 'mode', 'status', 'assign_staff', 'banks', 'outstanding', 'creditReceipts'));
+        return redirect()->route('receipt.multi.create', ['client_id' => $invoice->client_id, 'invoice' => $invoice->id]);
     }
 
 

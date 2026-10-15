@@ -26,10 +26,10 @@
         <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
             <h3 class="mb-0 text-primary">
                 <i class="icon-base bx bx-receipt text-primary me-2"></i> Receipt
-                <i class="icon-base bx bx-right-arrow-alt mx-1 text-muted"></i> Pay Multiple Invoices
+                <i class="icon-base bx bx-right-arrow-alt mx-1 text-muted"></i> New
             </h3>
             <a href="{{ url('receipt/create') }}" class="btn btn-outline-secondary btn-sm">
-                <i class="bx bx-list-ul me-1"></i> Pay a single invoice instead
+                <i class="bx bx-list-ul me-1"></i> Unpaid invoices list
             </a>
         </div>
 
@@ -114,6 +114,7 @@
                                         <th><input type="checkbox" class="form-check-input" id="selectAll" title="Select all"></th>
                                         <th>Invoice</th>
                                         <th>Month</th>
+                                        <th>Due</th>
                                         <th class="text-end">Total</th>
                                         <th class="text-end">Outstanding</th>
                                         <th class="text-end">WHT</th>
@@ -127,10 +128,15 @@
                                     @foreach($invoices as $inv)
                                         @php
                                             $outstanding = max(0, round((float) $inv->total - (float) $inv->settled_sum, 2));
-                                            $whtDefault = round((float) $inv->sub_amount * $wht_rate->wht_rate, 2);
-                                            $vatDefault = round(((float) $inv->sub_total > 0 ? (float) $inv->sub_total : (float) $inv->sub_amount) * 0.07, 2);
+                                            // Standard WHT / 7% VAT for the invoice, less what earlier receipts already withheld,
+                                            // so a second part payment does not deduct the tax twice.
+                                            $whtFull = round((float) $inv->sub_amount * $wht_rate->wht_rate, 2);
+                                            $vatFull = round(((float) $inv->sub_total > 0 ? (float) $inv->sub_total : (float) $inv->sub_amount) * 0.07, 2);
+                                            $whtDefault = max(0, round($whtFull - (float) $inv->wht_taken, 2));
+                                            $vatDefault = max(0, round($vatFull - (float) $inv->vat_taken, 2));
                                             $key = 'invoices.' . $inv->id;
-                                            $checked = old($key . '.selected') === '1';
+                                            // Ticked after a validation error if it was ticked, or when the screen was opened from this invoice.
+                                            $checked = old('_token') ? old($key . '.selected') === '1' : in_array($inv->id, $preselected ?? [], true);
                                         @endphp
                                         <tr class="mi-row {{ $checked ? '' : 'mi-off' }}"
                                             data-id="{{ $inv->id }}"
@@ -140,10 +146,13 @@
                                             <td><input type="checkbox" class="form-check-input mi-pick" name="invoices[{{ $inv->id }}][selected]" value="1" {{ $checked ? 'checked' : '' }}></td>
                                             <td><strong>FWSSi{{ $inv->id }}</strong><br><span class="badge bg-label-{{ $inv->status === 'uncompleted' ? 'warning' : 'danger' }}">{{ $inv->status === 'uncompleted' ? 'part paid' : 'unpaid' }}</span></td>
                                             <td>{{ $inv->invoice_month?->format('M Y') }}</td>
+                                            <td class="small {{ $inv->due_date && $inv->due_date->isPast() ? 'text-danger' : '' }}">{{ $inv->due_date?->format('d M Y') }}</td>
                                             <td class="text-end mi-num">{{ number_format($inv->total, 2) }}</td>
                                             <td class="text-end mi-num"><strong>{{ number_format($outstanding, 2) }}</strong></td>
-                                            <td><input type="number" step="0.01" min="0" class="form-control form-control-sm mi-wht" name="invoices[{{ $inv->id }}][wht]" value="{{ old($key . '.wht') }}" placeholder="0.00"></td>
-                                            <td><input type="number" step="0.01" min="0" class="form-control form-control-sm mi-vat" name="invoices[{{ $inv->id }}][vat7]" value="{{ old($key . '.vat7') }}" placeholder="0.00"></td>
+                                            <td><input type="number" step="0.01" min="0" class="form-control form-control-sm mi-wht" name="invoices[{{ $inv->id }}][wht]" value="{{ old($key . '.wht') }}" placeholder="0.00"
+                                                @if((float) $inv->wht_taken > 0) title="GH₵{{ number_format($inv->wht_taken, 2) }} WHT already withheld on this invoice" @endif></td>
+                                            <td><input type="number" step="0.01" min="0" class="form-control form-control-sm mi-vat" name="invoices[{{ $inv->id }}][vat7]" value="{{ old($key . '.vat7') }}" placeholder="0.00"
+                                                @if((float) $inv->vat_taken > 0) title="GH₵{{ number_format($inv->vat_taken, 2) }} VAT already withheld on this invoice" @endif></td>
                                             <td><input type="number" step="0.01" min="0" class="form-control form-control-sm mi-ded" name="invoices[{{ $inv->id }}][deduction]" value="{{ old($key . '.deduction') }}" placeholder="0.00"></td>
                                             <td><input type="number" step="0.01" min="0" class="form-control form-control-sm mi-applied" name="invoices[{{ $inv->id }}][applied]" value="{{ old($key . '.applied') }}" placeholder="auto"></td>
                                             <td class="text-end mi-num mi-remaining">{{ number_format($outstanding, 2) }}</td>

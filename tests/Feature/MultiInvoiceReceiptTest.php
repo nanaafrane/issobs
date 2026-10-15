@@ -131,7 +131,7 @@ class MultiInvoiceReceiptTest extends TestCase
     public function test_single_invoice_screens_render_with_bank_pickers(): void
     {
         $inv = $this->invoice(500, '2026-09-01');
-        $this->get('/receiptCreate/' . $inv->id)->assertOk()
+        $this->followingRedirects()->get('/receiptCreate/' . $inv->id)->assertOk()
             ->assertSee('RECEIVED INTO (OUR BANK)', false)->assertSee('GCB Main');
 
         $receipt = Receipt::create(['invoice_id' => $inv->id, 'client_id' => $this->client->id, 'total' => 100, 'cash_amount' => 100, 'status' => 'uncompleted', 'mode' => ['cash']]);
