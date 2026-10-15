@@ -1954,59 +1954,86 @@ class SalaryController extends Controller
             return back()->with('error', 'No salaries selected');
         }
 
+        $isFinanceManager = Auth::user()?->hasRole(['Finance Manager']);
+
         if ($action === 'delete')
         {
-            Salary::whereIn('id', $salaryIds)->delete();
+            // A paid (approved) salary is history: it is never deleted, by anyone.
+            $paid = Salary::with('employee')->whereIn('id', $salaryIds)->where('payment_status', 'approved')->get();
+            $deletable = array_values(array_diff(array_map('intval', $salaryIds), $paid->pluck('id')->all()));
+            foreach (Salary::whereIn('id', $deletable)->get() as $salary) {
+                $salary->delete();
+            }
+            if ($paid->isNotEmpty()) {
+                return back()->with('error', 'Approved (paid) salaries cannot be deleted: '
+                    . $paid->map(fn ($s) => ($s->employee?->name ?? 'Unknown') . ' (ID ' . $s->id . ')')->implode(', ')
+                    . (count($deletable) ? '. The others were deleted: ' . implode(', ', $deletable) : '.'));
+            }
             return back()->with('danger', 'Deleted salaries with IDs: ' . implode(', ', $salaryIds));
         }
 
        elseif ($action === 'approve')
         {
-            // echo 'Approving';
-                $salaries = Salary::findOrFail($salaryIds);
-                // dd($salaries);
-                foreach ($salaries as $salary) 
-                {
-                    $exists = Salary::where('id', $salary->id)
-                                    ->where('payment_status', '!=', 'pending')
-                                    ->exists();
-                    if ($exists) {
-                        $alreadyProcessed[] = $salary->employee?->name . " with Salary ID: " . $salary->id;
-                        continue;
-                    }
-
-                    Salary::where('id', $salary->id)->update(['payment_status' => 'approved', 'approval_date' => now() ,'user_id2' => Auth::id()]);
+            if (! $isFinanceManager) {
+                return back()->with('error', 'Only a Finance Manager can approve salaries.');
+            }
+            $alreadyProcessed = [];
+            $runs = [];
+            foreach (Salary::with('employee')->findOrFail($salaryIds) as $salary)
+            {
+                if ($salary->payment_status !== 'pending') {
+                    $alreadyProcessed[] = $salary->employee?->name . " with Salary ID: " . $salary->id;
+                    continue;
                 }
-            //  dd(count($alreadyProcessed));
+                $salary->payment_status = 'approved';
+                $salary->approval_date = now();
+                $salary->user_id2 = Auth::id();
+                $salary->save();
+                if ($run = \App\Support\PaymentRuns::recordSalary($salary, 'approve')) {
+                    $runs[$run->id] = \App\Support\PaymentRuns::label($run);
+                }
+            }
+            $into = $runs ? ' Recorded in: ' . implode('; ', $runs) . '.' : '';
             if (!empty($alreadyProcessed))
-                 {
-                    return back()->with('error', 'Salaries with the IDs have already been Approved: '. implode(', ', $alreadyProcessed). ' The remaining have been Appoved ')  ;
-                }
-            return back()->with('success', 'Approved salaries with IDs: ' . implode(', ', $salaryIds));
+            {
+                return back()->with('error', 'These salaries were not pending, so they were skipped: ' . implode(', ', $alreadyProcessed) . '. The remaining have been approved.' . $into);
+            }
+            return back()->with('success', 'Approved salaries with IDs: ' . implode(', ', $salaryIds) . '.' . $into);
         }
         elseif ($action === 'unapprove')
         {
-            // echo 'Approving';
-                $salaries = Salary::findOrFail($salaryIds);
-                // dd($salaries);
-                foreach ($salaries as $salary) 
-                {
-                    $exists = Salary::where('id', $salary->id)
-                                    ->where('payment_status', '!=', 'approved')
-                                    ->exists();
-                    if ($exists) {
-                        $alreadyProcessed[] = $salary->employee?->name . " with Salary ID: " . $salary->id;
-                        continue;
-                    }
-
-                    Salary::where('id', $salary->id)->update(['payment_status' => 'pending', 'approval_date' => now() ,'user_id2' => Auth::id()]);
+            if (! $isFinanceManager) {
+                return back()->with('error', 'Only a Finance Manager can unapprove salaries.');
+            }
+            $alreadyProcessed = [];
+            $blocked = [];
+            foreach (Salary::with('employee')->findOrFail($salaryIds) as $salary)
+            {
+                if ($salary->payment_status !== 'approved') {
+                    $alreadyProcessed[] = $salary->employee?->name . " with Salary ID: " . $salary->id;
+                    continue;
                 }
-            //  dd(count($alreadyProcessed));
-            if (!empty($alreadyProcessed))
-                 {
-                    return back()->with('error', 'Salaries with the IDs have already been Approved: '. implode(', ', $alreadyProcessed). ' The remaining have been Appoved ')  ;
+                // Paid in a closed payment: that is history, it cannot be taken back here.
+                if ($run = \App\Support\PaymentRuns::removeSalaryPayment($salary->id)) {
+                    $blocked[] = $salary->employee?->name . ' (ID ' . $salary->id . ', ' . \App\Support\PaymentRuns::label($run) . ')';
+                    continue;
                 }
-            return back()->with('success', 'Approved salaries with IDs: ' . implode(', ', $salaryIds));
+                $salary->payment_status = 'pending';
+                $salary->approval_date = null;
+                $salary->user_id2 = Auth::id();
+                $salary->save();
+            }
+            $messages = [];
+            if ($blocked) {
+                $messages[] = 'Paid in a closed payment, so not unapproved: ' . implode(', ', $blocked) . '.';
+            }
+            if ($alreadyProcessed) {
+                $messages[] = 'Not approved, so skipped: ' . implode(', ', $alreadyProcessed) . '.';
+            }
+            if ($messages) {
+                return back()->with('error', implode(' ', $messages) . ' The remaining have been unapproved.');
+            }
+            return back()->with('success', 'Unapproved salaries with IDs: ' . implode(', ', $salaryIds));
         }
         elseif ($action === 'hold')
             {
@@ -2014,7 +2041,7 @@ class SalaryController extends Controller
                     foreach ($salaries as $salary) 
                     {
                         $exists = Salary::where('id', $salary->id)
-                                        ->where('payment_status', 'hold')
+                                        ->whereIn('payment_status', ['hold', 'approved'])
                                         ->exists();
                         if ($exists) {
                             $alreadyProcessed[] = $salary->employee?->name . " with Salary ID: " . $salary->id;
@@ -2030,7 +2057,7 @@ class SalaryController extends Controller
                 //  dd(count($alreadyProcessed));
                 if (!empty($alreadyProcessed))
                     {
-                        return back()->with('error', 'Salaries with the IDs have already been Held : '. implode(', ', $alreadyProcessed). ' The remaining have been Appoved ')  ;
+                        return back()->with('error', 'Already held or approved (unapprove first), so skipped: '. implode(', ', $alreadyProcessed). ' The remaining have been Appoved ')  ;
                     }
                 return back()->with('success', 'Moved salaries with IDs: ' . implode(', ', $salaryIds));
             }
@@ -2041,7 +2068,7 @@ class SalaryController extends Controller
                     foreach ($salaries as $salary) 
                     {
                         $exists = Salary::where('id', $salary->id)
-                                        ->where('payment_status', 'pending')
+                                        ->whereIn('payment_status', ['pending', 'approved'])
                                         ->exists();
                         if ($exists) {
                             $alreadyProcessed[] = $salary->employee?->name . " with Salary ID: " . $salary->id;
@@ -2053,7 +2080,7 @@ class SalaryController extends Controller
                 //  dd(count($alreadyProcessed));
                 if (!empty($alreadyProcessed))
                     {
-                        return back()->with('error', 'Salaries with the IDs have already been Moved to Main: '. implode(', ', $alreadyProcessed). ' The remaining have been Appoved ')  ;
+                        return back()->with('error', 'Already in main or approved, so skipped: '. implode(', ', $alreadyProcessed). ' The remaining have been Appoved ')  ;
                     }
                 return back()->with('success', 'Moved salaries with IDs: ' . implode(', ', $salaryIds));
             }

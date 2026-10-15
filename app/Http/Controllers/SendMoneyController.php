@@ -109,12 +109,22 @@ class SendMoneyController extends Controller
 
         $action = $request->input('action_type') ?? $request->input('submit');
 
+        if (! Auth::user()?->hasRole(['Finance Manager'])) {
+            return back()->with('error', 'Only a Finance Manager can send or confirm salary payments.');
+        }
+
         if($action == 'pay')
             {
                 // return " You are about to Pay ";
+                $skipped = [];
 
                 foreach ($salaries as $salary )
                     {
+                        // Never send money twice: approved (paid), or already sent / succeeded.
+                        if ($salary->payment_status !== 'pending' || in_array(strtolower((string) $salary->status1), ['pending', 'success'], true)) {
+                            $skipped[] = ($salary->employee?->name ?? 'Unknown') . ' (ID ' . $salary->id . ')';
+                            continue;
+                        }
                         // SEND MONEY
                     $result = $this->sendMoney($salary->employee->name, $salary->net_salary, $salary->employee->phone_number, $salary->employee->channel,  Carbon::parse($salary->salary_month)->format('F')); 
                     // echo  $result . "<br>" ;
@@ -139,7 +149,9 @@ class SendMoneyController extends Controller
                         $salary->save();
                     }
 
-                    return back()->with('success', ' Payments has been made, Wait for up to 5 mins to check confirmation');
+                    $skippedNote = $skipped ? ' Skipped (not pending, or already sent): ' . implode(', ', $skipped) . '.' : '';
+
+                    return back()->with('success', ' Payments has been made, Wait for up to 5 mins to check confirmation.' . $skippedNote);
 
             }
         elseif($action == 'confirm')
@@ -148,6 +160,10 @@ class SendMoneyController extends Controller
 
                 foreach ($salaries as $salary )
                     {
+                        // Nothing sent for this salary (or already confirmed): nothing to check.
+                    if (! $salary->hubtel_id || $salary->status1 === 'success') {
+                        continue;
+                    }
                         // RUN A STATUS CHECK WITH CLIENT REFERENCE
                     $hubtel = DB::table('hubtel')->where('id', $salary->hubtel_id)->get();
                     $data = json_decode($hubtel, true);
@@ -177,7 +193,11 @@ class SendMoneyController extends Controller
                         {
                             $salary->status1 = $result['Data']['transactionStatus'];
                             $salary->payment_status = 'approved';
+                            $salary->approval_date = $salary->approval_date ?? now();
+                            $salary->user_id2 = $salary->user_id2 ?? Auth::id();
                             $salary->save(); 
+                            // Paid by MoMo: record it in the open payment of the month.
+                            \App\Support\PaymentRuns::recordSalary($salary, 'momo');
                         }else{
                             $salary->status1 = $result['Data']['transactionStatus'];
                             $salary->save(); 

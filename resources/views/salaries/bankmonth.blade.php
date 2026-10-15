@@ -328,6 +328,7 @@
                             <input type="hidden" name="action_type" id="action_type" value="" />
                             <input class="form-check-input form-check-inline" type="checkbox" value="" id="options" />
 
+                        @include('partials.payment_run_banner', ['month' => $month])
                             <div class="form-check form-check-inline">
                                  @if(Auth::user()->hasRole(['Finance Manager']))
                                 <button class="btn btn-success" data-loading="true" onclick="document.getElementById('action_type').value='approve'; return confirm('Kindly Confirm?')" type="submit"> <i class="icon-base bx bx-recycle"> </i> {{ __('Approve') }}</button>                   

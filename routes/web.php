@@ -24,6 +24,7 @@ use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SalaryController;
 use App\Http\Controllers\PayPriorityRuleController;
 use App\Http\Controllers\SalaryReportController;
+use App\Http\Controllers\PaymentRunController;
 use App\Http\Controllers\SalaryTopUpsController;
 use App\Http\Controllers\SendMoneyController;
 use App\Http\Controllers\ServiceController;
@@ -223,6 +224,13 @@ Route::post('employeesGuardReAassign', [EmployeeController::class, 'GuardReAassi
 
 Route::get('salaries/employees-data', [SalaryController::class, 'employeesData'])->name('salaries.employeesData');
 Route::get('salaries-report', [SalaryReportController::class, 'index'])->name('salaries.report');
+Route::get('salary-payments', [PaymentRunController::class, 'index'])->name('salary-payments.index');
+Route::get('salary-payments/cell', [PaymentRunController::class, 'cell'])->name('salary-payments.cell');
+Route::get('salary-payments/export', [PaymentRunController::class, 'export'])->name('salary-payments.export');
+Route::post('salary-payments/runs', [PaymentRunController::class, 'start'])->name('salary-payments.start');
+Route::put('salary-payments/runs/{run}', [PaymentRunController::class, 'update'])->whereNumber('run')->name('salary-payments.update');
+Route::post('salary-payments/runs/{run}/close', [PaymentRunController::class, 'close'])->whereNumber('run')->name('salary-payments.close');
+Route::post('salary-payments/differences', [PaymentRunController::class, 'payDifferences'])->name('salary-payments.differences');
 Route::get('salaries-month/data', [SalaryController::class, 'salariesMonthData'])->name('salaries.salariesMonthData');
 Route::get('salaries-month/export', [SalaryController::class, 'salariesMonthExport'])->name('salaries.salariesMonthExport');
 // Pay priority rules (Finance Manager; see PayPriorityRuleController)

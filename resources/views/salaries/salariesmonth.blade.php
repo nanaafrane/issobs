@@ -1994,6 +1994,7 @@
                             <div class="table-responsive text-nowrap">
 
                                 <input type="hidden" name="topups_action_type" id="topups_action_type" value="" />
+                                @include('partials.payment_run_banner', ['month' => $month])
                                  @if(Auth::user()->hasRole(['Finance Manager']) )
                                 <input class="form-check-input form-check-inline" type="checkbox" value="" id="topups" />
 

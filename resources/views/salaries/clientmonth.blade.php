@@ -359,6 +359,7 @@
                     <div class="col-lg-12 mb-4">
                         <input type="hidden" name="action_type" id="salary_action_type" value="" />
                         <input class="form-check-input form-check-inline" type="checkbox" value="" id="options" />
+                        @include('partials.payment_run_banner', ['month' => $month])
                        @if(Auth::user()->hasRole(['Finance Manager']))
                         <div class="form-check form-check-inline">
                             <button class="btn btn-danger m-4" data-action="hold" onclick="document.getElementById('salary_action_type').value='hold'; return confirm('Kindly Confirm?')" type="submit"> <i class="icon-base bx bx-bxs-file-plus"> </i> {{ __(' Hold') }}</button>                   
