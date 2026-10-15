@@ -14,7 +14,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('absent_deduction_settings', function (Blueprint $table) {
+        if (! Schema::hasTable('absent_deduction_settings')) Schema::create('absent_deduction_settings', function (Blueprint $table) {
             $table->id();
             $table->string('basis', 20)->default('basic');          // basic | basic_allowances
             $table->string('divisor', 20)->default('month_days');   // month_days | 30 | 26
@@ -23,7 +23,7 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        Schema::create('absent_deduction_changes', function (Blueprint $table) {
+        if (! Schema::hasTable('absent_deduction_changes')) Schema::create('absent_deduction_changes', function (Blueprint $table) {
             $table->id();
             $table->foreignId('salary_id')->index();
             $table->foreignId('employee_id');

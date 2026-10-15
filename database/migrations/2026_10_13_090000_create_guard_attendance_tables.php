@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 /**
@@ -15,11 +16,18 @@ use Illuminate\Support\Facades\Schema;
  *  clients             attendance_token (secret in the QR poster), site coordinates + radius.
  *  client_employee     shift each guard works at that client (day / night / rotate).
  *  employees           attendance PIN (hashed) and the phone the guard scans with.
+ *
+ * Safe to re-run: every step checks first, so a run that stopped half-way (MySQL cannot
+ * roll back DDL, and MyISAM has no transactions) finishes the remaining steps instead of
+ * failing on "table already exists". Altering the old tables rebuilds them, which
+ * re-checks legacy '0000-00-00' dates under strict mode (error 1292); those statements run
+ * with the date checks relaxed for the session only. No data is modified.
  */
 return new class extends Migration
 {
     public function up(): void
     {
+        if (! Schema::hasTable('client_shift_plans')) {
         Schema::create('client_shift_plans', function (Blueprint $table) {
             $table->id();
             $table->foreignId('client_id')->index();
@@ -35,7 +43,9 @@ return new class extends Migration
             $table->timestamps();
             $table->unique(['client_id', 'effective_month']);
         });
+        }
 
+        if (! Schema::hasTable('attendances')) {
         Schema::create('attendances', function (Blueprint $table) {
             $table->id();
             $table->foreignId('client_id')->index();
@@ -62,35 +72,86 @@ return new class extends Migration
             $table->index(['client_id', 'work_date']);
             $table->index('status');
         });
+        }
 
-        Schema::table('clients', function (Blueprint $table) {
-            $table->string('attendance_token', 40)->nullable()->unique();
-            $table->decimal('latitude', 10, 7)->nullable();
-            $table->decimal('longitude', 10, 7)->nullable();
-            $table->unsignedInteger('attendance_radius_m')->default(200);
-        });
+        $this->withoutStrictDates(function () {
+            if (! Schema::hasColumn('clients', 'attendance_token')) {
+                Schema::table('clients', function (Blueprint $table) {
+                    $table->string('attendance_token', 40)->nullable()->unique();
+                });
+            }
+            foreach (['latitude' => fn (Blueprint $t) => $t->decimal('latitude', 10, 7)->nullable(),
+                      'longitude' => fn (Blueprint $t) => $t->decimal('longitude', 10, 7)->nullable(),
+                      'attendance_radius_m' => fn (Blueprint $t) => $t->unsignedInteger('attendance_radius_m')->default(200)] as $column => $add) {
+                if (! Schema::hasColumn('clients', $column)) {
+                    Schema::table('clients', $add);
+                }
+            }
 
-        Schema::table('client_employee', function (Blueprint $table) {
-            $table->string('shift', 10)->nullable();    // day | night | rotate
-        });
+            if (! Schema::hasColumn('client_employee', 'shift')) {
+                Schema::table('client_employee', function (Blueprint $table) {
+                    $table->string('shift', 10)->nullable();    // day | night | rotate
+                });
+            }
 
-        Schema::table('employees', function (Blueprint $table) {
-            $table->string('attendance_pin')->nullable();
-            $table->string('attendance_device', 64)->nullable();
+            if (! Schema::hasColumn('employees', 'attendance_pin')) {
+                Schema::table('employees', function (Blueprint $table) {
+                    $table->string('attendance_pin')->nullable();
+                });
+            }
+            if (! Schema::hasColumn('employees', 'attendance_device')) {
+                Schema::table('employees', function (Blueprint $table) {
+                    $table->string('attendance_device', 64)->nullable();
+                });
+            }
         });
+    }
+
+    /** Run DDL on legacy tables with the zero-date checks off for this session only. */
+    private function withoutStrictDates(callable $callback): void
+    {
+        if (! in_array(DB::connection()->getDriverName(), ['mysql', 'mariadb'], true)) {
+            $callback();
+
+            return;
+        }
+
+        $original = (string) DB::selectOne('SELECT @@SESSION.sql_mode AS mode')->mode;
+        $relaxed = implode(',', array_diff(
+            explode(',', $original),
+            ['NO_ZERO_DATE', 'NO_ZERO_IN_DATE', 'STRICT_TRANS_TABLES', 'STRICT_ALL_TABLES', 'TRADITIONAL']
+        ));
+
+        DB::statement('SET SESSION sql_mode = '.DB::getPdo()->quote($relaxed));
+        try {
+            $callback();
+        } finally {
+            DB::statement('SET SESSION sql_mode = '.DB::getPdo()->quote($original));
+        }
     }
 
     public function down(): void
     {
-        Schema::table('employees', function (Blueprint $table) {
-            $table->dropColumn(['attendance_pin', 'attendance_device']);
-        });
-        Schema::table('client_employee', function (Blueprint $table) {
-            $table->dropColumn('shift');
-        });
-        Schema::table('clients', function (Blueprint $table) {
-            $table->dropUnique(['attendance_token']);
-            $table->dropColumn(['attendance_token', 'latitude', 'longitude', 'attendance_radius_m']);
+        $this->withoutStrictDates(function () {
+            foreach (['attendance_pin', 'attendance_device'] as $column) {
+                if (Schema::hasColumn('employees', $column)) {
+                    Schema::table('employees', fn (Blueprint $t) => $t->dropColumn($column));
+                }
+            }
+            if (Schema::hasColumn('client_employee', 'shift')) {
+                Schema::table('client_employee', fn (Blueprint $t) => $t->dropColumn('shift'));
+            }
+            if (Schema::hasColumn('clients', 'attendance_token')) {
+                Schema::table('clients', function (Blueprint $t) {
+                    $t->dropUnique(['attendance_token']);
+                    $t->dropColumn('attendance_token');
+                });
+            }
+            foreach (['latitude', 'longitude', 'attendance_radius_m'] as $column) {
+                if (Schema::hasColumn('clients', $column)) {
+                    Schema::table('clients', fn (Blueprint $t) => $t->dropColumn($column));
+                }
+            }
         });
         Schema::dropIfExists('attendances');
         Schema::dropIfExists('client_shift_plans');
