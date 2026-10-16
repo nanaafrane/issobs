@@ -81,6 +81,10 @@ class ScanRecorder
         $shift = $slot['shift'];
 
         $existing = Attendance::where('employee_id', $guard->id)->where('work_date', $date)->where('shift', $shift)->first();
+        if ($existing?->overtime_id) {
+            return ['ok' => true, 'status' => $existing->status, 'attendance' => $existing,
+                'message' => "This {$shift} shift is recorded on an overtime entry (" . strtolower((string) $existing->reason) . '). If you are here, tell your supervisor.'];
+        }
         if ($existing) {
             if ($existing->source === 'scan' && $existing->checked_in_at) {
                 return ['ok' => true, 'status' => $existing->status, 'attendance' => $existing,
@@ -152,6 +156,7 @@ class ScanRecorder
                 'work_date' => $date,
                 'shift' => $shift,
                 'status' => $flags ? Attendance::PENDING : Attendance::PRESENT,
+                'reason' => 'Present',
                 'source' => 'scan',
                 'checked_in_at' => $at,
                 'latitude' => $lat,

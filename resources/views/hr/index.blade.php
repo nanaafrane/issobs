@@ -233,7 +233,7 @@
                             <td>{{ $row->clientLabel() }}</td>
                             <td><strong>{{ $row->otEmployee?->name }}</strong></td>
                             <td>{{ $row->officer?->name }}</td>
-                            <td>{{ $row->reason }}</td>
+                            <td>{{ $row->reason }}@include('overtime._attendance_badge')</td>
                             <td>GH&#x20B5; {{ number_format($row->amount, 2) }}</td>
                             <td>{{ $row->phone_number }}</td>
                             <td>
@@ -277,7 +277,12 @@
 
                                     <select class="form-select form-select-sm" name="reason" style="width:130px">
                                         <option value="">Reason...</option>
-                                        @foreach($reasons as $r)<option value="{{ $r }}">{{ $r }}</option>@endforeach
+                                        <optgroup label="Guard named (goes on attendance)">
+                                            @foreach(\App\Support\Attendance\ShiftReasons::guardReasons() as $r)<option value="{{ $r }}">{{ $r }}</option>@endforeach
+                                        </optgroup>
+                                        <optgroup label="Post vacant">
+                                            @foreach(array_diff($reasons, \App\Support\Attendance\ShiftReasons::guardReasons()) as $r)<option value="{{ $r }}">{{ $r }}</option>@endforeach
+                                        </optgroup>
                                     </select>
 
                                     <input type="number" step="0.01" min="0" class="form-control form-control-sm" name="amount" placeholder="Amount" style="width:100px" value="30" required>

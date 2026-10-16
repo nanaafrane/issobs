@@ -13,6 +13,7 @@ use App\Support\Attendance\Roster;
 use App\Support\Attendance\ScanRecorder;
 use App\Support\Attendance\ShiftClock;
 use App\Support\Attendance\ShiftPlans;
+use App\Support\Attendance\ShiftReasons;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -47,7 +48,7 @@ class AttendanceController extends Controller
             ->get();
 
         $rows = MonthOverview::rows($clients, $month);
-        $pending = Attendance::where('status', Attendance::PENDING)
+        $pending = Attendance::where('status', Attendance::PENDING)->whereNull('overtime_id')
             ->whereIn('client_id', $clients->pluck('id')->all() ?: [0])->count();
 
         return view('attendance.index', compact('rows', 'month', 'pending'));
@@ -92,6 +93,10 @@ class AttendanceController extends Controller
         }
 
         $existing = Attendance::where('employee_id', $guard->id)->where('work_date', $date->toDateString())->where('shift', $data['shift'])->first();
+        if ($existing?->overtime_id) {
+            return response()->json(['message' => 'This shift comes from overtime entry #' . $existing->overtime_id
+                . '. Change or delete the overtime entry instead.'], 422);
+        }
         if ($existing && (int) $existing->client_id !== (int) $client->id) {
             return response()->json(['message' => 'This guard is already recorded at another client for that shift.'], 422);
         }
@@ -101,6 +106,7 @@ class AttendanceController extends Controller
         } elseif ($existing) {
             $existing->fill([
                 'status' => $data['status'],
+                'reason' => ShiftReasons::FOR_STATUS[$data['status']] ?? null,
                 'marked_by' => Auth::id(),
                 'note' => $data['note'] ?? $existing->note,
             ])->save();
@@ -108,7 +114,7 @@ class AttendanceController extends Controller
             Attendance::create([
                 'client_id' => $client->id, 'employee_id' => $guard->id,
                 'work_date' => $date->toDateString(), 'shift' => $data['shift'],
-                'status' => $data['status'], 'source' => 'manual',
+                'status' => $data['status'], 'reason' => ShiftReasons::FOR_STATUS[$data['status']] ?? null, 'source' => 'manual',
                 'marked_by' => Auth::id(), 'note' => $data['note'] ?? null,
             ]);
         }
@@ -349,6 +355,7 @@ class AttendanceController extends Controller
         $clientIds = Roster::clientsFor(Auth::user())->pluck('id')->all();
         $items = Attendance::with(['client:id,name,business_name,branch', 'employee:id,name,phone_number,client_id'])
             ->where('status', Attendance::PENDING)
+            ->whereNull('overtime_id')   // overtime entries are approved on the overtime page
             ->whereIn('client_id', $clientIds ?: [0])
             ->orderBy('work_date')->orderBy('checked_in_at')
             ->paginate(50);
@@ -365,6 +372,7 @@ class AttendanceController extends Controller
             'note' => ['nullable', 'string', 'max:255'],
         ]);
         abort_unless($attendance->status === Attendance::PENDING, 422, 'This sign-in was already reviewed.');
+        abort_if((bool) $attendance->overtime_id, 422, 'This comes from an overtime entry: approve or reject the overtime instead.');
 
         $note = trim(implode('; ', array_filter([$attendance->note, $data['note'] ?? null])));
         $attendance->fill([

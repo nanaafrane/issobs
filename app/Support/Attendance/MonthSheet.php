@@ -135,7 +135,15 @@ class MonthSheet
     {
         return collect(['day', 'night'])
             ->filter(fn ($s) => isset($cell[$s]))
-            ->map(fn ($s) => Attendance::CODES[$cell[$s]->status] ?? '?')
+            ->map(function ($s) use ($cell) {
+                $r = $cell[$s];
+                // Overtime awaiting approval: show the reason it will become, e.g. "S?".
+                if ($r->status === Attendance::PENDING && $r->overtime_id && ($to = ShiftReasons::guardStatus($r->reason) ?? ($r->reason === 'Present' ? Attendance::PRESENT : null))) {
+                    return Attendance::CODES[$to] . '?';
+                }
+
+                return Attendance::CODES[$r->status] ?? '?';
+            })
             ->implode('/');
     }
 

@@ -27,7 +27,8 @@ class UpdateOvertimeRequest extends FormRequest
             'ot_employee_id' => 'required|exists:employees,id',
             'officer_id' => 'nullable|exists:employees,id',
 
-            'reason' => 'nullable|string|max:255',
+            // Same list as attendance; required when a guard is named, because it decides their attendance.
+            'reason' => ['nullable', 'required_with:absent_employee_id', \Illuminate\Validation\Rule::in(\App\Support\Attendance\ShiftReasons::ALL)],
             'amount' => 'required|numeric|min:0',
             'phone_number' => 'nullable|string|max:50',
             'notes' => 'nullable|string|max:1000',
@@ -38,6 +39,7 @@ class UpdateOvertimeRequest extends FormRequest
     {
         return [
             'absent_employee_note.required_without' => 'Select the absent guard, or type a short note (e.g. "Shortage").',
+            'reason.required_with' => 'Pick a reason for the absent guard (it goes on their attendance).',
             'client_site_note.required_without' => 'Select a client, or type the guard post / site name.',
         ];
     }

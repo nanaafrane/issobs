@@ -232,7 +232,7 @@ class GuardAttendanceTest extends TestCase
     {
         Attendance::create(['client_id' => $this->client->id, 'employee_id' => $this->kofi->id, 'work_date' => '2026-10-13',
             'shift' => 'day', 'status' => 'off', 'source' => 'manual']);
-        $this->scan()->assertOk()->assertSee('already recorded you as off day');
+        $this->scan()->assertOk()->assertSee('already recorded you as off duty');
         $this->assertSame('off', Attendance::sole()->status);
     }
 
@@ -319,8 +319,14 @@ class GuardAttendanceTest extends TestCase
     {
         $kumasiClient = $this->makeClient('EJURA HOSPITAL', $this->kumasi);
 
-        $this->actingAs($this->ops)->get("/attendance/{$kumasiClient->id}")->assertForbidden();
-        $this->actingAs($this->ops)->get('/attendance')->assertDontSee('EJURA HOSPITAL');
+        // Operations department sees every client; other branch staff only their own field.
+        $adminDept = Department::create(['name' => 'Administration']);
+        $branch = User::factory()->create(['department_id' => $adminDept->id,
+            'role_id' => Role::create(['name' => 'Admin Assistant', 'department_id' => $adminDept->id])->id, 'field_id' => $this->accra->id]);
+
+        $this->actingAs($branch)->get("/attendance/{$kumasiClient->id}")->assertForbidden();
+        $this->actingAs($branch)->get('/attendance')->assertDontSee('EJURA HOSPITAL')->assertSee('DVLA HQ');
+        $this->actingAs($this->ops)->get('/attendance')->assertSee('EJURA HOSPITAL');
         $this->actingAs($this->headOffice)->get('/attendance')->assertSee('EJURA HOSPITAL');
     }
 

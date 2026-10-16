@@ -5,6 +5,7 @@ namespace App\Observers;
 use App\Models\Expense;
 use App\Models\ExpenseType;
 use App\Models\Overtime;
+use App\Support\Attendance\OvertimeAttendanceSync;
 use Illuminate\Support\Facades\Auth;
 
 /**
@@ -28,11 +29,20 @@ class OvertimeObserver
         } elseif ($overtime->expense_id) {
             $this->removeExpense($overtime);
         }
+
+        // Attendance sheet: "?" while in review, the reason once fully approved, put back on reject.
+        OvertimeAttendanceSync::sync($overtime);
     }
 
     public function deleted(Overtime $overtime): void
     {
         $this->removeExpense($overtime);
+        OvertimeAttendanceSync::reverseAll($overtime);
+    }
+
+    public function restored(Overtime $overtime): void
+    {
+        OvertimeAttendanceSync::sync($overtime);
     }
 
     protected function syncExpense(Overtime $overtime): void

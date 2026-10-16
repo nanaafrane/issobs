@@ -31,7 +31,7 @@ class Attendance extends Model
     public const LABELS = [
         self::PRESENT => 'Present',
         self::ABSENT => 'Absent',
-        self::OFF => 'Off day',
+        self::OFF => 'Off Duty',
         self::SICK => 'Sick',
         self::PASS => 'Pass',
         self::PENDING => 'Awaiting review',
@@ -43,7 +43,7 @@ class Attendance extends Model
     public const SHIFTS = ['day', 'night'];
 
     protected $fillable = [
-        'client_id', 'employee_id', 'work_date', 'shift', 'status', 'source',
+        'client_id', 'employee_id', 'work_date', 'shift', 'status', 'reason', 'source', 'overtime_id',
         'checked_in_at', 'latitude', 'longitude', 'accuracy_m', 'distance_m',
         'device_id', 'ip', 'flags', 'note', 'marked_by', 'reviewed_by', 'reviewed_at',
     ];
@@ -63,6 +63,12 @@ class Attendance extends Model
     public function employee()
     {
         return $this->belongsTo(employee::class);
+    }
+
+    /** Set while an overtime entry owns this row (see OvertimeAttendanceSync). */
+    public function overtime()
+    {
+        return $this->belongsTo(Overtime::class)->withTrashed();
     }
 
     public function markedBy()

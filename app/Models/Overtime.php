@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\Attendance\ShiftReasons;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -9,9 +10,8 @@ class Overtime extends Model
 {
     use SoftDeletes;
 
-    public const REASONS = [
-        'Shortage', 'Absent', 'Sick', 'Terminated', 'Extra Post', 'Event/Function', 'Other','Off Duty', 'Pass'
-    ];
+    /** Same list as attendance (see ShiftReasons): Absent / Sick / Off Duty / Pass also mark the named guard. */
+    public const REASONS = ShiftReasons::ALL;
 
     public const STAGE_LABELS = [
         1 => 'Submitted',
@@ -89,6 +89,12 @@ class Overtime extends Model
     public function expense()
     {
         return $this->belongsTo(Expense::class);
+    }
+
+    /** What this entry wrote to the attendance sheet (see OvertimeAttendanceSync). */
+    public function attendanceLinks()
+    {
+        return $this->hasMany(OvertimeAttendanceLink::class);
     }
 
     // ---------------------------------------------------------------

@@ -21,6 +21,7 @@
               'status' => $r->status, 'source' => $r->source,
               'time' => $r->checked_in_at?->format('H:i'),
               'distance' => $r->distance_m, 'flags' => $r->flags, 'note' => $r->note,
+              'reason' => $r->reason, 'overtime_id' => $r->overtime_id,
           ])->all();
       };
   @endphp
@@ -74,10 +75,10 @@
               <div class="att-legend small">
                   <span class="att-present">P</span>Present
                   <span class="att-absent ms-2">A</span>Absent
-                  <span class="att-leave ms-2">OFF</span>Off
+                  <span class="att-leave ms-2">OFF</span>Off Duty
                   <span class="att-leave ms-2">S</span>Sick
                   <span class="att-leave ms-2">PS</span>Pass
-                  <span class="att-pending ms-2">?</span>Awaiting review
+                  <span class="att-pending ms-2">?</span>Awaiting review (<em>S?</em> = overtime entry not yet approved)
                   <span class="text-muted ms-2">Click a day to change it. OFF, S and PS count as paid days.</span>
               </div>
               <div class="d-flex gap-2">
@@ -300,7 +301,7 @@
       <div class="d-flex flex-wrap gap-1">
           <a type="button" class="btn btn-success text-white" data-status="present">P</a>
           <a type="button" class="btn btn-danger text-white" data-status="absent">A</a>
-          <a type="button" class="btn btn-outline-primary " data-status="off">OFF</a>
+          <a type="button" class="btn btn-outline-primary " data-status="off">Off Duty</a>
           <a type="button" class="btn btn-outline-primary " data-status="sick">Sick</a>
           <a type="button" class="btn btn-outline-primary " data-status="pass">Pass</a>
           <a type="button" class="btn btn-outline-secondary " data-status="clear">Clear</a>
@@ -317,6 +318,7 @@
       const shiftUrl = @json(route('attendance.shift', $client->id));
       const CODES = @json(\App\Models\Attendance::CODES);
       const LABELS = @json(\App\Models\Attendance::LABELS);
+      const overtimeUrl = @json(url('overtime'));
       const pop = document.getElementById('att-pop');
       let current = null;   // {td, employee, date}
 
@@ -343,8 +345,12 @@
           const recs = JSON.parse(current.td.dataset.recs || '{}');
           const shift = document.querySelector('input[name=pop-shift]:checked').value;
           const r = recs[shift];
-          let html = r ? '<span class="badge bg-label-secondary">' + esc(LABELS[r.status] || r.status) + '</span> '
-              + (r.source === 'scan' ? 'scanned' + (r.time ? ' at ' + esc(r.time) : '') + (r.distance != null ? ', ' + esc(r.distance) + ' m from site' : '') : 'marked by operations')
+          let how = 'marked by operations';
+          if (r && r.source === 'scan') how = 'scanned' + (r.time ? ' at ' + esc(r.time) : '') + (r.distance != null ? ', ' + esc(r.distance) + ' m from site' : '');
+          if (r && r.source === 'kiosk') how = 'marked on the supervisor kiosk';
+          if (r && r.overtime_id) how = 'from <a href="' + overtimeUrl + '">overtime entry #' + esc(r.overtime_id) + '</a>' + (r.reason ? ' (' + esc(r.reason) + ')' : '')
+              + '<div class="text-muted mt-1">Change it on the overtime entry: approving it confirms this shift, deleting or rejecting it puts the sheet back.</div>';
+          let html = r ? '<span class="badge bg-label-secondary">' + esc(LABELS[r.status] || r.status) + '</span> ' + how
               : '<span class="text-muted">Nothing recorded for this shift.</span>';
           if (r && r.flags && r.flags.length) html += '<div class="text-warning mt-1">' + r.flags.map(esc).join('<br>') + '</div>';
           if (r && r.note) html += '<div class="text-muted mt-1">' + esc(r.note) + '</div>';

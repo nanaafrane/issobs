@@ -54,6 +54,9 @@ class KioskRecorder
         }
 
         $existing = Attendance::where('employee_id', $guard->id)->where('work_date', $date)->where('shift', $shift)->first();
+        if ($existing?->overtime_id) {
+            return ['ok' => false, 'message' => $guard->name . '\'s ' . $shift . ' shift comes from overtime entry #' . $existing->overtime_id . '. Change the overtime entry instead.'];
+        }
         if ($existing && (int) $existing->client_id !== (int) $client->id) {
             return ['ok' => false, 'message' => $guard->name . ' is already recorded at another client for this shift.'];
         }
@@ -71,6 +74,7 @@ class KioskRecorder
             'accuracy_m' => $accuracy,
             'distance_m' => $distance,
             'flags' => $flags ?: null,
+            'reason' => ShiftReasons::FOR_STATUS[$finalStatus] ?? null,
             'marked_by' => $supervisor->id,
             'note' => 'Marked on supervisor kiosk by ' . $supervisor->name,
         ];

@@ -188,7 +188,41 @@ Tests: `php artisan test --filter=AbsentDeductionTest` (7 tests).
 
 ---
 
-## 8. Next steps (not in this patch)
+## 8. Overtime and attendance
+
+An overtime entry now writes to the attendance sheet, and overtime and attendance use **one list of shift reasons**
+(`App\Support\Attendance\ShiftReasons`).
+
+| Overtime reason | Guard under "Absent / Post Vacant" | O.T guard |
+|---|---|---|
+| Absent | **A** (absent: counts for the payroll absent deduction) | Present at the entry's client |
+| Sick | **S** (paid) | Present |
+| Off Duty | **OFF** (paid) | Present |
+| Pass | **PS** (paid) | Present |
+| Shortage, Terminated, Extra Post, Event/Function, Other | not marked (post vacant) | Present |
+
+* **While the entry is in review** (submitted / branch review) both cells show as awaiting review with the reason, e.g. **S?**,
+  and count for nothing: not paid, not absent, not cover. They don't appear in the scan review queue, because they are
+  approved on the overtime page.
+* **On final approval** (Finance / H.O) the cells become the reason's status and the O.T guard counts as cover, so the
+  client's *uncovered shifts* go down.
+* **Rejected or deleted** (at any stage), or **edited** (other guard, date, shift or reason): the old cells go back exactly as
+  they were before the entry, and a cell the entry created is removed. What was there before is kept in
+  `overtime_attendance_links.previous`.
+* **Never overwritten:** a guard's own QR / kiosk *present* sign-in for that shift, or a cell owned by another overtime entry.
+  The entry shows *not on sheet* in red, with the reason on hover, and attendance is left alone.
+* While an entry owns a cell, the attendance grid, kiosk and review queue refuse to change it. The popover says which entry
+  it comes from.
+* On the overtime page each row shows what it did: *Absent: sheet pending / on sheet / not on sheet* and *O.T: ...*.
+  The reason drop-down is grouped into "Guard named (goes on attendance)" and "Post vacant". Naming an absent guard now
+  needs a reason from the list.
+* *Off day* is now called *Off Duty* on the attendance sheet, as in overtime.
+
+Tests: `php artisan test --filter=OvertimeAttendanceLinkTest` (8 tests).
+
+---
+
+## 9. Next steps (not in this patch)
 
 * **Invoicing**: *uncovered guard-shifts* per client is the quantity for an `ABSENT DEDUCTION` line on the client's invoice.
 * **Import** Jan–May from the Excel file if history is wanted in ISSOBS.

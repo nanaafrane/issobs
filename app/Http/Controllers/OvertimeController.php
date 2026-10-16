@@ -40,7 +40,7 @@ class OvertimeController extends Controller
      
         // dd($fields->pluck('id'));
 
-        $query = Overtime::with(['absentEmployee', 'client', 'otEmployee', 'officer', 'field'])
+        $query = Overtime::with(['absentEmployee', 'client', 'otEmployee', 'officer', 'field', 'attendanceLinks'])
             ->whereDate('entry_date', $date);
         // dd($query);
 
