@@ -548,7 +548,7 @@
             $cover.select2({
                 width: '100%', placeholder: 'Choose the guard covering', allowClear: true,
                 ajax: { url: availableUrl, dataType: 'json', delay: 200,
-                    data: p => ({ q: p.term, date: val('entry_date'), shift: val('shift'), field_id: val('field_id'), exclude: $absent.val() || '' }),
+                    data: p => ({ q: p.term, date: val('entry_date'), shift: val('shift'), field_id: val('field_id'), exclude: /^\d+$/.test($absent.val() || '') ? $absent.val() : '' }),
                     processResults: d => ({ results: d }) }
             });
 

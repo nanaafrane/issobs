@@ -206,13 +206,13 @@ class OvertimeController extends Controller
             'date' => ['required', 'date_format:Y-m-d'],
             'shift' => ['required', 'in:day,night'],
             'field_id' => ['nullable', 'integer'],
-            'exclude' => ['nullable', 'integer'],
+            'exclude' => ['nullable', 'string', 'max:20'],   // absent guard id; "vacant" / blank when nobody is named
             'except' => ['nullable', 'integer'],
             'q' => ['nullable', 'string', 'max:100'],
         ]);
 
         $busy = self::busyGuards($data['date'], $data['shift'], $data['except'] ?? null);
-        if (! empty($data['exclude'])) {
+        if (! empty($data['exclude']) && ctype_digit((string) $data['exclude'])) {
             $busy[(int) $data['exclude']] = 'the absent guard';
         }
 

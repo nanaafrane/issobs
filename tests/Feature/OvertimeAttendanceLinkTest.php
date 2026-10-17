@@ -349,4 +349,17 @@ class OvertimeAttendanceLinkTest extends TestCase
         $this->actingAs($this->ops)->get('/overtime?date=2026-10-15&field_id=' . $this->field->id)->assertOk()
             ->assertSee("Who didn't show up?", false)->assertSee('Who fills the gap?');
     }
+
+    public function test_free_guards_still_load_when_nobody_is_named(): void
+    {
+        foreach (['vacant', ''] as $exclude) {
+            $ids = collect($this->actingAs($this->ops)
+                ->getJson('/overtime/lookup/available-guards?date=2026-10-15&shift=day&field_id=' . $this->field->id . '&exclude=' . $exclude)
+                ->assertOk()->json())->pluck('children')->flatten(1)->pluck('id')->all();
+            $this->assertContains($this->yaw->id, $ids);
+            $this->assertContains($this->kofi->id, $ids);   // nobody absent, so Kofi is free too
+        }
+        // Post vacant entry saves with the chosen cover.
+        $this->submit(['absent_employee_id' => null, 'absent_employee_note' => 'POST VACANT', 'reason' => 'Shortage'])->assertOk();
+    }
 }
