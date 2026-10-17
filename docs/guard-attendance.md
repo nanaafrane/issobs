@@ -225,7 +225,30 @@ Tests: `php artisan test --filter=OvertimeAttendanceLinkTest` (8 tests).
 
 ---
 
-## 9. Next steps (not in this patch)
+## 9. Overtime entry form: client first
+
+The quick-entry row on the daily overtime page (and the HR copy of it) is now four steps:
+
+1. **Client / post.** Choose the client (or type a site name if it isn't in the list).
+2. **Who didn't show up?** Lists the guards posted to that client, with what the attendance sheet already says for that
+   date and shift: guards rostered on this shift first, then rotate / no shift, then the other shift or already present.
+   A guard already named on another overtime entry for this shift can't be picked twice. *Nobody (post vacant / shortage)*
+   is the first option. Picking a guard sets the reason to Absent, and picking Nobody sets it to Shortage; change either as needed.
+3. **Who fills the gap?** Only active guards of this field (and its sub-fields) who are **not already working this shift**:
+   present or signed in on the attendance sheet, or covering on another overtime entry. Guards on the other shift are listed first,
+   then rotate / no shift, then guards rostered on this shift (worth a check).
+4. Officer, amount, phone, **Add overtime**.
+
+Saving also refuses a guard who is already working that shift, or who is both the absent guard and the O.T guard.
+
+On the client's attendance sheet, the covering guard appears as a row labelled **O.T cover** (they're posted elsewhere).
+Their present days there count as cover for the client's plan, not as their own posting.
+
+Tests: in `OvertimeAttendanceLinkTest` (now 13 tests).
+
+---
+
+## 10. Next steps (not in this patch)
 
 * **Invoicing**: *uncovered guard-shifts* per client is the quantity for an `ABSENT DEDUCTION` line on the client's invoice.
 * **Import** Jan–May from the Excel file if history is wanted in ISSOBS.

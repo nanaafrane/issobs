@@ -181,6 +181,8 @@ Route::get('overtime/employee/{employee}/details', [OvertimeController::class, '
 // select2 search endpoints (JSON), reused by both the create and edit rows
 Route::get('overtime/lookup/employees', [OvertimeController::class, 'employeeOptions'])->name('overtime.lookup.employees');
 Route::get('overtime/lookup/clients', [OvertimeController::class, 'clientOptions'])->name('overtime.lookup.clients');
+Route::get('overtime/lookup/client-guards', [OvertimeController::class, 'clientGuards'])->name('overtime.lookup.clientGuards');
+Route::get('overtime/lookup/available-guards', [OvertimeController::class, 'availableGuards'])->name('overtime.lookup.availableGuards');
 // Opens the daily overtime page on the entry's date and field, scrolled to the entry (used by the attendance sheet).
 Route::get('overtime/{id}/open', [OvertimeController::class, 'open'])->whereNumber('id')->name('overtime.open');
 Route::resource('overtime', OvertimeController::class);

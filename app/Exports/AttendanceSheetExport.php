@@ -39,7 +39,7 @@ class AttendanceSheetExport implements FromArray, WithStyles, WithTitle
         foreach ($s->rows as $i => $row) {
             $e = $row['employee'];
             $line = [
-                sprintf('%02d', $i + 1), 'FWSS ' . $e->id, $e->location, $e->name . ($row['former'] ? ' (moved)' : ''),
+                sprintf('%02d', $i + 1), 'FWSS ' . $e->id, $e->location, $e->name . ($row['ot_cover'] ? ' (O.T cover)' : ($row['former'] ? ' (moved)' : '')),
                 $e->phone_number, strtoupper((string) ($row['shift'] ?? '')), $row['worked'], $row['paid'], $row['absent'],
             ];
             foreach ($s->days as $n => $_) {

@@ -281,4 +281,72 @@ class OvertimeAttendanceLinkTest extends TestCase
         // The sheet's popover links to /overtime/{id}/open.
         $this->actingAs($this->ops)->get("/attendance/{$this->client->id}")->assertSee("'/open", false);
     }
+
+    public function test_client_first_lookups_show_who_didnt_show_and_who_is_free(): void
+    {
+        $ama = $this->guard('AMA BOATENG', $this->client, 'night');
+        $esi = $this->guard('ESI MENSAH', $this->other, 'day');   // working the day shift at another client
+        Attendance::create(['client_id' => $this->other->id, 'employee_id' => $esi->id, 'work_date' => '2026-10-15',
+            'shift' => 'day', 'status' => 'present', 'source' => 'scan', 'checked_in_at' => '2026-10-15 05:50:00']);
+
+        // Step 2: guards posted to the client, day-shift guards first, with what the sheet says.
+        $groups = $this->actingAs($this->ops)->getJson('/overtime/lookup/client-guards?client_id=' . $this->client->id . '&date=2026-10-15&shift=day')
+            ->assertOk()->json();
+        $this->assertSame('On the day shift', $groups[0]['text']);
+        $this->assertSame($this->kofi->id, $groups[0]['children'][0]['id']);
+        $this->assertStringContainsString('nothing recorded', $groups[0]['children'][0]['text']);
+        $this->assertSame($ama->id, $groups[1]['children'][0]['id']);   // night guard listed after
+
+        // Step 3: free guards only (Esi is present this shift, Kofi is the absent guard).
+        $ids = collect($this->actingAs($this->ops)->getJson('/overtime/lookup/available-guards?date=2026-10-15&shift=day&field_id=' . $this->field->id . '&exclude=' . $this->kofi->id)
+            ->assertOk()->json())->pluck('children')->flatten(1)->pluck('id')->all();
+        $this->assertContains($this->yaw->id, $ids);
+        $this->assertContains($ama->id, $ids);
+        $this->assertNotContains($esi->id, $ids);
+        $this->assertNotContains($this->kofi->id, $ids);
+
+        // Once Yaw covers this shift he is no longer free, and Kofi shows as already on overtime.
+        $this->submit()->assertOk();
+        $ids = collect($this->actingAs($this->ops)->getJson('/overtime/lookup/available-guards?date=2026-10-15&shift=day&field_id=' . $this->field->id)->json())
+            ->pluck('children')->flatten(1)->pluck('id')->all();
+        $this->assertNotContains($this->yaw->id, $ids);
+        $kofi = collect($this->actingAs($this->ops)->getJson('/overtime/lookup/client-guards?client_id=' . $this->client->id . '&date=2026-10-15&shift=day')->json())
+            ->pluck('children')->flatten(1)->firstWhere('id', $this->kofi->id);
+        $this->assertTrue($kofi['disabled']);
+        $this->assertStringContainsString('Already on overtime', $kofi['text']);
+    }
+
+    public function test_a_guard_cannot_cover_two_gaps_or_cover_while_working(): void
+    {
+        $this->submit()->assertOk();
+        $ama = $this->guard('AMA BOATENG', $this->client, 'night');
+        // Yaw again, same date and shift.
+        $this->submit(['absent_employee_id' => $ama->id, 'reason' => 'Absent'])->assertStatus(422)->assertJsonValidationErrors('ot_employee_id');
+
+        // A guard present on the sheet this shift can't cover.
+        $esi = $this->guard('ESI MENSAH', $this->other, 'day');
+        Attendance::create(['client_id' => $this->other->id, 'employee_id' => $esi->id, 'work_date' => '2026-10-15',
+            'shift' => 'day', 'status' => 'present', 'source' => 'manual']);
+        $this->submit(['absent_employee_id' => $ama->id, 'ot_employee_id' => $esi->id])->assertStatus(422)
+            ->assertJsonFragment(['ot_employee_id' => ['This guard is already present on the attendance sheet for this shift. Pick a guard who is free for this shift.']]);
+
+        // Editing an entry doesn't clash with itself.
+        $o = Overtime::sole();
+        $this->actingAs($this->ops)->putJson("/overtime/{$o->id}", [
+            'entry_date' => '2026-10-15', 'shift' => 'day', 'field_id' => $this->field->id,
+            'absent_employee_id' => $this->kofi->id, 'client_id' => $this->client->id,
+            'ot_employee_id' => $this->yaw->id, 'reason' => 'Absent', 'amount' => 40,
+        ])->assertOk();
+    }
+
+    public function test_cover_guard_row_is_labelled_on_the_client_sheet(): void
+    {
+        $this->submit()->assertOk();
+        $this->approveFully(Overtime::sole());
+        $yaw = collect((new MonthSheet($this->client, '2026-10'))->rows)->firstWhere(fn ($r) => $r['employee']->id === $this->yaw->id);
+        $this->assertTrue($yaw['ot_cover']);
+        $this->actingAs($this->ops)->get("/attendance/{$this->client->id}?month=2026-10")->assertSee('O.T cover');
+        $this->actingAs($this->ops)->get('/overtime?date=2026-10-15&field_id=' . $this->field->id)->assertOk()
+            ->assertSee("Who didn't show up?", false)->assertSee('Who fills the gap?');
+    }
 }

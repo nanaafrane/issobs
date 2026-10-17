@@ -83,6 +83,8 @@ class MonthSheet
                 'employee' => $guard,
                 'shift' => $guard->attendance_shift,
                 'former' => (bool) ($guard->former ?? false),
+                // Not posted here, and every record this month came from an overtime entry: a guard who covered a gap.
+                'ot_cover' => (bool) ($guard->former ?? false) && $mine->isNotEmpty() && $mine->every(fn ($r) => $r->overtime_id),
                 'cells' => $cells,
                 'worked' => $mine->where('status', Attendance::PRESENT)->count(),
                 'paid' => $mine->whereIn('status', Attendance::PAID)->count(),

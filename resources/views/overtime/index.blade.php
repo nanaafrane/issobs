@@ -445,37 +445,51 @@
                     <tfoot>
                         <tr class="quick-row table-light">
                             <td colspan="10">
-                                <form class="ot-quick-form d-flex flex-wrap gap-2 align-items-center" data-shift="{{ $shiftKey }}">
+                                <form class="ot-quick-form" data-shift="{{ $shiftKey }}">
                                     @csrf
                                     <input type="hidden" name="entry_date" value="{{ $date->format('Y-m-d') }}">
                                     <input type="hidden" name="shift" value="{{ $shiftKey }}">
                                     <input type="hidden" name="field_id" value="{{ $fieldId }}">
 
-                                    <select class="form-select form-select-sm ot-select-employee" name="absent_employee_id" data-placeholder="Absent guard (or type below)" style="width:170px"></select>
-                                    <input type="text" class="form-control form-control-sm" name="absent_employee_note" placeholder="or note e.g. Shortage" style="width:140px">
+                                    <div class="ot-steps">
+                                        <div class="ot-step">
+                                            <label class="ot-step-label"><span class="ot-num">1</span> Client / post</label>
+                                            <select class="form-select form-select-sm ot-select-client" name="client_id" data-placeholder="Choose the client"></select>
+                                            <a href="#" class="ot-site-toggle small">Site not in the list?</a>
+                                            <input type="text" class="form-control form-control-sm mt-1 d-none" name="client_site_note" placeholder="Type the site / post name">
+                                        </div>
 
-                                    <select class="form-select form-select-sm ot-select-client" name="client_id" data-placeholder="Client" style="width:170px"></select>
-                                    <input type="text" class="form-control form-control-sm" name="client_site_note" placeholder="or site name" style="width:130px">
+                                        <div class="ot-step">
+                                            <label class="ot-step-label"><span class="ot-num">2</span> Who didn't show up?</label>
+                                            <select class="form-select form-select-sm ot-select-absent" name="absent_employee_id" disabled></select>
+                                            <input type="text" class="form-control form-control-sm mt-1 d-none" name="absent_employee_note" placeholder="Note, e.g. Shortage / new post">
+                                            <select class="form-select form-select-sm mt-1 ot-reason" name="reason">
+                                                <option value="">Reason...</option>
+                                                <optgroup label="Guard named (goes on attendance)">
+                                                    @foreach(\App\Support\Attendance\ShiftReasons::guardReasons() as $r)<option value="{{ $r }}">{{ $r }}</option>@endforeach
+                                                </optgroup>
+                                                <optgroup label="Post vacant">
+                                                    @foreach(array_diff($reasons, \App\Support\Attendance\ShiftReasons::guardReasons()) as $r)<option value="{{ $r }}">{{ $r }}</option>@endforeach
+                                                </optgroup>
+                                            </select>
+                                        </div>
 
-                                    <select class="form-select form-select-sm ot-select-employee" name="ot_employee_id" data-placeholder="O.T Employee *" required style="width:170px"></select>
+                                        <div class="ot-step">
+                                            <label class="ot-step-label"><span class="ot-num">3</span> Who fills the gap?</label>
+                                            <select class="form-select form-select-sm ot-select-cover" name="ot_employee_id" required disabled></select>
+                                            <div class="small text-muted mt-1">Only guards not already working this shift.</div>
+                                        </div>
 
-                                    <select class="form-select form-select-sm ot-select-employee" name="officer_id" data-placeholder="Officer on duty" style="width:170px"></select>
-
-                                    <select class="form-select form-select-sm" name="reason" style="width:130px">
-                                        <option value="">Reason...</option>
-                                        <optgroup label="Guard named (goes on attendance)">
-                                            @foreach(\App\Support\Attendance\ShiftReasons::guardReasons() as $r)<option value="{{ $r }}">{{ $r }}</option>@endforeach
-                                        </optgroup>
-                                        <optgroup label="Post vacant">
-                                            @foreach(array_diff($reasons, \App\Support\Attendance\ShiftReasons::guardReasons()) as $r)<option value="{{ $r }}">{{ $r }}</option>@endforeach
-                                        </optgroup>
-                                    </select>
-
-                                    <input type="number" step="0.01" min="0" class="form-control form-control-sm" name="amount" placeholder="Amount" style="width:100px" value="30" required>
-                                    <input type="text" class="form-control form-control-sm" name="phone_number" placeholder="Phone" style="width:120px">
-
-                                    <button type="submit" class="btn btn-dark btn-sm"><i class="bx bx-plus"></i> Add</button>
-                                    <!-- <button type="button" class="btn btn-outline-secondary btn-sm ot-duplicate-last"><i class="bx bx-copy"></i> Duplicate last</button> -->
+                                        <div class="ot-step ot-step-last">
+                                            <label class="ot-step-label"><span class="ot-num">4</span> Officer, amount</label>
+                                            <select class="form-select form-select-sm ot-select-employee" name="officer_id" data-placeholder="Officer on duty"></select>
+                                            <div class="d-flex gap-1 mt-1">
+                                                <input type="number" step="0.01" min="0" class="form-control form-control-sm" name="amount" placeholder="Amount" value="30" required>
+                                                <input type="text" class="form-control form-control-sm" name="phone_number" placeholder="Phone">
+                                            </div>
+                                            <button type="submit" class="btn btn-dark btn-sm mt-1 w-100"><i class="bx bx-plus"></i> Add overtime</button>
+                                        </div>
+                                    </div>
                                 </form>
                             </td>
                         </tr>
@@ -491,80 +505,110 @@
     @section('scripts')
     <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <style>
+        .ot-steps { display: grid; grid-template-columns: repeat(4, minmax(200px, 1fr)); gap: .75rem; align-items: start; white-space: normal; }
+        @media (max-width: 1100px) { .ot-steps { grid-template-columns: repeat(2, minmax(200px, 1fr)); } }
+        .ot-step { background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: .5rem .6rem; min-width: 0; }
+        .ot-step.ot-off { opacity: .55; }
+        .ot-step-label { display: block; font-size: .75rem; font-weight: 600; color: #374151; margin-bottom: .3rem; text-transform: none; }
+        .ot-num { display: inline-block; width: 1.25rem; height: 1.25rem; line-height: 1.25rem; text-align: center; border-radius: 50%; background: #111827; color: #fff; font-size: .7rem; margin-right: .25rem; }
+        .ot-step .select2-container { width: 100% !important; }
+    </style>
     <script>
     $(function () {
         const employeeUrl = "{{ route('overtime.lookup.employees') }}";
         const clientUrl = "{{ route('overtime.lookup.clients') }}";
+        const clientGuardsUrl = "{{ route('overtime.lookup.clientGuards') }}";
+        const availableUrl = "{{ route('overtime.lookup.availableGuards') }}";
         const storeUrl = "{{ route('overtime.store') }}";
         const csrf = "{{ csrf_token() }}";
 
-        function initSelects(scope) {
-            scope.find('.ot-select-employee').each(function () {
-                const $el = $(this);
-                $el.select2({
-                    width: '160px',
-                    placeholder: function () { return $el.data('placeholder'); },
-                    allowClear: true,
-                    ajax: {
-                        url: employeeUrl,
-                        dataType: 'json',
-                        delay: 200,
-                        data: function (params) { return { q: params.term, select_name: $el.attr('name'), field_id: $('select[name=field_id]').val() }; },
-                        processResults: data => ({ results: data })
-                    }
-                });
-            });
-
-            scope.find('.ot-select-client').each(function () {
-                const $el = $(this);
-                $el.select2({
-                    width: '160px',
-                    placeholder: function () { return $el.data('placeholder'); },
-                    allowClear: true,
-                    ajax: {
-                        url: clientUrl,
-                        dataType: 'json',
-                        delay: 200,
-                        data: function (params) { return { q: params.term, select_name: $el.attr('name'), field_id: $('select[name=field_id]').val() }; },
-                        processResults: data => ({ results: data })
-                    }
-                });
-            });
-        }
-        initSelects($('body'));
-
-        // Fast repeated data-entry: submit row via AJAX, refresh totals + table without full reload.
-        $('.ot-quick-form').on('submit', function (e) {
-            e.preventDefault();
+        $('.ot-quick-form').each(function () {
             const form = $(this);
-            const shift = form.data('shift');
+            const val = n => form.find('[name=' + n + ']').val();
+            const $client = form.find('.ot-select-client');
+            const $absent = form.find('.ot-select-absent');
+            const $cover = form.find('.ot-select-cover');
+            const $reason = form.find('.ot-reason');
+            const $note = form.find('[name=absent_employee_note]');
+            const $site = form.find('[name=client_site_note]');
+            const step = n => form.find('.ot-step').eq(n - 1);
 
-            $.ajax({
-                url: storeUrl,
-                method: 'POST',
-                data: form.serialize(),
-                headers: { 'X-CSRF-TOKEN': csrf },
-                success: function () {
-                    window.location.reload(); // simplest reliable refresh of totals/table/approval state
-                },
-                error: function (xhr) {
-                    const msg = xhr.responseJSON?.message || 'Please check the required fields (O.T Employee and Amount).';
-                    alert(msg);
-                }
+            // 1. Client
+            $client.select2({
+                width: '100%', placeholder: $client.data('placeholder'), allowClear: true,
+                ajax: { url: clientUrl, dataType: 'json', delay: 200,
+                    data: p => ({ q: p.term, field_id: val('field_id') }), processResults: d => ({ results: d }) }
             });
-        });
 
-        // "Duplicate last": copies officer / client / reason from the last row added in this shift,
-        // so a run of entries for the same site/officer doesn't need re-selecting every field.
-        $('.ot-duplicate-last').on('click', function () {
-            const form = $(this).closest('form');
-            const table = form.closest('table');
-            const lastRow = table.find('tbody tr').last();
-            if (!lastRow.length) return;
-            form.find('input[name=amount]').val(30);
-            // Officer/client text is just copied as a visual cue; user re-confirms via the dropdowns.
-            alert('Tip: re-select the officer/client from the dropdown — last entry was: '
-                + lastRow.find('td').eq(4).text() + ' / ' + lastRow.find('td').eq(2).text());
+            // 2. Guards posted to that client, with what the sheet says for this date/shift
+            $absent.select2({ width: '100%', placeholder: 'Choose the client first', allowClear: true, data: [] });
+
+            // 3. Guards free for this shift
+            $cover.select2({
+                width: '100%', placeholder: 'Choose the guard covering', allowClear: true,
+                ajax: { url: availableUrl, dataType: 'json', delay: 200,
+                    data: p => ({ q: p.term, date: val('entry_date'), shift: val('shift'), field_id: val('field_id'), exclude: $absent.val() || '' }),
+                    processResults: d => ({ results: d }) }
+            });
+
+            form.find('.ot-select-employee').select2({
+                width: '100%', placeholder: 'Officer on duty', allowClear: true,
+                ajax: { url: employeeUrl, dataType: 'json', delay: 200,
+                    data: p => ({ q: p.term, select_name: 'officer_id', field_id: val('field_id') }), processResults: d => ({ results: d }) }
+            });
+
+            function refreshSteps() {
+                const hasPost = !!$client.val() || !!$site.val().trim();
+                step(2).toggleClass('ot-off', !hasPost);
+                step(3).toggleClass('ot-off', !hasPost);
+                $cover.prop('disabled', !hasPost);
+            }
+
+            function loadAbsent(clientId) {
+                $absent.empty().prop('disabled', true);
+                if (!clientId) { $absent.select2({ width: '100%', placeholder: 'Choose the client first', data: [] }); refreshSteps(); return; }
+                $.getJSON(clientGuardsUrl, { client_id: clientId, date: val('entry_date'), shift: val('shift') }, function (groups) {
+                    const data = [{ id: '', text: '' }, { id: 'vacant', text: 'Nobody (post vacant / shortage)' }].concat(groups);
+                    $absent.empty().select2({ width: '100%', placeholder: groups.length ? 'Choose the guard who didn’t show' : 'No guards posted here: post vacant', allowClear: true, data: data });
+                    $absent.prop('disabled', false).val(null).trigger('change');
+                    refreshSteps();
+                });
+            }
+
+            $client.on('change', function () { loadAbsent($client.val()); $cover.val(null).trigger('change'); });
+            form.find('.ot-site-toggle').on('click', function (e) { e.preventDefault(); $site.toggleClass('d-none').trigger('focus'); });
+            $site.on('input', refreshSteps);
+
+            $absent.on('change', function () {
+                const v = $absent.val();
+                const vacant = v === 'vacant';
+                $note.toggleClass('d-none', !vacant);
+                if (vacant && !$note.val()) { $note.val('POST VACANT'); }
+                if (!vacant) { $note.val(''); }
+                // Sensible default reason for what was picked.
+                const guardReasons = @json(\App\Support\Attendance\ShiftReasons::guardReasons());
+                const r = $reason.val();
+                if (v && !vacant && (!r || !guardReasons.includes(r))) { $reason.val('Absent'); }
+                if (vacant && (!r || guardReasons.includes(r))) { $reason.val('Shortage'); }
+                $cover.val(null).trigger('change');   // the absent guard can't cover
+            });
+
+            refreshSteps();
+
+            // Submit via AJAX, then reload for totals / approval state.
+            form.on('submit', function (e) {
+                e.preventDefault();
+                const payload = form.serializeArray().filter(f => !(f.name === 'absent_employee_id' && (f.value === 'vacant' || f.value === '')));
+                $.ajax({
+                    url: storeUrl, method: 'POST', data: $.param(payload), headers: { 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
+                    success: () => window.location.reload(),
+                    error: function (xhr) {
+                        const errs = xhr.responseJSON?.errors;
+                        alert(errs ? Object.values(errs).flat().join('\n') : (xhr.responseJSON?.message || 'Please check the form.'));
+                    }
+                });
+            });
         });
     });
     </script>

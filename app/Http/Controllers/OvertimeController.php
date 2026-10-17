@@ -7,7 +7,9 @@ use App\Http\Requests\UpdateOvertimeRequest;
 use App\Models\Client;
 use App\Models\employee;
 use App\Models\Field;
+use App\Models\Attendance;
 use App\Models\Overtime;
+use App\Support\Attendance\Roster;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -140,6 +142,155 @@ class OvertimeController extends Controller
         ]));
     }
 
+    /**
+     * Step 2 of the entry form: the guards posted to the chosen client, with what the
+     * attendance sheet already says for that date and shift, so it's clear who didn't show.
+     */
+    public function clientGuards(Request $request)
+    {
+        $data = $request->validate([
+            'client_id' => ['required', 'integer'],
+            'date' => ['required', 'date_format:Y-m-d'],
+            'shift' => ['required', 'in:day,night'],
+            'except' => ['nullable', 'integer'],   // overtime entry being edited
+        ]);
+        $client = Client::findOrFail($data['client_id']);
+        $guards = Roster::guards($client);
+
+        $records = Attendance::whereIn('employee_id', $guards->pluck('id')->all() ?: [0])
+            ->where('work_date', $data['date'])->where('shift', $data['shift'])->get()->keyBy('employee_id');
+        $onOvertime = Overtime::whereDate('entry_date', $data['date'])->where('shift', $data['shift'])
+            ->whereIn('absent_employee_id', $guards->pluck('id')->all() ?: [0])
+            ->when($data['except'] ?? null, fn ($q, $id) => $q->where('id', '!=', $id))
+            ->pluck('id', 'absent_employee_id');
+
+        $rows = $guards->map(function ($g) use ($records, $onOvertime, $data) {
+            $r = $records->get($g->id);
+            $status = match (true) {
+                isset($onOvertime[$g->id]) => 'Already on overtime #' . $onOvertime[$g->id],
+                ! $r => 'nothing recorded',
+                $r->status === Attendance::PRESENT => 'present' . ($r->checked_in_at ? ' (signed in ' . $r->checked_in_at->format('H:i') . ')' : ''),
+                default => strtolower(Attendance::LABELS[$r->status] ?? $r->status),
+            };
+            $shift = $g->attendance_shift;
+            // Most likely missing first: rostered on this shift and not present.
+            $rank = ($shift === $data['shift'] ? 0 : (in_array($shift, ['day', 'night'], true) ? 2 : 1))
+                + ($r && $r->status === Attendance::PRESENT ? 3 : 0);
+
+            return [
+                'id' => $g->id,
+                'text' => $g->name . ' · ' . ($shift ? ucfirst($shift) : 'no shift') . ' · ' . $status,
+                'disabled' => isset($onOvertime[$g->id]),
+                'rank' => $rank,
+                'name' => $g->name,
+            ];
+        })->sortBy([['rank', 'asc'], ['name', 'asc']])->values();
+
+        $group = fn ($label, $items) => $items->isEmpty() ? null : ['text' => $label, 'children' => $items->map(fn ($r) => array_intersect_key($r, array_flip(['id', 'text', 'disabled'])))->values()];
+
+        return response()->json(array_values(array_filter([
+            $group('On the ' . $data['shift'] . ' shift', $rows->where('rank', 0)),
+            $group('Rotate / no shift set', $rows->where('rank', 1)),
+            $group('Other shift, or already present', $rows->where('rank', '>=', 2)),
+        ])));
+    }
+
+    /**
+     * Step 3: guards who can fill the gap - active guards in this field (and its sub-fields)
+     * who are not already working that date and shift (present / awaiting review on the
+     * attendance sheet, or doing another overtime).
+     */
+    public function availableGuards(Request $request)
+    {
+        $data = $request->validate([
+            'date' => ['required', 'date_format:Y-m-d'],
+            'shift' => ['required', 'in:day,night'],
+            'field_id' => ['nullable', 'integer'],
+            'exclude' => ['nullable', 'integer'],
+            'except' => ['nullable', 'integer'],
+            'q' => ['nullable', 'string', 'max:100'],
+        ]);
+
+        $busy = self::busyGuards($data['date'], $data['shift'], $data['except'] ?? null);
+        if (! empty($data['exclude'])) {
+            $busy[(int) $data['exclude']] = 'the absent guard';
+        }
+
+        $fieldIds = ! empty($data['field_id'])
+            ? Field::where('id', $data['field_id'])->orWhere('parent_field_id', $data['field_id'])->pluck('id')->all()
+            : [];
+
+        $guards = employee::query()
+            ->whereIn('status', Roster::ACTIVE_STATUSES)
+            ->when($fieldIds, fn ($q) => $q->whereIn('field_id', $fieldIds))
+            ->whereNotIn('id', array_keys($busy) ?: [0])
+            ->when($data['q'] ?? null, fn ($q, $v) => $q->where(fn ($i) => $i->where('name', 'like', "%{$v}%")->orWhere('phone_number', 'like', "%{$v}%")))
+            ->orderBy('name')
+            ->limit(60)
+            ->get(['id', 'name', 'phone_number', 'client_id']);
+
+        $clients = Client::whereIn('id', $guards->pluck('client_id')->filter()->unique()->all() ?: [0])->get(['id', 'name', 'business_name'])->keyBy('id');
+        $shifts = \Illuminate\Support\Facades\DB::table('client_employee')->whereIn('employee_id', $guards->pluck('id')->all() ?: [0])
+            ->whereNotNull('shift')->orderBy('id')->get(['employee_id', 'client_id', 'shift'])
+            ->mapWithKeys(fn ($r) => [$r->employee_id . ':' . $r->client_id => $r->shift]);
+
+        $rows = $guards->map(function ($g) use ($clients, $shifts, $data) {
+            $own = $shifts[$g->id . ':' . $g->client_id] ?? null;
+            $c = $clients->get($g->client_id);
+
+            return [
+                'id' => $g->id,
+                'text' => $g->name . ' · ' . ($c ? ($c->business_name ?: $c->name) : 'no client') . ($own ? ' (' . $own . ')' : ''),
+                'group' => $own === null || $own === 'rotate' ? 1 : ($own === $data['shift'] ? 2 : 0),
+            ];
+        });
+
+        $labels = [0 => 'Off this shift (works the other shift)', 1 => 'Rotate / no shift set', 2 => 'Rostered on this shift (check they are free)'];
+
+        return response()->json($rows->groupBy('group')->sortKeys()->map(fn ($items, $g) => [
+            'text' => $labels[$g],
+            'children' => $items->map(fn ($r) => ['id' => $r['id'], 'text' => $r['text']])->values(),
+        ])->values());
+    }
+
+    /** The O.T guard can't already be working that date and shift. */
+    private function ensureOtGuardIsFree(array $data, ?int $exceptOvertime = null): void
+    {
+        $busy = self::busyGuards(Carbon::parse($data['entry_date'])->toDateString(), $data['shift'], $exceptOvertime);
+        if (isset($busy[(int) $data['ot_employee_id']])) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'ot_employee_id' => 'This guard is ' . $busy[(int) $data['ot_employee_id']] . '. Pick a guard who is free for this shift.',
+            ]);
+        }
+        if (! empty($data['absent_employee_id']) && (int) $data['absent_employee_id'] === (int) $data['ot_employee_id']) {
+            throw \Illuminate\Validation\ValidationException::withMessages(['ot_employee_id' => 'The O.T guard can\'t be the absent guard.']);
+        }
+    }
+
+    /**
+     * [employee_id => why] for guards already working this date and shift:
+     * present or awaiting review on the attendance sheet, or the O.T guard on another entry.
+     */
+    public static function busyGuards(string $date, string $shift, ?int $exceptOvertime = null): array
+    {
+        $busy = [];
+        Attendance::where('work_date', $date)->where('shift', $shift)
+            ->whereIn('status', [Attendance::PRESENT, Attendance::PENDING])
+            ->whereNull('overtime_id')   // cells written by overtime are covered by the overtime query below
+            ->get(['employee_id', 'status'])
+            ->each(function ($r) use (&$busy) {
+                $busy[(int) $r->employee_id] = 'already ' . ($r->status === Attendance::PRESENT ? 'present' : 'signed in (awaiting review)') . ' on the attendance sheet for this shift';
+            });
+        Overtime::whereDate('entry_date', $date)->where('shift', $shift)
+            ->when($exceptOvertime, fn ($q) => $q->where('id', '!=', $exceptOvertime))
+            ->get(['id', 'ot_employee_id'])
+            ->each(function ($o) use (&$busy) {
+                $busy[(int) $o->ot_employee_id] = 'already doing overtime #' . $o->id;
+            });
+
+        return $busy;
+    }
+
     /** Daily page on the entry's own date and field, scrolled to and highlighting the entry. */
     public function open(int $id)
     {
@@ -157,6 +308,7 @@ class OvertimeController extends Controller
 
     public function store(StoreOvertimeRequest $request)
     {
+        $this->ensureOtGuardIsFree($request->validated());
         $overtime = Overtime::create(array_merge($request->validated(), [
             'user_1' => Auth::id(),
             'status_1' => 'approved', // creator's own confirmation, same convention as Expense
@@ -178,6 +330,7 @@ class OvertimeController extends Controller
         abort_unless($overtime->isEditableBy(Auth::user()), 403,
             'This entry can no longer be edited - Branch Review has already started.');
 
+        $this->ensureOtGuardIsFree($request->validated(), $overtime->id);
         $overtime->update($request->validated());
 
         if ($request->wantsJson()) {

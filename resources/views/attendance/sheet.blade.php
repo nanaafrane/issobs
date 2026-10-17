@@ -124,7 +124,7 @@
                             <div class="overflow-hidden">
                               <div class="fw-semibold text-truncate" title="{{ $e->name }}">{{ sprintf('%02d', $i + 1) }}. {{ $e->name }}</div>
                               <div class="text-muted" style="font-size:.7rem">FWSS {{ $e->id }} @if($e->phone_number)· {{ $e->phone_number }}@endif
-                                  @if($row['former'])<span class="badge bg-label-secondary">moved</span>@endif
+                                  @if($row['ot_cover'])<span class="badge bg-label-info" title="Posted elsewhere; covered shifts here on overtime">O.T cover</span>@elseif($row['former'])<span class="badge bg-label-secondary">moved</span>@endif
                                   @unless($row['former'])
                                       @if($e->attendance_pin)<i class="bx bx-key text-success" title="Has a PIN"></i>@else<i class="bx bx-key text-muted" title="No PIN yet"></i>@endif
                                       @if($e->attendance_device)<i class="bx bx-mobile text-success" title="Phone registered"></i>@endif
