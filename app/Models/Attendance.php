@@ -16,6 +16,7 @@ class Attendance extends Model
     public const OFF = 'off';
     public const SICK = 'sick';
     public const PASS = 'pass';
+    public const TERMINATED = 'terminated';   // guard left / was terminated: not paid, not counted as absent
     public const PENDING = 'pending';   // scan held for operations review; not counted until approved
 
     /** Statuses operations can set by hand, with the code shown in the monthly grid. */
@@ -25,6 +26,7 @@ class Attendance extends Model
         self::OFF => 'OFF',
         self::SICK => 'S',
         self::PASS => 'PS',
+        self::TERMINATED => 'T',
         self::PENDING => '?',
     ];
 
@@ -34,6 +36,7 @@ class Attendance extends Model
         self::OFF => 'Off Duty',
         self::SICK => 'Sick',
         self::PASS => 'Pass',
+        self::TERMINATED => 'Terminated',
         self::PENDING => 'Awaiting review',
     ];
 

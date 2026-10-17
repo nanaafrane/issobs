@@ -140,6 +140,21 @@ class OvertimeController extends Controller
         ]));
     }
 
+    /** Daily page on the entry's own date and field, scrolled to and highlighting the entry. */
+    public function open(int $id)
+    {
+        $overtime = Overtime::withTrashed()->find($id);
+        if (! $overtime || $overtime->trashed()) {
+            return redirect('overtime')->with('error', "Overtime entry #{$id} was deleted.");
+        }
+
+        return redirect(url('overtime') . '?' . http_build_query([
+            'date' => $overtime->entry_date->format('Y-m-d'),
+            'field_id' => $overtime->field_id,
+            'highlight' => $overtime->id,
+        ]) . '#ot-' . $overtime->id);
+    }
+
     public function store(StoreOvertimeRequest $request)
     {
         $overtime = Overtime::create(array_merge($request->validated(), [

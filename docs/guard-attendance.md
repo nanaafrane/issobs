@@ -199,7 +199,8 @@ An overtime entry now writes to the attendance sheet, and overtime and attendanc
 | Sick | **S** (paid) | Present |
 | Off Duty | **OFF** (paid) | Present |
 | Pass | **PS** (paid) | Present |
-| Shortage, Terminated, Extra Post, Event/Function, Other | not marked (post vacant) | Present |
+| Terminated | **T** (not paid, not counted as absent) | Present |
+| Shortage, Extra Post, Event/Function, Other | not marked (post vacant) | Present |
 
 * **While the entry is in review** (submitted / branch review) both cells show as awaiting review with the reason, e.g. **S?**,
   and count for nothing: not paid, not absent, not cover. They don't appear in the scan review queue, because they are
@@ -212,7 +213,9 @@ An overtime entry now writes to the attendance sheet, and overtime and attendanc
 * **Never overwritten:** a guard's own QR / kiosk *present* sign-in for that shift, or a cell owned by another overtime entry.
   The entry shows *not on sheet* in red, with the reason on hover, and attendance is left alone.
 * While an entry owns a cell, the attendance grid, kiosk and review queue refuse to change it. The popover says which entry
-  it comes from.
+  it comes from; its link (`/overtime/{id}/open`) opens the daily overtime page on that entry's date and field, scrolled to
+  the entry and highlighted.
+* **Terminated** is also an attendance status operations can set by hand (grey **T**).
 * On the overtime page each row shows what it did: *Absent: sheet pending / on sheet / not on sheet* and *O.T: ...*.
   The reason drop-down is grouped into "Guard named (goes on attendance)" and "Post vacant". Naming an absent guard now
   needs a reason from the list.

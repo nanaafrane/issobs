@@ -151,7 +151,7 @@ class MonthSheet
     public static function css(array $cell): string
     {
         $statuses = collect($cell)->pluck('status');
-        foreach ([Attendance::PENDING => 'att-pending', Attendance::ABSENT => 'att-absent', Attendance::PRESENT => 'att-present'] as $s => $css) {
+        foreach ([Attendance::PENDING => 'att-pending', Attendance::ABSENT => 'att-absent', Attendance::TERMINATED => 'att-terminated', Attendance::PRESENT => 'att-present'] as $s => $css) {
             if ($statuses->contains($s)) {
                 return $css;
             }

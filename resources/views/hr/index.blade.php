@@ -11,6 +11,7 @@
   @endphp
 
     @section('css')
+    <style>tr.ot-highlight > td { background: #fff4d6 !important; } tr.ot-highlight { outline: 2px solid #f0ad4e; outline-offset: -2px; } tr[id^="ot-"] { scroll-margin-top: 120px; }</style>
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <style>
         .ot-card { border-radius: 12px; border: 1px solid #e5e7eb; }
@@ -227,7 +228,7 @@
                     </thead>
                     <tbody>
                         @foreach($shiftData['rows'] as $key => $row)
-                        <tr data-id="{{ $row->id }}">
+                        <tr data-id="{{ $row->id }}" id="ot-{{ $row->id }}" @class(['ot-highlight' => (int) request('highlight') === $row->id])>
                             <td>{{ $key + 1 }}</td>
                             <td>{{ $row->absentLabel() }}</td>
                             <td>{{ $row->clientLabel() }}</td>

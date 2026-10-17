@@ -78,8 +78,9 @@
                   <span class="att-leave ms-2">OFF</span>Off Duty
                   <span class="att-leave ms-2">S</span>Sick
                   <span class="att-leave ms-2">PS</span>Pass
+                  <span class="att-terminated ms-2">T</span>Terminated
                   <span class="att-pending ms-2">?</span>Awaiting review (<em>S?</em> = overtime entry not yet approved)
-                  <span class="text-muted ms-2">Click a day to change it. OFF, S and PS count as paid days.</span>
+                  <span class="text-muted ms-2">Click a day to change it. OFF, S and PS count as paid days; T is neither paid nor absent.</span>
               </div>
               <div class="d-flex gap-2">
                   <button type="button" id="att-refresh" class="btn btn-sm btn-outline-primary d-none" onclick="location.reload()"><i class="bx bx-refresh"></i> Refresh totals</button>
@@ -304,6 +305,7 @@
           <a type="button" class="btn btn-outline-primary " data-status="off">Off Duty</a>
           <a type="button" class="btn btn-outline-primary " data-status="sick">Sick</a>
           <a type="button" class="btn btn-outline-primary " data-status="pass">Pass</a>
+          <a type="button" class="btn btn-outline-secondary " data-status="terminated">Terminated</a>
           <a type="button" class="btn btn-outline-secondary " data-status="clear">Clear</a>
       </div>
       <div id="pop-err" class="text-danger small mt-1"></div>
@@ -332,10 +334,11 @@
           td.dataset.recs = JSON.stringify(recs);
           const shifts = ['day', 'night'].filter(s => recs[s]);
           td.textContent = shifts.map(s => CODES[recs[s].status] || '?').join('/');
-          td.classList.remove('att-present', 'att-absent', 'att-leave', 'att-pending');
+          td.classList.remove('att-present', 'att-absent', 'att-leave', 'att-pending', 'att-terminated');
           const st = shifts.map(s => recs[s].status);
           if (st.includes('pending')) td.classList.add('att-pending');
           else if (st.includes('absent')) td.classList.add('att-absent');
+          else if (st.includes('terminated')) td.classList.add('att-terminated');
           else if (st.includes('present')) td.classList.add('att-present');
           else if (st.length) td.classList.add('att-leave');
           document.getElementById('att-refresh').classList.remove('d-none');
@@ -348,7 +351,7 @@
           let how = 'marked by operations';
           if (r && r.source === 'scan') how = 'scanned' + (r.time ? ' at ' + esc(r.time) : '') + (r.distance != null ? ', ' + esc(r.distance) + ' m from site' : '');
           if (r && r.source === 'kiosk') how = 'marked on the supervisor kiosk';
-          if (r && r.overtime_id) how = 'from <a href="' + overtimeUrl + '">overtime entry #' + esc(r.overtime_id) + '</a>' + (r.reason ? ' (' + esc(r.reason) + ')' : '')
+          if (r && r.overtime_id) how = 'from <a href="' + overtimeUrl + '/' + encodeURIComponent(r.overtime_id) + '/open">overtime entry #' + esc(r.overtime_id) + '</a>' + (r.reason ? ' (' + esc(r.reason) + ')' : '')
               + '<div class="text-muted mt-1">Change it on the overtime entry: approving it confirms this shift, deleting or rejecting it puts the sheet back.</div>';
           let html = r ? '<span class="badge bg-label-secondary">' + esc(LABELS[r.status] || r.status) + '</span> ' + how
               : '<span class="text-muted">Nothing recorded for this shift.</span>';

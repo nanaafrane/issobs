@@ -6,7 +6,7 @@ namespace App\Support\Attendance;
  * One list of shift reasons for overtime and attendance.
  *
  * An overtime entry's reason says what happened to the guard named under
- * "Absent / Post Vacant". Four reasons are about that guard and become their
+ * "Absent / Post Vacant". Five reasons are about that guard and become their
  * attendance for the shift; the rest are about the post (nobody to mark).
  */
 final class ShiftReasons
@@ -20,7 +20,7 @@ final class ShiftReasons
         'Sick' => 'sick',
         'Off Duty' => 'off',
         'Pass' => 'pass',
-        'Terminated' => null,
+        'Terminated' => 'terminated',
         'Shortage' => null,
         'Extra Post' => null,
         'Event/Function' => null,
@@ -34,6 +34,7 @@ final class ShiftReasons
         'sick' => 'Sick',
         'off' => 'Off Duty',
         'pass' => 'Pass',
+        'terminated' => 'Terminated',
     ];
 
     /** "sick", " Off duty " -> canonical reason name, or null if it isn't one. */
@@ -57,7 +58,7 @@ final class ShiftReasons
         return $name ? self::GUARD_STATUS[$name] : null;
     }
 
-    /** Reasons that mark the named guard: Absent, Sick, Off Duty, Pass. */
+    /** Reasons that mark the named guard: Absent, Sick, Terminated, Off Duty, Pass. */
     public static function guardReasons(): array
     {
         return array_keys(array_filter(self::GUARD_STATUS));

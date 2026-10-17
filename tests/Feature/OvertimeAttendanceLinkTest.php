@@ -231,7 +231,7 @@ class OvertimeAttendanceLinkTest extends TestCase
         $this->submit(['reason' => 'Shortage', 'absent_employee_id' => null, 'absent_employee_note' => 'SHORTAGE'])->assertOk();
         $this->assertSame(['cover'], OvertimeAttendanceLink::pluck('role')->all());
 
-        $this->submit(['reason' => 'Terminated', 'entry_date' => '2026-10-14'])->assertOk();   // guard named, but nothing to mark on them
+        $this->submit(['reason' => 'Other', 'entry_date' => '2026-10-14'])->assertOk();   // guard named, but nothing to mark on them
         $this->assertNull($this->cell($this->kofi, '2026-10-14'));
     }
 
@@ -240,5 +240,45 @@ class OvertimeAttendanceLinkTest extends TestCase
         $this->submit(['reason' => null])->assertStatus(422)->assertJsonValidationErrors('reason');
         $this->submit(['reason' => 'Holiday'])->assertStatus(422)->assertJsonValidationErrors('reason');
         $this->assertSame(0, Overtime::count());
+    }
+
+    public function test_terminated_goes_on_the_sheet_as_its_own_status(): void
+    {
+        $this->submit(['reason' => 'Terminated'])->assertOk();
+        $o = Overtime::sole();
+        $sheet = new MonthSheet($this->client, '2026-10');
+        $kofi = collect($sheet->rows)->firstWhere(fn ($r) => $r['employee']->id === $this->kofi->id);
+        $this->assertSame('T?', MonthSheet::code($kofi['cells'][15]));
+
+        $this->approveFully($o);
+        $k = $this->cell($this->kofi);
+        $this->assertSame(['terminated', 'Terminated'], [$k->status, $k->reason]);
+
+        // Not paid, not absent (no absent deduction), and the day isn't blank.
+        $kofi = collect((new MonthSheet($this->client, '2026-10'))->rows)->firstWhere(fn ($r) => $r['employee']->id === $this->kofi->id);
+        $this->assertSame([0, 0, 0, 'T', 'att-terminated'], [$kofi['worked'], $kofi['paid'], $kofi['absent'],
+            MonthSheet::code($kofi['cells'][15]), MonthSheet::css($kofi['cells'][15])]);
+        $this->assertSame(0, AbsentDeduction::attendanceFor([$this->kofi->id], '2026-10')[$this->kofi->id]['absent']);
+
+        // Operations can also mark it by hand.
+        $this->actingAs($this->ops)->postJson("/attendance/{$this->client->id}/mark",
+            ['employee_id' => $this->kofi->id, 'date' => '2026-10-16', 'shift' => 'day', 'status' => 'terminated'])->assertOk();
+        $this->assertSame('Terminated', $this->cell($this->kofi, '2026-10-16')->reason);
+    }
+
+    public function test_the_overtime_link_on_the_sheet_opens_the_entry(): void
+    {
+        $this->submit(['entry_date' => '2026-10-12'])->assertOk();
+        $o = Overtime::sole();
+
+        $this->actingAs($this->ops)->get("/overtime/{$o->id}/open")
+            ->assertRedirect(url('overtime') . '?date=2026-10-12&field_id=' . $this->field->id . '&highlight=' . $o->id . '#ot-' . $o->id);
+        $this->actingAs($this->ops)->get('/overtime?date=2026-10-12&field_id=' . $this->field->id . '&highlight=' . $o->id)->assertOk()
+            ->assertSee('id="ot-' . $o->id . '"', false)->assertSee('ot-highlight', false)->assertSee('KOFI MENSAH');
+
+        $this->actingAs($this->finance)->delete("/overtime/{$o->id}");
+        $this->actingAs($this->ops)->get("/overtime/{$o->id}/open")->assertRedirect(url('overtime'))->assertSessionHas('error');
+        // The sheet's popover links to /overtime/{id}/open.
+        $this->actingAs($this->ops)->get("/attendance/{$this->client->id}")->assertSee("'/open", false);
     }
 }
