@@ -93,6 +93,23 @@ multi-invoice one. Differences from the old single form:
 * "Client already has a category for that month" is reported, as the old single form did.
 The old `receiptCreate` view is removed. Editing a receipt still uses the single-invoice edit form.
 
+### If the connection drops while saving
+* **Never half-saved.** A receipt (with its invoice updates, collection, bank posting and client-ledger lines), an
+  edit, a void, applying credit, and an invoice (with its lines, totals, automatic credit and ledger) are each saved
+  in one database transaction: everything or nothing. This needs InnoDB tables — check with
+  `php artisan db:check-engines`, which lists any table that isn't and prints the `ALTER TABLE … ENGINE=InnoDB` to fix it.
+* **Never saved twice.** Each of those forms carries a hidden one-time code. If the server saved it but the reply was
+  lost and the page is sent again, the second arrival is shown what the first saved ("This was already saved — the
+  connection probably dropped after saving. Nothing was recorded twice."). Two copies arriving together are handled by
+  a unique index. Codes are kept 60 days (`form-submissions:prune` runs nightly).
+* **Button locks.** After the confirm dialog, the Generate/Update/Void/Apply buttons lock and show "Saving…"; pressing
+  again or Enter does nothing. Going Back unlocks them.
+* **Likely repeats.** A new receipt is held for confirmation when its cheque number (same bank), transfer reference or
+  MoMo transaction ID is already on a receipt, or when the same client was receipted the same amount in the last
+  10 minutes. The screen explains which receipt it looks like; ticking *"Yes, record it as a separate payment"* saves it.
+* **Cashier's rule of thumb:** if the page errors after pressing Generate, open the receipt list or the client's
+  statement before entering it again — or simply press Generate again on the same page; it will not be saved twice.
+
 ## 4. Repairing balances the old code already got wrong
 
 Fixing the code stops new damage; existing invoices still carry old mistakes. Run:

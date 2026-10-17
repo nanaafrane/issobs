@@ -12,7 +12,13 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        // Money forms carry a one-time code: a form that was already saved is not saved again.
+        $middleware->alias(['once' => \App\Http\Middleware\SaveFormOnce::class]);
+        // ...checked before the receipt/invoice is looked up, so a repeat "void" says "already saved", not "not found".
+        $middleware->prependToPriorityList(
+            before: \Illuminate\Routing\Middleware\SubstituteBindings::class,
+            prepend: \App\Http\Middleware\SaveFormOnce::class,
+        );
         // $middleware->redirectUsersTo('/');
     })
     ->withExceptions(function (Exceptions $exceptions): void {

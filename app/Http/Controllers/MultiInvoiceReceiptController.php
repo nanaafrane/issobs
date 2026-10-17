@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Models\Wht;
 use App\Services\Receipts\ReceiptRecorder;
 use App\Services\Receipts\CreditApplier;
+use App\Support\SubmissionGuard;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -67,10 +68,12 @@ class MultiInvoiceReceiptController extends Controller
         ));
     }
 
-    public function store(StoreMultiInvoiceReceiptRequest $request, ReceiptRecorder $recorder)
+    public function store(StoreMultiInvoiceReceiptRequest $request, ReceiptRecorder $recorder, SubmissionGuard $guard)
     {
         $client = $this->scopeToUserFields(Client::query())->findOrFail($request->integer('client_id'));
 
+        // Saved once per form: a re-sent form (dropped connection, double click) shows the first receipt.
+        return $guard->once($request, 'receipt', function () use ($request, $recorder, $client) {
         $receipt = $recorder->create($client, ReceiptRecorder::multiInvoiceInput($request), $request->file('image'));
 
         $count = $receipt->allocations()->count();
@@ -83,6 +86,7 @@ class MultiInvoiceReceiptController extends Controller
         }
 
         return redirect()->route('receipt.show', ['receipt' => $receipt->id])->with($recorder->notes ? 'warning' : 'primary', $message);
+        });
     }
 
     /**
@@ -90,7 +94,7 @@ class MultiInvoiceReceiptController extends Controller
      * client's open invoices. No new money moves, so collections and bank
      * balances are untouched.
      */
-    public function applyCredit(Request $request, Receipt $receipt, CreditApplier $credits)
+    public function applyCredit(Request $request, Receipt $receipt, CreditApplier $credits, SubmissionGuard $guard)
     {
         $request->validate([
             'invoices' => ['required', 'array'],
@@ -106,10 +110,12 @@ class MultiInvoiceReceiptController extends Controller
             ->map(fn ($row) => $row['applied'] ?? null)
             ->all();
 
-        $credits->apply($receipt, $invoices);
+        return $guard->once($request, 'apply_credit', function () use ($credits, $receipt, $invoices) {
+            $credits->apply($receipt, $invoices);
 
-        return redirect()->route('receipt.show', ['receipt' => $receipt->id])
-            ->with('primary', 'Credit applied. Remaining credit on this receipt: GH₵' . number_format($receipt->fresh()->unapplied_amount, 2));
+            return redirect()->route('receipt.show', ['receipt' => $receipt->id])
+                ->with('primary', 'Credit applied. Remaining credit on this receipt: GH₵' . number_format($receipt->fresh()->unapplied_amount, 2));
+        });
     }
 
     /** Invoices still owing money, oldest first, with what has already been settled. */

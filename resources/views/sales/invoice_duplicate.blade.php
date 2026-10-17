@@ -382,6 +382,7 @@
                         </div>
 
                         <form method="POST" action="{{ route('invoice.storeDuplicate', ['invoice' => $invoice->id]) }}">
+                            {!! \App\Support\SubmissionGuard::field() !!}
                             @csrf
                             <div class="row mb-3">
                                 <div class="col-12 col-sm-6 col-md-8">
@@ -525,7 +526,7 @@
 
                             <div style="padding-top: 30px;" class="row">
                                 <div class="col-12">
-                                    <button type="submit" id="submit" class="btn btn-danger btn-lg btn-block" onclick="return confirm('Kindly confirm duplicate invoice?')"> Create Duplicate </button>
+                                    <button type="submit" id="submit" class="btn btn-danger btn-lg btn-block" data-loading onclick="return confirm('Kindly confirm duplicate invoice?')"> Create Duplicate </button>
                                 </div>
                             </div>
                         </form>

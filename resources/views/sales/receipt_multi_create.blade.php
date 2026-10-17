@@ -75,6 +75,7 @@
         @if($client)
         <form method="POST" action="{{ route('receipt.multi.store') }}" enctype="multipart/form-data" id="multiForm">
             @csrf
+            {!! \App\Support\SubmissionGuard::field() !!}
             <input type="hidden" name="client_id" value="{{ $client->id }}">
 
             <div class="row g-4">
@@ -341,6 +342,16 @@
                         </div>
                         @endif
 
+                        @if($errors->has('duplicate') || old('confirm_duplicate'))
+                        <div class="alert alert-warning mb-3" id="duplicateBox">
+                            <strong><i class="bx bx-error me-1"></i> Possible repeat</strong>
+                            <div class="small mt-1">{{ $errors->first('duplicate') ?: 'You confirmed this is a separate payment.' }}</div>
+                            <div class="form-check mt-2 mb-0">
+                                <input class="form-check-input" type="checkbox" name="confirm_duplicate" value="1" id="confirm_duplicate" {{ old('confirm_duplicate') ? 'checked' : '' }}>
+                                <label class="form-check-label" for="confirm_duplicate">Yes, record it as a separate payment</label>
+                            </div>
+                        </div>
+                        @endif
                         <button type="submit" class="btn btn-primary w-100" id="submitBtn" data-loading>
                             <i class="bx bx-check-circle me-1"></i> Generate one receipt
                         </button>

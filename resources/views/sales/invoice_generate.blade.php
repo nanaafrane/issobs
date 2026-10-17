@@ -409,6 +409,7 @@
                         <hr />
                         <form method="POST" action="/invoice">
                             @csrf
+                            {!! \App\Support\SubmissionGuard::field() !!}
                             <input type="text" name="client_id" value="{{$client->id}}" hidden>
                             <div class="row">
                                 <div class="col-6">

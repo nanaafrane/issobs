@@ -405,6 +405,7 @@
                             </div>
                         </div>
             <form method="POST" action="/invoice/{{$invoice->id}}">
+                {!! \App\Support\SubmissionGuard::field() !!}
                 @csrf
                 @method('PUT')
                         <div class="row mb-3">
@@ -568,7 +569,7 @@
 
                             <div style="padding-top: 30px;" class="row">
                                     <div class="col-12">
-                                        <button type="submit" id="submit" class="btn btn-danger btn-lg btn-block" onclick="return confirm('Kindly Confirm?')"> Update </button>
+                                        <button type="submit" id="submit" class="btn btn-danger btn-lg btn-block" data-loading onclick="return confirm('Kindly Confirm?')"> Update </button>
                                     </div>
                                 </div>
 

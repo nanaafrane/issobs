@@ -125,3 +125,38 @@ Artisan::command('client-ledger:sync {--client= : Only this client id}', functio
 })->purpose('Post invoices, receipts and credit to the client ledger (safe to re-run)');
 
 \Illuminate\Support\Facades\Schedule::command('client-ledger:sync')->dailyAt('02:10')->withoutOverlapping();
+
+/*
+ | Saving is all-or-nothing only on InnoDB tables (MyISAM cannot undo a half-finished
+ | save). Lists any table that is not InnoDB and prints the SQL to convert it.
+ */
+Artisan::command('db:check-engines', function () {
+    $driver = \Illuminate\Support\Facades\DB::connection()->getDriverName();
+    if (! in_array($driver, ['mysql', 'mariadb'], true)) {
+        $this->info("Database driver is {$driver}: transactions are always supported.");
+
+        return;
+    }
+    $rows = \Illuminate\Support\Facades\DB::select(
+        "SELECT TABLE_NAME AS t, ENGINE AS e FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_TYPE = 'BASE TABLE' AND ENGINE <> 'InnoDB'"
+    );
+    if (! $rows) {
+        $this->info('All tables use InnoDB: receipts, invoices and payments are saved all-or-nothing.');
+
+        return;
+    }
+    $this->error(count($rows) . ' table(s) cannot undo a half-finished save:');
+    $this->table(['Table', 'Engine'], array_map(fn ($r) => [$r->t, $r->e], $rows));
+    $this->line('Back up, then convert with:');
+    foreach ($rows as $r) {
+        $this->line("  ALTER TABLE `{$r->t}` ENGINE=InnoDB;");
+    }
+})->purpose('Check every table supports all-or-nothing saving (InnoDB)');
+
+/* One-time form codes are only needed while a page might be re-sent; keep 60 days. */
+Artisan::command('form-submissions:prune', function () {
+    $n = \Illuminate\Support\Facades\DB::table('form_submissions')->where('created_at', '<', now()->subDays(60))->delete();
+    $this->info("Removed {$n} old form code(s).");
+})->purpose('Delete one-time form codes older than 60 days');
+
+\Illuminate\Support\Facades\Schedule::command('form-submissions:prune')->dailyAt('02:40');

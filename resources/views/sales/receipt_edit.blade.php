@@ -28,6 +28,7 @@
                 <div class="card">
                     <form method="POST" action="/receipt/{{$receipt->id}}" enctype="multipart/form-data">
                         @csrf
+                        {!! \App\Support\SubmissionGuard::field() !!}
                         @method('PUT')
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <h5 class="mb-0"> Receipt </h5>
@@ -426,7 +427,7 @@
                             </div>
                             <br>
                             <div class="modal-footer">
-                                <button type="submit" class="btn btn-info d-grid w-100" onclick="return confirm('Kindly Confirm?')">{{ __('Update') }}</button>
+                                <button type="submit" class="btn btn-info d-grid w-100" data-loading onclick="return confirm('Kindly Confirm?')">{{ __('Update') }}</button>
                             </div>
                     </form>
 

@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Invoice;
 use App\Services\Receipts\ClientLedger;
+use App\Support\SubmissionGuard;
+use Illuminate\Validation\ValidationException;
 use App\Services\Receipts\CreditApplier;
 use App\Services\Receipts\InvoiceSettlement;
 use App\Http\Requests\StoreInvoiceRequest;
@@ -475,7 +477,19 @@ class InvoiceController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreInvoiceRequest $request)
+    /**
+     * New invoice. The invoice, its lines, its totals, the client ledger and any
+     * automatic credit are saved together or not at all, and only once per form.
+     */
+    public function store(StoreInvoiceRequest $request, SubmissionGuard $guard)
+    {
+        return $guard->once($request, 'invoice', function () use ($request) {
+            return $this->storeInvoice($request)
+                ?? throw ValidationException::withMessages(['amount' => 'Add at least one line to the invoice.']);
+        });
+    }
+
+    private function storeInvoice(StoreInvoiceRequest $request)
     {
         //
         // dd($request->all());
@@ -720,7 +734,12 @@ class InvoiceController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function storeDuplicate(StoreInvoiceRequest $request, Invoice $sourceInvoice)
+    public function storeDuplicate(StoreInvoiceRequest $request, Invoice $sourceInvoice, SubmissionGuard $guard)
+    {
+        return $guard->once($request, 'invoice', fn () => $this->storeDuplicateInvoice($request, $sourceInvoice));
+    }
+
+    private function storeDuplicateInvoice(StoreInvoiceRequest $request, Invoice $sourceInvoice)
     {
         $invoice = new Invoice();
         $invoice->client_id = $request->input('client_id');
@@ -803,7 +822,13 @@ class InvoiceController extends Controller
         return redirect()->route('invoice.show', ['invoice' => $invoice_id])->with('primary', 'Invoice Duplicated Successfully' . $this->afterInvoiceRaised($invoice->fresh()));
     }
 
-    public function update(UpdateInvoiceRequest $request, Invoice $invoice)
+    /** Edit an invoice: lines, totals, recalculated balance and ledger correction together or not at all. */
+    public function update(UpdateInvoiceRequest $request, Invoice $invoice, SubmissionGuard $guard)
+    {
+        return $guard->once($request, 'invoice_edit', fn () => $this->updateInvoice($request, $invoice));
+    }
+
+    private function updateInvoice(UpdateInvoiceRequest $request, Invoice $invoice)
     {
         //
         // dd($invoice, $request->input('invoice_month'))->format('Y-m-d');

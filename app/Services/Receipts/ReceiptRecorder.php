@@ -76,6 +76,7 @@ class ReceiptRecorder
             'staff' => $request->input('staff'),
             'description' => $request->input('description'),
             'keep_credit' => in_array($request->input('keep_credit'), ['1', 'on', 1, true], true),
+            'confirm_duplicate' => $request->input('confirm_duplicate') === '1',
         ];
         foreach (self::MODE_FIELDS as $fields) {
             foreach ($fields as $field) {
@@ -130,6 +131,9 @@ class ReceiptRecorder
 
         return DB::transaction(function () use ($client, $input, $image) {
             [$payment, $money] = $this->payment($input);
+            if (empty($input['confirm_duplicate'])) {
+                $this->refuseLikelyDuplicate($client, $payment, $money);
+            }
             $invoices = $this->lockOpenInvoices($client->id, array_keys($input['invoices']));
             $plan = $this->plan($invoices, $input, $money);
 
@@ -186,6 +190,61 @@ class ReceiptRecorder
     /* ------------------------------------------------------------------
      | Steps
      * ------------------------------------------------------------------ */
+
+    /** Minutes within which the same amount for the same client is treated as a likely repeat. */
+    public const REPEAT_WINDOW_MINUTES = 10;
+
+    /**
+     * Stop a receipt that looks like one already saved, unless the cashier
+     * confirms it is a separate payment:
+     *  - the same cheque number from the same bank, transfer reference or
+     *    MoMo transaction ID is already on a receipt (any date, any client); or
+     *  - the same client paid the same amount in the last few minutes
+     *    (typically the same receipt entered again after a connection drop).
+     */
+    private function refuseLikelyDuplicate(Client $client, array $payment, float $money): void
+    {
+        $norm = fn ($v) => mb_strtolower(trim((string) $v));
+        $match = null;
+
+        $refs = [
+            'cheque' => ['cheque_reference', 'cheque number'],
+            'transfer' => ['transfer_reference', 'transfer reference'],
+            'momo' => ['momo_transactin_id', 'MoMo transaction ID'],
+        ];
+        foreach ($refs as $mode => [$field, $label]) {
+            $ref = $norm($payment[$field] ?? '');
+            if ($ref === '') {
+                continue;
+            }
+            $q = Receipt::whereRaw('LOWER(TRIM(' . $field . ')) = ?', [$ref]);
+            if ($mode === 'cheque' && $norm($payment['cheque_bank'] ?? '') !== '') {
+                $q->whereRaw('LOWER(TRIM(cheque_bank)) = ?', [$norm($payment['cheque_bank'])]);
+            }
+            if ($existing = $q->orderByDesc('id')->first()) {
+                $match = [$existing, 'the same ' . $label . ' (' . trim((string) $payment[$field]) . ')'];
+                break;
+            }
+        }
+
+        if (! $match && $money > 0) {
+            $recent = Receipt::where('client_id', $client->id)
+                ->where('created_at', '>=', now()->subMinutes(self::REPEAT_WINDOW_MINUTES))
+                ->orderByDesc('id')->get()
+                ->first(fn ($r) => abs(array_sum(array_map(fn ($f) => (float) $r->{$f}, self::AMOUNT_FIELDS)) - $money) < 0.005);
+            if ($recent) {
+                $match = [$recent, 'the same amount (GH₵' . number_format($money, 2) . ') for this client a few minutes ago'];
+            }
+        }
+
+        if ($match) {
+            [$existing, $why] = $match;
+            throw ValidationException::withMessages(['duplicate' =>
+                'This looks like receipt FWSSR' . $existing->id . ', saved ' . $existing->created_at?->format('d M Y H:i')
+                . ' with ' . $why . '. If it is a separate payment, tick "Yes, record it as a separate payment" and save again.',
+            ]);
+        }
+    }
 
     /** @return array{0: array, 1: float} payment fields (ticked modes only) and money received */
     private function payment(array $input): array

@@ -24,6 +24,7 @@ use App\Services\Receipts\BankPosting;
 use App\Services\Receipts\InvoiceSettlement;
 use App\Services\Receipts\ReceiptRecorder;
 use App\Services\Receipts\ReceiptVoider;
+use App\Support\SubmissionGuard;
 use App\Models\ReceiptVoid;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -715,19 +716,21 @@ class ReceiptController extends Controller
      * Money beyond what is owed becomes client credit, only when the cashier
      * ticks "keep as credit".
      */
-    public function store(StoreReceiptRequest $request, ReceiptRecorder $recorder)
+    public function store(StoreReceiptRequest $request, ReceiptRecorder $recorder, SubmissionGuard $guard)
     {
         $invoice = Invoice::findOrFail($request->integer('invoice_id'));
         $client = Client::findOrFail($invoice->client_id);   // the invoice decides the client, not the form
 
-        $receipt = $recorder->create(
-            $client,
-            ReceiptRecorder::singleInvoiceInput($request, $invoice->id),
-            $request->file('image')
-        );
+        return $guard->once($request, 'receipt', function () use ($request, $recorder, $client, $invoice) {
+            $receipt = $recorder->create(
+                $client,
+                ReceiptRecorder::singleInvoiceInput($request, $invoice->id),
+                $request->file('image')
+            );
 
-        return redirect()->route('receipt.show', ['receipt' => $receipt->id])
-            ->with($recorder->notes ? 'warning' : 'primary', $this->recordedMessage($receipt, $recorder->notes));
+            return redirect()->route('receipt.show', ['receipt' => $receipt->id])
+                ->with($recorder->notes ? 'warning' : 'primary', $this->recordedMessage($receipt, $recorder->notes));
+        });
     }
 
     private function recordedMessage(Receipt $receipt, array $notes = [], string $verb = 'created'): string
@@ -806,7 +809,7 @@ class ReceiptController extends Controller
      * amounts applied from scratch, so an edit can never subtract twice,
      * overwrite another receipt's WHT, or reopen a paid invoice.
      */
-    public function update(UpdateReceiptRequest $request, Receipt $receipt, ReceiptRecorder $recorder)
+    public function update(UpdateReceiptRequest $request, Receipt $receipt, ReceiptRecorder $recorder, SubmissionGuard $guard)
     {
         // Cash already taken to the bank cannot be changed here.
         $collection = Collection::where('receipt_id', $receipt->id)->first();
@@ -820,14 +823,16 @@ class ReceiptController extends Controller
                 ->with('warning', 'This receipt pays several invoices or its credit has been applied to other invoices, so it cannot be changed from the single-invoice edit form.');
         }
 
-        $receipt = $recorder->revise(
-            $receipt,
-            ReceiptRecorder::singleInvoiceInput($request, (int) $receipt->invoice_id),
-            $request->file('image')
-        );
+        return $guard->once($request, 'receipt_edit', function () use ($request, $recorder, $receipt) {
+            $receipt = $recorder->revise(
+                $receipt,
+                ReceiptRecorder::singleInvoiceInput($request, (int) $receipt->invoice_id),
+                $request->file('image')
+            );
 
-        return redirect()->route('receipt.show', ['receipt' => $receipt->id])
-            ->with('primary', $this->recordedMessage($receipt, [], 'updated'));
+            return redirect()->route('receipt.show', ['receipt' => $receipt->id])
+                ->with('primary', $this->recordedMessage($receipt, [], 'updated'));
+        });
     }
 
 
@@ -839,15 +844,17 @@ class ReceiptController extends Controller
      * archived with who/when/why and everything it did is reversed — see
      * App\Services\Receipts\ReceiptVoider.
      */
-    public function destroy(Request $request, Receipt $receipt, ReceiptVoider $voider)
+    public function destroy(Request $request, Receipt $receipt, ReceiptVoider $voider, SubmissionGuard $guard)
     {
         $request->validate(['void_reason' => ['required', 'string', 'min:5', 'max:500']], [
             'void_reason.required' => 'Give a reason for voiding this receipt.',
         ]);
 
-        $voider->void($receipt, (string) $request->input('void_reason'));
+        return $guard->once($request, 'receipt_void', function () use ($request, $receipt, $voider) {
+            $voider->void($receipt, (string) $request->input('void_reason'));
 
-        return redirect('receipt')->with('warning', 'Receipt FWSSR' . $receipt->id . ' voided. It is kept under Receipts › Voided.');
+            return redirect('receipt')->with('warning', 'Receipt FWSSR' . $receipt->id . ' voided. It is kept under Receipts › Voided.');
+        });
     }
 
     /** Voided receipts, with reason, who and when. */

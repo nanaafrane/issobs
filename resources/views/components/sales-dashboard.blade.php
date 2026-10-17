@@ -219,6 +219,7 @@
         updateOnlineStatus();
     </script>
 
+    @include('partials.submit_lock')
     @yield('scripts')
 
 </body>

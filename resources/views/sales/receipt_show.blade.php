@@ -489,11 +489,12 @@
                 <div class="card border border-danger"><div class="card-body">
                     <form method="POST" action="{{ url('receipt/' . $receipt->id) }}" onsubmit="return confirm('Void receipt FWSSR{{ $receipt->id }}? Its payments will be reversed.')">
                         @csrf
+                        {!! \App\Support\SubmissionGuard::field() !!}
                         @method('DELETE')
                         <label class="form-label" for="void_reason">Why is this receipt being voided?</label>
                         <textarea class="form-control mb-2" name="void_reason" id="void_reason" rows="2" required minlength="5" maxlength="500" placeholder="e.g. Cheque returned unpaid; entered against the wrong client"></textarea>
                         <small class="text-muted d-block mb-2">The receipt is kept under Receipts › Voided with this reason. Cheque/transfer money is reversed out of the bank, the invoices it paid are reopened, and the client's statement shows the reversal today.</small>
-                        <button class="btn btn-danger" type="submit">Void receipt</button>
+                        <button class="btn btn-danger" type="submit" data-loading>Void receipt</button>
                     </form>
                 </div></div>
             </div>
@@ -739,6 +740,7 @@
                 @else
                 <form method="POST" action="{{ route('receipt.applyCredit', $receipt->id) }}" onsubmit="return confirm('Apply credit to the ticked invoices?')">
                     @csrf
+                    {!! \App\Support\SubmissionGuard::field() !!}
                     <div class="table-responsive">
                         <table class="table table-sm mb-0">
                             <thead><tr><th></th><th>Invoice</th><th>Month</th><th class="text-end">Outstanding</th><th class="text-end" style="width:180px">Apply <small class="text-muted">(blank = as much as possible)</small></th></tr></thead>
@@ -756,7 +758,7 @@
                             </tbody>
                         </table>
                     </div>
-                    <div class="card-body pt-3"><button class="btn btn-warning" type="submit"><i class="bx bx-check me-1"></i> Apply credit</button></div>
+                    <div class="card-body pt-3"><button class="btn btn-warning" type="submit" data-loading><i class="bx bx-check me-1"></i> Apply credit</button></div>
                 </form>
                 @endif
             </div>

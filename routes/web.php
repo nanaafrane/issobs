@@ -115,9 +115,9 @@ Route::get('invoice/field/{field}/details', [InvoiceController::class, 'fieldDet
 Route::get('invoice/client/{client}/details', [InvoiceController::class, 'clientDetails']);
 Route::get('invoice/issuer/{issuer}/details', [InvoiceController::class, 'issuerDetails']);
 Route::get('invoice/data', [InvoiceController::class, 'datatable'])->name('invoice.data');
-Route::resource('invoice', InvoiceController::class);
+Route::resource('invoice', InvoiceController::class)->middleware('once');
 Route::get('invoice/{invoice}/duplicate', [InvoiceController::class, 'duplicate'])->name('invoice.duplicate');
-Route::post('invoice/{invoice}/duplicate', [InvoiceController::class, 'storeDuplicate'])->name('invoice.storeDuplicate');
+Route::post('invoice/{invoice}/duplicate', [InvoiceController::class, 'storeDuplicate'])->name('invoice.storeDuplicate')->middleware('once');
 Route::resource('proforma', ProformaController::class);
 Route::resource('proformaClient', ProformaClientController::class);
 Route::get('generate/{id}', [InvoiceController::class, 'generate']);
@@ -138,10 +138,10 @@ Route::get('receipt/client/{client}/details', [ReceiptController::class, 'client
 Route::get('receipt/collector/{collector}/details', [ReceiptController::class, 'collectorDetails']);
 // One receipt paying several invoices, and applying a receipt's leftover credit later.
 Route::get('receipt-multi/create', [MultiInvoiceReceiptController::class, 'create'])->name('receipt.multi.create');
-Route::post('receipt-multi', [MultiInvoiceReceiptController::class, 'store'])->name('receipt.multi.store');
-Route::post('receipt/{receipt}/apply-credit', [MultiInvoiceReceiptController::class, 'applyCredit'])->name('receipt.applyCredit');
+Route::post('receipt-multi', [MultiInvoiceReceiptController::class, 'store'])->name('receipt.multi.store')->middleware('once');
+Route::post('receipt/{receipt}/apply-credit', [MultiInvoiceReceiptController::class, 'applyCredit'])->name('receipt.applyCredit')->middleware('once');
 Route::get('receipt-voided', [ReceiptController::class, 'voided'])->name('receipt.voided');
-Route::resource('receipt', ReceiptController::class);
+Route::resource('receipt', ReceiptController::class)->middleware('once');
 Route::get('receiptPending', [ReceiptController::class, 'PendingReceipts'])->name('receipt.pending');
 Route::post('receiptChannels', [ReceiptController::class, 'receiptChannels']);
 

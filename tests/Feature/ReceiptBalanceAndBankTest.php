@@ -111,7 +111,7 @@ class ReceiptBalanceAndBankTest extends TestCase
         $wht = ['wth' => 'on', 'wht_amount' => 37.5];
         $this->cash($inv, 462.5, $wht);
         $first = Receipt::latest('id')->first();
-        $this->cash($inv, 462.5, $wht);
+        $this->cash($inv, 462.5, $wht + ['confirm_duplicate' => '1']);   // a second, separate payment of the same amount
         $this->assertInvoice($inv, 'completed', 0);
         $this->assertEquals(75, $inv->fresh()->wht_amount);
 
@@ -164,7 +164,7 @@ class ReceiptBalanceAndBankTest extends TestCase
         $this->cash($inv, 300, ['receipt_month' => '2026-08-20', 'advance_payment' => null])->assertSessionHasNoErrors();
         $this->assertSame('advance', Receipt::latest('id')->first()->advance_payment);
 
-        $this->cash($inv, 300, ['receipt_month' => '2026-09-10', 'advance_payment' => 'advance'])->assertSessionHasNoErrors();
+        $this->cash($inv, 300, ['receipt_month' => '2026-09-10', 'advance_payment' => 'advance', 'confirm_duplicate' => '1'])->assertSessionHasNoErrors();
         $this->assertNull(Receipt::latest('id')->first()->advance_payment);   // the old tick box is ignored
     }
 
@@ -173,7 +173,7 @@ class ReceiptBalanceAndBankTest extends TestCase
         $inv = $this->invoice();
         $this->cash($inv, 300);
         $first = Receipt::latest('id')->first();
-        $this->cash($inv, 300);
+        $this->cash($inv, 300, ['confirm_duplicate' => '1']);   // a second, separate payment of the same amount
         $this->delete('/receipt/' . $first->id, ['void_reason' => 'Entered in error']);
         $this->assertInvoice($inv, 'uncompleted', 700);
     }
