@@ -160,3 +160,12 @@ Artisan::command('form-submissions:prune', function () {
 })->purpose('Delete one-time form codes older than 60 days');
 
 \Illuminate\Support\Facades\Schedule::command('form-submissions:prune')->dailyAt('02:40');
+
+/*
+ | HR movements. Run by the employee_movements migration; safe to run again (adds only
+ | what is missing).
+ */
+Artisan::command('employees:backfill-movements', function () {
+    $r = \App\Support\EmployeeMovementsBackfill::run();
+    $this->info("Hires: {$r['hires']}, from nrrit: {$r['nrrit']} (skipped {$r['nrrit_skipped']}: \"New Recruit\" rows, duplicates or deleted employees), terminations without a record: {$r['terminations']}.");
+})->purpose('Copy employee history (hires, nrrit terminations / re-instatements) into employee_movements');

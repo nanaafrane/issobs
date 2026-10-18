@@ -52,16 +52,15 @@ class EmployeeController extends Controller
             default => [$anchor->copy()->startOfMonth(), $anchor->copy()->endOfMonth()],
         };
 
-        $base = employee::whereBetween('date_of_joining', [$from, $to]);
+        // Hires, re-instatements and terminations come from employee_movements: approved and
+        // dated, each counted once (nrrit counted re-instated people as new recruits too).
+        $moves = fn (array $types, $a, $b) => DB::table('employee_movements')->where('status', 'approved')
+            ->whereIn('type', $types)->whereBetween('effective_date', [Carbon::parse($a)->toDateString(), Carbon::parse($b)->toDateString()]);
+        $base = employee::whereIn('employees.id', $moves(['hire'], $from, $to)->select('employee_id'));
 
         $total = employee::where('ho_status', 'approved')->where('status', 'Active')->orwhere('status', 'Terminated')->count();
-        // hires in period (new recruits by date_of_joining) plus reinstatements recorded in `nrrit`
-        $hiresFromEmployees = (clone $base)->count();
-        $reinstateIds = DB::table('nrrit')->whereBetween('nrrit.status_month', [$from, $to])->where(function($q){
-            $q->where('nrrit.status1', 'Re-Instate')->orWhere('nrrit.status1', 'New Recruit');
-        })->pluck('employee_id')->toArray();
-        $reinstateCount = count($reinstateIds);
-        $count = $hiresFromEmployees + $reinstateCount;
+        // new recruits + re-instated in the period
+        $count = $moves(['hire', 'reinstatement'], $from, $to)->count();
 
         // Prefer salary-based active count for the selected period; fallback to employees active status
         $salaryActiveCount = Salary::whereBetween('salary_month', [$from, $to])->count();
@@ -90,34 +89,21 @@ class EmployeeController extends Controller
         // Roles summary (overall headcount per role) and top roles
         // Role summary limited to the selected period (hires in period by role)
         // Role summary: hires in period plus reinstatements mapped to current role
-        $roleSummaryEmp = employee::whereBetween('date_of_joining', [$from, $to])
-            ->join('roles', 'roles.id', '=', 'employees.role_id')
-            ->select('roles.name', DB::raw('COUNT(employees.id) as cnt'))
-            ->groupBy('roles.name')->get();
-
-        $roleSummaryReinstate = DB::table('nrrit')
-            ->whereBetween('nrrit.status_month', [$from, $to])
-            ->where(function($q){ $q->where('nrrit.status1','Re-Instate')->orWhere('nrrit.status1','New Recruit'); })
-            ->join('employees', 'nrrit.employee_id', '=', 'employees.id')
-            ->join('roles', 'roles.id', '=', 'employees.role_id')
-            ->select('roles.name', DB::raw('COUNT(nrrit.employee_id) as cnt'))
-            ->groupBy('roles.name')->get();
-
-        // Merge summaries
+        // role at the time of the movement
+        $roleRows = $moves(['hire', 'reinstatement'], $from, $to)
+            ->join('roles', 'roles.id', '=', 'employee_movements.role_id')
+            ->select('roles.name', DB::raw('COUNT(*) as cnt'))->groupBy('roles.name')->get();
         $roleMap = [];
-        foreach ($roleSummaryEmp as $r) { $roleMap[$r->name] = ($roleMap[$r->name] ?? 0) + $r->cnt; }
-        foreach ($roleSummaryReinstate as $r) { $roleMap[$r->name] = ($roleMap[$r->name] ?? 0) + $r->cnt; }
+        foreach ($roleRows as $r) { $roleMap[$r->name] = ($roleMap[$r->name] ?? 0) + $r->cnt; }
         $roleSummary = collect(array_map(function($k,$v){ return (object)['name'=>$k,'cnt'=>$v]; }, array_keys($roleMap), $roleMap))->sortByDesc('cnt')->values();
         $topRoles = $roleSummary->take(10);
 
         // Terminations in the selected period and by-month terminations
-        // Use `nrrit` table as the source of truth for terminations (and reinstates)
-        $terminationsInPeriod = DB::table('nrrit')->where('nrrit.status', 'Terminated')->whereBetween('nrrit.status_month', [$from, $to])->count();
+        $terminationsInPeriod = $moves(['termination'], $from, $to)->count();
 
-        $terminationsTrend = DB::table('nrrit')->where('nrrit.status', 'Terminated')
-            ->whereBetween('nrrit.status_month', [$from, $to])
-            ->select(DB::raw('DATE_FORMAT(nrrit.status_month, "%Y-%m-01") as month'), DB::raw('COUNT(*) as total'))
-            ->groupBy('month')->orderBy('month')->get();
+        $terminationsTrend = $moves(['termination'], $from, $to)->get(['effective_date'])
+            ->groupBy(fn ($r) => substr($r->effective_date, 0, 7) . '-01')
+            ->map(fn ($g, $month) => (object) ['month' => $month, 'total' => $g->count()])->sortKeys()->values();
 
         // Field-level summaries: active, hires this period, terminations this period
         $fields = Field::orderBy('name')->get();
@@ -125,24 +111,12 @@ class EmployeeController extends Controller
         $activePerField = employee::where('ho_status', 'approved')->where('status', 'Active')
             ->select('field_id', DB::raw('COUNT(*) as cnt'))->groupBy('field_id')->pluck('cnt', 'field_id');
 
-        $hiresPerField = employee::whereBetween('date_of_joining', [$from, $to])
+        // office at the time of the movement
+        $hiresPerField = $moves(['hire', 'reinstatement'], $from, $to)
             ->select('field_id', DB::raw('COUNT(*) as cnt'))->groupBy('field_id')->pluck('cnt', 'field_id');
 
-        // include reinstates from nrrit mapped to employee.field_id
-        $reinstatePerField = DB::table('nrrit')
-            ->whereBetween('nrrit.status_month', [$from, $to])
-            ->where(function($q){ $q->where('nrrit.status1','Re-Instate')->orWhere('nrrit.status1','New Recruit'); })
-            ->join('employees','nrrit.employee_id','=','employees.id')
-            ->select('employees.field_id', DB::raw('COUNT(nrrit.employee_id) as cnt'))
-            ->groupBy('employees.field_id')->pluck('cnt', 'field_id');
-
-        // merge hire counts
-        foreach ($reinstatePerField as $fid => $c) { $hiresPerField[$fid] = ($hiresPerField[$fid] ?? 0) + $c; }
-
-        $termsPerField = DB::table('nrrit')->where('nrrit.status', 'Terminated')->whereBetween('nrrit.status_month', [$from, $to])
-            ->join('employees','nrrit.employee_id','=','employees.id')
-            ->select('employees.field_id', DB::raw('COUNT(nrrit.employee_id) as cnt'))
-            ->groupBy('employees.field_id')->pluck('cnt', 'field_id');
+        $termsPerField = $moves(['termination'], $from, $to)
+            ->select('field_id', DB::raw('COUNT(*) as cnt'))->groupBy('field_id')->pluck('cnt', 'field_id');
 
         // Prepare arrays for charts
         $fieldLabels = $fields->pluck('name');
@@ -201,14 +175,8 @@ class EmployeeController extends Controller
 
             $label = $start->format('Y-m-d');
             $overlayLabels[] = $label;
-            // hires: employees joined in bucket + reinstate events in nrrit
-            $empHires = employee::whereBetween('date_of_joining', [$start, $end])->count();
-            $reinstateBucket = DB::table('nrrit')->whereBetween('nrrit.status_month', [$start, $end])
-                ->where(function($q){ $q->where('nrrit.status1','Re-Instate')->orWhere('nrrit.status1','New Recruit'); })->count();
-            $overlayHires[] = $empHires + $reinstateBucket;
-
-            // terminations: count nrrit terminations in bucket
-            $overlayTerms[] = DB::table('nrrit')->where('nrrit.status', 'Terminated')->whereBetween('nrrit.status_month', [$start, $end])->count();
+            $overlayHires[] = $moves(['hire', 'reinstatement'], $start, $end)->count();
+            $overlayTerms[] = $moves(['termination'], $start, $end)->count();
 
             $cursor = $next;
         }
@@ -229,7 +197,7 @@ class EmployeeController extends Controller
                 'yearly' => [$anchor->copy()->subYears($i)->startOfYear(), $anchor->copy()->subYears($i)->endOfYear()],
                 default => [$anchor->copy()->subMonths($i)->startOfMonth(), $anchor->copy()->subMonths($i)->endOfMonth()],
             };
-            $samples[] = employee::whereBetween('date_of_joining', [$pf, $pt])->count();
+            $samples[] = $moves(['hire', 'reinstatement'], $pf, $pt)->count();
         }
 
         $projection = $samples ? round(array_sum($samples) / count($samples), 2) : 0.0;
@@ -1160,113 +1128,82 @@ class EmployeeController extends Controller
 
     public function terminateEmployee(Request $request, $id)
     {
-        // dd($id, $request->status_date);
-        $employee = employee::findOrFail($id);
-        $employee->update(['status' => 'Terminated', 'status_date' =>  $request->status_date, 'user_id1' => Auth::id()]);
-
-        $parsedDate = Carbon::createFromFormat('Y-m', $request->status_date)->format('Y-m-d'); 
-
-        DB::table('nrrit')->insert([
-                    'employee_id' =>  $employee->id,
-                    'name' =>  $employee->name,
-                    'status_month' =>    $parsedDate,
-                    'status' => 'Terminated',
-                ]);
-
-        $user_id = Auth::id();
-
-
-        if(Auth::user()->role?->id == '1')
-            {
-                // return "You are at head office";
-            // $client->status = 'terminated';
-
-            $employee->ho_status = 'approved';
-            $employee->ho_date = $parsedDate;
-            $employee->user_id2 = $user_id;
-            $employee->save();
-
-        return redirect()->route('employees.index')->with('error', 'Employee successfully Terminated!, ID No: and Name '. implode(', ', [$employee->id, $employee->name]));
-
-
-            }
-        if(Auth::user()->department?->id == '7' && Auth::user()->role?->id == '3')
-            {
-                // return "You are a Manager";
-            // $client->status = 'pending';
-
-            $employee->ho_status = 'pending';
-            $employee->user_id2 = $request->staff;
-
-            $employee->bran_status = 'approved';
-            $employee->bran_date = $parsedDate;
-            $employee->user_id1 = $user_id;
-            $employee->save();
-
-        return redirect()->route('employees.index')->with('error', 'Employee successfully Terminated!, ID No: and Name '. implode(', ', [$employee->id, $employee->name]));
-
-
-            }
-
-
-        // return redirect()->route('employees.index')->with('error', 'Employee successfully Terminated!, ID No: and Name '. implode(', ', [$employee->id, $employee->name]));
-
+        return $this->changeEmploymentStatus($request, (int) $id, \App\Support\EmployeeMovements::TERMINATION);
     }
 
     public function employeeReinstate(Request $request, $id)
     {
+        return $this->changeEmploymentStatus($request, (int) $id, \App\Support\EmployeeMovements::REINSTATEMENT);
+    }
+
+    /**
+     * Terminate or re-instate, with the effective date, the reason and who asked.
+     * Head office (role 1) decides at once; anyone else's request waits for head office
+     * on the pending page (approve = it counts, decline = the employee's status is put back).
+     * Recorded in employee_movements (the HR movements report), never in nrrit.
+     */
+    private function changeEmploymentStatus(Request $request, int $id, string $type)
+    {
+        $M = \App\Support\EmployeeMovements::class;
+        $terminate = $type === $M::TERMINATION;
+        $data = $request->validate([
+            'effective_date' => ['required', 'date', 'after_or_equal:2000-01-01', 'before_or_equal:' . now()->addDays(90)->toDateString()],
+            'reason' => $terminate ? ['required', \Illuminate\Validation\Rule::in(array_keys($M::REASONS))] : ['nullable'],
+            'note' => [$terminate && $request->input('reason') === 'other' ? 'required' : 'nullable', 'string', 'max:255'],
+            'staff' => ['nullable', 'integer', 'exists:users,id'],
+        ], [
+            'note.required' => 'Say what the reason is when you choose "Other".',
+        ]);
+
         $employee = employee::findOrFail($id);
-        $employee->update(['status' => 'Re-Instate', 'status_date' =>  $request->status_date , 'user_id1' => Auth::id()]);
-       
-        // dd($request->status_date) ;
-      
-        $parsedDate = Carbon::createFromFormat('Y-m', $request->status_date)->format('Y-m-d'); 
-        // dd($parsedDate) ;
-      
-        DB::table('nrrit')->insert([
-                    'employee_id' =>  $employee->id,
-                    'name' =>  $employee->name,
-                    'status_month' =>   $parsedDate,
-                    'status' => 'Active',
-                    'status1' => 'Re-Instate',
-                ]);
+        $user = Auth::user();
+        $name = $employee->name . ' (FWSS ' . $employee->id . ')';
 
-        $user_id = Auth::id();
+        // Only an active employee can be terminated, only a terminated one re-instated, and
+        // never while a request of that kind is already waiting.
+        if ($terminate ? $employee->status !== 'Active' : $employee->status !== 'Terminated') {
+            return back()->with('error', $name . ' is ' . ($employee->status ?: 'not active') . ': '
+                . ($terminate ? 'only an Active employee can be terminated.' : 'only a Terminated employee can be re-instated.'));
+        }
+        if ($M::pending($employee->id, $type)) {
+            return back()->with('error', 'A ' . strtolower($M::LABELS[$type]) . ' request for ' . $name . ' is already waiting for head office.');
+        }
 
+        $headOffice = (string) $user->role?->id === '1';
+        $date = \Carbon\Carbon::parse($data['effective_date'])->toDateString();
+        $approver = $data['staff'] ?? User::where('department_id', '1')->where('role_id', '1')->value('id');
 
-        if(Auth::user()->role?->id == '1')
-            {
-                // return "You are at head office";
-            // $client->status = 'terminated';
-            $employee->status = 'Active';
-            $employee->ho_status = 'approved';
-            $employee->ho_date = $parsedDate;
-            $employee->user_id2 = $user_id;
+        DB::transaction(function () use ($employee, $user, $headOffice, $date, $data, $type, $terminate, $approver, $M) {
+            $previous = $employee->status;
+            $employee->status_date = $date;
+            $employee->user_id1 = $user->id;
+            if ($headOffice) {
+                $employee->status = $terminate ? 'Terminated' : 'Active';
+                $employee->ho_status = 'approved';
+                $employee->ho_date = now()->toDateString();
+                $employee->user_id2 = $user->id;
+            } else {
+                $employee->status = $terminate ? 'Terminated' : 'Re-Instate';
+                $employee->ho_status = 'pending';
+                $employee->user_id2 = $approver;
+                $employee->bran_status = 'approved';
+                $employee->bran_date = now()->toDateString();
+            }
             $employee->save();
 
-        return redirect()->route('employees.index')->with('error', 'Employee successfully Re-instated!, ID No: and Name '. implode(', ', [$employee->id, $employee->name]));
+            $M::record($employee, $type, $headOffice ? $M::APPROVED : $M::PENDING, $date, [
+                'reason' => $terminate ? $data['reason'] : null,
+                'note' => $data['note'] ?? null,
+                'previous_status' => $previous,
+                'source' => $terminate ? 'terminate' : 'reinstate',
+            ]);
+        });
 
+        $what = $terminate ? 'terminated' : 're-instated';
 
-            }
-        if(Auth::user()->department?->id == '7' && Auth::user()->role?->id == '3')
-            {
-                // return "You are a Manager";
-            // $client->status = 'pending';
-
-            $employee->ho_status = 'pending';
-            $employee->user_id2 = $request->staff;
-
-            $employee->bran_status = 'approved';
-            $employee->bran_date = $parsedDate;
-            $employee->user_id1 = $user_id;
-            $employee->save();
-
-        return redirect()->route('employees.index')->with('error', 'Employee successfully Re-instated!, ID No: and Name '. implode(', ', [$employee->id, $employee->name]));
-
-
-            }
-
-        // return redirect()->route('employees.index')->with('success', 'Employee successfully Re-instated! ID No: and Name '. implode(', ', [$employee->id, $employee->name]));
+        return redirect()->route('employees.show', $employee->id)->with($terminate ? 'error' : 'success', $headOffice
+            ? $name . ' ' . $what . ' with effect from ' . \Carbon\Carbon::parse($date)->format('d M Y') . '.'
+            : 'Request to ' . ($terminate ? 'terminate' : 're-instate') . ' ' . $name . ' sent to head office for approval.');
     }
 
     public function employeesBank()
@@ -1378,50 +1315,6 @@ class EmployeeController extends Controller
 
     }
 
-    public function newRecruitTerminate()
-    {
-        return view('employees.nrrit');
-    }
-
-    public function newRecruitTerminateView (Request $request)
-    {
-        $reinstate = [];
-        $terminate = [];
-         $month = Carbon::parse($request->month);
-        // New Recruit
-        $newRecruit = employee::whereMonth('date_of_joining', $month->month)->where('status', 'Active')->get();
-        // $newRecruitCount = count($newRecruit);
-        // dd($newRecruit);
-
-        $reinstate_id = DB::table('nrrit')->whereMonth('status_month', $month->month)->where('status1', 'Re-Instate')->pluck('employee_id')->toArray();
-        // $ids = $reinstate_id->implode(', ');
-        // $arrayIds = explode(',', $ids);
-        // dd($reinstate_id);
-        foreach($reinstate_id as $id)
-            {
-                $reinstate[] =  employee::findOrFail($id);
-            }
-
-        // $reinstateCount = count($reinstate);
-
-        //  $reinstate =  employee::whereIn('id', $reinstate_id)->get();
-        // dd($reinstate);
-        $terminate_id = DB::table('nrrit')->whereMonth('status_month', $month->month)->where('status', 'Terminated')->pluck('employee_id')->toArray();
-        foreach($terminate_id as $id)
-            {
-                $terminate[] =  employee::findOrFail($id);
-            }
-
-        $activeEmployees = employee::where('status', 'Active')->count();
-        $activeSalaryEmployees = Salary::whereMonth('salary_month', $month->month)->count();
-        // dd($activeSalaryEmployees);
-        // $terminateCount = count($terminate);
-        // dd($newRecruit, $reinstate, $terminate);
-        // $netEmployees = $
-
-        return view('employees.nrritview', compact('newRecruit', 'reinstate', 'terminate', 'month', 'activeSalaryEmployees', 'activeEmployees'));
-    }
-
     public function employeesPending()
     {
         // ONE list, and every card is counted from it, so the office cards always add up to
@@ -1459,7 +1352,11 @@ class EmployeeController extends Controller
         $officeCards = collect($managed)->filter(fn ($id) => $officeNames->has($id))
             ->map(fn ($id) => ['name' => $officeNames[$id], 'count' => $inField([$id])->count()])->values();
 
-        return view('employees.pending', compact('Tema', 'pendingEmployees', 'employeeAccra', 'employeeBotwe', 'employeeTema', 'employeeTakoradi',
+        // The waiting request behind each row (termination / re-instatement date and reason).
+        $pendingMoves = \App\Models\EmployeeMovement::whereIn('employee_id', $visiblePending->pluck('id')->all() ?: [0])
+            ->where('status', 'pending')->orderBy('id')->get()->keyBy('employee_id');
+
+        return view('employees.pending', compact('pendingMoves', 'Tema', 'pendingEmployees', 'employeeAccra', 'employeeBotwe', 'employeeTema', 'employeeTakoradi',
             'employeeKoforidua', 'employeeKumasi', 'employeeShyhills', 'employeeNoOffice', 'visiblePending', 'officeCards'));
     }
 
@@ -1494,6 +1391,7 @@ class EmployeeController extends Controller
         $action = $request->input('action_type') ?? $request->input('submit') ?? $request->input('decline'); 
 
         $alreadyProcessed = [];
+        $declined = [];
 
         $invoice_manager =  User::where('department_id', '1')->where('role_id', '1')->first();
         $user = Auth::user();
@@ -1543,26 +1441,24 @@ class EmployeeController extends Controller
                     $employee->user_id2 = $user->id;
                     $employee->ho_date = now();
 
-                    if($employee->status == 'Pending' || $employee->status == 'Re-Instate' || $employee->status == null)
-                    {
+                    // HR movements: approve what was waiting. A re-instatement is a re-instatement,
+                    // never a new recruit (nrrit used to log both).
+                    $movement = match (true) {
+                        $employee->status === 'Re-Instate' => \App\Support\EmployeeMovements::REINSTATEMENT,
+                        $employee->status === 'Terminated' => \App\Support\EmployeeMovements::TERMINATION,
+                        in_array($employee->status, ['Pending', null, ''], true) => \App\Support\EmployeeMovements::HIRE,
+                        default => null,
+                    };
+                    if ($employee->status === 'Pending' || $employee->status === 'Re-Instate' || $employee->status === null || $employee->status === '') {
                         $employee->status = 'Active';
-
-                            DB::table('nrrit')->insert([
-                                'employee_id' =>  $employee->id,
-                                'name' => $employee->name,
-                                'status_month' =>  $employee->date_of_joining,
-                                'status' => 'Active',
-                                'status1' => 'New Recruit',
-                            ]);
                     }
 
-                    if($employee->status == 'Terminated')
-                    {
-                        $employee->status = 'Terminated';
-
-                    }
-                    
-                    $employee->save();
+                    \Illuminate\Support\Facades\DB::transaction(function () use ($employee, $movement) {
+                        $employee->save();
+                        if ($movement) {
+                            \App\Support\EmployeeMovements::approve($employee, $movement);
+                        }
+                    });
 
                     // return 'you are at the head office';
                     
@@ -1571,6 +1467,18 @@ class EmployeeController extends Controller
 
             if($action == 'decline' )
                 {
+                    // A termination / re-instatement request declined by head office: the request
+                    // is declined and the employee goes back to the status they had.
+                    if (in_array($employee->status, ['Terminated', 'Re-Instate'], true) && $employee->ho_status !== 'approved') {
+                        \Illuminate\Support\Facades\DB::transaction(function () use ($employee) {
+                            $m = \App\Support\EmployeeMovements::decline($employee);
+                            $employee->status = $m?->previous_status ?: ($employee->status === 'Terminated' ? 'Active' : 'Terminated');
+                            $employee->ho_status = 'approved';
+                            $employee->save();
+                        });
+                        $declined[] = $employee->name . ' (FWSS ' . $employee->id . ')';
+                        continue;
+                    }
 
                     $employee->bran_status = 'pending';
                     // $employee->user_id2 = Auth::id();
@@ -1588,6 +1496,10 @@ class EmployeeController extends Controller
         }
 
 
+
+               if (! empty($declined)) {
+                   return back()->with('success', 'Request declined; status restored for: ' . implode(', ', $declined) . '.');
+               }
 
                return back()->with('success', 'Selected Employees Has Been Approved !.');
 

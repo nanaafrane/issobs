@@ -146,8 +146,8 @@
                     </li>
                     @if(Auth::user()->hasRole(['Manager', 'Invoice']))
                     <li class="menu-item ">
-                        <a href="{{url('employeesnrrit')}}" class="menu-link">
-                        <div class="text-truncate" data-i18n="SList">Terminate / Recruit</div>
+                        <a href="{{ route('employees.movements') }}" class="menu-link">
+                        <div class="text-truncate" data-i18n="SList">HR movements</div>
                         </a>
                     </li>
                     <li class="menu-item">
@@ -212,8 +212,8 @@
                     </li>
                     @if(Auth::user()->hasRole(['Manager', 'Invoice']))
                     <li class="menu-item ">
-                        <a href="{{url('employeesnrrit')}}" class="menu-link">
-                        <div class="text-truncate" data-i18n="SList">Terminate / Recruit</div>
+                        <a href="{{ route('employees.movements') }}" class="menu-link">
+                        <div class="text-truncate" data-i18n="SList">HR movements</div>
                         </a>
                     </li>
                     <li class="menu-item">

@@ -88,6 +88,19 @@ class employee extends Model
             }
         });
 
+        // HR movements: an active employee moved to another field office (edit form, bulk update).
+        static::updated(function (self $employee) {
+            if ($employee->wasChanged('field_id') && $employee->getOriginal('field_id') && $employee->status === 'Active') {
+                \App\Support\EmployeeMovements::transferred($employee, $employee->getOriginal('field_id'));
+            }
+            // Date of joining corrected on the edit form / bulk update: the hire follows it.
+            if ($employee->wasChanged('date_of_joining') && $employee->date_of_joining) {
+                \App\Models\EmployeeMovement::where('employee_id', $employee->id)->where('type', \App\Support\EmployeeMovements::HIRE)
+                    ->whereIn('status', [\App\Support\EmployeeMovements::PENDING, \App\Support\EmployeeMovements::APPROVED])
+                    ->latest('id')->first()?->update(['effective_date' => $employee->date_of_joining->toDateString(), 'date_estimated' => false]);
+            }
+        });
+
         // Salaries snapshot client / field / location, but gender comes from the employee.
         static::saved(function (self $employee) {
             if ($employee->wasChanged('gender')) {

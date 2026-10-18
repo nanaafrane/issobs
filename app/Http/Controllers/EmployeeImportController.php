@@ -120,7 +120,7 @@ class EmployeeImportController extends Controller
             $ids = [];
             foreach ($valid as $row) {
                 // spreadsheet row => new employee id (lets the error report leave these rows out later)
-                $ids[(string) $row['row']] = EmployeeCreator::create($row['employee'], $row['pay'], $user, $import->approver_id)->id;
+                $ids[(string) $row['row']] = EmployeeCreator::create($row['employee'], $row['pay'], $user, $import->approver_id, 'bulk_upload')->id;
             }
             return $ids;
         });

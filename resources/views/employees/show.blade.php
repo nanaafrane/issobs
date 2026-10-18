@@ -133,8 +133,8 @@
                             </a>
                         </li>
                         <li class="menu-item ">
-                            <a href="{{url('employeesnrrit')}}" class="menu-link">
-                            <div class="text-truncate" data-i18n="SList">Terminate / Recruit</div>
+                            <a href="{{ route('employees.movements') }}" class="menu-link">
+                            <div class="text-truncate" data-i18n="SList">HR movements</div>
                             </a>
                         </li>
                         <li class="menu-item">
@@ -197,8 +197,8 @@
                 </li>
                 @if(Auth::user()->hasRole(['Manager', 'Invoice']))
                 <li class="menu-item ">
-                    <a href="{{url('employeesnrrit')}}" class="menu-link">
-                    <div class="text-truncate" data-i18n="SList">Terminate / Recruit</div>
+                    <a href="{{ route('employees.movements') }}" class="menu-link">
+                    <div class="text-truncate" data-i18n="SList">HR movements</div>
                     </a>
                 </li>
                 <li class="menu-item">
@@ -338,6 +338,12 @@
     @section('content')
 
   <div class="container-xxl flex-grow-1 container-p-y">
+    @foreach(['success' => 'success', 'error' => 'danger'] as $key => $color)
+      @if(session($key))
+        <div class="alert alert-{{ $color }} alert-dismissible" role="alert">{{ session($key) }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>
+      @endif
+    @endforeach
     <div class="card mb-4">
       <div class="card-body">
         <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
@@ -539,7 +545,19 @@
           </div>
         </div>
 
-        @if(Auth::user()->hasRole(['Manager', 'Invoice']) && $employee->ho_status === 'approved')
+        @php
+            $pendingMove = \App\Support\EmployeeMovements::pending($employee->id);
+            $canTerminate = $employee->status === 'Active';
+            $canReinstate = $employee->status === 'Terminated';
+        @endphp
+        @if($pendingMove)
+          <div class="alert alert-warning mt-4 mb-0">
+            <strong>{{ \App\Support\EmployeeMovements::LABELS[$pendingMove->type] }}</strong> waiting for head office approval
+            @if($pendingMove->effective_date) · effective {{ $pendingMove->effective_date->format('d M Y') }} @endif
+            @if($pendingMove->reason) · {{ \App\Support\EmployeeMovements::reasonLabel($pendingMove->reason) }} @endif
+          </div>
+        @endif
+        @if(Auth::user()->hasRole(['Manager', 'Invoice']) && $employee->ho_status === 'approved' && ($canTerminate || $canReinstate))
           <div class="card bg-info mt-4">
             <div class="card-body text-end">
               <button
@@ -548,7 +566,7 @@
                 data-bs-toggle="modal"
                 data-bs-target="#statusModal">
                 <i class="icon-base bx bx-bxs-user-plus me-1"></i>
-                {{ $employee->status !== 'Active' ? 'Re-Instate' : 'Terminate' }}
+                {{ $canReinstate ? 'Re-Instate' : 'Terminate' }}
               </button>
             </div>
           </div>
@@ -557,64 +575,54 @@
             <div class="modal-dialog" role="document">
               <div class="modal-content">
                 <div class="modal-header">
-                  <h5 class="modal-title" id="statusModalLabel">
-                    {{ $employee->status !== 'Active' ? 'Choose Month To Re-Instate' : 'Choose Month To Terminate' }}
-                  </h5>
-                  <button
-                    type="button"
-                    class="btn-close"
-                    data-bs-dismiss="modal"
-                    aria-label="Close"></button>
+                  <h5 class="modal-title" id="statusModalLabel">{{ $canReinstate ? 'Re-instate' : 'Terminate' }} {{ $employee->name }}</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
 
-                <form method="GET" action="{{ $employee->status !== 'Active' ? url('employeeReinstate', $employee->id) : url('terminateEmployee', $employee->id) }}">
+                <form method="POST" action="{{ $canReinstate ? route('employees.reinstate', $employee->id) : route('employees.terminateEmployee', $employee->id) }}" id="statusForm">
                   @csrf
                   <div class="modal-body">
-                    <div class="row">
-                      <div class="col mb-0">
-                        <label for="status_date" class="form-label">{{ __('MONTH') }}</label>
-                        <input
-                          type="month"
-                          name="status_date"
-                          id="status_date"
-                          class="form-control @error('status_date') is-invalid @enderror"
-                          value="{{ old('status_date') }}"
-                          autocomplete="status_date"
-                          required>
-
-                        @error('status_date')
-                          <span class="invalid-feedback" role="alert">
-                            <strong>{{ $message }}</strong>
-                          </span>
-                        @enderror
-                      </div>
-
-                              <div class="mt-6 col mb-0">
-                                <div class="input-group">
-                                    <label class="input-group-text" for="inputGroupSelect01">{{ __('ASSIGN TO') }}</label>
-                                    <select name="staff" class="form-select @error('inputGroupSelect01') is-invalid @enderror" id="inputGroupSelect01" value="{{ old('staff')}}" >
-                                        <option selected disabled>Choose...</option>
-                                                @foreach($assign_staff as $user)
-                                                    @if($user->field_id == Auth::user()->field_id)
-                                                    <option value="{{$user->id}}"> {{$user->name}} </option>
-                                                    @elseif(Auth::user()->hasRole(['Manager']))
-                                                    <option value="{{$user->id}}"> {{$user->name}} </option>
-                                                    @endif
-                                                @endforeach
-                                    </select>
-                                </div>
-
-                                @error('staff')
-                                <span class="invalid-feedback" role="alert">
-                                    <strong>{{ $message }}</strong>
-                                </span>
-                                @enderror
-                            </div>
+                    <div class="mb-3">
+                      <label for="effective_date" class="form-label">{{ $canReinstate ? 'Back at work from' : 'Last day employed' }} *</label>
+                      <input type="date" name="effective_date" id="effective_date" max="{{ now()->addDays(90)->toDateString() }}"
+                             class="form-control @error('effective_date') is-invalid @enderror" value="{{ old('effective_date', now()->toDateString()) }}" required>
+                      <small class="text-muted">Decides which month the {{ $canReinstate ? 're-instatement' : 'termination' }} is reported in.</small>
+                      @error('effective_date')<span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>@enderror
                     </div>
+                    @if($canTerminate)
+                    <div class="mb-3">
+                      <label for="reason" class="form-label">Reason *</label>
+                      <select name="reason" id="reason" class="form-select @error('reason') is-invalid @enderror" required>
+                        <option value="" disabled @selected(! old('reason'))>Choose…</option>
+                        @foreach(\App\Support\EmployeeMovements::REASONS as $value => $label)
+                          <option value="{{ $value }}" @selected(old('reason') === $value)>{{ $label }}</option>
+                        @endforeach
+                      </select>
+                      @error('reason')<span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>@enderror
+                    </div>
+                    @endif
+                    <div class="mb-3">
+                      <label for="note" class="form-label">Note{{ $canTerminate ? ' (required for "Other")' : '' }}</label>
+                      <input type="text" name="note" id="note" maxlength="255" class="form-control @error('note') is-invalid @enderror" value="{{ old('note') }}">
+                      @error('note')<span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>@enderror
+                    </div>
+                    @if(collect($assign_staff)->isNotEmpty())
+                    <div class="input-group">
+                      <label class="input-group-text" for="staff">{{ __('ASSIGN TO') }}</label>
+                      <select name="staff" class="form-select @error('staff') is-invalid @enderror" id="staff">
+                        <option value="" selected>Choose…</option>
+                        @foreach($assign_staff as $user)
+                          @if($user->field_id == Auth::user()->field_id || Auth::user()->hasRole(['Manager']))
+                            <option value="{{ $user->id }}" @selected(old('staff') == $user->id)>{{ $user->name }}</option>
+                          @endif
+                        @endforeach
+                      </select>
+                    </div>
+                    @endif
                   </div>
                   <div class="modal-footer">
-                    <button type="submit" class="btn btn-info d-grid w-100">
-                      {{ $employee->status !== 'Active' ? __('Re-Instate') : __('Terminate') }}
+                    <button type="submit" class="btn btn-info d-grid w-100" onclick="return confirm('Kindly Confirm?')">
+                      {{ $canReinstate ? __('Re-Instate') : __('Terminate') }}
                     </button>
                   </div>
                 </form>
@@ -628,6 +636,16 @@
 
   @endsection
 
-
+  @section('scripts')
+  @if($errors->hasAny(['effective_date', 'reason', 'note', 'staff']))
+  <script>
+    // The terminate / re-instate form came back with an error: show it again.
+    document.addEventListener('DOMContentLoaded', function () {
+      var el = document.getElementById('statusModal');
+      if (el && window.bootstrap && bootstrap.Modal) { bootstrap.Modal.getOrCreateInstance(el).show(); }
+    });
+  </script>
+  @endif
+  @endsection
 
 </x-hr-dashboard>

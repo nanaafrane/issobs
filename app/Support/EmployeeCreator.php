@@ -131,9 +131,9 @@ class EmployeeCreator
      * @param array $data   employee attributes (name, gender, ..., tax_button, tin_number, ssnit_button, ssnit_number, image)
      * @param array $pay    bank_id, acc_number, branch, branch_code
      */
-    public static function create(array $data, array $pay, User $user, $approverId = null): employee
+    public static function create(array $data, array $pay, User $user, $approverId = null, string $source = 'form'): employee
     {
-        return DB::transaction(function () use ($data, $pay, $user, $approverId) {
+        return DB::transaction(function () use ($data, $pay, $user, $approverId, $source) {
             $employee = new employee();
             foreach ([
                 'name', 'gender', 'phone_number', 'channel', 'date_of_birth', 'nia_number', 'address', 'marital_status',
@@ -174,6 +174,9 @@ class EmployeeCreator
 
             $employee->payment_infos_id = $info->id;
             $employee->save();
+
+            // HR movements: a hire (approved at once when head office added them as Active).
+            EmployeeMovements::hired($employee, $source);
 
             return $employee;
         });

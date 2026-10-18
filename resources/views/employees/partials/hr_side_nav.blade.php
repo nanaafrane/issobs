@@ -1,12 +1,4 @@
-<x-hr-dashboard>
-
-    @section('css')
-    <link rel="stylesheet" href="https://cdn.datatables.net/2.3.5/css/dataTables.dataTables.css" />
-    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/3.2.5/css/buttons.dataTables.css">    
-    @endsection
-
-
-  @section('side_nav')
+{{-- Side menu of the HR pages (taken from the old NRRIT page). --}}
   <!-- Menu -->
     <aside id="layout-menu" class="layout-menu menu-vertical menu bg-menu-theme">
         <div class="app-brand demo">
@@ -138,8 +130,8 @@
                             </a>
                         </li>
                         <li class="menu-item active">
-                            <a href="{{url('employeesnrrit')}}" class="menu-link">
-                            <div class="text-truncate" data-i18n="SList">Terminate / Recruit</div>
+                            <a href="{{ route('employees.movements') }}" class="menu-link">
+                            <div class="text-truncate" data-i18n="SList">HR movements</div>
                             </a>
                         </li>
                         <li class="menu-item">
@@ -202,8 +194,8 @@
                 </li>
                 @if(Auth::user()->hasRole(['Manager', 'Invoice']))
                 <li class="menu-item active">
-                    <a href="{{url('employeesnrrit')}}" class="menu-link">
-                    <div class="text-truncate" data-i18n="SList">Terminate / Recruit</div>
+                    <a href="{{ route('employees.movements') }}" class="menu-link">
+                    <div class="text-truncate" data-i18n="SList">HR movements</div>
                     </a>
                 </li>
                 <li class="menu-item">
@@ -339,41 +331,3 @@
         </ul>
     </aside>
   <!-- / Menu -->
-  @endsection
-
-
-  @section('content')
-
-  <!-- Content -->
-    <div class="container-xxl flex-grow-1 container-p-y">
-
-        <div class="row">
-            <div class="col-12">
-                <h3 class="card-header"> <i class="icon-base bx bxs-user-account"></i> Employee New Recruit / Re-Instate / Terminate </h3>
-            </div>
-        </div><br>
-        <hr />
-
-        <div class="row">
-                <form action="/employeesnrritView" method="GET">
-                    @csrf
-                    <div class="col">
-
-                        <label for="month" class="form-label"> <strong>   CHOOSE A MONTH TO SEARCH </strong> </label> <br>
-
-                        <div class="form-check form-check-inline">
-                            <input type="month" class="form-control" name="month" required/> <br>
-                            
-                            <button class="btn btn-dark" type="submit"> <i class="icon-base bx bx-arrow-from-left"> </i> {{ __('') }}</button>
-                        </div>
-                    </div>
-                </form>
-        </div>
-
-
-
-    </div>
-  <!-- / Content -->
-
-  @endsection
-</x-hr-dashboard>

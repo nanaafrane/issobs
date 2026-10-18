@@ -3,11 +3,16 @@
                                 <td> <input class="checkBoxes form-check-input" type="checkbox" name="employees[]" value="{{ $employee->id }}" /></td>
                                 <td> {{ $key + 1 }} </td>
 
-                                @if($employee->status == 'Active')
-                                <td><span class="badge bg-label-success">{{$employee->status}}</span></td>
-                                @else
-                                <td><span class="badge bg-label-danger">{{$employee->status}}</span></td>
-                                @endif
+                                @php $move = ($pendingMoves ?? collect())->get($employee->id); @endphp
+                                <td>
+                                    <span class="badge {{ $employee->status == 'Active' ? 'bg-label-success' : 'bg-label-danger' }}">{{$employee->status}}</span>
+                                    @if($move && $move->type !== 'hire')
+                                        {{-- What head office is approving: the request's date and reason. --}}
+                                        <div class="small text-muted">
+                                            {{ \App\Support\EmployeeMovements::LABELS[$move->type] }}{{ $move->effective_date ? ' from ' . $move->effective_date->format('d M Y') : '' }}{{ $move->reason ? ' · ' . \App\Support\EmployeeMovements::reasonLabel($move->reason) : '' }}
+                                        </div>
+                                    @endif
+                                </td>
 
                                     <td> 
                                         @if($employee->assit_status == 'approved')

@@ -212,8 +212,12 @@ Route::get('employeesBankView/{id}', [EmployeeController::class, 'employeesBankV
 Route::get('employeesCash', [EmployeeController::class, 'employeesCash'])->name('employees.Cash');
 Route::get('employeesCashView/{id}', [EmployeeController::class, 'employeesCashView' ]);
 Route::post('employeesCashVerify', [EmployeeController::class, 'employeesCashVerify' ]);
-Route::get('employeesnrrit', [EmployeeController::class, 'newRecruitTerminate' ]);
-Route::get('employeesnrritView', [EmployeeController::class, 'newRecruitTerminateView' ]);
+// HR movements report (replaces the NRRIT page; the old URLs open it).
+Route::get('employees-movements', [\App\Http\Controllers\EmployeeMovementController::class, 'index'])->name('employees.movements');
+Route::get('employees-movements/export', [\App\Http\Controllers\EmployeeMovementController::class, 'export'])->name('employees.movements.export');
+Route::put('employees-movements/{movement}', [\App\Http\Controllers\EmployeeMovementController::class, 'update'])->whereNumber('movement')->name('employees.movements.update');
+Route::get('employeesnrrit', [\App\Http\Controllers\EmployeeMovementController::class, 'legacy']);
+Route::get('employeesnrritView', [\App\Http\Controllers\EmployeeMovementController::class, 'legacy']);
 Route::get('employeesPending', [EmployeeController::class, 'employeesPending']);
 Route::post('employeesAproval', [EmployeeController::class, 'employeesAproval']);
 
@@ -224,8 +228,8 @@ Route::put('employeesPayInfoUpdate/{id}', [EmployeeController::class, 'EmpPayInf
 Route::get('employeesSalary/{id}', [EmployeeController::class, 'EmpSalary']);
 Route::get('employeesViewSalaryInfo', [EmployeeController::class, 'EmpViewSalaryInfo']);
 Route::get('employeesGuardClient/{id}', [EmployeeController::class, 'GuardClient']);
-Route::get('terminateEmployee/{id}', [EmployeeController::class, 'terminateEmployee'])->name('employees.terminateEmployee');
-Route::get('employeeReinstate/{id}', [EmployeeController::class, 'employeeReinstate']);
+Route::post('terminateEmployee/{id}', [EmployeeController::class, 'terminateEmployee'])->whereNumber('id')->name('employees.terminateEmployee');
+Route::post('employeeReinstate/{id}', [EmployeeController::class, 'employeeReinstate'])->whereNumber('id')->name('employees.reinstate');
 Route::post('employeesGuardReAassign', [EmployeeController::class, 'GuardReAassign'])->name('employees.GuardReAassign');
 
 Route::get('salaries/employees-data', [SalaryController::class, 'employeesData'])->name('salaries.employeesData');
