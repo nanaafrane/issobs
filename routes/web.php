@@ -81,6 +81,7 @@ Route::get('attendance/{client}/poster', [AttendanceController::class, 'poster']
 Route::get('attendance/{client}/kiosk', [AttendanceController::class, 'kiosk'])->whereNumber('client')->name('attendance.kiosk');
 Route::post('attendance/{client}/kiosk', [AttendanceController::class, 'kioskMark'])->whereNumber('client')->name('attendance.kioskMark');
 Route::get('attendance/{client}/id-cards', [AttendanceController::class, 'idCards'])->whereNumber('client')->name('attendance.idCards');
+Route::post('attendance/{client}/move', [AttendanceController::class, 'move'])->whereNumber('client')->name('attendance.move');
 Route::post('attendance/{client}/mark', [AttendanceController::class, 'mark'])->whereNumber('client')->name('attendance.mark');
 Route::post('attendance/{client}/fill', [AttendanceController::class, 'fill'])->whereNumber('client')->name('attendance.fill');
 Route::post('attendance/{client}/shift', [AttendanceController::class, 'setShift'])->whereNumber('client')->name('attendance.shift');

@@ -63,8 +63,12 @@ class AttendanceController extends Controller
         $sheet = new MonthSheet($client, $month);
         $plans = $client->shiftPlans()->with('user:id,name')->get();
         $newPin = session('new_pin');
+        // Clients a guard can be moved to for a shift (the ones this user takes attendance for).
+        $moveTargets = Roster::clientsFor(Auth::user())->whereKeyNot($client->id)
+            ->orderByRaw('COALESCE(business_name, name)')->get(['id', 'name', 'business_name', 'branch'])
+            ->map(fn ($c) => ['id' => $c->id, 'name' => trim(($c->business_name ?: $c->name) . ($c->branch ? ' - ' . $c->branch : ''))])->values();
 
-        return view('attendance.sheet', compact('client', 'sheet', 'month', 'plans', 'newPin'));
+        return view('attendance.sheet', compact('client', 'sheet', 'month', 'plans', 'newPin', 'moveTargets'));
     }
 
     /** Set or clear one guard / date / shift. Called by the grid (JSON). */
@@ -120,6 +124,68 @@ class AttendanceController extends Controller
         }
 
         return response()->json(['ok' => true]);
+    }
+
+    /**
+     * Send a guard posted here to another client for one shift ("moved" / relief).
+     * The shift is recorded as Present at the other client with moved_from_client_id = this
+     * client, so this sheet shows "M - moved to ..." and the guard gets no absent deduction.
+     * action=cancel undoes it.
+     */
+    public function move(Request $request, Client $client)
+    {
+        $this->authorizeClient($client);
+        $data = $request->validate([
+            'employee_id' => ['required', 'integer'],
+            'date' => ['required', 'date_format:Y-m-d'],
+            'shift' => ['required', Rule::in(Attendance::SHIFTS)],
+            'to_client_id' => ['nullable', 'integer', 'required_without:action'],
+            'action' => ['nullable', Rule::in(['cancel'])],
+        ]);
+        $guard = employee::findOrFail($data['employee_id']);
+        $date = Carbon::parse($data['date']);
+        $existing = Attendance::where('employee_id', $guard->id)->where('work_date', $date->toDateString())->where('shift', $data['shift'])->first();
+
+        if (($data['action'] ?? null) === 'cancel') {
+            if (! $existing || (int) $existing->moved_from_client_id !== (int) $client->id || $existing->overtime_id || $existing->source === 'scan') {
+                return response()->json(['message' => 'There is no move from this client to cancel for that shift.'], 422);
+            }
+            $existing->delete();
+
+            return response()->json(['ok' => true]);
+        }
+
+        if (! Roster::isPosted($guard, $client)) {
+            return response()->json(['message' => 'Only guards posted to this client can be moved from here.'], 422);
+        }
+        if ($date->isAfter(Carbon::today())) {
+            return response()->json(['message' => 'A move can only be recorded for today or earlier.'], 422);
+        }
+        $to = Client::find($data['to_client_id']);
+        if (! $to || (int) $to->id === (int) $client->id || ! Roster::canManage(Auth::user(), $to)) {
+            return response()->json(['message' => 'Choose another client you can take attendance for.'], 422);
+        }
+        if ($existing?->overtime_id) {
+            return response()->json(['message' => 'This shift comes from overtime entry #' . $existing->overtime_id . '. Change the overtime entry instead.'], 422);
+        }
+        if ($existing && (int) $existing->client_id !== (int) $client->id) {
+            return response()->json(['message' => 'This guard is already recorded at another client for that shift.'], 422);
+        }
+        if ($existing && $existing->source === 'scan' && $existing->status === Attendance::PRESENT) {
+            return response()->json(['message' => 'This guard signed in here for that shift, so they weren\'t moved.'], 422);
+        }
+
+        DB::transaction(function () use ($existing, $guard, $client, $to, $date, $data) {
+            $existing?->delete();   // e.g. an absence marked here before the move was known
+            Attendance::create([
+                'client_id' => $to->id, 'moved_from_client_id' => $client->id,
+                'employee_id' => $guard->id, 'work_date' => $date->toDateString(), 'shift' => $data['shift'],
+                'status' => Attendance::PRESENT, 'reason' => 'Present', 'source' => 'manual', 'marked_by' => Auth::id(),
+                'note' => 'Moved from ' . ($client->business_name ?: $client->name) . ' for the shift',
+            ]);
+        });
+
+        return response()->json(['ok' => true, 'to' => $to->business_name ?: $to->name]);
     }
 
     /** Mark every unmarked day so far this month as present (one guard, or everyone with a day/night shift). */
@@ -374,8 +440,21 @@ class AttendanceController extends Controller
         abort_unless($attendance->status === Attendance::PENDING, 422, 'This sign-in was already reviewed.');
         abort_if((bool) $attendance->overtime_id, 422, 'This comes from an overtime entry: approve or reject the overtime instead.');
 
+        $guard = $attendance->employee;
+        $fromElsewhere = $guard && $guard->client_id && (int) $guard->client_id !== (int) $attendance->client_id;
+
+        // A guard from another post: rejecting means they weren't here, which is not an absence at
+        // this client (their own post's sheet decides that), so the sign-in is just removed.
+        if ($data['decision'] === 'reject' && $fromElsewhere) {
+            $attendance->delete();
+
+            return back()->with('success', 'Rejected: the sign-in by ' . $guard->name . ' was removed. They are not posted here, so no absence was recorded.');
+        }
+
         $note = trim(implode('; ', array_filter([$attendance->note, $data['note'] ?? null])));
         $attendance->fill([
+            // Approving a guard from another post records them as moved here for the shift.
+            'moved_from_client_id' => $data['decision'] === 'approve' && $fromElsewhere ? $guard->client_id : $attendance->moved_from_client_id,
             'status' => $data['decision'] === 'approve' ? Attendance::PRESENT : Attendance::ABSENT,
             'reviewed_by' => Auth::id(),
             'reviewed_at' => now(),

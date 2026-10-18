@@ -248,7 +248,33 @@ Tests: in `OvertimeAttendanceLinkTest` (now 13 tests).
 
 ---
 
-## 10. Next steps (not in this patch)
+## 10. Guard moved to another client for a shift
+
+A client has 6 guards. A new client, or another client, has nobody at post, so one guard is sent there for the day.
+
+**Rule:** the guard is **present at the client he worked at**, and his own post shows **M (moved)** with a hover saying
+where he went. He is never marked absent at his own post, so there is **no absent deduction**.
+
+* **How to record it** (his own client's sheet): click the day, then *Moved to another client for this shift*, choose the
+  client, and press **Move**. If an absence was already marked for that shift, it is replaced. **Cancel move** in the same popover undoes it.
+* **Other ways it gets recorded:**
+  * **Supervisor kiosk** at the other client: a guard from another post can be marked present (relief), but not absent.
+  * **QR scan** at the other client is held for review ("posted at ..."). Approving it records the move.
+    Rejecting it removes the sign-in; it doesn't make an absence at a client he isn't posted to.
+  * **Overtime cover** at another client also shows as M at home on days he has no shift of his own there.
+* **On the sheets:**
+  * Home: an italic blue **M** cell, with the hover *"Moved to LEXTA AIRPORT: present, day shift"*. A badge on his row
+    shows how many M days he has this month. Those days aren't blank, aren't absent, and don't count as cover for home.
+  * Other client: he appears as a **Relief** row, and his shift counts as cover there.
+  * Excel export: **M**.
+* Home can't mark him absent for a shift he worked elsewhere, and *Fill blanks as present* leaves it alone.
+* Stored as an ordinary attendance row at the other client with `attendances.moved_from_client_id` = his own post.
+
+Tests: `php artisan test --filter=MovedGuardTest` (4 tests).
+
+---
+
+## 11. Next steps (not in this patch)
 
 * **Invoicing**: *uncovered guard-shifts* per client is the quantity for an `ABSENT DEDUCTION` line on the client's invoice.
 * **Import** Jan–May from the Excel file if history is wanted in ISSOBS.

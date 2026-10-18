@@ -225,7 +225,7 @@ class GuardAttendanceTest extends TestCase
         $yaw = $this->makeGuard('YAW OWUSU', $other, 'day', '1357');
         $this->scan(['employee_number' => (string) $yaw->id, 'pin' => '1357', 'device_id' => 'dddddddd-1111-2222-3333-444444444444'], '2026-10-15 06:00:00')
             ->assertJson(['status' => 'pending']);
-        $this->assertContains('Not on this client\'s roster', Attendance::where('employee_id', $yaw->id)->sole()->flags);
+        $this->assertStringStartsWith('Not on this client\'s roster (posted at SSNIT CAR PARK', Attendance::where('employee_id', $yaw->id)->sole()->flags[0]);
     }
 
     public function test_scan_does_not_overwrite_what_operations_marked(): void
@@ -473,10 +473,14 @@ class GuardAttendanceTest extends TestCase
             ->assertOk()->assertJson(['status' => 'pending']);
         $this->assertStringContainsString('Supervisor marked it', Attendance::where('employee_id', $kwame->id)->sole()->flags[0]);
 
-        // Only the current shift; and only this client's guards.
+        // Only the current shift.
         $this->actingAs($this->ops)->postJson($url, ['employee' => (string) $this->kofi->id, 'status' => 'present', 'date' => '2026-10-01'] + $here)->assertStatus(422);
-        $stranger = $this->makeGuard('STRANGER', $this->makeClient('LEXTA', $this->accra), 'day', null);
-        $this->actingAs($this->ops)->postJson($url, ['employee' => (string) $stranger->id, 'status' => 'present'] + $here)->assertStatus(422);
+        // A guard from another post: present = moved here for the shift; absent can't be marked here.
+        $lexta = $this->makeClient('LEXTA', $this->accra);
+        $stranger = $this->makeGuard('STRANGER', $lexta, 'day', null);
+        $this->actingAs($this->ops)->postJson($url, ['employee' => (string) $stranger->id, 'status' => 'absent'] + $here)->assertStatus(422);
+        $this->actingAs($this->ops)->postJson($url, ['employee' => (string) $stranger->id, 'status' => 'present'] + $here)->assertOk();
+        $this->assertSame($lexta->id, Attendance::where('employee_id', $stranger->id)->sole()->moved_from_client_id);
 
         // A guard's own scan held for review, confirmed by the supervisor in person, is cleared.
         Attendance::where('employee_id', $kwame->id)->delete();

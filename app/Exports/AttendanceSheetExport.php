@@ -43,7 +43,7 @@ class AttendanceSheetExport implements FromArray, WithStyles, WithTitle
                 $e->phone_number, strtoupper((string) ($row['shift'] ?? '')), $row['worked'], $row['paid'], $row['absent'],
             ];
             foreach ($s->days as $n => $_) {
-                $line[] = MonthSheet::code($row['cells'][$n] ?? []);
+                $line[] = empty($row['cells'][$n]) && ! empty($row['away'][$n]) ? MonthSheet::AWAY_CODE : MonthSheet::code($row['cells'][$n] ?? []);
             }
             $rows[] = $line;
         }
@@ -54,7 +54,7 @@ class AttendanceSheetExport implements FromArray, WithStyles, WithTitle
             . '   POSTED: ' . $t['posted'] . '   TOTAL SHORTAGES = ' . ($t['shortage'] ?: 'NIL')];
         $rows[] = ['', '', 'UNCOVERED GUARD-SHIFTS SO FAR: ' . $t['uncovered_guard_days']];
         $rows[] = [];
-        $rows[] = ['', '', 'LEGEND: ' . collect(Attendance::CODES)->map(fn ($c, $k) => $c . ' = ' . Attendance::LABELS[$k])->implode(',  ')
+        $rows[] = ['', '', 'LEGEND: ' . collect(Attendance::CODES)->map(fn ($c, $k) => $c . ' = ' . Attendance::LABELS[$k])->push('M = Moved to another client')->implode(',  ')
             . '.  OFF, SICK and PASS count as paid days.'];
 
         return $rows;

@@ -16,6 +16,12 @@
       $m = $month->format('Y-m');
       $today = now()->toDateString();
       $clientName = $client->business_name ?: $client->name;
+      $awayInfo = fn (array $away) => collect($away)->map(fn ($r) => [
+          'client' => $r->client?->business_name ?: $r->client?->name, 'client_id' => $r->client_id, 'status' => $r->status,
+          'moved_here' => (int) $r->moved_from_client_id === (int) $client->id,
+          'cancellable' => (int) $r->moved_from_client_id === (int) $client->id && ! $r->overtime_id && $r->source !== 'scan',
+          'overtime_id' => $r->overtime_id,
+      ])->all();
       $cellJson = function (array $cell) {
           return collect($cell)->map(fn ($r) => [
               'status' => $r->status, 'source' => $r->source,
@@ -79,6 +85,7 @@
                   <span class="att-leave ms-2">S</span>Sick
                   <span class="att-leave ms-2">PS</span>Pass
                   <span class="att-terminated ms-2">T</span>Terminated
+                  <span class="att-moved ms-2">M</span>Moved to another client
                   <span class="att-pending ms-2">?</span>Awaiting review (<em>S?</em> = overtime entry not yet approved)
                   <span class="text-muted ms-2">Click a day to change it. OFF, S and PS count as paid days; T is neither paid nor absent.</span>
               </div>
@@ -124,7 +131,8 @@
                             <div class="overflow-hidden">
                               <div class="fw-semibold text-truncate" title="{{ $e->name }}">{{ sprintf('%02d', $i + 1) }}. {{ $e->name }}</div>
                               <div class="text-muted" style="font-size:.7rem">FWSS {{ $e->id }} @if($e->phone_number)· {{ $e->phone_number }}@endif
-                                  @if($row['ot_cover'])<span class="badge bg-label-info" title="Posted elsewhere; covered shifts here on overtime">O.T cover</span>@elseif($row['former'])<span class="badge bg-label-secondary">moved</span>@endif
+                                  @if($row['ot_cover'])<span class="badge bg-label-info" title="Posted elsewhere; covered shifts here on overtime">O.T cover</span>@elseif($row['relief'])<span class="badge bg-label-info" title="Posted at {{ $e->client?->business_name ?: $e->client?->name }}; moved here for some shifts">Relief</span>@elseif($row['former'])<span class="badge bg-label-secondary">moved</span>@endif
+                                  @if($row['moved'])<span class="badge bg-label-info" title="Shifts this month worked at another client (M)">{{ $row['moved'] }} M</span>@endif
                                   @unless($row['former'])
                                       @if($e->attendance_pin)<i class="bx bx-key text-success" title="Has a PIN"></i>@else<i class="bx bx-key text-muted" title="No PIN yet"></i>@endif
                                       @if($e->attendance_device)<i class="bx bx-mobile text-success" title="Phone registered"></i>@endif
@@ -177,8 +185,12 @@
                           <td class="tot text-muted">{{ $row['unmarked'] ?: '' }}</td>
                           @foreach($sheet->days as $n => $d)
                               @php($cell = $row['cells'][$n] ?? [])
-                              <td class="cell {{ \App\Support\Attendance\MonthSheet::css($cell) }} {{ $d['future'] ? 'future' : '' }} {{ in_array($d['weekday'], ['Sat', 'Sun']) ? 'we' : '' }}"
-                                  data-date="{{ $d['date']->toDateString() }}" data-recs='@json($cellJson($cell))'>{{ \App\Support\Attendance\MonthSheet::code($cell) }}</td>
+                              @php($away = $cell ? [] : ($row['away'][$n] ?? []))
+                              @php($awayJson = $awayInfo($away))
+                              <td class="cell {{ $away ? 'att-moved' : \App\Support\Attendance\MonthSheet::css($cell) }} {{ $d['future'] ? 'future' : '' }} {{ in_array($d['weekday'], ['Sat', 'Sun']) ? 'we' : '' }}"
+                                  data-date="{{ $d['date']->toDateString() }}" data-recs='@json($cellJson($cell))'
+                                  @if($away) title="{{ \App\Support\Attendance\MonthSheet::awayTitle($away) }}" data-away='@json($awayJson)' @endif
+                                  >{{ $away ? \App\Support\Attendance\MonthSheet::AWAY_CODE : \App\Support\Attendance\MonthSheet::code($cell) }}</td>
                           @endforeach
                       </tr>
                   @empty
@@ -308,6 +320,17 @@
           <a type="button" class="btn btn-outline-secondary " data-status="terminated">Terminated</a>
           <a type="button" class="btn btn-outline-secondary " data-status="clear">Clear</a>
       </div>
+      <div id="pop-move" class="mt-2 pt-2 border-top">
+          <div class="small fw-semibold mb-1">Moved to another client for this shift</div>
+          <div class="d-flex gap-1">
+              <select id="pop-move-to" class="form-select form-select-sm">
+                  <option value="">Choose client…</option>
+                  @foreach($moveTargets as $t)<option value="{{ $t['id'] }}">{{ $t['name'] }}</option>@endforeach
+              </select>
+              <button type="button" class="btn btn-sm btn-info text-white" id="pop-move-go">Move</button>
+          </div>
+          <div class="text-muted" style="font-size:.7rem">Recorded as present there; shows <strong>M</strong> here. No absence, no deduction.</div>
+      </div>
       <div id="pop-err" class="text-danger small mt-1"></div>
   </div>
   @endsection
@@ -321,6 +344,8 @@
       const CODES = @json(\App\Models\Attendance::CODES);
       const LABELS = @json(\App\Models\Attendance::LABELS);
       const overtimeUrl = @json(url('overtime'));
+      const moveUrl = @json(route('attendance.move', $client->id));
+      const sheetUrl = @json(url('attendance'));
       const pop = document.getElementById('att-pop');
       let current = null;   // {td, employee, date}
 
@@ -353,21 +378,46 @@
           if (r && r.source === 'kiosk') how = 'marked on the supervisor kiosk';
           if (r && r.overtime_id) how = 'from <a href="' + overtimeUrl + '/' + encodeURIComponent(r.overtime_id) + '/open">overtime entry #' + esc(r.overtime_id) + '</a>' + (r.reason ? ' (' + esc(r.reason) + ')' : '')
               + '<div class="text-muted mt-1">Change it on the overtime entry: approving it confirms this shift, deleting or rejecting it puts the sheet back.</div>';
+          const away = JSON.parse(current.td.dataset.away || '{}')[shift];
           let html = r ? '<span class="badge bg-label-secondary">' + esc(LABELS[r.status] || r.status) + '</span> ' + how
               : '<span class="text-muted">Nothing recorded for this shift.</span>';
+          if (!r && away) {
+              html = '<span class="badge bg-label-info">' + (away.moved_here ? 'Moved' : 'Elsewhere') + '</span> '
+                  + (away.moved_here ? 'Moved to ' : 'At ') + '<a href="' + sheetUrl + '/' + away.client_id + '?month=' + current.date.slice(0, 7) + '">' + esc(away.client) + '</a>: '
+                  + esc((LABELS[away.status] || away.status).toLowerCase()) + (away.overtime_id ? ' (overtime #' + esc(away.overtime_id) + ')' : '') + '.'
+                  + '<div class="text-muted mt-1">Not an absence here, so no deduction.</div>'
+                  + (away.cancellable ? '<button type="button" class="btn btn-sm btn-outline-danger mt-1" id="pop-move-cancel">Cancel move</button>' : '');
+          }
+          const canMove = !r && !away && !current.former && !current.td.classList.contains('future');
+          document.getElementById('pop-move').style.display = canMove ? '' : 'none';
           if (r && r.flags && r.flags.length) html += '<div class="text-warning mt-1">' + r.flags.map(esc).join('<br>') + '</div>';
           if (r && r.note) html += '<div class="text-muted mt-1">' + esc(r.note) + '</div>';
           document.getElementById('pop-info').innerHTML = html;
+          const cancel = document.getElementById('pop-move-cancel');
+          cancel && cancel.addEventListener('click', () => {
+              post(moveUrl, { employee_id: current.employee, date: current.date, shift, action: 'cancel' })
+                  .then(() => location.reload()).catch(err => { document.getElementById('pop-err').textContent = err.message; });
+          });
       }
+
+      document.getElementById('pop-move-go').addEventListener('click', function () {
+          const to = document.getElementById('pop-move-to').value;
+          if (!to) { document.getElementById('pop-err').textContent = 'Choose the client the guard was moved to.'; return; }
+          const shift = document.querySelector('input[name=pop-shift]:checked').value;
+          post(moveUrl, { employee_id: current.employee, date: current.date, shift, to_client_id: to })
+              .then(() => location.reload()).catch(err => { document.getElementById('pop-err').textContent = err.message; });
+      });
 
       document.getElementById('att-grid').addEventListener('click', function (ev) {
           const td = ev.target.closest('td.cell');
           if (!td) return;
           const tr = td.closest('tr');
-          current = { td, employee: tr.dataset.employee, date: td.dataset.date };
+          current = { td, employee: tr.dataset.employee, date: td.dataset.date, former: tr.classList.contains('former') };
           const recs = JSON.parse(td.dataset.recs || '{}');
           const own = tr.dataset.shift;
-          const shift = recs.day && !recs.night ? 'day' : recs.night && !recs.day ? 'night' : (own === 'night' ? 'night' : 'day');
+          const awayRecs = JSON.parse(td.dataset.away || '{}');
+          const shift = recs.day && !recs.night ? 'day' : recs.night && !recs.day ? 'night'
+              : awayRecs.day && !awayRecs.night ? 'day' : awayRecs.night && !awayRecs.day ? 'night' : (own === 'night' ? 'night' : 'day');
           document.getElementById('pop-' + shift).checked = true;
           document.getElementById('pop-name').textContent = tr.dataset.name;
           document.getElementById('pop-date').textContent = new Date(td.dataset.date + 'T00:00').toDateString();

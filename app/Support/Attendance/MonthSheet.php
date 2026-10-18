@@ -65,8 +65,17 @@ class MonthSheet
             }
         }
 
+        // Where guards posted here were on days they worked somewhere else (moved / relief / overtime cover),
+        // so the home sheet shows "M" instead of a blank or an absence.
+        $away = Attendance::with('client:id,name,business_name')
+            ->whereIn('employee_id', $guards->reject(fn ($g) => $g->former ?? false)->keys()->all() ?: [0])
+            ->where('client_id', '!=', $this->client->id)
+            ->whereBetween('work_date', [$this->month->toDateString(), $end->toDateString()])
+            ->get()
+            ->groupBy('employee_id');
+
         $elapsed = collect($this->days)->reject(fn ($d) => $d['future'])->count();
-        $sum = ['worked' => 0, 'paid' => 0, 'absent' => 0, 'pending' => 0, 'unmarked' => 0];
+        $sum = ['worked' => 0, 'paid' => 0, 'absent' => 0, 'pending' => 0, 'unmarked' => 0, 'moved' => 0];
 
         foreach ($guards as $guard) {
             /** @var Collection $mine */
@@ -79,8 +88,19 @@ class MonthSheet
                 }
             }
 
+            $awayCells = [];
+            foreach ($away->get($guard->id, collect()) as $r) {
+                if (! isset($cells[$r->work_date->day])) {
+                    $awayCells[$r->work_date->day][$r->shift] = $r;
+                }
+            }
+
             $row = [
                 'employee' => $guard,
+                'away' => $awayCells,
+                'moved' => count(array_filter(array_keys($awayCells), fn ($day) => ! $this->days[$day]['future'])),
+                // Not posted here; worked here on shifts they were moved from their own post.
+                'relief' => (bool) ($guard->former ?? false) && $mine->contains(fn ($r) => $r->moved_from_client_id),
                 'shift' => $guard->attendance_shift,
                 'former' => (bool) ($guard->former ?? false),
                 // Not posted here, and every record this month came from an overtime entry: a guard who covered a gap.
@@ -91,7 +111,7 @@ class MonthSheet
                 'absent' => $mine->where('status', Attendance::ABSENT)->count(),
                 'pending' => $mine->where('status', Attendance::PENDING)->count(),
             ];
-            $markedDays = collect($cells)->keys()->filter(fn ($day) => ! $this->days[$day]['future'])->count();
+            $markedDays = collect($cells)->keys()->merge(array_keys($awayCells))->unique()->filter(fn ($day) => ! $this->days[$day]['future'])->count();
             $row['unmarked'] = $row['former'] ? 0 : max(0, $elapsed - $markedDays);
 
             foreach ($sum as $k => $_) {
@@ -130,6 +150,21 @@ class MonthSheet
             // Shift slots nobody was present for, so far this month (what an ABSENT DEDUCTION would bill).
             'uncovered_guard_days' => $shortfall,
         ];
+    }
+
+    /** Code for a day the guard worked at another client: "M" (moved / relief / cover elsewhere). */
+    public const AWAY_CODE = 'M';
+
+    /** Hover text for an away day: "Moved to DVLA HQ: present, day shift". */
+    public static function awayTitle(array $away): string
+    {
+        return collect($away)->map(function ($r, $shift) {
+            $where = $r->client?->business_name ?: $r->client?->name ?: 'another client';
+
+            return ($r->moved_from_client_id ? 'Moved to ' : 'At ') . $where . ': '
+                . strtolower(Attendance::LABELS[$r->status] ?? $r->status) . ', ' . $shift . ' shift'
+                . ($r->overtime_id ? ' (overtime #' . $r->overtime_id . ')' : '');
+        })->implode(' / ');
     }
 
     /** Grid code for one guard on one day: "P", "A", "OFF", "?", "P/P" for a double shift, "" when unmarked. */

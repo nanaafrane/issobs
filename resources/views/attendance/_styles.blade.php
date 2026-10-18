@@ -20,6 +20,7 @@
     .att-absent { color: #c62828; background-color: #fdecec !important; }
     .att-leave { color: #5f5fb3; background-color: #efeffd !important; }
     .att-terminated { color: #fff; background-color: #6b7280 !important; }
+    .att-moved { color: #0e7490; background-color: #e0f2fe !important; font-style: italic; }
     .att-pending { color: #8a5a00; background-color: #fff4d6 !important; }
     .att-grid tfoot td { background: #f8f9fa; font-weight: 600; text-align: center; }
     .att-grid tfoot td.short { color: #c62828; }

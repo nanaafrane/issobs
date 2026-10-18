@@ -28,8 +28,14 @@ class KioskRecorder
     {
         $at = Carbon::instance($at ?? now());
 
-        if (! Roster::isPosted($guard, $client)) {
-            return ['ok' => false, 'message' => $guard->name . ' is not posted to this client.'];
+        // A guard from another post can be marked present here (moved / relief for the shift),
+        // but an absence belongs on their own post's sheet.
+        $relief = ! Roster::isPosted($guard, $client);
+        if ($relief && $status !== Attendance::PRESENT) {
+            return ['ok' => false, 'message' => $guard->name . ' is not posted to this client. Mark an absence on their own client\'s sheet.'];
+        }
+        if ($relief && ! $guard->client_id) {
+            return ['ok' => false, 'message' => $guard->name . ' has no client of their own, so they can\'t be marked as moved here.'];
         }
         if (! in_array($guard->status, Roster::ACTIVE_STATUSES, true)) {
             return ['ok' => false, 'message' => $guard->name . '\'s employee record is not active.'];
@@ -76,7 +82,8 @@ class KioskRecorder
             'flags' => $flags ?: null,
             'reason' => ShiftReasons::FOR_STATUS[$finalStatus] ?? null,
             'marked_by' => $supervisor->id,
-            'note' => 'Marked on supervisor kiosk by ' . $supervisor->name,
+            'note' => 'Marked on supervisor kiosk by ' . $supervisor->name . ($relief ? ' (moved here from their own post)' : ''),
+            'moved_from_client_id' => $relief ? $guard->client_id : null,
         ];
 
         if ($existing) {

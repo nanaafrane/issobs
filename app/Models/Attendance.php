@@ -46,7 +46,7 @@ class Attendance extends Model
     public const SHIFTS = ['day', 'night'];
 
     protected $fillable = [
-        'client_id', 'employee_id', 'work_date', 'shift', 'status', 'reason', 'source', 'overtime_id',
+        'client_id', 'moved_from_client_id', 'employee_id', 'work_date', 'shift', 'status', 'reason', 'source', 'overtime_id',
         'checked_in_at', 'latitude', 'longitude', 'accuracy_m', 'distance_m',
         'device_id', 'ip', 'flags', 'note', 'marked_by', 'reviewed_by', 'reviewed_at',
     ];
@@ -61,6 +61,12 @@ class Attendance extends Model
     public function client()
     {
         return $this->belongsTo(Client::class);
+    }
+
+    /** The guard's own post, when they were moved here for the shift. */
+    public function movedFrom()
+    {
+        return $this->belongsTo(Client::class, 'moved_from_client_id');
     }
 
     public function employee()

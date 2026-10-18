@@ -100,7 +100,8 @@ class ScanRecorder
         $notes = [];
 
         if (! $posted) {
-            $flags[] = 'Not on this client\'s roster';
+            $home = $guard->client_id ? \App\Models\Client::find($guard->client_id) : null;
+            $flags[] = 'Not on this client\'s roster' . ($home ? ' (posted at ' . ($home->business_name ?: $home->name) . '; approve if they were moved here)' : '');
         }
         if (! $slot['in_own_shift']) {
             $flags[] = "Signed in for the {$shift} shift but is rostered on " . ($ownShift ?: 'another') . ' shift';
