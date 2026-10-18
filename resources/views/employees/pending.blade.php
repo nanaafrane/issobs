@@ -493,6 +493,19 @@
                 </div>
             </div>
 
+            @if($employeeNoOffice->isNotEmpty())
+            {{-- Pending staff without a field office: part of the total, so they get a card too. --}}
+            <div class="col-lg-2">
+                <div class="card h-100 bg-warning text-dark" title="{{ $employeeNoOffice->map(fn ($e) => 'FWSS ' . $e->id . ' ' . $e->name)->implode(', ') }}">
+                    <div class="card-body">
+                        <p class="mb-1"><strong> NO OFFICE </strong> </p>
+                        <h4 class="card-title mb-3 text-dark"> {{ $employeeNoOffice->count() }} </h4>
+                        <small>Set their field office</small>
+                    </div>
+                </div>
+            </div>
+            @endif
+
         </div> <br>
         @elseif(Auth::user()->field?->name == 'Accra')
       
@@ -716,7 +729,8 @@
                         </thead>
                         <tbody>
 
-                         @if(Auth::user()->hasRole(['Invoice']) ||  (Auth::user()->hasRole(['Manager']) && Auth::user()->hasPermission('HR')) )
+                         {{-- Same people who see the all-office cards see every pending employee, so the list matches the total. --}}
+                         @if(Auth::user()->hasRole(['Invoice', 'Finance Manager']) ||  (Auth::user()->hasRole(['Manager']) && Auth::user()->hasPermission('HR')) )
                             @foreach ($pendingEmployees as $key => $employee )
                             <tr>
                                 <td> <input class="checkBoxes form-check-input" type="checkbox" name="employees[]" value="{{ $employee->id }}" /></td>

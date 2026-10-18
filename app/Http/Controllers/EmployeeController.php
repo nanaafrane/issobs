@@ -1424,98 +1424,33 @@ class EmployeeController extends Controller
 
     public function employeesPending()
     {
+        // ONE list, and every card is counted from it, so the office cards always add up to
+        // the total. Pending = waiting for head-office approval: a new recruit, termination
+        // or re-instatement whose HO status is still pending (or not set yet).
+        // The old queries ended in ->orwhere('ho_status', null) without brackets, which let
+        // ANY employee with an empty HO status in (Active ones too), and each card ran its own
+        // query, so cards and total could disagree.
+        $pendingEmployees = employee::with(['user', 'user1', 'user2', 'department', 'role', 'field', 'client', 'paymentInfo.bank'])
+            ->whereIn('status', ['Pending', 'Terminated', 'Re-Instate'])
+            ->where(fn ($q) => $q->where('ho_status', 'pending')->orWhereNull('ho_status'))
+            ->orderBy('id')
+            ->get();
 
-            //where('status', '!=','active')->where('ho_status', 'pending')->orwhere('ho_status', null)
-        $pendingEmployees = employee::whereIn('status', ['Pending','Terminated','Re-Instate'])->where('ho_status', 'pending')->orwhere('ho_status', null)->get();
+        $inField = fn (array $ids) => $pendingEmployees->filter(fn ($e) => in_array((int) $e->field_id, $ids, true))->values();
 
-        $Accra = employee::where('field_id', 1)->whereIn('status', ['Pending','Terminated','Re-Instate'])->where('ho_status', 'pending')->orwhere('ho_status', null)->get();
-        // dd($Accra);
-        $employeeAccra = collect();
-        foreach($Accra as $employee)
-            {
-                if($employee->field_id == 1)
-                {
-                    $employeeAccra[] = $employee;
-                }
-            }
-        $Botwe = employee::where('field_id', 2)->whereIn('status', ['Pending','Terminated','Re-Instate'])->where('ho_status', 'pending')->orwhere('ho_status', null)->get();
-        // dd($employeeBotwe);
-        $employeeBotwe = collect();
-        foreach($Botwe as $employee)
-            {
-                if($employee->field_id == 2)
-                    
-                    {
-                        $employeeBotwe[] = $employee;
-                    }
-            }
+        $employeeAccra = $inField([1]);
+        $employeeBotwe = $inField([2]);
+        $employeeTema = $inField([3])->count();
+        $employeeTakoradi = $inField([4]);
+        $employeeKoforidua = $inField([5]);
+        $employeeKumasi = $inField([6]);
+        $employeeShyhills = $inField([7])->count();
+        $Tema = $inField([3, 7]);                       // Tema also sees Shai Hills
+        // Pending staff with no (or an unknown) field office: counted in the total, so shown too.
+        $employeeNoOffice = $pendingEmployees->reject(fn ($e) => in_array((int) $e->field_id, [1, 2, 3, 4, 5, 6, 7], true))->values();
 
-        $employeesTema = employee::where('field_id', 3)->whereIn('status', ['Pending','Terminated','Re-Instate'])->where('ho_status', 'pending')->orwhere('ho_status', null)->get();
-         $employeeTema = collect();
-        foreach($employeesTema as $employee)
-            {
-                if($employee->field_id == 3)
-                {
-                    $employeeTema[] = $employee;
-                }
-            } 
-         $employeeTema = $employeeTema->count();
-
-        $temashia = employee::whereIn('field_id', [3,7])->whereIn('status', ['Pending','Terminated','Re-Instate'])->where('ho_status', 'pending')->orwhere('ho_status', null)->get();
-        $Tema = collect();
-        foreach($temashia as $employee)
-            {
-                if($employee->field_id == 3 || $employee->field_id == 7 )
-                {
-                    $Tema[] = $employee;
-                }
-            }
-        
-        $employeesShyhills = employee::where('field_id', 7)->whereIn('status', ['Pending','Terminated','Re-Instate'])->where('ho_status', 'pending')->orwhere('ho_status', null)->get();
-        $employeeShyhills = collect();
-        foreach($employeesShyhills as $employee)
-            {
-                if($employee->field_id == 7)
-                {
-                    $employeeShyhills[] = $employee;
-                }
-            } 
-         $employeeShyhills = $employeeShyhills->count();
-
-        $Takoradi = employee::where('field_id', 4)->whereIn('status', ['Pending','Terminated','Re-Instate'])->where('ho_status', 'pending')->orwhere('ho_status', null)->get();
-         $employeeTakoradi = collect();
-         foreach($Takoradi as $employee)
-            {
-                if($employee->field_id == 4)
-                {
-                    $employeeTakoradi[] = $employee;
-                }
-            }
-
-        $Koforidua = employee::where('field_id', 5)->whereIn('status', ['Pending','Terminated','Re-Instate'])->where('ho_status', 'pending')->orwhere('ho_status', null)->get();
-        $employeeKoforidua = collect();
-        foreach($Koforidua as $employee)
-            {   
-                if($employee->field_id == 5)
-                {
-                    $employeeKoforidua[] = $employee;
-                }
-            }
-
-
-        $Kumasi = employee::where('field_id', 6)->whereIn('status', ['Pending','Terminated','Re-Instate'])->where('ho_status', 'pending')->orwhere('ho_status', null)->get();
-        $employeeKumasi = collect();
-        foreach($Kumasi as $employee)
-            {
-                if($employee->field_id == 6)
-                {
-                    $employeeKumasi[] = $employee;  
-                }
-            }
-
-
-        return view('employees.pending', compact( 'Tema', 'pendingEmployees',  'employeeAccra', 'employeeBotwe', 'employeeTema', 'employeeTakoradi',  'employeeKoforidua', 'employeeKumasi', 'employeeShyhills'));
-
+        return view('employees.pending', compact('Tema', 'pendingEmployees', 'employeeAccra', 'employeeBotwe', 'employeeTema', 'employeeTakoradi',
+            'employeeKoforidua', 'employeeKumasi', 'employeeShyhills', 'employeeNoOffice'));
     }
 
 
