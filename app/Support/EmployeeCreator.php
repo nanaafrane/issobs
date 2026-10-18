@@ -104,11 +104,8 @@ class EmployeeCreator
         if (self::seesAllFields($user)) {
             return Field::pluck('id')->map(fn ($id) => (int) $id)->all();
         }
-        if ((string) $user->field_id === '3') {
-            return [3, 7];
-        }
-
-        return $user->field_id ? [(int) $user->field_id] : [];
+        // Own office + sub-offices (Tema also runs Shai Hills).
+        return Field::managedIds($user->field_id ? (int) $user->field_id : null);
     }
 
     /** Active, approved clients in the user's allowed field offices. */

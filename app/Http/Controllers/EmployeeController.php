@@ -1449,8 +1449,18 @@ class EmployeeController extends Controller
         // Pending staff with no (or an unknown) field office: counted in the total, so shown too.
         $employeeNoOffice = $pendingEmployees->reject(fn ($e) => in_array((int) $e->field_id, [1, 2, 3, 4, 5, 6, 7], true))->values();
 
+        // Head office sees every office; a field office sees its own office and its
+        // sub-offices (a Tema officer also sees Shai Hills), one card each.
+        $user = Auth::user();
+        $seesAllOffices = $user->hasRole(['Invoice', 'Finance Manager']) || ($user->hasRole(['Manager']) && $user->hasPermission('HR'));
+        $managed = $seesAllOffices ? [] : \App\Models\Field::managedIds($user->field_id ? (int) $user->field_id : null);
+        $visiblePending = $seesAllOffices ? $pendingEmployees : $inField($managed);
+        $officeNames = \App\Models\Field::whereIn('id', $managed ?: [0])->pluck('name', 'id');
+        $officeCards = collect($managed)->filter(fn ($id) => $officeNames->has($id))
+            ->map(fn ($id) => ['name' => $officeNames[$id], 'count' => $inField([$id])->count()])->values();
+
         return view('employees.pending', compact('Tema', 'pendingEmployees', 'employeeAccra', 'employeeBotwe', 'employeeTema', 'employeeTakoradi',
-            'employeeKoforidua', 'employeeKumasi', 'employeeShyhills', 'employeeNoOffice'));
+            'employeeKoforidua', 'employeeKumasi', 'employeeShyhills', 'employeeNoOffice', 'visiblePending', 'officeCards'));
     }
 
 

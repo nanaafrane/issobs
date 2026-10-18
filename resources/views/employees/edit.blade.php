@@ -539,9 +539,11 @@
                 </div>
                 <div class="col-md-3">
                   <label for="field_id" class="form-label"><strong>Field Office *</strong></label>
-                  <select name="field_id" id="field_id" class="form-select @error('field_id') is-invalid @enderror">
+                  {{-- Required: an employee without a field office must get one here (no silent first-option pick). --}}
+                  <select name="field_id" id="field_id" class="form-select @error('field_id') is-invalid @enderror" required>
+                    <option value="" disabled @selected(! old('field_id', $employee->field_id))>Assign Field Office</option>
                     @foreach($Fields as $field)
-                      <option @if($field?->name == $employee->field?->name) selected @endif value="{{ $field?->id }}">{{ $field?->name }}</option>
+                      <option @selected((string) old('field_id', $employee->field_id) === (string) $field?->id) value="{{ $field?->id }}">{{ $field?->name }}</option>
                     @endforeach
                   </select>
                   @error('field_id')<span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>@enderror

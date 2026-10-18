@@ -591,9 +591,9 @@
                             <div class="mb-3 col-md-4">
                               <label for="field_id" class="form-label"> <strong> {{ __('Field Office') }} * </strong>  </label>
                                 <select name="field_id" class="form-select @error('field_id') is-invalid @enderror" id="field_id" required>
-                                    <option selected disabled>Assign Field Office </option>
+                                    <option value="" disabled @selected(! old('field_id'))>Assign Field Office </option>
                                     @foreach($fields as $field)
-                                    <option value="{{$field->id}}">{{$field->name}}</option>
+                                    <option value="{{$field->id}}" @selected(old('field_id') == $field->id)>{{$field->name}}</option>
                                     @endforeach
                                 </select>
                                 @error('field_id')

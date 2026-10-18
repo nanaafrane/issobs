@@ -464,6 +464,12 @@ class EmployeeBulkImport
                 // The employee as it would be after this row.
                 $merged = array_merge($now, $provided);
 
+                // Every employee must belong to a field office: one saved without it
+                // (before this was enforced) gets it in the same row, or the row is refused.
+                if (empty($merged['field_id'])) {
+                    $e[] = 'Field Office is required: FWSS ' . $id . ' has none yet. Fill in Field Office for this row.';
+                }
+
                 if (($merged['payment_type'] ?? null) === 'Bank') {
                     if (empty($merged['pay.bank_id'])) $e[] = 'Bank is required when Payment Type is Bank.';
                     if (empty($merged['pay.acc_number'])) $e[] = 'Account Number is required when Payment Type is Bank.';

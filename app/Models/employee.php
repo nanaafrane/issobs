@@ -75,6 +75,12 @@ class employee extends Model
     protected static function booted(): void
     {
         static::saving(function (self $employee) {
+            // Every employee belongs to a field office: refuse to create one without it, or to
+            // clear it. Last line of defence behind the forms, bulk upload and bulk update.
+            // Older employees saved without one can still be saved for other changes.
+            if ((! $employee->exists || $employee->isDirty('field_id')) && empty($employee->field_id)) {
+                throw \Illuminate\Validation\ValidationException::withMessages(['field_id' => 'Field Office is required.']);
+            }
             if (! $employee->exists || $employee->isDirty(['client_id', 'field_id', 'location', 'gender'])) {
                 [$employee->pay_priority, $employee->pay_priority_reason] = \App\Support\PayPriority::evaluate(
                     $employee->client_id, $employee->field_id, $employee->location, $employee->gender

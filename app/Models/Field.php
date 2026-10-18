@@ -51,6 +51,27 @@ class Field extends Model
     {
     return $this->parent_field_id ?? $this->id;
     }
+
+    /**
+     * Field offices run by a user of this office: the office itself and its
+     * sub-offices (Tema runs Tema and Shai Hills). Tema (id 3) always includes
+     * Shai Hills (id 7), the rule the employee forms already use, in case the
+     * sub-office link was never set on this database.
+     *
+     * @return int[]
+     */
+    public static function managedIds(?int $fieldId): array
+    {
+        if (! $fieldId) {
+            return [];
+        }
+        $ids = array_merge([$fieldId], static::where('parent_field_id', $fieldId)->pluck('id')->map(fn ($id) => (int) $id)->all());
+        if ($fieldId === 3) {
+            $ids[] = 7;
+        }
+
+        return array_values(array_unique($ids));
+    }
  
 
 
