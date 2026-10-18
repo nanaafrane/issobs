@@ -308,6 +308,33 @@ class ClientLedgerAndReceivablesTest extends TestCase
         $this->get(route('receivables.aged'))->assertOk()->assertSee('Alpha Security')->assertSee('90.00 CR');
     }
 
+    public function test_clicking_a_client_lists_only_invoices_still_owing(): void
+    {
+        $paid = $this->invoice(500, '2026-07-01', '2026-07-20');
+        $this->pay($paid, ['receipt_month' => '2026-07-05', 'cash_amount' => 500]);       // fully paid: hidden
+        $part = $this->invoice(400, '2026-06-01', '2026-06-20');
+        $this->pay($part, ['receipt_month' => '2026-07-01', 'cash_amount' => 150]);       // 250 left, 112 days
+        $open = $this->invoice(200, '2026-09-01', '2026-09-30');                           // 10 days
+        $other = Client::create(['name' => 'Ama', 'business_name' => 'Other Co', 'field_id' => $this->field->id]);
+        $theirs = $this->invoice(999, '2026-09-01', null, $other);
+
+        $this->get(route('receivables.aged'))->assertSee(route('receivables.aged.client', $this->client->id));
+
+        $report = app(\App\Services\Receipts\ReceivablesAging::class)->forClient($this->client);
+        $this->assertSame([$part->id, $open->id], $report['invoices']->pluck('id')->all());   // oldest first
+        $this->assertEquals(250, $report['invoices'][0]->owed);
+        $this->assertEquals(150, $report['invoices'][0]->paid);
+        $this->assertSame('d90plus', $report['invoices'][0]->bucket);
+        $this->assertSame(10, $report['invoices'][1]->days_overdue);
+        $this->assertEquals(450, $report['totals']['owed']);
+
+        $this->get(route('receivables.aged.client', $this->client->id))->assertOk()
+            ->assertSee('FWSSi' . $part->id)->assertSee('FWSSi' . $open->id)
+            ->assertDontSee('>FWSSi' . $paid->id . '<', false)->assertDontSee('>FWSSi' . $theirs->id . '<', false)
+            ->assertSee('250.00')->assertSee('450.00')
+            ->assertSee(route('receipt.multi.create', ['client_id' => $this->client->id, 'invoice' => $open->id]));
+    }
+
     public function test_branch_users_only_see_their_office(): void
     {
         $tema = Field::create(['name' => 'Tema', 'user_id' => $this->user->id, 'number' => '2']);
@@ -321,6 +348,7 @@ class ClientLedgerAndReceivablesTest extends TestCase
 
         $this->get(route('receivables.aged'))->assertOk()->assertSee('Alpha Security')->assertDontSee('Tema Port Ltd');
         $this->get(route('receivables.aged', ['field' => $tema->id]))->assertForbidden();
+        $this->get(route('receivables.aged.client', $temaClient->id))->assertForbidden();
         $this->post(route('client.statement.email', $temaClient->id), ['to' => 'x@y.test'])->assertForbidden();
     }
 }

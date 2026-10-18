@@ -34,13 +34,9 @@ class ReceivablesAging
     {
         $asOf = ($asOf ?? now())->copy()->startOfDay();
 
-        $settled = ReceiptAllocation::selectRaw('invoice_id, SUM(settled) as settled')->groupBy('invoice_id');
-        $invoices = DB::table('invoices')
-            ->join('clients', 'clients.id', '=', 'invoices.client_id')
-            ->leftJoinSub($settled, 's', 's.invoice_id', '=', 'invoices.id')
+        $invoices = $this->owingInvoices()
             ->when($fieldIds !== null, fn ($q) => $q->whereIn('clients.field_id', $fieldIds ?: [0]))
-            ->whereRaw('invoices.total - COALESCE(s.settled, 0) > 0.004')
-            ->get(['invoices.id', 'invoices.client_id', 'invoices.total', 'invoices.due_date', 'invoices.invoice_month', DB::raw('COALESCE(s.settled, 0) as settled')]);
+            ->get();
 
         $credit = Receipt::where('unapplied_amount', '>', 0)
             ->when($fieldIds !== null, fn ($q) => $q->whereHas('client', fn ($c) => $c->whereIn('field_id', $fieldIds ?: [0])))
@@ -49,18 +45,7 @@ class ReceivablesAging
 
         $rows = [];
         foreach ($invoices as $inv) {
-            $owed = round((float) $inv->total - (float) $inv->settled, 2);
-            $due = $inv->due_date
-                ? Carbon::parse($inv->due_date)->startOfDay()
-                : Carbon::parse($inv->invoice_month)->addMonthNoOverflow()->endOfMonth()->startOfDay();
-            $days = $asOf->gt($due) ? (int) $due->diffInDays($asOf) : 0;
-            $bucket = match (true) {
-                $days <= 0 => 'current',
-                $days <= 30 => 'd30',
-                $days <= 60 => 'd60',
-                $days <= 90 => 'd90',
-                default => 'd90plus',
-            };
+            ['owed' => $owed, 'days' => $days, 'bucket' => $bucket] = $this->age($inv, $asOf);
 
             $row = &$rows[$inv->client_id];
             $row ??= array_fill_keys(array_keys(self::BUCKETS), 0.0) + ['client_id' => $inv->client_id, 'owed' => 0.0, 'invoices' => 0, 'oldest_days' => 0];
@@ -96,5 +81,80 @@ class ReceivablesAging
         }
 
         return ['as_of' => $asOf, 'rows' => $rows, 'totals' => $totals];
+    }
+
+    /**
+     * One client's invoices that still have something owing, oldest first,
+     * each with its due date, days overdue and age bucket — what you see when
+     * you click a client on the aged receivables report.
+     */
+    public function forClient(Client $client, ?Carbon $asOf = null): array
+    {
+        $asOf = ($asOf ?? now())->copy()->startOfDay();
+
+        $invoices = $this->owingInvoices()
+            ->where('invoices.client_id', $client->id)
+            ->orderByRaw('COALESCE(invoices.due_date, invoices.invoice_month)')
+            ->orderBy('invoices.id')
+            ->get()
+            ->map(function ($inv) use ($asOf) {
+                $age = $this->age($inv, $asOf);
+                $inv->owed = $age['owed'];
+                $inv->paid = round((float) $inv->settled, 2);
+                $inv->due = $age['due'];
+                $inv->days_overdue = $age['days'];
+                $inv->bucket = $age['bucket'];
+                $inv->invoice_month = $inv->invoice_month ? Carbon::parse($inv->invoice_month) : null;
+
+                return $inv;
+            });
+
+        $credits = Receipt::where('client_id', $client->id)->where('unapplied_amount', '>', 0)
+            ->orderBy('id')->get(['id', 'receipt_month', 'unapplied_amount']);
+
+        $totals = array_fill_keys(array_keys(self::BUCKETS), 0.0);
+        foreach ($invoices as $inv) {
+            $totals[$inv->bucket] = round($totals[$inv->bucket] + $inv->owed, 2);
+        }
+        $owed = round($invoices->sum('owed'), 2);
+        $credit = round((float) $credits->sum('unapplied_amount'), 2);
+
+        return [
+            'as_of' => $asOf,
+            'invoices' => $invoices,
+            'credits' => $credits,
+            'totals' => $totals + ['owed' => $owed, 'credit' => $credit, 'net' => round($owed - $credit, 2)],
+        ];
+    }
+
+    /** Invoices with something still owing: total − everything settled against them. */
+    private function owingInvoices()
+    {
+        $settled = ReceiptAllocation::selectRaw('invoice_id, SUM(settled) as settled')->groupBy('invoice_id');
+
+        return DB::table('invoices')
+            ->join('clients', 'clients.id', '=', 'invoices.client_id')
+            ->leftJoinSub($settled, 's', 's.invoice_id', '=', 'invoices.id')
+            ->whereRaw('invoices.total - COALESCE(s.settled, 0) > 0.004')
+            ->select(['invoices.id', 'invoices.client_id', 'invoices.total', 'invoices.due_date', 'invoices.invoice_month', DB::raw('COALESCE(s.settled, 0) as settled')]);
+    }
+
+    /** @return array{owed: float, due: Carbon, days: int, bucket: string} */
+    private function age(object $inv, Carbon $asOf): array
+    {
+        $owed = round((float) $inv->total - (float) $inv->settled, 2);
+        $due = $inv->due_date
+            ? Carbon::parse($inv->due_date)->startOfDay()
+            : Carbon::parse($inv->invoice_month)->addMonthNoOverflow()->endOfMonth()->startOfDay();
+        $days = $asOf->gt($due) ? (int) $due->diffInDays($asOf) : 0;
+        $bucket = match (true) {
+            $days <= 0 => 'current',
+            $days <= 30 => 'd30',
+            $days <= 60 => 'd60',
+            $days <= 90 => 'd90',
+            default => 'd90plus',
+        };
+
+        return ['owed' => $owed, 'due' => $due, 'days' => $days, 'bucket' => $bucket];
     }
 }

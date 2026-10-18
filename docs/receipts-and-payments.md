@@ -237,7 +237,9 @@ oldest credit first, and the confirmation message says how much. Each client has
   logged (who, to whom, period, balance) and the last five are shown on the page.
 * **Receipts › Aged receivables** (`/receivables/aged`): every client's owed amount split into *not yet due*,
   *1–30*, *31–60*, *61–90*, *over 90 days* overdue (from the invoice due date), with unused credit netted off, totals,
-  office filter, Excel export and a link to each statement. Branch users see their own office only.
+  office filter and Excel export. Branch users see their own office only. Clicking a client opens
+  `/receivables/aged/{client}`: only the invoices that still have something owing (oldest first) with due date, days
+  overdue, paid so far, owed and age, a *Receive payment* button per invoice, unused credit, and a link to the full statement.
 
 **5. Void, don't delete.** The receipt list's *Delete* is now **Void** (asks for a reason), and the receipt page has a
 *Void* button with a reason box. Voiding keeps a full copy in `receipt_voids` (*Receipts › Voided*), reverses

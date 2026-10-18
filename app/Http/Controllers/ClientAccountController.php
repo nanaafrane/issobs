@@ -99,6 +99,15 @@ class ClientAccountController extends Controller
         return view('receivables.aged', compact('report', 'fields', 'fieldId'));
     }
 
+    /** Aged receivables, one client: only the invoices they still owe on. */
+    public function agedClient(Client $client, ReceivablesAging $aging)
+    {
+        $this->authorizeClient($client);
+        $report = $aging->forClient($client);
+
+        return view('receivables.aged_client', compact('client', 'report'));
+    }
+
     /** Head office sees every office; everyone else only their own (Tema also sees Shai Hills). */
     private function allowedFieldIds(): ?array
     {

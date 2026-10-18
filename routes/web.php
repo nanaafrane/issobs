@@ -65,6 +65,7 @@ Route::get('clientStatement/{client}', [ClientController::class, 'statementOfAcc
 Route::post('clientStatement/{client}/email', [\App\Http\Controllers\ClientAccountController::class, 'email'])->name('client.statement.email');
 Route::get('clientStatement/{client}/pdf', [\App\Http\Controllers\ClientAccountController::class, 'pdf'])->name('client.statement.pdf');
 Route::get('receivables/aged', [\App\Http\Controllers\ClientAccountController::class, 'aged'])->name('receivables.aged');
+Route::get('receivables/aged/{client}', [\App\Http\Controllers\ClientAccountController::class, 'agedClient'])->name('receivables.aged.client');
 Route::get('clientAttachGuards/{id}', [ClientController::class, 'clientAttachGuards']);
 Route::post('client/{client}/attach-employees', [ClientController::class, 'attachEmployees'])->name('client.attachEmployees');
 Route::post('client/{client}/detach-employees', [ClientController::class, 'detachEmployees'])->name('client.detachEmployees');

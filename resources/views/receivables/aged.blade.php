@@ -64,7 +64,7 @@
                     <tbody>
                     @foreach($report['rows'] as $row)
                         <tr>
-                            <td><a href="{{ url('clientStatement', $row['client_id']) }}">{{ $row['client'] }}</a>@if($row['contact'] && $row['contact'] !== $row['client'])<div class="small text-muted">{{ $row['contact'] }}</div>@endif</td>
+                            <td><a href="{{ route('receivables.aged.client', $row['client_id']) }}">{{ $row['client'] }}</a>@if($row['contact'] && $row['contact'] !== $row['client'])<div class="small text-muted">{{ $row['contact'] }}</div>@endif</td>
                             <td>{{ $row['field'] }}</td>
                             <td class="ag-num">{{ $row['invoices'] }}</td>
                             @foreach(array_keys($b) as $k)
@@ -88,7 +88,7 @@
                 </table>
             </div>
         </div>
-        <p class="small text-muted mt-2">Owed = invoice total less everything paid against it (same figure as the statement of account). Overdue days count from the invoice due date. Click a client for their statement.</p>
+        <p class="small text-muted mt-2">Owed = invoice total less everything paid against it (same figure as the statement of account). Overdue days count from the invoice due date. Click a client to see the invoices they still owe.</p>
     </div>
     @endsection
 
