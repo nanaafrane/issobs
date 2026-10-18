@@ -270,6 +270,24 @@ where he went. He is never marked absent at his own post, so there is **no absen
 * Home can't mark him absent for a shift he worked elsewhere, and *Fill blanks as present* leaves it alone.
 * Stored as an ordinary attendance row at the other client with `attendances.moved_from_client_id` = his own post.
 
+### Overtime follows the same rule
+
+When the guard chosen to fill a gap on the overtime form is **on duty this shift at his own post**, covering means
+leaving that post. That's a move, not extra work on his own time:
+
+* *Who fills the gap?* lists him last, under **On duty this shift at his own post (will be moved)**. This covers his rostered
+  shift, and also when he is already signed in or marked present at his post. Picking him shows a note: his post shows **M**
+  and will be one guard short, and moving a guard on duty is usually not extra pay (check the amount).
+* Once the entry is saved, his cover cell at the gap is recorded with `moved_from_client_id` = his post. His post shows
+  **M** with *"Moved to … (overtime #id)"*: not absent (no deduction), not cover. While the entry is in review it shows as
+  awaiting review; on final approval it shows present.
+* Whatever his post had for that shift (a fill-blanks P, or even his sign-in) is replaced, and put back exactly as it was if
+  the entry is rejected, deleted or changed to another guard.
+* On the overtime row the badge reads **O.T (moved)**.
+* A guard covering on his **off** shift is unchanged: extra work, not a move.
+* "Busy" now means working at **another** client this shift (already moved / relief) or covering another overtime entry.
+  Being on duty at his own post no longer hides him; it marks him as a move.
+
 Tests: `php artisan test --filter=MovedGuardTest` (4 tests).
 
 ---

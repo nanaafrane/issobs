@@ -89,10 +89,33 @@ class OvertimeAttendanceSync
                 'employee_id' => (int) $o->ot_employee_id, 'client_id' => (int) $o->client_id,
                 'date' => $date, 'shift' => $o->shift,
                 'status' => $final ? Attendance::PRESENT : Attendance::PENDING, 'reason' => 'Present',
+                // Taken off his own active shift at another post: that post shows "M - moved", not absent.
+                'moved_from' => self::movedFrom((int) $o->ot_employee_id, (int) $o->client_id, $o->shift, $date),
             ];
         }
 
         return $out;
+    }
+
+    /**
+     * The cover guard's own client when this shift is his own rostered shift there (so covering
+     * means leaving his post: a move), otherwise null (extra shift on his off time).
+     */
+    public static function movedFrom(int $employeeId, int $toClientId, string $shift, ?string $date = null): ?int
+    {
+        $guard = employee::find($employeeId, ['id', 'client_id']);
+        if (! $guard || ! $guard->client_id || (int) $guard->client_id === $toClientId) {
+            return null;
+        }
+        $home = \App\Models\Client::find($guard->client_id);
+        if (! $home) {
+            return null;
+        }
+        $onDutyAtPost = $date && Attendance::where('employee_id', $guard->id)->where('client_id', $home->id)
+            ->where('work_date', $date)->where('shift', $shift)->whereNull('overtime_id')
+            ->whereIn('status', [Attendance::PRESENT, Attendance::PENDING])->exists();
+
+        return Roster::shiftOf($guard, $home) === $shift || $onDutyAtPost ? (int) $home->id : null;
     }
 
     private static function sameSlot(OvertimeAttendanceLink $link, array $t): bool
@@ -116,6 +139,7 @@ class OvertimeAttendanceSync
         $label = 'Overtime #' . $o->id . ' (' . ($role === 'cover' ? 'covering' : $t['reason']) . ')';
         $values = [
             'client_id' => $t['client_id'],
+            'moved_from_client_id' => $t['moved_from'] ?? null,
             'status' => $t['status'],
             'reason' => $t['status'] === Attendance::PENDING ? $t['reason'] : (ShiftReasons::FOR_STATUS[$t['status']] ?? $t['reason']),
             'source' => 'overtime',
@@ -132,7 +156,7 @@ class OvertimeAttendanceSync
         // Already ours: just move it on (pending -> approved, or a changed reason).
         if ($link && $link->state === 'linked' && ($row = Attendance::find($link->attendance_id)) && (int) $row->overtime_id === (int) $o->id) {
             $row->fill($values)->save();
-            self::saveLink($link, $base + ['state' => 'linked', 'message' => null]);
+            self::saveLink($link, $base + ['state' => 'linked', 'message' => self::movedMessage($t)]);
 
             return;
         }
@@ -158,7 +182,9 @@ class OvertimeAttendanceSync
 
                 return;
             }
-            if ($signedIn || $role === 'cover') {
+            // Moved off his own post: his mark there for this shift (even a sign-in) is replaced, and put back if the entry goes.
+            $movedOffHomeMark = $role === 'cover' && ! empty($t['moved_from']) && (int) $existing->client_id === (int) $t['moved_from'];
+            if (! $movedOffHomeMark && ($signedIn || $role === 'cover')) {
                 $where = $existing->client?->business_name ?: $existing->client?->name ?: 'another client';
                 self::saveLink($link, $base + ['state' => 'conflict', 'attendance_id' => $existing->id, 'previous' => null,
                     'message' => ($role === 'absent' ? 'The guard signed in for this shift' : 'The O.T guard is already on the sheet for this shift')
@@ -170,13 +196,13 @@ class OvertimeAttendanceSync
 
             $previous = collect($existing->getAttributes())->except(['id', 'created_at', 'updated_at'])->all();
             $existing->fill($values)->save();
-            self::saveLink($link, $base + ['state' => 'linked', 'attendance_id' => $existing->id, 'previous' => $previous, 'message' => null]);
+            self::saveLink($link, $base + ['state' => 'linked', 'attendance_id' => $existing->id, 'previous' => $previous, 'message' => self::movedMessage($t)]);
 
             return;
         }
 
         $row = Attendance::create($values + ['employee_id' => $t['employee_id'], 'work_date' => $t['date'], 'shift' => $t['shift']]);
-        self::saveLink($link, $base + ['state' => 'linked', 'attendance_id' => $row->id, 'previous' => null, 'message' => null]);
+        self::saveLink($link, $base + ['state' => 'linked', 'attendance_id' => $row->id, 'previous' => null, 'message' => self::movedMessage($t)]);
     }
 
     private static function reverse(OvertimeAttendanceLink $link): void
@@ -195,6 +221,16 @@ class OvertimeAttendanceSync
             }
         }
         $link->delete();
+    }
+
+    private static function movedMessage(array $t): ?string
+    {
+        if (empty($t['moved_from'])) {
+            return null;
+        }
+        $home = \App\Models\Client::find($t['moved_from']);
+
+        return 'Moved off his own ' . $t['shift'] . ' shift at ' . ($home?->business_name ?: $home?->name) . ' (shows M there, not absent).';
     }
 
     private static function saveLink(?OvertimeAttendanceLink $link, array $values): void

@@ -1,7 +1,8 @@
 {{-- What this overtime entry put on the attendance sheet (OvertimeAttendanceSync). --}}
 @foreach($row->attendanceLinks as $link)
     @php
-        $who = $link->role === 'cover' ? 'O.T' : 'Absent';
+        $moved = $link->role === 'cover' && str_starts_with((string) $link->message, 'Moved off');
+        $who = $link->role === 'cover' ? ($moved ? 'O.T (moved)' : 'O.T') : 'Absent';
         [$css, $text] = match (true) {
             $link->state === 'conflict' => ['bg-label-danger', $who . ': not on sheet'],
             $link->state === 'skipped' => ['bg-label-secondary', $who . ': no client'],

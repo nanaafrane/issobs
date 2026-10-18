@@ -297,13 +297,17 @@ class OvertimeAttendanceLinkTest extends TestCase
         $this->assertStringContainsString('nothing recorded', $groups[0]['children'][0]['text']);
         $this->assertSame($ama->id, $groups[1]['children'][0]['id']);   // night guard listed after
 
-        // Step 3: free guards only (Esi is present this shift, Kofi is the absent guard).
-        $ids = collect($this->actingAs($this->ops)->getJson('/overtime/lookup/available-guards?date=2026-10-15&shift=day&field_id=' . $this->field->id . '&exclude=' . $this->kofi->id)
-            ->assertOk()->json())->pluck('children')->flatten(1)->pluck('id')->all();
+        // Step 3: Kofi is the absent guard so he isn't offered. Esi is on duty at her own post: offered,
+        // but last and marked as a move. Off-shift guards first.
+        $groups = collect($this->actingAs($this->ops)->getJson('/overtime/lookup/available-guards?date=2026-10-15&shift=day&field_id=' . $this->field->id . '&exclude=' . $this->kofi->id)
+            ->assertOk()->json());
+        $ids = $groups->pluck('children')->flatten(1)->pluck('id')->all();
         $this->assertContains($this->yaw->id, $ids);
         $this->assertContains($ama->id, $ids);
-        $this->assertNotContains($esi->id, $ids);
         $this->assertNotContains($this->kofi->id, $ids);
+        $this->assertSame('On duty this shift at his own post (will be moved)', $groups->last()['text']);
+        $this->assertSame([$esi->id], collect($groups->last()['children'])->pluck('id')->all());
+        $this->assertSame('SSNIT CAR PARK', $groups->last()['children'][0]['moved_from']);
 
         // Once Yaw covers this shift he is no longer free, and Kofi shows as already on overtime.
         $this->submit()->assertOk();
@@ -323,12 +327,13 @@ class OvertimeAttendanceLinkTest extends TestCase
         // Yaw again, same date and shift.
         $this->submit(['absent_employee_id' => $ama->id, 'reason' => 'Absent'])->assertStatus(422)->assertJsonValidationErrors('ot_employee_id');
 
-        // A guard present on the sheet this shift can't cover.
+        // A guard already working at another client this shift (moved / relief) can't cover.
         $esi = $this->guard('ESI MENSAH', $this->other, 'day');
-        Attendance::create(['client_id' => $this->other->id, 'employee_id' => $esi->id, 'work_date' => '2026-10-15',
+        $third = $this->client('LEXTA');
+        Attendance::create(['client_id' => $third->id, 'moved_from_client_id' => $this->other->id, 'employee_id' => $esi->id, 'work_date' => '2026-10-15',
             'shift' => 'day', 'status' => 'present', 'source' => 'manual']);
         $this->submit(['absent_employee_id' => $ama->id, 'ot_employee_id' => $esi->id])->assertStatus(422)
-            ->assertJsonFragment(['ot_employee_id' => ['This guard is already present on the attendance sheet for this shift. Pick a guard who is free for this shift.']]);
+            ->assertJsonFragment(['ot_employee_id' => ['This guard is already present at another client for this shift. Pick a guard who is free for this shift.']]);
 
         // Editing an entry doesn't clash with itself.
         $o = Overtime::sole();
@@ -361,5 +366,48 @@ class OvertimeAttendanceLinkTest extends TestCase
         }
         // Post vacant entry saves with the chosen cover.
         $this->submit(['absent_employee_id' => null, 'absent_employee_note' => 'POST VACANT', 'reason' => 'Shortage'])->assertOk();
+    }
+
+    public function test_cover_guard_taken_off_his_own_active_shift_is_moved_not_absent(): void
+    {
+        // Esi works the day shift at SSNIT CAR PARK; ops had already filled her day as present there.
+        $esi = $this->guard('ESI MENSAH', $this->other, 'day');
+        Attendance::create(['client_id' => $this->other->id, 'employee_id' => $esi->id, 'work_date' => '2026-10-15',
+            'shift' => 'day', 'status' => 'present', 'reason' => 'Present', 'source' => 'manual', 'note' => 'filled']);
+
+        // The lookup lists her as on duty and says she'd be moved.
+        $groups = $this->actingAs($this->ops)->getJson('/overtime/lookup/available-guards?date=2026-10-15&shift=day&field_id=' . $this->field->id)->json();
+        $onDuty = collect($groups)->firstWhere('text', 'On duty this shift at his own post (will be moved)');
+        $this->assertSame('SSNIT CAR PARK', collect($onDuty['children'])->firstWhere('id', $esi->id)['moved_from']);
+
+        $this->submit(['ot_employee_id' => $esi->id])->assertOk();
+        $o = Overtime::sole();
+        $this->approveFully($o);
+
+        $cover = $this->cell($esi);
+        $this->assertSame([$this->client->id, $this->other->id, 'present', $o->id], [$cover->client_id, $cover->moved_from_client_id, $cover->status, $cover->overtime_id]);
+        $this->assertStringStartsWith('Moved off his own day shift at SSNIT CAR PARK', OvertimeAttendanceLink::where('role', 'cover')->sole()->message);
+
+        // Her own post: "M", not absent, not cover; no absent deduction.
+        $home = new MonthSheet($this->other, '2026-10');
+        $row = collect($home->rows)->firstWhere(fn ($r) => $r['employee']->id === $esi->id);
+        $this->assertSame([0, 1], [$row['absent'], $row['moved']]);
+        $this->assertSame('Moved to DVLA HQ: present, day shift (overtime #' . $o->id . ')', MonthSheet::awayTitle($row['away'][15]));
+        $this->assertSame(0, $home->cover[15]['day']);
+        $this->assertSame(0, AbsentDeduction::attendanceFor([$esi->id], '2026-10')[$esi->id]['absent']);
+        $this->actingAs($this->ops)->get('/overtime?date=2026-10-15&field_id=' . $this->field->id)->assertSee('O.T (moved): on sheet');
+
+        // Delete the overtime: her own post's mark comes back as it was.
+        $this->actingAs($this->finance)->delete("/overtime/{$o->id}");
+        $back = $this->cell($esi);
+        $this->assertSame([$this->other->id, null, 'present', 'filled', null], [$back->client_id, $back->moved_from_client_id, $back->status, $back->note, $back->overtime_id]);
+    }
+
+    public function test_cover_on_his_off_shift_is_extra_work_not_a_move(): void
+    {
+        // Yaw works nights at SSNIT CAR PARK; covering a day shift is on his own time.
+        $this->submit()->assertOk();
+        $this->assertNull($this->cell($this->yaw)->moved_from_client_id);
+        $this->assertNull(OvertimeAttendanceLink::where('role', 'cover')->sole()->message);
     }
 }

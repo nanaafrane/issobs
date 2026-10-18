@@ -234,22 +234,33 @@ class OvertimeController extends Controller
             ->whereNotNull('shift')->orderBy('id')->get(['employee_id', 'client_id', 'shift'])
             ->mapWithKeys(fn ($r) => [$r->employee_id . ':' . $r->client_id => $r->shift]);
 
-        $rows = $guards->map(function ($g) use ($clients, $shifts, $data) {
+        // Guards already on duty at their own post this shift (signed in / marked present there).
+        $atPost = Attendance::whereIn('employee_id', $guards->pluck('id')->all() ?: [0])
+            ->where('work_date', $data['date'])->where('shift', $data['shift'])->whereNull('overtime_id')
+            ->whereIn('status', [Attendance::PRESENT, Attendance::PENDING])->get(['employee_id', 'client_id'])
+            ->filter(fn ($r) => (int) $r->client_id === (int) $guards->firstWhere('id', $r->employee_id)?->client_id)
+            ->pluck('employee_id')->flip();
+
+        $rows = $guards->map(function ($g) use ($clients, $shifts, $data, $atPost) {
             $own = $shifts[$g->id . ':' . $g->client_id] ?? null;
             $c = $clients->get($g->client_id);
+
+            $onDuty = $own === $data['shift'] || isset($atPost[$g->id]);
 
             return [
                 'id' => $g->id,
                 'text' => $g->name . ' · ' . ($c ? ($c->business_name ?: $c->name) : 'no client') . ($own ? ' (' . $own . ')' : ''),
-                'group' => $own === null || $own === 'rotate' ? 1 : ($own === $data['shift'] ? 2 : 0),
+                'group' => $onDuty ? 2 : ($own === null || $own === 'rotate' ? 1 : 0),
+                // Taking him means moving him off his own post for this shift.
+                'moved_from' => $onDuty && $c ? ($c->business_name ?: $c->name) : null,
             ];
         });
 
-        $labels = [0 => 'Off this shift (works the other shift)', 1 => 'Rotate / no shift set', 2 => 'Rostered on this shift (check they are free)'];
+        $labels = [0 => 'Off this shift (works the other shift)', 1 => 'Rotate / no shift set', 2 => 'On duty this shift at his own post (will be moved)'];
 
         return response()->json($rows->groupBy('group')->sortKeys()->map(fn ($items, $g) => [
             'text' => $labels[$g],
-            'children' => $items->map(fn ($r) => ['id' => $r['id'], 'text' => $r['text']])->values(),
+            'children' => $items->map(fn ($r) => ['id' => $r['id'], 'text' => $r['text'], 'moved_from' => $r['moved_from']])->values(),
         ])->values());
     }
 
@@ -274,12 +285,16 @@ class OvertimeController extends Controller
     public static function busyGuards(string $date, string $shift, ?int $exceptOvertime = null): array
     {
         $busy = [];
-        Attendance::where('work_date', $date)->where('shift', $shift)
-            ->whereIn('status', [Attendance::PRESENT, Attendance::PENDING])
-            ->whereNull('overtime_id')   // cells written by overtime are covered by the overtime query below
-            ->get(['employee_id', 'status'])
+        Attendance::query()
+            ->join('employees', 'employees.id', '=', 'attendances.employee_id')
+            ->where('attendances.work_date', $date)->where('attendances.shift', $shift)
+            ->whereIn('attendances.status', [Attendance::PRESENT, Attendance::PENDING])
+            ->whereNull('attendances.overtime_id')   // cells written by overtime are covered by the overtime query below
+            // On duty at his own post is not "busy": taking him is a move (his post shows M).
+            ->where(fn ($q) => $q->whereNull('employees.client_id')->orWhereColumn('attendances.client_id', '!=', 'employees.client_id'))
+            ->get(['attendances.employee_id', 'attendances.status'])
             ->each(function ($r) use (&$busy) {
-                $busy[(int) $r->employee_id] = 'already ' . ($r->status === Attendance::PRESENT ? 'present' : 'signed in (awaiting review)') . ' on the attendance sheet for this shift';
+                $busy[(int) $r->employee_id] = 'already ' . ($r->status === Attendance::PRESENT ? 'present' : 'signed in (awaiting review)') . ' at another client for this shift';
             });
         Overtime::whereDate('entry_date', $date)->where('shift', $shift)
             ->when($exceptOvertime, fn ($q) => $q->where('id', '!=', $exceptOvertime))

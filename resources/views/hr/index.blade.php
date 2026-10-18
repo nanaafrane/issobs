@@ -293,6 +293,7 @@
                                             <label class="ot-step-label"><span class="ot-num">3</span> Who fills the gap?</label>
                                             <select class="form-select form-select-sm ot-select-cover" name="ot_employee_id" required disabled></select>
                                             <div class="small text-muted mt-1">Only guards not already working this shift.</div>
+                                            <div class="ot-move-note small mt-1 d-none" style="color:#0e7490"></div>
                                         </div>
 
                                         <div class="ot-step ot-step-last">
@@ -408,6 +409,17 @@
                 if (vacant && (!r || guardReasons.includes(r))) { $reason.val('Shortage'); }
                 $cover.val(null).trigger('change');   // the absent guard can't cover
             });
+
+            // Guard taken off his own active shift: it's a move. His post shows "M", not absent, and is one short.
+            const $moveNote = form.find('.ot-move-note');
+            $cover.on('select2:select', function (e) {
+                const from = e.params.data.moved_from;
+                $moveNote.toggleClass('d-none', !from).html(from
+                    ? '<strong>Moved</strong> off his own ' + val('shift') + ' shift at ' + $('<div>').text(from).html()
+                      + '. That post shows <strong>M</strong> (not absent) and will be one guard short. Moving a guard on duty is usually not extra pay: check the amount.'
+                    : '');
+            });
+            $cover.on('select2:clear', () => $moveNote.addClass('d-none').empty());
 
             refreshSteps();
 
