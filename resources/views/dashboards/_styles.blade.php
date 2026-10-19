@@ -13,6 +13,7 @@
   .dash .dash-tabs a.active { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.08); }
   .dash .dash-filters { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
   .dash .dash-filters .form-control, .dash .dash-filters .form-select { width: auto; min-width: 9rem; }
+  .dash [hidden] { display: none !important; }
 
   .dash .kpi { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 1rem 1.1rem; height: 100%; display: flex; flex-direction: column; gap: .2rem; }
   .dash .kpi .lbl { color: var(--ink-2); font-size: .78rem; font-weight: 600; text-transform: uppercase; letter-spacing: .03em; }

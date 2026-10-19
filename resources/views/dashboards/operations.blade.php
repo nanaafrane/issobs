@@ -23,14 +23,14 @@
           'label' => 'Post coverage', 'value' => Fmt::pct($k['coverage']),
           'status' => $covStatus($k['coverage']),
           'statusText' => $k['coverage'] === null ? null : Fmt::int($k['uncovered_days']) . ' guard-shifts not covered',
-          'note' => 'Signed-in guards vs shift plans', 'href' => route('attendance.index', ['month' => $ctx->month->format('Y-m')]),
+          'note' => 'Signed-in guards vs shift plans, ' . Fmt::int($k['counted_days']) . ' ' . \Illuminate\Support\Str::plural('day', $k['counted_days']), 'href' => route('attendance.index', $ctx->reportQuery([], 'month')),
         ])
       </div>
       <div class="col-xl-2 col-md-4 col-6">
         @include('dashboards._kpi', [
           'label' => 'Shortage', 'value' => Fmt::int($k['shortage']) . ' guards',
           'status' => $k['shortage'] ? 'bad' : 'good', 'statusText' => $k['shortage'] ? 'at ' . Fmt::int($k['clients_short']) . ' clients' : 'Every post filled',
-          'note' => Fmt::int($k['posted']) . ' posted of ' . Fmt::int($k['required']) . ' required',
+          'note' => 'Today: ' . Fmt::int($k['posted']) . ' posted of ' . Fmt::int($k['required']) . ' required',
         ])
       </div>
       <div class="col-xl-2 col-md-4 col-6">
@@ -58,7 +58,8 @@
       <div class="col-xl-2 col-md-4 col-6">
         @include('dashboards._kpi', [
           'label' => 'Overtime', 'value' => Fmt::int($k['overtime_count']) . ' shifts',
-          'note' => Fmt::money($k['overtime_amount'], 0) . ' this month', 'href' => route('overtime.report', ['period' => 'monthly', 'date' => $ctx->month->toDateString()]),
+          'delta' => $ctx->isRunning() ? null : Fmt::delta($k['overtime_count'], $k['overtime_prev'], $ctx->previousLabel()), 'upIsGood' => false,
+          'note' => Fmt::money($k['overtime_amount'], 0) . ' in the period', 'href' => route('overtime.report', $ctx->reportQuery(['daily', 'weekly', 'monthly', 'quarterly', 'semiannual', 'yearly'])),
         ])
       </div>
     </div>
@@ -78,7 +79,7 @@
     <div class="row g-3 mb-3">
       <div class="col-xl-8">
         <div class="panel">
-          <div class="panel-h"><h6>Guards on duty each day</h6><span class="hint">Approved sign-ins vs guards the shift plans require</span></div>
+          <div class="panel-h"><h6>Guards on duty</h6><span class="hint">{{ ['day' => 'Each day', 'week' => 'Average per day, by week', 'month' => 'Average per day, by month'][$d['daily']['unit']] }} · approved sign-ins vs the shift plans</span></div>
           <div class="legend">
             <span><i style="background:var(--s1)"></i>Present</span>
             <span><i style="background:var(--ink-3)"></i>Required (dashed)</span>
@@ -88,7 +89,7 @@
       </div>
       <div class="col-xl-4">
         <div class="panel">
-          <div class="panel-h"><h6>Overtime reasons</h6><span class="hint">{{ $ctx->month->format('M Y') }}</span></div>
+          <div class="panel-h"><h6>Overtime reasons</h6><span class="hint">{{ $ctx->label() }}</span></div>
           <div class="panel-b">
             @php($maxO = max(array_column($d['overtime_reasons'], 'value') ?: [0]))
             @forelse($d['overtime_reasons'] as $o)
@@ -97,7 +98,7 @@
                 <span class="track"><span class="fill d-block" style="width: {{ $maxO ? round($o['value'] / $maxO * 100, 1) : 0 }}%; background: var(--s2)"></span></span>
               </li></ul>
             @empty
-              <div class="empty">No overtime recorded this month.</div>
+              <div class="empty">No overtime recorded in this period.</div>
             @endforelse
           </div>
         </div>
@@ -107,7 +108,7 @@
     <div class="row g-3 mb-3">
       <div class="col-12">
         <div class="panel">
-          <div class="panel-h"><h6>Offices</h6><span class="hint">{{ $ctx->month->format('F Y') }}</span></div>
+          <div class="panel-h"><h6>Offices</h6><span class="hint">Coverage, absence &amp; overtime for {{ $ctx->label() }}; posted &amp; short as of today</span></div>
           <div class="panel-b table-responsive">
             <table class="dt">
               <thead><tr><th>Office</th><th class="num">Clients</th><th class="num">Guards</th><th class="num">Required</th><th class="num">Posted</th>
@@ -115,7 +116,7 @@
               <tbody>
               @forelse($d['offices'] as $o)
                 <tr>
-                  <td><a href="{{ route('dashboard.show', ['board' => 'operations', 'month' => $ctx->month->format('Y-m'), 'field' => $o['id']]) }}">{{ $o['name'] }}</a></td>
+                  <td><a href="{{ route('dashboard.show', ['board' => 'operations'] + $ctx->query(['field' => $o['id']])) }}">{{ $o['name'] }}</a></td>
                   <td class="num">{{ $o['clients'] }}</td>
                   <td class="num">{{ $o['guards'] }}@if($o['unposted'])<span class="muted"> ({{ $o['unposted'] }} free)</span>@endif</td>
                   <td class="num">{{ $o['required'] }}</td><td class="num">{{ $o['posted'] }}</td>
@@ -144,7 +145,7 @@
               <tbody>
               @forelse($d['attention'] as $c)
                 <tr>
-                  <td><a href="{{ route('attendance.show', ['client' => $c['id'], 'month' => $ctx->month->format('Y-m')]) }}">{{ $c['name'] }}</a><br><span class="muted small">{{ $c['office'] }}</span></td>
+                  <td><a href="{{ route('attendance.show', ['client' => $c['id'], 'month' => ($ctx->period === 'custom' ? $ctx->to : $ctx->anchor)->format('Y-m')]) }}">{{ $c['name'] }}</a><br><span class="muted small">{{ $c['office'] }}</span></td>
                   <td class="num">@if($c['no_plan'])<span class="chip bad">■ No plan</span>@else{{ $c['posted'] }} / {{ $c['required'] }}@endif</td>
                   <td class="num {{ $c['shortage'] ? 'neg' : '' }}">{{ $c['shortage'] ?: '—' }}</td>
                   <td class="num">{{ Fmt::pct($c['coverage'], 0) }}</td>

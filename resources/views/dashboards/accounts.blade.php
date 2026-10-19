@@ -1,8 +1,9 @@
 @use('App\Support\Dashboards\Fmt')
 @php
   $k = $d['kpi'];
-  $prevLabel = $ctx->month->copy()->subMonthNoOverflow()->format('M');
-  $mtd = $ctx->isCurrentMonth();
+  $prevLabel = $ctx->previousLabel();
+  $mtd = $ctx->isRunning();   // a period still running is not compared with a complete one
+  $inPeriod = $ctx->label();
 @endphp
 <x-sales-dashboard>
 
@@ -24,15 +25,15 @@
         @include('dashboards._kpi', [
           'label' => 'Invoiced', 'value' => Fmt::short($k['invoiced']), 'title' => Fmt::money($k['invoiced']),
           'delta' => $mtd ? null : Fmt::delta($k['invoiced'], $k['invoiced_prev'], $prevLabel),
-          'note' => Fmt::int($k['invoiced_count']) . ' invoices for ' . $ctx->month->format('M'),
+          'note' => Fmt::int($k['invoiced_count']) . ' invoices for ' . $k['invoiced_months'],
           'href' => url('invoice-report'),
         ])
       </div>
       <div class="col-xl-2 col-md-4 col-6">
         @include('dashboards._kpi', [
           'label' => 'Collected', 'value' => Fmt::short($k['collected']), 'title' => Fmt::money($k['collected']),
-          'delta' => $mtd ? null : Fmt::delta($k['collected'], $k['collected_prev'], $prevLabel),
           'note' => Fmt::int($k['collected_count']) . ' approved receipts', 'href' => url('receipt-report?' . http_build_query(['period' => 'custom', 'from' => $ctx->span()[0], 'to' => $ctx->span()[1]])),
+          'delta' => $mtd ? null : Fmt::delta($k['collected'], $k['collected_prev'], $prevLabel),
         ])
       </div>
       <div class="col-xl-2 col-md-4 col-6">
@@ -40,7 +41,7 @@
           'label' => 'Collection rate', 'value' => Fmt::pct($k['collection_rate']),
           'status' => $k['collection_rate'] === null ? null : ($k['collection_rate'] >= 90 ? 'good' : ($k['collection_rate'] >= 70 ? 'warn' : 'bad')),
           'statusText' => $k['collection_rate'] === null ? null : ($k['collection_rate'] >= 90 ? 'On track' : ($k['collection_rate'] >= 70 ? 'Below 90%' : 'Below 70%')),
-          'note' => 'Collected ÷ invoiced this month',
+          'note' => $k['collection_rate'] === null ? 'Shown for whole months only' : 'Collected ÷ invoiced, same months',
         ])
       </div>
       <div class="col-xl-2 col-md-4 col-6">
@@ -62,6 +63,7 @@
       <div class="col-xl-2 col-md-4 col-6">
         @include('dashboards._kpi', [
           'label' => 'Expenses', 'value' => Fmt::short($k['expenses']), 'title' => Fmt::money($k['expenses']),
+          'delta' => $mtd ? null : Fmt::delta($k['expenses'], $k['expenses_prev'], $prevLabel), 'upIsGood' => false,
           'note' => $k['expenses_pending_count'] ? Fmt::int($k['expenses_pending_count']) . ' awaiting approval (' . Fmt::short($k['expenses_pending']) . ')' : 'Approved at head office',
           'href' => route('expense.list'),
         ])
@@ -82,7 +84,7 @@
               <a href="{{ route('expense.list') }}"><span class="chip warn">▲ {{ Fmt::int($k['expenses_pending_count']) }}</span> expenses waiting for a decision</a>
             @endif
             @if($k['unpaid_invoices'])
-              <a href="{{ url('invoiceOutstanding') }}"><span class="chip flat">■ {{ Fmt::int($k['unpaid_invoices']) }}</span> of this month's invoices have nothing paid yet</a>
+              <a href="{{ url('invoiceOutstanding') }}"><span class="chip flat">■ {{ Fmt::int($k['unpaid_invoices']) }}</span> of the invoices for {{ $k['invoiced_months'] }} have nothing paid yet</a>
             @endif
           </div>
         </div>
@@ -94,13 +96,14 @@
       {{-- 12-month trend --}}
       <div class="col-xl-8">
         <div class="panel">
-          <div class="panel-h"><h6>Billing, collections and spend</h6><span class="hint">Last 12 months · GH₵</span></div>
+          <div class="panel-h"><h6>Billing, collections and spend</h6><span class="hint">{{ $d['trend']['caption'] }} · GH₵</span></div>
           <div class="legend">
-            <span><i style="background:var(--s1)"></i>Invoiced (by invoice month)</span>
+            @if($d['trend']['invoiced'])<span><i style="background:var(--s1)"></i>Invoiced (by invoice month)</span>@endif
             <span><i style="background:var(--s2)"></i>Collected (approved receipts)</span>
             <span><i style="background:var(--s3)"></i>Expenses (approved)</span>
           </div>
           <div id="ch-trend" class="chart"></div>
+          @unless($d['trend']['invoiced'])<div class="panel-b small muted pt-0">Invoices are raised per month, so they are plotted only when each bar is a month or longer.</div>@endunless
         </div>
       </div>
       {{-- Aging --}}
@@ -116,7 +119,7 @@
       {{-- Offices --}}
       <div class="col-xl-8">
         <div class="panel">
-          <div class="panel-h"><h6>Offices this month</h6><span class="hint">Contribution = service revenue (before levies &amp; VAT) − payroll cost − expenses</span></div>
+          <div class="panel-h"><h6>Offices</h6><span class="hint">Collected in {{ $inPeriod }}; invoices, payroll &amp; expenses for {{ $k['invoiced_months'] }}. Contribution = service revenue (before levies &amp; VAT) − payroll cost − expenses</span></div>
           <div class="panel-b table-responsive">
             @if(count($d['offices']))
             <table class="dt">
@@ -127,7 +130,7 @@
               <tbody>
               @foreach($d['offices'] as $o)
                 <tr>
-                  <td><a href="{{ route('dashboard.show', ['board' => 'accounts', 'month' => $ctx->month->format('Y-m'), 'field' => $o['id']]) }}">{{ $o['name'] }}</a></td>
+                  <td><a href="{{ route('dashboard.show', ['board' => 'accounts'] + $ctx->query(['field' => $o['id']])) }}">{{ $o['name'] }}</a></td>
                   <td class="num">{{ number_format($o['invoiced'], 0) }}</td>
                   <td class="num">{{ number_format($o['collected'], 0) }}</td>
                   <td class="num">{{ Fmt::pct($o['rate'], 0) }}</td>
@@ -180,7 +183,7 @@
     <div class="row g-3 mb-3">
       <div class="col-xl-4 col-md-6">
         <div class="panel">
-          <div class="panel-h"><h6>How clients paid</h6><span class="hint">{{ $ctx->month->format('M Y') }}</span></div>
+          <div class="panel-h"><h6>How clients paid</h6><span class="hint">{{ $inPeriod }}</span></div>
           <div id="ch-modes" class="chart"></div>
           <div class="panel-b small muted">
             Also withheld by clients: WHT {{ Fmt::money($k['wht']) }}@if($k['vat_withheld'] > 0), VAT {{ Fmt::money($k['vat_withheld']) }}@endif — check the certificates are filed.
@@ -189,7 +192,7 @@
       </div>
       <div class="col-xl-4 col-md-6">
         <div class="panel">
-          <div class="panel-h"><h6>Expenses by type</h6><span class="hint">Approved, {{ $ctx->month->format('M Y') }}</span></div>
+          <div class="panel-h"><h6>Expenses by type</h6><span class="hint">Approved, {{ $inPeriod }}</span></div>
           <div class="panel-b">
             @php($maxExp = max(array_column($d['expense_types'], 'value') ?: [0]))
             @forelse($d['expense_types'] as $e)
@@ -198,7 +201,7 @@
                 <span class="track"><span class="fill d-block" style="width: {{ $maxExp ? round($e['value'] / $maxExp * 100, 1) : 0 }}%"></span></span>
               </li></ul>
             @empty
-              <div class="empty">No approved expenses this month.</div>
+              <div class="empty">No approved expenses in this period.</div>
             @endforelse
           </div>
         </div>
@@ -206,14 +209,14 @@
       <div class="col-xl-4">
         @php($p = $d['payroll'])
         <div class="panel">
-          <div class="panel-h"><h6>Payroll — {{ $ctx->month->format('M Y') }}</h6>
-            @if($p['visible'])<a class="hint" href="{{ route('salaries.report', ['month' => $ctx->month->format('Y-m')]) }}">Salaries report →</a>@endif
+          <div class="panel-h"><h6>Payroll — {{ $p['months'] }}</h6>
+            @if($p['visible'])<a class="hint" href="{{ route('salaries.report', $ctx->reportQuery(['monthly', 'quarterly', 'semiannual', 'yearly'], 'month')) }}">Salaries report →</a>@endif
           </div>
           <div class="panel-b">
             @if(! $p['visible'])
               <div class="empty">Payroll figures are for finance and payroll roles.</div>
             @elseif(! $p['headcount'] && ! $p['held_count'])
-              <div class="empty">No payroll uploaded for this month yet.</div>
+              <div class="empty">No payroll uploaded for {{ $p['months'] }} yet.</div>
             @else
               <table class="dt">
                 <tr><td>Net pay ({{ Fmt::int($p['headcount']) }} people)</td><td class="num">{{ Fmt::money($p['net'], 0) }}</td></tr>
@@ -258,11 +261,12 @@
     <script>
       document.addEventListener('dash:charts', function () {
         var t = @json($d['trend']);
-        Dash.lines('#ch-trend', t.labels, [
-          { name: 'Invoiced', type: 'column', data: t.invoiced },
-          { name: 'Collected', type: 'column', data: t.collected },
-          { name: 'Expenses', type: 'line', data: t.expenses },
-        ], { money: true, height: 290 });
+        var series = [];
+        if (t.invoiced) series.push({ name: 'Invoiced', type: 'column', data: t.invoiced });
+        series.push({ name: 'Collected', type: 'column', data: t.collected });
+        series.push({ name: 'Expenses', type: 'line', data: t.expenses });
+        Dash.lines('#ch-trend', t.labels, series, { money: true, height: 290,
+          colors: t.invoiced ? [Dash.colors.s1, Dash.colors.s2, Dash.colors.s3] : [Dash.colors.s2, Dash.colors.s3] });
 
         var a = @json($d['aging']['buckets']);
         Dash.bars('#ch-aging', ['Not due', '1–30 d', '31–60 d', '61–90 d', '90+ d'], [{ name: 'Owed', data: a.map(function (b) { return b.value; }) }],
@@ -274,7 +278,7 @@
         if (m.length) {
           Dash.donut('#ch-modes', m.map(function (x) { return x.label; }), m.map(function (x) { return x.value; }), { money: true, height: 270, totalLabel: 'Collected' });
         } else {
-          document.querySelector('#ch-modes').innerHTML = '<div class="empty">No approved receipts this month.</div>';
+          document.querySelector('#ch-modes').innerHTML = '<div class="empty">No approved receipts in this period.</div>';
         }
       });
     </script>

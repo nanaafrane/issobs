@@ -29,14 +29,15 @@ class HrDashboard
 
     public static function build(DashboardContext $ctx): array
     {
-        // The whole month, as the Employees report does (it also enables its payroll cross-check).
-        $report = EmployeeMovementsReport::build($ctx->month->copy(), $ctx->month->copy()->endOfMonth(), $ctx->fieldIds);
+        // The whole period, as the Employees report does (a whole month also enables its payroll cross-check).
+        $report = EmployeeMovementsReport::build($ctx->from->copy(), $ctx->to->copy(), $ctx->fieldIds);
 
-        $buckets = array_map(fn ($m) => [$m[0]->copy(), $m[0]->copy()->endOfMonth()->startOfDay(), $m[2]], $ctx->months(12));
-        $series = EmployeeMovementsReport::series($buckets, $ctx->fieldIds);
+        $series = EmployeeMovementsReport::series(array_map(fn ($b) => [$b[0]->copy(), $b[1]->copy(), $b[2]], $ctx->trendBuckets()), $ctx->fieldIds);
 
-        // Why and how soon people leave: one month is too few terminations to read, so use 12.
-        $year = EmployeeMovementsReport::build($ctx->months(12)[0][0]->copy(), $ctx->month->copy()->endOfMonth(), $ctx->fieldIds);
+        // Why and how soon people leave: a short period has too few terminations to read, so use
+        // at least the 12 months up to the end of the period.
+        $yearFrom = $ctx->to->copy()->subMonthsNoOverflow(12)->addDay()->min($ctx->from);
+        $year = EmployeeMovementsReport::build($yearFrom, $ctx->to->copy(), $ctx->fieldIds);
 
         $t = $report['totals'];
 
@@ -60,6 +61,7 @@ class HrDashboard
             'pending' => array_slice($report['pending'], 0, 8),
             'series' => [
                 'labels' => array_column($series, 'label'),
+                'caption' => $ctx->trendCaption(),
                 'headcount' => array_column($series, 'closing'),
                 'hires' => array_map(fn ($r) => $r['hires'] + $r['reinstated'], $series),
                 'terminated' => array_column($series, 'terminated'),
@@ -68,6 +70,7 @@ class HrDashboard
             'by_reason' => self::reasons($year['by_reason']),
             'tenure' => $year['tenure'],
             'year' => [
+                'label' => $yearFrom->format('M Y') . ' – ' . $ctx->to->format('M Y'),
                 'hires' => $year['totals']['hires'] + $year['totals']['reinstated'],
                 'terminated' => $year['totals']['terminated'],
                 'turnover' => $year['totals']['turnover'],
@@ -106,14 +109,14 @@ class HrDashboard
         $total = $active()->count();
         $guards = $active()->where('role_id', DashboardContext::GUARD_ROLE_ID)->count();
 
-        $gender = $active()->selectRaw("LOWER(COALESCE(NULLIF(TRIM(gender), ''), 'not recorded')) as g, COUNT(*) as n")
-            ->groupBy('g')->pluck('n', 'g')
+        $gender = $active()->selectRaw("LOWER(COALESCE(NULLIF(TRIM(gender), ''), 'not recorded')) as gender_key, COUNT(*) as cnt")
+            ->groupBy('gender_key')->pluck('cnt', 'gender_key')
             ->mapWithKeys(fn ($n, $g) => [ucfirst($g) => (int) $n])->sortDesc()->all();
 
         $departments = $active()->leftJoin('departments', 'departments.id', '=', 'employees.department_id')
-            ->selectRaw("COALESCE(departments.name, 'No department') as name, COUNT(*) as n")
-            ->groupBy('departments.name')->orderByDesc('n')->limit(8)->get()
-            ->map(fn ($r) => ['label' => $r->name, 'value' => (int) $r->n])->all();
+            ->selectRaw("COALESCE(departments.name, 'No department') as dept_name, COUNT(*) as cnt")
+            ->groupBy('departments.name')->orderByDesc('cnt')->limit(8)->get()
+            ->map(fn ($r) => ['label' => $r->dept_name, 'value' => (int) $r->cnt])->all();
 
         $missing = [];
         foreach (self::REQUIRED_DETAILS as $col => $label) {
@@ -143,25 +146,27 @@ class HrDashboard
         ];
     }
 
-    /** The month's payroll: headcount paid, cost, and the attendance deductions taken. */
+    /** Payroll for the months the period touches: people paid, cost, and the attendance deductions taken. */
     private static function payroll(DashboardContext $ctx): array
     {
-        [$from, $to] = $ctx->span();
-        $row = DB::table('salaries')->whereBetween('salary_month', [$from, $to])->whereIn('payment_status', ['pending', 'approved'])
+        $row = DB::table('salaries')->whereBetween('salary_month', $ctx->monthSpan())->whereIn('payment_status', ['pending', 'approved'])
             ->when($ctx->fieldIds !== null, fn ($q) => $q->whereIn('field_id', $ctx->fieldIds ?: [0]))
-            ->selectRaw('COUNT(DISTINCT employee_id) as heads, COALESCE(SUM(gross_salary),0) as gross, COALESCE(SUM(net_salary),0) as net,
-                COALESCE(SUM(cost_to_company),0) as ctc, COALESCE(SUM(absent),0) as absent, COALESCE(SUM(overtime),0) as overtime')
+            ->selectRaw('COUNT(DISTINCT employee_id) as people, COUNT(*) as payslips, COALESCE(SUM(gross_salary),0) as gross_pay,
+                COALESCE(SUM(net_salary),0) as net_pay, COALESCE(SUM(cost_to_company),0) as ctc_amount,
+                COALESCE(SUM(absent),0) as absent_amount, COALESCE(SUM(overtime),0) as overtime_amount')
             ->first();
 
         return [
             'visible' => $ctx->user->hasRole(['Invoice', 'Manager', 'Internal Auditor', 'Officer', 'Finance Manager', 'Director']),
-            'heads' => (int) $row->heads,
-            'gross' => round((float) $row->gross, 2),
-            'net' => round((float) $row->net, 2),
-            'ctc' => round((float) $row->ctc, 2),
-            'absent' => round((float) $row->absent, 2),
-            'overtime' => round((float) $row->overtime, 2),
-            'avg_net' => $row->heads ? round($row->net / $row->heads, 2) : 0,
+            'months' => $ctx->monthsLabel(),
+            'heads' => (int) $row->people,
+            'gross' => round((float) $row->gross_pay, 2),
+            'net' => round((float) $row->net_pay, 2),
+            'ctc' => round((float) $row->ctc_amount, 2),
+            'absent' => round((float) $row->absent_amount, 2),
+            'overtime' => round((float) $row->overtime_amount, 2),
+            // Per payslip, so a quarter is not three months' pay per person.
+            'avg_net' => $row->payslips ? round($row->net_pay / $row->payslips, 2) : 0,
         ];
     }
 }

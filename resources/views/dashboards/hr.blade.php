@@ -2,7 +2,7 @@
 @php
   $k = $d['kpi'];
   $w = $d['workforce'];
-  $reportLink = route('employee.report', ['period' => 'monthly', 'date' => $ctx->month->toDateString()] + array_filter(['field' => $ctx->fieldId]));
+  $reportLink = route('employee.report', $ctx->reportQuery(['weekly', 'monthly', 'quarterly', 'semiannual', 'yearly']));
   $turnoverStatus = $k['turnover'] === null ? null : ($k['turnover'] <= 2 ? 'good' : ($k['turnover'] <= 4 ? 'warn' : 'bad'));
 @endphp
 <x-sales-dashboard>
@@ -23,8 +23,8 @@
       <div class="col-xl-2 col-md-4 col-6">
         @include('dashboards._kpi', [
           'label' => 'Headcount', 'value' => Fmt::int($k['closing']),
-          'delta' => ['text' => ($k['net'] > 0 ? '+' : '') . $k['net'] . ' since 1 ' . $ctx->month->format('M') . ' (' . Fmt::int($k['opening']) . ')', 'dir' => $k['net'] > 0 ? 'up' : ($k['net'] < 0 ? 'down' : 'flat')],
-          'neutral' => true, 'note' => 'Employed at month end', 'href' => $reportLink,
+          'delta' => ['text' => ($k['net'] > 0 ? '+' : '') . $k['net'] . ' since ' . $ctx->from->format('j M') . ' (' . Fmt::int($k['opening']) . ')', 'dir' => $k['net'] > 0 ? 'up' : ($k['net'] < 0 ? 'down' : 'flat')],
+          'neutral' => true, 'note' => 'Employed at ' . ($ctx->isRunning() ? 'the end of the period' : $ctx->to->format('j M Y')), 'href' => $reportLink,
         ])
       </div>
       <div class="col-xl-2 col-md-4 col-6">
@@ -74,19 +74,19 @@
     <div class="row g-3 mb-3">
       <div class="col-xl-8">
         <div class="panel">
-          <div class="panel-h"><h6>Headcount and movements</h6><span class="hint">Last 12 months · approved movements</span></div>
+          <div class="panel-h"><h6>Headcount and movements</h6><span class="hint">{{ $d['series']['caption'] }} · approved movements</span></div>
           <div class="legend">
             <span><i style="background:var(--s1)"></i>Joined</span>
             <span><i style="background:var(--s2)"></i>Left</span>
           </div>
           <div id="ch-moves" class="chart" style="min-height:200px"></div>
-          <div class="legend mt-1"><span><i style="background:var(--s3)"></i>Headcount at month end</span></div>
+          <div class="legend mt-1"><span><i style="background:var(--s3)"></i>Headcount at the end of each {{ $ctx->period === 'custom' ? 'bar' : 'period' }}</span></div>
           <div id="ch-head" class="chart" style="min-height:170px"></div>
         </div>
       </div>
       <div class="col-xl-4">
         <div class="panel">
-          <div class="panel-h"><h6>Why people left</h6><span class="hint">12 months · {{ Fmt::int($d['year']['terminated']) }} leavers · {{ Fmt::pct($d['year']['turnover']) }} turnover</span></div>
+          <div class="panel-h"><h6>Why people left</h6><span class="hint">{{ $d['year']['label'] }} · {{ Fmt::int($d['year']['terminated']) }} leavers · {{ Fmt::pct($d['year']['turnover']) }} turnover</span></div>
           <div class="panel-b">
             @php($maxR = max(array_column($d['by_reason'], 'value') ?: [0]))
             @forelse($d['by_reason'] as $r)
@@ -95,7 +95,7 @@
                 <span class="track"><span class="fill d-block" style="width: {{ $maxR ? round($r['value'] / $maxR * 100, 1) : 0 }}%; background: var(--s2)"></span></span>
               </li></ul>
             @empty
-              <div class="empty">No terminations in the last 12 months.</div>
+              <div class="empty">No terminations in {{ $d['year']['label'] }}.</div>
             @endforelse
             <div class="small mt-3" style="color:var(--ink-2)"><strong style="color:var(--ink)">How long leavers stayed</strong></div>
             <table class="dt mt-1">
@@ -112,7 +112,7 @@
     <div class="row g-3 mb-3">
       <div class="col-xl-8">
         <div class="panel">
-          <div class="panel-h"><h6>Offices — {{ $ctx->month->format('F') }}</h6><span class="hint">Start + joined + transfers in − left − transfers out = end</span></div>
+          <div class="panel-h"><h6>Offices — {{ $ctx->label() }}</h6><span class="hint">Start + joined + transfers in − left − transfers out = end</span></div>
           <div class="panel-b table-responsive">
             <table class="dt">
               <thead><tr><th>Office</th><th class="num">Start</th><th class="num">New</th><th class="num">Re-instated</th><th class="num">In</th>
@@ -120,7 +120,7 @@
               <tbody>
               @forelse($d['offices'] as $o)
                 <tr>
-                  <td>@if($o['field_id'] ?? null)<a href="{{ route('dashboard.show', ['board' => 'hr', 'month' => $ctx->month->format('Y-m'), 'field' => $o['field_id']]) }}">{{ $o['name'] }}</a>@else{{ $o['name'] }}@endif</td>
+                  <td>@if($o['field_id'] ?? null)<a href="{{ route('dashboard.show', ['board' => 'hr'] + $ctx->query(['field' => $o['field_id']])) }}">{{ $o['name'] }}</a>@else{{ $o['name'] }}@endif</td>
                   <td class="num">{{ $o['opening'] }}</td><td class="num">{{ $o['hires'] }}</td><td class="num">{{ $o['reinstated'] }}</td>
                   <td class="num">{{ $o['transfers_in'] }}</td><td class="num {{ $o['terminated'] ? 'neg' : '' }}">{{ $o['terminated'] }}</td>
                   <td class="num">{{ $o['transfers_out'] }}</td><td class="num"><strong>{{ $o['closing'] }}</strong></td>
@@ -204,10 +204,12 @@
         @php($pc = $d['payroll_check'])
         @php($py = $d['payroll'])
         <div class="panel">
-          <div class="panel-h"><h6>Payroll check — {{ $ctx->month->format('M') }}</h6>
-            @if($py['visible'])<a class="hint" href="{{ route('salaries.report', ['month' => $ctx->month->format('Y-m')]) }}">Salaries report →</a>@endif</div>
+          <div class="panel-h"><h6>Payroll — {{ $py['months'] }}</h6>
+            @if($py['visible'])<a class="hint" href="{{ route('salaries.report', $ctx->reportQuery(['monthly', 'quarterly', 'semiannual', 'yearly'], 'month')) }}">Salaries report →</a>@endif</div>
           <div class="panel-b">
-            @if($pc)
+            @if(! $pc)
+              <div class="small muted mb-2">The employed-vs-salaries check runs for a single month — pick <em>Monthly</em> to see it.</div>
+            @else
               <table class="dt">
                 <tr><td>Employed during the month</td><td class="num">{{ Fmt::int($pc['employed']) }}</td></tr>
                 <tr><td>Salaries raised</td><td class="num">{{ Fmt::int($pc['salaries']) }}</td></tr>
@@ -223,7 +225,7 @@
                 <tr><td>Overtime paid</td><td class="num">{{ Fmt::money($py['overtime'], 0) }}</td></tr>
               </table>
             @elseif($py['visible'])
-              <div class="empty">No payroll uploaded for this month yet.</div>
+              <div class="empty">No payroll uploaded for {{ $py['months'] }} yet.</div>
             @endif
           </div>
         </div>

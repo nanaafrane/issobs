@@ -41,8 +41,10 @@ class DashboardsTest extends TestCase
             $this->role[$n] = DB::table('roles')->insertGetId(['name' => $n]);
         }
         foreach (['Accra', 'Botwe', 'Tema', 'Takoradi', 'Koforidua', 'Kumasi', 'Shai Hills'] as $n) {
-            $this->field[$n] = DB::table('fields')->insertGetId(['name' => $n, 'parent_field_id' => $n === 'Shai Hills' ? 3 : null]);
+            $this->field[$n] = DB::table('fields')->insertGetId(['name' => $n]);
         }
+        // By id, not by position: ids are not reset between tests on MySQL / MariaDB.
+        DB::table('fields')->where('id', $this->field['Shai Hills'])->update(['parent_field_id' => $this->field['Tema']]);
     }
 
     protected function tearDown(): void
@@ -207,14 +209,137 @@ class DashboardsTest extends TestCase
         $required = $rows->first()['required_guard_days'];
         $this->assertSame(round(($required - $rows->first()['uncovered_guard_days']) / $required * 100, 1), $d['kpi']['coverage']);
         $this->assertSame(1, $d['kpi']['overtime_count']);
-        $this->assertSame(1, $d['daily']['present'][0]);
+        $this->assertSame(1.0, $d['daily']['present'][0]);
         $this->assertNull($d['daily']['present'][25]);   // after today: not plotted as zero
     }
 
-    public function test_a_future_or_garbage_month_falls_back_to_this_month(): void
+    /** [from, to] of the window the request asks for. */
+    private function window(array $query): array
     {
-        $this->assertSame('2026-10', DashboardContext::parseMonth('2027-03')->format('Y-m'));
-        $this->assertSame('2026-10', DashboardContext::parseMonth('not-a-month')->format('Y-m'));
-        $this->assertSame('2026-08', DashboardContext::parseMonth('2026-08')->format('Y-m'));
+        [$period, $from, $to] = DashboardContext::window(Request::create('/', 'GET', $query));
+
+        return [$period, $from->toDateString(), $to->toDateString()];
+    }
+
+    public function test_every_period_gives_its_calendar_window(): void
+    {
+        $this->assertSame(['monthly', '2026-10-01', '2026-10-31'], $this->window([]));
+        $this->assertSame(['daily', '2026-10-14', '2026-10-14'], $this->window(['period' => 'daily', 'date' => '2026-10-14']));
+        $this->assertSame(['weekly', '2026-10-12', '2026-10-18'], $this->window(['period' => 'weekly', 'date' => '2026-10-14']));
+        $this->assertSame(['quarterly', '2026-07-01', '2026-09-30'], $this->window(['period' => 'quarterly', 'date' => '2026-08-20']));
+        $this->assertSame(['semiannual', '2026-01-01', '2026-06-30'], $this->window(['period' => 'semiannual', 'date' => '2026-03-01']));
+        $this->assertSame(['yearly', '2025-01-01', '2025-12-31'], $this->window(['period' => 'yearly', 'date' => '2025-05-05']));
+        // A range: either order, never past today; incomplete -> this month.
+        $this->assertSame(['custom', '2026-09-15', '2026-10-20'], $this->window(['period' => 'custom', 'from' => '2026-12-01', 'to' => '2026-09-15']));
+        $this->assertSame(['monthly', '2026-10-01', '2026-10-31'], $this->window(['period' => 'custom', 'from' => '2026-09-15']));
+        // Old links (?month=) and bad input.
+        $this->assertSame(['monthly', '2026-08-01', '2026-08-31'], $this->window(['month' => '2026-08']));
+        $this->assertSame(['monthly', '2026-10-01', '2026-10-31'], $this->window(['month' => '2027-03']));
+        $this->assertSame(['weekly', '2026-10-19', '2026-10-25'], $this->window(['period' => 'weekly', 'date' => '2026-02-31']));
+        $this->assertSame(['monthly', '2026-10-01', '2026-10-31'], $this->window(['period' => 'fortnightly']));
+    }
+
+    public function test_previous_period_and_trend_buckets_follow_the_period(): void
+    {
+        $user = $this->user('Accounts', 'Finance Manager');
+        $q = $this->ctx($user, 'accounts', ['period' => 'quarterly', 'date' => '2026-08-01']);
+        $this->assertSame('2026-04-01', $q->shifted(1)->from->toDateString());
+        $this->assertSame('Q3 2026', $q->label());
+        $this->assertCount(8, $q->trendBuckets());
+        $this->assertSame('Q4 24', $q->trendBuckets()[0][2]);
+        $this->assertTrue($q->trendIsMonthly());
+
+        $w = $this->ctx($user, 'accounts', ['period' => 'weekly', 'date' => '2026-10-14']);
+        $this->assertCount(12, $w->trendBuckets());
+        $this->assertFalse($w->trendIsMonthly());
+        $this->assertSame(['2026-10-01', '2026-10-31'], $w->monthSpan());
+        $this->assertNotNull($w->next());   // this week (contains today)
+
+        $r = $this->ctx($user, 'accounts', ['period' => 'custom', 'from' => '2026-01-01', 'to' => '2026-10-20']);
+        $this->assertSame('Jan 26', $r->trendBuckets()[0][2]);
+        $this->assertCount(10, $r->trendBuckets());
+        $this->assertSame('2026-01-01', $r->trendBuckets()[0][0]->toDateString());
+        $buckets = $r->trendBuckets();
+        $this->assertSame('2026-10-20', end($buckets)[1]->toDateString());
+    }
+
+    public function test_accounts_figures_follow_the_period(): void
+    {
+        $c = $this->client('Accra');
+        $sep = $this->invoice($c, 1000, '2026-09-01');
+        $oct = $this->invoice($c, 2000, '2026-10-01');
+        $this->receipt($c, $sep, ['cash_amount' => 400], '2026-09-10');
+        $this->receipt($c, $sep, ['momo_amount' => 600], '2026-10-13');
+        $this->receipt($c, $oct, ['transfer_amount' => 500], '2026-10-15');
+        $user = $this->user('Accounts', 'Finance Manager');
+
+        $week = AccountsDashboard::build($this->ctx($user, 'accounts', ['period' => 'weekly', 'date' => '2026-10-14']));
+        $this->assertSame(1100.0, $week['kpi']['collected']);         // 13 and 15 Oct
+        $this->assertSame(2000.0, $week['kpi']['invoiced']);          // October's invoices
+        $this->assertNull($week['kpi']['collection_rate']);           // a week against a month: not shown
+        $this->assertNull($week['trend']['invoiced']);
+        $this->assertSame(1100.0, end($week['trend']['collected']));
+
+        $day = AccountsDashboard::build($this->ctx($user, 'accounts', ['period' => 'daily', 'date' => '2026-10-13']));
+        $this->assertSame(600.0, $day['kpi']['collected']);
+        $this->assertCount(14, $day['trend']['collected']);
+
+        $q = AccountsDashboard::build($this->ctx($user, 'accounts', ['period' => 'quarterly', 'date' => '2026-10-01']));
+        $this->assertSame(1100.0, $q['kpi']['collected']);
+        $this->assertSame(2000.0, $q['kpi']['invoiced']);
+        $this->assertSame(55.0, $q['kpi']['collection_rate']);
+
+        // A range ending today (20 Oct) is not whole months: no collection rate.
+        $range = AccountsDashboard::build($this->ctx($user, 'accounts', ['period' => 'custom', 'from' => '2026-09-01', 'to' => '2026-10-31']));
+        $this->assertSame(1500.0, $range['kpi']['collected']);
+        $this->assertSame(3000.0, $range['kpi']['invoiced']);
+        $this->assertNull($range['kpi']['collection_rate']);
+
+        $sep = AccountsDashboard::build($this->ctx($user, 'accounts', ['period' => 'custom', 'from' => '2026-09-01', 'to' => '2026-09-30']));
+        $this->assertSame(40.0, $sep['kpi']['collection_rate']);
+        $oct = AccountsDashboard::build($this->ctx($user, 'accounts', ['period' => 'monthly', 'date' => '2026-10-05']));
+        $this->assertSame(400.0, $oct['kpi']['collected_prev']);     // September
+    }
+
+    public function test_every_board_renders_for_every_period(): void
+    {
+        $director = $this->user('Administration', 'Director');
+        $c = $this->client('Accra', 1, 1);
+        $g = $this->guard('Accra', $c);
+        $this->invoice($c, 500);
+        DB::table('attendances')->insert(['client_id' => $c, 'employee_id' => $g, 'work_date' => '2026-10-05', 'shift' => 'day', 'status' => 'present', 'source' => 'kiosk']);
+
+        $queries = [
+            ['period' => 'daily', 'date' => '2026-10-05'], ['period' => 'weekly'], ['period' => 'monthly', 'date' => '2026-09-09'],
+            ['period' => 'quarterly'], ['period' => 'semiannual'], ['period' => 'yearly', 'date' => '2025-06-01'],
+            ['period' => 'custom', 'from' => '2025-11-03', 'to' => '2026-10-20'], ['month' => '2026-08'],
+        ];
+        foreach (['accounts', 'hr', 'operations'] as $board) {
+            foreach ($queries as $q) {
+                $this->actingAs($director)->get('/dashboard/' . $board . '?' . http_build_query($q))->assertOk();
+            }
+        }
+    }
+
+    public function test_operations_coverage_over_a_week_counts_only_that_week(): void
+    {
+        $c = $this->client('Accra', 1, 0);     // one day guard
+        $g = $this->guard('Accra', $c);
+        foreach (['2026-10-12', '2026-10-13', '2026-10-14', '2026-10-05'] as $day) {
+            DB::table('attendances')->insert(['client_id' => $c, 'employee_id' => $g, 'work_date' => $day, 'shift' => 'day', 'status' => 'present', 'source' => 'kiosk']);
+        }
+        $user = $this->user('Operations', 'Officer');
+
+        // Week of 12 Oct, complete: 3 of 7 guard-shifts covered.
+        $d = OperationsDashboard::build($this->ctx($user, 'operations', ['period' => 'weekly', 'date' => '2026-10-12']));
+        $this->assertSame(7, $d['kpi']['counted_days']);
+        $this->assertSame(4, $d['kpi']['uncovered_days']);
+        $this->assertSame(round(3 / 7 * 100, 1), $d['kpi']['coverage']);
+        $this->assertCount(7, $d['daily']['present']);
+
+        // This week (19–25 Oct): counted to today only.
+        $now = OperationsDashboard::build($this->ctx($user, 'operations', ['period' => 'weekly']));
+        $this->assertSame(2, $now['kpi']['counted_days']);
+        $this->assertNull(end($now['daily']['present']));
     }
 }
