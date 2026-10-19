@@ -216,6 +216,10 @@ class EmployeeMovements
         if (in_array($type, [self::TERMINATION, self::REINSTATEMENT], true) && $effectiveDate) {
             self::alignEstimatedHire($e->id, Carbon::parse($effectiveDate)->toDateString());
         }
+        if ($type === self::TERMINATION && $effectiveDate) {
+            // Status is Active (only Active staff can be terminated): make the history agree.
+            self::ensureEmployedBefore($e, Carbon::parse($effectiveDate)->toDateString());
+        }
 
         return EmployeeMovement::create(array_merge(self::snapshot($e), [
             'employee_id' => $e->id,
@@ -238,6 +242,58 @@ class EmployeeMovements
     {
         EmployeeMovement::where('employee_id', $employeeId)->where('type', self::HIRE)->where('date_estimated', true)
             ->whereNotNull('effective_date')->where('effective_date', '>', $date)->update(['effective_date' => $date]);
+    }
+
+    /**
+     * Before a termination dated $date counts, the history must show the employee employed on
+     * that date. Someone taken back on before re-instatement had its own step still ends in
+     * an older termination; someone with no hire at all has no start. Fill the gap so the new
+     * termination counts: an estimated re-instatement (the old "New Recruit" date when there
+     * is one, else the day after the old termination), or an undated hire. A genuine clash
+     * (a real joining date after $date) is left for HR to correct.
+     *
+     * @return EmployeeMovement|null what was added
+     */
+    public static function ensureEmployedBefore(employee $e, string $date): ?EmployeeMovement
+    {
+        $last = EmployeeMovement::where('employee_id', $e->id)->where('status', self::APPROVED)
+            ->whereIn('type', [self::HIRE, self::REINSTATEMENT, self::TERMINATION])
+            // Up to $date - but not the termination(s) on $date itself, which are what we check for.
+            ->where(fn ($q) => $q->whereNull('effective_date')->orWhere('effective_date', '<', $date)
+                ->orWhere(fn ($w) => $w->where('effective_date', $date)->where('type', '!=', self::TERMINATION)))
+            ->orderByRaw('effective_date IS NOT NULL')->orderBy('effective_date')->orderBy('id')->get()->last();
+
+        if (! $last) {
+            if (EmployeeMovement::where('employee_id', $e->id)->where('type', self::HIRE)->where('status', self::APPROVED)->exists()) {
+                return null;   // hired after $date: a real clash, listed for HR
+            }
+            // No approved start at all (old record): employed from before any period.
+            $waitingHire = EmployeeMovement::where('employee_id', $e->id)->where('type', self::HIRE)->where('status', self::PENDING)->first();
+            if ($waitingHire) {
+                // Their hire was never approved, yet they are employed: approve it.
+                $waitingHire->update(['status' => self::APPROVED, 'decided_at' => now()]);
+
+                return $waitingHire;
+            }
+
+            return self::record($e, self::HIRE, self::APPROVED, null, ['source' => 'history_fix', 'date_estimated' => true,
+                'note' => 'Joining not on record; added so a later termination counts.']);
+        }
+        if ($last->type !== self::TERMINATION) {
+            return null;   // employed on $date
+        }
+        $ended = $last->effective_date->toDateString();
+        $back = \Illuminate\Support\Facades\Schema::hasTable('nrrit')
+            ? DB::table('nrrit')->where('employee_id', $e->id)->where('status1', 'New Recruit')->where('status_month', '>', $ended)
+                ->where('status_month', '<=', $date)->orderBy('status_month')->value('status_month') : null;
+        $back = $back ? substr((string) $back, 0, 10) : Carbon::parse($ended)->addDay()->toDateString();
+
+        return EmployeeMovement::create(array_merge(self::snapshot($e), [
+            'employee_id' => $e->id, 'type' => self::REINSTATEMENT, 'status' => self::APPROVED,
+            'effective_date' => $back, 'date_estimated' => true, 'source' => 'history_fix',
+            'note' => 'Taken back on after the termination of ' . Carbon::parse($ended)->format('d M Y') . ' with no re-instatement on record (added).',
+            'requested_at' => now(), 'decided_at' => now(),
+        ]));
     }
 
     public static function pending(int $employeeId, ?string $type = null): ?EmployeeMovement
@@ -264,13 +320,41 @@ class EmployeeMovements
     }
 
     /**
+     * The employee was just approved by head office: approve the request that was waiting,
+     * matching what the employee now is (Terminated -> the termination; Active -> the
+     * re-instatement or the new recruit). Creates nothing; returns what it approved.
+     */
+    public static function approveWaiting(employee $e): ?EmployeeMovement
+    {
+        $type = match (true) {
+            $e->status === 'Terminated' => self::TERMINATION,
+            $e->status === 'Active' && self::pending($e->id, self::REINSTATEMENT) => self::REINSTATEMENT,
+            $e->status === 'Active' && self::pending($e->id, self::HIRE) => self::HIRE,
+            default => null,
+        };
+
+        return $type && self::pending($e->id, $type) ? self::approve($e, $type) : null;
+    }
+
+    /**
      * Head office approved this employee. Approves the waiting movement of the matching type,
      * or records an approved one if none was requested (older requests made before movements
      * existed). Returns the approved movement.
      */
     public static function approve(employee $e, string $type): EmployeeMovement
     {
+        // Already approved a moment ago (the employee's own save approves what was waiting):
+        // never record it twice.
+        $latest = EmployeeMovement::where('employee_id', $e->id)->where('status', self::APPROVED)
+            ->whereIn('type', [self::HIRE, self::TERMINATION, self::REINSTATEMENT])->latest('id')->first();
+        if (! self::pending($e->id, $type) && $latest?->type === $type) {
+            return $latest;
+        }
+
         $m = self::pending($e->id, $type);
+        if ($m && $type === self::TERMINATION && $m->effective_date) {
+            self::ensureEmployedBefore($e, $m->effective_date->toDateString());
+        }
         if ($m) {
             // The office etc. may have been corrected while waiting: store them as approved.
             $m->fill(self::snapshot($e))->fill(['status' => self::APPROVED, 'decided_by' => Auth::id(), 'decided_at' => now()]);

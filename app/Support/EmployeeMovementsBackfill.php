@@ -26,10 +26,10 @@ use Illuminate\Support\Facades\Schema;
  */
 class EmployeeMovementsBackfill
 {
-    /** @return array{hires:int, nrrit:int, nrrit_skipped:int, terminations:int, reinstatements:int} */
+    /** @return array{hires:int, nrrit:int, nrrit_skipped:int, terminations:int, approved_waiting:int, reinstatements:int} */
     public static function run(): array
     {
-        $out = ['hires' => 0, 'nrrit' => 0, 'nrrit_skipped' => 0, 'terminations' => 0, 'reinstatements' => 0];
+        $out = ['hires' => 0, 'nrrit' => 0, 'nrrit_skipped' => 0, 'terminations' => 0, 'approved_waiting' => 0, 'reinstatements' => 0];
         $now = now();
         $validDate = fn ($d) => $d && ! str_starts_with((string) $d, '0000') && Carbon::hasFormat(substr((string) $d, 0, 10), 'Y-m-d')
             && substr((string) $d, 0, 4) > '1900' ? substr((string) $d, 0, 10) : null;
@@ -144,9 +144,62 @@ class EmployeeMovementsBackfill
                 }
             });
 
+        $out['approved_waiting'] = self::approveWhatHeadOfficeApproved();
         $out['reinstatements'] = self::backOnWithoutReinstatement($validDate);
+        $out['reinstatements'] += self::fillGapsBeforeTerminations();
 
         return $out;
+    }
+
+    /**
+     * Step 4b. Requests still "waiting" for employees head office has already approved
+     * (approved through the edit form before approval followed the employee): approve them,
+     * dated when head office approved the employee. Returns how many.
+     */
+    private static function approveWhatHeadOfficeApproved(): int
+    {
+        $n = 0;
+        $now = now();
+        $rows = DB::table('employee_movements as m')->join('employees as e', 'e.id', '=', 'm.employee_id')
+            ->where('m.status', 'pending')->where('e.ho_status', 'approved')
+            ->where(fn ($q) => $q->where(fn ($w) => $w->where('m.type', 'termination')->where('e.status', 'Terminated'))
+                ->orWhere(fn ($w) => $w->whereIn('m.type', ['reinstatement', 'hire'])->where('e.status', 'Active')))
+            ->get(['m.id', 'e.ho_date', 'e.user_id2']);
+        foreach ($rows as $r) {
+            DB::table('employee_movements')->where('id', $r->id)->update(['status' => 'approved', 'decided_by' => $r->user_id2,
+                'decided_at' => $r->ho_date && ! str_starts_with((string) $r->ho_date, '0000') ? $r->ho_date : $now, 'updated_at' => $now]);
+            $n++;
+        }
+
+        return $n;
+    }
+
+    /**
+     * Step 6. A termination that cannot count because the history does not show the employee
+     * employed (an older termination with no re-instatement after it, or no hire approved):
+     * fill the gap (EmployeeMovements::ensureEmployedBefore). Returns how many were added.
+     */
+    private static function fillGapsBeforeTerminations(): int
+    {
+        $n = 0;
+        $ids = DB::table('employee_movements')->where('type', 'termination')->where('status', 'approved')->whereNotNull('effective_date')
+            ->distinct()->pluck('employee_id');
+        foreach ($ids as $id) {
+            $e = \App\Models\employee::find($id);
+            if (! $e) {
+                continue;
+            }
+            $why = \App\Support\EmployeeMovementsReport::explain($e->id);
+            $terms = \App\Models\EmployeeMovement::whereIn('id', array_keys(array_filter($why, fn ($w) => $w && str_starts_with($w, 'Not counted: not employed'))))
+                ->where('type', 'termination')->orderBy('effective_date')->get();
+            foreach ($terms as $t) {
+                if (\App\Support\EmployeeMovements::ensureEmployedBefore($e, $t->effective_date->toDateString())) {
+                    $n++;
+                }
+            }
+        }
+
+        return $n;
     }
 
     /** Step 5. Returns how many re-instatements were added. */

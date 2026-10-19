@@ -223,11 +223,11 @@ class EmployeeMovementsTest extends TestCase
         ]);
 
         $out = EmployeeMovementsBackfill::run();
-        $this->assertSame(['hires' => 3, 'nrrit' => 3, 'nrrit_skipped' => 1, 'terminations' => 1, 'reinstatements' => 0], $out);
+        $this->assertSame(['hires' => 3, 'nrrit' => 3, 'nrrit_skipped' => 1, 'terminations' => 1, 'approved_waiting' => 0, 'reinstatements' => 0], $out);
         $this->assertSame(['hire', 'termination', 'reinstatement'], EmployeeMovement::where('employee_id', $back)->orderBy('effective_date')->pluck('type')->all());
         $this->assertTrue((bool) EmployeeMovement::where('employee_id', $noRecord)->where('type', 'termination')->value('date_estimated'));
 
-        $this->assertSame(['hires' => 0, 'nrrit' => 0, 'nrrit_skipped' => 1, 'terminations' => 0, 'reinstatements' => 0], EmployeeMovementsBackfill::run(), 'nothing twice');
+        $this->assertSame(['hires' => 0, 'nrrit' => 0, 'nrrit_skipped' => 1, 'terminations' => 0, 'approved_waiting' => 0, 'reinstatements' => 0], EmployeeMovementsBackfill::run(), 'nothing twice');
         $this->assertReconciles($this->report('2026-01-01', '2026-12-31'));
     }
 
@@ -462,5 +462,89 @@ class EmployeeMovementsTest extends TestCase
         $t = EmployeeMovement::where('employee_id', $e->id)->where('type', 'termination')->sole();
         $this->assertStringStartsWith('Not counted: not employed on 05 Oct 2026', EmployeeMovementsReport::explain($e->id)[$t->id]);
         $this->actingAs($this->hr)->get('/employees/' . $e->id)->assertOk()->assertSee('Not counted: not employed on 05 Oct 2026');
+    }
+
+    public function test_approving_by_saving_the_edit_form_also_approves_the_waiting_termination(): void
+    {
+        $e = $this->hire($this->headOffice, 'Accra', '2026-01-10');
+        $this->actingAs($this->branch)->post('/terminateEmployee/' . $e->id, ['effective_date' => '2026-10-10', 'reason' => 'resigned']);
+
+        // Head office opens the employee's edit form and saves it (instead of Approve on the pending page).
+        // employees.tin_number / ssnit_number exist in production (the edit form writes them); no migration creates them.
+        foreach (['tin_number', 'ssnit_number'] as $col) {
+            if (! \Illuminate\Support\Facades\Schema::hasColumn('employees', $col)) {
+                \Illuminate\Support\Facades\Schema::table('employees', fn ($t) => $t->string($col)->nullable());
+            }
+        }
+        $this->actingAs($this->headOffice)->put('/employees/' . $e->id, ['name' => $e->name, 'field_id' => $this->f['Accra'], 'payment_type' => 'Cash',
+            'phone_number' => $e->phone_number, 'gender' => 'male', 'date_of_joining' => '2026-01-10'])->assertRedirect()->assertSessionHasNoErrors();
+        $this->assertSame(['Terminated', 'approved'], [$e->fresh()->status, $e->fresh()->ho_status]);
+        $this->assertSame('approved', EmployeeMovement::where('employee_id', $e->id)->where('type', 'termination')->value('status'));
+        $this->assertSame(1, $this->report('2026-10-01', '2026-10-31')['totals']['terminated']);
+
+        // Approving again on the pending page records nothing twice.
+        $this->actingAs($this->headOffice)->post('/employeesAproval', ['employees' => [$e->id], 'action_type' => 'headOffice']);
+        $this->assertSame(1, EmployeeMovement::where('employee_id', $e->id)->where('type', 'termination')->count());
+    }
+
+    public function test_requests_left_waiting_for_already_approved_employees_are_repaired(): void
+    {
+        $e = $this->hire($this->headOffice, 'Accra', '2026-01-10');
+        $this->actingAs($this->branch)->post('/terminateEmployee/' . $e->id, ['effective_date' => '2026-10-10', 'reason' => 'resigned']);
+        // What the edit form did before this fix: approved the employee without the request.
+        DB::table('employees')->where('id', $e->id)->update(['ho_status' => 'approved', 'ho_date' => '2026-10-11']);
+        $this->assertSame(0, $this->report('2026-10-01', '2026-10-31')['totals']['terminated']);
+
+        $this->assertSame(1, EmployeeMovementsBackfill::run()['approved_waiting']);
+        $this->assertSame(1, $this->report('2026-10-01', '2026-10-31')['totals']['terminated']);
+    }
+
+    public function test_a_termination_counts_even_when_the_old_history_ends_in_an_earlier_termination_or_has_no_hire(): void
+    {
+        // Taken back on before re-instatement had its own step: history ends in a March termination.
+        $back = $this->hire($this->headOffice, 'Accra', '2025-01-10');
+        EmployeeMovement::create(['employee_id' => $back->id, 'type' => 'termination', 'status' => 'approved', 'effective_date' => '2026-03-01',
+            'date_estimated' => true, 'field_id' => $this->f['Accra'], 'source' => 'nrrit']);
+        // Hire never approved although they are Active.
+        $waiting = $this->hire($this->headOffice, 'Accra', '2025-02-10');
+        EmployeeMovement::where('employee_id', $waiting->id)->update(['status' => 'pending']);
+
+        foreach ([$back, $waiting] as $e) {
+            $this->actingAs($this->branch)->post('/terminateEmployee/' . $e->id, ['effective_date' => '2026-10-10', 'reason' => 'resigned']);
+        }
+        $this->actingAs($this->hr)->post('/employeesAproval', ['employees' => [$back->id, $waiting->id], 'action_type' => 'headOffice']);
+
+        $r = $this->report('2026-10-01', '2026-10-31');
+        $this->assertSame(2, $r['totals']['terminated']);
+        $this->assertSame([], $r['conflicts']);
+        $this->assertReconciles($r);
+        $fix = EmployeeMovement::where('employee_id', $back->id)->where('source', 'history_fix')->sole();
+        $this->assertSame(['reinstatement', '2026-03-02', true], [$fix->type, $fix->effective_date->toDateString(), $fix->date_estimated]);
+    }
+
+    public function test_the_history_fill_in_repairs_terminations_already_approved_but_not_counted(): void
+    {
+        $e = $this->hire($this->headOffice, 'Accra', '2025-01-10');
+        // State left by earlier versions: old termination, then a new approved one that could not count.
+        foreach (['2026-03-01', '2026-10-10'] as $d) {
+            EmployeeMovement::create(['employee_id' => $e->id, 'type' => 'termination', 'status' => 'approved', 'effective_date' => $d,
+                'date_estimated' => false, 'field_id' => $this->f['Accra'], 'source' => 'terminate']);
+        }
+        $e->forceFill(['status' => 'Terminated'])->save();
+        $this->assertSame(0, $this->report('2026-10-01', '2026-10-31')['totals']['terminated']);
+
+        $this->assertSame(1, EmployeeMovementsBackfill::run()['reinstatements']);
+        $this->assertSame(1, $this->report('2026-10-01', '2026-10-31')['totals']['terminated']);
+        $this->assertSame(0, EmployeeMovementsBackfill::run()['reinstatements'], 'once');
+        $this->artisan('employees:movements-why', ['employee' => $e->id])->assertSuccessful();
+
+        // A hire never approved, status Terminated, approved termination: repaired too.
+        $w = $this->hire($this->headOffice, 'Accra', '2025-02-10');
+        EmployeeMovement::where('employee_id', $w->id)->update(['status' => 'pending']);
+        EmployeeMovement::create(['employee_id' => $w->id, 'type' => 'termination', 'status' => 'approved', 'effective_date' => '2026-10-12',
+            'date_estimated' => false, 'field_id' => $this->f['Accra'], 'source' => 'terminate']);
+        $w->forceFill(['status' => 'Terminated'])->save();
+        EmployeeMovementsBackfill::run();
+        $this->assertSame(2, $this->report('2026-10-01', '2026-10-31')['totals']['terminated']);
     }
 }

@@ -167,5 +167,27 @@ Artisan::command('form-submissions:prune', function () {
  */
 Artisan::command('employees:backfill-movements', function () {
     $r = \App\Support\EmployeeMovementsBackfill::run();
-    $this->info("Hires: {$r['hires']}, from nrrit: {$r['nrrit']} (skipped {$r['nrrit_skipped']}: \"New Recruit\" rows, duplicates or deleted employees), terminations without a record: {$r['terminations']}, re-instatements for staff active again: {$r['reinstatements']}.");
+    $this->info("Hires: {$r['hires']}, from nrrit: {$r['nrrit']} (skipped {$r['nrrit_skipped']}: \"New Recruit\" rows, duplicates or deleted employees), terminations without a record: {$r['terminations']}, requests already approved on the employee: {$r['approved_waiting']}, re-instatements for staff active again: {$r['reinstatements']}.");
 })->purpose('Copy employee history (hires, nrrit terminations / re-instatements) into employee_movements');
+
+/*
+ | Why is (or isn't) an employee's termination / recruitment counted in HR movements?
+ | php artisan employees:movements-why 123
+ */
+Artisan::command('employees:movements-why {employee : employee id, e.g. 123 for FWSS 123}', function () {
+    $id = (int) $this->argument('employee');
+    $e = \App\Models\employee::find($id);
+    if (! $e) {
+        $this->error("No employee {$id}.");
+
+        return 1;
+    }
+    $this->info("FWSS {$e->id} {$e->name}: status {$e->status}, head office {$e->ho_status}, joined " . ($e->date_of_joining?->format('d M Y') ?? 'unknown'));
+    $why = \App\Support\EmployeeMovementsReport::explain($e->id);
+    $rows = \App\Models\EmployeeMovement::where('employee_id', $e->id)->orderBy('effective_date')->orderBy('id')->get()
+        ->map(fn ($m) => [$m->id, $m->type, $m->effective_date?->format('Y-m-d') ?? '-', $m->status, $m->source,
+            $m->status === 'approved' ? ($why[$m->id] ?? 'Counted') : ($m->status === 'pending' ? 'Waiting for approval: counts once approved' : 'Not counted (' . $m->status . ')')]);
+    $this->table(['id', 'type', 'date', 'status', 'source', 'in HR movements'], $rows->all());
+
+    return 0;
+})->purpose('Explain how one employee shows in the HR movements report');

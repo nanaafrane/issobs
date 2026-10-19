@@ -88,6 +88,15 @@ class employee extends Model
             }
         });
 
+        // HR movements: head office approved this employee - by the Approve button, by saving
+        // the edit form, by a bulk update, whatever the screen. The waiting request (termination,
+        // re-instatement, new recruit) is approved with it, so it always counts in the report.
+        static::updated(function (self $employee) {
+            if ($employee->wasChanged('ho_status') && $employee->ho_status === 'approved') {
+                \App\Support\EmployeeMovements::approveWaiting($employee);
+            }
+        });
+
         // HR movements: an active employee moved to another field office (edit form, bulk update).
         static::updated(function (self $employee) {
             // Employed before this save: an edit (form or bulk update) can put an active
