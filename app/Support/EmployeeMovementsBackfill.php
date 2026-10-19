@@ -10,8 +10,10 @@ use Illuminate\Support\Facades\Schema;
  * Copies history into employee_movements, once. Safe to run again: it only adds what is
  * missing (an employee with a hire already gets no second one; an nrrit row is copied once).
  *
- *  1. A hire for every employee: date of joining (else the day the record was created,
- *     marked "date estimated"). Approved, except recruits still Pending.
+ *  1. A hire for every employee: date of joining. With none, the hire has NO date: the
+ *     employee counts as employed from before any period (the day the record was keyed
+ *     in is not when they joined - often a bulk upload), and HR is asked for the date.
+ *     Approved, except recruits still Pending.
  *  2. nrrit terminations and re-instatements (month only, so "date estimated"). The
  *     wrong "New Recruit" rows nrrit wrote when a re-instatement was approved are not
  *     copied: hires come from step 1. A request still waiting for head office is pending.
@@ -40,7 +42,7 @@ class EmployeeMovementsBackfill
                     $pending = $e->status === 'Pending' || $e->status === null || $e->status === '';
                     $insert[] = [
                         'employee_id' => $e->id, 'type' => 'hire', 'status' => $pending ? 'pending' : 'approved',
-                        'effective_date' => $joined ?? $created, 'date_estimated' => $joined ? 0 : 1,
+                        'effective_date' => $joined, 'date_estimated' => $joined ? 0 : 1,
                         'field_id' => $e->field_id ?: null, 'client_id' => $e->client_id ?: null, 'role_id' => $e->role_id ?: null,
                         'department_id' => $e->department_id ?: null, 'source' => 'backfill',
                         'requested_by' => $e->user_id, 'requested_at' => $created, 'decided_by' => $pending ? null : $e->user_id2,

@@ -266,6 +266,22 @@ class OvertimeAttendanceLinkTest extends TestCase
         $this->assertSame('Terminated', $this->cell($this->kofi, '2026-10-16')->reason);
     }
 
+    public function test_an_approved_terminated_overtime_asks_head_office_and_reversing_it_withdraws(): void
+    {
+        $this->submit(['reason' => 'Terminated'])->assertOk();
+        $o = Overtime::sole();
+        $this->assertSame('Active', $this->kofi->fresh()->status, 'a submitted entry asks nothing yet');
+
+        $this->approveFully($o);
+        $m = \App\Models\EmployeeMovement::where('employee_id', $this->kofi->id)->where('type', 'termination')->sole();
+        $this->assertSame(['pending', 'overtime', '2026-10-14'], [$m->status, $m->source, $m->effective_date->toDateString()]);
+        $this->assertSame(['Terminated', 'pending'], [$this->kofi->fresh()->status, $this->kofi->fresh()->ho_status]);
+
+        // Finance deletes the entry: the sheet goes back and the request is withdrawn.
+        $this->actingAs($this->finance)->delete("/overtime/{$o->id}")->assertRedirect();
+        $this->assertSame(['cancelled', 'Active'], [$m->fresh()->status, $this->kofi->fresh()->status]);
+    }
+
     public function test_the_overtime_link_on_the_sheet_opens_the_entry(): void
     {
         $this->submit(['entry_date' => '2026-10-12'])->assertOk();

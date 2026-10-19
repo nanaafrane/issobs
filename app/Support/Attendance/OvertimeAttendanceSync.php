@@ -215,6 +215,8 @@ class OvertimeAttendanceSync
                     DB::table('attendances')->where('id', $row->id)->update(
                         collect($link->previous)->only(array_keys($row->getAttributes()))->except(['id'])->all() + ['updated_at' => now()]
                     );
+                    // Written directly (no model events): re-check a "T" termination request.
+                    \App\Support\AttendanceTerminations::sync((int) $row->employee_id);
                 } else {
                     $row->delete();
                 }

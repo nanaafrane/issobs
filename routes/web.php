@@ -216,6 +216,7 @@ Route::post('employeesCashVerify', [EmployeeController::class, 'employeesCashVer
 Route::get('employees-movements', [\App\Http\Controllers\EmployeeMovementController::class, 'index'])->name('employees.movements');
 Route::get('employees-movements/export', [\App\Http\Controllers\EmployeeMovementController::class, 'export'])->name('employees.movements.export');
 Route::put('employees-movements/{movement}', [\App\Http\Controllers\EmployeeMovementController::class, 'update'])->whereNumber('movement')->name('employees.movements.update');
+Route::post('employees-movements/{movement}/undo', [\App\Http\Controllers\EmployeeMovementController::class, 'undo'])->whereNumber('movement')->name('employees.movements.undo');
 Route::get('employeesnrrit', [\App\Http\Controllers\EmployeeMovementController::class, 'legacy']);
 Route::get('employeesnrritView', [\App\Http\Controllers\EmployeeMovementController::class, 'legacy']);
 Route::get('employeesPending', [EmployeeController::class, 'employeesPending']);

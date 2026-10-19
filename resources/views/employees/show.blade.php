@@ -552,9 +552,61 @@
         @endphp
         @if($pendingMove)
           <div class="alert alert-warning mt-4 mb-0">
-            <strong>{{ \App\Support\EmployeeMovements::LABELS[$pendingMove->type] }}</strong> waiting for head office approval
+            <strong>{{ \App\Support\EmployeeMovements::LABELS[$pendingMove->type] }}</strong> waiting for head office approval{{ in_array($pendingMove->source, ['attendance', 'overtime'], true) ? ' (from the attendance sheet)' : '' }}
             @if($pendingMove->effective_date) · effective {{ $pendingMove->effective_date->format('d M Y') }} @endif
             @if($pendingMove->reason) · {{ \App\Support\EmployeeMovements::reasonLabel($pendingMove->reason) }} @endif
+          </div>
+        @endif
+
+        @php
+            $M = \App\Support\EmployeeMovements::class;
+            $history = \App\Models\EmployeeMovement::with(['requester:id,name', 'decider:id,name', 'field:id,name', 'fromField:id,name'])
+                ->where('employee_id', $employee->id)->orderByDesc('effective_date')->orderByDesc('id')->get();
+            $lastChange = $history->whereIn('type', [$M::TERMINATION, $M::REINSTATEMENT])->whereIn('status', [$M::APPROVED, $M::PENDING])->sortByDesc('id')->first();
+            $decides = $M::canDecide(Auth::user());
+            $badge = ['approved' => 'bg-label-success', 'pending' => 'bg-label-warning', 'declined' => 'bg-label-secondary', 'cancelled' => 'bg-label-secondary'];
+        @endphp
+        @if($history->isNotEmpty())
+          <div class="card mt-4" id="employmentHistory">
+            <h6 class="card-header">Employment history</h6>
+            <div class="table-responsive">
+              <table class="table table-sm mb-0">
+                <thead><tr><th>Date</th><th>What</th><th>Office</th><th>Status</th><th>Reason / note</th><th>By</th><th></th></tr></thead>
+                <tbody>
+                  @foreach($history as $h)
+                    @php
+                        $canWithdraw = $h->status === $M::PENDING && $h->id === $lastChange?->id && ($decides || (int) $h->requested_by === (int) Auth::id());
+                        $canUndo = $h->status === $M::APPROVED && $decides && $h->id === $lastChange?->id
+                            && $employee->status === ($h->type === $M::TERMINATION ? 'Terminated' : 'Active');
+                    @endphp
+                    <tr>
+                      <td>{{ $h->effective_date?->format('d M Y') ?? 'date unknown' }}{{ $h->date_estimated ? ' (est.)' : '' }}</td>
+                      <td>{{ $M::LABELS[$h->type] ?? $h->type }}{{ $h->type === $M::TRANSFER ? ' from ' . ($h->fromField?->name ?? '?') : '' }}</td>
+                      <td>{{ $h->field?->name }}</td>
+                      <td><span class="badge {{ $badge[$h->status] ?? 'bg-label-secondary' }}">{{ $h->status === 'cancelled' ? 'undone / withdrawn' : $h->status }}</span></td>
+                      <td class="text-wrap" style="max-width: 22rem">{{ $h->type === $M::TERMINATION ? $M::reasonLabel($h->reason) : '' }}{{ $h->note ? ($h->type === $M::TERMINATION ? ' · ' : '') . $h->note : '' }}</td>
+                      <td class="small">{{ $h->requester?->name }}{{ $h->decider && $h->decider->id !== $h->requester?->id ? ' → ' . $h->decider->name : '' }}</td>
+                      <td class="text-end">
+                        @if($canWithdraw || $canUndo)
+                          <button class="btn btn-sm btn-outline-danger py-0" type="button" data-bs-toggle="collapse" data-bs-target="#undo{{ $h->id }}">{{ $canWithdraw ? 'Withdraw' : 'Undo' }}</button>
+                        @endif
+                      </td>
+                    </tr>
+                    @if($canWithdraw || $canUndo)
+                      <tr class="collapse" id="undo{{ $h->id }}"><td colspan="7">
+                        <form method="POST" action="{{ route('employees.movements.undo', $h->id) }}" class="d-flex flex-wrap gap-2 align-items-center"
+                              onsubmit="return confirm('{{ $canWithdraw ? 'Withdraw this request?' : 'Undo this ' . strtolower($M::LABELS[$h->type]) . '? It will no longer count anywhere.' }}')">
+                          @csrf
+                          <span class="small">{{ $canWithdraw ? 'Withdraw the request' : ($h->type === $M::TERMINATION ? 'Terminated by mistake? Undo it (not a re-instatement):' : 'Re-instated by mistake? Undo it:') }}</span>
+                          <input type="text" name="why" class="form-control form-control-sm" style="max-width: 20rem" maxlength="150" minlength="5" required placeholder="Why (e.g. wrong guard selected)">
+                          <button class="btn btn-sm btn-danger" type="submit">{{ $canWithdraw ? 'Withdraw' : 'Undo' }}</button>
+                        </form>
+                      </td></tr>
+                    @endif
+                  @endforeach
+                </tbody>
+              </table>
+            </div>
           </div>
         @endif
         @if(Auth::user()->hasRole(['Manager', 'Invoice']) && $employee->ho_status === 'approved' && ($canTerminate || $canReinstate))

@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Models\Attendance;
+use App\Models\Client;
 use App\Models\Department;
 use App\Models\employee;
 use App\Models\EmployeeMovement;
@@ -29,6 +31,7 @@ class EmployeeMovementsTest extends TestCase
     private User $headOffice;   // role 1: decides at once
     private User $branch;       // department 7, role 3: requests, head office approves
     private User $temaOfficer;
+    private User $hr;           // Manager in the HR department: decides at once
     private array $f = [];
 
     protected function setUp(): void
@@ -52,6 +55,7 @@ class EmployeeMovementsTest extends TestCase
         Field::whereKey($this->f['Shai Hills'])->update(['parent_field_id' => $this->f['Tema']]);
         $this->branch = User::factory()->create(['department_id' => $depts[6]->id, 'role_id' => $manager->id, 'field_id' => $this->f['Accra']]);
         $this->temaOfficer = User::factory()->create(['department_id' => $depts[6]->id, 'role_id' => $officer->id, 'field_id' => $this->f['Tema']]);
+        $this->hr = User::factory()->create(['department_id' => $depts[5]->id, 'role_id' => $manager->id]);
     }
 
     protected function tearDown(): void
@@ -250,5 +254,153 @@ class EmployeeMovementsTest extends TestCase
         // The old NRRIT address opens the new report for the same month.
         $this->actingAs($this->headOffice)->get('/employeesnrritView?month=2026-09')->assertRedirect(route('employees.movements', ['month' => '2026-09']));
         $this->actingAs($this->headOffice)->get('/employees-movements/export?month=2026-10')->assertOk()->assertDownload('HR_MOVEMENTS_OCTOBER_2026.xlsx');
+    }
+
+    public function test_hr_terminates_from_the_employee_page_and_it_shows_at_once(): void
+    {
+        $e = $this->hire($this->headOffice, 'Accra', '2026-01-10');
+        $this->actingAs($this->hr)->post('/terminateEmployee/' . $e->id, ['effective_date' => '2026-10-12', 'reason' => 'dismissed'])
+            ->assertSessionHas('error', fn ($m) => str_contains($m, 'terminated with effect from 12 Oct 2026'));
+        $this->assertSame(['Terminated', 'approved'], [$e->fresh()->status, $e->fresh()->ho_status]);
+        $this->assertSame(1, $this->report('2026-10-01', '2026-10-31')['totals']['terminated']);
+    }
+
+    public function test_a_termination_of_someone_with_an_unknown_joining_date_still_counts(): void
+    {
+        // Old record: no date of joining at all (the hire has no date).
+        $id = DB::table('employees')->insertGetId(['name' => 'Old guard', 'phone_number' => '233240000009', 'status' => 'Active', 'ho_status' => 'approved',
+            'field_id' => $this->f['Accra'], 'user_id' => $this->headOffice->id, 'created_at' => now(), 'updated_at' => now()]);
+        EmployeeMovementsBackfill::run();
+        $this->actingAs($this->headOffice)->post('/terminateEmployee/' . $id, ['effective_date' => '2026-10-12', 'reason' => 'resigned']);
+
+        $r = $this->report('2026-10-01', '2026-10-31');
+        $this->assertSame([1, 1, 0], [$r['totals']['opening'], $r['totals']['terminated'], $r['totals']['closing']]);
+        $this->assertReconciles($r);
+
+        // A termination dated before the joining date is not silently lost: it is listed.
+        $late = $this->hire($this->headOffice, 'Accra', '2026-10-20');
+        $this->actingAs($this->headOffice)->post('/terminateEmployee/' . $late->id, ['effective_date' => '2026-10-05', 'reason' => 'resigned']);
+        $r = $this->report('2026-10-01', '2026-10-31');
+        $this->assertSame([$late->id], array_column($r['conflicts'], 'employee_id'));
+        $this->assertReconciles($r);
+    }
+
+    private function attendance(employee $e, string $date, string $status, ?User $by = null): Attendance
+    {
+        $client = Client::firstOrCreate(['name' => 'DVLA'], ['business_name' => 'DVLA HQ', 'phone_number' => '0240000000', 'address' => 'Accra',
+            'field_id' => $this->f['Accra'], 'status' => 'Active', 'ho_status' => 'approved', 'user_id' => $this->headOffice->id]);
+
+        return Attendance::updateOrCreate(['employee_id' => $e->id, 'work_date' => $date, 'shift' => 'day'],
+            ['client_id' => $client->id, 'status' => $status, 'source' => 'manual', 'marked_by' => ($by ?? $this->branch)->id]);
+    }
+
+    public function test_a_T_on_the_attendance_sheet_asks_head_office_to_terminate(): void
+    {
+        $e = $this->hire($this->headOffice, 'Accra', '2026-01-10');
+        $row = $this->attendance($e, '2026-10-14', Attendance::TERMINATED);
+
+        $m = EmployeeMovement::where('employee_id', $e->id)->where('type', 'termination')->sole();
+        $this->assertSame(['pending', 'attendance', '2026-10-13'], [$m->status, $m->source, $m->effective_date->toDateString()]);
+        $this->assertSame(['Terminated', 'pending'], [$e->fresh()->status, $e->fresh()->ho_status], 'shows on the pending employees page');
+        $this->assertSame(1, $this->actingAs($this->headOffice)->get('/employeesPending')->viewData('pendingEmployees')->count());
+        $this->assertSame(0, $this->report('2026-10-01', '2026-10-31')['totals']['terminated'], 'counts only once approved');
+
+        // An earlier T moves the requested date; a second T does not ask twice.
+        $this->attendance($e, '2026-10-10', Attendance::TERMINATED);
+        $this->assertSame('2026-10-09', $m->fresh()->effective_date->toDateString());
+        $this->assertSame(1, EmployeeMovement::where('employee_id', $e->id)->where('type', 'termination')->count());
+
+        // Head office approves: counted in October.
+        $this->actingAs($this->headOffice)->post('/employeesAproval', ['employees' => [$e->id], 'action_type' => 'headOffice']);
+        $this->assertSame(1, $this->report('2026-10-01', '2026-10-31')['totals']['terminated']);
+    }
+
+    public function test_removing_the_T_withdraws_the_sheet_request(): void
+    {
+        $e = $this->hire($this->headOffice, 'Accra', '2026-01-10');
+        $row = $this->attendance($e, '2026-10-14', Attendance::TERMINATED);
+        $row->update(['status' => Attendance::PRESENT]);       // corrected on the sheet
+
+        $this->assertSame('cancelled', EmployeeMovement::where('employee_id', $e->id)->where('type', 'termination')->value('status'));
+        $this->assertSame(['Active', 'approved'], [$e->fresh()->status, $e->fresh()->ho_status]);
+
+        // Deleting the cell works the same way.
+        $row = $this->attendance($e, '2026-10-15', Attendance::TERMINATED);
+        $this->assertSame('Terminated', $e->fresh()->status);
+        $row->delete();
+        $this->assertSame('Active', $e->fresh()->status);
+    }
+
+    public function test_a_T_never_overrides_a_request_from_the_employee_page_or_a_terminated_guard(): void
+    {
+        $e = $this->hire($this->headOffice, 'Accra', '2026-01-10');
+        $this->actingAs($this->branch)->post('/terminateEmployee/' . $e->id, ['effective_date' => '2026-10-12', 'reason' => 'resigned']);
+        $row = $this->attendance($e, '2026-10-14', Attendance::TERMINATED);
+        $row->update(['status' => Attendance::PRESENT]);
+        $m = EmployeeMovement::where('employee_id', $e->id)->where('type', 'termination')->sole();
+        $this->assertSame(['pending', 'terminate', '2026-10-12'], [$m->status, $m->source, $m->effective_date->toDateString()], 'the page request stands');
+    }
+
+    public function test_undo_a_mistaken_termination_leaves_no_termination_or_reinstatement(): void
+    {
+        $e = $this->hire($this->headOffice, 'Accra', '2026-01-10');
+        $this->actingAs($this->hr)->post('/terminateEmployee/' . $e->id, ['effective_date' => '2026-10-12', 'reason' => 'absconded']);
+        $m = EmployeeMovement::where('employee_id', $e->id)->where('type', 'termination')->sole();
+
+        $this->actingAs($this->branch)->post('/employees-movements/' . $m->id . '/undo', ['why' => 'wrong guard selected'])->assertSessionHas('error');
+        $this->actingAs($this->hr)->post('/employees-movements/' . $m->id . '/undo', [])->assertSessionHasErrors('why');
+        $this->actingAs($this->hr)->post('/employees-movements/' . $m->id . '/undo', ['why' => 'wrong guard selected'])->assertSessionHas('success');
+
+        $this->assertSame(['Active', 'approved'], [$e->fresh()->status, $e->fresh()->ho_status]);
+        $this->assertStringContainsString('Undone: wrong guard selected', $m->fresh()->note);
+        $r = $this->report('2026-10-01', '2026-10-31');
+        $this->assertSame([0, 0, 1, 1], [$r['totals']['terminated'], $r['totals']['reinstated'], $r['totals']['opening'], $r['totals']['closing']]);
+        $this->actingAs($this->hr)->get('/employees/' . $e->id)->assertOk()->assertSee('Employment history')->assertSee('undone / withdrawn');
+
+        // Only the latest change can be undone: once re-instated properly, the old termination stays.
+        $this->actingAs($this->hr)->post('/terminateEmployee/' . $e->id, ['effective_date' => '2026-10-13', 'reason' => 'resigned']);
+        $t2 = EmployeeMovement::where('employee_id', $e->id)->where('type', 'termination')->where('status', 'approved')->sole();
+        $this->actingAs($this->hr)->post('/employeeReinstate/' . $e->id, ['effective_date' => '2026-10-18']);
+        $this->actingAs($this->hr)->post('/employees-movements/' . $t2->id . '/undo', ['why' => 'wrong guard selected'])->assertSessionHas('error');
+        $this->assertSame('approved', $t2->fresh()->status);
+    }
+
+    public function test_the_requester_can_withdraw_a_waiting_request(): void
+    {
+        $e = $this->hire($this->headOffice, 'Accra', '2026-01-10');
+        $this->actingAs($this->branch)->post('/terminateEmployee/' . $e->id, ['effective_date' => '2026-10-12', 'reason' => 'resigned']);
+        $m = EmployeeMovement::where('employee_id', $e->id)->where('type', 'termination')->sole();
+        $this->actingAs($this->temaOfficer)->post('/employees-movements/' . $m->id . '/undo', ['why' => 'not my request'])->assertSessionHas('error');
+        $this->actingAs($this->branch)->post('/employees-movements/' . $m->id . '/undo', ['why' => 'asked by mistake'])->assertSessionHas('success');
+        $this->assertSame(['cancelled', 'Active'], [$m->fresh()->status, $e->fresh()->status]);
+    }
+
+    public function test_edits_and_bulk_updates_keep_the_history_right(): void
+    {
+        $e = $this->hire($this->headOffice, 'Accra', '2026-01-10');
+
+        // A branch edit sends an active employee back to Pending AND moves them to Botwe.
+        $updated = EmployeeCreator::update($e->id, ['field_id' => $this->f['Botwe'], 'location' => 'Gate 2'], [], $this->branch, $this->headOffice->id);
+        $this->assertSame('transfer', EmployeeMovement::where('employee_id', $e->id)->latest('id')->value('type'), 'transfer recorded although the edit set Pending');
+
+        // Approving the edit is not a new recruit.
+        $updated->refresh()->forceFill(['ho_status' => 'pending'])->save();
+        $this->actingAs($this->headOffice)->post('/employeesAproval', ['employees' => [$e->id], 'action_type' => 'headOffice']);
+        $this->assertSame(1, EmployeeMovement::where('employee_id', $e->id)->where('type', 'hire')->count());
+        $this->assertSame('Active', $e->fresh()->status);
+
+        // Correcting the date of joining (edit form / bulk update) moves the hire.
+        EmployeeCreator::update($e->id, ['date_of_joining' => '2026-01-03'], [], $this->headOffice);
+        $this->assertSame('2026-01-03', EmployeeMovement::where('employee_id', $e->id)->where('type', 'hire')->value('effective_date')->toDateString());
+
+        // Bulk upload records the hire with its source.
+        $rows = [2 => array_merge(array_fill_keys(array_values(\App\Support\EmployeeBulkImport::COLUMNS), null),
+            ['full_name' => 'Ama', 'gender' => 'Female', 'phone_number' => '0240000077', 'payment_type' => 'Cash', 'field_office' => 'Accra', 'date_of_joining' => '2026-10-02'])];
+        $res = \App\Support\EmployeeBulkImport::validate($rows, $this->headOffice)['results'][2];
+        $this->assertSame([], $res['errors']);
+        $new = EmployeeCreator::create($res['employee'], $res['pay'], $this->headOffice, null, 'bulk_upload');
+        $this->assertSame(['approved', 'bulk_upload', '2026-10-02'], EmployeeMovement::where('employee_id', $new->id)->get(['status', 'source', 'effective_date'])
+            ->map(fn ($m) => [$m->status, $m->source, $m->effective_date->toDateString()])->first());
+        $this->assertReconciles($this->report('2026-10-01', '2026-10-31'));
     }
 }

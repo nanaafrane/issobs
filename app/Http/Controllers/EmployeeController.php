@@ -1169,35 +1169,14 @@ class EmployeeController extends Controller
             return back()->with('error', 'A ' . strtolower($M::LABELS[$type]) . ' request for ' . $name . ' is already waiting for head office.');
         }
 
-        $headOffice = (string) $user->role?->id === '1';
+        // Head office / HR decide at once; anyone else's request waits for them.
+        $headOffice = $M::canDecide($user);
         $date = \Carbon\Carbon::parse($data['effective_date'])->toDateString();
-        $approver = $data['staff'] ?? User::where('department_id', '1')->where('role_id', '1')->value('id');
-
-        DB::transaction(function () use ($employee, $user, $headOffice, $date, $data, $type, $terminate, $approver, $M) {
-            $previous = $employee->status;
-            $employee->status_date = $date;
-            $employee->user_id1 = $user->id;
-            if ($headOffice) {
-                $employee->status = $terminate ? 'Terminated' : 'Active';
-                $employee->ho_status = 'approved';
-                $employee->ho_date = now()->toDateString();
-                $employee->user_id2 = $user->id;
-            } else {
-                $employee->status = $terminate ? 'Terminated' : 'Re-Instate';
-                $employee->ho_status = 'pending';
-                $employee->user_id2 = $approver;
-                $employee->bran_status = 'approved';
-                $employee->bran_date = now()->toDateString();
-            }
-            $employee->save();
-
-            $M::record($employee, $type, $headOffice ? $M::APPROVED : $M::PENDING, $date, [
-                'reason' => $terminate ? $data['reason'] : null,
-                'note' => $data['note'] ?? null,
-                'previous_status' => $previous,
-                'source' => $terminate ? 'terminate' : 'reinstate',
-            ]);
-        });
+        $M::changeStatus($employee, $type, $date, [
+            'reason' => $terminate ? $data['reason'] : null,
+            'note' => $data['note'] ?? null,
+            'source' => $terminate ? 'terminate' : 'reinstate',
+        ], $user, isset($data['staff']) ? (int) $data['staff'] : null);
 
         $what = $terminate ? 'terminated' : 're-instated';
 
@@ -1446,7 +1425,11 @@ class EmployeeController extends Controller
                     $movement = match (true) {
                         $employee->status === 'Re-Instate' => \App\Support\EmployeeMovements::REINSTATEMENT,
                         $employee->status === 'Terminated' => \App\Support\EmployeeMovements::TERMINATION,
-                        in_array($employee->status, ['Pending', null, ''], true) => \App\Support\EmployeeMovements::HIRE,
+                        // An edit of someone already employed also comes back as Pending: that is
+                        // approving the edit, not a new recruit (no second hire).
+                        in_array($employee->status, ['Pending', null, ''], true)
+                            && ! \App\Models\EmployeeMovement::where('employee_id', $employee->id)->where('type', 'hire')->where('status', 'approved')->exists()
+                            => \App\Support\EmployeeMovements::HIRE,
                         default => null,
                     };
                     if ($employee->status === 'Pending' || $employee->status === 'Re-Instate' || $employee->status === null || $employee->status === '') {

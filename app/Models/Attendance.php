@@ -58,6 +58,18 @@ class Attendance extends Model
         'flags' => 'array',
     ];
 
+    /** A "T" on the sheet raises (or withdraws) a termination request: App\Support\AttendanceTerminations. */
+    protected static function booted(): void
+    {
+        $sync = function (self $row) {
+            if ($row->status === self::TERMINATED || $row->getOriginal('status') === self::TERMINATED || $row->wasChanged('employee_id')) {
+                \App\Support\AttendanceTerminations::sync((int) $row->employee_id);
+            }
+        };
+        static::saved($sync);
+        static::deleted($sync);
+    }
+
     public function client()
     {
         return $this->belongsTo(Client::class);

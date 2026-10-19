@@ -90,7 +90,10 @@ class employee extends Model
 
         // HR movements: an active employee moved to another field office (edit form, bulk update).
         static::updated(function (self $employee) {
-            if ($employee->wasChanged('field_id') && $employee->getOriginal('field_id') && $employee->status === 'Active') {
+            // Employed before this save: an edit (form or bulk update) can put an active
+            // employee back to Pending for approval in the same save that moves their office.
+            if ($employee->wasChanged('field_id') && $employee->getOriginal('field_id')
+                && ($employee->status === 'Active' || $employee->getOriginal('status') === 'Active')) {
                 \App\Support\EmployeeMovements::transferred($employee, $employee->getOriginal('field_id'));
             }
             // Date of joining corrected on the edit form / bulk update: the hire follows it.

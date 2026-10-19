@@ -9,7 +9,7 @@
                                     @if($move && $move->type !== 'hire')
                                         {{-- What head office is approving: the request's date and reason. --}}
                                         <div class="small text-muted">
-                                            {{ \App\Support\EmployeeMovements::LABELS[$move->type] }}{{ $move->effective_date ? ' from ' . $move->effective_date->format('d M Y') : '' }}{{ $move->reason ? ' · ' . \App\Support\EmployeeMovements::reasonLabel($move->reason) : '' }}
+                                            {{ \App\Support\EmployeeMovements::LABELS[$move->type] }}{{ $move->effective_date ? ' from ' . $move->effective_date->format('d M Y') : '' }}{{ $move->reason ? ' · ' . \App\Support\EmployeeMovements::reasonLabel($move->reason) : '' }}{{ in_array($move->source, ['attendance', 'overtime'], true) ? ' · from the attendance sheet' : '' }}
                                         </div>
                                     @endif
                                 </td>

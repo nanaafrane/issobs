@@ -34,8 +34,11 @@ class EmployeeMovementsReport
         $to = $to->copy()->startOfDay();
         $inScope = fn ($f) => $fieldIds === null || in_array((int) $f, $fieldIds, true);
 
-        $rows = DB::table('employee_movements')->where('status', 'approved')->whereNotNull('effective_date')
-            ->orderBy('effective_date')->orderBy('id')
+        // An approved hire with no known date (old records) counts as employed from before any
+        // period, so their later termination is never lost. Other undated movements wait for a date.
+        $rows = DB::table('employee_movements')->where('status', 'approved')
+            ->where(fn ($q) => $q->whereNotNull('effective_date')->orWhere('type', 'hire'))
+            ->orderByRaw('effective_date IS NOT NULL')->orderBy('effective_date')->orderBy('id')
             ->get(['id', 'employee_id', 'type', 'effective_date', 'reason', 'note', 'field_id', 'from_field_id', 'client_id', 'role_id',
                 'date_estimated', 'requested_by', 'decided_by', 'decided_at', 'source']);
 
@@ -43,11 +46,12 @@ class EmployeeMovementsReport
         $opening = null;
         $closing = null;
         $events = [];     // movements in the period, attributed to an office
+        $conflicts = [];  // movements that make no sense in order (e.g. terminated before joining)
         $fromStr = $from->toDateString();
         $toStr = $to->toDateString();
 
         foreach ($rows as $m) {
-            $date = substr((string) $m->effective_date, 0, 10);
+            $date = $m->effective_date ? substr((string) $m->effective_date, 0, 10) : '0000-00-00';
             if ($opening === null && $date >= $fromStr) {
                 $opening = $state;
             }
@@ -63,14 +67,18 @@ class EmployeeMovementsReport
                 case EmployeeMovements::HIRE:
                 case EmployeeMovements::REINSTATEMENT:
                     if ($before['active']) {
-                        continue 2;   // already employed: a duplicate, ignore
+                        if ($m->type === EmployeeMovements::REINSTATEMENT) {
+                            $conflicts[] = $m;   // re-instated while still employed
+                        }
+                        continue 2;   // already employed: a duplicate hire, ignore
                     }
                     $after = ['active' => true, 'field' => $office, 'since' => $date];
                     $m->office = $office;
                     break;
                 case EmployeeMovements::TERMINATION:
                     if (! $before['active']) {
-                        continue 2;   // not employed at that date: nothing to end
+                        $conflicts[] = $m;   // e.g. termination dated before the joining date
+                        continue 2;
                     }
                     $after = ['active' => false, 'field' => $before['field'], 'since' => null];
                     $m->office = $before['field'];
@@ -224,8 +232,51 @@ class EmployeeMovementsReport
             'pending' => self::pending($fieldIds, $names),
             'undated' => self::undated($fieldIds, $names),
             'mismatches' => self::mismatches($state, $fieldIds, $names),
+            'conflicts' => self::conflicts($conflicts, $fieldIds, $names),
+            'pending_counts' => self::pendingCounts($fieldIds),
             'payroll' => self::payrollCheck($from, $to, $opening, $closing, $events, $fieldIds),
         ];
+    }
+
+    /**
+     * Movements that could not be counted because of their order: a termination dated
+     * before the employee joined (or after an earlier termination), a re-instatement of
+     * someone still employed. Shown so HR can correct the dates.
+     */
+    private static function conflicts(array $list, ?array $fieldIds, array $names): array
+    {
+        if (! $list) {
+            return [];
+        }
+        $people = DB::table('employees')->whereIn('id', collect($list)->pluck('employee_id')->all())->get(['id', 'name', 'field_id'])->keyBy('id');
+        $hires = DB::table('employee_movements')->where('type', 'hire')->where('status', 'approved')
+            ->whereIn('employee_id', collect($list)->pluck('employee_id')->all())->pluck('effective_date', 'employee_id');
+        $out = [];
+        foreach ($list as $m) {
+            $p = $people[$m->employee_id] ?? null;
+            $office = (int) ($m->field_id ?: ($p->field_id ?? 0));
+            if ($fieldIds !== null && ! in_array($office, $fieldIds, true)) {
+                continue;
+            }
+            $out[] = [
+                'id' => (int) $m->id, 'employee_id' => (int) $m->employee_id, 'name' => $p->name ?? 'Employee #' . $m->employee_id,
+                'type' => EmployeeMovements::LABELS[$m->type] ?? $m->type, 'type_key' => $m->type, 'reason_key' => $m->reason,
+                'date' => substr((string) $m->effective_date, 0, 10), 'office' => $names[$office] ?? 'No office',
+                'problem' => $m->type === EmployeeMovements::TERMINATION
+                    ? 'Not counted: not employed on that date (joined ' . (($hires[$m->employee_id] ?? null) ? Carbon::parse($hires[$m->employee_id])->format('d M Y') : 'on an unknown date') . ', or already terminated).'
+                    : 'Not counted: still employed on that date.',
+            ];
+        }
+
+        return $out;
+    }
+
+    /** Requests waiting for head office, by type (shown beside the totals). */
+    private static function pendingCounts(?array $fieldIds): array
+    {
+        return DB::table('employee_movements as m')->join('employees as e', 'e.id', '=', 'm.employee_id')->where('m.status', 'pending')
+            ->when($fieldIds !== null, fn ($q) => $q->whereIn(DB::raw('COALESCE(m.field_id, e.field_id)'), $fieldIds ?: [0]))
+            ->selectRaw('m.type, COUNT(*) as n')->groupBy('m.type')->pluck('n', 'type')->map(fn ($n) => (int) $n)->all();
     }
 
     /** Terminations per 100 staff on average over the period. */
@@ -251,7 +302,7 @@ class EmployeeMovementsReport
             ])->all();
     }
 
-    /** Approved movements with no date: left out of every count until a date is set. */
+    /** Approved movements with no date. A hire counts as employed from before any period; others wait for a date. */
     private static function undated(?array $fieldIds, array $names): array
     {
         return DB::table('employee_movements as m')->join('employees as e', 'e.id', '=', 'm.employee_id')

@@ -4,6 +4,8 @@ namespace App\Support;
 
 use App\Models\employee;
 use App\Models\EmployeeMovement;
+use App\Models\User;
+use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 
@@ -58,6 +60,137 @@ class EmployeeMovements
         return self::REASONS[$reason] ?? ($reason ? ucfirst(str_replace('_', ' ', $reason)) : 'Not recorded');
     }
 
+    /**
+     * Who decides terminations / re-instatements at once (and approves other people's
+     * requests): head office (role 1, Invoice) and an HR manager - the same people who
+     * approve on the pending employees page. Anyone else's request waits for them.
+     */
+    public static function canDecide(?User $user): bool
+    {
+        return $user !== null && ((string) $user->role?->id === '1' || $user->hasRole(['Invoice'])
+            || ($user->hasRole(['Manager']) && $user->hasPermission('HR')));
+    }
+
+    /** The head-office user a request is assigned to when the requester picks nobody. */
+    public static function defaultApprover(): ?int
+    {
+        $id = User::where('department_id', '1')->where('role_id', '1')->value('id');
+
+        return $id ? (int) $id : null;
+    }
+
+    /**
+     * Terminate or re-instate an employee: the ONE place both happen, whoever asks
+     * (employee page, attendance sheet, overtime). A decider's change is approved at once;
+     * anyone else's is a request: the employee shows as pending on the pending employees
+     * page until head office / HR approves or declines it.
+     *
+     * @param array $extra reason, note, source, previous_status
+     */
+    public static function changeStatus(employee $e, string $type, string $date, array $extra, ?User $by, ?int $approverId = null): EmployeeMovement
+    {
+        $terminate = $type === self::TERMINATION;
+        $decides = self::canDecide($by);
+
+        return DB::transaction(function () use ($e, $type, $date, $extra, $by, $approverId, $terminate, $decides) {
+            $previous = $e->status;
+            $e->status_date = $date;
+            $e->user_id1 = $by?->id;
+            if ($decides) {
+                $e->status = $terminate ? 'Terminated' : 'Active';
+                $e->ho_status = 'approved';
+                $e->ho_date = now()->toDateString();
+                $e->user_id2 = $by->id;
+            } else {
+                $e->status = $terminate ? 'Terminated' : 'Re-Instate';
+                $e->ho_status = 'pending';
+                $e->user_id2 = $approverId ?: self::defaultApprover();
+                $e->bran_status = 'approved';
+                $e->bran_date = now()->toDateString();
+            }
+            $e->save();
+
+            return self::record($e, $type, $decides ? self::APPROVED : self::PENDING, $date, $extra + [
+                'previous_status' => $previous,
+                'user_id' => $by?->id,
+            ]);
+        });
+    }
+
+    /**
+     * Undo a termination / re-instatement entered by mistake. The movement is kept, marked
+     * cancelled with who undid it and why, and counts in nothing - so a wrong termination is
+     * NOT reported as a termination plus a re-instatement. Only the employee's latest status
+     * change can be undone, and only while their status still reflects it.
+     *
+     * @return string|null an error message, or null when done
+     */
+    public static function undo(EmployeeMovement $m, User $by, string $why): ?string
+    {
+        if (! self::canDecide($by)) {
+            return 'Only head office or HR can undo a termination or re-instatement.';
+        }
+        if (! in_array($m->type, [self::TERMINATION, self::REINSTATEMENT], true)) {
+            return 'Only a termination or a re-instatement can be undone.';
+        }
+        $e = employee::find($m->employee_id);
+        if (! $e) {
+            return 'The employee no longer exists.';
+        }
+        if ($m->status === self::PENDING) {
+            return self::withdraw($m, $by, $why);
+        }
+        if ($m->status !== self::APPROVED) {
+            return 'This ' . strtolower(self::LABELS[$m->type]) . ' is already ' . $m->status . '.';
+        }
+        $latest = EmployeeMovement::where('employee_id', $e->id)->whereIn('type', [self::TERMINATION, self::REINSTATEMENT])
+            ->whereIn('status', [self::APPROVED, self::PENDING])->latest('id')->first();
+        if ($latest?->id !== $m->id) {
+            return 'Only the latest termination or re-instatement can be undone; this one has been followed by another.';
+        }
+        $expected = $m->type === self::TERMINATION ? 'Terminated' : 'Active';
+        if ($e->status !== $expected) {
+            return $e->name . ' is now ' . ($e->status ?: 'without a status') . ', so this cannot be undone here.';
+        }
+
+        DB::transaction(function () use ($m, $e, $by, $why) {
+            $m->update(['status' => self::CANCELLED, 'decided_by' => $by->id, 'decided_at' => now(),
+                'note' => mb_substr(trim(($m->note ? $m->note . ' · ' : '') . 'Undone: ' . $why), 0, 255)]);
+            $e->status = $m->type === self::TERMINATION ? ($m->previous_status && $m->previous_status !== 'Terminated' ? $m->previous_status : 'Active') : 'Terminated';
+            if ($e->status === 'Re-Instate' || $e->status === 'Pending') {
+                $e->status = 'Active';
+            }
+            $e->ho_status = 'approved';
+            $e->status_date = null;
+            $e->save();
+        });
+
+        return null;
+    }
+
+    /** Withdraw a request still waiting for head office (requester or a decider). Error message or null. */
+    public static function withdraw(EmployeeMovement $m, User $by, string $why = ''): ?string
+    {
+        if ($m->status !== self::PENDING || ! in_array($m->type, [self::TERMINATION, self::REINSTATEMENT], true)) {
+            return 'Only a termination or re-instatement request still waiting for approval can be withdrawn.';
+        }
+        if (! self::canDecide($by) && (int) $m->requested_by !== (int) $by->id) {
+            return 'Only the person who asked, head office or HR can withdraw this request.';
+        }
+        $e = employee::find($m->employee_id);
+        DB::transaction(function () use ($m, $e, $by, $why) {
+            $m->update(['status' => self::CANCELLED, 'decided_by' => $by->id, 'decided_at' => now(),
+                'note' => mb_substr(trim(($m->note ? $m->note . ' · ' : '') . 'Withdrawn' . ($why !== '' ? ': ' . $why : '')), 0, 255)]);
+            if ($e) {
+                $e->status = $m->previous_status ?: ($m->type === self::TERMINATION ? 'Active' : 'Terminated');
+                $e->ho_status = 'approved';
+                $e->save();
+            }
+        });
+
+        return null;
+    }
+
     /** Office, client, role and department of the employee right now. */
     private static function snapshot(employee $e): array
     {
@@ -80,6 +213,10 @@ class EmployeeMovements
         $userId = $extra['user_id'] ?? Auth::id();
         unset($extra['user_id']);
 
+        if (in_array($type, [self::TERMINATION, self::REINSTATEMENT], true) && $effectiveDate) {
+            self::alignEstimatedHire($e->id, Carbon::parse($effectiveDate)->toDateString());
+        }
+
         return EmployeeMovement::create(array_merge(self::snapshot($e), [
             'employee_id' => $e->id,
             'type' => $type,
@@ -90,6 +227,17 @@ class EmployeeMovements
             'decided_by' => $status === self::APPROVED ? $userId : null,
             'decided_at' => $status === self::APPROVED ? $now : null,
         ], $extra));
+    }
+
+    /**
+     * A hire whose date was only guessed can't be after a termination / re-instatement:
+     * move it back to that date (still marked estimated). A real date of joining is never
+     * moved: the report lists the clash for HR to correct instead.
+     */
+    public static function alignEstimatedHire(int $employeeId, string $date): void
+    {
+        EmployeeMovement::where('employee_id', $employeeId)->where('type', self::HIRE)->where('date_estimated', true)
+            ->whereNotNull('effective_date')->where('effective_date', '>', $date)->update(['effective_date' => $date]);
     }
 
     public static function pending(int $employeeId, ?string $type = null): ?EmployeeMovement

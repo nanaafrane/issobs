@@ -34,7 +34,8 @@
       $transfersNet = $t['transfers_in'] - $t['transfers_out'];
       $dateCell = fn ($row) => \Carbon\Carbon::parse($row['date'])->format('d M Y') . ($row['estimated'] ? ' <span class="mv-est" title="Date estimated from old records">est.</span>' : '');
       $tenure = fn ($d) => $d === null ? '–' : ($d < 60 ? $d . ' days' : ($d < 730 ? round($d / 30.4) . ' months' : round($d / 365, 1) . ' years'));
-      $attention = count($r['undated']) + count($r['mismatches']);
+      $attention = count($r['undated']) + count($r['mismatches']) + count($r['conflicts']);
+      $waiting = $r['pending_counts'];
   @endphp
   <div class="container-xxl flex-grow-1 container-p-y">
 
@@ -96,15 +97,21 @@
               <div class="mv-flow" id="mvFlow">
                   <div class="mv-step total"><div class="label">Headcount at start</div><div class="v">{{ number_format($t['opening']) }}</div><div class="small text-muted">end of {{ $r['from']->copy()->subDay()->format('d M Y') }}</div></div>
                   <div class="mv-op">+</div>
-                  <div class="mv-step"><div class="label">New recruits</div><div class="v mv-plus">{{ number_format($t['hires']) }}</div></div>
+                  <div class="mv-step"><div class="label">New recruits</div><div class="v mv-plus">{{ number_format($t['hires']) }}</div>
+                      @if(! empty($waiting['hire']))<div class="small text-warning">+{{ $waiting['hire'] }} waiting for approval</div>@endif
+                  </div>
                   <div class="mv-op">+</div>
-                  <div class="mv-step"><div class="label">Re-instated</div><div class="v mv-plus">{{ number_format($t['reinstated']) }}</div></div>
+                  <div class="mv-step"><div class="label">Re-instated</div><div class="v mv-plus">{{ number_format($t['reinstated']) }}</div>
+                      @if(! empty($waiting['reinstatement']))<div class="small text-warning">+{{ $waiting['reinstatement'] }} waiting for approval</div>@endif
+                  </div>
                   @if($t['transfers_in'] || $t['transfers_out'])
                   <div class="mv-op">±</div>
                   <div class="mv-step"><div class="label">Transfers (in − out)</div><div class="v">{{ $transfersNet > 0 ? '+' : '' }}{{ $transfersNet }}</div><div class="small text-muted">{{ $t['transfers_in'] }} in · {{ $t['transfers_out'] }} out</div></div>
                   @endif
                   <div class="mv-op">−</div>
-                  <div class="mv-step"><div class="label">Terminated</div><div class="v mv-minus">{{ number_format($t['terminated']) }}</div></div>
+                  <div class="mv-step"><div class="label">Terminated</div><div class="v mv-minus">{{ number_format($t['terminated']) }}</div>
+                      @if(! empty($waiting['termination']))<div class="small text-warning">+{{ $waiting['termination'] }} waiting for approval</div>@endif
+                  </div>
                   <div class="mv-op">=</div>
                   <div class="mv-step total"><div class="label">Headcount at end</div><div class="v">{{ number_format($t['closing']) }}</div><div class="small text-muted">end of {{ $r['to']->format('d M Y') }}</div></div>
               </div>
@@ -278,7 +285,7 @@
                           <p>@foreach($r['payroll']['not_employed'] as $p)<a href="{{ url('employees', $p['employee_id']) }}">{{ $p['name'] }}</a>{{ $loop->last ? '' : ', ' }}@endforeach</p>
                       @endif
                       @if(count($r['undated']))
-                          <p class="mb-1"><strong>No date recorded</strong> (left out of every count until a date is set)</p>
+                          <p class="mb-1"><strong>No date recorded</strong> (a new recruit with no date counts as employed from before the period; anything else is left out until it has a date)</p>
                           <p>
                               @foreach($r['undated'] as $p)
                                   <a href="{{ url('employees', $p['employee_id']) }}">{{ $p['name'] }}</a> ({{ $p['type'] }})
@@ -289,6 +296,19 @@
                                   {{ $loop->last ? '' : ' · ' }}
                               @endforeach
                           </p>
+                      @endif
+                      @if(count($r['conflicts']))
+                          <p class="mb-1"><strong>Not counted: dates out of order</strong> (correct the date)</p>
+                          <ul class="mb-3">
+                              @foreach($r['conflicts'] as $p)
+                                  <li><a href="{{ url('employees', $p['employee_id']) }}">{{ $p['name'] }}</a> – {{ $p['type'] }} {{ \Carbon\Carbon::parse($p['date'])->format('d M Y') }}, {{ $p['office'] }}. {{ $p['problem'] }}
+                                      @if($canCorrect)
+                                          <button type="button" class="btn btn-link btn-sm p-0 mv-fix" data-id="{{ $p['id'] }}" data-type="{{ $p['type_key'] }}"
+                                                  data-name="{{ $p['name'] }}" data-date="{{ $p['date'] }}" data-reason="{{ $p['reason_key'] }}" data-note="">correct</button>
+                                      @endif
+                                  </li>
+                              @endforeach
+                          </ul>
                       @endif
                       @if(count($r['mismatches']))
                           <p class="mb-1"><strong>Status disagrees with the movements</strong> (status changed outside Terminate / Re-instate)</p>

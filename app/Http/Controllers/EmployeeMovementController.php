@@ -125,6 +125,9 @@ class EmployeeMovementController extends Controller
             $movement->note = $data['note'];
         }
         $movement->save();
+        if (in_array($movement->type, [EmployeeMovements::TERMINATION, EmployeeMovements::REINSTATEMENT], true)) {
+            EmployeeMovements::alignEstimatedHire($movement->employee_id, $movement->effective_date->toDateString());
+        }
 
         // A corrected hire date also fills an empty date of joining.
         if ($movement->type === EmployeeMovements::HIRE) {
@@ -135,6 +138,28 @@ class EmployeeMovementController extends Controller
 
         return back()->with('success', EmployeeMovements::LABELS[$movement->type] . ' of ' . $name . ' corrected: ' . $old . ' → '
             . $movement->effective_date->format('d M Y') . '.');
+    }
+
+    /**
+     * Undo a termination / re-instatement entered by mistake (head office / HR), or withdraw a
+     * request still waiting (also the person who asked). Kept in the history as cancelled;
+     * counts in nothing - a mistaken termination is not reported as terminated + re-instated.
+     */
+    public function undo(Request $request, EmployeeMovement $movement)
+    {
+        $data = $request->validate(['why' => ['required', 'string', 'min:5', 'max:150']],
+            ['why.required' => 'Say why (e.g. "terminated the wrong guard").', 'why.min' => 'Say why in a few words.']);
+        $pending = $movement->status === EmployeeMovements::PENDING;
+        $error = $pending
+            ? EmployeeMovements::withdraw($movement, Auth::user(), $data['why'])
+            : EmployeeMovements::undo($movement, Auth::user(), $data['why']);
+        if ($error) {
+            return back()->with('error', $error);
+        }
+        $name = employee::whereKey($movement->employee_id)->value('name');
+
+        return back()->with('success', ($pending ? 'Request withdrawn' : EmployeeMovements::LABELS[$movement->type] . ' undone')
+            . ' for ' . $name . '. Status is now ' . employee::whereKey($movement->employee_id)->value('status') . '.');
     }
 
     /** Old NRRIT URLs: ?month=YYYY-MM keeps working. */
