@@ -41,6 +41,8 @@ Route::get('/', function () {
 Auth::routes();
 
 Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
+Route::get('dashboard/{board}', [App\Http\Controllers\DashboardController::class, 'show'])
+    ->whereIn('board', ['accounts', 'hr', 'operations'])->name('dashboard.show');
 Route::get('staffAdd', [HomeController::class, 'staffCreate']);
 Route::get('staff', [HomeController::class, 'showAllStaffs']);
 Route::get('staff/{id}', [HomeController::class, 'show']);
