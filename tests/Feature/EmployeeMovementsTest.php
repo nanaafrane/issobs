@@ -578,4 +578,43 @@ class EmployeeMovementsTest extends TestCase
         $this->actingAs($this->hr)->get('/employees-movements?month=2026-10')->assertOk()
             ->assertSee('Active at start')->assertSee('incl. 1 awaiting termination approval')->assertSee('All employees on record today, by office');
     }
+
+    public function test_the_employees_report_shows_the_same_figures_as_hr_movements_and_its_trend_adds_up(): void
+    {
+        $a = $this->hire($this->headOffice, 'Accra', '2026-01-10');
+        $b = $this->hire($this->headOffice, 'Botwe', '2026-02-10');
+        $this->hire($this->headOffice, 'Accra', '2026-08-03');
+        $this->hire($this->headOffice, 'Tema', '2026-10-04');
+        $this->actingAs($this->hr)->post('/terminateEmployee/' . $b->id, ['effective_date' => '2026-09-20', 'reason' => 'resigned']);
+        $a->field_id = $this->f['Botwe'];                 // transfer, 20 Oct
+        $a->save();
+
+        $res = $this->actingAs($this->hr)->get('/employee-report?period=monthly&date=2026-10-15')->assertOk();
+        $this->assertSame($this->report('2026-10-01', '2026-10-31')['totals'], $res->viewData('report')['totals']);
+        $res->assertSee('Active at start')->assertSee('See who (HR movements)');
+
+        // Every bucket of the trend equals the HR movements report for that month, per office too.
+        foreach ([null, [$this->f['Accra']], [$this->f['Botwe']]] as $scope) {
+            $buckets = [];
+            for ($m = 1; $m <= 10; $m++) {
+                $f = Carbon::create(2026, $m, 1);
+                $buckets[] = [$f->copy(), $f->copy()->endOfMonth()->startOfDay(), $f->format('M')];
+            }
+            foreach (EmployeeMovementsReport::series($buckets, $scope) as $i => $row) {
+                $x = EmployeeMovementsReport::build($buckets[$i][0], $buckets[$i][1], $scope)['totals'];
+                foreach (['opening', 'hires', 'reinstated', 'terminated', 'transfers_in', 'transfers_out', 'closing'] as $k) {
+                    $this->assertSame($x[$k], $row[$k], json_encode($scope) . " {$row['label']} $k");
+                }
+            }
+        }
+
+        // Quarterly and yearly views, and an office filter, render with matching totals.
+        $q = $this->actingAs($this->hr)->get('/employee-report?period=quarterly&date=2026-08-15')->assertOk()->viewData('report');
+        $this->assertSame($this->report('2026-07-01', '2026-09-30')['totals'], $q['totals']);
+        $y = $this->actingAs($this->hr)->get('/employee-report?period=yearly&date=2026-08-15&field=' . $this->f['Accra'])->assertOk()->viewData('report');
+        $this->assertSame($this->report('2026-01-01', '2026-12-31', [$this->f['Accra']])['totals'], $y['totals']);
+        // A field office only sees its own offices.
+        $t = $this->actingAs($this->temaOfficer)->get('/employee-report?period=monthly&date=2026-10-15&field=' . $this->f['Accra'])->assertOk()->viewData('report');
+        $this->assertSame(1, $t['totals']['hires'], 'Tema + Shai Hills only');
+    }
 }

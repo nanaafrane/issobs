@@ -36,181 +36,67 @@ class EmployeeController extends Controller
     }
 
 
-        public function report(Request $request)
+    /**
+     * Employees report: the HR movements figures (App\Support\EmployeeMovementsReport) for a
+     * period, plus their trend, so this page and the HR movements page always agree.
+     * Active at start + new recruits + re-instated +/- transfers - terminated = active at end.
+     */
+    public function report(Request $request)
     {
-        $period = $request->input('period', 'monthly');
-        $anchor = $request->filled('date') ? Carbon::parse($request->date) : Carbon::today();
-
-        [$from, $to] = match ($period) {
-            'daily' => [$anchor->copy()->startOfDay(), $anchor->copy()->endOfDay()],
-            'weekly' => [$anchor->copy()->startOfWeek(), $anchor->copy()->endOfWeek()],
-            'quarterly' => [$anchor->copy()->startOfQuarter(), $anchor->copy()->endOfQuarter()],
-            'semiannual' => ($anchor->month <= 6)
-                ? [$anchor->copy()->startOfYear(), $anchor->copy()->startOfYear()->addMonths(5)->endOfMonth()]
-                : [$anchor->copy()->startOfYear()->addMonths(6), $anchor->copy()->endOfYear()],
-            'yearly' => [$anchor->copy()->startOfYear(), $anchor->copy()->endOfYear()],
-            default => [$anchor->copy()->startOfMonth(), $anchor->copy()->endOfMonth()],
-        };
-
-        // Hires, re-instatements and terminations come from employee_movements: approved and
-        // dated, each counted once (nrrit counted re-instated people as new recruits too).
-        $moves = fn (array $types, $a, $b) => DB::table('employee_movements')->where('status', 'approved')
-            ->whereIn('type', $types)->whereBetween('effective_date', [Carbon::parse($a)->toDateString(), Carbon::parse($b)->toDateString()]);
-        $base = employee::whereIn('employees.id', $moves(['hire'], $from, $to)->select('employee_id'));
-
-        $total = employee::where('ho_status', 'approved')->where('status', 'Active')->orwhere('status', 'Terminated')->count();
-        // new recruits + re-instated in the period
-        $count = $moves(['hire', 'reinstatement'], $from, $to)->count();
-
-        // Prefer salary-based active count for the selected period; fallback to employees active status
-        $salaryActiveCount = Salary::whereBetween('salary_month', [$from, $to])->count();
-        $active = $salaryActiveCount > 0 ? $salaryActiveCount : employee::where('status', 'Active')->count();
-        $avgSalary = (float) employee::whereBetween('date_of_joining', [$from, $to])->where('ho_status', 'approved')->where('status', 'Active')->avg('basic_salary') ?: 0.0;
-        // Overall headcount by status for KPIs
-        $terminated = employee::where('status', 'Terminated')->where('ho_status', 'approved')->count();
-        $pending = employee::where('status', 'Pending')->where('ho_status', 'approved')->count();
-
-        $byField = (clone $base)->join('fields', 'fields.id', '=', 'employees.field_id')
-            ->select('fields.name as field_name', DB::raw('COUNT(employees.id) as cnt'))
-            ->groupBy('fields.name')->orderByDesc('cnt')->get();
-
-        $byDepartment = (clone $base)->join('departments', 'departments.id', '=', 'employees.department_id')
-            ->select('departments.name as dept_name', DB::raw('COUNT(employees.id) as cnt'))
-            ->groupBy('departments.name')->orderByDesc('cnt')->limit(10)->get();
-
-        // Status counts (from employees table)
-        $byStatus = (clone $base)->select('status', DB::raw('COUNT(*) as cnt'))
-            ->groupBy('status')->get();
-
-        // Trend of hires: include reinstate events from nrrit as separate counts when present
-        $trend = (clone $base)->select('date_of_joining', DB::raw('COUNT(id) as total'))
-            ->groupBy('date_of_joining')->orderBy('date_of_joining')->get();
-
-        // Roles summary (overall headcount per role) and top roles
-        // Role summary limited to the selected period (hires in period by role)
-        // Role summary: hires in period plus reinstatements mapped to current role
-        // role at the time of the movement
-        $roleRows = $moves(['hire', 'reinstatement'], $from, $to)
-            ->join('roles', 'roles.id', '=', 'employee_movements.role_id')
-            ->select('roles.name', DB::raw('COUNT(*) as cnt'))->groupBy('roles.name')->get();
-        $roleMap = [];
-        foreach ($roleRows as $r) { $roleMap[$r->name] = ($roleMap[$r->name] ?? 0) + $r->cnt; }
-        $roleSummary = collect(array_map(function($k,$v){ return (object)['name'=>$k,'cnt'=>$v]; }, array_keys($roleMap), $roleMap))->sortByDesc('cnt')->values();
-        $topRoles = $roleSummary->take(10);
-
-        // Terminations in the selected period and by-month terminations
-        $terminationsInPeriod = $moves(['termination'], $from, $to)->count();
-
-        $terminationsTrend = $moves(['termination'], $from, $to)->get(['effective_date'])
-            ->groupBy(fn ($r) => substr($r->effective_date, 0, 7) . '-01')
-            ->map(fn ($g, $month) => (object) ['month' => $month, 'total' => $g->count()])->sortKeys()->values();
-
-        // Field-level summaries: active, hires this period, terminations this period
-        $fields = Field::orderBy('name')->get();
-
-        $activePerField = employee::where('ho_status', 'approved')->where('status', 'Active')
-            ->select('field_id', DB::raw('COUNT(*) as cnt'))->groupBy('field_id')->pluck('cnt', 'field_id');
-
-        // office at the time of the movement
-        $hiresPerField = $moves(['hire', 'reinstatement'], $from, $to)
-            ->select('field_id', DB::raw('COUNT(*) as cnt'))->groupBy('field_id')->pluck('cnt', 'field_id');
-
-        $termsPerField = $moves(['termination'], $from, $to)
-            ->select('field_id', DB::raw('COUNT(*) as cnt'))->groupBy('field_id')->pluck('cnt', 'field_id');
-
-        // Prepare arrays for charts
-        $fieldLabels = $fields->pluck('name');
-        $fieldActiveArr = $fields->pluck('id')->map(fn($id) => $activePerField[$id] ?? 0);
-        $fieldHiresArr = $fields->pluck('id')->map(fn($id) => $hiresPerField[$id] ?? 0);
-        $fieldTermsArr = $fields->pluck('id')->map(fn($id) => $termsPerField[$id] ?? 0);
-
-        $roleLabels = $roleSummary->pluck('name');
-        $roleCounts = $roleSummary->pluck('cnt');
-
-        $topRoleLabels = $topRoles->pluck('name');
-        $topRoleCounts = $topRoles->pluck('cnt');
-
-        $deptLabels = $byDepartment->pluck('dept_name');
-        $deptCounts = $byDepartment->pluck('cnt');
-
-        $terminationMonths = $terminationsTrend->pluck('month');
-        $terminationCounts = $terminationsTrend->pluck('total');
-
-        // Build period-aligned buckets for overlay chart (hires vs terminations)
-        $overlayLabels = [];
-        $overlayHires = [];
-        $overlayTerms = [];
-        $cursor = $from->copy();
-        while ($cursor <= $to) {
-            if ($period === 'daily') {
-                $start = $cursor->copy()->startOfDay();
-                $end = $cursor->copy()->endOfDay();
-                $next = $cursor->copy()->addDay();
-            } elseif ($period === 'weekly') {
-                $start = $cursor->copy()->startOfWeek();
-                $end = $cursor->copy()->endOfWeek();
-                $next = $cursor->copy()->addWeek();
-            } elseif ($period === 'quarterly') {
-                $start = $cursor->copy()->startOfQuarter();
-                $end = $cursor->copy()->endOfQuarter();
-                $next = $cursor->copy()->addQuarter();
-            } elseif ($period === 'semiannual') {
-                $start = $cursor->month <= 6
-                    ? $cursor->copy()->startOfYear()
-                    : $cursor->copy()->startOfYear()->addMonths(6);
-                $end = $cursor->month <= 6
-                    ? $cursor->copy()->startOfYear()->addMonths(5)->endOfMonth()
-                    : $cursor->copy()->endOfYear();
-                $next = $cursor->copy()->addMonths(6);
-            } elseif ($period === 'yearly') {
-                $start = $cursor->copy()->startOfYear();
-                $end = $cursor->copy()->endOfYear();
-                $next = $cursor->copy()->addYear();
-            } else {
-                // monthly
-                $start = $cursor->copy()->startOfMonth();
-                $end = $cursor->copy()->endOfMonth();
-                $next = $cursor->copy()->addMonth();
-            }
-
-            $label = $start->format('Y-m-d');
-            $overlayLabels[] = $label;
-            $overlayHires[] = $moves(['hire', 'reinstatement'], $start, $end)->count();
-            $overlayTerms[] = $moves(['termination'], $start, $end)->count();
-
-            $cursor = $next;
+        $periods = ['weekly' => 'Weekly', 'monthly' => 'Monthly', 'quarterly' => 'Quarterly', 'semiannual' => 'Half-year', 'yearly' => 'Yearly'];
+        $period = array_key_exists($request->input('period'), $periods) ? $request->input('period') : 'monthly';
+        try {
+            $anchor = $request->filled('date') ? Carbon::parse($request->input('date')) : Carbon::today();
+        } catch (\Throwable) {
+            $anchor = Carbon::today();
         }
 
-        // projection: average hires of last 4 periods
-        $samples = [];
-        for ($i = 1; $i <= 4; $i++) {
-            [$pf, $pt] = match ($period) {
-                'daily' => [$anchor->copy()->subDays($i)->startOfDay(), $anchor->copy()->subDays($i)->endOfDay()],
-                'weekly' => [$anchor->copy()->subWeeks($i)->startOfWeek(), $anchor->copy()->subWeeks($i)->endOfWeek()],
-                'quarterly' => [
-                    $anchor->copy()->subMonths(3 * $i)->startOfQuarter(),
-                    $anchor->copy()->subMonths(3 * $i)->endOfQuarter(),
-                ],
-                'semiannual' => ($anchor->copy()->subMonths(6 * $i)->month <= 6)
-                    ? [$anchor->copy()->subMonths(6 * $i)->startOfYear(), $anchor->copy()->subMonths(6 * $i)->startOfYear()->addMonths(5)->endOfMonth()]
-                    : [$anchor->copy()->subMonths(6 * $i)->startOfYear()->addMonths(6), $anchor->copy()->subMonths(6 * $i)->endOfYear()],
-                'yearly' => [$anchor->copy()->subYears($i)->startOfYear(), $anchor->copy()->subYears($i)->endOfYear()],
-                default => [$anchor->copy()->subMonths($i)->startOfMonth(), $anchor->copy()->subMonths($i)->endOfMonth()],
+        $window = function (Carbon $d) use ($period): array {
+            return match ($period) {
+                'weekly' => [$d->copy()->startOfWeek(), $d->copy()->endOfWeek()->startOfDay()],
+                'quarterly' => [$d->copy()->startOfQuarter(), $d->copy()->endOfQuarter()->startOfDay()],
+                'semiannual' => $d->month <= 6
+                    ? [$d->copy()->startOfYear(), $d->copy()->startOfYear()->addMonths(5)->endOfMonth()->startOfDay()]
+                    : [$d->copy()->startOfYear()->addMonths(6), $d->copy()->endOfYear()->startOfDay()],
+                'yearly' => [$d->copy()->startOfYear(), $d->copy()->endOfYear()->startOfDay()],
+                default => [$d->copy()->startOfMonth(), $d->copy()->endOfMonth()->startOfDay()],
             };
-            $samples[] = $moves(['hire', 'reinstatement'], $pf, $pt)->count();
+        };
+        $label = fn (Carbon $f, Carbon $t) => match ($period) {
+            'weekly' => $f->format('d M'),
+            'quarterly' => 'Q' . $f->quarter . ' ' . $f->format('Y'),
+            'semiannual' => ($f->month <= 6 ? 'H1 ' : 'H2 ') . $f->format('Y'),
+            'yearly' => $f->format('Y'),
+            default => $f->format('M Y'),
+        };
+        [$from, $to] = $window($anchor);
+
+        // Offices: head office sees all (or picks one); a field office its own + sub-offices.
+        [$all, $allowed] = \App\Support\EmployeeMovementsReport::scopeFor(Auth::user());
+        $field = $request->filled('field') ? (int) $request->input('field') : null;
+        $fieldIds = $field && in_array($field, $allowed, true) ? array_values(array_intersect(Field::managedIds($field), $allowed)) : ($all ? null : $allowed);
+        $offices = Field::whereIn('id', $allowed ?: [0])->orderBy('name')->get(['id', 'name']);
+
+        $report = \App\Support\EmployeeMovementsReport::build($from, $to, $fieldIds);
+
+        // Trend: the selected period and the ones before it (12 months, 8 quarters, ...).
+        $count = ['weekly' => 12, 'monthly' => 12, 'quarterly' => 8, 'semiannual' => 6, 'yearly' => 5][$period];
+        $buckets = [];
+        $cursor = $from->copy();
+        for ($i = 0; $i < $count; $i++) {
+            [$bf, $bt] = $window($cursor);
+            array_unshift($buckets, [$bf, $bt, $label($bf, $bt)]);
+            $cursor = $bf->copy()->subDay();
         }
+        $trend = \App\Support\EmployeeMovementsReport::series($buckets, $fieldIds);
 
-        $projection = $samples ? round(array_sum($samples) / count($samples), 2) : 0.0;
+        // Link to the same figures, person by person, on the HR movements page.
+        $movementsUrl = route('employees.movements', array_filter($period === 'monthly'
+            ? ['month' => $from->format('Y-m'), 'field' => $field]
+            : ['mode' => 'range', 'from' => $from->toDateString(), 'to' => $to->toDateString(), 'field' => $field]));
 
-        return view('employees.report', compact(
-            'period', 'anchor', 'from', 'to', 'total', 'count', 'active', 'avgSalary',
-            'byField', 'byDepartment', 'byStatus', 'trend', 'projection',
-            'roleSummary', 'topRoles', 'terminationsInPeriod', 'terminationsTrend', 'fields', 'activePerField', 'hiresPerField', 'termsPerField',
-            'fieldLabels', 'fieldActiveArr', 'fieldHiresArr', 'fieldTermsArr',
-            'roleLabels', 'roleCounts', 'topRoleLabels', 'topRoleCounts',
-            'deptLabels', 'deptCounts', 'terminationMonths', 'terminationCounts',
-            'overlayLabels', 'overlayHires', 'overlayTerms', 'terminated', 'pending'
-        ));
+        return view('employees.report', compact('period', 'periods', 'anchor', 'from', 'to', 'report', 'trend', 'offices', 'field', 'all', 'movementsUrl')
+            + ['periodLabel' => $label($from, $to)]);
     }
 
     /**

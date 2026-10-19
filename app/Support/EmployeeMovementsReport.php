@@ -192,6 +192,8 @@ class EmployeeMovementsReport
                 'date' => $m->effective_date ? substr((string) $m->effective_date, 0, 10) : ($m->place_at ?? ''),
                 'estimated' => (bool) $m->date_estimated || ! $m->effective_date,
                 'office' => $officeName($m->office),
+                'office_id' => (int) $m->office,
+                'from_office_id' => isset($m->from_office) ? (int) $m->from_office : null,
                 'from_office' => isset($m->from_office) ? $officeName($m->from_office) : null,
                 'client' => $clientName($m->client_id),
                 'role' => $m->role_id ? ($roles[$m->role_id] ?? '') : '',
@@ -421,6 +423,90 @@ class EmployeeMovementsReport
                 default:
                     $out[$m->id] = null;
             }
+        }
+
+        return $out;
+    }
+
+    /**
+     * Offices a user may report on: head office / HR / directors / auditors see every office
+     * (all = true); a field office its own office and sub-offices.
+     *
+     * @return array{0: bool, 1: int[]}
+     */
+    public static function scopeFor(\App\Models\User $user): array
+    {
+        $all = $user->hasRole(['Invoice', 'Finance Manager', 'Director', 'Internal Auditor'])
+            || ($user->hasRole(['Manager']) && ($user->hasPermission('HR') || $user->hasPermission('Administration')));
+        $ids = $all ? Field::orderBy('name')->pluck('id')->map(fn ($id) => (int) $id)->all()
+            : Field::managedIds($user->field_id ? (int) $user->field_id : null);
+
+        return [$all, $ids];
+    }
+
+    /**
+     * The same figures as build(), for a run of periods at once (one replay of the history):
+     * per bucket active at start / end, new recruits, re-instated, terminated, transfers.
+     * Each bucket adds up exactly like the report: start + in - out = end.
+     *
+     * @param array<int, array{0: Carbon, 1: Carbon, 2?: string}> $buckets  [from, to, label] in date order
+     */
+    public static function series(array $buckets, ?array $fieldIds = null): array
+    {
+        if (! $buckets) {
+            return [];
+        }
+        $last = end($buckets)[1];
+        $all = self::build(Carbon::parse('1900-01-01'), $last->copy(), $fieldIds);
+        $inScope = fn ($f) => $f !== null && ($fieldIds === null || in_array((int) $f, $fieldIds, true));
+
+        // Every counted movement as a dated change to the in-scope headcount.
+        $changes = [];
+        foreach ($all['lists'] as $type => $rows) {
+            foreach ($rows as $m) {
+                $delta = match ($type) {
+                    'hire', 'reinstatement' => 1,
+                    'termination' => -1,
+                    default => ($inScope($m['office_id']) ? 1 : 0) - ($inScope($m['from_office_id']) ? 1 : 0),
+                };
+                $changes[] = ['date' => $m['date'], 'type' => $type, 'delta' => $delta,
+                    // As build(): counted per office, so a move between two offices in scope is
+                    // one in and one out (net 0).
+                    'in' => $type === 'transfer' && $inScope($m['office_id']),
+                    'out' => $type === 'transfer' && $inScope($m['from_office_id'])];
+            }
+        }
+        usort($changes, fn ($a, $b) => $a['date'] <=> $b['date']);
+
+        $base = $all['totals']['opening'];   // employed before any dated movement
+        $out = [];
+        foreach ($buckets as $b) {
+            [$from, $to] = [$b[0]->toDateString(), $b[1]->toDateString()];
+            $row = ['label' => $b[2] ?? $from, 'from' => $from, 'to' => $to, 'opening' => $base, 'hires' => 0, 'reinstated' => 0,
+                'terminated' => 0, 'transfers_in' => 0, 'transfers_out' => 0, 'closing' => $base];
+            $opening = $base;
+            $closing = $base;
+            foreach ($changes as $c) {
+                if ($c['date'] < $from) {
+                    $opening += $c['delta'];
+                }
+                if ($c['date'] <= $to) {
+                    $closing += $c['delta'];
+                }
+                if ($c['date'] >= $from && $c['date'] <= $to) {
+                    match ($c['type']) {
+                        'hire' => $row['hires']++,
+                        'reinstatement' => $row['reinstated']++,
+                        'termination' => $row['terminated']++,
+                        default => null,
+                    };
+                    $row['transfers_in'] += $c['in'] ? 1 : 0;
+                    $row['transfers_out'] += $c['out'] ? 1 : 0;
+                }
+            }
+            $row['opening'] = $opening;
+            $row['closing'] = $closing;
+            $out[] = $row;
         }
 
         return $out;

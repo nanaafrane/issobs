@@ -28,13 +28,7 @@ class EmployeeMovementController extends Controller
     /** Head office sees every office; a field office its own office and sub-offices. */
     private function scope(): array
     {
-        $user = Auth::user();
-        $all = $user->hasRole(['Invoice', 'Finance Manager', 'Director', 'Internal Auditor'])
-            || ($user->hasRole(['Manager']) && ($user->hasPermission('HR') || $user->hasPermission('Administration')));
-        $ids = $all ? Field::orderBy('name')->pluck('id')->map(fn ($id) => (int) $id)->all()
-            : Field::managedIds($user->field_id ? (int) $user->field_id : null);
-
-        return [$all, $ids];
+        return EmployeeMovementsReport::scopeFor(Auth::user());
     }
 
     /** @return array{0: Carbon, 1: Carbon, 2: string, 3: ?array, 4: bool, 5: array} */

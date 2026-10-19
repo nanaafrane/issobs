@@ -8,6 +8,13 @@
         .rep-kpi .sub { font-size: .85rem; color: #6b7280; }
         .rep-card { border-radius: 12px; border: 1px solid #e5e7eb; }
         .rep-card .card-header { background: #f9fafb; border-bottom: 1px solid #e5e7eb; font-weight: 600; }
+        .rep-kpi .label { font-size: .75rem; color: #6b7280; text-transform: uppercase; letter-spacing: .02em; }
+        .rep-kpi .value.plus { color: #047857; }
+        .rep-kpi .value.minus { color: #b91c1c; }
+        .rep-kpi.total { background: #f3f4f6; }
+        .rep-table td, .rep-table th { white-space: nowrap; font-size: .85rem; }
+        .rep-table td.num, .rep-table th.num { text-align: right; font-variant-numeric: tabular-nums; }
+        .rep-table tfoot td { font-weight: 700; background: #f9fafb; }
     </style>
     @endsection
 
@@ -357,314 +364,215 @@
    @endsection
 
     @section('content')
+    @php
+        $r = $report;
+        $t = $r['totals'];
+        $bs = $r['by_status'];
+        $signed = fn ($n) => ($n > 0 ? '+' : '') . number_format($n);
+        $officeName = $field ? optional($offices->firstWhere('id', $field))->name : ($all ? 'all offices' : $offices->pluck('name')->implode(' + '));
+    @endphp
     <div class="container-xxl flex-grow-1 container-p-y">
 
-        <div class="row mb-4">
-            <div class="col-12"><h3 class="mb-0"><i class="bx bx-user"></i> Employees Report</h3></div>
+        <div class="d-flex flex-wrap justify-content-between align-items-end gap-2 mb-3">
+            <div>
+                <h3 class="mb-1"><i class="bx bx-user"></i> Employees report · {{ $periodLabel }}</h3>
+                <div class="text-muted small">{{ $from->format('d M Y') }} – {{ $to->format('d M Y') }}, {{ $officeName }}. Same figures as
+                    <a href="{{ $movementsUrl }}">HR movements</a>: only approved movements count; active at start + recruits + re-instated ± transfers − terminated = active at end.</div>
+            </div>
+            <a href="{{ $movementsUrl }}" class="btn btn-sm btn-outline-primary"><i class="bx bx-list-ul"></i> See who (HR movements)</a>
         </div>
 
-        <form method="GET" action="{{ url('employee-report') }}" class="row g-2 align-items-end mb-4">
+        <form method="GET" action="{{ url('employee-report') }}" class="row g-2 align-items-end mb-4" id="repFilter">
             <div class="col-auto">
                 <label class="form-label small mb-0">Period</label>
                 <select name="period" class="form-select form-select-sm" onchange="this.form.submit()">
-                    @foreach(['daily'=>'Daily','weekly'=>'Weekly','monthly'=>'Monthly','quarterly'=>'Quarterly','semiannual'=>'Semiannual','yearly'=>'Yearly'] as $val=>$label)
-                        <option value="{{ $val }}" @selected($period == $val)>{{ $label }}</option>
+                    @foreach($periods as $val => $lbl)
+                        <option value="{{ $val }}" @selected($period == $val)>{{ $lbl }}</option>
                     @endforeach
                 </select>
             </div>
             <div class="col-auto">
-                <label class="form-label small mb-0">Anchor Date</label>
+                <label class="form-label small mb-0">Date in the period</label>
                 <input type="date" name="date" value="{{ $anchor->format('Y-m-d') }}" class="form-control form-control-sm" onchange="this.form.submit()">
             </div>
-            <div class="col-auto text-muted small pb-1">Showing: {{ $from->format('d M Y') }} &ndash; {{ $to->format('d M Y') }}</div>
+            @if($offices->count() > 1)
+            <div class="col-auto">
+                <label class="form-label small mb-0">Office</label>
+                <select name="field" class="form-select form-select-sm" onchange="this.form.submit()">
+                    <option value="">{{ $all ? 'All offices' : 'All my offices' }}</option>
+                    @foreach($offices as $o)
+                        <option value="{{ $o->id }}" @selected($field === (int) $o->id)>{{ $o->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+            @endif
         </form>
 
-        <div class="row g-3 mb-4">
-            <div class="col-lg-2 col-6"><div class="rep-kpi"><small class="text-muted">TOTAL EMPLOYEES</small><div class="value">{{ number_format($total) }}</div></div></div>
-            <div class="col-lg-2 col-6"><div class="rep-kpi"><small class="text-muted">ADDED TO SALARY</small><div class="value">{{ $active }}</div></div></div>
-            <div class="col-lg-2 col-6"><div class="rep-kpi"><small class="text-muted">TERMINATED</small><div class="value">{{ $terminated }}</div></div></div>
-            <div class="col-lg-2 col-6"><div class="rep-kpi"><small class="text-muted">PENDING</small><div class="value">{{ $pending }}</div></div></div>
-            <div class="col-lg-2 col-6"><div class="rep-kpi"><small class="text-muted">AVG BASIC SALARY</small><div class="value">GH&#x20B5; {{ number_format($avgSalary,2) }}</div></div></div>
+        {{-- The period, as it adds up --}}
+        <div class="row g-3 mb-2" id="repKpis">
+            <div class="col-lg col-6"><div class="rep-kpi total"><span class="label">Active at start</span><div class="value">{{ number_format($t['opening']) }}</div><span class="sub">end of {{ $from->copy()->subDay()->format('d M Y') }}</span></div></div>
+            <div class="col-lg col-6"><div class="rep-kpi"><span class="label">New recruits</span><div class="value {{ $t['hires'] ? 'plus' : '' }}">{{ $t['hires'] ? '+' . number_format($t['hires']) : '0' }}</div></div></div>
+            <div class="col-lg col-6"><div class="rep-kpi"><span class="label">Re-instated</span><div class="value {{ $t['reinstated'] ? 'plus' : '' }}">{{ $t['reinstated'] ? '+' . number_format($t['reinstated']) : '0' }}</div></div></div>
+            @if($t['transfers_in'] || $t['transfers_out'])
+            <div class="col-lg col-6"><div class="rep-kpi"><span class="label">Transfers in − out</span><div class="value">{{ $signed($t['transfers_in'] - $t['transfers_out']) }}</div></div></div>
+            @endif
+            <div class="col-lg col-6"><div class="rep-kpi"><span class="label">Terminated</span><div class="value {{ $t['terminated'] ? 'minus' : '' }}">{{ $t['terminated'] ? '−' . number_format($t['terminated']) : '0' }}</div></div></div>
+            <div class="col-lg col-6"><div class="rep-kpi total"><span class="label">Active at end</span><div class="value">{{ number_format($t['closing']) }}</div>
+                <span class="sub">end of {{ $to->format('d M Y') }}{{ $r['awaiting_termination'] ? ' · incl. ' . $r['awaiting_termination'] . ' awaiting termination approval' : '' }}</span></div></div>
+        </div>
+        <div class="d-flex flex-wrap gap-4 small mb-4">
+            <span><strong>Net change:</strong> {{ $signed($t['net']) }}</span>
+            <span><strong>Turnover:</strong> {{ $t['turnover'] === null ? '–' : $t['turnover'] . '%' }} <span class="text-muted">(terminated ÷ average active)</span></span>
+            <span><strong>Early leavers:</strong> {{ $r['early_leavers'] }} <span class="text-muted">(within 90 days)</span></span>
+            @if(array_sum($r['pending_counts']))<span class="text-warning"><strong>Waiting for approval:</strong> {{ array_sum($r['pending_counts']) }} (not counted)</span>@endif
+            @if(! $t['reconciles'])<span class="text-danger"><strong>Does not add up</strong> – please report this.</span>@endif
         </div>
 
         <div class="row g-3 mb-4">
             <div class="col-lg-8">
                 <div class="card rep-card h-100">
-                    <div class="card-header">Hires Trend</div>
-                    <div class="card-body"><div id="emp-trend-chart"></div></div>
+                    <div class="card-header">Active staff and movements, {{ count($trend) }} {{ strtolower($periods[$period]) === 'weekly' ? 'weeks' : 'periods' }} to {{ $periodLabel }}</div>
+                    <div class="card-body">
+                        <div class="small text-muted">Active at the end of each period</div>
+                        <div id="rep-trend-active" style="min-height:170px"></div>
+                        <div class="small text-muted mt-2">Recruits + re-instated (up) and terminated (down)</div>
+                        <div id="rep-trend-moves" style="min-height:190px"></div>
+                    </div>
                 </div>
             </div>
             <div class="col-lg-4">
                 <div class="card rep-card h-100">
-                    <div class="card-header">By Status</div>
-                    <div class="card-body">
-                        @php
-                            $statusTotals = ($byStatus->sum('cnt') ?? 0) ?: 0;
-                            $statusMap = ($byStatus->keyBy('status') ?? collect());
-                            $ordered = ['Active','Terminated','On Leave'];
-                        @endphp
-
-                        <div class="row text-center mb-3">
-                            @foreach($ordered as $st)
-                                @php
-                                    $r = $statusMap[$st] ?? (object)['cnt'=>0];
-                                    $pct = $statusTotals ? round(($r->cnt / $statusTotals) * 100, 1) : 0;
-                                @endphp
-                                <div class="col-12 col-md-4 mb-2">
-                                    <div class="rep-kpi">
-                                        <div class="small text-muted">{{ $st }}</div>
-                                        <div class="pct">{{ $pct }}%</div>
-                                        <div class="sub">{{ $r->cnt }} employees</div>
-                                    </div>
-                                </div>
-                            @endforeach
-                        </div>
-
-                        <div id="emp-status-chart" style="height:220px"></div>
-
+                    <div class="card-header">Employees on record today</div>
+                    <div class="card-body small">
+                        @foreach(['active' => 'Active', 'edit_pending' => 'Active, edit awaiting approval', 'recruit_pending' => 'New recruits awaiting approval',
+                                  'termination_pending' => 'Termination awaiting approval', 'reinstatement_pending' => 'Re-instatement awaiting approval', 'terminated' => 'Terminated'] as $k => $lbl)
+                            <div class="d-flex justify-content-between border-bottom py-1"><span>{{ $lbl }}</span><strong>{{ number_format($bs['total'][$k]) }}</strong></div>
+                        @endforeach
+                        <div class="d-flex justify-content-between py-1"><span>Total on record</span><strong>{{ number_format($bs['total']['total']) }}</strong></div>
                     </div>
                 </div>
+            </div>
+        </div>
+
+        <div class="card rep-card mb-4">
+            <div class="card-header">By office · {{ $periodLabel }}</div>
+            <div class="table-responsive">
+                <table class="table table-sm rep-table mb-0" id="repOffices">
+                    <thead><tr><th>Office</th><th class="num">Active at start</th><th class="num">New recruits</th><th class="num">Re-instated</th><th class="num">Transfers in</th>
+                        <th class="num">Terminated</th><th class="num">Transfers out</th><th class="num">Active at end</th><th class="num">Net</th><th class="num">Turnover</th></tr></thead>
+                    <tbody>
+                        @forelse($r['offices'] as $o)
+                            <tr><td>{{ $o['name'] }}</td><td class="num">{{ $o['opening'] }}</td><td class="num">{{ $o['hires'] }}</td><td class="num">{{ $o['reinstated'] }}</td>
+                                <td class="num">{{ $o['transfers_in'] }}</td><td class="num">{{ $o['terminated'] }}</td><td class="num">{{ $o['transfers_out'] }}</td>
+                                <td class="num">{{ $o['closing'] }}</td><td class="num">{{ $signed($o['net']) }}</td><td class="num">{{ $o['turnover'] === null ? '–' : $o['turnover'] . '%' }}</td></tr>
+                        @empty
+                            <tr><td colspan="10" class="text-muted">No staff or movements.</td></tr>
+                        @endforelse
+                    </tbody>
+                    <tfoot><tr><td>Total</td><td class="num">{{ $t['opening'] }}</td><td class="num">{{ $t['hires'] }}</td><td class="num">{{ $t['reinstated'] }}</td><td class="num">{{ $t['transfers_in'] }}</td>
+                        <td class="num">{{ $t['terminated'] }}</td><td class="num">{{ $t['transfers_out'] }}</td><td class="num">{{ $t['closing'] }}</td><td class="num">{{ $signed($t['net']) }}</td>
+                        <td class="num">{{ $t['turnover'] === null ? '–' : $t['turnover'] . '%' }}</td></tr></tfoot>
+                </table>
             </div>
         </div>
 
         <div class="row g-3 mb-4">
-            <div class="col-lg-6">
+            <div class="col-lg-4">
                 <div class="card rep-card h-100">
-                    <div class="card-header">Top Roles</div>
-                    <div class="card-body">
-                        <div id="chart-top-roles" style="height:240px"></div>
-                    </div>
+                    <div class="card-header">Why staff left · {{ $periodLabel }}</div>
+                    <div class="card-body"><div id="rep-reasons"></div></div>
                 </div>
             </div>
-            <div class="col-lg-6">
+            <div class="col-lg-4">
                 <div class="card rep-card h-100">
-                    <div class="card-header">Roles Summary</div>
-                    <div class="card-body">
-                        <div id="chart-role-summary" style="height:240px"></div>
-                    </div>
+                    <div class="card-header">How long leavers had worked</div>
+                    <div class="card-body"><div id="rep-tenure"></div></div>
                 </div>
             </div>
-        </div>
-
-        <div class="row g-3 mb-4">
-            <div class="col-lg-6">
+            <div class="col-lg-4">
                 <div class="card rep-card h-100">
-                    <div class="card-header">Field Office Summary</div>
-                    <div class="card-body">
-                        <div id="chart-field-summary" style="height:260px"></div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-6">
-                <div class="card rep-card h-100">
-                    <div class="card-header">Top Departments (hires)</div>
-                    <div class="card-body">
-                        <div id="chart-top-depts" style="height:240px"></div>
-                    </div>
+                    <div class="card-header">New recruits by role</div>
+                    <div class="card-body"><div id="rep-roles"></div></div>
                 </div>
             </div>
         </div>
 
-        <div class="row g-3 mb-4">
-            <div class="col-lg-6">
-                <div class="card rep-card h-100">
-                    <div class="card-header">Terminations (selected period)</div>
-                    <div class="card-body">
-                        <div id="emp-terminations-trend" style="height:180px"></div>
-                        <div class="mt-3"><div class="rep-kpi"><small class="text-muted">Terminations in period</small><div class="value">{{ $terminationsInPeriod }}</div></div></div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-6">
-                <div class="card rep-card h-100">
-                    <div class="card-header">Terminations by Month</div>
-                    <div class="table-responsive">
-                        <div id="chart-terminations-month" style="height:200px"></div>
-                        <table class="table table-sm mb-0">
-                            <thead><tr><th>Month</th><th>Terminations</th></tr></thead>
-                            <tbody>
-                                @forelse($terminationsTrend as $t)
-                                    <tr><td>{{ 
-                                        
-                                        \Carbon\Carbon::parse($t->month)->format('M Y')
-                                    }}</td><td>{{ $t->total }}</td></tr>
-                                @empty
-                                    <tr><td colspan="2" class="text-muted text-center py-3">No terminations in this period.</td></tr>
-                                @endforelse
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+        <div class="card rep-card mb-4">
+            <div class="card-header">Employees on record today, by office</div>
+            <div class="table-responsive">
+                <table class="table table-sm rep-table mb-0">
+                    <thead><tr><th>Office</th><th class="num">Active</th><th class="num">Edit awaiting approval</th><th class="num">Recruits awaiting approval</th>
+                        <th class="num">Terminations awaiting approval</th><th class="num">Re-instatements awaiting approval</th><th class="num">Terminated</th><th class="num">Total</th></tr></thead>
+                    <tbody>
+                        @foreach($bs['offices'] as $o)
+                            <tr><td>{{ $o['name'] }}</td><td class="num">{{ $o['active'] }}</td><td class="num">{{ $o['edit_pending'] }}</td><td class="num">{{ $o['recruit_pending'] }}</td>
+                                <td class="num">{{ $o['termination_pending'] }}</td><td class="num">{{ $o['reinstatement_pending'] }}</td><td class="num">{{ $o['terminated'] }}</td><td class="num">{{ $o['total'] }}</td></tr>
+                        @endforeach
+                    </tbody>
+                    <tfoot><tr><td>Total</td><td class="num">{{ $bs['total']['active'] }}</td><td class="num">{{ $bs['total']['edit_pending'] }}</td><td class="num">{{ $bs['total']['recruit_pending'] }}</td>
+                        <td class="num">{{ $bs['total']['termination_pending'] }}</td><td class="num">{{ $bs['total']['reinstatement_pending'] }}</td><td class="num">{{ $bs['total']['terminated'] }}</td><td class="num">{{ $bs['total']['total'] }}</td></tr></tfoot>
+                </table>
             </div>
         </div>
-
     </div>
     @endsection
 
     @section('scripts')
     <script src="{{asset('vendor/libs/apex-charts/apexcharts.js')}}"></script>
     <script>
-        // Use period-aligned overlay arrays (hires vs terminations)
-        const rawTrendLabels = @json($overlayLabels) || [];
-        const rawTrendValues = @json($overlayHires) || [];
-        const rawTermValues = @json($overlayTerms) || [];
-        const reportPeriod = @json($period);
+    (function () {
+        var trend = {!! json_encode(array_map(fn ($b) => ['label' => $b['label'], 'in' => $b['hires'] + $b['reinstated'], 'out' => $b['terminated'], 'active' => $b['closing']], $trend)) !!};
+        var reasons = {!! json_encode($r['by_reason']) !!};
+        var tenure = {!! json_encode($r['tenure']) !!};
+        var roles = {!! json_encode($r['hires_by_role']) !!};
+        var none = function (id, text) { var el = document.getElementById(id); if (el) { el.innerHTML = '<div class="text-muted small p-2">' + text + '</div>'; } };
+        var has = function (obj) { return Object.keys(obj).some(function (k) { return obj[k] > 0; }); };
+        if (typeof ApexCharts === 'undefined') { return; }
 
-        const trendLabels = rawTrendLabels.map(l => {
-            if (!l) return '-';
-            const d = new Date(l);
-            if (reportPeriod === 'daily') return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
-            if (reportPeriod === 'weekly') return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
-            if (reportPeriod === 'yearly') return d.getFullYear().toString();
-            // monthly: short month + year
-            return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short' });
-        });
-
-        const trendValues = rawTrendValues.map(v => (typeof v === 'number' ? v : Number(v) || 0));
-        const termValuesOverlay = rawTermValues.map(v => (typeof v === 'number' ? v : Number(v) || 0));
-
-        const hiresTickAmount = Math.min(8, trendLabels.length || 8);
-        new ApexCharts(document.querySelector('#emp-trend-chart'), {
-            chart: { type: 'line', height: 300, toolbar: { show: false } },
-            series: [
-                { name: 'Hires', type: 'area', data: trendValues },
-                { name: 'Terminations', type: 'line', data: termValuesOverlay }
-            ],
-            xaxis: { categories: trendLabels, labels: { rotate: -45, trim: true }, tickAmount: hiresTickAmount },
-            dataLabels: { enabled: false },
-            colors: ['#7c3aed', '#ef4444'],
-            stroke: { curve: 'smooth', width: [2, 2] },
-            tooltip: { x: { formatter: (val) => val }, y: { formatter: val => val ? Number(val).toLocaleString() : '0' } },
-            responsive: [{ breakpoint: 768, options: { xaxis: { labels: { rotate: -30 }, tickAmount: Math.min(4, trendLabels.length || 4) } } }]
+        // Two charts on the same periods: the level (active staff) and what moved it.
+        var labels = trend.map(function (b) { return b.label; });
+        var actives = trend.map(function (b) { return b.active; });
+        var lo = Math.min.apply(null, actives), hi = Math.max.apply(null, actives), pad = Math.max(1, Math.ceil((hi - lo) * 0.15));
+        new ApexCharts(document.querySelector('#rep-trend-active'), {
+            chart: { type: 'line', height: 170, toolbar: { show: false }, zoom: { enabled: false } },
+            series: [{ name: 'Active at end', data: actives }],
+            xaxis: { categories: labels, labels: { show: false }, tooltip: { enabled: false } },
+            yaxis: { min: Math.max(0, lo - pad), max: hi + pad, tickAmount: 2, decimalsInFloat: 0, forceNiceScale: true },
+            colors: ['#1f2937'], stroke: { width: 2.5, curve: 'straight' }, markers: { size: 3 },
+            dataLabels: { enabled: false }, grid: { strokeDashArray: 3 }, legend: { show: false }
+        }).render();
+        var ins = trend.map(function (b) { return b.in; }), outs = trend.map(function (b) { return -b.out; });
+        var top = Math.max(1, Math.max.apply(null, ins), Math.max.apply(null, outs.map(Math.abs)));
+        if (top > 5) { top = Math.ceil(top / 2) * 2; }          // whole-number ticks either way
+        new ApexCharts(document.querySelector('#rep-trend-moves'), {
+            chart: { type: 'bar', height: 190, stacked: true, toolbar: { show: false } },
+            series: [{ name: 'Recruits + re-instated', data: ins }, { name: 'Terminated', data: outs }],
+            xaxis: { categories: labels },
+            yaxis: { min: -top, max: top, tickAmount: top <= 5 ? top * 2 : 4, decimalsInFloat: 0,
+                labels: { formatter: function (v) { return Math.abs(Math.round(v)); } } },
+            plotOptions: { bar: { columnWidth: '55%' } },
+            colors: ['#047857', '#b91c1c'], dataLabels: { enabled: false }, grid: { strokeDashArray: 3 },
+            tooltip: { shared: true, intersect: false, y: { formatter: function (v) { return Math.abs(v).toLocaleString(); } } },
+            legend: { position: 'top', horizontalAlign: 'left' }
         }).render();
 
-        const statusLabels = @json($byStatus->pluck('status')) || [];
-        const statusValues = @json($byStatus->pluck('cnt')) || [];
-        const statusSeries = statusValues.map(v => (typeof v === 'number' ? v : Number(v) || 0));
-
-        if (statusSeries.some(v => v > 0)) {
-            new ApexCharts(document.querySelector('#emp-status-chart'), {
-                chart: { type: 'donut', height: 220 },
-                series: statusSeries,
-                labels: statusLabels.map(s => s ? (s.charAt(0).toUpperCase() + s.slice(1)) : '-'),
-                colors: ['#10b981', '#ef4444', '#f59e0b'],
-                legend: { position: 'bottom' }
+        var bar = function (id, data, color, empty) {
+            if (!has(data)) { none(id, empty); return; }
+            var keys = Object.keys(data);
+            new ApexCharts(document.querySelector('#' + id), {
+                chart: { type: 'bar', height: Math.max(160, 34 * keys.length), toolbar: { show: false } },
+                plotOptions: { bar: { horizontal: true, barHeight: '60%' } },
+                series: [{ name: 'Staff', data: keys.map(function (k) { return data[k]; }) }],
+                xaxis: { categories: keys, labels: { show: false }, axisTicks: { show: false } },
+                yaxis: { labels: { maxWidth: 170 } },
+                grid: { xaxis: { lines: { show: false } } },
+                colors: [color], dataLabels: { enabled: true }, tooltip: { enabled: false }
             }).render();
-        } else {
-            document.querySelector('#emp-status-chart').innerHTML = '<div class="text-muted p-3">No status data for this period.</div>';
-        }
-
-        // Terminations trend chart (by month)
-        const termLabelsRaw = @json($terminationsTrend->pluck('month')) || [];
-        const termValuesRaw = @json($terminationsTrend->pluck('total')) || [];
-        const termLabels = termLabelsRaw.map(l => {
-            if (!l) return '-';
-            const d = new Date(l);
-            return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short' });
-        });
-        const termValues = termValuesRaw.map(v => (typeof v === 'number' ? v : Number(v) || 0));
-        const termTick = Math.min(8, termLabels.length || 8);
-
-        if (termValues.some(v => v > 0)) {
-            new ApexCharts(document.querySelector('#emp-terminations-trend'), {
-                chart: { type: 'area', height: 180, toolbar: { show: false } },
-                series: [{ name: 'Terminations', data: termValues }],
-                xaxis: { categories: termLabels, labels: { rotate: -30, trim: true }, tickAmount: termTick },
-                dataLabels: { enabled: false },
-                colors: ['#ef4444'],
-                stroke: { curve: 'smooth', width: 2 },
-                tooltip: { x: { formatter: (val) => val }, y: { formatter: val => val ? Number(val).toLocaleString() : '0' } },
-                responsive: [{ breakpoint: 768, options: { xaxis: { labels: { rotate: 0 }, tickAmount: Math.min(4, termLabels.length || 4) } } }]
-            }).render();
-        } else {
-            document.querySelector('#emp-terminations-trend').innerHTML = '<div class="text-muted p-3">No terminations data for this period.</div>';
-        }
-
-        // Top Roles bar
-        const topRoleLabels = @json($topRoleLabels) || [];
-        const topRoleCounts = @json($topRoleCounts) || [];
-        if ((topRoleCounts || []).some(v => v > 0)) {
-            new ApexCharts(document.querySelector('#chart-top-roles'), {
-                chart: { type: 'bar', height: 240 },
-                series: [{ name: 'Employees', data: topRoleCounts }],
-                xaxis: { categories: topRoleLabels, labels: { rotate: -45, trim: true } },
-                colors: ['#2563eb'],
-                tooltip: { y: { formatter: v => v ? Number(v).toLocaleString() : '0' } }
-            }).render();
-        } else {
-            document.querySelector('#chart-top-roles').innerHTML = '<div class="text-muted p-3">No role data.</div>';
-        }
-
-        // Roles summary donut
-        const roleLabels = @json($roleLabels) || [];
-        const roleCounts = @json($roleCounts) || [];
-        if ((roleCounts || []).some(v => v > 0)) {
-            new ApexCharts(document.querySelector('#chart-role-summary'), {
-                chart: { type: 'donut', height: 240 },
-                series: roleCounts,
-                labels: roleLabels,
-                legend: { position: 'bottom' }
-            }).render();
-        } else {
-            document.querySelector('#chart-role-summary').innerHTML = '<div class="text-muted p-3">No role data.</div>';
-        }
-
-        // Field summary stacked bar
-        const fieldLabels = @json($fieldLabels) || [];
-        const fieldActive = @json($fieldActiveArr) || [];
-        const fieldHires = @json($fieldHiresArr) || [];
-        const fieldTerms = @json($fieldTermsArr) || [];
-        if ((fieldActive.concat(fieldHires, fieldTerms)).some(v => v > 0)) {
-            new ApexCharts(document.querySelector('#chart-field-summary'), {
-                chart: { type: 'bar', height: 260, stacked: true },
-                series: [
-                    { name: 'Active', data: fieldActive },
-                    { name: 'Hires', data: fieldHires },
-                    { name: 'Terminations', data: fieldTerms }
-                ],
-                xaxis: { categories: fieldLabels, labels: { rotate: -45, trim: true } },
-                colors: ['#10b981', '#7c3aed', '#ef4444'],
-                legend: { position: 'bottom' },
-                tooltip: { y: { formatter: v => v ? Number(v).toLocaleString() : '0' } }
-            }).render();
-        } else {
-            document.querySelector('#chart-field-summary').innerHTML = '<div class="text-muted p-3">No field data.</div>';
-        }
-
-        // Top Departments bar
-        const deptLabels = @json($deptLabels) || [];
-        const deptCounts = @json($deptCounts) || [];
-        if ((deptCounts || []).some(v => v > 0)) {
-            new ApexCharts(document.querySelector('#chart-top-depts'), {
-                chart: { type: 'bar', height: 240 },
-                series: [{ name: 'Hires', data: deptCounts }],
-                xaxis: { categories: deptLabels, labels: { rotate: -45, trim: true } },
-                colors: ['#06b6d4'],
-                tooltip: { y: { formatter: v => v ? Number(v).toLocaleString() : '0' } }
-            }).render();
-        } else {
-            document.querySelector('#chart-top-depts').innerHTML = '<div class="text-muted p-3">No department data.</div>';
-        }
-
-        // Terminations by month bar
-        const tMonthRaw = @json($terminationMonths) || [];
-        const tMonthVals = @json($terminationCounts) || [];
-        const tMonthLabels = tMonthRaw.map(l => {
-            if (!l) return '-';
-            const d = new Date(l);
-            return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short' });
-        });
-        if ((tMonthVals || []).some(v => v > 0)) {
-            new ApexCharts(document.querySelector('#chart-terminations-month'), {
-                chart: { type: 'bar', height: 200 },
-                series: [{ name: 'Terminations', data: tMonthVals }],
-                xaxis: { categories: tMonthLabels, labels: { rotate: -45, trim: true } },
-                colors: ['#ef4444'],
-                tooltip: { y: { formatter: v => v ? Number(v).toLocaleString() : '0' } }
-            }).render();
-        } else {
-            document.querySelector('#chart-terminations-month').innerHTML = '<div class="text-muted p-3">No terminations data.</div>';
-        }
+        };
+        bar('rep-reasons', reasons, '#b91c1c', 'No terminations in this period.');
+        bar('rep-tenure', tenure, '#6b7280', 'No terminations in this period.');
+        bar('rep-roles', roles, '#047857', 'No new recruits in this period.');
+    })();
     </script>
     @endsection
 
