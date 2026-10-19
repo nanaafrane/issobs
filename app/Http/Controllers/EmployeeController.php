@@ -1371,9 +1371,23 @@ class EmployeeController extends Controller
 
         $alreadyProcessed = [];
         $declined = [];
+        $approvedMoves = [];
 
         $invoice_manager =  User::where('department_id', '1')->where('role_id', '1')->first();
         $user = Auth::user();
+
+        // The buttons on the pending page are shown by role; check the same here, so a
+        // decision is never taken by someone who could not see the button.
+        $M = \App\Support\EmployeeMovements::class;
+        if (in_array($action, ['headOffice', 'decline'], true) && ! $M::canDecide($user)) {
+            return back()->with('error', 'Only head office or HR can approve or decline.');
+        }
+        if ($action === 'branch' && ! ($user->hasRole(['Manager']) && $user->hasPermission('Administration'))) {
+            return back()->with('error', 'Only a branch (Administration) manager can give branch approval.');
+        }
+        if (! in_array($action, ['branch', 'headOffice', 'decline'], true)) {
+            return back()->with('error', 'Choose Approve or Decline.');
+        }
 
         // $invoice_manager = $staff->;
 
@@ -1398,7 +1412,7 @@ class EmployeeController extends Controller
 
                     $employee->assit_status = 'approved';
                     $employee->ho_status = 'pending';
-                    $employee->user_id2 =  $invoice_manager->id;
+                    $employee->user_id2 =  $invoice_manager?->id ?? $employee->user_id2;
 
                     $employee->save();
                     // return 'you are a Branch Manager';
@@ -1436,12 +1450,14 @@ class EmployeeController extends Controller
                         $employee->status = 'Active';
                     }
 
-                    \Illuminate\Support\Facades\DB::transaction(function () use ($employee, $movement) {
+                    $approved = \Illuminate\Support\Facades\DB::transaction(function () use ($employee, $movement) {
                         $employee->save();
-                        if ($movement) {
-                            \App\Support\EmployeeMovements::approve($employee, $movement);
-                        }
+
+                        return $movement ? \App\Support\EmployeeMovements::approve($employee, $movement) : null;
                     });
+                    if ($approved) {
+                        $approvedMoves[] = $approved;
+                    }
 
                     // return 'you are at the head office';
                     
@@ -1484,7 +1500,21 @@ class EmployeeController extends Controller
                    return back()->with('success', 'Request declined; status restored for: ' . implode(', ', $declined) . '.');
                }
 
-               return back()->with('success', 'Selected Employees Has Been Approved !.');
+               // Say what was approved and where it now shows in the HR movements report.
+               $parts = collect($approvedMoves)->groupBy('type')->map(function ($ms, $type) use ($M) {
+                   $months = $ms->map(fn ($m) => $m->effective_date?->format('M Y') ?? 'no date')->unique()->implode(', ');
+
+                   $noun = ['hire' => 'new recruit', 'termination' => 'termination', 'reinstatement' => 're-instatement'][$type] ?? $type;
+
+                   return $ms->count() . ' ' . $noun . ($ms->count() === 1 ? '' : 's') . ' (HR movements: ' . $months . ')';
+               })->values()->all();
+               $msg = $action === 'branch' ? 'Branch approval given; waiting for head office.'
+                   : ($parts ? 'Approved: ' . implode('; ', $parts) . '.' : 'Selected employees approved.');
+               if ($alreadyProcessed) {
+                   $msg .= ' Already approved, skipped:' . implode(',', $alreadyProcessed) . '.';
+               }
+
+               return back()->with('success', $msg);
 
 
     }

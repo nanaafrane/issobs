@@ -167,5 +167,5 @@ Artisan::command('form-submissions:prune', function () {
  */
 Artisan::command('employees:backfill-movements', function () {
     $r = \App\Support\EmployeeMovementsBackfill::run();
-    $this->info("Hires: {$r['hires']}, from nrrit: {$r['nrrit']} (skipped {$r['nrrit_skipped']}: \"New Recruit\" rows, duplicates or deleted employees), terminations without a record: {$r['terminations']}.");
+    $this->info("Hires: {$r['hires']}, from nrrit: {$r['nrrit']} (skipped {$r['nrrit_skipped']}: \"New Recruit\" rows, duplicates or deleted employees), terminations without a record: {$r['terminations']}, re-instatements for staff active again: {$r['reinstatements']}.");
 })->purpose('Copy employee history (hires, nrrit terminations / re-instatements) into employee_movements');

@@ -18,13 +18,18 @@ use Illuminate\Support\Facades\Schema;
  *     wrong "New Recruit" rows nrrit wrote when a re-instatement was approved are not
  *     copied: hires come from step 1. A request still waiting for head office is pending.
  *  3. A termination for anyone Terminated who still has none (status date, else unknown).
+ *  5. A re-instatement for anyone Active again whose history ends in a termination (taken
+ *     back on through an edit / approval before re-instatement had its own step - nrrit
+ *     logged those as "New Recruit"). Without it a later termination could not count.
+ *     Dated by that "New Recruit" row, else the head-office approval date, else the
+ *     termination date; always marked estimated.
  */
 class EmployeeMovementsBackfill
 {
-    /** @return array{hires:int, nrrit:int, nrrit_skipped:int, terminations:int} */
+    /** @return array{hires:int, nrrit:int, nrrit_skipped:int, terminations:int, reinstatements:int} */
     public static function run(): array
     {
-        $out = ['hires' => 0, 'nrrit' => 0, 'nrrit_skipped' => 0, 'terminations' => 0];
+        $out = ['hires' => 0, 'nrrit' => 0, 'nrrit_skipped' => 0, 'terminations' => 0, 'reinstatements' => 0];
         $now = now();
         $validDate = fn ($d) => $d && ! str_starts_with((string) $d, '0000') && Carbon::hasFormat(substr((string) $d, 0, 10), 'Y-m-d')
             && substr((string) $d, 0, 4) > '1900' ? substr((string) $d, 0, 10) : null;
@@ -127,15 +132,57 @@ class EmployeeMovementsBackfill
         //    (records keyed in late): move it back to that date.
         $first = DB::table('employee_movements')->whereIn('type', ['termination', 'reinstatement'])->whereNotNull('effective_date')
             ->selectRaw('employee_id, MIN(effective_date) as d')->groupBy('employee_id')->pluck('d', 'employee_id');
-        DB::table('employee_movements')->where('type', 'hire')->where('date_estimated', 1)->whereIn('employee_id', $first->keys()->all() ?: [0])
+        // An unknown (null) hire date stays unknown: giving it the termination's date would
+        // make "worked for" 0 days.
+        DB::table('employee_movements')->where('type', 'hire')->where('date_estimated', 1)->whereNotNull('effective_date')
+            ->whereIn('employee_id', $first->keys()->all() ?: [0])
             ->get(['id', 'employee_id', 'effective_date'])
             ->each(function ($h) use ($first) {
                 $d = $first[$h->employee_id];
-                if ($h->effective_date === null || $h->effective_date > $d) {
+                if ($h->effective_date > $d) {
                     DB::table('employee_movements')->where('id', $h->id)->update(['effective_date' => $d]);
                 }
             });
 
+        $out['reinstatements'] = self::backOnWithoutReinstatement($validDate);
+
         return $out;
+    }
+
+    /** Step 5. Returns how many re-instatements were added. */
+    private static function backOnWithoutReinstatement(callable $validDate): int
+    {
+        $added = 0;
+        $now = now();
+        $pending = DB::table('employee_movements')->where('status', 'pending')->where('type', 'reinstatement')->pluck('employee_id')->flip();
+        DB::table('employees')->where('status', 'Active')->orderBy('id')
+            ->select(['id', 'ho_date', 'field_id', 'client_id', 'role_id', 'department_id', 'user_id2'])
+            ->chunk(500, function ($rows) use (&$added, $now, $pending, $validDate) {
+                $last = DB::table('employee_movements')->whereIn('employee_id', $rows->pluck('id')->all())->where('status', 'approved')
+                    ->whereIn('type', ['hire', 'reinstatement', 'termination'])->whereNotNull('effective_date')
+                    ->orderBy('effective_date')->orderBy('id')->get(['employee_id', 'type', 'effective_date'])
+                    ->groupBy('employee_id')->map(fn ($ms) => $ms->last());
+                foreach ($rows as $e) {
+                    $m = $last[$e->id] ?? null;
+                    if (! $m || $m->type !== 'termination' || isset($pending[$e->id])) {
+                        continue;
+                    }
+                    $ended = substr((string) $m->effective_date, 0, 10);
+                    $rehired = Schema::hasTable('nrrit') ? DB::table('nrrit')->where('employee_id', $e->id)->where('status1', 'New Recruit')
+                        ->where('status_month', '>', $ended)->orderBy('status_month')->value('status_month') : null;
+                    $approvedOn = $validDate($e->ho_date);
+                    $date = $validDate($rehired) ?? ($approvedOn && $approvedOn > $ended ? $approvedOn : $ended);
+                    DB::table('employee_movements')->insert([
+                        'employee_id' => $e->id, 'type' => 'reinstatement', 'status' => 'approved', 'effective_date' => $date, 'date_estimated' => 1,
+                        'note' => 'Active again with no re-instatement on record (added from history).',
+                        'field_id' => $e->field_id ?: null, 'client_id' => $e->client_id ?: null, 'role_id' => $e->role_id ?: null,
+                        'department_id' => $e->department_id ?: null, 'source' => 'backfill', 'decided_by' => $e->user_id2,
+                        'created_at' => $now, 'updated_at' => $now,
+                    ]);
+                    $added++;
+                }
+            });
+
+        return $added;
     }
 }

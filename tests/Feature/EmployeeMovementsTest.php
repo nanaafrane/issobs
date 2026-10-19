@@ -223,11 +223,11 @@ class EmployeeMovementsTest extends TestCase
         ]);
 
         $out = EmployeeMovementsBackfill::run();
-        $this->assertSame(['hires' => 3, 'nrrit' => 3, 'nrrit_skipped' => 1, 'terminations' => 1], $out);
+        $this->assertSame(['hires' => 3, 'nrrit' => 3, 'nrrit_skipped' => 1, 'terminations' => 1, 'reinstatements' => 0], $out);
         $this->assertSame(['hire', 'termination', 'reinstatement'], EmployeeMovement::where('employee_id', $back)->orderBy('effective_date')->pluck('type')->all());
         $this->assertTrue((bool) EmployeeMovement::where('employee_id', $noRecord)->where('type', 'termination')->value('date_estimated'));
 
-        $this->assertSame(['hires' => 0, 'nrrit' => 0, 'nrrit_skipped' => 1, 'terminations' => 0], EmployeeMovementsBackfill::run(), 'nothing twice');
+        $this->assertSame(['hires' => 0, 'nrrit' => 0, 'nrrit_skipped' => 1, 'terminations' => 0, 'reinstatements' => 0], EmployeeMovementsBackfill::run(), 'nothing twice');
         $this->assertReconciles($this->report('2026-01-01', '2026-12-31'));
     }
 
@@ -402,5 +402,65 @@ class EmployeeMovementsTest extends TestCase
         $this->assertSame(['approved', 'bulk_upload', '2026-10-02'], EmployeeMovement::where('employee_id', $new->id)->get(['status', 'source', 'effective_date'])
             ->map(fn ($m) => [$m->status, $m->source, $m->effective_date->toDateString()])->first());
         $this->assertReconciles($this->report('2026-10-01', '2026-10-31'));
+    }
+
+    public function test_worked_for_is_measured_from_the_joining_date_and_unknown_without_one(): void
+    {
+        $dated = $this->hire($this->headOffice, 'Accra', '2026-04-01');
+        $id = DB::table('employees')->insertGetId(['name' => 'No joining date', 'phone_number' => '233240000011', 'status' => 'Active', 'ho_status' => 'approved',
+            'field_id' => $this->f['Accra'], 'user_id' => $this->headOffice->id, 'created_at' => now(), 'updated_at' => now()]);
+        EmployeeMovementsBackfill::run();
+        $this->actingAs($this->hr)->post('/terminateEmployee/' . $dated->id, ['effective_date' => '2026-10-11', 'reason' => 'resigned']);
+        $this->actingAs($this->hr)->post('/terminateEmployee/' . $id, ['effective_date' => '2026-10-11', 'reason' => 'resigned']);
+
+        $rows = collect($this->report('2026-10-01', '2026-10-31')['lists']['termination'])->keyBy('employee_id');
+        $this->assertSame([193, '2026-04-01'], [$rows[$dated->id]['tenure_days'], $rows[$dated->id]['tenure_from']]);
+        $this->assertSame([null, null], [$rows[$id]['tenure_days'], $rows[$id]['tenure_from']], 'never counted from year 0');
+        // Running the history fill-in again (every migration does) keeps the unknown date unknown.
+        EmployeeMovementsBackfill::run();
+        $this->assertNull(EmployeeMovement::where('employee_id', $id)->where('type', 'hire')->value('effective_date'));
+        $this->actingAs($this->hr)->get('/employees-movements?month=2026-10')->assertOk()->assertSee('since 01 Apr 2026')->assertSee('unknown');
+    }
+
+    public function test_only_head_office_or_hr_can_approve_and_the_message_says_where_it_counts(): void
+    {
+        $e = $this->hire($this->headOffice, 'Accra', '2026-01-10');
+        $this->actingAs($this->branch)->post('/terminateEmployee/' . $e->id, ['effective_date' => '2026-10-10', 'reason' => 'resigned']);
+
+        $this->actingAs($this->temaOfficer)->post('/employeesAproval', ['employees' => [$e->id], 'action_type' => 'headOffice'])->assertSessionHas('error');
+        $this->assertSame('pending', $e->fresh()->ho_status);
+
+        $this->actingAs($this->hr)->post('/employeesAproval', ['employees' => [$e->id], 'action_type' => 'headOffice'])
+            ->assertSessionHas('success', 'Approved: 1 termination (HR movements: Oct 2026).');
+        $this->assertSame(1, $this->report('2026-10-01', '2026-10-31')['totals']['terminated']);
+    }
+
+    public function test_staff_taken_back_on_without_a_reinstatement_get_one_so_a_new_termination_counts(): void
+    {
+        // History before re-instatement had its own step: terminated in March, back on in May
+        // through approval (nrrit "New Recruit"), Active now.
+        $id = DB::table('employees')->insertGetId(['name' => 'Back again', 'phone_number' => '233240000012', 'status' => 'Active', 'ho_status' => 'approved',
+            'date_of_joining' => '2025-01-01', 'field_id' => $this->f['Accra'], 'user_id' => $this->headOffice->id, 'created_at' => now(), 'updated_at' => now()]);
+        DB::table('nrrit')->insert([
+            ['employee_id' => $id, 'name' => 'Back again', 'status_month' => '2026-03-01', 'status' => 'Terminated', 'status1' => null],
+            ['employee_id' => $id, 'name' => 'Back again', 'status_month' => '2026-05-01', 'status' => 'Active', 'status1' => 'New Recruit'],
+        ]);
+        $this->assertSame(1, EmployeeMovementsBackfill::run()['reinstatements']);
+        $this->assertSame('2026-05-01', EmployeeMovement::where('employee_id', $id)->where('type', 'reinstatement')->value('effective_date')->toDateString());
+        $this->assertSame(0, EmployeeMovementsBackfill::run()['reinstatements'], 'once');
+
+        $this->actingAs($this->hr)->post('/terminateEmployee/' . $id, ['effective_date' => '2026-10-10', 'reason' => 'absconded']);
+        $r = $this->report('2026-10-01', '2026-10-31');
+        $this->assertSame(1, $r['totals']['terminated']);
+        $this->assertSame([], $r['conflicts']);
+    }
+
+    public function test_the_employee_page_says_when_a_termination_is_not_counted_and_why(): void
+    {
+        $e = $this->hire($this->headOffice, 'Accra', '2026-10-20');
+        $this->actingAs($this->hr)->post('/terminateEmployee/' . $e->id, ['effective_date' => '2026-10-05', 'reason' => 'resigned']);
+        $t = EmployeeMovement::where('employee_id', $e->id)->where('type', 'termination')->sole();
+        $this->assertStringStartsWith('Not counted: not employed on 05 Oct 2026', EmployeeMovementsReport::explain($e->id)[$t->id]);
+        $this->actingAs($this->hr)->get('/employees/' . $e->id)->assertOk()->assertSee('Not counted: not employed on 05 Oct 2026');
     }
 }

@@ -564,6 +564,7 @@
                 ->where('employee_id', $employee->id)->orderByDesc('effective_date')->orderByDesc('id')->get();
             $lastChange = $history->whereIn('type', [$M::TERMINATION, $M::REINSTATEMENT])->whereIn('status', [$M::APPROVED, $M::PENDING])->sortByDesc('id')->first();
             $decides = $M::canDecide(Auth::user());
+            $explain = \App\Support\EmployeeMovementsReport::explain($employee->id);
             $badge = ['approved' => 'bg-label-success', 'pending' => 'bg-label-warning', 'declined' => 'bg-label-secondary', 'cancelled' => 'bg-label-secondary'];
         @endphp
         @if($history->isNotEmpty())
@@ -583,7 +584,13 @@
                       <td>{{ $h->effective_date?->format('d M Y') ?? 'date unknown' }}{{ $h->date_estimated ? ' (est.)' : '' }}</td>
                       <td>{{ $M::LABELS[$h->type] ?? $h->type }}{{ $h->type === $M::TRANSFER ? ' from ' . ($h->fromField?->name ?? '?') : '' }}</td>
                       <td>{{ $h->field?->name }}</td>
-                      <td><span class="badge {{ $badge[$h->status] ?? 'bg-label-secondary' }}">{{ $h->status === 'cancelled' ? 'undone / withdrawn' : $h->status }}</span></td>
+                      <td><span class="badge {{ $badge[$h->status] ?? 'bg-label-secondary' }}">{{ $h->status === 'cancelled' ? 'undone / withdrawn' : $h->status }}</span>
+                        @if($h->status === 'pending')
+                          <div class="small text-muted">counts in HR movements once approved</div>
+                        @elseif($h->status === 'approved' && ! empty($explain[$h->id]))
+                          <div class="small {{ str_starts_with($explain[$h->id], 'Not counted') ? 'text-danger' : 'text-muted' }}">{{ $explain[$h->id] }}</div>
+                        @endif
+                      </td>
                       <td class="text-wrap" style="max-width: 22rem">{{ $h->type === $M::TERMINATION ? $M::reasonLabel($h->reason) : '' }}{{ $h->note ? ($h->type === $M::TERMINATION ? ' · ' : '') . $h->note : '' }}</td>
                       <td class="small">{{ $h->requester?->name }}{{ $h->decider && $h->decider->id !== $h->requester?->id ? ' → ' . $h->decider->name : '' }}</td>
                       <td class="text-end">

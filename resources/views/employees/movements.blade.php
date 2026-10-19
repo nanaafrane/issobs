@@ -245,7 +245,7 @@
                                           <td>{{ $row['office'] }}</td>
                                           @if($type === 'transfer')<td>{{ $row['from_office'] }}</td>@endif
                                           <td>{{ $row['client'] }}</td><td>{{ $row['role'] }}</td>
-                                          @if($type === 'termination')<td>{{ $row['reason'] }}</td><td>{{ $tenure($row['tenure_days']) }}</td>@endif
+                                          @if($type === 'termination')<td>{{ $row['reason'] }}</td><td title="{{ $row['tenure_from'] ? 'Since ' . \Carbon\Carbon::parse($row['tenure_from'])->format('d M Y') . ' (joining or last re-instatement)' : 'Joining date not recorded' }}">{{ $row['tenure_days'] === null ? 'unknown' : $tenure($row['tenure_days']) }}{!! $row['tenure_estimated'] ? ' <span class="mv-est">est.</span>' : '' !!}@if($row['tenure_from'])<div class="small text-muted">since {{ \Carbon\Carbon::parse($row['tenure_from'])->format('d M Y') }}</div>@endif</td>@endif
                                           <td class="text-wrap" style="max-width: 18rem">{{ $row['note'] }}</td>
                                           <td>{{ $row['requested_by'] }}</td><td>{{ $row['approved_by'] }}</td>
                                       </tr>

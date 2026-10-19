@@ -59,7 +59,7 @@ class EmployeeMovementsReport
                 $closing = $state;
             }
             $e = (int) $m->employee_id;
-            $before = $state[$e] ?? ['active' => false, 'field' => self::NO_OFFICE, 'since' => null];
+            $before = $state[$e] ?? ['active' => false, 'field' => self::NO_OFFICE, 'since' => null, 'since_est' => false];
             $after = $before;
             $office = (int) ($m->field_id ?: self::NO_OFFICE);
 
@@ -72,7 +72,8 @@ class EmployeeMovementsReport
                         }
                         continue 2;   // already employed: a duplicate hire, ignore
                     }
-                    $after = ['active' => true, 'field' => $office, 'since' => $date];
+                    // No start date known (old record): "worked for" is unknown, never counted from year 0.
+                    $after = ['active' => true, 'field' => $office, 'since' => $m->effective_date ? $date : null, 'since_est' => (bool) $m->date_estimated];
                     $m->office = $office;
                     break;
                 case EmployeeMovements::TERMINATION:
@@ -80,12 +81,14 @@ class EmployeeMovementsReport
                         $conflicts[] = $m;   // e.g. termination dated before the joining date
                         continue 2;
                     }
-                    $after = ['active' => false, 'field' => $before['field'], 'since' => null];
+                    $after = ['active' => false, 'field' => $before['field'], 'since' => null, 'since_est' => false];
                     $m->office = $before['field'];
                     $m->tenure_days = $before['since'] ? (int) Carbon::parse($before['since'])->diffInDays(Carbon::parse($date)) : null;
+                    $m->tenure_from = $before['since'];
+                    $m->tenure_estimated = $before['since_est'];
                     break;
                 case EmployeeMovements::TRANSFER:
-                    $after = ['active' => $before['active'], 'field' => $office, 'since' => $before['since']];
+                    $after = ['active' => $before['active'], 'field' => $office, 'since' => $before['since'], 'since_est' => $before['since_est']];
                     $m->office = $office;
                     $m->from_office = $before['field'];
                     if (! $before['active'] || $before['field'] === $office) {
@@ -190,6 +193,8 @@ class EmployeeMovementsReport
                 'reason_key' => $m->reason,
                 'note' => $m->note,
                 'tenure_days' => $m->tenure_days ?? null,
+                'tenure_from' => $m->tenure_from ?? null,
+                'tenure_estimated' => (bool) ($m->tenure_estimated ?? false),
                 'requested_by' => $users[$m->requested_by] ?? '',
                 'approved_by' => $users[$m->decided_by] ?? '',
                 'source' => $m->source,
@@ -277,6 +282,56 @@ class EmployeeMovementsReport
         return DB::table('employee_movements as m')->join('employees as e', 'e.id', '=', 'm.employee_id')->where('m.status', 'pending')
             ->when($fieldIds !== null, fn ($q) => $q->whereIn(DB::raw('COALESCE(m.field_id, e.field_id)'), $fieldIds ?: [0]))
             ->selectRaw('m.type, COUNT(*) as n')->groupBy('m.type')->pluck('n', 'type')->map(fn ($n) => (int) $n)->all();
+    }
+
+    /**
+     * Why each of this employee's approved movements is or is not counted in the report
+     * (the same replay as build(), for one person). movement id => null (counted) or the
+     * reason it is left out. Shown in the employee's history so nothing is skipped silently.
+     *
+     * @return array<int, ?string>
+     */
+    public static function explain(int $employeeId): array
+    {
+        $rows = DB::table('employee_movements')->where('employee_id', $employeeId)->where('status', 'approved')
+            ->orderByRaw('effective_date IS NOT NULL')->orderBy('effective_date')->orderBy('id')
+            ->get(['id', 'type', 'effective_date', 'field_id']);
+        $active = false;
+        $lastEnd = null;
+        $out = [];
+        foreach ($rows as $m) {
+            $date = $m->effective_date ? Carbon::parse($m->effective_date)->format('d M Y') : null;
+            if (! $m->effective_date && $m->type !== EmployeeMovements::HIRE) {
+                $out[$m->id] = 'Not counted: it has no date. Set the date in the HR movements report (Needs attention).';
+                continue;
+            }
+            switch ($m->type) {
+                case EmployeeMovements::HIRE:
+                case EmployeeMovements::REINSTATEMENT:
+                    if ($active) {
+                        $out[$m->id] = $m->type === EmployeeMovements::HIRE ? 'Not counted: already employed (a duplicate hire).'
+                            : 'Not counted: still employed on ' . $date . ' (no termination before it).';
+                        continue 2;
+                    }
+                    $active = true;
+                    $out[$m->id] = $m->effective_date ? null : 'Counted as employed from before any period (joining date unknown).';
+                    break;
+                case EmployeeMovements::TERMINATION:
+                    if (! $active) {
+                        $out[$m->id] = 'Not counted: not employed on ' . $date . ($lastEnd ? ' (already terminated on ' . $lastEnd . ')' : ' (the joining date is later)')
+                            . '. Correct the dates in the HR movements report (Needs attention).';
+                        continue 2;
+                    }
+                    $active = false;
+                    $lastEnd = $date;
+                    $out[$m->id] = null;
+                    break;
+                default:
+                    $out[$m->id] = null;
+            }
+        }
+
+        return $out;
     }
 
     /** Terminations per 100 staff on average over the period. */
