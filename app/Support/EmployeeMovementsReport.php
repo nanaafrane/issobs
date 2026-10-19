@@ -34,13 +34,15 @@ class EmployeeMovementsReport
         $to = $to->copy()->startOfDay();
         $inScope = fn ($f) => $fieldIds === null || in_array((int) $f, $fieldIds, true);
 
-        // An approved hire with no known date (old records) counts as employed from before any
-        // period, so their later termination is never lost. Other undated movements wait for a date.
+        // Movements with no known date (old records) happened before any period: an undated
+        // hire = employed from the start, an undated termination = already gone before the
+        // start (so a Terminated guard is never counted as employed for ever). They change
+        // who is employed but never count as a movement in a period.
         $rows = DB::table('employee_movements')->where('status', 'approved')
-            ->where(fn ($q) => $q->whereNotNull('effective_date')->orWhere('type', 'hire'))
             ->orderByRaw('effective_date IS NOT NULL')->orderBy('effective_date')->orderBy('id')
             ->get(['id', 'employee_id', 'type', 'effective_date', 'reason', 'note', 'field_id', 'from_field_id', 'client_id', 'role_id',
                 'date_estimated', 'requested_by', 'decided_by', 'decided_at', 'source']);
+        $rows = self::placeUndatedTerminations($rows);
 
         $state = [];      // employee => ['active' => bool, 'field' => int, 'since' => date]
         $opening = null;
@@ -51,11 +53,11 @@ class EmployeeMovementsReport
         $toStr = $to->toDateString();
 
         foreach ($rows as $m) {
-            $date = $m->effective_date ? substr((string) $m->effective_date, 0, 10) : '0000-00-00';
-            if ($opening === null && $date >= $fromStr) {
+            $date = $m->effective_date ? substr((string) $m->effective_date, 0, 10) : ($m->place_at ?? '0000-00-00');
+            if ($opening === null && $date >= $fromStr && $m->effective_date) {
                 $opening = $state;
             }
-            if ($closing === null && $date > $toStr) {
+            if ($closing === null && $date > $toStr && $m->effective_date) {
                 $closing = $state;
             }
             $e = (int) $m->employee_id;
@@ -78,7 +80,9 @@ class EmployeeMovementsReport
                     break;
                 case EmployeeMovements::TERMINATION:
                     if (! $before['active']) {
-                        $conflicts[] = $m;   // e.g. termination dated before the joining date
+                        if ($m->effective_date) {
+                            $conflicts[] = $m;   // e.g. termination dated before the joining date
+                        }
                         continue 2;
                     }
                     $after = ['active' => false, 'field' => $before['field'], 'since' => null, 'since_est' => false];
@@ -98,7 +102,9 @@ class EmployeeMovementsReport
                     break;
             }
             $state[$e] = $after;
-            if ($date >= $fromStr && $date <= $toStr) {
+            // An undated termination placed after a start inside the period counts there (as an
+            // estimate), so the period still adds up; one placed before it changes only who is active.
+            if (($m->effective_date || ($m->place_at ?? '0000-00-00') !== '0000-00-00') && $date >= $fromStr && $date <= $toStr) {
                 $events[] = $m;
             }
         }
@@ -183,8 +189,8 @@ class EmployeeMovementsReport
                 'employee_id' => (int) $m->employee_id,
                 'name' => $p->name ?? 'Employee #' . $m->employee_id,
                 'phone' => $p->phone_number ?? '',
-                'date' => substr((string) $m->effective_date, 0, 10),
-                'estimated' => (bool) $m->date_estimated,
+                'date' => $m->effective_date ? substr((string) $m->effective_date, 0, 10) : ($m->place_at ?? ''),
+                'estimated' => (bool) $m->date_estimated || ! $m->effective_date,
                 'office' => $officeName($m->office),
                 'from_office' => isset($m->from_office) ? $officeName($m->from_office) : null,
                 'client' => $clientName($m->client_id),
@@ -239,6 +245,8 @@ class EmployeeMovementsReport
             'mismatches' => self::mismatches($state, $fieldIds, $names),
             'conflicts' => self::conflicts($conflicts, $fieldIds, $names),
             'pending_counts' => self::pendingCounts($fieldIds),
+            'awaiting_termination' => self::awaitingTermination($closing, $fieldIds),
+            'by_status' => self::byStatus($fieldIds, $names),
             'payroll' => self::payrollCheck($from, $to, $opening, $closing, $events, $fieldIds),
         ];
     }
@@ -276,6 +284,86 @@ class EmployeeMovementsReport
         return $out;
     }
 
+    /**
+     * A termination with no date (old records) can only be placed by guesswork. It is put
+     * straight after the employee's last known start (hire / re-instatement), so they are
+     * never counted as active for a month they were not, and it never counts as a
+     * termination in any month. Rows come back in replay order.
+     */
+    private static function placeUndatedTerminations($rows)
+    {
+        $lastStart = [];
+        foreach ($rows as $m) {
+            if ($m->effective_date && in_array($m->type, [EmployeeMovements::HIRE, EmployeeMovements::REINSTATEMENT], true)) {
+                $d = substr((string) $m->effective_date, 0, 10);
+                $lastStart[$m->employee_id] = max($lastStart[$m->employee_id] ?? $d, $d);
+            }
+        }
+        $key = function ($m) use ($lastStart) {
+            if ($m->effective_date) {
+                return [substr((string) $m->effective_date, 0, 10), 0, $m->id];
+            }
+            if ($m->type === EmployeeMovements::TERMINATION) {
+                $m->place_at = $lastStart[$m->employee_id] ?? '0000-00-00';
+
+                return [$m->place_at, 1, $m->id];   // after that day's start
+            }
+
+            return ['0000-00-00', 0, $m->id];          // undated hire: before everything
+        };
+
+        return $rows->sortBy(fn ($m) => $key($m))->values();
+    }
+
+    /**
+     * Of the headcount at the end, how many have a termination waiting for approval (still
+     * counted as employed until head office approves it).
+     */
+    private static function awaitingTermination(array $closing, ?array $fieldIds): int
+    {
+        $ids = DB::table('employee_movements')->where('status', 'pending')->where('type', 'termination')->pluck('employee_id');
+        $n = 0;
+        foreach ($ids as $id) {
+            $s = $closing[(int) $id] ?? null;
+            if ($s && $s['active'] && ($fieldIds === null || in_array((int) $s['field'], $fieldIds, true))) {
+                $n++;
+            }
+        }
+
+        return $n;
+    }
+
+    /** Every employee on record today, per office and status (the overall picture beside the monthly one). */
+    private static function byStatus(?array $fieldIds, array $names): array
+    {
+        $rows = DB::table('employees')->when($fieldIds !== null, fn ($q) => $q->whereIn('field_id', $fieldIds ?: [0]))
+            ->selectRaw("COALESCE(field_id, 0) as f, CASE
+                WHEN status = 'Active' AND ho_status = 'pending' THEN 'edit_pending'
+                WHEN status = 'Active' THEN 'active'
+                WHEN status = 'Terminated' AND ho_status = 'pending' THEN 'termination_pending'
+                WHEN status = 'Terminated' THEN 'terminated'
+                WHEN status = 'Re-Instate' THEN 'reinstatement_pending'
+                ELSE 'recruit_pending' END as k, COUNT(*) as n")
+            ->groupBy('f', 'k')->get();
+        $out = [];
+        $blank = ['active' => 0, 'edit_pending' => 0, 'recruit_pending' => 0, 'termination_pending' => 0, 'reinstatement_pending' => 0, 'terminated' => 0, 'total' => 0];
+        foreach ($rows as $r) {
+            $f = (int) $r->f;
+            $out[$f] ??= ['name' => $f ? ($names[$f] ?? 'Office #' . $f) : 'No office'] + $blank;
+            $out[$f][$r->k] += (int) $r->n;
+            $out[$f]['total'] += (int) $r->n;
+        }
+        uasort($out, fn ($a, $b) => strcasecmp($a['name'], $b['name']));
+        $total = ['name' => 'Total'] + $blank;
+        foreach ($out as $o) {
+            foreach ($blank as $k => $_) {
+                $total[$k] += $o[$k];
+            }
+        }
+
+        return ['offices' => array_values($out), 'total' => $total];
+    }
+
     /** Requests waiting for head office, by type (shown beside the totals). */
     private static function pendingCounts(?array $fieldIds): array
     {
@@ -301,7 +389,7 @@ class EmployeeMovementsReport
         $out = [];
         foreach ($rows as $m) {
             $date = $m->effective_date ? Carbon::parse($m->effective_date)->format('d M Y') : null;
-            if (! $m->effective_date && $m->type !== EmployeeMovements::HIRE) {
+            if (! $m->effective_date && ! in_array($m->type, [EmployeeMovements::HIRE, EmployeeMovements::TERMINATION], true)) {
                 $out[$m->id] = 'Not counted: it has no date. Set the date in the HR movements report (Needs attention).';
                 continue;
             }
@@ -317,14 +405,18 @@ class EmployeeMovementsReport
                     $out[$m->id] = $m->effective_date ? null : 'Counted as employed from before any period (joining date unknown).';
                     break;
                 case EmployeeMovements::TERMINATION:
+                    if (! $active && ! $m->effective_date) {
+                        $out[$m->id] = 'Date unknown: treated as gone straight after their last start (joining or re-instatement). Set the real date in the HR movements report.';
+                        continue 2;
+                    }
                     if (! $active) {
                         $out[$m->id] = 'Not counted: not employed on ' . $date . ($lastEnd ? ' (already terminated on ' . $lastEnd . ')' : ' (the joining date is later)')
                             . '. Correct the dates in the HR movements report (Needs attention).';
                         continue 2;
                     }
                     $active = false;
-                    $lastEnd = $date;
-                    $out[$m->id] = null;
+                    $lastEnd = $date ?? 'an unknown date';
+                    $out[$m->id] = $m->effective_date ? null : 'Date unknown: treated as gone straight after their last start (joining or re-instatement). Set the real date in the HR movements report.';
                     break;
                 default:
                     $out[$m->id] = null;

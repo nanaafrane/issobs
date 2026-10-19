@@ -24,11 +24,20 @@ class EmployeeMovementsExport implements WithMultipleSheets
         $period = $r['from']->format('d M Y') . ' to ' . $r['to']->format('d M Y');
 
         $summary = [['HR MOVEMENTS ' . strtoupper($period)], [],
-            ['OFFICE', 'START', 'NEW RECRUITS', 'RE-INSTATED', 'TRANSFERS IN', 'TERMINATED', 'TRANSFERS OUT', 'END', 'NET', 'TURNOVER %']];
+            ['OFFICE', 'ACTIVE AT START', 'NEW RECRUITS', 'RE-INSTATED', 'TRANSFERS IN', 'TERMINATED', 'TRANSFERS OUT', 'ACTIVE AT END', 'NET', 'TURNOVER %']];
         foreach ($r['offices'] as $o) {
             $summary[] = [$o['name'], $o['opening'], $o['hires'], $o['reinstated'], $o['transfers_in'], $o['terminated'], $o['transfers_out'], $o['closing'], $o['net'], $o['turnover']];
         }
         $summary[] = ['TOTAL', $t['opening'], $t['hires'], $t['reinstated'], $t['transfers_in'], $t['terminated'], $t['transfers_out'], $t['closing'], $t['net'], $t['turnover']];
+        if (! empty($r['awaiting_termination'])) {
+            $summary[] = ['Active at end includes ' . $r['awaiting_termination'] . ' awaiting termination approval'];
+        }
+        $summary[] = [];
+        $summary[] = ['ALL EMPLOYEES ON RECORD TODAY', 'ACTIVE', 'ACTIVE, EDIT AWAITING APPROVAL', 'NEW RECRUITS AWAITING APPROVAL',
+            'TERMINATION AWAITING APPROVAL', 'RE-INSTATEMENT AWAITING APPROVAL', 'TERMINATED', 'TOTAL ON RECORD'];
+        foreach (array_merge($r['by_status']['offices'], [$r['by_status']['total']]) as $o) {
+            $summary[] = [$o['name'], $o['active'], $o['edit_pending'], $o['recruit_pending'], $o['termination_pending'], $o['reinstatement_pending'], $o['terminated'], $o['total']];
+        }
         $summary[] = [];
         $summary[] = ['WHY STAFF LEFT', 'COUNT'];
         foreach ($r['by_reason'] as $reason => $n) {

@@ -547,4 +547,35 @@ class EmployeeMovementsTest extends TestCase
         EmployeeMovementsBackfill::run();
         $this->assertSame(2, $this->report('2026-10-01', '2026-10-31')['totals']['terminated']);
     }
+
+    public function test_active_at_start_counts_only_active_staff_not_everyone_on_record(): void
+    {
+        $this->hire($this->headOffice, 'Accra', '2025-01-10');                 // active
+        $waiting = $this->hire($this->headOffice, 'Accra', '2025-01-10');      // termination awaiting approval
+        $this->actingAs($this->branch)->post('/terminateEmployee/' . $waiting->id, ['effective_date' => '2026-10-15', 'reason' => 'resigned']);
+        // Old record: Terminated, termination date never recorded.
+        $old = $this->hire($this->headOffice, 'Accra', '2024-03-01');
+        $old->forceFill(['status' => 'Terminated'])->save();
+        EmployeeMovement::create(['employee_id' => $old->id, 'type' => 'termination', 'status' => 'approved', 'effective_date' => null,
+            'date_estimated' => true, 'field_id' => $this->f['Accra'], 'source' => 'backfill']);
+
+        $r = $this->report('2026-10-01', '2026-10-31');
+        $this->assertSame([2, 2, 1], [$r['totals']['opening'], $r['totals']['closing'], $r['awaiting_termination']], 'the undated leaver is not counted as employed');
+        $this->assertReconciles($r);
+        $this->assertSame(['active' => 1, 'termination_pending' => 1, 'terminated' => 1, 'total' => 3],
+            array_intersect_key($r['by_status']['total'], array_flip(['active', 'termination_pending', 'terminated', 'total'])));
+        $this->assertStringStartsWith('Date unknown: treated as gone straight after', EmployeeMovementsReport::explain($old->id)[EmployeeMovement::where('employee_id', $old->id)->where('type', 'termination')->value('id')]);
+        // Joined in October and gone at an unknown date: October still adds up.
+        $brief = $this->hire($this->headOffice, 'Accra', '2026-10-05');
+        $brief->forceFill(['status' => 'Terminated'])->save();
+        EmployeeMovement::create(['employee_id' => $brief->id, 'type' => 'termination', 'status' => 'approved', 'effective_date' => null,
+            'date_estimated' => true, 'field_id' => $this->f['Accra'], 'source' => 'backfill']);
+        $r = $this->report('2026-10-01', '2026-10-31');
+        $this->assertSame([1, 1], [$r['totals']['hires'], $r['totals']['terminated']]);
+        $this->assertReconciles($r);
+        $this->assertReconciles($this->report('2026-11-01', '2026-11-30'));
+
+        $this->actingAs($this->hr)->get('/employees-movements?month=2026-10')->assertOk()
+            ->assertSee('Active at start')->assertSee('incl. 1 awaiting termination approval')->assertSee('All employees on record today, by office');
+    }
 }

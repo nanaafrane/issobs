@@ -95,7 +95,7 @@
       <div class="card mv-card mb-3">
           <div class="card-body">
               <div class="mv-flow" id="mvFlow">
-                  <div class="mv-step total"><div class="label">Headcount at start</div><div class="v">{{ number_format($t['opening']) }}</div><div class="small text-muted">end of {{ $r['from']->copy()->subDay()->format('d M Y') }}</div></div>
+                  <div class="mv-step total"><div class="label">Active at start</div><div class="v">{{ number_format($t['opening']) }}</div><div class="small text-muted">end of {{ $r['from']->copy()->subDay()->format('d M Y') }}</div></div>
                   <div class="mv-op">+</div>
                   <div class="mv-step"><div class="label">New recruits</div><div class="v mv-plus">{{ number_format($t['hires']) }}</div>
                       @if(! empty($waiting['hire']))<div class="small text-warning">+{{ $waiting['hire'] }} waiting for approval</div>@endif
@@ -113,7 +113,9 @@
                       @if(! empty($waiting['termination']))<div class="small text-warning">+{{ $waiting['termination'] }} waiting for approval</div>@endif
                   </div>
                   <div class="mv-op">=</div>
-                  <div class="mv-step total"><div class="label">Headcount at end</div><div class="v">{{ number_format($t['closing']) }}</div><div class="small text-muted">end of {{ $r['to']->format('d M Y') }}</div></div>
+                  <div class="mv-step total"><div class="label">Active at end</div><div class="v">{{ number_format($t['closing']) }}</div><div class="small text-muted">end of {{ $r['to']->format('d M Y') }}</div>
+                      @if($r['awaiting_termination'])<div class="small text-warning">incl. {{ $r['awaiting_termination'] }} awaiting termination approval</div>@endif
+                  </div>
               </div>
               <div class="d-flex flex-wrap gap-4 mt-3 small">
                   <span><strong>Net change:</strong> {{ $t['net'] > 0 ? '+' : '' }}{{ $t['net'] }}</span>
@@ -136,7 +138,7 @@
           <div class="card-header">By office</div>
           <div class="table-responsive">
               <table class="table table-sm mv-table mb-0" id="mvOffices">
-                  <thead><tr><th>Office</th><th class="num">Start</th><th class="num">New recruits</th><th class="num">Re-instated</th><th class="num">Transfers in</th><th class="num">Terminated</th><th class="num">Transfers out</th><th class="num">End</th><th class="num">Net</th><th class="num">Turnover</th></tr></thead>
+                  <thead><tr><th>Office</th><th class="num">Active at start</th><th class="num">New recruits</th><th class="num">Re-instated</th><th class="num">Transfers in</th><th class="num">Terminated</th><th class="num">Transfers out</th><th class="num">Active at end</th><th class="num">Net</th><th class="num">Turnover</th></tr></thead>
                   <tbody>
                       @forelse($r['offices'] as $o)
                           <tr>
@@ -150,6 +152,28 @@
                       @endforelse
                   </tbody>
                   <tfoot><tr><td>Total</td><td class="num">{{ $t['opening'] }}</td><td class="num">{{ $t['hires'] }}</td><td class="num">{{ $t['reinstated'] }}</td><td class="num">{{ $t['transfers_in'] }}</td><td class="num">{{ $t['terminated'] }}</td><td class="num">{{ $t['transfers_out'] }}</td><td class="num">{{ $t['closing'] }}</td><td class="num">{{ $t['net'] > 0 ? '+' : '' }}{{ $t['net'] }}</td><td class="num">{{ $t['turnover'] === null ? '–' : $t['turnover'] . '%' }}</td></tr></tfoot>
+              </table>
+          </div>
+      </div>
+
+      @php $bs = $r['by_status']; @endphp
+      <div class="card mv-card mb-3" id="mvAllStaff">
+          <div class="card-header d-flex justify-content-between align-items-center">
+              <span>All employees on record today, by office</span>
+              <span class="small text-muted fw-normal">the overall picture; the monthly figures above count active staff only</span>
+          </div>
+          <div class="table-responsive">
+              <table class="table table-sm mv-table mb-0">
+                  <thead><tr><th>Office</th><th class="num">Active</th><th class="num">Active, edit awaiting approval</th><th class="num">New recruits awaiting approval</th>
+                      <th class="num">Termination awaiting approval</th><th class="num">Re-instatement awaiting approval</th><th class="num">Terminated</th><th class="num">Total on record</th></tr></thead>
+                  <tbody>
+                      @foreach($bs['offices'] as $o)
+                          <tr><td>{{ $o['name'] }}</td><td class="num">{{ $o['active'] }}</td><td class="num">{{ $o['edit_pending'] }}</td><td class="num">{{ $o['recruit_pending'] }}</td>
+                              <td class="num">{{ $o['termination_pending'] }}</td><td class="num">{{ $o['reinstatement_pending'] }}</td><td class="num">{{ $o['terminated'] }}</td><td class="num">{{ $o['total'] }}</td></tr>
+                      @endforeach
+                  </tbody>
+                  <tfoot><tr><td>Total</td><td class="num">{{ $bs['total']['active'] }}</td><td class="num">{{ $bs['total']['edit_pending'] }}</td><td class="num">{{ $bs['total']['recruit_pending'] }}</td>
+                      <td class="num">{{ $bs['total']['termination_pending'] }}</td><td class="num">{{ $bs['total']['reinstatement_pending'] }}</td><td class="num">{{ $bs['total']['terminated'] }}</td><td class="num">{{ $bs['total']['total'] }}</td></tr></tfoot>
               </table>
           </div>
       </div>
@@ -285,7 +309,7 @@
                           <p>@foreach($r['payroll']['not_employed'] as $p)<a href="{{ url('employees', $p['employee_id']) }}">{{ $p['name'] }}</a>{{ $loop->last ? '' : ', ' }}@endforeach</p>
                       @endif
                       @if(count($r['undated']))
-                          <p class="mb-1"><strong>No date recorded</strong> (a new recruit with no date counts as employed from before the period; anything else is left out until it has a date)</p>
+                          <p class="mb-1"><strong>No date recorded</strong> (a new recruit with no date counts as employed from before the period, a termination with no date as gone straight after their last start; a re-instatement or transfer is left out until it has a date)</p>
                           <p>
                               @foreach($r['undated'] as $p)
                                   <a href="{{ url('employees', $p['employee_id']) }}">{{ $p['name'] }}</a> ({{ $p['type'] }})
