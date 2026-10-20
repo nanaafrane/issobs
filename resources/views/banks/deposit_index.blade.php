@@ -91,11 +91,12 @@
         <form method="POST" action="{{ route('deposit.store') }}" id="depositForm" autocomplete="off">
             @csrf
             {!! \App\Support\SubmissionGuard::field() !!}
+            <div id="offPageTicks"></div>
             <div class="row g-3">
                 <div class="{{ $canDeposit ? 'col-lg-8' : 'col-12' }}">
                     <div class="card">
                         <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2 py-3">
-                            <h6 class="mb-0">Waiting to be deposited</h6>
+                            <h6 class="mb-0">Waiting to be deposited <span class="small text-primary fw-normal ms-1" id="pickedNote"></span></h6>
                             @if($canDeposit && $waiting->isNotEmpty())
                             <div class="d-flex flex-wrap gap-2">
                                 <button type="button" class="btn btn-sm btn-outline-primary" data-tick="cash">Tick all cash</button>
@@ -274,8 +275,16 @@
     <script src="https://cdn.datatables.net/2.3.3/js/dataTables.js"></script>
     <script>
     (function () {
+        // Paged list. Ticks on other pages still count: totals read every row, and on
+        // saving, ticks on pages not shown are sent as hidden fields.
+        var dt = null;
         if (window.DataTable && document.querySelector('#waitingTable tbody tr')) {   // table works without it too
-            new DataTable('#waitingTable', { paging: false, info: false, order: [[5, 'asc']], columnDefs: [{ targets: [0, 1], orderable: true }] });
+            dt = new DataTable('#waitingTable', {
+                pageLength: 25,
+                lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, 'All']],
+                order: [[5, 'asc']],
+                language: { info: 'Showing _START_–_END_ of _TOTAL_ waiting', infoFiltered: '(filtered from _MAX_)' }
+            });
         }
 
         var rate = {{ $chargeRate !== null ? json_encode($chargeRate) : 'null' }};
@@ -286,8 +295,20 @@
         charge.addEventListener('input', function () { chargeTouched = true; update(); });
 
         function money(v) { return (Math.round(v * 100) / 100).toLocaleString('en-GH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+        // Every row, including rows on pages not shown (DataTables keeps them out of the page).
+        function rows(onlyMatchingSearch) {
+            if (!dt) return Array.prototype.slice.call(document.querySelectorAll('#waitingTable tbody tr'));
+            return dt.rows(onlyMatchingSearch ? { search: 'applied' } : {}).nodes().toArray();
+        }
+        function checks(kind, onlyMatchingSearch) {
+            var out = [];
+            rows(onlyMatchingSearch).forEach(function (tr) {
+                tr.querySelectorAll('.dp-check' + (kind ? '[data-kind="' + kind + '"]' : '')).forEach(function (c) { out.push(c); });
+            });
+            return out;
+        }
         function picked(kind) {
-            return Array.prototype.filter.call(form.querySelectorAll('.dp-check[data-kind="' + kind + '"]'), function (c) { return c.checked; });
+            return checks(kind).filter(function (c) { return c.checked; });
         }
         function sum(list) { return list.reduce(function (s, c) { return s + parseFloat(c.dataset.amount || 0); }, 0); }
         function count(n) { return n ? '(' + n + ')' : ''; }
@@ -313,7 +334,13 @@
             document.getElementById('pvOut').textContent = money(chg);
             document.getElementById('pvChargeRow').style.display = chg > 0 ? '' : 'none';
 
-            document.querySelectorAll('#waitingTable tbody tr').forEach(function (tr) {
+            var offPage = cash.concat(momo).filter(function (c) { return !document.body.contains(c); }).length;
+            var note = document.getElementById('pickedNote');
+            if (note) note.textContent = cash.length + momo.length
+                ? (cash.length + momo.length) + ' ticked' + (offPage ? ' (' + offPage + ' on other pages)' : '')
+                : '';
+
+            rows().forEach(function (tr) {
                 var c = tr.querySelector('.dp-check[data-kind="cash"]'), m = tr.querySelector('.dp-check[data-kind="momo"]');
                 tr.classList.toggle('dp-on-cash', !!(c && c.checked));
                 tr.classList.toggle('dp-on-momo', !!(m && m.checked));
@@ -347,17 +374,25 @@
         document.querySelectorAll('[data-tick]').forEach(function (b) {
             b.addEventListener('click', function () {
                 var kind = b.dataset.tick;
-                form.querySelectorAll('.dp-check').forEach(function (c) {
-                    if (kind === 'none') c.checked = false;
-                    else if (c.dataset.kind === kind) c.checked = true;
-                });
+                // "Tick all" ticks every row that matches the search box, on every page.
+                (kind === 'none' ? checks(null) : checks(kind, true)).forEach(function (c) { c.checked = kind !== 'none'; });
                 update();
             });
         });
         form.addEventListener('submit', function (e) {
             var slip = document.getElementById('slipSum').textContent;
             var bank = document.getElementById('bank_id');
-            if (!confirm('Deposit GH₵ ' + slip + ' to ' + bank.options[bank.selectedIndex].text + '?')) e.preventDefault();
+            if (!confirm('Deposit GH₵ ' + slip + ' to ' + bank.options[bank.selectedIndex].text + '?')) { e.preventDefault(); return; }
+
+            // Ticks on pages not shown are not in the form: send them as hidden fields.
+            var carry = document.getElementById('offPageTicks');
+            carry.innerHTML = '';
+            picked('cash').concat(picked('momo')).forEach(function (c) {
+                if (document.body.contains(c)) return;
+                var h = document.createElement('input');
+                h.type = 'hidden'; h.name = c.name; h.value = c.value;
+                carry.appendChild(h);
+            });
         });
         update();
     })();
