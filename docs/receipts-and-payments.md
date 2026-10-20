@@ -6,17 +6,18 @@
 
 | Paid by | Where it goes | When |
 |---|---|---|
-| **Cash** | Collection → *Bank Deposit* → the bank picked on the deposit screen | when someone deposits it |
+| **Cash** | Collection → *Bank Deposit* → the bank picked on the deposit slip | when someone deposits it |
 | **Cheque** | straight into the bank picked on the receipt (*Paid into (our bank)*) | the moment the receipt is saved |
 | **Transfer** | straight into the bank picked on the receipt (*Received into (our bank)*) | the moment the receipt is saved |
-| MoMo / other | not a bank — stays in Collections | — |
+| **MoMo** | Collection → withdrawn → *Bank Deposit* (alone or with cash); the withdrawal charge is a separate bank debit | when someone deposits it |
+| Other | not a bank — stays in Collections | — |
 
-* Every bank ledger line now says how the money arrived (`channel`: `cheque`, `transfer`, `deposit`, `expense`) and
+* Every bank ledger line now says how the money arrived (`channel`: `cheque`, `transfer`, `deposit`, `momo_charge`, `expense`) and
   carries a narration ("Cheque received — receipt FWSSR123 (ref CHQ-9)"), shown under *Accounts › Banks*.
 * Editing a receipt's cheque/transfer amount or bank adds a **reversal line** and a new posting; deleting the receipt
   adds a reversal. Nothing is ever deleted from the bank ledger.
-* Bank Deposit only lists what still has to be carried to the bank: **cash**, plus cheques received **before** this
-  change (those were never posted). A receipt paid only by cheque/transfer gets collection status **Banked** and
+* Bank Deposit only lists what still has to be carried to the bank: **cash** and **MoMo**, plus cheques received
+  **before** this change (those were never posted). See *Cash and MoMo deposits* below. A receipt paid only by cheque/transfer gets collection status **Banked** and
   never appears on the deposit screen, so a cheque can't be counted twice.
 
 ---
@@ -250,6 +251,69 @@ invoice's total re-derives its status and posts the correction.
 
 ---
 
+## 8. Cash and MoMo deposits
+
+### What was wrong
+
+* **MoMo never reached a bank.** Collections recorded MoMo, but Bank Deposit ignored it, so MoMo receipts sat as
+  "undeposited" forever and the bank balance never included them. A receipt paid by cheque *and* MoMo was even marked
+  **Banked**, hiding the MoMo completely.
+* **No place for the withdrawal charge.** MoMo has to be cashed out before it can be deposited, and the vendor/agent
+  keeps a charge. That cost was invisible, so the bank was short by it with no line explaining why.
+* **One deposit per receipt, not per slip.** Ticking 10 receipts made 10 deposits and 10 bank lines, while the bank
+  shows one slip. No slip number, no date on the slip, no "deposited by" — nothing to reconcile against.
+* Every row needed its own bank picked; deposits could not be corrected (only edited in the database); the summary
+  tiles were hard-coded to 0; nothing stopped the deposit page being used by anyone.
+
+### How it works now
+
+* **One deposit = one bank slip**: bank account, date on the slip, slip/ref number, deposited by, notes.
+* Each receipt's money waits in **two parts**, ticked separately: **Cash** (deposited alone or with MoMo) and **MoMo**
+  (deposited alone or with cash). The two parts of one receipt may go on different slips; until both are banked the
+  collection shows *Part deposited*.
+* When MoMo is ticked, the **MoMo withdrawal charge** must be entered (0 if none). It must be less than the MoMo
+  withdrawn. `MOMO_WITHDRAWAL_CHARGE_RATE` in `.env` (e.g. `1` for 1%) only pre-fills the box; the real figure from the
+  withdrawal SMS is what's saved.
+* The screen adds it up live: *Cash + MoMo − charge = Amount on slip*, and shows exactly what the bank account will
+  get before saving.
+
+**On the bank account** (Accounts › Banks), a slip with cash 500, MoMo 300 and a 3.00 charge posts:
+
+| Line | Money in | Money out | Narration |
+|---|---|---|---|
+| `deposit` | 800.00 | | Deposit slip 1234 of 20 Oct 2026 — cash 500.00 + MoMo 300.00 (slip 797.00 after MoMo charge) · receipts FWSSR… |
+| `MoMo charge` | | 3.00 | MoMo withdrawal charge slip 1234 of 20 Oct 2026 — on MoMo 300.00 withdrawn for deposit #… · receipt FWSSR… |
+
+The bank balance moves by **797.00 — exactly the slip**. The charge is its own debit line, labelled *MoMo charge*, so it
+can be found, filtered and totalled.
+
+> Why the deposit line is the gross 800 and not the 797 left after the charge: if the books credited 797 **and** also
+> debited the 3.00 charge, the balance would go up by only 794 — 3.00 less than the bank actually received. Crediting
+> the gross amount and debiting the charge shows the charge clearly *and* keeps the balance equal to the bank's. The
+> amount on the slip (797) is stored on the deposit and printed in the narration for reconciliation.
+
+* **Deposits made** (Accounts › Bank Deposit): one row per slip for a month, with cash, MoMo, charge and amount on
+  slip, totals, the month's MoMo charges (and the % of MoMo withdrawn they cost), what's still waiting, Excel export.
+* **Deposit page**: the slip, its bank lines, and every receipt on it. **Reverse** (Finance Manager / Director, with a
+  reason) posts both bank lines back and puts the cash and MoMo back on Bank Deposit. Nothing is deleted.
+* A receipt whose cash or MoMo has been deposited **cannot be edited or voided** until that deposit is reversed.
+* **Already banked by hand?** Finance Manager / Director can tick old collections and *Mark as already banked* with a
+  note (e.g. old MoMo cashed and deposited before this release). They close with the note kept and **nothing is
+  posted to a bank** — use this once to clear history, not for new money.
+* Who: deposits by Invoice, Finance Manager, Director. Branch staff see what is waiting for their own office (Tema also
+  sees Shai Hills) but cannot deposit.
+* Same-submission protection as receipts: a double click or a dropped connection never makes two deposits.
+
+### After deploying
+
+1. `php artisan migrate` (adds slip columns to `bank_deposits`, and `cash_deposit_id` / `momo_deposit_id` /
+   `deposit_note` to `collections`; zero-date safe and re-runnable).
+2. Open Bank Deposit. MoMo from receipts that were never deposited now appears under **MoMo waiting**. Anything there
+   that was already banked by hand: tick it and *Mark as already banked* with a note. Everything else: deposit it.
+3. Optional: `MOMO_WITHDRAWAL_CHARGE_RATE=` in `.env` to pre-fill the charge.
+
+---
+
 ## Code map
 
 | File | Purpose |
@@ -258,6 +322,9 @@ invoice's total re-derives its status and posts the correction.
 | `app/Services/Receipts/ReceiptAllocator.php` | Pure maths: split money over invoices, validate, leftover credit |
 | `app/Services/Receipts/InvoiceSettlement.php` | Allocation lines + client ledger; re-derives invoice status/balance; release on edit/delete |
 | `app/Services/Receipts/BankPosting.php` | Cheque/transfer straight to bank, reversals, what's left to deposit |
+| `app/Services/Banking/DepositBook.php` | Cash/MoMo waiting, deposit slips, MoMo charge debit, reversal, mark already banked |
+| `app/Http/Controllers/BankDepositController.php`, `resources/views/banks/deposit_*.blade.php` | Bank Deposit screen, deposits made, deposit page |
+| `tests/Feature/BankDepositTest.php` | Cash alone, MoMo alone, both, charge rules, part deposits, reversal, office scope |
 | `app/Services/Receipts/BalanceRecompute.php` + `routes/console.php` | `receipts:recompute` |
 | `app/Services/Receipts/ReceiptWorkflow.php` | Approval routing and category A–D |
 | `app/Http/Controllers/MultiInvoiceReceiptController.php` | Multi-invoice screen, apply credit |

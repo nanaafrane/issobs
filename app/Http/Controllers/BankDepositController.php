@@ -2,178 +2,149 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\BankDeposit;
 use App\Http\Requests\StoreBankDepositRequest;
-use App\Http\Requests\UpdateBankDepositRequest;
 use App\Models\Bank;
-use App\Models\BankTransaction;
-use App\Models\Collection;
-use App\Models\Receipt;
-use App\Services\Receipts\BankPosting;
-use Illuminate\Support\Facades\DB;
+use App\Models\BankDeposit;
+use App\Models\Field;
+use App\Services\Banking\DepositBook;
+use App\Support\SubmissionGuard;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
+/**
+ * Bank Deposit: take waiting cash and MoMo to the bank, one slip at a time.
+ * The bookkeeping is in App\Services\Banking\DepositBook.
+ */
 class BankDepositController extends Controller
 {
+    /** Who can make deposits. */
+    public const DEPOSIT_ROLES = ['Invoice', 'Finance Manager', 'Director'];
 
-    /**
-     * Create a new controller instance.
-     *
-     * @return void
-     */
-    public function __construct()
+    /** Who can reverse a deposit or close old collections as already banked. */
+    public const CORRECT_ROLES = ['Finance Manager', 'Director'];
+
+    public function __construct(private DepositBook $book)
     {
         $this->middleware('auth');
     }
 
-
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
+    /** Deposits made (one row per slip), newest first, for a month. */
+    public function index(Request $request)
     {
-        //
-        // $collections = Collection::where('status', 'undeposited')->get();
-        $banks = Bank::all();
-        // return view('banks.deposit_list', compact('collections', 'banks'));
-        // dd($collections);
-        $deposits = BankDeposit::all();
-        return view('banks.deposit_list', compact('deposits', 'banks'));
+        abort_unless(Auth::user()?->hasRole(self::DEPOSIT_ROLES), 403);
+        $month = $this->month($request->input('month'));
+        $from = $month->copy()->startOfMonth();
+        $to = $month->copy()->endOfMonth();
+
+        $deposits = BankDeposit::with(['bank', 'user'])
+            ->where(fn ($q) => $q->whereBetween('deposit_date', [$from->toDateString(), $to->toDateString()])
+                ->orWhere(fn ($q) => $q->whereNull('deposit_date')->whereBetween('created_at', [$from, $to])))
+            ->orderByDesc('deposit_date')->orderByDesc('id')
+            ->get();
+
+        $live = $deposits->whereNull('reversed_at');
+        $summary = [
+            'slips' => $live->count(),
+            'banked' => round((float) $live->sum('total'), 2),
+            'cash' => round((float) $live->sum(fn ($d) => (float) $d->cash_amount + (float) $d->cheque_amount), 2),
+            'momo' => round((float) $live->sum('momo_amount'), 2),
+            'charges' => round((float) $live->sum('momo_charge'), 2),
+        ];
+        $summary['charge_rate'] = $summary['momo'] > 0 ? round($summary['charges'] / $summary['momo'] * 100, 2) : null;
+
+        $waiting = $this->book->waiting($this->allowedFieldIds());
+        $waitingTotals = ['cash' => round($waiting->sum('cash_due'), 2), 'momo' => round($waiting->sum('momo_due'), 2), 'count' => $waiting->count()];
+
+        return view('banks.deposit_list', compact('deposits', 'summary', 'month', 'waitingTotals'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
+    /** What is waiting to be deposited, and the slip form. */
+    public function create(Request $request)
     {
-        //
-        // Cheques and transfers now go straight to the bank from the receipt, so
-        // only cash (and cheques received before that change) is left to deposit.
-        $collections = Collection::where('status', 'undeposited')->get()
-            ->each(function ($c) {
-                $d = BankPosting::depositable($c);
-                $c->deposit_cash = $d['cash'];
-                $c->deposit_cheque = $d['cheque'];
-                $c->deposit_total = $d['total'];
-            })
-            ->filter(fn ($c) => $c->deposit_total > 0)
-            ->values();
-        $banks = Bank::all();
+        $allowed = $this->allowedFieldIds();
+        $fieldId = $request->integer('field') ?: null;
+        if ($fieldId && $allowed !== null && ! in_array($fieldId, $allowed, true)) {
+            abort(403);
+        }
 
-        // Pre-select the bank chosen on the receipt (only matters for old, never-banked cheques).
-        $suggestedBanks = Receipt::whereIn('id', $collections->pluck('receipt_id')->filter())
-            ->get(['id', 'cheque_to_bank_id', 'transfer_to_bank_id'])
-            ->mapWithKeys(fn ($r) => [$r->id => $r->cheque_to_bank_id ?: $r->transfer_to_bank_id]);
+        $waiting = $this->book->waiting($fieldId ? [$fieldId] : $allowed);
+        $fields = $allowed === null ? Field::orderBy('name')->get() : Field::whereIn('id', $allowed)->orderBy('name')->get();
+        $banks = Bank::orderBy('name')->get();
+        $canDeposit = Auth::user()?->hasRole(self::DEPOSIT_ROLES) ?? false;
+        $canCorrect = Auth::user()?->hasRole(self::CORRECT_ROLES) ?? false;
+        $chargeRate = is_numeric(config('banking.momo_charge_rate')) ? (float) config('banking.momo_charge_rate') : null;
 
-        return view('banks.deposit_index', compact('collections', 'banks', 'suggestedBanks'));
+        return view('banks.deposit_index', compact('waiting', 'fields', 'fieldId', 'banks', 'canDeposit', 'canCorrect', 'chargeRate'));
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(StoreBankDepositRequest $request)
+    public function store(StoreBankDepositRequest $request, SubmissionGuard $guard)
     {
-        $collectionIds = array_filter((array) $request->input('collections', []));
-        if (empty($collectionIds)) {
-            return back()->with('error', 'Tick at least one collection to deposit.');
-        }
+        return $guard->once($request, 'bank_deposit', function () use ($request) {
+            $deposit = $this->book->deposit($request->validated());
 
-        // bank_id is keyed by collection id (bank_id[<collection id>]) so the bank
-        // always matches its own row. Previously both were plain lists, and
-        // ticking only some rows paired collections with other rows' banks.
-        $bankIds = (array) $request->input('bank_id', []);
-        $missing = array_filter($collectionIds, fn ($id) => empty($bankIds[$id]));
-        if ($missing) {
-            return back()->withInput()->with('error', 'Choose a bank for every ticked collection (collection #' . implode(', #', $missing) . ').');
-        }
-
-        DB::transaction(function () use ($collectionIds, $bankIds) {
-            $collections = Collection::whereIn('id', $collectionIds)
-                ->where('status', 'undeposited')
-                ->lockForUpdate()
-                ->get();
-
-            foreach ($collections as $collection) {
-                $bank = Bank::whereKey($bankIds[$collection->id])->lockForUpdate()->firstOrFail();
-                // Cash, plus the cheque only if it was not already posted from the receipt.
-                $amounts = BankPosting::depositable($collection);
-
-                if ($amounts['total'] > 0) {
-                    $current_deposited_id = $this->bank_deposit($amounts, $bank->id);
-                    $this->bank_transaction($bank, $current_deposited_id, $collection, $amounts);
-
-                    $bank->total = round((float) $bank->total + $amounts['total'], 2);
-                    $bank->save();
-                }
-
-                $collection->status = 'Deposited';
-                $collection->save();
-            }
+            return redirect()->route('deposit.show', $deposit)
+                ->with('success', 'Deposit saved: GH₵ ' . number_format($deposit->total, 2) . ' to ' . $deposit->bank?->name
+                    . ((float) $deposit->momo_charge > 0 ? ' (MoMo withdrawal charge GH₵ ' . number_format($deposit->momo_charge, 2) . ' posted as a bank debit)' : '') . '.');
         });
-
-        return back()->with('success', 'Bank Deposit Added Successfully');
-
     }
 
-    /** @param array{cash: float, cheque: float, total: float} $amounts */
-    public function bank_deposit (array $amounts, $bank)
+    /** One slip: what went on it, and its lines on the bank account. */
+    public function show(BankDeposit $deposit)
     {
-        // CREATE A BANK DEPOSIT AND RETURN THE DEPOSITED ID
-        $deposit = new BankDeposit();
-        $deposit->bank_id = $bank;
-        $deposit->user_id = Auth::user()->id;
-        $deposit->cash_amount = $amounts['cash'];
-        $deposit->cheque_amount = $amounts['cheque'];
-        $deposit->total = $amounts['total'];
-        $deposit->save();
+        abort_unless(Auth::user()?->hasRole(self::DEPOSIT_ROLES), 403);
+        $deposit->load(['bank', 'user', 'reversedBy', 'bankLines']);
+        $collections = $deposit->collections()
+            ->leftJoin('receipts', 'receipts.id', '=', 'collections.receipt_id')
+            ->leftJoin('clients', 'clients.id', '=', 'receipts.client_id')
+            ->leftJoin('fields', 'fields.id', '=', 'collections.field_id')
+            ->orderBy('collections.id')
+            ->get(['collections.*', 'receipts.momo_transactin_id as momo_ref', \Illuminate\Support\Facades\DB::raw('COALESCE(clients.business_name, clients.name) as client_name'), 'fields.name as office']);
+        $canCorrect = Auth::user()?->hasRole(self::CORRECT_ROLES) ?? false;
 
-         return $deposit->id;
+        return view('banks.deposit_show', compact('deposit', 'collections', 'canCorrect'));
     }
 
-    /** @param array{cash: float, cheque: float, total: float} $amounts */
-    public function bank_transaction($bank, $current_deposited_id, $collection, array $amounts)
+    public function reverse(Request $request, BankDeposit $deposit, SubmissionGuard $guard)
     {
-        $bank_transaction = new BankTransaction();
-        $bank_transaction->bank_id = $bank->id;
-        $bank_transaction->channel = 'deposit';
-        $bank_transaction->credit = $amounts['total'];
-        $bank_transaction->deposit_id = $current_deposited_id;
-        $bank_transaction->balance = round((float) $bank->total + $amounts['total'], 2);
-        $bank_transaction->narration = 'Deposit of collection #' . $collection->id
-            . ($collection->receipt_id ? ' (receipt FWSSR' . $collection->receipt_id . ')' : '');
-        $bank_transaction->save();
+        abort_unless(Auth::user()?->hasRole(self::CORRECT_ROLES), 403);
+
+        return $guard->once($request, 'bank_deposit_reverse', function () use ($request, $deposit) {
+            $this->book->reverse($deposit, (string) $request->input('reversal_reason'));
+
+            return redirect()->route('deposit.show', $deposit)
+                ->with('success', 'Deposit reversed. Its cash and MoMo are back on Bank Deposit, waiting to be deposited.');
+        });
     }
 
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(BankDeposit $bankDeposit)
+    public function markBanked(Request $request, SubmissionGuard $guard)
     {
-        //
+        abort_unless(Auth::user()?->hasRole(self::CORRECT_ROLES), 403);
+
+        return $guard->once($request, 'bank_deposit_mark_banked', function () use ($request) {
+            $n = $this->book->markAlreadyBanked((array) $request->input('collections', []), (string) $request->input('banked_reason'));
+
+            return redirect()->route('deposit.create')->with('success', $n . ' ' . ($n === 1 ? 'collection' : 'collections') . ' marked as already banked. Nothing was posted to any bank.');
+        });
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(BankDeposit $bankDeposit)
+    /** Head office sees every office; everyone else only their own (Tema also sees Shai Hills). */
+    private function allowedFieldIds(): ?array
     {
-        //
+        $user = Auth::user();
+        if ($user?->hasRole(['Finance Manager', 'Invoice', 'Director'])) {
+            return null;
+        }
+
+        return $user?->field_id == 3 ? [3, 7] : array_values(array_filter([(int) $user?->field_id]));
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(UpdateBankDepositRequest $request, BankDeposit $bankDeposit)
+    private function month(?string $value): Carbon
     {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(BankDeposit $bankDeposit)
-    {
-        //
+        try {
+            return $value ? Carbon::createFromFormat('Y-m', $value)->startOfMonth() : now()->startOfMonth();
+        } catch (\Throwable) {
+            return now()->startOfMonth();
+        }
     }
 }

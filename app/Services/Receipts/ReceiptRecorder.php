@@ -165,6 +165,9 @@ class ReceiptRecorder
 
         return DB::transaction(function () use ($receipt, $input, $image) {
             $receipt = Receipt::whereKey($receipt->id)->lockForUpdate()->firstOrFail();
+            if (\App\Services\Banking\DepositBook::anyPartDeposited(Collection::where('receipt_id', $receipt->id)->first())) {
+                throw ValidationException::withMessages(['receipt' => 'Money on this receipt has already been deposited, so it cannot be changed. Reverse the deposit first.']);
+            }
             [$payment, $money] = $this->payment($input);
 
             $this->settlement->release($receipt);

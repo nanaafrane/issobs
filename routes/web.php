@@ -164,7 +164,9 @@ Route::get('receiptListSearch', [ReceiptController::class, 'receiptListSearch'])
 
 Route::resource('collections', CollectionController::class);
 
-Route::resource('deposit', BankDepositController::class);
+Route::resource('deposit', BankDepositController::class)->only(['index', 'create', 'store', 'show'])->middleware('once');
+Route::post('deposit/{deposit}/reverse', [BankDepositController::class, 'reverse'])->name('deposit.reverse')->middleware('once');
+Route::post('deposit-mark-banked', [BankDepositController::class, 'markBanked'])->name('deposit.markBanked')->middleware('once');
 
 Route::resource('banks', BankController::class);
 

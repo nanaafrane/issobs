@@ -11,10 +11,10 @@ use App\Models\Receipt;
  * Puts cheque and transfer money straight into the bank account chosen on the
  * receipt — the moment the receipt is written, not later through Bank Deposit.
  *
- *   cash      -> Collections -> Bank Deposit (unchanged)
+ *   cash      -> Collections -> Bank Deposit
  *   cheque    -> credited to receipts.cheque_to_bank_id immediately
  *   transfer  -> credited to receipts.transfer_to_bank_id immediately
- *   momo      -> not a bank (unchanged)
+ *   momo      -> Collections -> Bank Deposit (withdrawn, charge posted as a debit)
  *
  * Editing a receipt re-posts it; deleting it reverses it. Nothing is ever
  * deleted from the bank ledger: a change adds a reversal line (debit) and a
@@ -108,13 +108,13 @@ class BankPosting
     private function syncCollection(Receipt $receipt): void
     {
         $collection = Collection::where('receipt_id', $receipt->id)->first();
-        if (! $collection || strcasecmp((string) $collection->status, 'deposited') === 0) {
+        if (! $collection || \App\Services\Banking\DepositBook::anyPartDeposited($collection)) {
             return;
         }
 
         $wentToBank = (float) $receipt->cheque_amount > 0 || (float) $receipt->transfer_amount > 0;
-        if (self::depositable($collection)['total'] > 0 || ! $wentToBank) {
-            $collection->status = 'undeposited';   // cash still to deposit (or momo only: never a bank)
+        if (self::depositable($collection)['total'] > 0 || (float) $collection->momo_amount > 0 || ! $wentToBank) {
+            $collection->status = 'undeposited';   // cash or MoMo still to deposit (Bank Deposit)
         } else {
             $collection->status = 'Banked';        // everything already went straight to the bank
         }

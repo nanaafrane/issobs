@@ -197,7 +197,7 @@ class ReceiptBalanceAndBankTest extends TestCase
         // Only the cash is left for Bank Deposit.
         $collection = Collection::where('receipt_id', $receipt->id)->first();
         $this->get('/deposit/create')->assertOk()->assertSee('200.00');
-        $this->post('/deposit', ['collections' => [$collection->id], 'bank_id' => [$collection->id => $this->bank->id]])
+        $this->post('/deposit', ['cash' => [$collection->id], 'bank_id' => $this->bank->id, 'deposit_date' => now()->toDateString()])
             ->assertSessionHas('success');
         $this->assertEquals(2000, $this->bank->fresh()->total);   // 1000 + 800 cheque + 200 cash, cheque not counted twice
     }
@@ -212,7 +212,7 @@ class ReceiptBalanceAndBankTest extends TestCase
         $collection = Collection::where('receipt_id', Receipt::latest('id')->value('id'))->first();
         $this->assertSame('Banked', $collection->status);
         $this->get('/deposit/create')->assertOk()
-            ->assertViewHas('collections', fn ($list) => ! $list->contains('id', $collection->id));
+            ->assertViewHas('waiting', fn ($list) => ! $list->contains('id', $collection->id));
     }
 
     public function test_editing_cheque_amount_or_bank_reposts_with_reversal(): void
@@ -238,7 +238,7 @@ class ReceiptBalanceAndBankTest extends TestCase
     {
         // A collection from before this change: cheque never posted to any bank.
         $collection = Collection::create(['cash_amount' => 0, 'cheque_amount' => 350, 'total_amount' => 350, 'status' => 'undeposited']);
-        $this->post('/deposit', ['collections' => [$collection->id], 'bank_id' => [$collection->id => $this->bank->id]])
+        $this->post('/deposit', ['cash' => [$collection->id], 'bank_id' => $this->bank->id, 'deposit_date' => now()->toDateString()])
             ->assertSessionHas('success');
         $this->assertEquals(1350, $this->bank->fresh()->total);
         $this->assertSame('deposit', BankTransaction::latest('id')->value('channel'));

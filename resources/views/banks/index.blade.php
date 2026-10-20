@@ -273,12 +273,12 @@
                                     </td>
                                     <td>{{ $t->bank?->name }}</td>
                                     <td>
-                                        @if($t->channel)<span class="badge bg-label-primary me-1">{{ $t->channel }}</span>@endif
+                                        @if($t->channel === 'momo_charge')<span class="badge bg-label-danger me-1">MoMo charge</span>@elseif($t->channel)<span class="badge bg-label-primary me-1">{{ $t->channel }}</span>@endif
                                         {{ $t->narration }}
                                     </td>
                                     <td class="bk-src">
                                         @if($t->receipt_id)<a href="{{ url('receipt', $t->receipt_id) }}">Receipt FWSSR{{ $t->receipt_id }}</a>
-                                        @elseif($t->deposit_id)Deposit #{{ $t->deposit_id }}
+                                        @elseif($t->deposit_id)<a href="{{ route('deposit.show', $t->deposit_id) }}">Deposit #{{ $t->deposit_id }}</a>
                                         @elseif($t->expense_id)Expense #{{ $t->expense_id }}
                                         @else <span class="bk-muted">Manual</span>@endif
                                     </td>

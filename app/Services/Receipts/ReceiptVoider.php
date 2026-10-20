@@ -43,8 +43,8 @@ class ReceiptVoider
             $receipt = Receipt::whereKey($receipt->id)->lockForUpdate()->firstOrFail();
             $collection = Collection::where('receipt_id', $receipt->id)->first();
 
-            if ($collection && strcasecmp((string) $collection->status, 'deposited') === 0) {
-                throw ValidationException::withMessages(['void_reason' => 'The cash on this receipt has already been deposited, so it cannot be voided here.']);
+            if (\App\Services\Banking\DepositBook::anyPartDeposited($collection)) {
+                throw ValidationException::withMessages(['void_reason' => 'The cash or MoMo on this receipt has already been deposited, so it cannot be voided. Reverse the deposit first (Bank Deposit › the deposit › Reverse).']);
             }
 
             $money = round(array_sum(array_map(fn ($f) => (float) $receipt->{$f}, ClientLedger::MONEY_FIELDS)), 2);

@@ -905,7 +905,7 @@ class ReceiptController extends Controller
     private static function isDeposited(?Collection $collection): bool
     {
         // Deposits save "Deposited"; older code compared against "deposited".
-        return $collection && strcasecmp((string) $collection->status, 'deposited') === 0;
+        return \App\Services\Banking\DepositBook::anyPartDeposited($collection);
     }
 
 

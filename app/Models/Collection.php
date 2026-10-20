@@ -19,8 +19,16 @@ class Collection extends Model
         'expenses_amount',
         'total_amount',
         'field_id',
+        'cash_deposit_id',
+        'momo_deposit_id',
+        'deposit_note',
     ];
 
+
+    public function receipt()
+    {
+        return $this->belongsTo(Receipt::class);
+    }
 
     public function field()
     {

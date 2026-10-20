@@ -317,20 +317,18 @@ class MultiInvoiceReceiptTest extends TestCase
         $this->assertSame($this->bank->id, (int) $receipt->cheque_to_bank_id);
     }
 
-    public function test_deposit_pairs_each_collection_with_its_own_bank(): void
+    public function test_deposit_takes_only_the_ticked_collections_to_the_chosen_bank(): void
     {
         $second = Bank::create(['name' => 'Ecobank Ops', 'branch' => 'Tema', 'acc_number' => '999', 'total' => 0]);
         $c1 = Collection::create(['cash_amount' => 100, 'total_amount' => 100, 'status' => 'undeposited']);
         $c2 = Collection::create(['cash_amount' => 250, 'total_amount' => 250, 'status' => 'undeposited']);
 
-        // Only the second collection is ticked; it must go to the bank chosen on ITS row.
-        $this->post('/deposit', [
-            'collections' => [$c2->id],
-            'bank_id' => [$c1->id => $this->bank->id, $c2->id => $second->id],
-        ])->assertSessionHas('success');
+        $this->post('/deposit', ['cash' => [$c2->id], 'bank_id' => $second->id, 'deposit_date' => now()->toDateString()])
+            ->assertSessionHas('success');
 
         $this->assertEquals(250, $second->fresh()->total);
         $this->assertEquals(1000, $this->bank->fresh()->total);
         $this->assertSame('undeposited', $c1->fresh()->status);
+        $this->assertSame('Deposited', $c2->fresh()->status);
     }
 }
