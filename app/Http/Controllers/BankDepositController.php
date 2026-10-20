@@ -70,7 +70,7 @@ class BankDepositController extends Controller
 
         $waiting = $this->book->waiting($fieldId ? [$fieldId] : $allowed);
         $fields = $allowed === null ? Field::orderBy('name')->get() : Field::whereIn('id', $allowed)->orderBy('name')->get();
-        $banks = Bank::orderBy('name')->get();
+        $banks = Bank::banksOnly()->operating()->orderBy('name')->get();
         $canDeposit = Auth::user()?->hasRole(self::DEPOSIT_ROLES) ?? false;
         $canCorrect = Auth::user()?->hasRole(self::CORRECT_ROLES) ?? false;
         $chargeRate = is_numeric(config('banking.momo_charge_rate')) ? (float) config('banking.momo_charge_rate') : null;

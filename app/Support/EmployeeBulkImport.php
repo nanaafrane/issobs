@@ -701,7 +701,7 @@ class EmployeeBulkImport
             'departments' => Department::pluck('name', 'id')->mapWithKeys(fn ($n, $id) => [(int) $id => (string) $n])->all(),
             'roles' => Role::pluck('name', 'id')->mapWithKeys(fn ($n, $id) => [(int) $id => (string) $n])->all(),
             'fields' => Field::pluck('name', 'id')->mapWithKeys(fn ($n, $id) => [(int) $id => (string) $n])->all(),
-            'banks' => Bank::pluck('name', 'id')->mapWithKeys(fn ($n, $id) => [(int) $id => (string) $n])->all(),
+            'banks' => Bank::banksOnly()->pluck('name', 'id')->mapWithKeys(fn ($n, $id) => [(int) $id => (string) $n])->all(),
             'clients' => $clients,
             'client_field' => $clientField,
             'allowed_fields' => EmployeeCreator::allowedFieldIds($user),

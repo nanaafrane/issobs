@@ -782,7 +782,7 @@ class ReceiptController extends Controller
         $status = DB::table('receipt_status')->get();
          $wht = new Wht();
          $invoice = Invoice::findorFail($receipt->invoice_id);
-        $banks = Bank::orderBy('name')->get();
+        $banks = Bank::banksOnly()->operating()->orderBy('name')->get();
 
         $user = Auth::user();
         $staff =  User::all();

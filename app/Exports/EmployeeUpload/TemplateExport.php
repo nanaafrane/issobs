@@ -48,7 +48,7 @@ class TemplateExport implements WithMultipleSheets, WithEvents
             'Departments' => Department::orderBy('name')->get(['id', 'name'])->map(fn ($d) => $d->id . ' | ' . $d->name)->all(),
             'Roles' => Role::orderBy('name')->get(['id', 'name'])->map(fn ($r) => $r->id . ' | ' . $r->name)->all(),
             'Clients' => EmployeeCreator::allowedClients($user)->map(fn ($c) => $c->id . ' | ' . trim($c->name . ' ' . $c->business_name))->all(),
-            'Banks' => Bank::orderBy('name')->get(['id', 'name'])->map(fn ($b) => $b->id . ' | ' . $b->name)->all(),
+            'Banks' => Bank::banksOnly()->orderBy('name')->get(['id', 'name'])->map(fn ($b) => $b->id . ' | ' . $b->name)->all(),
         ];
     }
 

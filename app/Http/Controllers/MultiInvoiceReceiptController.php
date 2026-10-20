@@ -59,7 +59,7 @@ class MultiInvoiceReceiptController extends Controller
         }
 
         $mode = DB::table('receipt_mode')->get();
-        $banks = Bank::orderBy('name')->get();
+        $banks = Bank::banksOnly()->operating()->orderBy('name')->get();
         $wht_rate = new Wht();
         $assign_staff = $this->assignableStaff();
 

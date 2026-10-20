@@ -76,7 +76,13 @@
                     <a href="{{ url('deposit') }}" class="menu-link"><div class="text-truncate">Bank Deposit</div></a>
                 </li>
                 <li @class(['menu-item', 'active' => request()->is('banks*')])>
-                    <a href="{{ url('banks') }}" class="menu-link"><div class="text-truncate">Banks</div></a>
+                    <a href="{{ url('banks') }}" class="menu-link"><div class="text-truncate">Bank &amp; cash</div></a>
+                </li>
+                <li @class(['menu-item', 'active' => request()->is('money/transfers*')])>
+                    <a href="{{ route('money.transfers') }}" class="menu-link"><div class="text-truncate">Transfers / fund cash</div></a>
+                </li>
+                <li @class(['menu-item', 'active' => request()->is('money/payments*')])>
+                    <a href="{{ route('money.payments') }}" class="menu-link"><div class="text-truncate">Payments</div></a>
                 </li>
             </ul>
         </li>

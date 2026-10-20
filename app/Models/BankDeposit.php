@@ -30,6 +30,11 @@ class BankDeposit extends Model
         'reversed_at' => 'datetime',
     ];
 
+    public function setDepositDateAttribute($value): void
+    {
+        $this->attributes['deposit_date'] = $value ? \Carbon\Carbon::parse($value)->toDateString() : null;   // plain date in every database
+    }
+
     public function bank()
     {
         return $this->belongsTo(Bank::class);

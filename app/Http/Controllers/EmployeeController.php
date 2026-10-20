@@ -526,7 +526,7 @@ class EmployeeController extends Controller
         $fieldsAll = Field::all();
         $fields = null;
         $clients = null;
-        $banks = Bank::all();
+        $banks = Bank::banksOnly()->get();
         $staff =  User::all();
         $user =  Auth::user();
 
@@ -574,7 +574,7 @@ class EmployeeController extends Controller
     {
         //
         $employee_pay_info = PaymentInfo::where('employee_id', $id)->first();
-        $banks =  Bank::all();
+        $banks = Bank::banksOnly()->get();
         return view('employees.payinfo', compact('employee_pay_info', 'banks'));
     }
 
@@ -610,7 +610,7 @@ class EmployeeController extends Controller
     {
         //
         $employee_pay_info = PaymentInfo::where('employee_id', $id)->first();
-        $banks =  Bank::all();
+        $banks = Bank::banksOnly()->get();
         return view('employees.viewpayinfo', compact('employee_pay_info', 'banks'));
     }
 
@@ -719,7 +719,7 @@ class EmployeeController extends Controller
         $Roles = Role::all();
         $Fields = Field::all();
         $clients = Client::all();
-        $banks = Bank::all();
+        $banks = Bank::banksOnly()->get();
 
         $user = Auth::user();
         $staff =  User::all();
@@ -754,7 +754,7 @@ class EmployeeController extends Controller
         $fieldsAll = Field::all();
         $Fields= null;
         $clients = null;
-        $banks = Bank::all();
+        $banks = Bank::banksOnly()->get();
 
         $user = Auth::user();
         $staff =  User::all();
@@ -1074,8 +1074,8 @@ class EmployeeController extends Controller
     public function employeesBank()
     {
         // LIST ALL BANKS , EACH WITH ALL EMPLOYEES ASSIGNED TO THAT BANK
-        $bankIds = Bank::pluck('id');
-        $banks = Bank::all();
+        $bankIds = Bank::banksOnly()->pluck('id');
+        $banks = Bank::banksOnly()->get();
 
         // $groupedBankEmployees = PaymentInfo::with('employee') ->whereIn('bank_id', $bankIds)->get()->groupBy('bank_id');
 

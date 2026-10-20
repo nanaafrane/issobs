@@ -98,7 +98,7 @@ class AccountsDashboard
             'expense_types' => $expenses['by_type'],
             'payroll' => self::payroll($ctx),
             'banks' => $ctx->user->hasRole(['Finance Manager', 'Director'])
-                ? Bank::orderBy('name')->get(['id', 'name', 'branch', 'acc_number', 'total'])
+                ? Bank::orderBy('name')->get(['id', 'name', 'kind', 'branch', 'acc_number', 'total'])
                 : collect(),
         ];
     }

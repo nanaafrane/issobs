@@ -380,7 +380,7 @@ class SalaryController extends Controller
         $categories = category::whereBetween('category_month', $span)->get();
 
         $groupedBankSalaries = $inMonth()->whereIn('payment_status', $live)->where('payment_type', 'Bank')
-            ->whereIn('bank_id', Bank::pluck('id'))->groupBy('bank_id')->with('bank')
+            ->whereIn('bank_id', Bank::banksOnly()->pluck('id'))->groupBy('bank_id')->with('bank')
             ->get(['bank_id', DB::raw('SUM(gross_salary) as gross'), DB::raw('SUM(total_deductions) as deductions'), DB::raw('SUM(net_salary) as paid'), DB::raw('COUNT(*) as total_employees')]);
 
         $groupedCashkSalaries = $inMonth()->whereIn('payment_status', $live)->where('payment_type', 'Cash')
@@ -1671,7 +1671,7 @@ class SalaryController extends Controller
     {
         //
         // dd($salary);
-        $banks = Bank::all();
+        $banks = Bank::banksOnly()->get();
         $clients = Client::all();
         $Fields = Field::all();
         

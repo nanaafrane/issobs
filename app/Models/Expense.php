@@ -54,6 +54,18 @@ class Expense extends Model
         return $this->belongsTo(Field::class);
     }
 
+    /** The payment that paid this expense (null = not paid yet). */
+    public function payment()
+    {
+        return $this->belongsTo(AccountPayment::class, 'payment_id');
+    }
+
+    /** Fully approved and not yet paid. */
+    public function scopeAwaitingPayment($q)
+    {
+        return $q->where('status_3', 'approved')->whereNull('payment_id');
+    }
+
     /**
      * Which stage (2 or 3) is currently awaiting action, or null if
      * fully approved, rejected, or (defensively) stage 1 isn't done yet.
@@ -112,6 +124,9 @@ class Expense extends Model
      */
     public function isEditableBy(User $user): bool
     {
+        if ($this->payment_id) {
+            return false;   // paid: cancel the payment first
+        }
         if ($this->isPrivilegedApprover($user)) {
             return true;
         }

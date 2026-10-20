@@ -90,7 +90,7 @@ class FieldController extends Controller
     {
         //
         // dd($field);
-        $banks = Bank::all();
+        $banks = Bank::banksOnly()->get();
         return view('locations.edit', compact('field', 'banks'));
     }
 

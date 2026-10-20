@@ -22,7 +22,7 @@ class StoreBankDepositRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'bank_id' => ['required', 'integer', 'exists:banks,id'],
+            'bank_id' => ['required', 'integer', \Illuminate\Validation\Rule::exists('banks', 'id')->where('kind', 'bank')],
             'deposit_date' => ['required', 'date', 'before_or_equal:today', 'after:' . now()->subYear()->toDateString()],
             'slip_number' => ['nullable', 'string', 'max:60'],
             'depositor' => ['nullable', 'string', 'max:120'],

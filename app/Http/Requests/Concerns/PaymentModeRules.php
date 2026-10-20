@@ -23,13 +23,13 @@ trait PaymentModeRules
             'cheque_amount' => [$when('cheque'), 'nullable', 'numeric', 'min:0'],
             'cheque_bank' => [$when('cheque')],
             // Which of OUR accounts the cheque is paid into (posted straight to that bank).
-            'cheque_to_bank_id' => [$when('cheque'), 'nullable', 'integer', 'exists:banks,id'],
+            'cheque_to_bank_id' => [$when('cheque'), 'nullable', 'integer', \Illuminate\Validation\Rule::exists('banks', 'id')->where('kind', 'bank')],
 
             'transfer_reference' => [$when('transfer')],
             'transfer_amount' => [$when('transfer'), 'nullable', 'numeric', 'min:0'],
             'transfer_bank' => [$when('transfer')],
             // Which of OUR accounts the transfer landed in.
-            'transfer_to_bank_id' => [$when('transfer'), 'nullable', 'integer', 'exists:banks,id'],
+            'transfer_to_bank_id' => [$when('transfer'), 'nullable', 'integer', \Illuminate\Validation\Rule::exists('banks', 'id')->where('kind', 'bank')],
 
             'momo_transactin_id' => [$when('momo')],
             'momo_amount' => [$when('momo'), 'nullable', 'numeric', 'min:0'],

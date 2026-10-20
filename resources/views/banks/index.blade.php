@@ -2,8 +2,8 @@
 
     @php
         $user = Auth::user();
-        $canSeeAll = $user?->hasRole(['Invoice', 'Finance Manager']) ?? false;
-        $canDelete = $user?->hasRole(['Finance Manager']) ?? false;
+        $canSeeAll = $user?->hasRole(\App\Http\Controllers\BankController::VIEW_ROLES) ?? false;
+        $canCorrect = $user?->hasRole(\App\Http\Controllers\BankController::CORRECT_ROLES) ?? false;
         $money = fn ($v) => 'GH₵ ' . number_format((float) $v, 2);
         $groupName = ['day' => 'Day', 'week' => 'Week starting', 'month' => 'Month', 'year' => 'Year'][$group] ?? 'Period';
 
@@ -76,13 +76,17 @@
         {{-- Title and the one primary action --}}
         <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-4">
             <div>
-                <h3 class="mb-1"><i class="bx bxs-bank me-1"></i> Banks</h3>
-                <div class="bk-muted small">Balances, money in and out, and every ledger entry for the period you choose.</div>
+                <h3 class="mb-1"><i class="bx bxs-bank me-1"></i> Bank &amp; cash</h3>
+                <div class="bk-muted small">Balances, where money came from and where it went, and every ledger entry for the period you choose.</div>
             </div>
             @if($canSeeAll)
-            <button type="button" class="btn btn-dark" data-bs-toggle="modal" data-bs-target="#addBankModal">
-                <i class="icon-base bx bx-plus"></i> Add bank
-            </button>
+            <div class="d-flex flex-wrap gap-2">
+                <a href="{{ route('money.transfers.create') }}" class="btn btn-outline-primary"><i class="icon-base bx bx-transfer"></i> Fund / transfer</a>
+                <a href="{{ route('money.payments.create') }}" class="btn btn-primary"><i class="icon-base bx bx-money-withdraw"></i> Make a payment</a>
+                <button type="button" class="btn btn-dark" data-bs-toggle="modal" data-bs-target="#addBankModal">
+                    <i class="icon-base bx bx-plus"></i> Add account
+                </button>
+            </div>
             @endif
         </div>
 
@@ -91,7 +95,7 @@
         </div>
 
         @if(! $canSeeAll)
-            <div class="alert alert-info">Bank balances and ledger entries are visible to Finance only. Your branch deposits are under <strong>Accounts › Bank Deposit</strong>.</div>
+            <div class="alert alert-info">Bank and cash balances and ledger entries are visible to Finance only. Your branch deposits are under <strong>Accounts › Bank Deposit</strong>.</div>
         @else
 
         {{-- Period --}}
@@ -123,8 +127,9 @@
         {{-- Summary band: balance now, then what moved in the chosen period --}}
         <div class="bk-band mb-4">
             <div>
-                <div class="label">Total across {{ $banks->count() }} {{ Str::plural('bank', $banks->count()) }}</div>
+                <div class="label">Total across {{ $live->count() }} {{ Str::plural('account', $live->count()) }}</div>
                 <div class="value lead-value">{{ $money($totalBalance) }}</div>
+                <div class="note">In banks <strong>{{ $money($bankBalance) }}</strong> · Cash on hand <strong>{{ $money($cashBalance) }}</strong></div>
                 <div class="note">
                     @if($projection['runway_days'] !== null)
                         At the last 30 days' pace this lasts about <strong>{{ $projection['runway_days'] }} days</strong>.
@@ -136,17 +141,18 @@
             <div>
                 <div class="label">Money in</div>
                 <div class="value bk-in">{{ $money($inTotal) }}</div>
-                <div class="note">{{ $from->format('d M Y') }} to {{ $to->format('d M Y') }}</div>
+                <div class="note">From clients and deposits, {{ $from->format('d M') }} – {{ $to->format('d M Y') }}</div>
             </div>
             <div>
                 <div class="label">Money out</div>
                 <div class="value bk-out">{{ $money($outTotal) }}</div>
-                <div class="note">Expenses, salaries and withdrawals</div>
+                <div class="note">Payments, expenses and charges</div>
             </div>
             <div>
                 <div class="label">Net movement</div>
                 <div class="value {{ $net >= 0 ? 'bk-in' : 'bk-out' }}">{{ $net >= 0 ? '+' : '−' }}{{ $money(abs($net)) }}</div>
-                <div class="note">{{ $net >= 0 ? 'Balances grew' : 'Balances shrank' }} in this period</div>
+                <div class="note">{{ $net >= 0 ? 'Balances grew' : 'Balances shrank' }} in this period.
+                    @if($flow['internal'] > 0) Moves between our own accounts ({{ $money($flow['internal']) }}) are not counted as in or out. @endif</div>
             </div>
         </div>
 
@@ -162,24 +168,28 @@
                 <div class="bk-panel h-100">
                     <div class="head">Where the money sits <small>share of total</small></div>
                     <div style="max-height: 24rem; overflow-y: auto;">
-                        @forelse($banks as $bank)
+                        @forelse($live as $bank)
                             @php
                                 $p = $perBank[$bank->id] ?? null;
                                 $share = $totalBalance > 0 ? max(0, $bank->total) / $totalBalance * 100 : 0;
-                                $off = isset($lastBalances[$bank->id]) && abs($lastBalances[$bank->id] - $bank->total) > 0.005;
+                                $off = isset($checks[$bank->id]);
                             @endphp
                             <div class="bk-bank">
                                 <div class="d-flex justify-content-between align-items-start gap-2">
                                     <div>
-                                        <div class="name">{{ $bank->name }}</div>
+                                        <div class="name"><a href="{{ route('banks.show', $bank) }}" class="text-body">{{ $bank->name }}</a>
+                                            @if($bank->isCash())<span class="badge bg-label-success ms-1">Cash</span>@endif
+                                            @if($bank->is_active === false)<span class="badge bg-label-secondary ms-1">closed</span>@endif
+                                        </div>
                                         <div class="meta">
-                                            {{ $bank->branch }}@if($bank->acc_number) · •••• {{ substr($bank->acc_number, -4) }}@endif
+                                            @if($bank->isCash())Held by {{ $bank->custodian ?: '—' }}
+                                            @else{{ $bank->branch }}@if($bank->acc_number) · •••• {{ substr($bank->acc_number, -4) }}@endif @endif
                                         </div>
                                     </div>
                                     <div class="text-end">
                                         <div class="fw-bold bk-num">{{ $money($bank->total) }}</div>
                                         @if($off)
-                                            <span class="badge bg-label-warning" title="Balance on this bank differs from its last ledger entry ({{ $money($lastBalances[$bank->id]) }}). Review its statement.">Check balance</span>
+                                            <span class="badge bg-label-warning" title="Balance differs from opening balance + ledger ({{ $money($checks[$bank->id]) }}). Review its statement.">Check balance</span>
                                         @endif
                                     </div>
                                 </div>
@@ -194,24 +204,86 @@
                                             <i class="icon-base bx bx-dots-vertical-rounded"></i>
                                         </button>
                                         <div class="dropdown-menu dropdown-menu-end">
-                                            <a class="dropdown-item" href="{{ url('banks', $bank->id) }}"><i class="icon-base bx bx-detail me-1"></i> Statement and details</a>
-                                            @if($canDelete)
-                                            <form action="{{ url('banks', $bank->id) }}" method="POST"
-                                                  onsubmit="return confirm('Delete {{ addslashes($bank->name) }}? This cannot be undone.');">
-                                                @csrf @method('DELETE')
-                                                <button class="dropdown-item text-danger" type="submit" @disabled(abs($bank->total) > 0.004)
-                                                    title="{{ abs($bank->total) > 0.004 ? 'Only a bank with a zero balance can be deleted.' : '' }}">
-                                                    <i class="icon-base bx bx-trash me-1"></i> Delete
-                                                </button>
-                                            </form>
+                                            <a class="dropdown-item" href="{{ route('banks.show', $bank) }}"><i class="icon-base bx bx-detail me-1"></i> Statement and details</a>
+                                            @if($bank->is_active !== false)
+                                            <a class="dropdown-item" href="{{ route('money.transfers.create', ['to' => $bank->id]) }}"><i class="icon-base bx bx-transfer me-1"></i> Fund this account</a>
+                                            <a class="dropdown-item" href="{{ route('money.payments.create', ['bank' => $bank->id]) }}"><i class="icon-base bx bx-money-withdraw me-1"></i> Pay from this account</a>
                                             @endif
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         @empty
-                            <div class="p-4 text-center bk-muted">No bank accounts yet. Use <strong>Add bank</strong> to create the first one.</div>
+                            <div class="p-4 text-center bk-muted">No accounts yet. Use <strong>Add account</strong> to create the first one.</div>
                         @endforelse
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- Where money came from and where it went (business money only) --}}
+        <div class="row g-3 mb-4">
+            <div class="col-lg-8">
+                <div class="bk-panel h-100">
+                    <div class="head">Where money came from and where it went <small>{{ $from->format('d M') }} – {{ $to->format('d M Y') }}</small></div>
+                    <div class="row g-0">
+                        <div class="col-md-6 border-end">
+                            <table class="table table-sm bk-table mb-0">
+                                <thead><tr><th>Money in</th><th class="bk-num">GH₵</th></tr></thead>
+                                <tbody>
+                                @forelse($flow['in'] as $r)
+                                    <tr><td>{{ $r['label'] }} <span class="bk-muted bk-src">· {{ $r['count'] }}</span></td><td class="bk-num bk-in">{{ number_format($r['amount'], 2) }}</td></tr>
+                                @empty
+                                    <tr><td colspan="2" class="bk-muted">Nothing came in.</td></tr>
+                                @endforelse
+                                </tbody>
+                                <tfoot><tr><td>Total in</td><td class="bk-num bk-in">{{ number_format($flow['total_in'], 2) }}</td></tr></tfoot>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <table class="table table-sm bk-table mb-0">
+                                <thead><tr><th>Money out</th><th class="bk-num">GH₵</th></tr></thead>
+                                <tbody>
+                                @forelse($flow['out'] as $r)
+                                    <tr><td>{{ $r['label'] }} <span class="bk-muted bk-src">· {{ $r['count'] }}</span></td><td class="bk-num bk-out">{{ number_format($r['amount'], 2) }}</td></tr>
+                                @empty
+                                    <tr><td colspan="2" class="bk-muted">Nothing went out.</td></tr>
+                                @endforelse
+                                </tbody>
+                                <tfoot><tr><td>Total out</td><td class="bk-num bk-out">{{ number_format($flow['total_out'], 2) }}</td></tr></tfoot>
+                            </table>
+                        </div>
+                    </div>
+                    @if($flow['internal'] > 0)
+                    <div class="px-3 py-2 border-top small bk-muted">
+                        <i class="bx bx-transfer"></i> {{ $flow['internal_count'] }} {{ Str::plural('move', $flow['internal_count']) }} between our own accounts ({{ $money($flow['internal']) }}), e.g. funding Main Cash — not money in or out of the business.
+                        <a href="{{ route('money.transfers') }}">See transfers</a>
+                    </div>
+                    @endif
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="bk-panel h-100">
+                    <div class="head">Needs attention</div>
+                    <div class="p-3 small">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Approved expenses not yet paid <span class="bk-muted">({{ $awaiting->count() }})</span></span>
+                            <span class="bk-num fw-semibold">{{ number_format($awaiting->sum('amount'), 2) }}</span>
+                        </div>
+                        @if($awaiting->isNotEmpty())
+                            <a href="{{ route('money.payments.create', ['for' => 'expenses']) }}" class="btn btn-sm btn-outline-primary mb-3">Pay approved expenses</a>
+                        @endif
+                        <div class="d-flex justify-content-between mb-1">
+                            <span>Cheques issued, not yet cleared <span class="bk-muted">({{ $uncleared->count() }})</span></span>
+                            <span class="bk-num fw-semibold">{{ number_format($uncleared->sum('amount'), 2) }}</span>
+                        </div>
+                        <div class="bk-muted mb-3">Your bank statement shows this much more than the books until these cheques are presented.
+                            @if($uncleared->isNotEmpty())<a href="{{ route('money.payments', ['status' => 'issued']) }}">List</a>@endif</div>
+                        @if($checks)
+                            <div class="alert alert-warning py-2 mb-0">{{ count($checks) }} {{ Str::plural('account', count($checks)) }} with a balance that does not match its ledger — open its statement.</div>
+                        @else
+                            <div class="bk-muted"><i class="bx bx-check-circle text-success"></i> Every balance matches its opening balance plus its ledger.</div>
+                        @endif
                     </div>
                 </div>
             </div>
@@ -235,9 +307,9 @@
 
                     <div class="d-flex flex-wrap gap-2 align-items-end mb-3">
                         <div>
-                            <label class="form-label small mb-0" for="bkBankFilter">Bank</label>
+                            <label class="form-label small mb-0" for="bkBankFilter">Account</label>
                             <select id="bkBankFilter" class="form-select form-select-sm">
-                                <option value="">All banks</option>
+                                <option value="">All accounts</option>
                                 @foreach($banks as $bank)<option value="{{ $bank->name }}">{{ $bank->name }}</option>@endforeach
                             </select>
                         </div>
@@ -256,7 +328,7 @@
                             <thead>
                                 <tr>
                                     <th>Date</th>
-                                    <th>Bank</th>
+                                    <th>Account</th>
                                     <th>Details</th>
                                     <th>Source</th>
                                     <th class="bk-num">Money in</th>
@@ -267,21 +339,16 @@
                             <tbody>
                                 @foreach($transactions as $t)
                                 <tr>
-                                    <td data-order="{{ $t->created_at->timestamp }}">
-                                        {{ $t->created_at->format('d M Y') }}
-                                        <div class="bk-muted bk-src">{{ $t->created_at->format('H:i') }}</div>
+                                    <td data-order="{{ $t->entry_date?->format('Ymd') }}{{ str_pad($t->id, 9, '0', STR_PAD_LEFT) }}">
+                                        {{ $t->entry_date?->format('d M Y') }}
+                                        <div class="bk-muted bk-src">recorded {{ $t->created_at?->format('d M H:i') }}</div>
                                     </td>
                                     <td>{{ $t->bank?->name }}</td>
                                     <td>
-                                        @if($t->channel === 'momo_charge')<span class="badge bg-label-danger me-1">MoMo charge</span>@elseif($t->channel)<span class="badge bg-label-primary me-1">{{ $t->channel }}</span>@endif
+                                        @include('banks.partials.channel_badge', ['t' => $t])
                                         {{ $t->narration }}
                                     </td>
-                                    <td class="bk-src">
-                                        @if($t->receipt_id)<a href="{{ url('receipt', $t->receipt_id) }}">Receipt FWSSR{{ $t->receipt_id }}</a>
-                                        @elseif($t->deposit_id)<a href="{{ route('deposit.show', $t->deposit_id) }}">Deposit #{{ $t->deposit_id }}</a>
-                                        @elseif($t->expense_id)Expense #{{ $t->expense_id }}
-                                        @else <span class="bk-muted">Manual</span>@endif
-                                    </td>
+                                    <td class="bk-src">@include('banks.partials.ledger_source', ['t' => $t])</td>
                                     <td class="bk-num bk-in" data-order="{{ (float) $t->credit }}" data-dir="in">{{ $t->credit > 0 ? number_format($t->credit, 2) : '' }}</td>
                                     <td class="bk-num bk-out" data-order="{{ (float) $t->debit }}" data-dir="out">{{ $t->debit > 0 ? number_format($t->debit, 2) : '' }}</td>
                                     <td class="bk-num fw-semibold" data-order="{{ (float) $t->balance }}">{{ number_format($t->balance, 2) }}</td>
@@ -322,7 +389,7 @@
                                     <td class="bk-num fw-semibold {{ $row['net'] >= 0 ? 'bk-in' : 'bk-out' }}">{{ number_format($row['net'], 2) }}</td>
                                 </tr>
                                 @empty
-                                <tr><td colspan="5" class="text-center bk-muted py-4">No ledger entries between these dates.</td></tr>
+                                <tr><td colspan="5" class="text-center bk-muted py-4">No money in or out between these dates (moves between our own accounts are left out here).</td></tr>
                                 @endforelse
                             </tbody>
                             @if(count($series))
@@ -345,41 +412,81 @@
         @endif
     </div>
 
-    {{-- Add bank --}}
+    {{-- Add account --}}
     @if($canSeeAll)
     <div class="modal fade" id="addBankModal" tabindex="-1" aria-labelledby="addBankTitle" aria-hidden="true">
         <div class="modal-dialog" role="document">
-            <form class="modal-content" method="POST" action="{{ url('banks') }}">
+            <form class="modal-content" method="POST" action="{{ route('banks.store') }}">
                 @csrf
-                <input type="hidden" name="user_id" value="{{ auth()->id() }}">
+                {!! \App\Support\SubmissionGuard::field() !!}
                 <div class="modal-header">
-                    <h5 class="modal-title" id="addBankTitle">Add bank</h5>
+                    <h5 class="modal-title" id="addBankTitle">Add account</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
+                    @php $kindOld = old('kind', 'bank'); @endphp
+                    <div class="btn-group w-100 mb-3" role="group" aria-label="Kind of account">
+                        <input type="radio" class="btn-check" name="kind" id="kindBank" value="bank" @checked($kindOld === 'bank')>
+                        <label class="btn btn-outline-primary" for="kindBank"><i class="bx bxs-bank"></i> Bank account</label>
+                        <input type="radio" class="btn-check" name="kind" id="kindCash" value="cash" @checked($kindOld === 'cash')>
+                        <label class="btn btn-outline-success" for="kindCash"><i class="bx bx-wallet"></i> Cash on hand</label>
+                    </div>
+                    <p class="small bk-muted" data-kind="cash">Cash held at the office (e.g. <strong>Main Cash</strong>), funded by cheques or withdrawals from the banks and used to pay approved expenses. It has its own balance and statement like a bank.</p>
                     <div class="mb-3">
-                        <label for="name" class="form-label">Bank name</label>
-                        <input type="text" name="name" id="name" class="form-control @error('name') is-invalid @enderror" value="{{ old('name') }}" required>
+                        <label for="name" class="form-label">Name</label>
+                        <input type="text" name="name" id="name" class="form-control @error('name') is-invalid @enderror" value="{{ old('name') }}" placeholder="e.g. GCB Operations / Main Cash" required>
                         @error('name')<span class="invalid-feedback"><strong>{{ $message }}</strong></span>@enderror
                     </div>
-                    <div class="mb-3">
-                        <label for="acc_number" class="form-label">Account number</label>
-                        <input type="text" name="acc_number" id="acc_number" class="form-control @error('acc_number') is-invalid @enderror" value="{{ old('acc_number') }}" required>
-                        @error('acc_number')<span class="invalid-feedback"><strong>{{ $message }}</strong></span>@enderror
+                    <div class="row g-2 mb-3" data-kind="bank">
+                        <div class="col-6">
+                            <label for="acc_number" class="form-label">Account number</label>
+                            <input type="text" name="acc_number" id="acc_number" class="form-control @error('acc_number') is-invalid @enderror" value="{{ old('acc_number') }}">
+                            @error('acc_number')<span class="invalid-feedback"><strong>{{ $message }}</strong></span>@enderror
+                        </div>
+                        <div class="col-6">
+                            <label for="branch" class="form-label">Branch</label>
+                            <input type="text" name="branch" id="branch" class="form-control @error('branch') is-invalid @enderror" value="{{ old('branch') }}">
+                            @error('branch')<span class="invalid-feedback"><strong>{{ $message }}</strong></span>@enderror
+                        </div>
                     </div>
-                    <div class="mb-0">
-                        <label for="branch" class="form-label">Branch</label>
-                        <input type="text" name="branch" id="branch" class="form-control @error('branch') is-invalid @enderror" value="{{ old('branch') }}" required>
-                        @error('branch')<span class="invalid-feedback"><strong>{{ $message }}</strong></span>@enderror
+                    <div class="mb-3" data-kind="cash">
+                        <label for="custodian" class="form-label">Held by (custodian)</label>
+                        <input type="text" name="custodian" id="custodian" class="form-control @error('custodian') is-invalid @enderror" value="{{ old('custodian') }}" placeholder="who keeps the cash">
+                        @error('custodian')<span class="invalid-feedback"><strong>{{ $message }}</strong></span>@enderror
                     </div>
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <label for="opening_balance" class="form-label">Opening balance (GH₵)</label>
+                            <input type="number" step="0.01" name="opening_balance" id="opening_balance" class="form-control @error('opening_balance') is-invalid @enderror" value="{{ old('opening_balance', '0.00') }}">
+                            @error('opening_balance')<span class="invalid-feedback"><strong>{{ $message }}</strong></span>@enderror
+                        </div>
+                        <div class="col-6">
+                            <label for="opening_date" class="form-label">As at</label>
+                            <input type="date" name="opening_date" id="opening_date" class="form-control" value="{{ old('opening_date', now()->toDateString()) }}" max="{{ now()->toDateString() }}">
+                        </div>
+                    </div>
+                    <div class="form-text">The balance on the bank statement (or cash counted) on that date. After this, the balance only changes through deposits, receipts, transfers, payments and adjustments.</div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-dark">Add bank</button>
+                    <button type="submit" class="btn btn-dark" data-loading>Add account</button>
                 </div>
             </form>
         </div>
     </div>
+    <script>
+    (function () {
+        function show() {
+            var kind = (document.querySelector('input[name="kind"]:checked') || {}).value || 'bank';
+            document.querySelectorAll('#addBankModal [data-kind]').forEach(function (el) { el.style.display = el.dataset.kind === kind ? '' : 'none'; });
+        }
+        document.querySelectorAll('input[name="kind"]').forEach(function (r) { r.addEventListener('change', show); });
+        show();
+    })();
+    </script>
+    @if($errors->any() && old('kind'))
+    <script>document.addEventListener('DOMContentLoaded', function () { if (window.bootstrap) new bootstrap.Modal(document.getElementById('addBankModal')).show(); });</script>
+    @endif
     @endif
     @endsection
 

@@ -168,7 +168,22 @@ Route::resource('deposit', BankDepositController::class)->only(['index', 'create
 Route::post('deposit/{deposit}/reverse', [BankDepositController::class, 'reverse'])->name('deposit.reverse')->middleware('once');
 Route::post('deposit-mark-banked', [BankDepositController::class, 'markBanked'])->name('deposit.markBanked')->middleware('once');
 
-Route::resource('banks', BankController::class);
+Route::resource('banks', BankController::class)->except(['create', 'edit'])->middleware('once');
+Route::post('banks/{bank}/adjust', [BankController::class, 'adjust'])->name('banks.adjust')->middleware('once');
+Route::post('banks/{bank}/toggle', [BankController::class, 'toggle'])->name('banks.toggle');
+
+// Money leaving an account: transfers between our accounts (e.g. funding Main Cash) and payments out.
+Route::get('money/transfers', [\App\Http\Controllers\AccountMovementController::class, 'transfers'])->name('money.transfers');
+Route::get('money/transfers/create', [\App\Http\Controllers\AccountMovementController::class, 'createTransfer'])->name('money.transfers.create');
+Route::post('money/transfers', [\App\Http\Controllers\AccountMovementController::class, 'storeTransfer'])->name('money.transfers.store')->middleware('once');
+Route::get('money/transfers/{transfer}', [\App\Http\Controllers\AccountMovementController::class, 'showTransfer'])->name('money.transfers.show');
+Route::post('money/transfers/{transfer}/reverse', [\App\Http\Controllers\AccountMovementController::class, 'reverseTransfer'])->name('money.transfers.reverse')->middleware('once');
+Route::get('money/payments', [\App\Http\Controllers\AccountMovementController::class, 'payments'])->name('money.payments');
+Route::get('money/payments/create', [\App\Http\Controllers\AccountMovementController::class, 'createPayment'])->name('money.payments.create');
+Route::post('money/payments', [\App\Http\Controllers\AccountMovementController::class, 'storePayment'])->name('money.payments.store')->middleware('once');
+Route::get('money/payments/{payment}', [\App\Http\Controllers\AccountMovementController::class, 'showPayment'])->name('money.payments.show');
+Route::post('money/payments/{payment}/clear', [\App\Http\Controllers\AccountMovementController::class, 'clearPayment'])->name('money.payments.clear');
+Route::post('money/payments/{payment}/cancel', [\App\Http\Controllers\AccountMovementController::class, 'cancelPayment'])->name('money.payments.cancel')->middleware('once');
 
 Route::get('/expense/list', [ExpenseController::class, 'list'])->name('expense.list');
 Route::post('/expense/{expense}/approve', [ExpenseController::class, 'approve'])->name('expense.approve');

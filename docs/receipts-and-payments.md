@@ -314,6 +314,93 @@ can be found, filtered and totalled.
 
 ---
 
+## 9. Money leaving the banks, and Main Cash
+
+### What was wrong
+
+* **Nothing recorded money leaving a bank.** The ledger only had money coming in (receipts, deposits), so bank
+  balances only ever went up, and approved expenses were never marked *paid* or tied to where the money came from.
+* **Editing a bank could overwrite its balance** (`total` was saved straight from the form, unvalidated) — a balance
+  could change with no ledger line. **Delete really deleted** the bank (the message said otherwise), orphaning its
+  history; it could also be a bank used on employees' payment details.
+* *Statement and details* opened only an edit form: there was **no account statement**.
+* Ledger dates were the moment of typing (`created_at`), not the day the money moved.
+* The `banks` list is shared with HR/payroll (employees' bank, salaries by bank), so any new kind of account would have
+  shown up in those pickers.
+* `expenses.expense_date` was used by the expense screens but **no migration created it** (added by hand on live).
+
+### The approach
+
+**Main Cash is a cash-on-hand account** — the *cash book*, run on the **imprest (petty cash) system**: it is funded from
+the banks by cheque or withdrawal, holds physical cash with a named custodian, and pays approved expenses. In the
+system it is an account of kind **Cash** next to the banks, with the same ledger, balance and statement.
+
+| Movement | From → To | Ledger | In "money in / out"? |
+|---|---|---|---|
+| **Fund / transfer** | bank → Main Cash (cheque, cash withdrawal); bank → bank (cheque, transfer); Main Cash → bank (cash paid in); cash → cash (handed over) | debit *Moved out* on the source, credit *Moved in* on the destination, linked | **No** — it is our own money changing place |
+| **Payment** | bank → someone else (cheque, transfer, MoMo); Main Cash → someone else (cash) | one debit, with payee, category, reference | Yes, by category |
+| **Adjustment** | any account, + or − with a reason | one line | Yes, as *Adjustments* |
+
+* **Several cheques from several banks** can fund Main Cash in **one entry** (one line per cheque); they share a batch
+  and are reversed together if entered wrongly.
+* **Pay approved expenses**: tick them (fully approved, not yet paid); the amount is their total, they show *Paid* with a
+  link to the payment, and a paid expense can no longer be edited. The expense list shows *Awaiting payment* and a
+  *Pay* button for finance.
+* **Cheques** are *issued* until marked **cleared** (date from the bank statement). Uncleared cheques are listed per bank
+  for reconciliation: *books + uncleared cheques = what the bank statement should show*.
+* **Mistakes are cancelled / reversed with a reason** (Finance Manager / Director): the opposite line is posted, nothing
+  is deleted; cancelling an expense payment puts its expenses back to *awaiting payment*.
+* **Main Cash can never go below zero**; a payment or transfer that would overdraw it is refused ("fund it from a bank").
+* **Balances are never typed in.** A new account starts with an opening balance and date; after that only ledger lines
+  move it, so `total = opening balance + money in − money out` always (checked on every page; any account that breaks
+  it is flagged). Corrections are adjustments with a reason. An account with history is **closed**, not deleted (only
+  at 0.00); only a never-used account can be deleted.
+* Ledger lines carry the **date the money moved** (`entry_date`: cheque / payment / deposit date) as well as when they
+  were recorded.
+* **Cash accounts never appear in bank pickers** — receipts (cheque/transfer *into our bank*), Bank Deposit, employee
+  payment details, payroll by bank, employee upload template — and the server rejects them there too.
+* Collected cash still goes **to the bank** through Bank Deposit (*bank all takings intact*); Main Cash is funded only
+  from the banks. That keeps every cedi received on a bank statement.
+
+### Reports
+
+* **Bank & cash** (overview): total split into *in banks* and *cash on hand*; money in / out for the period **from the
+  business's point of view** (transfers between our accounts left out and shown separately); **where money came from
+  and where it went** — cheques / transfers from clients, cash & MoMo deposited, then payments by category (approved
+  expenses, suppliers, salaries, statutory, bank charges, rent & utilities, loans, refunds, drawings, other), MoMo
+  charges and adjustments; **needs attention** — approved expenses not yet paid, uncleared cheques, balance checks;
+  every ledger line with what posted it (receipt, deposit, payment, transfer, adjustment).
+* **Account statement** (each account): period with presets, opening balance, every line with running balance,
+  closing balance, Excel export and print; for a bank, the **reconciliation** box and uncleared cheques (mark cleared);
+  for cash, a **cash count** that shows the difference and pre-fills the adjustment.
+* **Payments**: by month / account / category / status, totals by category, cash vs cheque/transfer, uncleared cheques,
+  approved expenses unpaid; Excel export.
+* **Transfers**: by month, into and out of each account.
+
+### After deploying
+
+1. `php artisan migrate`. Existing balances are kept exactly: each account gets an opening balance = its balance minus
+   what its ledger already explains (dated at its first ledger line). Existing ledger lines are dated on the day they
+   were entered. Zero-date safe, re-runnable.
+2. *Accounts › Bank & cash › Add account › Cash on hand*: name **Main Cash**, custodian, opening balance = the cash
+   counted today.
+3. Fund it (*Fund / transfer*) with the cheque(s) written to it, and pay approved expenses from it (*Make a payment ›
+   Pay approved expenses*).
+4. When each bank statement arrives: mark cheques cleared, enter bank charges as payments (*Bank charges*) or
+   adjustments, and check the reconciliation box.
+
+### Suggested next
+
+* **Payroll into the ledger**: when a payment run's funds are released, post one payment (*Salaries & wages*) from the
+  paying bank, so salaries show on the bank statements automatically.
+* **Payment vouchers / approval** for large non-expense payments (two people: one records, one approves).
+* **Import the bank statement** (CSV) and match lines automatically to receipts, deposits and cheques.
+* **Budget vs actual** per expense type and office, from the paid-expense figures.
+* A full **chart of accounts / double entry** (income, expense, asset, liability accounts) if the company wants the
+  system to produce a trial balance, P&L and balance sheet rather than exporting to an accounting package.
+
+---
+
 ## Code map
 
 | File | Purpose |
@@ -325,6 +412,10 @@ can be found, filtered and totalled.
 | `app/Services/Banking/DepositBook.php` | Cash/MoMo waiting, deposit slips, MoMo charge debit, reversal, mark already banked |
 | `app/Http/Controllers/BankDepositController.php`, `resources/views/banks/deposit_*.blade.php` | Bank Deposit screen, deposits made, deposit page |
 | `tests/Feature/BankDepositTest.php` | Cash alone, MoMo alone, both, charge rules, part deposits, reversal, office scope |
+| `app/Services/Banking/AccountBook.php` | Transfers between our accounts (fund Main Cash), payments, cheque clearing, cancel/reverse, adjustments |
+| `app/Services/Banking/AccountReports.php` | Account statement, where money came from / went, balance checks, expenses awaiting payment |
+| `app/Http/Controllers/BankController.php`, `AccountMovementController.php`, `resources/views/banks/*` | Bank & cash overview, statement, transfers, payments |
+| `tests/Feature/MainCashAndPaymentsTest.php` | Main Cash, multi-cheque funding, expense payments, cheques, cancellations, statement, migration |
 | `app/Services/Receipts/BalanceRecompute.php` + `routes/console.php` | `receipts:recompute` |
 | `app/Services/Receipts/ReceiptWorkflow.php` | Approval routing and category A–D |
 | `app/Http/Controllers/MultiInvoiceReceiptController.php` | Multi-invoice screen, apply credit |

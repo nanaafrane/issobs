@@ -179,9 +179,25 @@
                     <span class="stage-label">{{ $stage['label'] }}</span>
                     @if(!$loop->last)<span class="text-muted">→</span>@endif
                 @endforeach
+                @if($expense->payment_id)
+                    <span class="text-muted">→</span>
+                    <span class="dot approved"></span>
+                    <span class="stage-label">
+                        @if(Auth::user()?->hasRole(\App\Http\Controllers\BankController::VIEW_ROLES))
+                            <a href="{{ route('money.payments.show', $expense->payment_id) }}">Paid</a>
+                        @else Paid @endif
+                    </span>
+                @elseif($expense->isFullyApproved())
+                    <span class="text-muted">→</span>
+                    <span class="dot pending"></span>
+                    <span class="stage-label">Awaiting payment</span>
+                @endif
             </div>
  
             <div class="d-flex gap-1">
+                @if(! $expense->payment_id && $expense->isFullyApproved() && Auth::user()?->hasRole(\App\Http\Controllers\BankController::VIEW_ROLES))
+                    <a href="{{ route('money.payments.create', ['expenses' => [$expense->id]]) }}" class="btn btn-sm btn-outline-primary">Pay</a>
+                @endif
                 @if($expense->currentStage() && $expense->canActOnStage(Auth::user(), $expense->currentStage()))
                     <form action="{{ route('expense.approve', $expense) }}" method="POST" class="d-inline">
                         @csrf

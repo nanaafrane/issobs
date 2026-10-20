@@ -23,7 +23,7 @@ class StorePaymentInfoRequest extends FormRequest
     {
         return [
             //
-            'bank_id' => 'nullable|exists:banks,id',
+            'bank_id' => ['nullable', \Illuminate\Validation\Rule::exists('banks', 'id')->where('kind', 'bank')],
             'acc_number' => 'nullable|string|max:50|unique:payment_infos,acc_number',
             'branch' => 'nullable|string|max:255',
             'tin_number' => 'nullable|string|max:50|unique:payment_infos,tin_number',
