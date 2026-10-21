@@ -304,6 +304,7 @@
             <ul class="menu-sub">
                 <li class="menu-item active"><a href="{{url('overtime')}}" class="menu-link"><div>Daily Entry</div></a></li>
                 <li class="menu-item"><a href="{{url('overtime-report')}}" class="menu-link"><div>Reports</div></a></li>
+                <li class="menu-item"><a href="{{ route('overtime.payouts') }}" class="menu-link"><div>Pay-outs</div></a></li>
             </ul>
         </li>
         @endif
@@ -357,6 +358,7 @@
             <div class="col-12 d-flex justify-content-between align-items-center flex-wrap gap-2">
                 <h3 class="mb-0"><i class="bx bx-time-five"></i> Overtime — Daily Entry</h3>
                 <a href="{{ url('overtime-report') }}" class="btn btn-outline-dark btn-sm"><i class="bx bx-bar-chart-alt-2"></i> View Reports</a>
+                <a href="{{ route('overtime.payouts') }}" class="btn btn-outline-primary btn-sm"><i class="bx bx-money-withdraw"></i> Pay-outs</a>
             </div>
         </div>
 

@@ -196,6 +196,15 @@ Route::resource('expense', ExpenseController::class);
 Route::post('overtime/{overtime}/approve', [OvertimeController::class, 'approve'])->name('overtime.approve');
 Route::post('overtime/{overtime}/reject', [OvertimeController::class, 'reject'])->name('overtime.reject');
 Route::get('overtime-report', [OvertimeController::class, 'report'])->name('overtime.report');
+// Paying overtime: one pay-out per office and period (one expense, one payment); the office ticks each guard paid.
+Route::get('overtime-payouts', [\App\Http\Controllers\OvertimePayoutController::class, 'index'])->name('overtime.payouts');
+Route::get('overtime-payouts/create', [\App\Http\Controllers\OvertimePayoutController::class, 'create'])->name('overtime.payouts.create');
+Route::post('overtime-payouts', [\App\Http\Controllers\OvertimePayoutController::class, 'store'])->name('overtime.payouts.store')->middleware('once');
+Route::get('overtime-payouts/payroll-check', [\App\Http\Controllers\OvertimePayoutController::class, 'payrollCheck'])->name('overtime.payouts.payrollCheck');
+Route::get('overtime-payouts/{payout}', [\App\Http\Controllers\OvertimePayoutController::class, 'show'])->whereNumber('payout')->name('overtime.payouts.show');
+Route::post('overtime-payouts/{payout}/disburse', [\App\Http\Controllers\OvertimePayoutController::class, 'disburse'])->name('overtime.payouts.disburse')->middleware('once');
+Route::post('overtime-payouts/{payout}/give-back', [\App\Http\Controllers\OvertimePayoutController::class, 'giveBack'])->name('overtime.payouts.giveBack')->middleware('once');
+Route::post('overtime-payouts/{payout}/cancel', [\App\Http\Controllers\OvertimePayoutController::class, 'cancel'])->name('overtime.payouts.cancel')->middleware('once');
 Route::get('overtime/field/{field}/details', [OvertimeController::class, 'fieldDetails']);
 Route::get('overtime/reason/{reason}/details', [OvertimeController::class, 'reasonDetails']);
 Route::get('overtime/client/{client}/details', [OvertimeController::class, 'clientDetails']);

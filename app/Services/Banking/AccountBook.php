@@ -196,7 +196,7 @@ class AccountBook
                 'reference' => $this->clean($input['reference'] ?? null, 60),
                 'amount' => $amount,
                 'payment_date' => $date->toDateString(),
-                'category' => $expenses->isNotEmpty() ? 'expenses' : (string) $input['category'],
+                'category' => $expenses->isNotEmpty() && $input['category'] !== 'overtime' ? 'expenses' : (string) $input['category'],
                 'description' => $this->clean($input['description'] ?? null, 500)
                     ?? ($expenses->isNotEmpty() ? 'Expenses #' . $expenses->pluck('id')->implode(', #') : null),
                 'status' => $method === 'cheque' ? 'issued' : 'paid',
@@ -253,6 +253,26 @@ class AccountBook
             $payment->save();
 
             return $payment;
+        });
+    }
+
+    /**
+     * Part of a payment came back (e.g. overtime cash not handed out, a MoMo transfer that
+     * bounced). Posted as money in on the account it is paid back into, linked to the payment.
+     */
+    public function refundPart(AccountPayment $payment, Bank $into, float $amount, string $reason): BankTransaction
+    {
+        $reason = $this->reason($reason, 'reason');
+        $amount = round($amount, 2);
+        if ($amount <= 0) {
+            throw ValidationException::withMessages(['amount' => 'Nothing to return.']);
+        }
+
+        return DB::transaction(function () use ($payment, $into, $amount, $reason) {
+            $bank = Bank::whereKey($into->id)->lockForUpdate()->firstOrFail();
+            $this->mustOperate($bank, 'bank_id');
+
+            return $this->post($bank, $amount, 'payment', now(), 'Returned from ' . $this->paymentLabel($payment) . ' to ' . $payment->payee . ': ' . $reason, ['payment_id' => $payment->id]);
         });
     }
 

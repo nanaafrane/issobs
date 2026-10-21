@@ -31,13 +31,43 @@ class Overtime extends Model
         'expense_id',
     ];
 
+    public const DISBURSE_METHODS = [
+        'cash' => 'Cash',
+        'momo' => 'MoMo',
+        'payroll' => 'With salary',
+        'payment' => 'Paid from Bank & cash (before pay-outs)',
+    ];
+
     protected $casts = [
         'entry_date' => 'date',
         'amount' => 'decimal:2',
         'date_1' => 'datetime',
         'date_2' => 'datetime',
         'date_3' => 'datetime',
+        'disbursed_at' => 'date',
     ];
+
+    public function setDisbursedAtAttribute($v): void
+    {
+        $this->attributes['disbursed_at'] = $v ? \Carbon\Carbon::parse($v)->toDateString() : null;
+    }
+
+    public function payout()
+    {
+        return $this->belongsTo(OvertimePayout::class, 'payout_id');
+    }
+
+    /** Approved, not on a pay-out and not paid: money the company owes the guard. */
+    public function scopeOwed($q)
+    {
+        return $q->where('status_3', 'approved')->whereNull('payout_id')->whereNull('disbursed_at');
+    }
+
+    /** On a pay-out or already paid: amount, guard and date can no longer change. */
+    public function isLockedForPay(): bool
+    {
+        return (bool) $this->payout_id || (bool) $this->disbursed_at;
+    }
 
     // ---------------------------------------------------------------
     // Relationships
@@ -167,6 +197,9 @@ class Overtime extends Model
 
     public function isEditableBy($user): bool
     {
+        if ($this->isLockedForPay()) {
+            return false;   // take it off its pay-out first (only before it is paid)
+        }
         if (in_array($user->role?->name ?? null, ['Finance Manager', 'Director'], true)) {
             return true;
         }

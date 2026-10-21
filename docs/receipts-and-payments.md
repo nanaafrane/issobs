@@ -419,6 +419,55 @@ system it is an account of kind **Cash** next to the banks, with the same ledger
 
 ---
 
+## 10. Paying overtime: pay-outs
+
+### What was wrong
+
+* Every approved daily overtime entry created **its own pre-approved expense**, so *Approved expenses waiting to be
+  paid* (and the bank payment screen) filled with one line per guard per shift per day, each to be paid separately.
+* Editing, rejecting or deleting an entry changed or deleted its expense **even after it was paid**, so payments no
+  longer matched the work.
+* Nothing recorded that the guard actually received the money (cash handed over, MoMo reference).
+* Salaries also carry an `overtime` figure (payroll sheet) and nothing compared it with the daily overtime, so the same
+  overtime could be paid twice.
+* The old observer's `expenses.overtime_id` was not a fillable field, so those expenses were linked only by
+  `overtimes.expense_id`.
+
+### How it works now
+
+* Approved entries are **owed** (*Operations › Overtime › Pay-outs* shows what is owed by office). They no longer create
+  expenses and never appear one by one on the bank payment screen.
+* **Finance raises one pay-out** for an office and chosen dates, ticks the entries, and picks how it is paid:
+  * **Cash, through the office officer** — from Main Cash (cash) or a bank (cheque/transfer) to the named officer;
+  * **MoMo from head office** — from a bank by mobile money;
+  * **With the monthly salary** — no money moves now; the entries are marked for that month's payroll.
+* For cash / MoMo the pay-out creates **one expense** (type *Overtime*, the office, the total) and **one payment**
+  (category *Overtime pay-outs*), so the bank or cash statement shows one line:
+  "Cash … to Kwame (Tema overtime) — Overtime pay-outs: Overtime pay-out #12 — Tema 14 Oct–20 Oct 2026 · 23 entries".
+* **The office ticks each guard as paid** on the pay-out page (date; for MoMo the transaction ID of each guard). The
+  page shows *paid to guards*, *still held by the officer* and *returned*; the overview shows **cash held by officers**.
+* **Money not paid out** (guard did not collect, MoMo failed) is **returned** by finance into an account with a reason:
+  money in on that account, linked to the payment; the expense is reduced to what the guards got; those entries are
+  owed again for the next pay-out. When every entry is paid or returned the pay-out closes.
+* **Cancel** (Finance Manager / Director) while nothing has been paid or returned: the payment is reversed, the expense
+  removed, the entries owed again.
+* **Entries on a pay-out are locked**: no edit, reject or delete (cancel or return them first).
+* **Payroll check** (per month, and on each payroll pay-out): for each guard, overtime sent to that payroll against the
+  `overtime` on their salary. *+* = the salary pays more (possible double pay, or also paid in cash/MoMo);
+  *−* = approved overtime missing from the salary.
+* Who: finance (Invoice, Finance Manager, Director) raises pay-outs and returns money; the office (and its
+  sub-offices, e.g. Tema + Shai Hills) sees its pay-outs and ticks its guards paid.
+* Expense reports now show overtime **when it is paid out** (one expense per pay-out, dated at the end of its period),
+  not when each entry was approved. Overtime cost by date / client / guard is still on *Overtime › Reports*.
+
+### After deploying
+
+`php artisan migrate`: old per-entry overtime expenses that were **never paid** are removed (their entries become owed
+and can go on a pay-out); any that **were already paid** from Bank & cash are kept and their entries are marked paid by
+that payment. Zero-date safe, re-runnable.
+
+---
+
 ## Code map
 
 | File | Purpose |
@@ -434,6 +483,8 @@ system it is an account of kind **Cash** next to the banks, with the same ledger
 | `app/Services/Banking/AccountReports.php` | Account statement, where money came from / went, balance checks, expenses awaiting payment |
 | `app/Http/Controllers/BankController.php`, `AccountMovementController.php`, `resources/views/banks/*` | Bank & cash overview, statement, transfers, payments |
 | `tests/Feature/MainCashAndPaymentsTest.php` | Main Cash, multi-cheque funding, expense payments, cheques, cancellations, statement, migration |
+| `app/Services/Overtime/OvertimePayouts.php`, `app/Http/Controllers/OvertimePayoutController.php`, `resources/views/overtime/payout*` | Overtime pay-outs: one expense + payment per office and period, disbursement per guard, returns, cancel, payroll check |
+| `tests/Feature/OvertimePayoutTest.php` | Cash / MoMo / payroll pay-outs, disbursement, returns, locks, office scope, migration |
 | `app/Services/Receipts/BalanceRecompute.php` + `routes/console.php` | `receipts:recompute` |
 | `app/Services/Receipts/ReceiptWorkflow.php` | Approval routing and category A–D |
 | `app/Http/Controllers/MultiInvoiceReceiptController.php` | Multi-invoice screen, apply credit |

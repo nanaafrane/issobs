@@ -311,6 +311,7 @@
             <ul class="menu-sub">
                 <li class="menu-item"><a href="{{url('overtime')}}" class="menu-link"><div>Daily Entry</div></a></li>
                 <li class="menu-item"><a href="{{url('overtime-report')}}" class="menu-link"><div>Reports</div></a></li>
+                <li class="menu-item"><a href="{{ route('overtime.payouts') }}" class="menu-link"><div>Pay-outs</div></a></li>
             </ul>
         </li>
         @endif
