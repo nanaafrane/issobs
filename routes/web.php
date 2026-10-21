@@ -143,6 +143,7 @@ Route::get('receipt/collector/{collector}/details', [ReceiptController::class, '
 // One receipt paying several invoices, and applying a receipt's leftover credit later.
 Route::get('receipt-multi/create', [MultiInvoiceReceiptController::class, 'create'])->name('receipt.multi.create');
 Route::post('receipt-multi', [MultiInvoiceReceiptController::class, 'store'])->name('receipt.multi.store')->middleware('once');
+Route::get('receipt-multi/{receipt}/edit', [MultiInvoiceReceiptController::class, 'edit'])->name('receipt.multi.edit');
 Route::post('receipt/{receipt}/apply-credit', [MultiInvoiceReceiptController::class, 'applyCredit'])->name('receipt.applyCredit')->middleware('once');
 Route::get('receipt-voided', [ReceiptController::class, 'voided'])->name('receipt.voided');
 Route::resource('receipt', ReceiptController::class)->middleware('once');

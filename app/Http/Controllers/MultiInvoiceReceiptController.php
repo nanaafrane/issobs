@@ -68,6 +68,70 @@ class MultiInvoiceReceiptController extends Controller
         ));
     }
 
+    /**
+     * Edit a receipt on the same screen as a new one: the client is fixed, the invoices
+     * it pays are ticked with their amounts, its payment details are filled in. Saving
+     * goes to ReceiptController@update (ReceiptRecorder::revise).
+     */
+    public function edit(Receipt $receipt, ReceiptRecorder $recorder)
+    {
+        $client = $this->scopeToUserFields(Client::query())->with('field')->findOrFail($receipt->client_id);
+
+        if (\App\Services\Banking\DepositBook::anyPartDeposited(\App\Models\Collection::where('receipt_id', $receipt->id)->first())) {
+            return redirect()->route('receipt.show', ['receipt' => $receipt->id])
+                ->with('error', 'Money on this receipt has already been deposited, so it cannot be edited. Reverse the deposit first (Bank Deposit › the deposit › Reverse).');
+        }
+
+        // What this receipt itself paid on each invoice (its credit applied elsewhere stays as it is).
+        $own = $receipt->allocations()->where(fn ($q) => $q->where('source', '!=', 'credit')->orWhereNull('source'))->get()->keyBy('invoice_id');
+        $creditLines = $receipt->allocations()->where('source', 'credit')->get();
+        $creditUsed = $recorder->creditUsed($receipt);
+
+        $prefill = $own->map(fn ($a) => [
+            'applied' => (float) $a->amount_applied,
+            'wht' => (float) $a->wht_amount,
+            'vat7' => (float) $a->vat7_amount,
+            'deduction' => (float) $a->deduction_amount,
+        ])->all();
+        // A receipt from before allocations existed: its one invoice with the receipt's own figures.
+        if (! $prefill && $receipt->invoice_id && $creditLines->isEmpty()) {
+            $prefill[$receipt->invoice_id] = [
+                'applied' => null,
+                'wht' => (float) $receipt->wht_amount,
+                'vat7' => (float) $receipt->vat7_value,
+                'deduction' => (float) $receipt->dAmount,
+            ];
+        }
+
+        // Open invoices plus the ones this receipt pays; amounts as if this receipt were not there.
+        $notMine = fn ($q) => $q->where(fn ($w) => $w->where('receipt_id', '!=', $receipt->id)->orWhere('source', 'credit'));
+        $invoices = Invoice::where('client_id', $client->id)
+            ->where(fn ($q) => $q->whereIn('status', ['unpaid', 'uncompleted'])->orWhereIn('id', array_keys($prefill) ?: [0]))
+            ->withSum(['allocations as settled_sum' => $notMine], 'settled')
+            ->withSum(['allocations as wht_taken' => $notMine], 'wht_amount')
+            ->withSum(['allocations as vat_taken' => $notMine], 'vat7_amount')
+            ->orderBy('invoice_month')->orderBy('id')
+            ->get()
+            ->filter(fn ($inv) => isset($prefill[$inv->id]) || round((float) $inv->total - (float) $inv->settled_sum, 2) > 0.004)
+            ->values();
+
+        $creditReceipts = Receipt::where('client_id', $client->id)->where('unapplied_amount', '>', 0)
+            ->where('id', '!=', $receipt->id)->orderBy('id')->get();
+        $clients = collect([$client]);
+        $mode = DB::table('receipt_mode')->get();
+        $banks = Bank::banksOnly()->operating()->orderBy('name')
+            ->orWhereIn('id', array_filter([$receipt->cheque_to_bank_id, $receipt->transfer_to_bank_id]))->get();
+        $wht_rate = new Wht();
+        $assign_staff = collect();     // the approval routing is not changed by an edit
+        $preselected = array_keys($prefill);
+        $editing = $receipt;
+
+        return view('sales.receipt_multi_create', compact(
+            'clients', 'client', 'invoices', 'creditReceipts', 'mode', 'banks', 'wht_rate', 'assign_staff', 'preselected',
+            'editing', 'prefill', 'creditLines', 'creditUsed'
+        ));
+    }
+
     public function store(StoreMultiInvoiceReceiptRequest $request, ReceiptRecorder $recorder, SubmissionGuard $guard)
     {
         $client = $this->scopeToUserFields(Client::query())->findOrFail($request->integer('client_id'));

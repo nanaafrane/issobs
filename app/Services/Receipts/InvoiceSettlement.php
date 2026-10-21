@@ -101,17 +101,23 @@ class InvoiceSettlement
      *
      * @return array<int, int> ids of invoices that were recalculated
      */
-    public function release(Receipt $receipt): array
+    public function release(Receipt $receipt, bool $keepCreditApplied = false): array
     {
-        $invoiceIds = ReceiptAllocation::where('receipt_id', $receipt->id)->pluck('invoice_id')->all();
+        // When a receipt is edited, the credit it already gave to other invoices
+        // ("Apply credit") stays where it is; only its own payment lines are undone.
+        $own = fn () => ReceiptAllocation::where('receipt_id', $receipt->id)
+            ->when($keepCreditApplied, fn ($q) => $q->where(fn ($w) => $w->where('source', '!=', 'credit')->orWhereNull('source')));
+        $invoiceIds = $own()->pluck('invoice_id')->all();
 
         // Receipts created before allocations existed and never backfilled.
-        if (empty($invoiceIds) && $receipt->invoice_id) {
+        if (empty($invoiceIds) && $receipt->invoice_id && ! ReceiptAllocation::where('receipt_id', $receipt->id)->exists()) {
             $invoiceIds = [$receipt->invoice_id];
         }
 
-        ReceiptAllocation::where('receipt_id', $receipt->id)->delete();
-        Transaction::where('receipt_id', $receipt->id)->delete();
+        $own()->delete();
+        Transaction::where('receipt_id', $receipt->id)
+            ->when($keepCreditApplied, fn ($q) => $q->whereIn('invoice_id', $invoiceIds ?: [0]))
+            ->delete();
 
         $invoiceIds = array_values(array_unique($invoiceIds));
         foreach (Invoice::whereIn('id', $invoiceIds)->get() as $invoice) {

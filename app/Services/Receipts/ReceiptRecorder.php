@@ -170,18 +170,34 @@ class ReceiptRecorder
             }
             [$payment, $money] = $this->payment($input);
 
-            $this->settlement->release($receipt);
+            // Credit from this receipt already applied to other invoices stays applied;
+            // the edited receipt must still cover it.
+            $creditUsed = $this->creditUsed($receipt);
+            $this->settlement->release($receipt, true);
 
             $invoices = $this->lockOpenInvoices($receipt->client_id, array_keys($input['invoices']));
-            $plan = $this->plan($invoices, $input, $money);
+            if ($creditUsed > 0 && $money < $creditUsed) {
+                throw ValidationException::withMessages(['invoices' => 'GH₵' . number_format($creditUsed, 2)
+                    . ' of this receipt\'s credit is already applied to other invoices, so the money received cannot be less than that.']);
+            }
+            $plan = $this->plan($invoices, $input, round($money - $creditUsed, 2), $creditUsed);
 
             $this->fill($receipt, $input, $payment, $money, $plan, $invoices);
+            if ($creditUsed > 0) {
+                $receipt->advance_payment = 'advance';
+            }
             if ($image) {
                 $receipt->image = $image->store('images', 'public_html_disk');   // otherwise keep the existing copy
             }
             $receipt->save();
 
             $this->allocate($receipt, $invoices, $plan, true);
+            if ($creditUsed > 0) {
+                // Completed only when every invoice it pays (including through its credit) is paid.
+                $receipt->status = Invoice::whereIn('id', $receipt->allocations()->pluck('invoice_id'))
+                    ->where('status', '!=', 'completed')->doesntExist() ? 'completed' : 'uncompleted';
+                $receipt->save();
+            }
             $this->writeCollection($receipt, Client::find($receipt->client_id));
             $this->bankPosting->sync($receipt);
             $this->ledger->sync($receipt->client_id);
@@ -296,7 +312,13 @@ class ReceiptRecorder
         return $invoices;
     }
 
-    private function plan($invoices, array $input, float $money): array
+    /** Money from this receipt already given to other invoices with "Apply credit". */
+    public function creditUsed(Receipt $receipt): float
+    {
+        return round((float) \App\Models\ReceiptAllocation::where('receipt_id', $receipt->id)->where('source', 'credit')->sum('amount_applied'), 2);
+    }
+
+    private function plan($invoices, array $input, float $money, float $creditUsed = 0.0): array
     {
         $lines = $invoices->map(function (Invoice $invoice) use ($input) {
             $row = $input['invoices'][$invoice->id] ?? $input['invoices'][(string) $invoice->id] ?? [];
@@ -318,7 +340,7 @@ class ReceiptRecorder
 
         $errors = $plan['errors'];
 
-        if ($money <= 0 && $credits <= 0) {
+        if ($money <= 0 && $credits <= 0 && $creditUsed <= 0) {
             $errors[] = 'Enter the amount received for the payment mode(s) you ticked.';
         }
         foreach ($plan['lines'] as $line) {
@@ -327,7 +349,7 @@ class ReceiptRecorder
             }
         }
         if ($plan['unapplied'] > 0 && empty($input['keep_credit'])) {
-            $errors[] = $invoices->isEmpty()
+            $errors[] = $invoices->isEmpty() && $creditUsed <= 0
                 ? 'Tick at least one invoice, or tick "Keep the extra as client credit (advance)" to record an advance payment.'
                 : 'GH₵' . number_format($plan['unapplied'], 2) . ' is more than the invoice(s) need. '
                     . 'Check the amount, or tick "Keep the extra as client credit (advance)".';

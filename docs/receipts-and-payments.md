@@ -92,7 +92,25 @@ multi-invoice one. Differences from the old single form:
 * The "keep extra as client credit" tick only appears when there is extra money.
 * The screen is limited to the user's office (the old form would open any invoice by its number).
 * "Client already has a category for that month" is reported, as the old single form did.
-The old `receiptCreate` view is removed. Editing a receipt still uses the single-invoice edit form.
+The old `receiptCreate` view is removed.
+
+**Editing uses the same screen** (`/receipt/{id}/edit` → `/receipt-multi/{id}/edit`, saved by `PUT /receipt/{id}`).
+The client is fixed; the invoices the receipt pays are ticked with the amounts, WHT, VAT and deductions it saved; its
+payment modes, references, payer's banks and *our* banks are filled in; the attachment is kept unless replaced.
+Outstanding figures and WHT/VAT defaults are shown **without this receipt**, so money can be moved between invoices,
+an invoice added or removed, or the extra kept as credit — then saving re-applies the receipt from scratch
+(`ReceiptRecorder::revise`). What the old edit form got wrong:
+* It pre-filled WHT/VAT with the **standard amount (hard-coded 7.5%)**, not what was saved, so re-saving silently changed
+  the receipt's WHT/VAT.
+* Payment rows only opened when the receipt had exactly one mode (`mode == 'cheque'`), so a cheque + cash receipt
+  opened with its details hidden; *other payments* never reopened.
+* Receipts paying several invoices, advances without an invoice, and receipts whose credit had been applied could not
+  be edited at all (void and re-enter was the only way); the invoices paid could not be changed.
+* A required *Assign to* box that was ignored on save (an edit never changes the approval routing — still true).
+
+Credit from the receipt already applied to other invoices (*Apply credit*) **stays applied**; the screen shows it and
+the edited money must still cover it. A receipt whose cash/MoMo has been deposited cannot be edited (reverse the
+deposit first), and only users of the client's office can open or save it.
 
 ### If the connection drops while saving
 * **Never half-saved.** A receipt (with its invoice updates, collection, bank posting and client-ledger lines), an

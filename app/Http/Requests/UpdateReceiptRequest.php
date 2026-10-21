@@ -29,6 +29,14 @@ class UpdateReceiptRequest extends FormRequest
             'receipt_month' => ['required', 'date'],
             'keep_credit' => ['nullable', 'in:1,on'],
             'image' => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:2048'],
+            'description' => ['nullable', 'string', 'max:255'],
+            // The edit screen (same as a new receipt): one row per invoice.
+            'invoices' => ['nullable', 'array'],
+            'invoices.*.selected' => ['nullable', 'in:1'],
+            'invoices.*.applied' => ['nullable', 'numeric', 'min:0'],
+            'invoices.*.wht' => ['nullable', 'numeric', 'min:0'],
+            'invoices.*.vat7' => ['nullable', 'numeric', 'min:0'],
+            'invoices.*.deduction' => ['nullable', 'numeric', 'min:0'],
         ], $this->paymentModeRules(), $this->adjustmentRules());
     }
 

@@ -22,15 +22,31 @@
     @endsection
 
     @section('content')
+    @php
+        // The same screen creates a receipt and edits one ($editing).
+        $editing = $editing ?? null;
+        $prefill = $prefill ?? [];
+        $creditUsed = (float) ($creditUsed ?? 0);
+        $creditLines = $creditLines ?? collect();
+        $val = fn (string $field, $default = null) => old($field, $editing ? $editing->{$field} : $default);
+        $amt = fn ($v) => (float) $v > 0 ? number_format((float) $v, 2, '.', '') : null;
+    @endphp
     <div class="container-xxl flex-grow-1 container-p-y">
         <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
             <h3 class="mb-0 text-primary">
                 <i class="icon-base bx bx-receipt text-primary me-2"></i> Receipt
-                <i class="icon-base bx bx-right-arrow-alt mx-1 text-muted"></i> New
+                <i class="icon-base bx bx-right-arrow-alt mx-1 text-muted"></i>
+                @if($editing) FWSSR{{ $editing->id }} <i class="icon-base bx bx-right-arrow-alt mx-1 text-muted"></i> Edit @else New @endif
             </h3>
+            @if($editing)
+            <a href="{{ route('receipt.show', $editing->id) }}" class="btn btn-outline-secondary btn-sm">
+                <i class="bx bx-arrow-back me-1"></i> Back to the receipt
+            </a>
+            @else
             <a href="{{ url('receipt/create') }}" class="btn btn-outline-secondary btn-sm">
                 <i class="bx bx-list-ul me-1"></i> Unpaid invoices list
             </a>
+            @endif
         </div>
 
         @include('flash-messages')
@@ -46,6 +62,17 @@
             </div>
         @endif
 
+        @if($editing)
+        <div class="alert alert-info d-flex flex-wrap gap-2 align-items-start">
+            <i class="bx bx-info-circle mt-1"></i>
+            <div>
+                Editing receipt <strong>FWSSR{{ $editing->id }}</strong> of {{ $editing->created_at?->format('d M Y') }}.
+                Amounts below are what it pays now; outstanding figures exclude this receipt, so you can move money between invoices or change the payment.
+                Saving re-applies it from scratch — other receipts on the same invoices are not affected.
+                @if($editing->coll_status) Approval stays as it is ({{ $editing->coll_status }}). @endif
+            </div>
+        </div>
+        @else
         {{-- Step 1: choose the client --}}
         <div class="card mb-4">
             <div class="card-body">
@@ -71,10 +98,12 @@
                 </form>
             </div>
         </div>
+        @endif
 
         @if($client)
-        <form method="POST" action="{{ route('receipt.multi.store') }}" enctype="multipart/form-data" id="multiForm">
+        <form method="POST" action="{{ $editing ? route('receipt.update', $editing->id) : route('receipt.multi.store') }}" enctype="multipart/form-data" id="multiForm">
             @csrf
+            @if($editing) @method('PUT') @endif
             {!! \App\Support\SubmissionGuard::field() !!}
             <input type="hidden" name="client_id" value="{{ $client->id }}">
 
@@ -105,7 +134,7 @@
 
                         @if($invoices->isEmpty())
                             <div class="card-body">
-                                <p class="mb-0 text-muted">This client has no unpaid invoices. You can still record the money as an <strong>advance payment</strong>: fill in the payment below and tick “Keep the extra as client credit”.</p>
+                                <p class="mb-0 text-muted">This client has no unpaid invoices{{ $editing ? ' for this receipt to pay' : '' }}. You can still record the money as an <strong>advance payment</strong>: fill in the payment below and tick “Keep the extra as client credit”.</p>
                             </div>
                         @else
                         <div class="table-responsive">
@@ -136,8 +165,10 @@
                                             $whtDefault = max(0, round($whtFull - (float) $inv->wht_taken, 2));
                                             $vatDefault = max(0, round($vatFull - (float) $inv->vat_taken, 2));
                                             $key = 'invoices.' . $inv->id;
-                                            // Ticked after a validation error if it was ticked, or when the screen was opened from this invoice.
+                                            // Ticked after a validation error if it was ticked, or when the screen was opened from this invoice
+                                            // (editing: the invoices this receipt pays).
                                             $checked = old('_token') ? old($key . '.selected') === '1' : in_array($inv->id, $preselected ?? [], true);
+                                            $pre = $prefill[$inv->id] ?? [];
                                         @endphp
                                         <tr class="mi-row {{ $checked ? '' : 'mi-off' }}"
                                             data-id="{{ $inv->id }}"
@@ -145,17 +176,19 @@
                                             data-wht="{{ $whtDefault }}"
                                             data-vat="{{ $vatDefault }}">
                                             <td><input type="checkbox" class="form-check-input mi-pick" name="invoices[{{ $inv->id }}][selected]" value="1" {{ $checked ? 'checked' : '' }}></td>
-                                            <td><strong>FWSSi{{ $inv->id }}</strong><br><span class="badge bg-label-{{ $inv->status === 'uncompleted' ? 'warning' : 'danger' }}">{{ $inv->status === 'uncompleted' ? 'part paid' : 'unpaid' }}</span></td>
+                                            <td><strong>FWSSi{{ $inv->id }}</strong><br>
+                                                @if($editing && isset($prefill[$inv->id]))<span class="badge bg-label-primary">on this receipt</span>
+                                                @else<span class="badge bg-label-{{ $inv->status === 'uncompleted' ? 'warning' : 'danger' }}">{{ $inv->status === 'uncompleted' ? 'part paid' : 'unpaid' }}</span>@endif</td>
                                             <td>{{ $inv->invoice_month?->format('M Y') }}</td>
                                             <td class="small {{ $inv->due_date && $inv->due_date->isPast() ? 'text-danger' : '' }}">{{ $inv->due_date?->format('d M Y') }}</td>
                                             <td class="text-end mi-num">{{ number_format($inv->total, 2) }}</td>
                                             <td class="text-end mi-num"><strong>{{ number_format($outstanding, 2) }}</strong></td>
-                                            <td><input type="number" step="0.01" min="0" class="form-control form-control-sm mi-wht" name="invoices[{{ $inv->id }}][wht]" value="{{ old($key . '.wht') }}" placeholder="0.00"
+                                            <td><input type="number" step="0.01" min="0" class="form-control form-control-sm mi-wht" name="invoices[{{ $inv->id }}][wht]" value="{{ old($key . '.wht', $amt($pre['wht'] ?? 0)) }}" placeholder="0.00"
                                                 @if((float) $inv->wht_taken > 0) title="GH₵{{ number_format($inv->wht_taken, 2) }} WHT already withheld on this invoice" @endif></td>
-                                            <td><input type="number" step="0.01" min="0" class="form-control form-control-sm mi-vat" name="invoices[{{ $inv->id }}][vat7]" value="{{ old($key . '.vat7') }}" placeholder="0.00"
+                                            <td><input type="number" step="0.01" min="0" class="form-control form-control-sm mi-vat" name="invoices[{{ $inv->id }}][vat7]" value="{{ old($key . '.vat7', $amt($pre['vat7'] ?? 0)) }}" placeholder="0.00"
                                                 @if((float) $inv->vat_taken > 0) title="GH₵{{ number_format($inv->vat_taken, 2) }} VAT already withheld on this invoice" @endif></td>
-                                            <td><input type="number" step="0.01" min="0" class="form-control form-control-sm mi-ded" name="invoices[{{ $inv->id }}][deduction]" value="{{ old($key . '.deduction') }}" placeholder="0.00"></td>
-                                            <td><input type="number" step="0.01" min="0" class="form-control form-control-sm mi-applied" name="invoices[{{ $inv->id }}][applied]" value="{{ old($key . '.applied') }}" placeholder="auto"></td>
+                                            <td><input type="number" step="0.01" min="0" class="form-control form-control-sm mi-ded" name="invoices[{{ $inv->id }}][deduction]" value="{{ old($key . '.deduction', $amt($pre['deduction'] ?? 0)) }}" placeholder="0.00"></td>
+                                            <td><input type="number" step="0.01" min="0" class="form-control form-control-sm mi-applied" name="invoices[{{ $inv->id }}][applied]" value="{{ old($key . '.applied', isset($pre['applied']) ? number_format((float) $pre['applied'], 2, '.', '') : null) }}" placeholder="auto"></td>
                                             <td class="text-end mi-num mi-remaining">{{ number_format($outstanding, 2) }}</td>
                                         </tr>
                                     @endforeach
@@ -164,7 +197,7 @@
                         </div>
                         <div class="card-body pt-3">
                             <label class="form-label" for="description">Deduction description <small class="text-muted">(only if you entered deductions)</small></label>
-                            <input type="text" class="form-control" name="description" id="description" value="{{ old('description') }}" placeholder="e.g. Penalty for late guard posting">
+                            <input type="text" class="form-control" name="description" id="description" value="{{ $val('description') }}" placeholder="e.g. Penalty for late guard posting">
                         </div>
                         @endif
                     </div>
@@ -179,18 +212,18 @@
                             <div class="row g-3 mb-3">
                                 <div class="col-md-6">
                                     <label for="from" class="form-label">FROM</label>
-                                    <input type="text" name="from" id="from" class="form-control" value="{{ old('from', $client->name) }}" placeholder="Full name of payer" required>
+                                    <input type="text" name="from" id="from" class="form-control" value="{{ $val('from', $client->name) }}" placeholder="Full name of payer" required>
                                 </div>
                                 <div class="col-md-6">
                                     <label for="receipt_month" class="form-label">RECEIPT DATE</label>
-                                    <input type="date" name="receipt_month" id="receipt_month" class="form-control" value="{{ old('receipt_month', now()->toDateString()) }}" required>
+                                    <input type="date" name="receipt_month" id="receipt_month" class="form-control" value="{{ old('receipt_month', $editing?->receipt_month ? \Carbon\Carbon::parse($editing->receipt_month)->toDateString() : now()->toDateString()) }}" required>
                                 </div>
                             </div>
 
                             <label class="form-label d-block">MODE <small class="text-muted">(tick one or more)</small></label>
                             @php
                                 $modeInputId = fn ($name) => 'mode_' . str_replace(' ', '_', strtolower($name));
-                                $selectedModes = old('mode', []);
+                                $selectedModes = old('mode', $editing ? array_values((array) $editing->mode) : []);
                             @endphp
                             <div class="d-flex flex-wrap gap-4 mb-3">
                                 @foreach ($mode as $m)
@@ -205,7 +238,7 @@
                                 <div class="row g-3">
                                     <div class="col-md-4">
                                         <label for="cash_amount" class="form-label">CASH AMOUNT</label>
-                                        <input type="number" step="0.01" min="0" name="cash_amount" id="cash_amount" class="form-control mi-money" value="{{ old('cash_amount') }}" placeholder="GH&#8373;">
+                                        <input type="number" step="0.01" min="0" name="cash_amount" id="cash_amount" class="form-control mi-money" value="{{ $val('cash_amount') }}" placeholder="GH&#8373;">
                                     </div>
                                 </div>
                             </div>
@@ -214,11 +247,11 @@
                                 <div class="row g-3">
                                     <div class="col-md-6">
                                         <label for="momo_transactin_id" class="form-label">MOMO TRANSACTION ID</label>
-                                        <input type="text" name="momo_transactin_id" id="momo_transactin_id" class="form-control" value="{{ old('momo_transactin_id') }}">
+                                        <input type="text" name="momo_transactin_id" id="momo_transactin_id" class="form-control" value="{{ $val('momo_transactin_id') }}">
                                     </div>
                                     <div class="col-md-4">
                                         <label for="momo_amount" class="form-label">MOMO AMOUNT</label>
-                                        <input type="number" step="0.01" min="0" name="momo_amount" id="momo_amount" class="form-control mi-money" value="{{ old('momo_amount') }}" placeholder="GH&#8373;">
+                                        <input type="number" step="0.01" min="0" name="momo_amount" id="momo_amount" class="form-control mi-money" value="{{ $val('momo_amount') }}" placeholder="GH&#8373;">
                                     </div>
                                 </div>
                             </div>
@@ -227,18 +260,18 @@
                                 <div class="row g-3">
                                     <div class="col-md-3">
                                         <label for="cheque_reference" class="form-label">CHEQUE NO. / REF</label>
-                                        <input type="text" name="cheque_reference" id="cheque_reference" class="form-control" value="{{ old('cheque_reference') }}">
+                                        <input type="text" name="cheque_reference" id="cheque_reference" class="form-control" value="{{ $val('cheque_reference') }}">
                                     </div>
                                     <div class="col-md-3">
                                         <label for="cheque_amount" class="form-label">CHEQUE AMOUNT</label>
-                                        <input type="number" step="0.01" min="0" name="cheque_amount" id="cheque_amount" class="form-control mi-money" value="{{ old('cheque_amount') }}" placeholder="GH&#8373;">
+                                        <input type="number" step="0.01" min="0" name="cheque_amount" id="cheque_amount" class="form-control mi-money" value="{{ $val('cheque_amount') }}" placeholder="GH&#8373;">
                                     </div>
                                     <div class="col-md-3">
                                         <label for="cheque_bank" class="form-label">DRAWN ON (PAYER'S BANK)</label>
-                                        <input type="text" name="cheque_bank" id="cheque_bank" class="form-control" value="{{ old('cheque_bank') }}" placeholder="e.g. GCB">
+                                        <input type="text" name="cheque_bank" id="cheque_bank" class="form-control" value="{{ $val('cheque_bank') }}" placeholder="e.g. GCB">
                                     </div>
                                     <div class="col-md-3">
-                                        @include('partials.receipt_bank_select', ['name' => 'cheque_to_bank_id', 'label' => 'PAID INTO (OUR BANK)', 'banks' => $banks, 'selected' => null])
+                                        @include('partials.receipt_bank_select', ['name' => 'cheque_to_bank_id', 'label' => 'PAID INTO (OUR BANK)', 'banks' => $banks, 'selected' => $editing?->cheque_to_bank_id])
                                     </div>
                                 </div>
                             </div>
@@ -247,18 +280,18 @@
                                 <div class="row g-3">
                                     <div class="col-md-3">
                                         <label for="transfer_reference" class="form-label">TRANSFER REF</label>
-                                        <input type="text" name="transfer_reference" id="transfer_reference" class="form-control" value="{{ old('transfer_reference') }}">
+                                        <input type="text" name="transfer_reference" id="transfer_reference" class="form-control" value="{{ $val('transfer_reference') }}">
                                     </div>
                                     <div class="col-md-3">
                                         <label for="transfer_amount" class="form-label">TRANSFER AMOUNT</label>
-                                        <input type="number" step="0.01" min="0" name="transfer_amount" id="transfer_amount" class="form-control mi-money" value="{{ old('transfer_amount') }}" placeholder="GH&#8373;">
+                                        <input type="number" step="0.01" min="0" name="transfer_amount" id="transfer_amount" class="form-control mi-money" value="{{ $val('transfer_amount') }}" placeholder="GH&#8373;">
                                     </div>
                                     <div class="col-md-3">
                                         <label for="transfer_bank" class="form-label">FROM (PAYER'S BANK)</label>
-                                        <input type="text" name="transfer_bank" id="transfer_bank" class="form-control" value="{{ old('transfer_bank') }}" placeholder="e.g. Ecobank">
+                                        <input type="text" name="transfer_bank" id="transfer_bank" class="form-control" value="{{ $val('transfer_bank') }}" placeholder="e.g. Ecobank">
                                     </div>
                                     <div class="col-md-3">
-                                        @include('partials.receipt_bank_select', ['name' => 'transfer_to_bank_id', 'label' => 'RECEIVED INTO (OUR BANK)', 'banks' => $banks, 'selected' => null])
+                                        @include('partials.receipt_bank_select', ['name' => 'transfer_to_bank_id', 'label' => 'RECEIVED INTO (OUR BANK)', 'banks' => $banks, 'selected' => $editing?->transfer_to_bank_id])
                                     </div>
                                 </div>
                             </div>
@@ -267,19 +300,20 @@
                                 <div class="row g-3">
                                     <div class="col-md-6">
                                         <label for="other_payment_descri" class="form-label">OTHER PAYMENT DESCRIPTION</label>
-                                        <input type="text" name="other_payment_descri" id="other_payment_descri" class="form-control" value="{{ old('other_payment_descri') }}">
+                                        <input type="text" name="other_payment_descri" id="other_payment_descri" class="form-control" value="{{ $val('other_payment_descri') }}">
                                     </div>
                                     <div class="col-md-4">
                                         <label for="other_payment_amnt" class="form-label">AMOUNT</label>
-                                        <input type="number" step="0.01" min="0" name="other_payment_amnt" id="other_payment_amnt" class="form-control mi-money" value="{{ old('other_payment_amnt') }}" placeholder="GH&#8373;">
+                                        <input type="number" step="0.01" min="0" name="other_payment_amnt" id="other_payment_amnt" class="form-control mi-money" value="{{ $val('other_payment_amnt') }}" placeholder="GH&#8373;">
                                     </div>
                                 </div>
                             </div>
 
                             <div class="row g-3 mt-1">
                                 <div class="col-md-6">
-                                    <label for="image" class="form-label">Attach cheque / slip <small class="text-muted">(jpg/png, max 2MB)</small></label>
+                                    <label for="image" class="form-label">{{ $editing?->image ? 'Replace attached cheque / slip' : 'Attach cheque / slip' }} <small class="text-muted">(jpg/png, max 2MB)</small></label>
                                     <input type="file" name="image" id="image" class="form-control" accept="image/png, image/jpeg">
+                                    @if($editing?->image)<small class="text-muted">Current: <a href="{{ asset('storage/' . $editing->image) }}" target="_blank" rel="noopener">view attachment</a> — kept unless you choose a new file.</small>@endif
                                 </div>
                                 @if($assign_staff->isNotEmpty())
                                 <div class="col-md-6">
@@ -314,14 +348,23 @@
                                 <div class="mi-credit-box mt-3" id="creditBox" style="display:none">
                                     <div class="d-flex justify-content-between"><span>Not applied to any invoice</span><strong class="mi-num" id="sumUnapplied">0.00</strong></div>
                                     <div class="form-check mt-2 mb-0">
-                                        <input class="form-check-input" type="checkbox" name="keep_credit" value="1" id="keep_credit" {{ old('keep_credit') ? 'checked' : '' }}>
+                                        <input class="form-check-input" type="checkbox" name="keep_credit" value="1" id="keep_credit" {{ old('_token') ? (old('keep_credit') ? 'checked' : '') : ($editing && (float) $editing->unapplied_amount > 0 ? 'checked' : '') }}>
                                         <label class="form-check-label" for="keep_credit">Keep the extra as client credit (advance)</label>
                                     </div>
                                     <small class="text-muted d-block mt-1">It stays on this receipt and can be applied to the client's next invoices from the receipt page.</small>
                                 </div>
                                 <div class="alert alert-danger mt-3 mb-0 py-2" id="overBox" style="display:none">
-                                    More is applied than was received. Lower an amount or add the missing payment.
+                                    More is applied than was received{{ $creditUsed > 0 ? ' (after the credit already used)' : '' }}. Lower an amount or add the missing payment.
                                 </div>
+                                @if($creditUsed > 0)
+                                <div class="border rounded p-2 mt-3 small">
+                                    <div class="d-flex justify-content-between"><span>Credit already applied to other invoices</span><strong class="mi-num">{{ number_format($creditUsed, 2) }}</strong></div>
+                                    <div class="text-muted">
+                                        @foreach($creditLines as $cl)FWSSi{{ $cl->invoice_id }} {{ number_format($cl->amount_applied, 2) }}@if(! $loop->last), @endif @endforeach
+                                        — stays applied. The money received must still cover it.
+                                    </div>
+                                </div>
+                                @endif
                             </div>
                         </div>
 
@@ -342,7 +385,7 @@
                         </div>
                         @endif
 
-                        @if($errors->has('duplicate') || old('confirm_duplicate'))
+                        @if(! $editing && ($errors->has('duplicate') || old('confirm_duplicate')))
                         <div class="alert alert-warning mb-3" id="duplicateBox">
                             <strong><i class="bx bx-error me-1"></i> Possible repeat</strong>
                             <div class="small mt-1">{{ $errors->first('duplicate') ?: 'You confirmed this is a separate payment.' }}</div>
@@ -353,7 +396,7 @@
                         </div>
                         @endif
                         <button type="submit" class="btn btn-primary w-100" id="submitBtn" data-loading>
-                            <i class="bx bx-check-circle me-1"></i> Generate one receipt
+                            <i class="bx bx-check-circle me-1"></i> {{ $editing ? 'Save changes to FWSSR' . $editing->id : 'Generate one receipt' }}
                         </button>
                     </div>
                 </div>
@@ -404,6 +447,10 @@
         $('.mi-mode').on('change', function () { syncModes(true); recalc(); });
         syncModes(false);
 
+        // Editing: credit from this receipt already applied to other invoices must stay covered.
+        const reserved = {{ json_encode(round($creditUsed, 2)) }};
+        const editing = {{ $editing ? 'true' : 'false' }};
+
         // ---- allocation maths (mirrors App\Services\Receipts\ReceiptAllocator) ----
         const r2 = n => Math.round((parseFloat(n) || 0) * 100) / 100;
         const fmt = n => r2(n).toLocaleString('en-GH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -429,7 +476,7 @@
                     explicit += r2($tr.find('.mi-applied').val());
                 }
             });
-            let pool = Math.max(0, r2(money - explicit));
+            let pool = Math.max(0, r2(money - reserved - explicit));
 
             let applied = 0, credits = 0, settled = 0, picked = 0, paid = 0;
             rows.forEach(tr => {
@@ -464,7 +511,7 @@
                 applied += a; credits += c; settled += s;
             });
 
-            const unapplied = r2(money - applied);
+            const unapplied = r2(money - reserved - applied);
             $('#sumMoney').text(fmt(money));
             $('#sumApplied').text(fmt(applied));
             $('#sumCredits').text(fmt(credits));
@@ -516,7 +563,9 @@
                 return;
             }
             const picked = $('.mi-pick:checked').length;
-            const msg = picked
+            const msg = editing
+                ? 'Save the changes to this receipt (GH₵ ' + $('#sumMoney').text() + ', ' + picked + ' invoice(s))?'
+                : picked
                 ? 'Generate ONE receipt for GH₵ ' + $('#sumMoney').text() + ' covering ' + picked + ' invoice(s)?'
                 : 'Record GH₵ ' + $('#sumMoney').text() + ' as an advance (client credit) with no invoice?';
             if (!confirm(msg)) e.preventDefault();

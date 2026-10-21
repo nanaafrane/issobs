@@ -769,39 +769,10 @@ class ReceiptController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
+    /** Receipts are edited on the same screen as a new receipt. */
     public function edit(Receipt $receipt)
     {
-        //
-        // dd($receipt);
-        if ($this->isManagedByMultiInvoiceFlow($receipt)) {
-            return redirect()->route('receipt.show', ['receipt' => $receipt->id])
-                ->with('warning', 'This receipt pays several invoices or holds client credit. To change it, delete it and record it again with "Pay multiple invoices".');
-        }
-
-        $mode = DB::table('receipt_mode')->get();
-        $status = DB::table('receipt_status')->get();
-         $wht = new Wht();
-         $invoice = Invoice::findorFail($receipt->invoice_id);
-        $banks = Bank::banksOnly()->operating()->orderBy('name')->get();
-
-        $user = Auth::user();
-        $staff =  User::all();
-        $manager = $staff->where('department_id', '7')->where('role_id', '3');
-        $finance_manager = $staff->where('department_id', '1')->where('role_id', '2');
-        $assign_staff = [];
-        // dd($manager);
-        if($user->role->name == 'Admin Assistant')
-            {
-                $assign_staff = $manager;
-            }
-
-        if($user->role->name == 'Manager')
-            {
-                $assign_staff = $finance_manager;
-            }
-
-
-        return view('sales.receipt_edit', compact('receipt','wht','invoice','mode','status', 'assign_staff', 'user', 'banks'));
+        return redirect()->route('receipt.multi.edit', ['receipt' => $receipt->id]);
     }
 
     /**
@@ -818,17 +789,16 @@ class ReceiptController extends Controller
             return redirect()->back()->with('error', 'Receipt has been Deposited and cannot be edited');
         }
 
-        if ($this->isManagedByMultiInvoiceFlow($receipt)) {
-            return redirect()->route('receipt.show', ['receipt' => $receipt->id])
-                ->with('warning', 'This receipt pays several invoices or its credit has been applied to other invoices, so it cannot be changed from the single-invoice edit form.');
-        }
+        // Only for a client this user may work with.
+        $this->authorizeClientOffice($receipt);
 
         return $guard->once($request, 'receipt_edit', function () use ($request, $recorder, $receipt) {
-            $receipt = $recorder->revise(
-                $receipt,
-                ReceiptRecorder::singleInvoiceInput($request, (int) $receipt->invoice_id),
-                $request->file('image')
-            );
+            // The edit screen (same as a new receipt) sends invoices[…]; the old
+            // single-invoice form fields are still understood.
+            $input = $request->has('invoices') || ! $receipt->invoice_id
+                ? ReceiptRecorder::multiInvoiceInput($request)
+                : ReceiptRecorder::singleInvoiceInput($request, (int) $receipt->invoice_id);
+            $receipt = $recorder->revise($receipt, $input, $request->file('image'));
 
             return redirect()->route('receipt.show', ['receipt' => $receipt->id])
                 ->with('primary', $this->recordedMessage($receipt, [], 'updated'));
@@ -890,16 +860,15 @@ class ReceiptController extends Controller
      * created and maintained by MultiInvoiceReceiptController; the classic
      * one-invoice edit form would corrupt their allocations.
      */
-    private function isManagedByMultiInvoiceFlow(Receipt $receipt): bool
+    /** Same office rules as the receipt screens: head office sees all, Tema also sees Shai Hills. */
+    private function authorizeClientOffice(Receipt $receipt): void
     {
-        if (! $receipt->invoice_id) {
-            return true;
+        $user = Auth::user();
+        if ($user?->hasRole(['Finance Manager', 'Invoice'])) {
+            return;
         }
-
-        // A single-invoice receipt holding unused credit can still be edited;
-        // once its credit has been applied to other invoices it cannot.
-        return $receipt->allocations()->distinct()->count('invoice_id') > 1
-            || $receipt->allocations()->where('source', 'credit')->exists();
+        $fieldIds = $user?->field_id == 3 ? [3, 7] : array_filter([$user?->field_id]);
+        abort_unless(\App\Models\Client::whereKey($receipt->client_id)->whereIn('field_id', $fieldIds ?: [0])->exists(), 403);
     }
 
     private static function isDeposited(?Collection $collection): bool

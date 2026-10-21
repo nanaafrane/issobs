@@ -124,8 +124,9 @@ class MultiInvoiceReceiptTest extends TestCase
             ->assertSee('Invoices paid')->assertSee('FWSSi' . $a->id)->assertSee('FWSSi' . $b->id);
         $this->getJson(route('receipt.data'))->assertOk()
             ->assertJsonFragment(['invoice_id' => 'FWSSi' . $a->id . ' +1 more']);
-        // The single-invoice edit form must not be used on it.
-        $this->get(route('receipt.edit', $receipt))->assertRedirect(route('receipt.show', $receipt));
+        // It is edited on the same screen as a new receipt, both invoices ticked.
+        $this->get(route('receipt.edit', $receipt))->assertRedirect(route('receipt.multi.edit', $receipt));
+        $this->get(route('receipt.multi.edit', $receipt))->assertOk()->assertSee('FWSSi' . $a->id)->assertSee('FWSSi' . $b->id)->assertSee('on this receipt');
     }
 
     public function test_single_invoice_screens_render_with_bank_pickers(): void
@@ -136,7 +137,7 @@ class MultiInvoiceReceiptTest extends TestCase
 
         $receipt = Receipt::create(['invoice_id' => $inv->id, 'client_id' => $this->client->id, 'total' => 100, 'cash_amount' => 100, 'status' => 'uncompleted', 'mode' => ['cash']]);
         ReceiptAllocation::create(['receipt_id' => $receipt->id, 'invoice_id' => $inv->id, 'amount_applied' => 100, 'settled' => 100]);
-        $this->get(route('receipt.edit', $receipt))->assertOk()->assertSee('PAID INTO (OUR BANK)', false);
+        $this->followingRedirects()->get(route('receipt.edit', $receipt))->assertOk()->assertSee('PAID INTO (OUR BANK)', false);
 
         $this->get('/deposit/create')->assertOk();
     }
@@ -217,7 +218,7 @@ class MultiInvoiceReceiptTest extends TestCase
         $this->assertNull($receipt->invoice_id);
         $this->assertEquals(900, $receipt->unapplied_amount);
         $this->get(route('receipt.show', $receipt))->assertOk()->assertSee('Apply credit');
-        $this->get(route('receipt.edit', $receipt))->assertRedirect(route('receipt.show', $receipt));
+        $this->followingRedirects()->get(route('receipt.edit', $receipt))->assertOk()->assertSee('Save changes to FWSSR' . $receipt->id);
 
         // Next month's invoice is raised; settle it from the credit.
         $inv = $this->invoice(600, '2026-10-01');
