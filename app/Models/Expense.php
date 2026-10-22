@@ -60,10 +60,22 @@ class Expense extends Model
         return $this->belongsTo(AccountPayment::class, 'payment_id');
     }
 
+    /** A creditor (e.g. the director) who paid this expense for the company. */
+    public function creditorEntry()
+    {
+        return $this->belongsTo(CreditorEntry::class, 'creditor_entry_id');
+    }
+
+    /** Paid from a company account, or by a creditor on the company's behalf. */
+    public function isPaid(): bool
+    {
+        return (bool) $this->payment_id || (bool) $this->creditor_entry_id;
+    }
+
     /** Fully approved and not yet paid. */
     public function scopeAwaitingPayment($q)
     {
-        return $q->where('status_3', 'approved')->whereNull('payment_id');
+        return $q->where('status_3', 'approved')->whereNull('payment_id')->whereNull('creditor_entry_id');
     }
 
     /**
@@ -124,7 +136,7 @@ class Expense extends Model
      */
     public function isEditableBy(User $user): bool
     {
-        if ($this->payment_id) {
+        if ($this->isPaid()) {
             return false;   // paid: cancel the payment first
         }
         if ($this->isPrivilegedApprover($user)) {

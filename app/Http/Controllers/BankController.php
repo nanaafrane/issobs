@@ -73,7 +73,7 @@ class BankController extends Controller
             default => $d->format('d M Y'),
         };
         $series = $inRange()
-            ->whereNotIn('channel', ['transfer_in', 'transfer_out'])
+            ->whereNotIn('channel', ['transfer_in', 'transfer_out', 'loan_in', 'loan_out'])
             ->selectRaw('entry_date AS d, COALESCE(SUM(credit),0) AS i, COALESCE(SUM(debit),0) AS o, COUNT(*) AS c')
             ->groupBy('entry_date')->orderBy('entry_date')->get()
             ->groupBy(fn ($r) => $bucket(Carbon::parse($r->d)))
@@ -97,11 +97,13 @@ class BankController extends Controller
 
         $uncleared = AccountPayment::with('bank')->where('status', 'issued')->orderBy('payment_date')->get();
         $awaiting = $this->reports->awaitingPayment();
+        $owedRows = \App\Models\Creditor::where('balance', '>', 0);
+        $creditorsOwed = ['amount' => round((float) $owedRows->sum('balance'), 2), 'count' => $owedRows->count()];
 
         return view('banks.index', compact(
             'banks', 'live', 'perBank', 'from', 'to', 'group', 'inTotal', 'outTotal', 'net', 'flow',
             'totalBalance', 'cashBalance', 'bankBalance', 'transactions', 'truncated', 'series', 'checks', 'projection',
-            'uncleared', 'awaiting'
+            'uncleared', 'awaiting', 'creditorsOwed'
         ));
     }
 

@@ -82,6 +82,9 @@
                 <li @class(['menu-item', 'active' => request()->is('money/payments*')])>
                     <a href="{{ route('money.payments') }}" class="menu-link"><div class="text-truncate">Payments</div></a>
                 </li>
+                <li @class(['menu-item', 'active' => request()->is('creditors*')])>
+                    <a href="{{ route('creditors.index') }}" class="menu-link"><div class="text-truncate">Creditors (loans)</div></a>
+                </li>
             </ul>
         </li>
         <li class="menu-item">

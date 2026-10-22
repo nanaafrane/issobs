@@ -149,9 +149,10 @@
                 <div class="note">Payments, expenses and charges</div>
             </div>
             <div>
-                <div class="label">Net movement</div>
+                <div class="label">Net from the business</div>
                 <div class="value {{ $net >= 0 ? 'bk-in' : 'bk-out' }}">{{ $net >= 0 ? '+' : '−' }}{{ $money(abs($net)) }}</div>
-                <div class="note">{{ $net >= 0 ? 'Balances grew' : 'Balances shrank' }} in this period.
+                <div class="note">Money in less money out in this period.
+                    @if($flow['financing']['received'] > 0 || $flow['financing']['repaid'] > 0) Borrowed {{ $money($flow['financing']['received']) }}, repaid {{ $money($flow['financing']['repaid']) }} (financing, not counted). @endif
                     @if($flow['internal'] > 0) Moves between our own accounts ({{ $money($flow['internal']) }}) are not counted as in or out. @endif</div>
             </div>
         </div>
@@ -254,6 +255,14 @@
                             </table>
                         </div>
                     </div>
+                    @if($flow['financing']['received'] > 0 || $flow['financing']['repaid'] > 0)
+                    <div class="px-3 py-2 border-top small">
+                        <i class="bx bx-building-house"></i> <strong>Financing</strong> (borrowed money, not income or spending):
+                        received from creditors <span class="bk-in bk-num">{{ $money($flow['financing']['received']) }}</span> ·
+                        repaid <span class="bk-out bk-num">{{ $money($flow['financing']['repaid']) }}</span>.
+                        <a href="{{ route('creditors.index') }}">Creditors</a>
+                    </div>
+                    @endif
                     @if($flow['internal'] > 0)
                     <div class="px-3 py-2 border-top small bk-muted">
                         <i class="bx bx-transfer"></i> {{ $flow['internal_count'] }} {{ Str::plural('move', $flow['internal_count']) }} between our own accounts ({{ $money($flow['internal']) }}), e.g. funding Main Cash — not money in or out of the business.
@@ -279,6 +288,11 @@
                         </div>
                         <div class="bk-muted mb-3">Your bank statement shows this much more than the books until these cheques are presented.
                             @if($uncleared->isNotEmpty())<a href="{{ route('money.payments', ['status' => 'issued']) }}">List</a>@endif</div>
+                        <div class="d-flex justify-content-between mb-1">
+                            <span>Owed to creditors (loans) <span class="bk-muted">({{ $creditorsOwed['count'] }})</span></span>
+                            <span class="bk-num fw-semibold">{{ number_format($creditorsOwed['amount'], 2) }}</span>
+                        </div>
+                        <div class="bk-muted mb-3">Money borrowed, e.g. from the director, still to be paid back. <a href="{{ route('creditors.index') }}">Creditors</a></div>
                         @if($checks)
                             <div class="alert alert-warning py-2 mb-0">{{ count($checks) }} {{ Str::plural('account', count($checks)) }} with a balance that does not match its ledger — open its statement.</div>
                         @else

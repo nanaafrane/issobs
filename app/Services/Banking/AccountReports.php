@@ -86,10 +86,20 @@ class AccountReports
         $out = [];
         $internal = 0.0;
         $internalCount = 0;
+        // Borrowed money (creditors / director's loan) and paying it back: financing, not income or spending.
+        $financing = ['received' => 0.0, 'repaid' => 0.0];
         foreach ($rows as $r) {
             if (in_array($r->channel, ['transfer_in', 'transfer_out'], true)) {
                 $internal += (float) $r->credit;
                 $internalCount += $r->credit > 0 ? 1 : 0;
+                continue;
+            }
+            if ($r->channel === 'loan_in') {
+                $financing['received'] += (float) $r->credit - (float) $r->debit;
+                continue;
+            }
+            if ($r->channel === 'loan_out') {
+                $financing['repaid'] += (float) $r->debit - (float) $r->credit;
                 continue;
             }
             [$key, $label] = $this->classify($r);
@@ -122,6 +132,7 @@ class AccountReports
             'net' => round($in->sum('amount') - $out->sum('amount'), 2),
             'internal' => round($internal, 2),
             'internal_count' => $internalCount,
+            'financing' => ['received' => round($financing['received'], 2), 'repaid' => round($financing['repaid'], 2)],
         ];
     }
 

@@ -468,6 +468,39 @@ that payment. Zero-date safe, re-runnable.
 
 ---
 
+## 11. Creditors: money the company borrows (director's loan)
+
+### What was wrong
+
+When a director put money into a company account there was no right way to record it: an *adjustment* (counted as
+**money in**, as if it were income) or nothing at all; paying it back was a payment under *Loan repayment* (counted as
+**money out**, as if it were an expense). Nowhere showed how much the company owed the director.
+
+### How it works now
+
+A director's (or shareholder's, or lender's) money is a **liability**: the company owes it back. It is not income, and
+repaying it is not an expense. *Accounts › Creditors (loans)*:
+
+| Action | Company account | Creditor's balance owed |
+|---|---|---|
+| **Money received** — into a bank (transfer / cheque / MoMo) or **Main Cash** | + money in, *Funding (to repay)* (`loan_in`) | + |
+| **Paid on our behalf** — the creditor paid a supplier or ticked **approved expenses** from their own money | — no company money moves | + (the expenses show *Paid by a creditor*) |
+| **Repay** — from a bank or Main Cash, never more than is owed | − money out, *Loan repayment* (`loan_out`) | − |
+| **Interest** (optional, with a repayment) | − a payment, category *Interest on loans* | — (a cost, counted as money out) |
+| **Reverse** (Finance Manager / Director, with a reason) | the opposite line | the opposite; expenses back to awaiting payment |
+
+* Each creditor has a **statement**: opening balance owed, every entry, running balance, closing; Excel / print. The
+  list shows what is owed to each, borrowed and repaid this month, and the **total owed**.
+* **Bank & cash** keeps borrowed money out of *money in / money out* and shows it on its own *Financing* line
+  (received / repaid) — so the figures show what the business itself earned and spent; *Needs attention* shows the
+  total owed to creditors. Bank statements label the lines *Funding (to repay)* and *Loan repayment*, linked to the
+  creditor.
+* Main Cash still cannot go below zero; a repayment it cannot cover is refused.
+* A creditor set up with money already owed from before gets it as its opening balance.
+* The old payment category *Loan repayment* is kept for past entries; new repayments go through Creditors.
+
+---
+
 ## Code map
 
 | File | Purpose |
@@ -485,6 +518,8 @@ that payment. Zero-date safe, re-runnable.
 | `tests/Feature/MainCashAndPaymentsTest.php` | Main Cash, multi-cheque funding, expense payments, cheques, cancellations, statement, migration |
 | `app/Services/Overtime/OvertimePayouts.php`, `app/Http/Controllers/OvertimePayoutController.php`, `resources/views/overtime/payout*` | Overtime pay-outs: one expense + payment per office and period, disbursement per guard, returns, cancel, payroll check |
 | `tests/Feature/OvertimePayoutTest.php` | Cash / MoMo / payroll pay-outs, disbursement, returns, locks, office scope, migration |
+| `app/Services/Banking/CreditorBook.php`, `app/Http/Controllers/CreditorController.php`, `resources/views/creditors/*` | Creditors: money received, paid on our behalf, repaid (+ interest), reversals, statements |
+| `tests/Feature/CreditorsTest.php` | Director's loan in, on behalf, repay, interest, reversals, statement, financing kept out of in/out |
 | `app/Services/Receipts/BalanceRecompute.php` + `routes/console.php` | `receipts:recompute` |
 | `app/Services/Receipts/ReceiptWorkflow.php` | Approval routing and category A–D |
 | `app/Http/Controllers/MultiInvoiceReceiptController.php` | Multi-invoice screen, apply credit |

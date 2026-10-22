@@ -9,6 +9,8 @@
         'transfer_out' => ['Moved out', 'bg-label-info'],
         'payment' => ['Payment', 'bg-label-warning'],
         'adjustment' => ['Adjustment', 'bg-label-secondary'],
+        'loan_in' => ['Funding (to repay)', 'bg-label-dark'],
+        'loan_out' => ['Loan repayment', 'bg-label-dark'],
         'expense' => ['Expense', 'bg-label-warning'],
     ][$t->channel] ?? [$t->channel ?: 'Other', 'bg-label-secondary'];
 @endphp

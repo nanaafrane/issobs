@@ -186,6 +186,17 @@ Route::get('money/payments/{payment}', [\App\Http\Controllers\AccountMovementCon
 Route::post('money/payments/{payment}/clear', [\App\Http\Controllers\AccountMovementController::class, 'clearPayment'])->name('money.payments.clear');
 Route::post('money/payments/{payment}/cancel', [\App\Http\Controllers\AccountMovementController::class, 'cancelPayment'])->name('money.payments.cancel')->middleware('once');
 
+// Creditors: money borrowed by the company (director's loan, shareholder, lender) and paid back.
+Route::get('creditors', [\App\Http\Controllers\CreditorController::class, 'index'])->name('creditors.index');
+Route::post('creditors', [\App\Http\Controllers\CreditorController::class, 'store'])->name('creditors.store');
+Route::get('creditors/{creditor}', [\App\Http\Controllers\CreditorController::class, 'show'])->whereNumber('creditor')->name('creditors.show');
+Route::put('creditors/{creditor}', [\App\Http\Controllers\CreditorController::class, 'update'])->name('creditors.update');
+Route::post('creditors/{creditor}/receive', [\App\Http\Controllers\CreditorController::class, 'receive'])->name('creditors.receive')->middleware('once');
+Route::post('creditors/{creditor}/on-behalf', [\App\Http\Controllers\CreditorController::class, 'onBehalf'])->name('creditors.onBehalf')->middleware('once');
+Route::post('creditors/{creditor}/repay', [\App\Http\Controllers\CreditorController::class, 'repay'])->name('creditors.repay')->middleware('once');
+Route::get('creditor-entries/{entry}', [\App\Http\Controllers\CreditorController::class, 'entry'])->name('creditors.entry');
+Route::post('creditor-entries/{entry}/reverse', [\App\Http\Controllers\CreditorController::class, 'reverse'])->name('creditors.reverse')->middleware('once');
+
 Route::get('/expense/list', [ExpenseController::class, 'list'])->name('expense.list');
 Route::post('/expense/{expense}/approve', [ExpenseController::class, 'approve'])->name('expense.approve');
 Route::post('/expense/{expense}/reject', [ExpenseController::class, 'reject'])->name('expense.reject');

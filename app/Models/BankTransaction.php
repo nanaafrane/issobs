@@ -19,6 +19,7 @@ class BankTransaction extends Model
         'deposit_id',
         'transfer_id',
         'payment_id',
+        'creditor_entry_id',
         'receipt_id',
         'channel',
         'debit',

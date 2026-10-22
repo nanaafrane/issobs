@@ -176,7 +176,7 @@ class AccountBook
             $expenses = collect();
             if ($expenseIds) {
                 $expenses = Expense::whereIn('id', $expenseIds)->lockForUpdate()->get();
-                $bad = $expenses->filter(fn ($e) => $e->status_3 !== 'approved' || $e->payment_id)->pluck('id')
+                $bad = $expenses->filter(fn ($e) => $e->status_3 !== 'approved' || $e->isPaid())->pluck('id')
                     ->merge(array_diff($expenseIds, $expenses->pluck('id')->all()));
                 if ($bad->isNotEmpty()) {
                     throw ValidationException::withMessages(['expense_ids' => 'Expense #' . $bad->implode(', #') . ' is not approved or has already been paid. Refresh and try again.']);
@@ -290,6 +290,20 @@ class AccountBook
             $bank = Bank::whereKey($bank->id)->lockForUpdate()->firstOrFail();
 
             return $this->post($bank, $amount, 'adjustment', $date, 'Adjustment by ' . (Auth::user()?->name ?? 'user #' . Auth::id()) . ': ' . $reason, [], 'amount');
+        });
+    }
+
+    /**
+     * One ledger line for another module (e.g. creditors: funding in, repayment out),
+     * with the same rules: account must be open, cash never below zero.
+     */
+    public function record(Bank $bank, float $amount, string $channel, Carbon $date, string $narration, array $links = [], ?string $errorField = null): BankTransaction
+    {
+        return DB::transaction(function () use ($bank, $amount, $channel, $date, $narration, $links, $errorField) {
+            $bank = Bank::whereKey($bank->id)->lockForUpdate()->firstOrFail();
+            $this->mustOperate($bank, $errorField ?? 'bank_id');
+
+            return $this->post($bank, $amount, $channel, $date, $narration, $links, $errorField);
         });
     }
 
