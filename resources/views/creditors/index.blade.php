@@ -14,32 +14,32 @@
     @section('content')
     @php $owed = $creditors->sum('balance'); @endphp
     <div class="container-xxl flex-grow-1 container-p-y">
-        <div class="d-flex flex-wrap justify-content-between align-items-end gap-2 mb-3">
+        <div class="d-flex flex-wrap flex-md-nowrap justify-content-between align-items-start gap-3 mb-3">
             <div>
                 <h3 class="text-primary mb-1"><i class="bx bx-building-house me-1"></i> Creditors (loans to the company)</h3>
                 <div class="text-muted small">People or institutions the company has borrowed from — e.g. a director's loan — and what it still owes them. Borrowed money is not income, and paying it back is not an expense.</div>
             </div>
-            <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addCreditor"><i class="bx bx-plus"></i> Add creditor</button>
+            <button class="btn btn-primary btn-sm text-nowrap" data-bs-toggle="modal" data-bs-target="#addCreditor"><i class="bx bx-plus"></i> Add creditor</button>
         </div>
 
         @include('flash-messages')
         @if($errors->any())<div class="alert alert-danger">@foreach($errors->all() as $e)<div>{{ $e }}</div>@endforeach</div>@endif
 
         <div class="row g-3 mb-3">
-            <div class="col-md-4"><div class="card cr-tile"><div class="card-body py-3">
+            <div class="col-md-4"><div class="card cr-tile h-100"><div class="card-body py-3">
                 <div class="small text-muted">The company owes creditors</div>
                 <div class="fs-4 fw-bold">GH₵ {{ number_format($owed, 2) }}</div>
                 <div class="small text-muted">{{ $creditors->where('balance', '>', 0)->count() }} of {{ $creditors->count() }} with a balance</div>
             </div></div></div>
-            <div class="col-md-4"><div class="card cr-tile"><div class="card-body py-3">
+            <div class="col-md-4"><div class="card cr-tile h-100"><div class="card-body py-3">
                 <div class="small text-muted">Borrowed this month</div>
                 <div class="fs-5 fw-bold">GH₵ {{ number_format($thisMonth->sum('added'), 2) }}</div>
                 <div class="small text-muted">received + paid on our behalf</div>
             </div></div></div>
-            <div class="col-md-4"><div class="card cr-tile"><div class="card-body py-3">
+            <div class="col-md-4"><div class="card cr-tile h-100"><div class="card-body py-3">
                 <div class="small text-muted">Repaid this month</div>
                 <div class="fs-5 fw-bold">GH₵ {{ number_format($thisMonth->sum('reduced'), 2) }}</div>
-                <div class="small text-muted">&nbsp;</div>
+                <div class="small text-muted">back to creditors</div>
             </div></div></div>
         </div>
 

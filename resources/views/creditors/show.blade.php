@@ -18,6 +18,10 @@
         tr.cr-edge td { background: #f8f9fb; font-weight: 600; }
         tr.cr-rev td { color: #8592a3; }
         :target td { background: rgba(105, 108, 255, .1) !important; }
+        /* All three tabs stay visible on a phone (they wrap instead of running off the screen). */
+        .cr-tabs { flex-wrap: wrap; }
+        .cr-tabs .nav-link { white-space: nowrap; }
+        @media (max-width: 575px) { .cr-tabs .nav-link { padding: .5rem .75rem; } }
         @media print { #layout-menu, .layout-navbar, .no-print, footer, .dt-buttons { display: none !important; } }
     </style>
     @endsection
@@ -59,15 +63,14 @@
         </div>
 
         @if($creditor->is_active !== false)
-        <div class="card mb-3 no-print">
-            <div class="card-header pb-0">
-                <ul class="nav nav-tabs card-header-tabs" role="tablist">
-                    <li class="nav-item"><button class="nav-link {{ $tab === 'receive' ? 'active' : '' }}" data-bs-toggle="tab" data-bs-target="#tReceive" type="button">Money received</button></li>
-                    <li class="nav-item"><button class="nav-link {{ $tab === 'behalf' ? 'active' : '' }}" data-bs-toggle="tab" data-bs-target="#tBehalf" type="button">Paid on our behalf</button></li>
-                    <li class="nav-item"><button class="nav-link {{ $tab === 'repay' ? 'active' : '' }}" data-bs-toggle="tab" data-bs-target="#tRepay" type="button">Repay</button></li>
-                </ul>
-            </div>
-            <div class="card-body tab-content">
+        {{-- Sneat tabs: nav-align-top wraps the tab list and the panes (card-header-tabs does not fit this template). --}}
+        <div class="nav-align-top mb-3 no-print">
+            <ul class="nav nav-tabs cr-tabs" role="tablist">
+                <li class="nav-item"><button class="nav-link {{ $tab === 'receive' ? 'active' : '' }}" data-bs-toggle="tab" data-bs-target="#tReceive" type="button" role="tab"><i class="bx bx-download me-1"></i> Money received</button></li>
+                <li class="nav-item"><button class="nav-link {{ $tab === 'behalf' ? 'active' : '' }}" data-bs-toggle="tab" data-bs-target="#tBehalf" type="button" role="tab"><i class="bx bx-receipt me-1"></i> Paid on our behalf</button></li>
+                <li class="nav-item"><button class="nav-link {{ $tab === 'repay' ? 'active' : '' }}" data-bs-toggle="tab" data-bs-target="#tRepay" type="button" role="tab"><i class="bx bx-upload me-1"></i> Repay</button></li>
+            </ul>
+            <div class="tab-content">
                 <div class="tab-pane fade {{ $tab === 'receive' ? 'show active' : '' }}" id="tReceive">
                     <p class="small text-muted">{{ $creditor->name }} put money into a company account or Main Cash. The account gets money in (marked <em>Funding, to repay</em>) and the company owes them more.</p>
                     <form method="POST" action="{{ route('creditors.receive', $creditor) }}" class="row g-2" onsubmit="return confirm('Record money received from {{ addslashes($creditor->name) }}?');">
