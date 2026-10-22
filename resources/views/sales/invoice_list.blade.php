@@ -329,12 +329,7 @@
           <div class="text-truncate" data-i18n="Accounts"> Accounts </div>
         </a>
         <ul class="menu-sub">
-          <li class="menu-item">
-            <a href="{{url('collections')}}" class="menu-link">
-              <i class="menu-icon tf-icons bx bx-add-to-queue bg-danger"></i>
-              <div class="text-truncate" data-i18n="ARegister">Collections</div>
-            </a>
-          </li>
+
           <li class="menu-item">
             <a href="{{url('deposit')}}" class="menu-link">
               <i class="menu-icon tf-icons bx bx-arrow-from-left bg-danger"></i>

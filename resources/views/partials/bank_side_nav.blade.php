@@ -69,9 +69,7 @@
                 <div class="text-truncate"><strong>Accounts</strong></div>
             </a>
             <ul class="menu-sub">
-                <li @class(['menu-item', 'active' => request()->is('collections*')])>
-                    <a href="{{ url('collections') }}" class="menu-link"><div class="text-truncate">Collections</div></a>
-                </li>
+
                 <li @class(['menu-item', 'active' => request()->is('deposit*')])>
                     <a href="{{ url('deposit') }}" class="menu-link"><div class="text-truncate">Bank Deposit</div></a>
                 </li>
