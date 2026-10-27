@@ -17,6 +17,7 @@ class AccountPayment extends Model
     public const CATEGORIES = [
         'expenses' => 'Approved expenses',
         'overtime' => 'Overtime pay-outs',
+        'fuel' => 'Fuel pay-outs',
         'supplier' => 'Supplier / service provider',
         'salaries' => 'Salaries & wages',
         'statutory' => 'Tax, SSNIT & statutory',

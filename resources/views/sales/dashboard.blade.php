@@ -296,6 +296,18 @@
       </li>
       @endif
 
+        {{-- Fleet: open to every office (each sees its own vehicles); approvals and pay-outs are role-checked. --}}
+        <li @class(['menu-item', 'active open' => request()->is('fleet*')])>
+            <a href="javascript:void(0);" class="menu-link menu-toggle"><i class="menu-icon tf-icons bx bx-car text-info me-2"></i><div>Fleet</div></a>
+            <ul class="menu-sub">
+                <li @class(['menu-item', 'active' => request()->is('fleet/vehicles*')])><a href="{{ route('fleet.vehicles') }}" class="menu-link"><div>Vehicles</div></a></li>
+                <li @class(['menu-item', 'active' => request()->is('fleet/fuel') || request()->is('fleet/fuel/*')])><a href="{{ route('fleet.fuel') }}" class="menu-link"><div>Fuel</div></a></li>
+                <li @class(['menu-item', 'active' => request()->is('fleet/fuel-payouts*')])><a href="{{ route('fleet.fuel.payouts') }}" class="menu-link"><div>Fuel pay-outs</div></a></li>
+                <li @class(['menu-item', 'active' => request()->is('fleet/maintenance*')])><a href="{{ route('fleet.maintenance') }}" class="menu-link"><div>Maintenance</div></a></li>
+                <li @class(['menu-item', 'active' => request()->is('fleet/report*')])><a href="{{ route('fleet.report') }}" class="menu-link"><div>Monthly cost</div></a></li>
+            </ul>
+        </li>
+
       @if($canViewPayroll)
       <li class="menu-header small text-uppercase"><span class="menu-header-text">PAYROLL</span></li>
         <li class="menu-item">

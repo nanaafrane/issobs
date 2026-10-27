@@ -47,6 +47,7 @@
             </div>
             @if($bank->is_active !== false)
             <div class="d-flex gap-2 no-print">
+                <a href="{{ route('money.cashbook', ['bank' => $bank->id, 'from' => $st['from']->format('Y-m-d'), 'to' => $st['to']->format('Y-m-d')]) }}" class="btn btn-outline-secondary btn-sm"><i class="bx bx-book-content"></i> Cash book by item</a>
                 <a href="{{ route('money.transfers.create', ['to' => $bank->id]) }}" class="btn btn-outline-primary btn-sm"><i class="bx bx-transfer"></i> Fund this account</a>
                 <a href="{{ route('money.payments.create', ['bank' => $bank->id]) }}" class="btn btn-primary btn-sm"><i class="bx bx-money-withdraw"></i> Pay from it</a>
             </div>

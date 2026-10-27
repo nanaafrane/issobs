@@ -1,7 +1,7 @@
 <x-sales-dashboard>
 
     @section('side_nav')
-        @include('partials.payroll_side_nav')
+        @include('partials.bank_side_nav')
     @endsection
 
     @section('css')

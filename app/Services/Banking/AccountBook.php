@@ -196,7 +196,8 @@ class AccountBook
                 'reference' => $this->clean($input['reference'] ?? null, 60),
                 'amount' => $amount,
                 'payment_date' => $date->toDateString(),
-                'category' => $expenses->isNotEmpty() && $input['category'] !== 'overtime' ? 'expenses' : (string) $input['category'],
+                // Pay-outs (overtime, fuel) keep their own category; any other expense payment is "Approved expenses".
+                'category' => $expenses->isNotEmpty() && ! in_array($input['category'], ['overtime', 'fuel'], true) ? 'expenses' : (string) $input['category'],
                 'description' => $this->clean($input['description'] ?? null, 500)
                     ?? ($expenses->isNotEmpty() ? 'Expenses #' . $expenses->pluck('id')->implode(', #') : null),
                 'status' => $method === 'cheque' ? 'issued' : 'paid',

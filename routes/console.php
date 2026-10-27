@@ -191,3 +191,23 @@ Artisan::command('employees:movements-why {employee : employee id, e.g. 123 for 
 
     return 0;
 })->purpose('Explain how one employee shows in the HR movements report');
+
+/*
+ | Fleet: load a FUEL REQUEST AND USAGE REPORT sheet into fuel entries (vehicles added as needed).
+ | Re-runnable (rows already loaded are skipped). --approved for a sheet already signed off;
+ | entries are never marked paid — pay them on a fuel pay-out unless Main Cash already paid them.
+ */
+Artisan::command('fleet:import-fuel {file} {--field= : office id for every row, instead of the FIELD column} {--approved : rows are already approved} {--dry-run : check only, save nothing}', function () {
+    $r = app(\App\Services\Fleet\FuelSheetImport::class)->import(
+        (string) $this->argument('file'), $this->option('field') ? (int) $this->option('field') : null,
+        (bool) $this->option('approved'), (bool) $this->option('dry-run'),
+        \App\Models\User::whereHas('role', fn ($q) => $q->whereIn('name', ['Finance Manager', 'Director']))->value('id')
+    );
+    $this->info(($this->option('dry-run') ? '[dry run] ' : '') . "{$r['created']} fuel entries loaded, {$r['skipped']} already there.");
+    if ($r['vehicles']) {
+        $this->line('Vehicles added: ' . implode(', ', $r['vehicles']) . ' (complete their make/model on Fleet › Vehicles).');
+    }
+    foreach ($r['errors'] as $e) {
+        $this->warn($e);
+    }
+})->purpose('Load a fuel request and usage sheet (xlsx) into fleet fuel entries');

@@ -1,5 +1,9 @@
 <x-hr-dashboard>
 
+  @section('side_nav')
+    @include('partials.receipt_side_nav')
+  @endsection
+  
   @section('css')
   <style>
       .mv-card { border-radius: 12px; border: 1px solid #e5e7eb; }
@@ -19,9 +23,6 @@
   </style>
   @endsection
 
-  @section('side_nav')
-      @include('employees.partials.hr_side_nav')
-  @endsection
 
   @section('content')
   @php

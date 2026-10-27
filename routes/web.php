@@ -185,6 +185,9 @@ Route::post('money/payments', [\App\Http\Controllers\AccountMovementController::
 Route::get('money/payments/{payment}', [\App\Http\Controllers\AccountMovementController::class, 'showPayment'])->name('money.payments.show');
 Route::post('money/payments/{payment}/clear', [\App\Http\Controllers\AccountMovementController::class, 'clearPayment'])->name('money.payments.clear');
 Route::post('money/payments/{payment}/cancel', [\App\Http\Controllers\AccountMovementController::class, 'cancelPayment'])->name('money.payments.cancel')->middleware('once');
+// The analysed cash book (Main Cash sheet layout): every line spread over its items, total per item at month end.
+Route::get('money/cash-book', [\App\Http\Controllers\CashBookController::class, 'index'])->name('money.cashbook');
+Route::get('money/cash-book/export', [\App\Http\Controllers\CashBookController::class, 'export'])->name('money.cashbook.export');
 
 // Creditors: money borrowed by the company (director's loan, shareholder, lender) and paid back.
 Route::get('creditors', [\App\Http\Controllers\CreditorController::class, 'index'])->name('creditors.index');
@@ -228,6 +231,37 @@ Route::get('overtime/lookup/available-guards', [OvertimeController::class, 'avai
 // Opens the daily overtime page on the entry's date and field, scrolled to the entry (used by the attendance sheet).
 Route::get('overtime/{id}/open', [OvertimeController::class, 'open'])->whereNumber('id')->name('overtime.open');
 Route::resource('overtime', OvertimeController::class);
+
+// Fleet: vehicles, fuel (paid through fuel pay-outs, like overtime) and maintenance (one expense per approved job).
+Route::get('fleet/vehicles', [\App\Http\Controllers\VehicleController::class, 'index'])->name('fleet.vehicles');
+Route::post('fleet/vehicles', [\App\Http\Controllers\VehicleController::class, 'store'])->name('fleet.vehicles.store');
+Route::get('fleet/vehicles/{vehicle}', [\App\Http\Controllers\VehicleController::class, 'show'])->whereNumber('vehicle')->name('fleet.vehicles.show');
+Route::put('fleet/vehicles/{vehicle}', [\App\Http\Controllers\VehicleController::class, 'update'])->whereNumber('vehicle')->name('fleet.vehicles.update');
+Route::delete('fleet/vehicles/{vehicle}', [\App\Http\Controllers\VehicleController::class, 'destroy'])->whereNumber('vehicle')->name('fleet.vehicles.destroy');
+Route::get('fleet/report', [\App\Http\Controllers\VehicleController::class, 'report'])->name('fleet.report');
+Route::get('fleet/fuel', [\App\Http\Controllers\FuelController::class, 'index'])->name('fleet.fuel');
+Route::post('fleet/fuel', [\App\Http\Controllers\FuelController::class, 'store'])->name('fleet.fuel.store');
+Route::post('fleet/fuel/bulk', [\App\Http\Controllers\FuelController::class, 'bulk'])->name('fleet.fuel.bulk');
+Route::get('fleet/fuel/{fuel}/edit', [\App\Http\Controllers\FuelController::class, 'edit'])->whereNumber('fuel')->name('fleet.fuel.edit');
+Route::put('fleet/fuel/{fuel}', [\App\Http\Controllers\FuelController::class, 'update'])->whereNumber('fuel')->name('fleet.fuel.update');
+Route::delete('fleet/fuel/{fuel}', [\App\Http\Controllers\FuelController::class, 'destroy'])->whereNumber('fuel')->name('fleet.fuel.destroy');
+Route::post('fleet/fuel/{fuel}/approve', [\App\Http\Controllers\FuelController::class, 'approve'])->whereNumber('fuel')->name('fleet.fuel.approve');
+Route::post('fleet/fuel/{fuel}/reject', [\App\Http\Controllers\FuelController::class, 'reject'])->whereNumber('fuel')->name('fleet.fuel.reject');
+Route::get('fleet/fuel-payouts', [\App\Http\Controllers\FuelPayoutController::class, 'index'])->name('fleet.fuel.payouts');
+Route::get('fleet/fuel-payouts/create', [\App\Http\Controllers\FuelPayoutController::class, 'create'])->name('fleet.fuel.payouts.create');
+Route::post('fleet/fuel-payouts', [\App\Http\Controllers\FuelPayoutController::class, 'store'])->name('fleet.fuel.payouts.store')->middleware('once');
+Route::get('fleet/fuel-payouts/{payout}', [\App\Http\Controllers\FuelPayoutController::class, 'show'])->whereNumber('payout')->name('fleet.fuel.payouts.show');
+Route::post('fleet/fuel-payouts/{payout}/cancel', [\App\Http\Controllers\FuelPayoutController::class, 'cancel'])->whereNumber('payout')->name('fleet.fuel.payouts.cancel')->middleware('once');
+Route::get('fleet/maintenance', [\App\Http\Controllers\MaintenanceController::class, 'index'])->name('fleet.maintenance');
+Route::post('fleet/maintenance', [\App\Http\Controllers\MaintenanceController::class, 'store'])->name('fleet.maintenance.store');
+Route::get('fleet/maintenance/types', [\App\Http\Controllers\MaintenanceController::class, 'types'])->name('fleet.maintenance.types');
+Route::post('fleet/maintenance/types', [\App\Http\Controllers\MaintenanceController::class, 'storeType'])->name('fleet.maintenance.types.store');
+Route::put('fleet/maintenance/types/{type}', [\App\Http\Controllers\MaintenanceController::class, 'updateType'])->whereNumber('type')->name('fleet.maintenance.types.update');
+Route::get('fleet/maintenance/{maintenance}/edit', [\App\Http\Controllers\MaintenanceController::class, 'edit'])->whereNumber('maintenance')->name('fleet.maintenance.edit');
+Route::put('fleet/maintenance/{maintenance}', [\App\Http\Controllers\MaintenanceController::class, 'update'])->whereNumber('maintenance')->name('fleet.maintenance.update');
+Route::delete('fleet/maintenance/{maintenance}', [\App\Http\Controllers\MaintenanceController::class, 'destroy'])->whereNumber('maintenance')->name('fleet.maintenance.destroy');
+Route::post('fleet/maintenance/{maintenance}/approve', [\App\Http\Controllers\MaintenanceController::class, 'approve'])->whereNumber('maintenance')->name('fleet.maintenance.approve');
+Route::post('fleet/maintenance/{maintenance}/reject', [\App\Http\Controllers\MaintenanceController::class, 'reject'])->whereNumber('maintenance')->name('fleet.maintenance.reject');
 
 Route::get('employees/export', [EmployeeController::class, 'export'])->name('employees.export');
 Route::get('employees/data', [EmployeeController::class, 'datatable'])->name('employees.data');

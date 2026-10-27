@@ -130,6 +130,12 @@
           <div class="text-truncate" data-i18n="Clients">Clients</div>
         </a>
       </li>
+        <li class="menu-item {{ request()->is('attendance*') ? 'active' : '' }}">
+            <a href="{{ route('attendance.index') }}" class="menu-link">
+            <i class="menu-icon tf-icons bx bx-calendar-check text-info me-2"></i>
+            <div class="text-truncate" data-i18n="Attendance">Guard Attendance</div>
+            </a>
+        </li>
       <li class="menu-item ">
           <a href="javascript:void(0);" class="menu-link menu-toggle">
           <i class="menu-icon tf-icons bx bx-user-circle text-info me-2"></i>
@@ -255,80 +261,120 @@
 
       <li class="menu-header small text-uppercase"> <span class="menu-header-text text-danger">Accounts</span></li>
 
-      <li class="menu-item">
-        <a href="javascript:void(0);" class="menu-link menu-toggle">
-          <i class="menu-icon tf-icons bx bx-chart text-danger me-2"></i>
-          <div class="text-truncate" data-i18n="Accounts"> Accounts </div>
-        </a>
-        <ul class="menu-sub">
-          <li class="menu-item">
-            <a href="{{url('collections')}}" class="menu-link">
-              <i class="menu-icon tf-icons bx bx-add-to-queue bg-danger"></i>
-              <div class="text-truncate" data-i18n="ARegister">Collections</div>
+        <li class="menu-item">
+            <a href="javascript:void(0);" class="menu-link menu-toggle">
+                <i class="menu-icon tf-icons bx bx-chart text-danger me-2"></i>
+                <div class="text-truncate"><strong>Accounts</strong></div>
             </a>
-          </li>
-          <li class="menu-item">
-            <a href="{{url('deposit')}}" class="menu-link">
-              <i class="menu-icon tf-icons bx bx-arrow-from-left bg-danger"></i>
-              <div class="text-truncate" data-i18n="AList">Bank Deposit</div>
-            </a>
-          </li>
-          <li class="menu-item">
-            <a href="{{url('banks')}}" class="menu-link">
-              <i class="menu-icon tf-icons bx bx-bank text-danger me-2"></i>
-              <div class="text-truncate" data-i18n="AList">Banks</div>
-            </a>
-          </li>
-        </ul>
-      </li>
+            <ul class="menu-sub">
+
+                <li @class(['menu-item', 'active' => request()->is('deposit*')])>
+                    <a href="{{ url('deposit') }}" class="menu-link"><div class="text-truncate">Bank Deposit</div></a>
+                </li>
+                <li @class(['menu-item', 'active' => request()->is('banks*')])>
+                    <a href="{{ url('banks') }}" class="menu-link"><div class="text-truncate">Bank &amp; cash</div></a>
+                </li>
+                <li @class(['menu-item', 'active' => request()->is('money/transfers*')])>
+                    <a href="{{ route('money.transfers') }}" class="menu-link"><div class="text-truncate">Transfers / fund cash</div></a>
+                </li>
+                <li @class(['menu-item', 'active' => request()->is('money/payments*')])>
+                    <a href="{{ route('money.payments') }}" class="menu-link"><div class="text-truncate">Payments</div></a>
+                </li>
+                <li @class(['menu-item', 'active' => request()->is('money/cash-book*')])>
+                    <a href="{{ route('money.cashbook') }}" class="menu-link"><div class="text-truncate">Cash book (by item)</div></a>
+                </li>
+                <li @class(['menu-item', 'active' => request()->is('creditors*')])>
+                    <a href="{{ route('creditors.index') }}" class="menu-link"><div class="text-truncate">Creditors (loans)</div></a>
+                </li>
+            </ul>
+        </li>
+
       <li class="menu-item">
         <a href="{{url('expense')}}" class="menu-link">
           <i class="menu-icon tf-icons bx bx-credit-card text-secondary me-2"></i>
-          <div class="text-truncate" data-i18n="Expense"> Expense </div>
+          <div class="text-truncate" data-i18n="Expense"> <strong>Expense</strong> </div>
         </a>
        </li>
 
       <li class="menu-item">
-          <a href="javascript:void(0);" class="menu-link menu-toggle"><i class="menu-icon tf-icons bx bx-time-five bg-danger"></i><div>Overtime</div></a>
+          <a href="javascript:void(0);" class="menu-link menu-toggle"><i class="menu-icon tf-icons bx bx-time-five bg-danger"></i><div> <strong>Overtime</strong></div></a>
           <ul class="menu-sub">
               <li class="menu-item"><a href="{{url('overtime')}}" class="menu-link"><div>Daily Entry</div></a></li>
               <li class="menu-item"><a href="{{url('overtime-report')}}" class="menu-link"><div>Reports</div></a></li>
+                <li class="menu-item"><a href="{{ route('overtime.payouts') }}" class="menu-link"><div>Pay-outs</div></a></li>
           </ul>
       </li>
+
+      {{-- Fleet: open to every office (each sees its own vehicles); approvals and pay-outs are role-checked. --}}
+        <li @class(['menu-item', 'active open' => request()->is('fleet*')])>
+            <a href="javascript:void(0);" class="menu-link menu-toggle"><i class="menu-icon tf-icons bx bx-car text-info me-2"></i><div> <strong>Fleet</strong></div></a>
+            <ul class="menu-sub">
+                <li @class(['menu-item', 'active' => request()->is('fleet/vehicles*')])><a href="{{ route('fleet.vehicles') }}" class="menu-link"><div>Vehicles</div></a></li>
+                <li @class(['menu-item', 'active' => request()->is('fleet/fuel') || request()->is('fleet/fuel/*')])><a href="{{ route('fleet.fuel') }}" class="menu-link"><div>Fuel</div></a></li>
+                <li @class(['menu-item', 'active' => request()->is('fleet/fuel-payouts*')])><a href="{{ route('fleet.fuel.payouts') }}" class="menu-link"><div>Fuel pay-outs</div></a></li>
+                <li @class(['menu-item', 'active' => request()->is('fleet/maintenance*')])><a href="{{ route('fleet.maintenance') }}" class="menu-link"><div>Maintenance</div></a></li>
+                <li @class(['menu-item', 'active' => request()->is('fleet/report*')])><a href="{{ route('fleet.report') }}" class="menu-link"><div>Monthly cost</div></a></li>
+            </ul>
+        </li>
       @endif
 
       @if($canViewPayroll)
       <li class="menu-header small text-uppercase"><span class="menu-header-text">PAYROLL</span></li>
-        <li class="menu-item">
+            <li class="menu-item ">
                 <a href="javascript:void(0);" class="menu-link menu-toggle">
-                <i class="menu-icon tf-icons bx bx-money-withdraw text-primary me-2"></i>
+                <i class="menu-icon tf-icons bx bx-money-withdraw"></i>
                 <div class="text-truncate" data-i18n="Payroll">Payroll</div>
                 </a>
                 <ul class="menu-sub">
-                @if(Auth::user()->hasRole([ 'Finance Manager']))
-
-                <li class="menu-item">
+                @if(Auth::user()->hasRole(['Finance Manager']) )
+                <li @class(['menu-item', 'active' => request()->is('salaries/index')])>
                     <a href="{{ url('salaries') }}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-user-circle text-info me-2"></i>
+                    <i class="menu-icon tf-icons bx bxs-user-account"></i>
                     <div class="text-truncate" data-i18n="Employees">Add to Salaries</div>
                     </a>
                 </li>
 
-                <li class="menu-item">
+                <li @class(['menu-item', 'active' => request()->is('salaries/create', 'salariesCreate*', 'salaries')])>
                     <a href="{{ url('salaries/create') }}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-money-withdraw text-primary me-2"></i>
+                    <i class="menu-icon tf-icons bx bx-money-withdraw"></i>
                     <div class="text-truncate" data-i18n="Salaries">Salaries</div>
                     </a>
                 </li>
                 @endif
 
-
-                <li class="menu-item">
+                <li @class(['menu-item', 'active' => request()->is('salariesTransaction', 'salariesMonth*', 'salaries')])>
                     <a href="{{ url('salariesTransaction') }}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-transfer-alt text-primary me-2"></i>
+                    <i class="menu-icon tf-icons bx bx-transfer-alt"></i>
                     <div class="text-truncate" data-i18n="Transaction">Transactions</div>
                     </a>
                 </li>
+
+               @if(Auth::user()->hasRole(['Finance Manager']) )
+                <li @class(['menu-item', 'active' => request()->is('salaries-report')])>
+                    <a href="{{ route('salaries.report') }}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-line-chart"></i>
+                    <div class="text-truncate" data-i18n="SalariesReport">Salaries Report</div>
+                    </a>
+                </li>
+                <li @class(['menu-item', 'active' => request()->is('salary-payments')])>
+                    <a href="{{ route('salary-payments.index') }}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-list-check"></i>
+                    <div class="text-truncate" data-i18n="SalaryPayments">Salary payments</div>
+                    </a>
+                </li>
+                <li @class(['menu-item', 'active' => request()->is('absent-deductions')])>
+                    <a href="{{ route('absent-deductions.index') }}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-calendar-x"></i>
+                    <div class="text-truncate" data-i18n="AbsentDeductions">Absent deductions</div>
+                    </a>
+                </li>
+                <li @class(['menu-item', 'active' => request()->is('pay-priority')])>
+                    <a href="{{ route('pay-priority.index') }}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bxs-bolt"></i>
+                    <div class="text-truncate" data-i18n="PayPriority">Pay priority rules</div>
+                    </a>
+                </li>
+                @endif
 
                 </ul>
             </li>
