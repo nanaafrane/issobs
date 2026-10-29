@@ -107,6 +107,11 @@
                 <div class="text-truncate" data-i18n="RList">List</div>
                 </a>
             </li>
+            <li @class(['menu-item', 'active' => request()->is('receipt-multi/create')])>
+                <a href="{{url('receipt-multi/create')}}" class="menu-link">
+                <div class="text-truncate" data-i18n="RList">New Receipt</div>
+                </a>
+            </li>
             <li @class(['menu-item', 'active' => request()->is('receiptPending')])>
                 <a href="{{url('receiptPending')}}" class="menu-link">
                 <div class="text-truncate" data-i18n="RPending">Pending </div>
