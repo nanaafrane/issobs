@@ -77,6 +77,7 @@
                     <div class="who">
                         <div class="n">{{ $g->name }}</div>
                         <div class="m">FWSS {{ $g->id }} · {{ ucfirst($g->attendance_shift ?: 'no shift set') }}
+                            @if($g->phone_number) · <a href="tel:{{ preg_replace('/\D+/', '', $g->phone_number) }}" style="color:inherit">{{ $g->phone_number }}</a>@endif
                             <span class="badge st {{ $st ? 's-' . (in_array($st, ['present','absent','pending']) ? $st : 'other') : '' }}">{{ $st ? \App\Models\Attendance::LABELS[$st] : '' }}</span></div>
                     </div>
                     <button class="btn btn-p" data-id="{{ $g->id }}" data-status="present">P</button>

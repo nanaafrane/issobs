@@ -125,12 +125,12 @@
                   <tbody>
                   @forelse($sheet->rows as $i => $row)
                       @php($e = $row['employee'])
-                      <tr class="{{ $row['former'] ? 'former' : '' }}" data-employee="{{ $e->id }}" data-name="{{ $e->name }}" data-shift="{{ $row['shift'] }}">
+                      <tr class="{{ $row['former'] ? 'former' : '' }}" data-employee="{{ $e->id }}" data-name="{{ $e->name }}" data-phone="{{ $e->phone_number }}" data-shift="{{ $row['shift'] }}">
                           <td class="sticky-col">
                             <div class="d-flex align-items-start justify-content-between gap-1">
                             <div class="overflow-hidden">
                               <div class="fw-semibold text-truncate" title="{{ $e->name }}">{{ sprintf('%02d', $i + 1) }}. {{ $e->name }}</div>
-                              <div class="text-muted" style="font-size:.7rem">FWSS {{ $e->id }} @if($e->phone_number)· {{ $e->phone_number }}@endif
+                              <div class="text-muted" style="font-size:.7rem">FWSS {{ $e->id }} @include('partials.guard_contact', ['emp' => $e])
                                   @if($row['ot_cover'])<span class="badge bg-label-info" title="Posted elsewhere; covered shifts here on overtime">O.T cover</span>@elseif($row['relief'])<span class="badge bg-label-info" title="Posted at {{ $e->client?->business_name ?: $e->client?->name }}; moved here for some shifts">Relief</span>@elseif($row['former'])<span class="badge bg-label-secondary">moved</span>@endif
                                   @if($row['moved'])<span class="badge bg-label-info" title="Shifts this month worked at another client (M)">{{ $row['moved'] }} M</span>@endif
                                   @unless($row['former'])
@@ -303,7 +303,7 @@
   {{-- Cell editor --}}
   <div id="att-pop">
       <div class="d-flex justify-content-between align-items-start mb-1">
-          <div><div class="fw-semibold small" id="pop-name"></div><div class="text-muted" style="font-size:.72rem" id="pop-date"></div></div>
+          <div><div class="fw-semibold small" id="pop-name"></div><div id="pop-phone" style="font-size:.72rem"></div><div class="text-muted" style="font-size:.72rem" id="pop-date"></div></div>
           <button type="button" class="btn-close btn-sm" id="pop-close" aria-label="Close"></button>
       </div>
       <div class="btn-group btn-group-sm w-100 mb-2" role="group">
@@ -420,6 +420,8 @@
               : awayRecs.day && !awayRecs.night ? 'day' : awayRecs.night && !awayRecs.day ? 'night' : (own === 'night' ? 'night' : 'day');
           document.getElementById('pop-' + shift).checked = true;
           document.getElementById('pop-name').textContent = tr.dataset.name;
+          const ph = tr.dataset.phone;
+          document.getElementById('pop-phone').innerHTML = ph ? '<a class="text-muted" href="tel:' + ph.replace(/\D+/g, '') + '"><i class="bx bx-phone"></i> ' + esc(ph) + '</a>' : '';
           document.getElementById('pop-date').textContent = new Date(td.dataset.date + 'T00:00').toDateString();
           document.getElementById('pop-err').textContent = '';
           showInfo();

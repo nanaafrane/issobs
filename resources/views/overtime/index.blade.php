@@ -101,10 +101,10 @@
                         @foreach($shiftData['rows'] as $key => $row)
                         <tr data-id="{{ $row->id }}" id="ot-{{ $row->id }}" @class(['ot-highlight' => (int) request('highlight') === $row->id])>
                             <td>{{ $key + 1 }}</td>
-                            <td>{{ $row->absentLabel() }}</td>
+                            <td>{{ $row->absentLabel() }}@if($row->absentEmployee)<div>@include('partials.guard_contact', ['emp' => $row->absentEmployee])</div>@endif</td>
                             <td>{{ $row->clientLabel() }}</td>
-                            <td><strong>{{ $row->otEmployee?->name }}</strong></td>
-                            <td>{{ $row->officer?->name }}</td>
+                            <td><strong>{{ $row->otEmployee?->name }}</strong><div>@include('partials.guard_contact', ['emp' => $row->otEmployee])</div></td>
+                            <td>{{ $row->officer?->name }}<div>@include('partials.guard_contact', ['emp' => $row->officer])</div></td>
                             <td>{{ $row->reason }}@include('overtime._attendance_badge')</td>
                             <td>GH&#x20B5; {{ number_format($row->amount, 2) }}</td>
                             <td>{{ $row->phone_number }}</td>
@@ -284,6 +284,9 @@
             // Guard taken off his own active shift: it's a move. His post shows "M", not absent, and is one short.
             const $moveNote = form.find('.ot-move-note');
             $cover.on('select2:select', function (e) {
+                const phone = e.params.data.phone;
+                const $phone = form.find('[name=phone_number]');
+                if (phone && !$phone.val()) { $phone.val(phone); }
                 const from = e.params.data.moved_from;
                 $moveNote.toggleClass('d-none', !from).html(from
                     ? '<strong>Moved</strong> off his own ' + val('shift') + ' shift at ' + $('<div>').text(from).html()

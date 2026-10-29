@@ -426,4 +426,24 @@ class OvertimeAttendanceLinkTest extends TestCase
         $this->assertNull($this->cell($this->yaw)->moved_from_client_id);
         $this->assertNull(OvertimeAttendanceLink::where('role', 'cover')->sole()->message);
     }
+
+    public function test_guard_phone_numbers_show_on_overtime_and_the_sheet(): void
+    {
+        $this->kofi->forceFill(['phone_number' => '0241112222'])->save();
+        $this->yaw->forceFill(['phone_number' => '0553334444'])->save();
+        $this->submit()->assertOk();
+
+        $this->actingAs($this->ops)->get('/overtime?date=2026-10-15&field_id=' . $this->field->id)->assertOk()
+            ->assertSee('href="tel:0241112222"', false)->assertSee('href="tel:0553334444"', false)
+            ->assertSee('https://wa.me/233553334444', false);
+        $this->actingAs($this->ops)->get("/attendance/{$this->client->id}?month=2026-10")->assertOk()
+            ->assertSee('href="tel:0241112222"', false)->assertSee('data-phone="0241112222"', false);
+
+        $who = collect($this->actingAs($this->ops)->getJson('/overtime/lookup/client-guards?client_id=' . $this->client->id . '&date=2026-10-14&shift=day')->json())
+            ->pluck('children')->flatten(1)->firstWhere('id', $this->kofi->id);
+        $this->assertStringContainsString('0241112222', $who['text']);
+        $free = collect($this->actingAs($this->ops)->getJson('/overtime/lookup/available-guards?date=2026-10-14&shift=day&field_id=' . $this->field->id)->json())
+            ->pluck('children')->flatten(1)->firstWhere('id', $this->yaw->id);
+        $this->assertSame('0553334444', $free['phone']);
+    }
 }

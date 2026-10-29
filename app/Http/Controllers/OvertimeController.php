@@ -179,7 +179,7 @@ class OvertimeController extends Controller
 
             return [
                 'id' => $g->id,
-                'text' => $g->name . ' · ' . ($shift ? ucfirst($shift) : 'no shift') . ' · ' . $status,
+                'text' => $g->name . ($g->phone_number ? ' (' . $g->phone_number . ')' : '') . ' · ' . ($shift ? ucfirst($shift) : 'no shift') . ' · ' . $status,
                 'disabled' => isset($onOvertime[$g->id]),
                 'rank' => $rank,
                 'name' => $g->name,
@@ -249,7 +249,8 @@ class OvertimeController extends Controller
 
             return [
                 'id' => $g->id,
-                'text' => $g->name . ' · ' . ($c ? ($c->business_name ?: $c->name) : 'no client') . ($own ? ' (' . $own . ')' : ''),
+                'text' => $g->name . ($g->phone_number ? ' · ' . $g->phone_number : '') . ' · ' . ($c ? ($c->business_name ?: $c->name) : 'no client') . ($own ? ' (' . $own . ')' : ''),
+                'phone' => $g->phone_number,
                 'group' => $onDuty ? 2 : ($own === null || $own === 'rotate' ? 1 : 0),
                 // Taking him means moving him off his own post for this shift.
                 'moved_from' => $onDuty && $c ? ($c->business_name ?: $c->name) : null,
@@ -260,7 +261,7 @@ class OvertimeController extends Controller
 
         return response()->json($rows->groupBy('group')->sortKeys()->map(fn ($items, $g) => [
             'text' => $labels[$g],
-            'children' => $items->map(fn ($r) => ['id' => $r['id'], 'text' => $r['text'], 'moved_from' => $r['moved_from']])->values(),
+            'children' => $items->map(fn ($r) => ['id' => $r['id'], 'text' => $r['text'], 'moved_from' => $r['moved_from'], 'phone' => $r['phone']])->values(),
         ])->values());
     }
 
