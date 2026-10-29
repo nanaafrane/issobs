@@ -26,7 +26,7 @@ return [
     'enforce' => true,
 
     // The first payment is due on this date. With no renewals listed, this is the due date.
-    'starts_on' => '2026-11-01',
+    'starts_on' => '2026-10-01',
 
     // Days the system keeps working after the due date before it becomes read-only.
     'grace_days' => 30,

@@ -1,0 +1,278 @@
+From e1742f954e5a93e7c7ebbe40015e843efbc5dfce Mon Sep 17 00:00:00 2001
+From: nana afrane <nanaafrane59@gmail.com>
+Date: Thu, 29 Oct 2026 15:56:17 +0000
+Subject: [PATCH] Subscription: payment details only for Finance Manager and
+ Director
+
+Finance Manager and Director see the due/overdue/read-only messages with
+dates, the Subscription menu link, the billing page and the Pay button.
+Other roles see nothing until the system is locked, then only
+"SYSTEM INACTIVE - READ ONLY"; billing and pay return 403 for them.
+Roles are set in config subscription.billing_roles.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01K5ksjW3t5rKURuVk3XWkru
+---
+ app/Http/Controllers/BillingController.php    |  6 ++-
+ app/Http/Middleware/ReadOnlyWhenUnpaid.php    | 16 ++++---
+ app/Support/Subscription.php                  |  7 +++
+ config/subscription.php                       |  4 ++
+ docs/subscription.md                          |  3 ++
+ .../views/components/hr-dashboard.blade.php   |  2 +
+ .../components/sales-dashboard.blade.php      |  2 +
+ .../partials/subscription_banner.blade.php    | 16 +++++--
+ .../partials/subscription_readonly.blade.php  |  5 ++-
+ tests/Feature/SubscriptionLockTest.php        | 45 +++++++++++++++++++
+ 10 files changed, 93 insertions(+), 13 deletions(-)
+
+diff --git a/app/Http/Controllers/BillingController.php b/app/Http/Controllers/BillingController.php
+index cded164..67b5593 100644
+--- a/app/Http/Controllers/BillingController.php
++++ b/app/Http/Controllers/BillingController.php
+@@ -21,6 +21,8 @@ public function __construct()
+ 
+     public function index(Request $request, Subscription $subscription, HubtelCheckout $hubtel)
+     {
++        abort_unless($subscription->canManage($request->user()), 403, 'Only the Finance Manager or Director can view the subscription.');
++
+         // Back from Hubtel: check that payment straight away rather than waiting for the callback.
+         if ($request->filled('paid')) {
+             $payment = $hubtel->confirm((string) $request->query('paid'));
+@@ -40,8 +42,10 @@ public function index(Request $request, Subscription $subscription, HubtelChecko
+         ]);
+     }
+ 
+-    public function pay(Request $request, HubtelCheckout $hubtel)
++    public function pay(Request $request, HubtelCheckout $hubtel, Subscription $subscription)
+     {
++        abort_unless($subscription->canManage($request->user()), 403, 'Only the Finance Manager or Director can pay the subscription.');
++
+         $data = $request->validate(['months' => 'required|integer|min:1|max:12']);
+ 
+         try {
+diff --git a/app/Http/Middleware/ReadOnlyWhenUnpaid.php b/app/Http/Middleware/ReadOnlyWhenUnpaid.php
+index 0e5112a..cd37dcf 100644
+--- a/app/Http/Middleware/ReadOnlyWhenUnpaid.php
++++ b/app/Http/Middleware/ReadOnlyWhenUnpaid.php
+@@ -27,19 +27,21 @@ public function handle(Request $request, Closure $next): Response
+             return $next($request);
+         }
+ 
+-        $message = 'Subscription overdue: the system is read-only until payment is made. '
+-            .'You can still view and print, but not save or change anything.';
++        $manager = $this->subscription->canManage($request->user());
++        $message = $manager
++            ? 'Subscription overdue: the system is read-only until payment is made. You can still view and print, but not save or change anything.'
++            : 'SYSTEM INACTIVE - READ ONLY. You can view and print, but not save or change anything.';
+ 
+         if ($request->expectsJson() || $request->ajax()) {
+-            return response()->json([
++            return response()->json(array_filter([
+                 'code' => 'SUBSCRIPTION_LOCKED',
+                 'message' => $message,
+-                'due_date' => $this->subscription->dueDate()->toDateString(),
+-                'pay_url' => url('billing'),
+-            ], 402);
++                'due_date' => $manager ? $this->subscription->dueDate()->toDateString() : null,
++                'pay_url' => $manager ? url('billing') : null,
++            ]), 402);
+         }
+ 
+-        return redirect()->back(fallback: url('billing'))->with('error', $message);
++        return redirect()->back(fallback: $manager ? url('billing') : url('home'))->with('error', $message);
+     }
+ 
+     private function blocks(Request $request): bool
+diff --git a/app/Support/Subscription.php b/app/Support/Subscription.php
+index 3e2bf7f..0034696 100644
+--- a/app/Support/Subscription.php
++++ b/app/Support/Subscription.php
+@@ -82,6 +82,13 @@ public function daysUntilLock(): int
+         return (int) $this->today()->diffInDays($this->lockDate(), false);
+     }
+ 
++    /** May this user see payment details and pay (Finance Manager, Director)? */
++    public function canManage($user): bool
++    {
++        return $user && method_exists($user, 'hasRole')
++            && $user->hasRole((array) config('subscription.billing_roles', ['Finance Manager', 'Director']));
++    }
++
+     /** Is this user never locked (developer/support login)? */
+     public function bypasses($user): bool
+     {
+diff --git a/config/subscription.php b/config/subscription.php
+index 118b547..ebd1546 100644
+--- a/config/subscription.php
++++ b/config/subscription.php
+@@ -44,6 +44,10 @@
+         // ['months' => 1, 'paid_on' => '2026-11-01', 'reference' => 'Cash - November 2026'],
+     ],
+ 
++    // Roles that see the due date / overdue messages, the Subscription page and the Pay button.
++    // Everyone else sees nothing until the system is locked, then only "SYSTEM INACTIVE - READ ONLY".
++    'billing_roles' => ['Finance Manager', 'Director'],
++
+     // Logins that are never locked (e.g. the developer's own account, to fix data
+     // or help with payment). Matched on the user's email address.
+     'bypass_emails' => [
+diff --git a/docs/subscription.md b/docs/subscription.md
+index ad63fff..3ec9b6c 100644
+--- a/docs/subscription.md
++++ b/docs/subscription.md
+@@ -9,6 +9,8 @@ ## The rule
+ | Overdue | 1 to 30 days after the due date | yellow banner: "read-only on <date>, N days left" |
+ | **Read-only** | from the 31st day after the due date | red banner; Save / Create / Register / Edit / Delete greyed out; server refuses every POST, PUT, PATCH, DELETE |
+ 
++**Who sees what.** Only the Finance Manager and Director (`billing_roles`) see the reminder, overdue and read-only messages with dates, the Subscription page and the Pay button. Everyone else sees nothing until the system is locked, then a red **SYSTEM INACTIVE – READ ONLY** banner; their buttons are greyed out the same way, and the billing page and pay request return 403 for them.
++
+ Read-only ends the moment a renewal or payment moves the due date forward. Nothing about the lock is stored, so it can't get stuck.
+ 
+ Dates are judged in Ghana time (Africa/Accra) on the server.
+@@ -36,6 +38,7 @@ ## Settings (config/subscription.php)
+ - `starts_on` - first due date.
+ - `grace_days` (30), `warn_days_before` (7).
+ - `monthly_fee`, `currency`.
++- `billing_roles` - roles that see payment details and can pay (Finance Manager, Director).
+ - `bypass_emails` - logins never locked (your own developer/support account).
+ - `always_allowed` - writes that keep working when locked: login, logout, password reset, billing, Hubtel callbacks for salary payouts already sent.
+ - `blocked_get` - old links that change data with a GET (terminate/reinstate client, sendMoney); blocked while locked.
+diff --git a/resources/views/components/hr-dashboard.blade.php b/resources/views/components/hr-dashboard.blade.php
+index c4c7e79..013691f 100644
+--- a/resources/views/components/hr-dashboard.blade.php
++++ b/resources/views/components/hr-dashboard.blade.php
+@@ -114,9 +114,11 @@ class="nav-link dropdown-toggle hide-arrow p-0"
+                                     <li>
+                                         <div class="dropdown-divider my-1"></div>
+                                     </li>
++                                    @if (app(\App\Support\Subscription::class)->canManage(Auth::user()))
+                                     <li>
+                                         <a class="dropdown-item" href="{{ url('billing') }}"><i class="bx bx-credit-card me-2"></i> Subscription</a>
+                                     </li>
++                                    @endif
+                                     <li>
+ 
+                                         <a class="dropdown-item" href="{{ route('logout') }}"
+diff --git a/resources/views/components/sales-dashboard.blade.php b/resources/views/components/sales-dashboard.blade.php
+index bc4c814..5fe35fd 100644
+--- a/resources/views/components/sales-dashboard.blade.php
++++ b/resources/views/components/sales-dashboard.blade.php
+@@ -114,9 +114,11 @@ class="nav-link dropdown-toggle hide-arrow p-0"
+                                     <li>
+                                         <div class="dropdown-divider my-1"></div>
+                                     </li>
++                                    @if (app(\App\Support\Subscription::class)->canManage(Auth::user()))
+                                     <li>
+                                         <a class="dropdown-item" href="{{ url('billing') }}"><i class="bx bx-credit-card me-2"></i> Subscription</a>
+                                     </li>
++                                    @endif
+                                     <li>
+ 
+                                         <a class="dropdown-item" href="{{ route('logout') }}"
+diff --git a/resources/views/partials/subscription_banner.blade.php b/resources/views/partials/subscription_banner.blade.php
+index b8d297a..a13cf0e 100644
+--- a/resources/views/partials/subscription_banner.blade.php
++++ b/resources/views/partials/subscription_banner.blade.php
+@@ -1,14 +1,24 @@
+ {{--
+-    Subscription warning on every page. Due soon / overdue: a reminder with the date.
+-    Locked: the system is read-only (the server refuses saves; see ReadOnlyWhenUnpaid).
++    Subscription banner on every page.
++    Finance Manager / Director (config subscription.billing_roles): due soon, overdue
++    and read-only messages with dates and the Pay button.
++    Everyone else: nothing until the system is locked, then "SYSTEM INACTIVE - READ ONLY".
+ --}}
+ @php
+     $sub = app(\App\Support\Subscription::class);
+     $subStatus = $sub->status();
+     $subBypass = $sub->bypasses(auth()->user());
++    $subManager = $sub->canManage(auth()->user());
+ @endphp
+ 
+-@if ($subStatus === \App\Support\Subscription::LOCKED)
++@if (! $subManager)
++    @if ($subStatus === \App\Support\Subscription::LOCKED)
++        <div class="alert alert-danger text-center fw-bold mx-3 mt-3 mb-0" role="alert" id="subscription-banner">
++            <i class="bx bx-lock-alt me-1"></i> SYSTEM INACTIVE &ndash; READ ONLY
++            @if ($subBypass) <div class="small fw-normal">(Your login is exempt, so you can still make changes.)</div> @endif
++        </div>
++    @endif
++@elseif ($subStatus === \App\Support\Subscription::LOCKED)
+     <div class="alert alert-danger d-flex flex-wrap align-items-center justify-content-between gap-2 mx-3 mt-3 mb-0" role="alert" id="subscription-banner">
+         <div>
+             <i class="bx bx-lock-alt me-1"></i>
+diff --git a/resources/views/partials/subscription_readonly.blade.php b/resources/views/partials/subscription_readonly.blade.php
+index 68e2d07..12a5dbe 100644
+--- a/resources/views/partials/subscription_readonly.blade.php
++++ b/resources/views/partials/subscription_readonly.blade.php
+@@ -13,8 +13,9 @@
+ </style>
+ <script>
+ (function () {
+-    var MSG = 'Read-only: the subscription is overdue. Saving and changes are switched off until payment is made.';
+-    var PAY = @json(url('billing'));
++    var MSG = @json($sub->canManage(auth()->user())
++        ? 'Read-only: the subscription is overdue. Saving and changes are switched off until payment is made.'
++        : 'SYSTEM INACTIVE - READ ONLY');
+ 
+     function allowed(el) {
+         return !!(el.closest && el.closest('[data-readonly-allow], #logout-form, form[action$="/billing/pay"], form[action$="/logout"]'));
+diff --git a/tests/Feature/SubscriptionLockTest.php b/tests/Feature/SubscriptionLockTest.php
+index a24e3fa..419dcaa 100644
+--- a/tests/Feature/SubscriptionLockTest.php
++++ b/tests/Feature/SubscriptionLockTest.php
+@@ -202,6 +202,51 @@ public function test_hubtel_payment_counts_only_after_hubtel_confirms_it_and_onl
+         Http::assertSentCount(3);   // initiate + two status checks; the repeat callback asked nothing
+     }
+ 
++    private function clerk(): User
++    {
++        $role = Role::forceCreate(['id' => 9, 'name' => 'Invoice', 'department_id' => $this->user->department_id]);
++
++        return User::factory()->create(['department_id' => $this->user->department_id, 'role_id' => $role->id]);
++    }
++
++    public function test_only_finance_manager_and_director_see_overdue_details_and_pay(): void
++    {
++        $this->on('2026-11-20');   // overdue, not yet read-only
++        $director = User::factory()->create(['department_id' => $this->user->department_id,
++            'role_id' => Role::forceCreate(['id' => 3, 'name' => 'Director', 'department_id' => $this->user->department_id])->id]);
++        $clerk = $this->clerk();
++
++        foreach ([$this->user, $director] as $manager) {
++            $this->actingAs($manager)->get('billing')->assertOk()
++                ->assertSee('Subscription overdue')->assertSee('Pay now')->assertSee('href="'.url('billing').'"', false);
++        }
++
++        // Other roles: no banner, no Subscription link, no billing page, no paying.
++        $this->actingAs($clerk);
++        $html = $this->get('receivables/aged')->getContent();
++        $this->assertStringNotContainsString('Subscription overdue', $html);
++        $this->assertStringNotContainsString('SYSTEM INACTIVE', $html);
++        $this->assertStringNotContainsString(url('billing'), $html);
++        $this->get('billing')->assertForbidden();
++        $this->post('billing/pay', ['months' => 1])->assertForbidden();
++    }
++
++    public function test_other_roles_only_see_system_inactive_when_locked(): void
++    {
++        $this->on('2026-12-10');
++        $clerk = $this->clerk();
++
++        $html = $this->actingAs($clerk)->get('receivables/aged')->assertOk()->getContent();
++        $this->assertStringContainsString('SYSTEM INACTIVE &ndash; READ ONLY', $html);
++        $this->assertStringNotContainsString('Pay / renew', $html);
++        $this->assertStringNotContainsString('was due on', $html);
++        $this->assertStringContainsString('subscription-readonly', $html);   // buttons still greyed out
++
++        $this->from('/home')->post('_sub/save')->assertRedirect('/home')
++            ->assertSessionHas('error', fn ($m) => str_starts_with($m, 'SYSTEM INACTIVE'));
++        $this->postJson('_sub/save')->assertStatus(402)->assertJsonMissingPath('pay_url')->assertJsonMissingPath('due_date');
++    }
++
+     public function test_pay_button_explains_when_online_payment_is_not_on_yet(): void
+     {
+         $this->on('2026-12-10');
+-- 
+2.43.0
+
