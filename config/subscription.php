@@ -34,7 +34,7 @@ return [
     // Start warning this many days before the due date.
     'warn_days_before' => 7,
 
-    'monthly_fee' => 0.00,          // GHS; shown on the billing page and charged through Hubtel
+    'monthly_fee' => 2000.00,          // GHS; shown on the billing page and charged through Hubtel
     'currency' => 'GHS',
     'timezone' => 'Africa/Accra',   // dates are judged in Ghana time, never the user's clock
 

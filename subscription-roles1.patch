@@ -1,4 +1,4 @@
-From e1742f954e5a93e7c7ebbe40015e843efbc5dfce Mon Sep 17 00:00:00 2001
+From 36fa0c5a80489119e36dca37034d97dd0c3afe1b Mon Sep 17 00:00:00 2001
 From: nana afrane <nanaafrane59@gmail.com>
 Date: Thu, 29 Oct 2026 15:56:17 +0000
 Subject: [PATCH] Subscription: payment details only for Finance Manager and
@@ -102,7 +102,7 @@ index 3e2bf7f..0034696 100644
      public function bypasses($user): bool
      {
 diff --git a/config/subscription.php b/config/subscription.php
-index 118b547..ebd1546 100644
+index 5a31a1c..419bf1d 100644
 --- a/config/subscription.php
 +++ b/config/subscription.php
 @@ -44,6 +44,10 @@
