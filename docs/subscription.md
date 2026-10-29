@@ -37,6 +37,7 @@ Check the state any time: `php artisan subscription:status`.
 - `enforce` - false switches the whole thing off.
 - `starts_on` - first due date.
 - `grace_days` (30), `warn_days_before` (7).
+- `pay_months` - choices in the Months list on the Pay screen, e.g. `[1, 3, 6]`.
 - `monthly_fee`, `currency`.
 - `billing_roles` - roles that see payment details and can pay (Finance Manager, Director).
 - `bypass_emails` - logins never locked (your own developer/support account).

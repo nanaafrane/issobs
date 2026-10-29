@@ -34,6 +34,10 @@ return [
     // Start warning this many days before the due date.
     'warn_days_before' => 7,
 
+    // Choices in the "Months" list on the Pay screen. Only these can be paid for.
+    // e.g. [1] = one month at a time; [1, 3, 6] = up to six months.
+    'pay_months' => [1],
+
     'monthly_fee' => 2000.00,          // GHS; shown on the billing page and charged through Hubtel
     'currency' => 'GHS',
     'timezone' => 'Africa/Accra',   // dates are judged in Ghana time, never the user's clock

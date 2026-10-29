@@ -35,6 +35,7 @@ class SubscriptionLockTest extends TestCase
             'subscription.renewals' => [],
             'subscription.bypass_emails' => [],
             'subscription.monthly_fee' => 500,
+            'subscription.pay_months' => [1, 2, 3, 6, 12],
             'subscription.hubtel.enabled' => false,
         ]);
 
@@ -245,6 +246,45 @@ class SubscriptionLockTest extends TestCase
         $this->from('/home')->post('_sub/save')->assertRedirect('/home')
             ->assertSessionHas('error', fn ($m) => str_starts_with($m, 'SYSTEM INACTIVE'));
         $this->postJson('_sub/save')->assertStatus(402)->assertJsonMissingPath('pay_url')->assertJsonMissingPath('due_date');
+    }
+
+    public function test_months_list_comes_from_config_and_other_values_are_refused(): void
+    {
+        config([
+            'subscription.pay_months' => [1, 3],
+            'subscription.hubtel.enabled' => true,
+            'subscription.hubtel.api_id' => 'id',
+            'subscription.hubtel.api_key' => 'key',
+            'subscription.hubtel.merchant_account' => '123',
+        ]);
+        $this->on('2026-11-20');
+        Http::fake(['payproxyapi.hubtel.com/*' => Http::response(['data' => ['checkoutUrl' => 'https://pay.hubtel.com/x']])]);
+
+        $this->actingAs($this->user)->get('billing')->assertOk()
+            ->assertSee('<option value="1">', false)->assertSee('<option value="3">', false)
+            ->assertDontSee('<option value="12">', false);
+
+        $this->post('billing/pay', ['months' => 12])->assertSessionHasErrors('months');
+        $this->post('billing/pay', ['months' => 3])->assertRedirect('https://pay.hubtel.com/x');
+        $this->assertSame(3, SubscriptionPayment::sole()->months);
+    }
+
+    public function test_one_month_only_shows_the_amount_without_a_list(): void
+    {
+        config([
+            'subscription.pay_months' => [1],
+            'subscription.hubtel.enabled' => true,
+            'subscription.hubtel.api_id' => 'id',
+            'subscription.hubtel.api_key' => 'key',
+            'subscription.hubtel.merchant_account' => '123',
+        ]);
+        $this->on('2026-11-20');
+
+        $this->actingAs($this->user)->get('billing')->assertOk()
+            ->assertSee('1 month - GHS 500.00')
+            ->assertSee('<input type="hidden" name="months" value="1">', false)
+            ->assertDontSee('<select name="months"', false);
+        $this->post('billing/pay', ['months' => 2])->assertSessionHasErrors('months');
     }
 
     public function test_pay_button_explains_when_online_payment_is_not_on_yet(): void

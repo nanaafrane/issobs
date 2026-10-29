@@ -46,7 +46,7 @@ class BillingController extends Controller
     {
         abort_unless($subscription->canManage($request->user()), 403, 'Only the Finance Manager or Director can pay the subscription.');
 
-        $data = $request->validate(['months' => 'required|integer|min:1|max:12']);
+        $data = $request->validate(['months' => ['required', 'integer', \Illuminate\Validation\Rule::in(HubtelCheckout::monthChoices())]]);
 
         try {
             return redirect()->away($hubtel->start((int) $data['months'], $request->user()?->id));

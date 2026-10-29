@@ -23,6 +23,15 @@ use RuntimeException;
  */
 class HubtelCheckout
 {
+    /** Months that can be paid for at once (config subscription.pay_months). */
+    public static function monthChoices(): array
+    {
+        $months = array_values(array_unique(array_filter(array_map('intval', (array) config('subscription.pay_months', [1])), fn ($m) => $m >= 1 && $m <= 36)));
+        sort($months);
+
+        return $months ?: [1];
+    }
+
     public function enabled(): bool
     {
         $c = config('subscription.hubtel');
@@ -38,7 +47,9 @@ class HubtelCheckout
             throw new RuntimeException('Online payment is not switched on yet.');
         }
 
-        $months = max(1, min(12, $months));
+        if (! in_array($months, self::monthChoices(), true)) {
+            throw new RuntimeException('That number of months cannot be paid for.');
+        }
         $amount = round((float) config('subscription.monthly_fee') * $months, 2);
 
         $payment = SubscriptionPayment::create([

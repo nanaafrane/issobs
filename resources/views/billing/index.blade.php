@@ -50,14 +50,24 @@
             @if($onlinePayment)
                 <form method="POST" action="{{ url('billing/pay') }}" class="row g-2 align-items-end" data-readonly-allow>
                     @csrf
+                    @php $choices = \App\Services\Billing\HubtelCheckout::monthChoices(); @endphp
+                    @if(count($choices) === 1)
+                        {{-- One choice only (config pay_months): no list, just the amount. --}}
+                        <input type="hidden" name="months" value="{{ $choices[0] }}">
+                        <div class="col-auto">
+                            <div class="small text-muted">Amount</div>
+                            <div class="fw-bold">{{ $choices[0] }} {{ \Illuminate\Support\Str::plural('month', $choices[0]) }} - {{ $currency }} {{ number_format($fee * $choices[0], 2) }}</div>
+                        </div>
+                    @else
                     <div class="col-auto">
                         <label class="form-label small mb-1" for="months">Months</label>
                         <select name="months" id="months" class="form-select form-select-sm">
-                            @foreach([1, 2, 3, 6, 12] as $m)
+                            @foreach($choices as $m)
                                 <option value="{{ $m }}">{{ $m }} {{ \Illuminate\Support\Str::plural('month', $m) }} - {{ $currency }} {{ number_format($fee * $m, 2) }}</option>
                             @endforeach
                         </select>
                     </div>
+                    @endif
                     <div class="col-auto">
                         <button class="btn btn-primary btn-sm" data-loading><i class="bx bx-mobile-alt me-1"></i> Pay with Hubtel (MoMo / card)</button>
                     </div>
