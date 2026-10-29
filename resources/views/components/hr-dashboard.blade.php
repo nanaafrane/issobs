@@ -115,6 +115,9 @@
                                         <div class="dropdown-divider my-1"></div>
                                     </li>
                                     <li>
+                                        <a class="dropdown-item" href="{{ url('billing') }}"><i class="bx bx-credit-card me-2"></i> Subscription</a>
+                                    </li>
+                                    <li>
 
                                         <a class="dropdown-item" href="{{ route('logout') }}"
                                             onclick="event.preventDefault();
@@ -142,6 +145,7 @@
                 <div id="connection-status" class="alert" style="display:none;">
                     You are currently offline.
                 </div>
+                @include('partials.subscription_banner')
                     @yield('content')
 
 
@@ -220,6 +224,7 @@
     </script>
 
     @include('partials.submit_lock')
+    @include('partials.subscription_readonly')
     @yield('scripts')
 
 </body>

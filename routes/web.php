@@ -400,3 +400,9 @@ Route::get('exportCategory/{month}/{category}', [SalaryController::class, 'expor
 //     //     echo $value->name. " / ". $value->business_name ;
 //     // }
 // });
+// Monthly subscription: status page and payment. Keeps working while the system is read-only.
+// See docs/subscription.md.
+Route::get('billing', [\App\Http\Controllers\BillingController::class, 'index'])->name('billing');
+Route::post('billing/pay', [\App\Http\Controllers\BillingController::class, 'pay'])->name('billing.pay');
+Route::post('billing/hubtel/callback', [\App\Http\Controllers\BillingController::class, 'hubtelCallback'])
+    ->middleware('throttle:60,1')->name('billing.hubtel.callback');

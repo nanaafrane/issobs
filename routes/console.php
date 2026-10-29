@@ -211,3 +211,30 @@ Artisan::command('fleet:import-fuel {file} {--field= : office id for every row, 
         $this->warn($e);
     }
 })->purpose('Load a fuel request and usage sheet (xlsx) into fleet fuel entries');
+
+/*
+ | Monthly subscription. Renewals are recorded in config/subscription.php.
+ */
+Artisan::command('subscription:status', function () {
+    $s = app(\App\Support\Subscription::class);
+    $this->table(['', ''], [
+        ['Status', $s->status()],
+        ['Due date', $s->dueDate()->toFormattedDateString()],
+        ['Read-only from', $s->lockDate()->toFormattedDateString()],
+        ['Days until due', $s->daysUntilDue()],
+        ['Enforced', $s->enforced() ? 'yes' : 'no (config subscription.enforce)'],
+    ]);
+    $rows = $s->history()->map(fn ($r) => [$r['paid_on']?->toDateString() ?? '-', $r['months'], $r['source'], $r['reference']])->all();
+    $rows ? $this->table(['Paid on', 'Months', 'Source', 'Reference'], $rows) : $this->line('No payments recorded yet.');
+})->purpose('Show when the subscription is due and whether the system is read-only');
+
+Artisan::command('subscription:check-pending', function () {
+    // Hubtel asks merchants to check the status themselves if no callback came within a few minutes.
+    $hubtel = app(\App\Services\Billing\HubtelCheckout::class);
+    $n = 0;
+    \App\Models\SubscriptionPayment::where('status', 'pending')->where('created_at', '>=', now()->subDays(3))
+        ->each(function ($p) use ($hubtel, &$n) { $hubtel->confirm($p->client_reference); $n++; });
+    $this->info("Checked {$n} pending payment(s).");
+})->purpose('Ask Hubtel about subscription payments still pending');
+
+\Illuminate\Support\Facades\Schedule::command('subscription:check-pending')->everyTenMinutes()->withoutOverlapping();

@@ -19,6 +19,11 @@ return Application::configure(basePath: dirname(__DIR__))
             before: \Illuminate\Routing\Middleware\SubstituteBindings::class,
             prepend: \App\Http\Middleware\SaveFormOnce::class,
         );
+        // Subscription more than 30 days overdue: read-only (GET only). See docs/subscription.md.
+        $middleware->appendToGroup('web', \App\Http\Middleware\ReadOnlyWhenUnpaid::class);
+        $middleware->appendToGroup('api', \App\Http\Middleware\ReadOnlyWhenUnpaid::class);
+        // Hubtel posts payment results from its own servers, without our CSRF token.
+        $middleware->validateCsrfTokens(except: ['billing/hubtel/callback']);
         // $middleware->redirectUsersTo('/');
     })
     ->withExceptions(function (Exceptions $exceptions): void {

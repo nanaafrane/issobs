@@ -16,6 +16,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        // Subscription state is worked out once per request.
+        $this->app->scoped(\App\Support\Subscription::class);
 
         // app()->usePublicPath(__DIR__ . '/../../public_html');
     }
