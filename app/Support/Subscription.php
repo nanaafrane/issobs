@@ -82,6 +82,13 @@ class Subscription
         return (int) $this->today()->diffInDays($this->lockDate(), false);
     }
 
+    /** May this user see payment details and pay (Finance Manager, Director)? */
+    public function canManage($user): bool
+    {
+        return $user && method_exists($user, 'hasRole')
+            && $user->hasRole((array) config('subscription.billing_roles', ['Finance Manager', 'Director']));
+    }
+
     /** Is this user never locked (developer/support login)? */
     public function bypasses($user): bool
     {

@@ -9,6 +9,8 @@
 | Overdue | 1 to 30 days after the due date | yellow banner: "read-only on <date>, N days left" |
 | **Read-only** | from the 31st day after the due date | red banner; Save / Create / Register / Edit / Delete greyed out; server refuses every POST, PUT, PATCH, DELETE |
 
+**Who sees what.** Only the Finance Manager and Director (`billing_roles`) see the reminder, overdue and read-only messages with dates, the Subscription page and the Pay button. Everyone else sees nothing until the system is locked, then a red **SYSTEM INACTIVE – READ ONLY** banner; their buttons are greyed out the same way, and the billing page and pay request return 403 for them.
+
 Read-only ends the moment a renewal or payment moves the due date forward. Nothing about the lock is stored, so it can't get stuck.
 
 Dates are judged in Ghana time (Africa/Accra) on the server.
@@ -36,6 +38,7 @@ Check the state any time: `php artisan subscription:status`.
 - `starts_on` - first due date.
 - `grace_days` (30), `warn_days_before` (7).
 - `monthly_fee`, `currency`.
+- `billing_roles` - roles that see payment details and can pay (Finance Manager, Director).
 - `bypass_emails` - logins never locked (your own developer/support account).
 - `always_allowed` - writes that keep working when locked: login, logout, password reset, billing, Hubtel callbacks for salary payouts already sent.
 - `blocked_get` - old links that change data with a GET (terminate/reinstate client, sendMoney); blocked while locked.

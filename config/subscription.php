@@ -44,6 +44,10 @@ return [
         // ['months' => 1, 'paid_on' => '2026-11-01', 'reference' => 'Cash - November 2026'],
     ],
 
+    // Roles that see the due date / overdue messages, the Subscription page and the Pay button.
+    // Everyone else sees nothing until the system is locked, then only "SYSTEM INACTIVE - READ ONLY".
+    'billing_roles' => ['Finance Manager', 'Director'],
+
     // Logins that are never locked (e.g. the developer's own account, to fix data
     // or help with payment). Matched on the user's email address.
     'bypass_emails' => [

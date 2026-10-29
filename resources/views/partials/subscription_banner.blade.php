@@ -1,14 +1,24 @@
 {{--
-    Subscription warning on every page. Due soon / overdue: a reminder with the date.
-    Locked: the system is read-only (the server refuses saves; see ReadOnlyWhenUnpaid).
+    Subscription banner on every page.
+    Finance Manager / Director (config subscription.billing_roles): due soon, overdue
+    and read-only messages with dates and the Pay button.
+    Everyone else: nothing until the system is locked, then "SYSTEM INACTIVE - READ ONLY".
 --}}
 @php
     $sub = app(\App\Support\Subscription::class);
     $subStatus = $sub->status();
     $subBypass = $sub->bypasses(auth()->user());
+    $subManager = $sub->canManage(auth()->user());
 @endphp
 
-@if ($subStatus === \App\Support\Subscription::LOCKED)
+@if (! $subManager)
+    @if ($subStatus === \App\Support\Subscription::LOCKED)
+        <div class="alert alert-danger text-center fw-bold mx-3 mt-3 mb-0" role="alert" id="subscription-banner">
+            <i class="bx bx-lock-alt me-1"></i> SYSTEM INACTIVE &ndash; READ ONLY
+            @if ($subBypass) <div class="small fw-normal">(Your login is exempt, so you can still make changes.)</div> @endif
+        </div>
+    @endif
+@elseif ($subStatus === \App\Support\Subscription::LOCKED)
     <div class="alert alert-danger d-flex flex-wrap align-items-center justify-content-between gap-2 mx-3 mt-3 mb-0" role="alert" id="subscription-banner">
         <div>
             <i class="bx bx-lock-alt me-1"></i>

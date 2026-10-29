@@ -114,9 +114,11 @@
                                     <li>
                                         <div class="dropdown-divider my-1"></div>
                                     </li>
+                                    @if (app(\App\Support\Subscription::class)->canManage(Auth::user()))
                                     <li>
                                         <a class="dropdown-item" href="{{ url('billing') }}"><i class="bx bx-credit-card me-2"></i> Subscription</a>
                                     </li>
+                                    @endif
                                     <li>
 
                                         <a class="dropdown-item" href="{{ route('logout') }}"

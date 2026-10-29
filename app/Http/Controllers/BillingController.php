@@ -21,6 +21,8 @@ class BillingController extends Controller
 
     public function index(Request $request, Subscription $subscription, HubtelCheckout $hubtel)
     {
+        abort_unless($subscription->canManage($request->user()), 403, 'Only the Finance Manager or Director can view the subscription.');
+
         // Back from Hubtel: check that payment straight away rather than waiting for the callback.
         if ($request->filled('paid')) {
             $payment = $hubtel->confirm((string) $request->query('paid'));
@@ -40,8 +42,10 @@ class BillingController extends Controller
         ]);
     }
 
-    public function pay(Request $request, HubtelCheckout $hubtel)
+    public function pay(Request $request, HubtelCheckout $hubtel, Subscription $subscription)
     {
+        abort_unless($subscription->canManage($request->user()), 403, 'Only the Finance Manager or Director can pay the subscription.');
+
         $data = $request->validate(['months' => 'required|integer|min:1|max:12']);
 
         try {

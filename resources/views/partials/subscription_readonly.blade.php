@@ -13,8 +13,9 @@
 </style>
 <script>
 (function () {
-    var MSG = 'Read-only: the subscription is overdue. Saving and changes are switched off until payment is made.';
-    var PAY = @json(url('billing'));
+    var MSG = @json($sub->canManage(auth()->user())
+        ? 'Read-only: the subscription is overdue. Saving and changes are switched off until payment is made.'
+        : 'SYSTEM INACTIVE - READ ONLY');
 
     function allowed(el) {
         return !!(el.closest && el.closest('[data-readonly-allow], #logout-form, form[action$="/billing/pay"], form[action$="/logout"]'));

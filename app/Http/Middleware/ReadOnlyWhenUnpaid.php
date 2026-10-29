@@ -27,19 +27,21 @@ class ReadOnlyWhenUnpaid
             return $next($request);
         }
 
-        $message = 'Subscription overdue: the system is read-only until payment is made. '
-            .'You can still view and print, but not save or change anything.';
+        $manager = $this->subscription->canManage($request->user());
+        $message = $manager
+            ? 'Subscription overdue: the system is read-only until payment is made. You can still view and print, but not save or change anything.'
+            : 'SYSTEM INACTIVE - READ ONLY. You can view and print, but not save or change anything.';
 
         if ($request->expectsJson() || $request->ajax()) {
-            return response()->json([
+            return response()->json(array_filter([
                 'code' => 'SUBSCRIPTION_LOCKED',
                 'message' => $message,
-                'due_date' => $this->subscription->dueDate()->toDateString(),
-                'pay_url' => url('billing'),
-            ], 402);
+                'due_date' => $manager ? $this->subscription->dueDate()->toDateString() : null,
+                'pay_url' => $manager ? url('billing') : null,
+            ]), 402);
         }
 
-        return redirect()->back(fallback: url('billing'))->with('error', $message);
+        return redirect()->back(fallback: $manager ? url('billing') : url('home'))->with('error', $message);
     }
 
     private function blocks(Request $request): bool

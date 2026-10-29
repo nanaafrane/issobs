@@ -202,6 +202,51 @@ class SubscriptionLockTest extends TestCase
         Http::assertSentCount(3);   // initiate + two status checks; the repeat callback asked nothing
     }
 
+    private function clerk(): User
+    {
+        $role = Role::forceCreate(['id' => 9, 'name' => 'Invoice', 'department_id' => $this->user->department_id]);
+
+        return User::factory()->create(['department_id' => $this->user->department_id, 'role_id' => $role->id]);
+    }
+
+    public function test_only_finance_manager_and_director_see_overdue_details_and_pay(): void
+    {
+        $this->on('2026-11-20');   // overdue, not yet read-only
+        $director = User::factory()->create(['department_id' => $this->user->department_id,
+            'role_id' => Role::forceCreate(['id' => 3, 'name' => 'Director', 'department_id' => $this->user->department_id])->id]);
+        $clerk = $this->clerk();
+
+        foreach ([$this->user, $director] as $manager) {
+            $this->actingAs($manager)->get('billing')->assertOk()
+                ->assertSee('Subscription overdue')->assertSee('Pay now')->assertSee('href="'.url('billing').'"', false);
+        }
+
+        // Other roles: no banner, no Subscription link, no billing page, no paying.
+        $this->actingAs($clerk);
+        $html = $this->get('receivables/aged')->getContent();
+        $this->assertStringNotContainsString('Subscription overdue', $html);
+        $this->assertStringNotContainsString('SYSTEM INACTIVE', $html);
+        $this->assertStringNotContainsString(url('billing'), $html);
+        $this->get('billing')->assertForbidden();
+        $this->post('billing/pay', ['months' => 1])->assertForbidden();
+    }
+
+    public function test_other_roles_only_see_system_inactive_when_locked(): void
+    {
+        $this->on('2026-12-10');
+        $clerk = $this->clerk();
+
+        $html = $this->actingAs($clerk)->get('receivables/aged')->assertOk()->getContent();
+        $this->assertStringContainsString('SYSTEM INACTIVE &ndash; READ ONLY', $html);
+        $this->assertStringNotContainsString('Pay / renew', $html);
+        $this->assertStringNotContainsString('was due on', $html);
+        $this->assertStringContainsString('subscription-readonly', $html);   // buttons still greyed out
+
+        $this->from('/home')->post('_sub/save')->assertRedirect('/home')
+            ->assertSessionHas('error', fn ($m) => str_starts_with($m, 'SYSTEM INACTIVE'));
+        $this->postJson('_sub/save')->assertStatus(402)->assertJsonMissingPath('pay_url')->assertJsonMissingPath('due_date');
+    }
+
     public function test_pay_button_explains_when_online_payment_is_not_on_yet(): void
     {
         $this->on('2026-12-10');
