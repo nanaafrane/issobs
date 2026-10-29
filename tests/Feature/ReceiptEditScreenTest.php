@@ -98,6 +98,31 @@ class ReceiptEditScreenTest extends TestCase
         $this->assertMatchesRegularExpression('/name="invoices\[' . $inv->id . '\]\[selected\]" value="1" checked/', $html);
     }
 
+    public function test_wht_and_vat_switches_are_on_when_the_receipt_has_them(): void
+    {
+        $a = $this->invoice(1000, '2026-08-01');
+        $b = $this->invoice(1000, '2026-09-01');
+        $withWht = $this->create([$a->id => ['selected' => '1', 'wht' => '75']], ['cash_amount' => 925]);
+        $html = $this->get(route('receipt.multi.edit', $withWht))->assertOk()->getContent();
+        $this->assertMatchesRegularExpression('/id="applyWht"[^>]*checked/', $html);
+        $this->assertDoesNotMatchRegularExpression('/id="applyVat"[^>]*checked/', $html);
+
+        $withVat = $this->create([$b->id => ['selected' => '1', 'vat7' => '70']], ['cash_amount' => 500, 'from' => 'Other payer']);
+        $html = $this->get(route('receipt.multi.edit', $withVat))->getContent();
+        $this->assertMatchesRegularExpression('/id="applyVat"[^>]*checked/', $html);
+        $this->assertDoesNotMatchRegularExpression('/id="applyWht"[^>]*checked/', $html);
+
+        // A new receipt starts with both off; after a validation error they stay as the cashier left them.
+        $html = $this->get(route('receipt.multi.create', ['client_id' => $this->client->id]))->getContent();
+        $this->assertDoesNotMatchRegularExpression('/id="applyWht"[^>]*checked/', $html);
+        $this->from(route('receipt.multi.create', ['client_id' => $this->client->id]))
+            ->post(route('receipt.multi.store'), ['client_id' => $this->client->id, 'receipt_month' => '2026-09-05', 'from' => 'X', 'mode' => ['cash'], 'apply_wht' => '1', 'invoices' => []])
+            ->assertSessionHasErrors();
+        $html = $this->get(route('receipt.multi.create', ['client_id' => $this->client->id]))->getContent();
+        $this->assertMatchesRegularExpression('/id="applyWht"[^>]*checked/', $html);
+        $this->assertDoesNotMatchRegularExpression('/id="applyVat"[^>]*checked/', $html);
+    }
+
     public function test_saving_unchanged_keeps_every_figure(): void
     {
         $inv = $this->invoice(1000);

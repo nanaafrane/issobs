@@ -30,6 +30,11 @@
         $creditLines = $creditLines ?? collect();
         $val = fn (string $field, $default = null) => old($field, $editing ? $editing->{$field} : $default);
         $amt = fn ($v) => (float) $v > 0 ? number_format((float) $v, 2, '.', '') : null;
+        // The WHT / VAT switches are on when the receipt being edited has WHT / VAT on any invoice,
+        // and keep their state after a validation error.
+        $prefilled = fn (string $k) => collect($prefill)->contains(fn ($r) => (float) ($r[$k] ?? 0) > 0);
+        $whtOn = session()->hasOldInput() ? old('apply_wht') === '1' : ($editing && $prefilled('wht'));
+        $vatOn = session()->hasOldInput() ? old('apply_vat') === '1' : ($editing && $prefilled('vat7'));
     @endphp
     <div class="container-xxl flex-grow-1 container-p-y">
         <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
@@ -119,11 +124,11 @@
                             </div>
                             <div class="d-flex flex-wrap gap-3 align-items-center">
                                 <div class="form-check form-switch mb-0">
-                                    <input class="form-check-input" type="checkbox" id="applyWht">
+                                    <input class="form-check-input" type="checkbox" id="applyWht" name="apply_wht" value="1" @checked($whtOn)>
                                     <label class="form-check-label" for="applyWht">{{ $wht_rate->wht_rate * 100 }}% WHT</label>
                                 </div>
                                 <div class="form-check form-switch mb-0">
-                                    <input class="form-check-input" type="checkbox" id="applyVat">
+                                    <input class="form-check-input" type="checkbox" id="applyVat" name="apply_vat" value="1" @checked($vatOn)>
                                     <label class="form-check-label" for="applyVat">7% VAT</label>
                                 </div>
                                 <button type="button" class="btn btn-sm btn-outline-primary" id="autoAllocate">
@@ -539,6 +544,13 @@
         $('#selectAll').on('change', function () {
             $('.mi-pick').prop('checked', this.checked).trigger('change');
         });
+        // "Select all" shows ticked when every invoice is ticked (e.g. editing a receipt that pays them all).
+        function syncSelectAll() {
+            const $p = $('.mi-pick');
+            $('#selectAll').prop('checked', $p.length > 0 && $p.filter(':checked').length === $p.length);
+        }
+        $(document).on('change', '.mi-pick', syncSelectAll);
+        syncSelectAll();
         $('#autoAllocate').on('click', function () {
             $('.mi-applied').data('typed', false);
             recalc();
