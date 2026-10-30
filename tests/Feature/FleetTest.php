@@ -410,6 +410,60 @@ class FleetTest extends TestCase
         @unlink($path);
     }
 
+    private function staff(string $name, string $role, ?Field $field = null): \App\Models\employee
+    {
+        $r = Role::where('name', $role)->first() ?? Role::forceCreate(['name' => $role, 'department_id' => Department::first()->id]);
+        $e = new \App\Models\employee();
+        $e->forceFill(['name' => $name, 'status' => 'Active', 'field_id' => ($field ?? $this->accra)->id, 'role_id' => $r->id,
+            'basic_salary' => 1500, 'allowances' => 0, 'user_id' => $this->finance->id])->save();
+
+        return $e;
+    }
+
+    public function test_driver_dropdowns_offer_only_drivers_and_riders(): void
+    {
+        $kofi = $this->staff('KOFI DRIVER', 'Driver');
+        $ama = $this->staff('AMA RIDER', ' rider ');                  // role names compared ignoring case and spaces
+        $yaw = $this->staff('YAW GUARD', 'Guard');
+        $tema = $this->staff('ESI TEMA DRIVER', 'Driver', $this->tema);
+
+        $this->actingAs($this->accraOfficer);
+        $page = $this->get(route('fleet.vehicles'))->assertOk();
+        $page->assertSee('KOFI DRIVER · Driver')->assertSee('AMA RIDER · rider')->assertDontSee('YAW GUARD')->assertDontSee('ESI TEMA DRIVER');   // other office
+        $this->get(route('fleet.fuel'))->assertOk()->assertSee('KOFI DRIVER')->assertDontSee('YAW GUARD');
+
+        // the server refuses anyone else, whatever the form sends
+        $this->post(route('fleet.vehicles.store'), ['reg_no' => 'GT-1-26', 'kind' => 'car', 'fuel_type' => 'diesel', 'field_id' => $this->accra->id, 'driver_employee_id' => $yaw->id])
+            ->assertSessionHasErrors('driver_employee_id');
+        $this->post(route('fleet.vehicles.store'), ['reg_no' => 'GT-1-26', 'kind' => 'car', 'fuel_type' => 'diesel', 'field_id' => $this->accra->id, 'driver_employee_id' => $ama->id])
+            ->assertSessionHasNoErrors();
+        $this->fuel(['driver_employee_id' => $yaw->id])->assertSessionHasErrors('driver_employee_id');
+        $this->fuel(['driver_employee_id' => $kofi->id])->assertSessionHasNoErrors();
+
+        // a driver already on a vehicle stays selectable after their role changes, so editing does not lose them
+        $car = Vehicle::where('reg_no', 'GT-1-26')->sole();
+        $ama->forceFill(['role_id' => $yaw->role_id])->save();
+        $this->actingAs($this->finance)->get(route('fleet.vehicles.show', $car))->assertOk()->assertSee('AMA RIDER');
+        $this->put(route('fleet.vehicles.update', $car), ['reg_no' => 'GT-1-26', 'kind' => 'car', 'fuel_type' => 'diesel', 'field_id' => $this->accra->id, 'driver_employee_id' => $ama->id])
+            ->assertSessionHasNoErrors();
+        $this->get(route('fleet.vehicles'))->assertDontSee('AMA RIDER · Guard');                // but new picks only show drivers and riders
+
+        // no free-text driver name: the forms do not have it and the server ignores it
+        $this->get(route('fleet.vehicles'))->assertDontSee('name="driver_name"', false);
+        $this->get(route('fleet.fuel'))->assertDontSee('name="driver_name"', false);
+        $this->actingAs($this->accraOfficer);
+        $this->fuel(['entry_date' => '2026-10-05', 'odometer' => 120500, 'driver_name' => 'SOMEONE TYPED'])->assertSessionHasNoErrors();
+        $this->assertSame(0, FuelEntry::where('driver_name', 'SOMEONE TYPED')->count());
+        $typed = FuelEntry::latest('id')->first();
+        $this->assertSame('SIMON EWORYI', $typed->driver_name);                                     // the vehicle's driver, as before
+
+        // a name already on an entry (imported sheet) is kept when the entry is edited
+        $this->actingAs($this->finance)->put(route('fleet.fuel.update', $typed), ['entry_date' => '2026-10-05', 'vehicle_id' => $this->bike->id, 'amount' => 150, 'price_per_litre' => 16.97])
+            ->assertSessionHasNoErrors();
+        $this->assertSame('SIMON EWORYI', $typed->fresh()->driver_name);
+        $this->get(route('fleet.fuel.edit', $typed))->assertOk()->assertSee('SIMON EWORYI (as recorded)');
+    }
+
     public function test_fleet_pages_render(): void
     {
         $this->fuel();

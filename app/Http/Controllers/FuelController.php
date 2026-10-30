@@ -50,8 +50,7 @@ class FuelController extends Controller
         $vehicles = Vehicle::with('field')->where('status', '!=', 'disposed')
             ->when($allowed !== null, fn ($q) => $q->whereIn('field_id', $allowed ?: [0]))->orderBy('reg_no')->get();
         $fields = $this->visibleFields();
-        $drivers = employee::where('status', 'Active')->when($allowed !== null, fn ($q) => $q->whereIn('field_id', $allowed ?: [0]))
-            ->orderBy('name')->limit(2000)->get(['id', 'name']);
+        $drivers = $this->driverOptions();
         $stations = FuelEntry::whereNotNull('station')->distinct()->orderBy('station')->limit(50)->pluck('station');
         $live = $rows->reject->isRejected();
         $totals = [
@@ -84,7 +83,7 @@ class FuelController extends Controller
         $allowed = $this->allowedFieldIds();
         $vehicles = Vehicle::where('status', '!=', 'disposed')->when($allowed !== null, fn ($q) => $q->whereIn('field_id', $allowed ?: [0]))->orderBy('reg_no')->get();
         $fields = $this->visibleFields();
-        $drivers = employee::where('status', 'Active')->when($allowed !== null, fn ($q) => $q->whereIn('field_id', $allowed ?: [0]))->orderBy('name')->limit(2000)->get(['id', 'name']);
+        $drivers = $this->driverOptions($fuel->driver_employee_id);
         $stations = FuelEntry::whereNotNull('station')->distinct()->orderBy('station')->limit(50)->pluck('station');
 
         return view('fleet.fuel_edit', compact('fuel', 'vehicles', 'fields', 'drivers', 'stations'));
@@ -94,7 +93,7 @@ class FuelController extends Controller
     {
         $this->mustSeeField($fuel->field_id);
         abort_unless($fuel->isEditableBy(Auth::user()), 403, 'This entry can no longer be edited.');
-        $data = $this->validated($request);
+        $data = $this->validated($request, $fuel);
         $data['field_id'] ??= Vehicle::find($data['vehicle_id'])?->field_id;
         $this->mustSeeField($data['field_id']);
         $this->entries->update($fuel, $data);
@@ -147,14 +146,13 @@ class FuelController extends Controller
         return back()->with('success', 'Fuel entry ' . $decision . '.');
     }
 
-    private function validated(Request $request): array
+    private function validated(Request $request, ?FuelEntry $current = null): array
     {
         return $request->validate([
             'entry_date' => ['required', 'date', 'before_or_equal:today'],
             'vehicle_id' => ['required', 'integer', 'exists:vehicles,id'],
             'field_id' => ['nullable', 'integer', 'exists:fields,id'],
-            'driver_employee_id' => ['nullable', 'integer', 'exists:employees,id'],
-            'driver_name' => ['nullable', 'string', 'max:120'],
+            'driver_employee_id' => ['nullable', 'integer', 'exists:employees,id', $this->driverRule($current?->driver_employee_id)],
             'purpose' => ['nullable', 'string', 'max:150'],
             'fuel_type' => ['nullable', Rule::in(array_keys(Vehicle::FUEL_TYPES))],
             'litres' => ['nullable', 'numeric', 'min:0.01', 'max:5000'],

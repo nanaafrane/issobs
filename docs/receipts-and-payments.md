@@ -501,6 +501,66 @@ repaying it is not an expense. *Accounts › Creditors (loans)*:
 
 ---
 
+## 12. Moving money between our accounts: many to many
+
+### What was wrong
+
+*Fund an account / move money* took several lines into **one** account, and each line was one fixed method. Real
+moves do not look like that:
+
+* one cheque from GCB is **cashed** and the cash shared: 20,000 into Main Cash, 25,000 deposited into OMNIBSIC,
+  5,000 to the Kumasi petty cash — three entries before, and GCB showed three debits for what its statement shows
+  as one cheque;
+* a cheque from CBG is **deposited** into Ecobank (not cashed) — no way to say so;
+* a transfer and a cheque from two banks into two others — several separate entries with nothing tying them together.
+
+### How it works now
+
+*Accounts › Transfers / fund cash › Move money*: **step 1** the account(s) the money comes out of, **step 2** the
+account(s) it goes into, **step 3** a live preview of the exact line each account's statement will show, with the
+balance after. Quick starts fill the form for the common cases (fund Main Cash, cash a cheque and share it, bank →
+bank transfer, deposit a cheque into another bank, pay cash into a bank).
+
+| Leaves a bank as | Leaves a cash account as | Arrives in a bank as | Arrives in a cash account as |
+|---|---|---|---|
+| bank transfer · cheque · cash withdrawal | cash | transfer received · cheque deposited · cash deposited | cash received |
+
+Rules (each with a plain message on the screen, and checked again when saving):
+
+* out and in must balance; a **transfer** arrives as a transfer (so transfers out = transfers received);
+* a **cheque** is deposited **whole into one account** — to share it, cash it (then it arrives as cash anywhere);
+* cash withdrawn, cash and cashed cheques arrive as cash (deposited into a bank, or received by a cash account);
+* an account cannot be on both sides of one move; money cannot arrive before it leaves (each line can have its
+  own date — *different day?* — e.g. cash deposited the next morning);
+* a cash account cannot give more than it holds; a bank going below zero, or a cheque number already used from the
+  same bank, is **flagged** in the preview (not blocked).
+
+Each account gets the lines its **own statement** shows: a cheque or withdrawal is **one debit** however it is shared
+out ("Cheque 000457 cashed — Main Cash 20,000.00, OMNIBSIC 25,000.00, …"); each deposit / cash received is **one
+credit** ("Cash deposited (ref SLIP 77) — cheque 000457 (GCB Main)"); a bank transfer is one debit and one credit
+per destination. So reconciling each bank against its statement still works line by line.
+
+The move is saved as one batch; *who funded what* (one `account_transfers` row per source → destination pair, with
+how it left and how it arrived) is on the move's page. **Reverse** posts the opposite of every line the move made.
+Moves are still not money in or out of the business (they stay out of the *money in / out* figures and the
+all-accounts cash book).
+
+The older single-destination form (`to_bank_id` + `lines`) is still accepted, so nothing that posts it breaks.
+
+### After deploying
+
+`php artisan migrate` — adds `in_method`, `in_reference`, `in_date`, `leg_out`, `leg_in` to `account_transfers`.
+Older transfers keep showing as they were.
+
+### Suggested next
+
+* **Bank charges on a move** (transfer fee, cheque book / cash withdrawal charge): a charges box on the source line,
+  posted as a *Bank charges* payment in the same batch.
+* **Cheques in clearing**: a cheque deposited into another bank shown as *uncleared* on the receiving account until
+  the bank clears it (as issued cheques already are on the paying side).
+
+---
+
 ## Code map
 
 | File | Purpose |
@@ -512,7 +572,10 @@ repaying it is not an expense. *Accounts › Creditors (loans)*:
 | `app/Services/Banking/DepositBook.php` | Cash/MoMo waiting, deposit slips, MoMo charge debit, reversal, mark already banked |
 | `app/Http/Controllers/BankDepositController.php`, `resources/views/banks/deposit_*.blade.php` | Bank Deposit screen, deposits made, deposit page |
 | `tests/Feature/BankDepositTest.php` | Cash alone, MoMo alone, both, charge rules, part deposits, reversal, office scope |
-| `app/Services/Banking/AccountBook.php` | Transfers between our accounts (fund Main Cash), payments, cheque clearing, cancel/reverse, adjustments |
+| `app/Services/Banking/AccountBook.php` | Moves between our accounts (`move()`; `transfer()` for the older form), payments, cheque clearing, cancel/reverse, adjustments |
+| `app/Services/Banking/MovePlan.php` | Plans a many-to-many move: rules, who funded what, the statement line each account gets (used by the preview and by saving) |
+| `resources/views/banks/transfer_create.blade.php`, `AccountMovementController::previewTransfer` | Move money screen and its live preview |
+| `tests/Feature/MoveMoneyTest.php` | Cheque cashed and shared, many-to-many routes, rules, dates, reversal, preview, screens |
 | `app/Services/Banking/AccountReports.php` | Account statement, where money came from / went, balance checks, expenses awaiting payment |
 | `app/Http/Controllers/BankController.php`, `AccountMovementController.php`, `resources/views/banks/*` | Bank & cash overview, statement, transfers, payments |
 | `tests/Feature/MainCashAndPaymentsTest.php` | Main Cash, multi-cheque funding, expense payments, cheques, cancellations, statement, migration |

@@ -310,7 +310,7 @@ class MainCashAndPaymentsTest extends TestCase
         $this->get(route('banks.show', $cash))->assertOk()->assertSee('Cash count')->assertSee('Held by Ama (cashier)');
         $this->get(route('money.transfers'))->assertOk()->assertSee('000789');
         $this->get(route('money.transfers.show', AccountTransfer::first()))->assertOk()->assertSee('Cheque 000789 to Main Cash');
-        $this->get(route('money.transfers.create'))->assertOk()->assertSee('Add another cheque');
+        $this->get(route('money.transfers.create'))->assertOk()->assertSee('Money comes out of')->assertSee('Cash a cheque and share it');
         $this->get(route('money.payments'))->assertOk()->assertSee('Supplier Co')->assertSee('Cheque issued');
         $this->get(route('money.payments', ['status' => 'issued']))->assertOk()->assertSee('000790');
         $this->get(route('money.payments.create', ['for' => 'expenses']))->assertOk()->assertSee('Fuel 25');

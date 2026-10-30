@@ -143,6 +143,15 @@ class employee extends Model
         return $this->belongsTo(Role::class);
     }
 
+    /** Roles whose holders can be assigned to a vehicle (compared ignoring case and spaces). */
+    public const DRIVER_ROLES = ['driver', 'rider'];
+
+    /** Employees whose role is Driver or Rider: the only people the fleet screens offer as drivers. */
+    public function scopeDrivers($query)
+    {
+        return $query->whereHas('role', fn ($r) => $r->whereIn(\Illuminate\Support\Facades\DB::raw('LOWER(TRIM(name))'), self::DRIVER_ROLES));
+    }
+
     public function field()
     {
         return $this->belongsTo(Field::class);

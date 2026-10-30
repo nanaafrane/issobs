@@ -45,6 +45,31 @@ trait FleetScope
         abort_if($allowed !== null && ! in_array((int) $fieldId, $allowed, true), 403, 'This belongs to another office.');
     }
 
+    /**
+     * Active Drivers and Riders of the offices this user sees, for the driver dropdowns.
+     * $keep: the driver already on the record, kept in the list even if their role has changed.
+     */
+    protected function driverOptions(?int $keep = null)
+    {
+        $allowed = $this->allowedFieldIds();
+
+        return \App\Models\employee::with('role:id,name')
+            ->where(fn ($q) => $q->where('status', 'Active')->drivers()
+                ->when($allowed !== null, fn ($w) => $w->whereIn('field_id', $allowed ?: [0])))
+            ->when($keep, fn ($q) => $q->orWhere('id', $keep))
+            ->orderBy('name')->limit(2000)->get(['id', 'name', 'role_id']);
+    }
+
+    /** Validation rule: the driver must be a Driver or Rider (or the one already on the record). */
+    protected function driverRule(?int $current = null): \Closure
+    {
+        return function (string $attribute, mixed $value, \Closure $fail) use ($current) {
+            if ($value && (int) $value !== (int) $current && ! \App\Models\employee::drivers()->whereKey((int) $value)->exists()) {
+                $fail('Choose a driver or rider: only employees whose role is Driver or Rider can be assigned to a vehicle.');
+            }
+        };
+    }
+
     protected function visibleFields()
     {
         $allowed = $this->allowedFieldIds();

@@ -32,7 +32,7 @@ class VehicleController extends Controller
             ->orderBy('reg_no')->get();
         $due = $this->reports->due($allowed)->whereIn('state', ['overdue', 'soon', 'missing']);
         $fields = $this->visibleFields();
-        $drivers = $this->drivers($allowed);
+        $drivers = $this->driverOptions();
 
         return view('fleet.vehicles', compact('vehicles', 'due', 'fields', 'drivers', 'status'));
     }
@@ -61,7 +61,7 @@ class VehicleController extends Controller
         $summary = $this->reports->vehicleSummary($from, $to)['rows']->firstWhere('vehicle.id', $vehicle->id);
         $due = $this->reports->due(null, 30, $vehicle->id);
         $fields = $this->visibleFields();
-        $drivers = $this->drivers($this->allowedFieldIds());
+        $drivers = $this->driverOptions($vehicle->driver_employee_id);
 
         return view('fleet.vehicle_show', compact('vehicle', 'fuel', 'work', 'summary', 'due', 'from', 'to', 'fields', 'drivers'));
     }
@@ -112,8 +112,7 @@ class VehicleController extends Controller
             'kind' => ['required', Rule::in(array_keys(Vehicle::KINDS))],
             'fuel_type' => ['required', Rule::in(array_keys(Vehicle::FUEL_TYPES))],
             'field_id' => ['required', 'integer', 'exists:fields,id'],
-            'driver_employee_id' => ['nullable', 'integer', 'exists:employees,id'],
-            'driver_name' => ['nullable', 'string', 'max:120'],
+            'driver_employee_id' => ['nullable', 'integer', 'exists:employees,id', $this->driverRule($vehicle?->driver_employee_id)],
             'tank_litres' => ['nullable', 'numeric', 'min:0', 'max:2000'],
             'opening_odometer' => ['nullable', 'integer', 'min:0'],
             'status' => ['nullable', Rule::in(array_keys(Vehicle::STATUSES))],
@@ -122,12 +121,5 @@ class VehicleController extends Controller
         $data['status'] = $data['status'] ?? ($vehicle?->status ?? 'active');
 
         return $data;
-    }
-
-    private function drivers(?array $allowed)
-    {
-        return employee::where('status', 'Active')
-            ->when($allowed !== null, fn ($q) => $q->whereIn('field_id', $allowed ?: [0]))
-            ->orderBy('name')->limit(2000)->get(['id', 'name']);
     }
 }

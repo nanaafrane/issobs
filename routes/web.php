@@ -176,6 +176,7 @@ Route::post('banks/{bank}/toggle', [BankController::class, 'toggle'])->name('ban
 // Money leaving an account: transfers between our accounts (e.g. funding Main Cash) and payments out.
 Route::get('money/transfers', [\App\Http\Controllers\AccountMovementController::class, 'transfers'])->name('money.transfers');
 Route::get('money/transfers/create', [\App\Http\Controllers\AccountMovementController::class, 'createTransfer'])->name('money.transfers.create');
+Route::post('money/transfers/preview', [\App\Http\Controllers\AccountMovementController::class, 'previewTransfer'])->name('money.transfers.preview');
 Route::post('money/transfers', [\App\Http\Controllers\AccountMovementController::class, 'storeTransfer'])->name('money.transfers.store')->middleware('once');
 Route::get('money/transfers/{transfer}', [\App\Http\Controllers\AccountMovementController::class, 'showTransfer'])->name('money.transfers.show');
 Route::post('money/transfers/{transfer}/reverse', [\App\Http\Controllers\AccountMovementController::class, 'reverseTransfer'])->name('money.transfers.reverse')->middleware('once');

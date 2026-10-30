@@ -31,6 +31,9 @@ class FuelEntries
         if ($entry->isLockedForPay()) {
             throw ValidationException::withMessages(['amount' => 'This fuel is on pay-out #' . $entry->payout_id . ': cancel the pay-out first.']);
         }
+        if (empty($data['driver_employee_id']) && ! array_key_exists('driver_name', $data)) {
+            $data['driver_name'] = $entry->driver_name;   // keep the name already on the entry (e.g. from an imported sheet)
+        }
         $entry->fill($this->prepare($data, $entry->id));
         $entry->save();
 

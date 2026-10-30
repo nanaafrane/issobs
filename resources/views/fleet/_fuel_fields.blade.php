@@ -5,12 +5,11 @@
         <option value="">Choose…</option>
         @foreach($vehicles as $v)<option value="{{ $v->id }}" data-fuel="{{ $v->fuel_type }}" @selected((int) old('vehicle_id', $f?->vehicle_id ?? request('vehicle_id')) === $v->id)>{{ $v->reg_no }}{{ $v->name ? ' · ' . $v->name : '' }}</option>@endforeach
     </select></div>
-<div class="col-md-3 col-6"><label class="form-label small mb-0">Driver</label>
+<div class="col-md-5 col-6"><label class="form-label small mb-0">Driver <span class="text-muted">(Drivers &amp; Riders)</span></label>
     <select name="driver_employee_id" class="form-select form-select-sm">
-        <option value="">(vehicle's driver / type below)</option>
-        @foreach($drivers as $d)<option value="{{ $d->id }}" @selected((int) old('driver_employee_id', $f?->driver_employee_id) === $d->id)>{{ $d->name }}</option>@endforeach
+        <option value="">{{ $drivers->isEmpty() ? 'No Driver or Rider in this office yet' : ($f?->driver_name && ! $f?->driver_employee_id ? $f->driver_name . ' (as recorded)' : "(the vehicle's driver)") }}</option>
+        @foreach($drivers as $d)<option value="{{ $d->id }}" @selected((int) old('driver_employee_id', $f?->driver_employee_id) === $d->id)>{{ $d->name }}{{ $d->role ? ' · ' . trim($d->role->name) : '' }}</option>@endforeach
     </select></div>
-<div class="col-md-2 col-6"><label class="form-label small mb-0">or driver name</label><input name="driver_name" class="form-control form-control-sm" value="{{ old('driver_name', $f?->driver_name) }}" maxlength="120"></div>
 <div class="col-md-2 col-6"><label class="form-label small mb-0">Office</label>
     <select name="field_id" class="form-select form-select-sm"><option value="">(vehicle's office)</option>@foreach($fields as $fl)<option value="{{ $fl->id }}" @selected((int) old('field_id', $f?->field_id) === $fl->id)>{{ $fl->name }}</option>@endforeach</select></div>
 

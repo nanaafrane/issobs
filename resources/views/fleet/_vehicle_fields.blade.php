@@ -10,12 +10,11 @@
         <option value="">Choose…</option>
         @foreach($fields as $f)<option value="{{ $f->id }}" @selected((int) old('field_id', $v?->field_id ?? (count($fields) === 1 ? $f->id : 0)) === $f->id)>{{ $f->name }}</option>@endforeach
     </select></div>
-<div class="col-6"><label class="form-label small mb-0">Driver (employee)</label>
+<div class="col-12"><label class="form-label small mb-0">Driver <span class="text-muted">(Drivers &amp; Riders)</span></label>
     <select name="driver_employee_id" class="form-select form-select-sm">
-        <option value="">—</option>
-        @foreach($drivers as $d)<option value="{{ $d->id }}" @selected((int) old('driver_employee_id', $v?->driver_employee_id) === $d->id)>{{ $d->name }}</option>@endforeach
+        <option value="">{{ $drivers->isEmpty() ? 'No Driver or Rider in this office yet' : ($v?->driver_name && ! $v?->driver_employee_id ? $v->driver_name . ' (as recorded — pick from the list)' : '—') }}</option>
+        @foreach($drivers as $d)<option value="{{ $d->id }}" @selected((int) old('driver_employee_id', $v?->driver_employee_id) === $d->id)>{{ $d->name }}{{ $d->role ? ' · ' . trim($d->role->name) : '' }}</option>@endforeach
     </select></div>
-<div class="col-6"><label class="form-label small mb-0">or driver name</label><input name="driver_name" class="form-control form-control-sm" value="{{ old('driver_name', $v?->driver_name) }}" maxlength="120"></div>
 <div class="col-6"><label class="form-label small mb-0">Tank (litres)</label><input type="number" step="0.01" min="0" name="tank_litres" class="form-control form-control-sm" value="{{ old('tank_litres', $v?->tank_litres) }}"></div>
 <div class="col-6"><label class="form-label small mb-0">km reading at start</label><input type="number" min="0" name="opening_odometer" class="form-control form-control-sm" value="{{ old('opening_odometer', $v?->opening_odometer) }}"></div>
 @if($v)

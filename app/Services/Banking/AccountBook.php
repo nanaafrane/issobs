@@ -33,8 +33,62 @@ use Illuminate\Validation\ValidationException;
 class AccountBook
 {
     /**
-     * Move money between our accounts. Several lines (e.g. one cheque per bank) into one
-     * destination are saved together under one batch.
+     * Move money between our accounts: any number of sources into any number of destinations,
+     * by transfer, cheque (deposited, or cashed and shared out), withdrawal or cash. The plan
+     * (who funded what, and the lines each account's statement shows) comes from MovePlan,
+     * which the screen also uses for its live preview. Saved as one batch.
+     *
+     * @param  array{date?:?string, notes?:?string, sources:array, destinations:array}  $input
+     * @return Collection<int, AccountTransfer>  one row per "who funded what" pair
+     */
+    public function move(array $input): Collection
+    {
+        return DB::transaction(function () use ($input) {
+            $ids = collect((array) ($input['sources'] ?? []))->pluck('bank_id')
+                ->merge(collect((array) ($input['destinations'] ?? []))->pluck('bank_id'))
+                ->filter()->map(fn ($id) => (int) $id)->unique()->values();
+            $banks = Bank::whereIn('id', $ids)->orderBy('id')->lockForUpdate()->get()->keyBy('id');
+            $plan = MovePlan::make($input, $banks);
+
+            $batch = (string) Str::uuid();
+            $notes = $this->clean($input['notes'] ?? null, 500);
+            $made = [];
+            foreach ($plan->pairs as $k => $p) {
+                $s = $plan->sources[$p['out']];
+                $d = $plan->destinations[$p['in']];
+                $made[$k] = AccountTransfer::create([
+                    'batch' => $batch,
+                    'leg_out' => $p['out'],
+                    'leg_in' => $p['in'],
+                    'from_bank_id' => $s['bank']->id,
+                    'to_bank_id' => $d['bank']->id,
+                    'amount' => $p['amount'],
+                    'method' => $p['method'],
+                    'reference' => $s['reference'],
+                    'in_method' => $p['in_method'],
+                    'in_reference' => $d['reference'] ?? ($p['in_method'] === 'cheque' ? $s['reference'] : null),
+                    'transfer_date' => $s['date']->toDateString(),
+                    'in_date' => $d['date']->equalTo($s['date']) ? null : $d['date']->toDateString(),
+                    'notes' => $notes,
+                    'user_id' => Auth::id(),
+                ]);
+            }
+
+            // Money out first (a cash account must hold what it gives), then money in.
+            $outs = array_filter($plan->lines, fn ($l) => $l['amount'] < 0);
+            $ins = array_filter($plan->lines, fn ($l) => $l['amount'] > 0);
+            foreach (array_merge($outs, $ins) as $l) {
+                $field = $l['amount'] < 0 ? 'sources.' . $plan->pairs[$l['pair']]['out'] . '.amount' : null;
+                $this->post($banks[$l['bank']->id], $l['amount'], $l['channel'], $l['date'], $l['narration'], ['transfer_id' => $made[$l['pair']]->id], $field);
+            }
+
+            return new \Illuminate\Database\Eloquent\Collection(array_values($made));
+        });
+    }
+
+    /**
+     * The older "fund one account" form: several lines (one cheque per bank…) into ONE account.
+     * Kept for callers that still send it; it is a move with one destination.
      *
      * @param  array{to_bank_id:int, transfer_date:string, notes?:?string,
      *               lines: array<int, array{from_bank_id:int, amount:float|string, method:string, reference?:?string}>}  $input
@@ -46,56 +100,47 @@ class AccountBook
         if (! $lines) {
             throw ValidationException::withMessages(['lines' => 'Enter at least one cheque or transfer with an amount.']);
         }
-        $date = $this->date($input['transfer_date'] ?? null, 'transfer_date');
+        $this->date($input['transfer_date'] ?? null, 'transfer_date');
+        $to = Bank::find((int) ($input['to_bank_id'] ?? 0));
+        $this->mustOperate($to, 'to_bank_id');
 
-        return DB::transaction(function () use ($input, $lines, $date) {
-            $ids = array_unique(array_merge([(int) $input['to_bank_id']], array_map(fn ($l) => (int) $l['from_bank_id'], $lines)));
-            $banks = Bank::whereIn('id', $ids)->orderBy('id')->lockForUpdate()->get()->keyBy('id');
-            $to = $banks[(int) $input['to_bank_id']] ?? null;
-            $this->mustOperate($to, 'to_bank_id');
-
-            $batch = (string) Str::uuid();
-            $made = collect();
-            foreach ($lines as $i => $line) {
-                $from = $banks[(int) $line['from_bank_id']] ?? null;
-                $this->mustOperate($from, "lines.$i.from_bank_id");
-                if ($from->id === $to->id) {
-                    throw ValidationException::withMessages(["lines.$i.from_bank_id" => 'Money cannot be moved from ' . $to->name . ' into itself.']);
-                }
-                $method = (string) $line['method'];
-                if (! array_key_exists($method, AccountTransfer::METHODS)) {
-                    throw ValidationException::withMessages(["lines.$i.method" => 'Choose how the money moved.']);
-                }
-                $fits = self::methodsBetween($from, $to);
-                if (! in_array($method, $fits, true)) {
-                    throw ValidationException::withMessages(["lines.$i.method" => 'From ' . $from->name . ' to ' . $to->name . ' the money moves by '
-                        . implode(' or ', array_map(fn ($m) => strtolower(AccountTransfer::METHODS[$m]), $fits)) . '.']);
-                }
-                if ($method === 'cheque' && trim((string) ($line['reference'] ?? '')) === '') {
-                    throw ValidationException::withMessages(["lines.$i.reference" => 'Enter the cheque number.']);
-                }
-                $amount = round((float) $line['amount'], 2);
-
-                $t = AccountTransfer::create([
-                    'batch' => $batch,
-                    'from_bank_id' => $from->id,
-                    'to_bank_id' => $to->id,
-                    'amount' => $amount,
-                    'method' => $method,
-                    'reference' => $this->clean($line['reference'] ?? null, 60),
-                    'transfer_date' => $date->toDateString(),
-                    'notes' => $this->clean($input['notes'] ?? null, 500),
-                    'user_id' => Auth::id(),
-                ]);
-
-                $how = AccountTransfer::METHODS[$method] . ($t->reference ? ' ' . $t->reference : '');
-                $this->post($from, -$amount, 'transfer_out', $date, $how . ' to ' . $to->name . $this->note($t->notes), ['transfer_id' => $t->id], "lines.$i.amount");
-                $this->post($to, $amount, 'transfer_in', $date, $how . ' from ' . $from->name . $this->note($t->notes), ['transfer_id' => $t->id]);
-                $made->push($t);
+        $sources = [];
+        foreach ($lines as $i => $line) {
+            $from = Bank::find((int) ($line['from_bank_id'] ?? 0));
+            $this->mustOperate($from, "lines.$i.from_bank_id");
+            if ($from->id === $to->id) {
+                throw ValidationException::withMessages(["lines.$i.from_bank_id" => 'Money cannot be moved from ' . $to->name . ' into itself.']);
             }
+            $method = (string) ($line['method'] ?? '');
+            $fits = self::methodsBetween($from, $to);
+            if (! in_array($method, $fits, true)) {
+                throw ValidationException::withMessages(["lines.$i.method" => 'From ' . $from->name . ' to ' . $to->name . ' the money moves by '
+                    . implode(' or ', array_map(fn ($m) => strtolower(AccountTransfer::METHODS[$m]), $fits)) . '.']);
+            }
+            $sources[] = ['bank_id' => $from->id, 'how' => in_array($method, ['deposit', 'handover'], true) ? 'cash' : $method,
+                'amount' => $line['amount'], 'reference' => $line['reference'] ?? null];
+        }
+        $arrive = collect($sources)->pluck('how')->unique();
+        $destinations = [];
+        if ($to->isCash() || $arrive->every(fn ($h) => in_array($h, ['cash', 'withdrawal'], true))) {
+            $destinations[] = ['bank_id' => $to->id, 'how' => 'cash', 'amount' => collect($sources)->sum('amount')];
+        } else {
+            // bank -> bank: each cheque deposited, transfers received, cash paid in.
+            foreach ($sources as $i => $s) {
+                $destinations[] = ['bank_id' => $to->id, 'how' => $s['how'] === 'cheque' ? 'cheque' : ($s['how'] === 'transfer' ? 'transfer' : 'cash'),
+                    'amount' => $s['amount'], 'cheque' => $s['how'] === 'cheque' ? $i : null];
+            }
+        }
 
-            return $made;
-        });
+        try {
+            return $this->move(['date' => $input['transfer_date'] ?? null, 'notes' => $input['notes'] ?? null, 'sources' => $sources, 'destinations' => $destinations]);
+        } catch (ValidationException $e) {
+            $errors = [];
+            foreach ($e->errors() as $key => $messages) {
+                $errors[preg_match('/^sources\.(\d+)\.(\w+)$/', $key, $m) ? "lines.{$m[1]}.{$m[2]}" : 'lines'] = $messages;
+            }
+            throw ValidationException::withMessages($errors);
+        }
     }
 
     /**
@@ -117,7 +162,10 @@ class AccountBook
         };
     }
 
-    /** Undo a set of transfers entered together. */
+    /**
+     * Undo a move entered in error: every line it posted gets its opposite, so each account is
+     * back where it was. Works for moves of any shape (and for older transfers).
+     */
     public function reverseTransfer(AccountTransfer $transfer, string $reason): Collection
     {
         $reason = $this->reason($reason, 'reversal_reason');
@@ -127,12 +175,16 @@ class AccountBook
             if ($rows->isEmpty()) {
                 throw ValidationException::withMessages(['reversal_reason' => 'This has already been reversed.']);
             }
-            $banks = Bank::whereIn('id', $rows->pluck('from_bank_id')->merge($rows->pluck('to_bank_id'))->unique())->orderBy('id')->lockForUpdate()->get()->keyBy('id');
+            $lines = BankTransaction::whereIn('transfer_id', $rows->pluck('id'))->orderBy('id')->get();
+            $banks = Bank::whereIn('id', $lines->pluck('bank_id')->unique())->orderBy('id')->lockForUpdate()->get()->keyBy('id');
 
+            // Take money back out of the accounts that received it first, then return it.
+            foreach ($lines->sortBy(fn ($l) => (float) $l->credit > 0 ? 0 : 1) as $l) {
+                $amount = round((float) $l->debit - (float) $l->credit, 2);
+                $this->post($banks[$l->bank_id], $amount, $amount < 0 ? 'transfer_out' : 'transfer_in', now(),
+                    'Reversal (' . $reason . '): ' . $l->narration, ['transfer_id' => $l->transfer_id], 'reversal_reason');
+            }
             foreach ($rows as $t) {
-                $why = 'Reversal of ' . strtolower(AccountTransfer::METHODS[$t->method] ?? $t->method) . ($t->reference ? ' ' . $t->reference : '') . ' (' . $reason . ')';
-                $this->post($banks[$t->to_bank_id], -(float) $t->amount, 'transfer_out', now(), $why . ' — back to ' . $banks[$t->from_bank_id]->name, ['transfer_id' => $t->id], 'reversal_reason');
-                $this->post($banks[$t->from_bank_id], (float) $t->amount, 'transfer_in', now(), $why . ' — from ' . $banks[$t->to_bank_id]->name, ['transfer_id' => $t->id]);
                 $t->reversed_at = now();
                 $t->reversed_by = Auth::id();
                 $t->reversal_reason = $reason;
