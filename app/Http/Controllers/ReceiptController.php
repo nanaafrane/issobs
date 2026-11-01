@@ -1383,7 +1383,7 @@ class ReceiptController extends Controller
 
         $user = Auth::user();
 
-        if($user->role->name == 'Finance Manager' || $user->role->name == 'Invoice' )
+        if($user->role->name == 'Finance Manager' || $user->role->name == 'Invoice' || $user->role->name == 'Director' )
         {
             // $receipts = Receipt::all();
             $accra = null;
@@ -1657,6 +1657,11 @@ class ReceiptController extends Controller
 
             if($action == 'headOffice' )
                 {
+                    // Head-office (finance) approval releases the receipt's cash / MoMo to Bank Deposit:
+                    // only the Finance Manager or a Director may give it.
+                    if (! Auth::user()?->hasRole(['Finance Manager', 'Director'])) {
+                        return back()->with('error', 'Only the Finance Manager or a Director can approve receipts for head office.');
+                    }
                     // // dd($receipt);
                     $exists = Receipt::where('id', $receipt->id)
                         ->where('ho_status', 'approved')

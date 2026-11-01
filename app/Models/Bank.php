@@ -22,7 +22,7 @@ use Illuminate\Database\Eloquent\Model;
  */
 class Bank extends Model
 {
-    public const KINDS = ['bank' => 'Bank account', 'cash' => 'Cash on hand'];
+    public const KINDS = ['bank' => 'Bank account', 'cash' => 'Cash on hand', 'momo' => 'MoMo wallet'];
 
     protected $fillable = [
         'name',
@@ -30,6 +30,7 @@ class Bank extends Model
         'branch',
         'acc_number',
         'custodian',
+        'field_id',
         'user_id',
         'total',            // set by code only (opening figure / postings) — never from a form
         'opening_balance',
@@ -81,6 +82,24 @@ class Bank extends Model
         return $this->kind === 'cash';
     }
 
+    /** The company's mobile-money wallet: pays and receives by MoMo, cashes out at an agent. */
+    public function isWallet(): bool
+    {
+        return $this->kind === 'momo';
+    }
+
+    /** Cash boxes and MoMo wallets hold only what is in them: they can never go below zero. */
+    public function cannotOverdraw(): bool
+    {
+        return $this->isCash() || $this->isWallet();
+    }
+
+    /** The office a cash box or wallet belongs to (e.g. Tema office cash). */
+    public function field()
+    {
+        return $this->belongsTo(Field::class);
+    }
+
     public function transactions()
     {
         return $this->hasMany(BankTransaction::class);
@@ -91,6 +110,9 @@ class Bank extends Model
     {
         if ($this->isCash()) {
             return $this->name . ' (cash' . ($this->custodian ? ', held by ' . $this->custodian : '') . ')';
+        }
+        if ($this->isWallet()) {
+            return $this->name . ' (MoMo' . ($this->acc_number ? ' ' . $this->acc_number : '') . ')';
         }
 
         return $this->name . ($this->acc_number ? ' — ' . $this->acc_number : '');

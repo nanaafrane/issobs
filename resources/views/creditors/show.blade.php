@@ -194,8 +194,9 @@
         document.querySelectorAll('[data-money-form]').forEach(function (box) {
             var bank = box.querySelector('select[name="bank_id"]'), method = box.querySelector('select[name="method"]');
             function sync() {
-                var opt = bank.options[bank.selectedIndex], cash = opt && opt.dataset.cash === '1';
-                method.closest('div').style.display = cash ? 'none' : '';
+                // Cash boxes take cash, the MoMo wallet MoMo: only a bank needs "how".
+                var opt = bank.options[bank.selectedIndex];
+                method.closest('div').style.display = opt && opt.value && opt.dataset.kind !== 'bank' ? 'none' : '';
             }
             bank.addEventListener('change', sync); sync();
         });

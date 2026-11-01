@@ -52,8 +52,9 @@ class BankController extends Controller
         $net = $flow['net'];
 
         $cashBalance = (float) $banks->filter->isCash()->sum('total');
-        $bankBalance = (float) $banks->reject->isCash()->sum('total');
-        $totalBalance = $cashBalance + $bankBalance;
+        $walletBalance = (float) $banks->filter->isWallet()->sum('total');
+        $bankBalance = (float) $banks->reject(fn ($b) => $b->isCash() || $b->isWallet())->sum('total');
+        $totalBalance = $cashBalance + $walletBalance + $bankBalance;
 
         $limit = 2000;
         $transactions = $inRange()->with('bank')->orderByDesc('entry_date')->orderByDesc('id')->limit($limit + 1)->get();
@@ -102,7 +103,7 @@ class BankController extends Controller
 
         return view('banks.index', compact(
             'banks', 'live', 'perBank', 'from', 'to', 'group', 'inTotal', 'outTotal', 'net', 'flow',
-            'totalBalance', 'cashBalance', 'bankBalance', 'transactions', 'truncated', 'series', 'checks', 'projection',
+            'totalBalance', 'cashBalance', 'walletBalance', 'bankBalance', 'transactions', 'truncated', 'series', 'checks', 'projection',
             'uncleared', 'awaiting', 'creditorsOwed'
         ));
     }
@@ -126,12 +127,13 @@ class BankController extends Controller
         $data = $request->validate([
             'kind' => ['required', Rule::in(array_keys(Bank::KINDS))],
             'name' => ['required', 'string', 'max:120', 'unique:banks,name'],
-            'acc_number' => ['required_if:kind,bank', 'nullable', 'string', 'max:60'],
+            'acc_number' => ['required_if:kind,bank', 'required_if:kind,momo', 'nullable', 'string', 'max:60'],
             'branch' => ['required_if:kind,bank', 'nullable', 'string', 'max:120'],
             'custodian' => ['required_if:kind,cash', 'nullable', 'string', 'max:120'],
-            'opening_balance' => ['nullable', 'numeric', $request->input('kind') === 'cash' ? 'min:0' : 'min:-999999999'],
+            'field_id' => ['nullable', 'integer', 'exists:fields,id'],
+            'opening_balance' => ['nullable', 'numeric', $request->input('kind') === 'bank' ? 'min:-999999999' : 'min:0'],
             'opening_date' => ['nullable', 'date', 'before_or_equal:today'],
-        ], [], ['acc_number' => 'account number', 'custodian' => 'who holds the cash']);
+        ], [], ['acc_number' => $request->input('kind') === 'momo' ? 'wallet number' : 'account number', 'custodian' => 'who holds the cash', 'field_id' => 'office']);
 
         $bank = Bank::create([
             'kind' => $data['kind'],
@@ -139,13 +141,14 @@ class BankController extends Controller
             'acc_number' => $data['acc_number'] ?? '',      // columns are NOT NULL; a cash account has none
             'branch' => $data['branch'] ?? '',
             'custodian' => $data['custodian'] ?? null,
+            'field_id' => $data['kind'] === 'bank' ? null : ($data['field_id'] ?? null),
             'opening_balance' => round((float) ($data['opening_balance'] ?? 0), 2),
             'total' => round((float) ($data['opening_balance'] ?? 0), 2),
             'opening_date' => $data['opening_date'] ?? now()->toDateString(),
             'user_id' => Auth::id(),
         ]);
 
-        return redirect()->route('banks.show', $bank)->with('success', ($bank->isCash() ? 'Cash account' : 'Bank account') . ' ' . $bank->name . ' added.');
+        return redirect()->route('banks.show', $bank)->with('success', (Bank::KINDS[$bank->kind] ?? 'Account') . ' ' . $bank->name . ' added.');
     }
 
     /** Details only. The balance never changes here — use an adjustment. */
@@ -157,7 +160,11 @@ class BankController extends Controller
             'acc_number' => [$bank->isCash() ? 'nullable' : 'required', 'nullable', 'string', 'max:60'],
             'branch' => ['nullable', 'string', 'max:120'],
             'custodian' => ['nullable', 'string', 'max:120'],
+            'field_id' => ['nullable', 'integer', 'exists:fields,id'],
         ]);
+        if ($bank->kind === 'bank' || ! $request->has('field_id')) {
+            unset($data['field_id']);
+        }
         $data['acc_number'] = $data['acc_number'] ?? '';
         $data['branch'] = $data['branch'] ?? '';
         $bank->fill($data)->save();

@@ -258,7 +258,7 @@ class BankDepositTest extends TestCase
     {
         $c = $this->receive(cash: 120, momo: 80);
         $this->get(route('deposit.create'))->assertOk()
-            ->assertSee('Deposit slip')->assertSee('MoMo withdrawal charge')->assertSee('FWSSR' . $c->receipt_id)
+            ->assertSee('Where does this money go?')->assertSee('MoMo withdrawal charge')->assertSee('FWSSR' . $c->receipt_id)
             ->assertSee('name="cash[]"', false)->assertSee('name="momo[]"', false);
 
         $this->deposit(['cash' => [$c->id], 'momo' => [$c->id], 'momo_charge' => '1.60', 'slip_number' => 'GCB-55'])

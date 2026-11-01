@@ -42,7 +42,7 @@ class DepositBook
      * @return Rows<int, object> one row per collection: collection, receipt/client
      *                           details, cash_due, momo_due, days_waiting
      */
-    public function waiting(?array $fieldIds = null): Rows
+    public function waiting(?array $fieldIds = null, bool $approved = true): Rows
     {
         $rows = Collection::query()
             ->leftJoin('receipts', 'receipts.id', '=', 'collections.receipt_id')
@@ -50,6 +50,10 @@ class DepositBook
             ->leftJoin('fields', 'fields.id', '=', 'collections.field_id')
             ->where(fn ($q) => $q->whereNull('collections.status')->orWhereRaw('LOWER(collections.status) <> ?', ['deposited']))
             ->when($fieldIds !== null, fn ($q) => $q->whereIn('collections.field_id', $fieldIds ?: [0]))
+            // Only money the Finance Manager / a Director has approved (head office) can be banked or spent.
+            ->where(fn ($q) => $approved
+                ? $q->whereNull('collections.receipt_id')->orWhere('receipts.ho_status', 'approved')
+                : $q->whereNotNull('collections.receipt_id')->where(fn ($w) => $w->whereNull('receipts.ho_status')->orWhere('receipts.ho_status', '!=', 'approved')))
             ->orderBy('collections.created_at')
             ->orderBy('collections.id')
             ->get([
@@ -70,6 +74,12 @@ class DepositBook
 
             return $c;
         })->filter(fn ($c) => $c->cash_due > 0 || $c->momo_due > 0)->values();
+    }
+
+    /** Cash / MoMo from receipts not yet approved at head office: shown, but not available yet. */
+    public function awaitingApproval(?array $fieldIds = null): Rows
+    {
+        return $this->waiting($fieldIds, false);
     }
 
     /** Cash (plus an old, never-banked cheque) on this collection not yet deposited. */
@@ -135,11 +145,32 @@ class DepositBook
                 throw ValidationException::withMessages(['cash' => 'Some of the ticked money has already been deposited (collection #'
                     . implode(', #', array_unique($taken)) . '). The list has been refreshed — check it and try again.']);
             }
+            // Only receipts approved at head office (Finance Manager / Director) can be banked or spent.
+            $receiptIds = $collections->pluck('receipt_id')->filter()->unique();
+            $notApproved = $receiptIds->isEmpty() ? collect() : \App\Models\Receipt::whereIn('id', $receiptIds)
+                ->where(fn ($q) => $q->whereNull('ho_status')->orWhere('ho_status', '!=', 'approved'))->pluck('id');
+            if ($notApproved->isNotEmpty()) {
+                throw ValidationException::withMessages(['cash' => 'Receipt FWSSR' . $notApproved->implode(', FWSSR')
+                    . ' is not yet approved by the Finance Manager, so its money cannot be banked or spent yet.']);
+            }
+
+            // Where the money goes: a bank, an office cash box, or the MoMo wallet.
+            $bank = Bank::whereKey($input['bank_id'] ?? 0)->lockForUpdate()->first();
+            if (! $bank || $bank->is_active === false) {
+                throw ValidationException::withMessages(['bank_id' => 'Choose the account the money goes into.']);
+            }
 
             $cash = round($cash, 2);
             $cheque = round($cheque, 2);
             $momo = round($momo, 2);
             $charge = round((float) ($input['momo_charge'] ?? 0), 2);
+            if ($bank->isWallet()) {
+                // MoMo already in the wallet is not withdrawn: no charge.
+                if ($charge > 0) {
+                    throw ValidationException::withMessages(['momo_charge' => 'MoMo kept in the wallet is not withdrawn, so there is no withdrawal charge.']);
+                }
+                $input['momo_charge'] = 0;
+            }
             if ($momo <= 0 && $charge > 0) {
                 throw ValidationException::withMessages(['momo_charge' => 'There is no MoMo on this deposit, so there is no withdrawal charge.']);
             }
@@ -152,7 +183,6 @@ class DepositBook
 
             $gross = round($cash + $cheque + $momo, 2);
             $slip = round($gross - $charge, 2);
-            $bank = Bank::whereKey($input['bank_id'])->lockForUpdate()->firstOrFail();
             $date = Carbon::parse($input['deposit_date'])->startOfDay();
 
             $deposit = BankDeposit::create([
@@ -188,8 +218,13 @@ class DepositBook
                 $momo > 0 ? 'MoMo ' . number_format($momo, 2) : null,
             ])->filter()->implode(' + ');
 
+            $into = match (true) {
+                $bank->isCash() => 'Collections kept as cash',
+                $bank->isWallet() => 'Collections into the MoMo wallet',
+                default => 'Deposit',
+            };
             $this->post($bank, $deposit, 'deposit', $gross,
-                'Deposit' . $this->slipLabel($deposit) . ' — ' . $what
+                $into . $this->slipLabel($deposit) . ' — ' . $what
                 . ($charge > 0 ? ' (slip ' . number_format($slip, 2) . ' after MoMo charge)' : '')
                 . ' · ' . $receipts(array_merge($cashIds, $momoIds)));
 
@@ -317,6 +352,11 @@ class DepositBook
     private function post(Bank $bank, BankDeposit $deposit, string $channel, float $amount, string $narration): void
     {
         $balance = round((float) $bank->total + $amount, 2);
+        if ($amount < 0 && $bank->cannotOverdraw() && $balance < -0.004) {
+            // e.g. reversing collections kept in an office cash box after they were spent.
+            throw ValidationException::withMessages(['reversal_reason' => $bank->name . ' only holds GH₵ ' . number_format((float) $bank->total, 2)
+                . ' — this money has already been spent from it, so it cannot be taken back out.']);
+        }
         BankTransaction::create([
             'bank_id' => $bank->id,
             'deposit_id' => $deposit->id,

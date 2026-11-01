@@ -85,7 +85,7 @@ class FuelPayouts
             if (! $bank) {
                 throw ValidationException::withMessages(['bank_id' => 'Choose the account the money comes from.']);
             }
-            $payMethod = $bank->isCash() ? 'cash' : (string) ($input['pay_method'] ?? 'cheque');
+            $payMethod = $bank->isCash() ? 'cash' : ($bank->isWallet() ? 'momo' : (string) ($input['pay_method'] ?? 'cheque'));
 
             $payout = FuelPayout::create([
                 'field_id' => $field->id,

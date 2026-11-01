@@ -26,7 +26,7 @@ class AccountReports
     public const SOURCES = [
         'receipt_cheque' => 'Cheques received from clients',
         'receipt_transfer' => 'Transfers received from clients',
-        'deposit' => 'Cash & MoMo deposited',
+        'deposit' => 'Cash & MoMo collected (banked or kept)',
         'momo_charge' => 'MoMo withdrawal charges',
         'adjustment' => 'Adjustments',
         'expense' => 'Expenses (old entries)',

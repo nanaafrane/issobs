@@ -89,7 +89,7 @@
                                     <select name="bank_id" id="bank_id" class="form-select">
                                         <option value="">Choose…</option>
                                         @foreach($accounts as $a)
-                                            <option value="{{ $a->id }}" data-cash="{{ $a->isCash() ? 1 : 0 }}" data-balance="{{ (float) $a->total }}" @selected((string) old('bank_id') === (string) $a->id)>{{ $a->label }} · {{ number_format($a->total, 2) }}</option>
+                                            <option value="{{ $a->id }}" data-cash="{{ $a->cannotOverdraw() ? 1 : 0 }}" data-kind="{{ $a->kind }}" data-balance="{{ (float) $a->total }}" @selected((string) old('bank_id') === (string) $a->id)>{{ $a->label }} · {{ number_format($a->total, 2) }}</option>
                                         @endforeach
                                     </select>
                                 </div>
@@ -160,7 +160,7 @@
             var m = method();
             form.querySelectorAll('[data-for]').forEach(function (el) { el.style.display = el.dataset.for.split(' ').indexOf(m) >= 0 ? '' : 'none'; });
             var opt = bank.options[bank.selectedIndex], isCash = opt && opt.dataset.cash === '1';
-            document.getElementById('payMethodBox').style.display = (m === 'cash' && opt && opt.value && !isCash) ? '' : 'none';
+            document.getElementById('payMethodBox').style.display = (m === 'cash' && opt && opt.value && opt.dataset.kind === 'bank') ? '' : 'none';
             var total = 0, n = 0, guards = {};
             form.querySelectorAll('.po-pick').forEach(function (c) {
                 c.closest('tr').classList.toggle('op-off', !c.checked);
@@ -172,8 +172,8 @@
             if (m !== 'payroll' && opt && opt.value) {
                 var bal = parseFloat(opt.dataset.balance);
                 document.getElementById('poBalance').textContent = opt.text.split(' · ')[0] + ' after: GH₵ ' + money(bal - total);
-                if (isCash && total > bal) warn = 'Not enough cash in ' + opt.text.split(' (')[0] + ' — fund it first.';
-                if (m === 'momo' && isCash) warn = 'MoMo is sent from a bank account.';
+                if (isCash && total > bal) warn = 'Not enough in ' + opt.text.split(' (')[0] + ' — fund it first.';
+                if (m === 'momo' && opt.dataset.kind === 'cash') warn = 'MoMo is sent from a bank account or the MoMo wallet.';
             } else document.getElementById('poBalance').textContent = '';
             document.getElementById('poWarn').textContent = warn;
             var btn = document.getElementById('poBtn');

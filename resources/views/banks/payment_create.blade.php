@@ -72,7 +72,7 @@
                                 <select name="bank_id" id="bank_id" class="form-select" required>
                                     <option value="">Choose…</option>
                                     @foreach($accounts as $a)
-                                        <option value="{{ $a->id }}" data-cash="{{ $a->isCash() ? 1 : 0 }}" data-balance="{{ (float) $a->total }}" @selected($bankSel === (string) $a->id)>{{ $a->label }} · {{ number_format($a->total, 2) }}</option>
+                                        <option value="{{ $a->id }}" data-cash="{{ $a->cannotOverdraw() ? 1 : 0 }}" data-kind="{{ $a->kind }}" data-balance="{{ (float) $a->total }}" @selected($bankSel === (string) $a->id)>{{ $a->label }} · {{ number_format($a->total, 2) }}</option>
                                     @endforeach
                                 </select>
                             </div>
@@ -144,8 +144,8 @@
 
         function fitMethods() {
             var opt = bank.options[bank.selectedIndex];
-            var cash = opt && opt.dataset.cash === '1';
-            var allowed = !bank.value ? Object.keys(labels) : (cash ? ['cash'] : ['cheque', 'transfer', 'momo']);
+            var kind = opt && opt.value ? opt.dataset.kind : '';
+            var allowed = !bank.value ? Object.keys(labels) : (kind === 'cash' ? ['cash'] : (kind === 'momo' ? ['momo'] : ['cheque', 'transfer', 'momo']));
             var keep = method.value || method.dataset.old;
             method.innerHTML = allowed.map(function (k) { return '<option value="' + k + '">' + labels[k] + '</option>'; }).join('');
             if (allowed.indexOf(keep) >= 0) method.value = keep;
@@ -178,7 +178,7 @@
             var now = opt && opt.value ? parseFloat(opt.dataset.balance) : null;
             document.getElementById('payNow').textContent = now === null ? '—' : money(now);
             document.getElementById('payAfter').textContent = now === null ? '—' : money(now - total);
-            if (now !== null && opt.dataset.cash === '1' && total > now) warn = 'Not enough cash — fund it from a bank first.';
+            if (now !== null && opt.dataset.cash === '1' && total > now) warn = 'Not enough in ' + opt.text.split(' · ')[0] + ' — fund it first.';
             document.getElementById('payNote').textContent = method.value === 'cheque' ? 'The cheque shows as issued until you mark it cleared on the bank statement.' : '';
             document.getElementById('payWarn').textContent = warn;
             var btn = document.getElementById('payBtn');

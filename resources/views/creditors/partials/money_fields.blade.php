@@ -5,7 +5,7 @@
         <select name="bank_id" class="form-select" required>
             <option value="">Choose…</option>
             @foreach($accounts as $a)
-                <option value="{{ $a->id }}" data-cash="{{ $a->isCash() ? 1 : 0 }}" @selected((string) old('bank_id') === (string) $a->id && old('_tab') === ($prefix === 'rc' ? 'receive' : 'repay'))>{{ $a->label }} · {{ number_format($a->total, 2) }}</option>
+                <option value="{{ $a->id }}" data-cash="{{ $a->cannotOverdraw() ? 1 : 0 }}" data-kind="{{ $a->kind }}" @selected((string) old('bank_id') === (string) $a->id && old('_tab') === ($prefix === 'rc' ? 'receive' : 'repay'))>{{ $a->label }} · {{ number_format($a->total, 2) }}</option>
             @endforeach
         </select>
     </div>

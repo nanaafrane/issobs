@@ -113,10 +113,10 @@ class OvertimePayouts
             if (! $bank) {
                 throw ValidationException::withMessages(['bank_id' => 'Choose the account the overtime money comes from.']);
             }
-            if ($method === 'momo' && $bank->isCash()) {
+            if ($method === 'momo' && $bank->isCash()) {   // a bank or the MoMo wallet sends MoMo
                 throw ValidationException::withMessages(['bank_id' => 'MoMo is sent from a bank account, not from ' . $bank->name . '.']);
             }
-            $payMethod = $bank->isCash() ? 'cash' : ($method === 'momo' ? 'momo' : (string) ($input['pay_method'] ?? 'cheque'));
+            $payMethod = $bank->isCash() ? 'cash' : ($bank->isWallet() || $method === 'momo' ? 'momo' : (string) ($input['pay_method'] ?? 'cheque'));
 
             $expense = Expense::create([
                 'description' => $payout->label() . ' · ' . count($ids) . ' entries',

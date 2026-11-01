@@ -58,7 +58,7 @@ class CreditorBook
             $bank = Bank::findOrFail((int) $input['bank_id']);
             $amount = $this->amount($input['amount'] ?? 0);
             $date = $this->date($input['entry_date'] ?? null);
-            $method = $bank->isCash() ? 'cash' : (string) ($input['method'] ?? 'transfer');
+            $method = $bank->isCash() ? 'cash' : ($bank->isWallet() ? 'momo' : (string) ($input['method'] ?? 'transfer'));
 
             $entry = $this->entry($creditor, 'received', $amount, $date, [
                 'bank_id' => $bank->id, 'method' => $method,
@@ -130,7 +130,7 @@ class CreditorBook
             if ($interest < 0) {
                 throw ValidationException::withMessages(['interest' => 'Interest cannot be negative.']);
             }
-            $method = $bank->isCash() ? 'cash' : (string) ($input['method'] ?? 'transfer');
+            $method = $bank->isCash() ? 'cash' : ($bank->isWallet() ? 'momo' : (string) ($input['method'] ?? 'transfer'));
             if ($method === 'cheque' && trim((string) ($input['reference'] ?? '')) === '') {
                 throw ValidationException::withMessages(['reference' => 'Enter the cheque number.']);
             }

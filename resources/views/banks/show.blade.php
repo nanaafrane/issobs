@@ -36,11 +36,13 @@
             <div>
                 <h3 class="mb-1">
                     {{ $bank->name }}
-                    <span class="badge {{ $bank->isCash() ? 'bg-label-success' : 'bg-label-primary' }} align-middle fs-6">{{ \App\Models\Bank::KINDS[$bank->kind] ?? 'Bank account' }}</span>
+                    <span class="badge {{ $bank->isCash() ? 'bg-label-success' : ($bank->isWallet() ? 'bg-label-warning' : 'bg-label-primary') }} align-middle fs-6">{{ \App\Models\Bank::KINDS[$bank->kind] ?? 'Bank account' }}</span>
                     @if($bank->is_active === false)<span class="badge bg-label-secondary align-middle fs-6">closed</span>@endif
                 </h3>
                 <div class="st-muted small">
+                    @if($bank->field) {{ $bank->field->name }} office · @endif
                     @if($bank->isCash()) Held by {{ $bank->custodian ?: '—' }}
+                    @elseif($bank->isWallet()) MoMo {{ $bank->acc_number ?: '' }}@if($bank->custodian) · managed by {{ $bank->custodian }}@endif
                     @else {{ $bank->branch }}@if($bank->acc_number) · Account {{ $bank->acc_number }}@endif @endif
                     · Statement {{ $st['from']->format('d M Y') }} – {{ $st['to']->format('d M Y') }}
                 </div>
@@ -104,7 +106,7 @@
         </div>
 
         <div class="row g-3">
-            @if(! $bank->isCash())
+            @if($bank->kind === 'bank' || ! $bank->kind)
             <div class="col-lg-7">
                 <div class="card h-100"><div class="card-body">
                     <h6>Reconcile with the bank statement</h6>
@@ -141,10 +143,10 @@
             @else
             <div class="col-lg-7">
                 <div class="card h-100"><div class="card-body">
-                    <h6>Cash count</h6>
-                    <p class="small st-muted">Count the cash in the box and enter it. Any difference should be explained; a Finance Manager posts it as an adjustment.</p>
+                    <h6>{{ $bank->isWallet() ? 'Wallet balance check' : 'Cash count' }}</h6>
+                    <p class="small st-muted">{{ $bank->isWallet() ? 'Enter the balance the MoMo app / statement shows.' : 'Count the cash in the box and enter it.' }} Any difference should be explained; a Finance Manager posts it as an adjustment.</p>
                     <div class="d-flex flex-wrap gap-3 align-items-end">
-                        <div><label class="form-label small mb-0" for="counted">Cash counted (GH₵)</label><input type="number" step="0.01" min="0" id="counted" class="form-control form-control-sm" style="width: 11rem"></div>
+                        <div><label class="form-label small mb-0" for="counted">{{ $bank->isWallet() ? 'Balance on the wallet (GH₵)' : 'Cash counted (GH₵)' }}</label><input type="number" step="0.01" min="0" id="counted" class="form-control form-control-sm" style="width: 11rem"></div>
                         <div class="small">Books: <strong class="st-num">{{ $m($bank->total) }}</strong></div>
                         <div class="small">Difference: <strong id="countDiff" class="st-num">—</strong></div>
                     </div>
@@ -158,8 +160,13 @@
                     <form method="POST" action="{{ route('banks.update', $bank) }}" class="row g-2">
                         @csrf @method('PUT')
                         <div class="col-12"><label class="form-label small mb-0">Name</label><input name="name" class="form-control form-control-sm" value="{{ old('name', $bank->name) }}" required></div>
-                        @if($bank->isCash())
-                            <div class="col-12"><label class="form-label small mb-0">Held by</label><input name="custodian" class="form-control form-control-sm" value="{{ old('custodian', $bank->custodian) }}"></div>
+                        @if($bank->isCash() || $bank->isWallet())
+                            @if($bank->isWallet())<div class="col-12"><label class="form-label small mb-0">Wallet number</label><input name="acc_number" class="form-control form-control-sm" value="{{ old('acc_number', $bank->acc_number) }}"></div>@endif
+                            <div class="col-12"><label class="form-label small mb-0">Office</label>
+                                <select name="field_id" class="form-select form-select-sm"><option value="">Head office / none</option>
+                                    @foreach(\App\Models\Field::orderBy('name')->get() as $f)<option value="{{ $f->id }}" @selected((int) old('field_id', $bank->field_id) === $f->id)>{{ $f->name }}</option>@endforeach
+                                </select></div>
+                            <div class="col-12"><label class="form-label small mb-0">{{ $bank->isWallet() ? 'Managed by' : 'Held by' }}</label><input name="custodian" class="form-control form-control-sm" value="{{ old('custodian', $bank->custodian) }}"></div>
                         @else
                             <div class="col-6"><label class="form-label small mb-0">Account number</label><input name="acc_number" class="form-control form-control-sm" value="{{ old('acc_number', $bank->acc_number) }}" required></div>
                             <div class="col-6"><label class="form-label small mb-0">Branch</label><input name="branch" class="form-control form-control-sm" value="{{ old('branch', $bank->branch) }}"></div>

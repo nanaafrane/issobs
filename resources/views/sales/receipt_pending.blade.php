@@ -323,7 +323,7 @@
                         <button class="btn btn-dark" type="submit" onclick="document.getElementById('receipt_action_type').value='branch'; return confirm('Kindly Confirm?')"> <i class="icon-base bx bx-arrow-from-left"> </i> {{ __('Approve') }}</button>
                     </div>    
 
-                    @elseif(Auth::user()->hasRole(['Finance Manager']))
+                    @elseif(Auth::user()->hasRole(['Finance Manager', 'Director']))
                     <div class="form-check form-check-inline">                            
                         <button class="btn btn-success" type="submit" onclick="document.getElementById('receipt_action_type').value='headOffice'; return confirm('Kindly Confirm?')"> <i class="icon-base bx bx-arrow-from-left"> </i> {{ __('Approve') }}</button>
                     </div>

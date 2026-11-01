@@ -87,8 +87,8 @@ class MainCashAndPaymentsTest extends TestCase
         $this->assertSame('Ama (cashier)', $cash->custodian);
 
         $this->get(route('receipt.multi.create'))->assertOk()->assertViewHas('banks', fn ($b) => ! $b->contains('id', $cash->id) && $b->contains('id', $this->gcb->id));
-        $this->get(route('deposit.create'))->assertOk()->assertViewHas('banks', fn ($b) => ! $b->contains('id', $cash->id));
-        $this->post('/deposit', ['bank_id' => $cash->id, 'deposit_date' => '2026-10-20', 'cash' => [1]])->assertSessionHasErrors('bank_id');
+        // Collections can now be kept in a cash box to be spent there (approved receipts only).
+        $this->get(route('deposit.create'))->assertOk()->assertViewHas('banks', fn ($b) => $b->contains('id', $cash->id));
     }
 
     public function test_cheques_from_several_banks_fund_main_cash_in_one_entry(): void

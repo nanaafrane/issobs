@@ -154,6 +154,16 @@ class AccountBook
      */
     public static function methodsBetween(Bank $from, Bank $to): array
     {
+        // A MoMo wallet: sends/receives MoMo like a transfer, is cashed out at an agent (withdrawal)
+        // and takes cash in at an agent (deposit); no cheques.
+        if ($from->isWallet() || $to->isWallet()) {
+            return match (true) {
+                $from->isCash() => ['deposit'],
+                $to->isCash() => ['withdrawal'],
+                default => ['transfer'],
+            };
+        }
+
         return match (true) {
             ! $from->isCash() && ! $to->isCash() => ['cheque', 'transfer'],
             ! $from->isCash() && $to->isCash() => ['cheque', 'withdrawal'],
@@ -212,11 +222,13 @@ class AccountBook
             $this->mustOperate($bank, 'bank_id');
 
             $method = (string) $input['method'];
-            $allowed = $bank->isCash() ? ['cash'] : ['cheque', 'transfer', 'momo'];
+            $allowed = $bank->isCash() ? ['cash'] : ($bank->isWallet() ? ['momo'] : ['cheque', 'transfer', 'momo']);
             if (! in_array($method, $allowed, true)) {
-                throw ValidationException::withMessages(['method' => $bank->isCash()
-                    ? $bank->name . ' is cash: pay in cash, or pay by cheque/transfer from a bank account.'
-                    : 'From a bank account, pay by cheque, transfer or mobile money.']);
+                throw ValidationException::withMessages(['method' => match (true) {
+                    $bank->isCash() => $bank->name . ' is cash: pay in cash, or pay by cheque/transfer from a bank account.',
+                    $bank->isWallet() => $bank->name . ' is a MoMo wallet: it pays by mobile money.',
+                    default => 'From a bank account, pay by cheque, transfer or mobile money.',
+                }]);
             }
             if ($method === 'cheque' && trim((string) ($input['reference'] ?? '')) === '') {
                 throw ValidationException::withMessages(['reference' => 'Enter the cheque number.']);
@@ -364,7 +376,7 @@ class AccountBook
     private function post(Bank $bank, float $amount, string $channel, Carbon $date, string $narration, array $links = [], ?string $errorField = null): BankTransaction
     {
         $balance = round((float) $bank->total + $amount, 2);
-        if ($amount < 0 && $bank->isCash() && $balance < -0.004) {
+        if ($amount < 0 && $bank->cannotOverdraw() && $balance < -0.004) {
             throw ValidationException::withMessages([$errorField ?? 'amount' => $bank->name . ' only holds GH₵ ' . number_format((float) $bank->total, 2)
                 . ' — it cannot pay out GH₵ ' . number_format(-$amount, 2) . '. Fund it from a bank first.']);
         }

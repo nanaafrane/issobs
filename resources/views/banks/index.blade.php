@@ -129,7 +129,7 @@
             <div>
                 <div class="label">Total across {{ $live->count() }} {{ Str::plural('account', $live->count()) }}</div>
                 <div class="value lead-value">{{ $money($totalBalance) }}</div>
-                <div class="note">In banks <strong>{{ $money($bankBalance) }}</strong> · Cash on hand <strong>{{ $money($cashBalance) }}</strong></div>
+                <div class="note">In banks <strong>{{ $money($bankBalance) }}</strong> · Cash on hand <strong>{{ $money($cashBalance) }}</strong>@if($walletBalance != 0) · MoMo wallet <strong>{{ $money($walletBalance) }}</strong>@endif</div>
                 <div class="note">
                     @if($projection['runway_days'] !== null)
                         At the last 30 days' pace this lasts about <strong>{{ $projection['runway_days'] }} days</strong>.
@@ -179,11 +179,13 @@
                                 <div class="d-flex justify-content-between align-items-start gap-2">
                                     <div>
                                         <div class="name"><a href="{{ route('banks.show', $bank) }}" class="text-body">{{ $bank->name }}</a>
-                                            @if($bank->isCash())<span class="badge bg-label-success ms-1">Cash</span>@endif
+                                            @if($bank->isCash())<span class="badge bg-label-success ms-1">Cash</span>@elseif($bank->isWallet())<span class="badge bg-label-warning ms-1">MoMo</span>@endif
                                             @if($bank->is_active === false)<span class="badge bg-label-secondary ms-1">closed</span>@endif
                                         </div>
                                         <div class="meta">
-                                            @if($bank->isCash())Held by {{ $bank->custodian ?: '—' }}
+                                            @if($bank->field){{ $bank->field->name }} · @endif
+                                            @if($bank->isWallet())MoMo {{ $bank->acc_number }}
+                                            @elseif($bank->isCash())Held by {{ $bank->custodian ?: '—' }}
                                             @else{{ $bank->branch }}@if($bank->acc_number) · •••• {{ substr($bank->acc_number, -4) }}@endif @endif
                                         </div>
                                     </div>
@@ -444,29 +446,41 @@
                         <label class="btn btn-outline-primary" for="kindBank"><i class="bx bxs-bank"></i> Bank account</label>
                         <input type="radio" class="btn-check" name="kind" id="kindCash" value="cash" @checked($kindOld === 'cash')>
                         <label class="btn btn-outline-success" for="kindCash"><i class="bx bx-wallet"></i> Cash on hand</label>
+                        <input type="radio" class="btn-check" name="kind" id="kindMomo" value="momo" @checked($kindOld === 'momo')>
+                        <label class="btn btn-outline-warning" for="kindMomo"><i class="bx bx-mobile-alt"></i> MoMo wallet</label>
                     </div>
-                    <p class="small bk-muted" data-kind="cash">Cash held at the office (e.g. <strong>Main Cash</strong>), funded by cheques or withdrawals from the banks and used to pay approved expenses. It has its own balance and statement like a bank.</p>
+                    <p class="small bk-muted" data-kind="cash">Cash held at an office (e.g. <strong>Main Cash</strong> or <strong>Tema office cash</strong>): approved collections can be kept here and spent on salaries and expenses, or it is funded from the banks. It has its own balance and statement like a bank.</p>
+                    <p class="small bk-muted" data-kind="momo">The company's mobile-money wallet: approved MoMo collections can be kept here (no withdrawal charge) and salaries or expenses paid from it by MoMo. It has its own balance and statement.</p>
                     <div class="mb-3">
                         <label for="name" class="form-label">Name</label>
                         <input type="text" name="name" id="name" class="form-control @error('name') is-invalid @enderror" value="{{ old('name') }}" placeholder="e.g. GCB Operations / Main Cash" required>
                         @error('name')<span class="invalid-feedback"><strong>{{ $message }}</strong></span>@enderror
                     </div>
-                    <div class="row g-2 mb-3" data-kind="bank">
+                    <div class="row g-2 mb-3" data-kind="bank momo">
                         <div class="col-6">
-                            <label for="acc_number" class="form-label">Account number</label>
+                            <label for="acc_number" class="form-label" id="accNumberLabel">Account number</label>
                             <input type="text" name="acc_number" id="acc_number" class="form-control @error('acc_number') is-invalid @enderror" value="{{ old('acc_number') }}">
                             @error('acc_number')<span class="invalid-feedback"><strong>{{ $message }}</strong></span>@enderror
                         </div>
-                        <div class="col-6">
+                        <div class="col-6" data-kind="bank">
                             <label for="branch" class="form-label">Branch</label>
                             <input type="text" name="branch" id="branch" class="form-control @error('branch') is-invalid @enderror" value="{{ old('branch') }}">
                             @error('branch')<span class="invalid-feedback"><strong>{{ $message }}</strong></span>@enderror
                         </div>
                     </div>
-                    <div class="mb-3" data-kind="cash">
-                        <label for="custodian" class="form-label">Held by (custodian)</label>
-                        <input type="text" name="custodian" id="custodian" class="form-control @error('custodian') is-invalid @enderror" value="{{ old('custodian') }}" placeholder="who keeps the cash">
-                        @error('custodian')<span class="invalid-feedback"><strong>{{ $message }}</strong></span>@enderror
+                    <div class="row g-2 mb-3" data-kind="cash momo">
+                        <div class="col-6">
+                            <label for="custodian" class="form-label" id="custodianLabel">Held by (custodian)</label>
+                            <input type="text" name="custodian" id="custodian" class="form-control @error('custodian') is-invalid @enderror" value="{{ old('custodian') }}" placeholder="who keeps it">
+                            @error('custodian')<span class="invalid-feedback"><strong>{{ $message }}</strong></span>@enderror
+                        </div>
+                        <div class="col-6">
+                            <label for="field_id" class="form-label">Office</label>
+                            <select name="field_id" id="field_id" class="form-select">
+                                <option value="">Head office / none</option>
+                                @foreach(\App\Models\Field::orderBy('name')->get() as $f)<option value="{{ $f->id }}" @selected((int) old('field_id') === $f->id)>{{ $f->name }}</option>@endforeach
+                            </select>
+                        </div>
                     </div>
                     <div class="row g-2">
                         <div class="col-6">
@@ -492,7 +506,9 @@
     (function () {
         function show() {
             var kind = (document.querySelector('input[name="kind"]:checked') || {}).value || 'bank';
-            document.querySelectorAll('#addBankModal [data-kind]').forEach(function (el) { el.style.display = el.dataset.kind === kind ? '' : 'none'; });
+            document.querySelectorAll('#addBankModal [data-kind]').forEach(function (el) { el.style.display = el.dataset.kind.split(' ').indexOf(kind) >= 0 ? '' : 'none'; });
+            document.getElementById('accNumberLabel').textContent = kind === 'momo' ? 'Wallet number' : 'Account number';
+            document.getElementById('custodianLabel').textContent = kind === 'momo' ? 'Managed by' : 'Held by (custodian)';
         }
         document.querySelectorAll('input[name="kind"]').forEach(function (r) { r.addEventListener('change', show); });
         show();

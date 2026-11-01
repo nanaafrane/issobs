@@ -72,7 +72,7 @@
                         <div class="mb-2"><label class="form-label small mb-0">Paid to</label><input name="payee" class="form-control form-control-sm" value="{{ old('payee', $station ?: '') }}" placeholder="Fuel station, or who bought the fuel" required maxlength="150"></div>
                         <div class="mb-2"><label class="form-label small mb-0">From account</label>
                             <select name="bank_id" class="form-select form-select-sm" id="fpBank" required>
-                                @foreach($accounts as $a)<option value="{{ $a->id }}" data-cash="{{ $a->isCash() ? 1 : 0 }}" @selected((int) old('bank_id') === $a->id)>{{ $a->name }} ({{ number_format((float) $a->total, 2) }})</option>@endforeach
+                                @foreach($accounts as $a)<option value="{{ $a->id }}" data-cash="{{ $a->cannotOverdraw() ? 1 : 0 }}" data-kind="{{ $a->kind }}" @selected((int) old('bank_id') === $a->id)>{{ $a->name }} ({{ number_format((float) $a->total, 2) }})</option>@endforeach
                             </select></div>
                         <div class="mb-2" id="fpMethodRow"><label class="form-label small mb-0">How</label>
                             <select name="pay_method" class="form-select form-select-sm">@foreach(['cheque' => 'Cheque', 'transfer' => 'Bank transfer', 'momo' => 'Mobile money'] as $k => $l)<option value="{{ $k }}" @selected(old('pay_method') === $k)>{{ $l }}</option>@endforeach</select></div>
@@ -104,7 +104,7 @@
             document.addEventListener('change', e => { if (e.target.classList.contains('fp-pick')) sum(); });
             document.getElementById('fpAll')?.addEventListener('change', function () { picks().forEach(c => c.checked = this.checked); sum(); });
             const bank = document.getElementById('fpBank'), row = document.getElementById('fpMethodRow');
-            function method() { if (bank && row) row.style.display = bank.selectedOptions[0]?.dataset.cash === '1' ? 'none' : ''; }
+            function method() { if (bank && row) row.style.display = (bank.selectedOptions[0]?.dataset.kind || 'bank') !== 'bank' ? 'none' : ''; }
             bank?.addEventListener('change', method); method(); sum();
         })();
     </script>

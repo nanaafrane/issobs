@@ -561,6 +561,38 @@ Older transfers keep showing as they were.
 
 ---
 
+## 13. Collections: approve first, then bank them or spend them
+
+Cash and MoMo taken on receipts are not always banked. Offices often pay salaries or small
+expenses straight out of what they collected. The app now records that honestly instead of
+pretending everything went to the bank.
+
+**1. Finance approval comes first.** A receipt's cash and MoMo appear on Bank Deposit only once
+the Finance Manager or a Director has approved the receipt at head office (`ho_status = approved`).
+Until then they are listed under "Awaiting finance approval" with a link to the pending receipts,
+and `DepositBook::deposit()` refuses them. Only the Finance Manager or a Director can give the
+head-office approval (others get an error); a Director's own receipts are approved at once.
+
+**2. Every cedi lands in an account.** On the deposit screen "Where does this money go?" offers:
+
+| Into | When | Charge | Statement line |
+|---|---|---|---|
+| A bank account | Banked as before | MoMo withdrawal charge required if MoMo is included | "Deposit …" |
+| An office cash box (`kind = cash`, with an office) | Kept at the office to pay salaries/expenses there | Charge required if MoMo was withdrawn to cash | "Collections kept as cash …" |
+| The MoMo wallet (`kind = momo`) | MoMo left in the company wallet | None allowed | "Collections into the MoMo wallet …" |
+
+**3. Spending goes through the normal flows** — Payments (category salaries, expenses, …),
+overtime pay-outs, fuel pay-outs, creditor repayments — choosing the cash box (method cash) or the
+wallet (method MoMo) as "Paid from". So every salary paid from collections has a payee, date,
+category and approver trail, and shows in the account statement and the in/out report.
+
+**4. Rules.** A cash box or wallet can never go below zero. A deposit into a cash box or wallet
+cannot be reversed once the money has been spent from it. A wallet can be cashed out into a cash
+box with Move money (method "withdrawal"); a cash box can be paid into the wallet ("deposit").
+
+**Setting up.** Bank & cash → Add account → "MoMo wallet" (wallet number required) or
+"Cash on hand" (choose the office and who holds it). Create one cash box per office.
+
 ## Code map
 
 | File | Purpose |
@@ -582,6 +614,7 @@ Older transfers keep showing as they were.
 | `app/Services/Overtime/OvertimePayouts.php`, `app/Http/Controllers/OvertimePayoutController.php`, `resources/views/overtime/payout*` | Overtime pay-outs: one expense + payment per office and period, disbursement per guard, returns, cancel, payroll check |
 | `tests/Feature/OvertimePayoutTest.php` | Cash / MoMo / payroll pay-outs, disbursement, returns, locks, office scope, migration |
 | `app/Services/Banking/CreditorBook.php`, `app/Http/Controllers/CreditorController.php`, `resources/views/creditors/*` | Creditors: money received, paid on our behalf, repaid (+ interest), reversals, statements |
+| `tests/Feature/CollectionsApproveAndSpendTest.php` | Finance approval before deposit, office cash boxes, MoMo wallet, salaries paid from collections, no overdraw, reversal guard |
 | `tests/Feature/CreditorsTest.php` | Director's loan in, on behalf, repay, interest, reversals, statement, financing kept out of in/out |
 | `app/Services/Receipts/BalanceRecompute.php` + `routes/console.php` | `receipts:recompute` |
 | `app/Services/Receipts/ReceiptWorkflow.php` | Approval routing and category A–D |

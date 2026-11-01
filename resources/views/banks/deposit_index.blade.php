@@ -38,7 +38,7 @@
         <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-3">
             <div>
                 <h3 class="text-primary mb-1"><i class="bx bx-arrow-from-left me-1"></i> Bank Deposit</h3>
-                <div class="text-muted small">Cash and MoMo received on receipts, waiting to go to the bank. One deposit = one bank slip.</div>
+                <div class="text-muted small">Approved cash and MoMo from receipts: deposit it in a bank, or keep it in an office cash box or the MoMo wallet to pay expenses and salaries there. One entry = one slip.</div>
             </div>
             <div class="d-flex gap-2 align-items-end">
                 @if($fields->count() > 1)
@@ -72,7 +72,7 @@
                 <div class="small text-muted">{{ $cashWaiting->count() }} {{ \Illuminate\Support\Str::plural('receipt', $cashWaiting->count()) }}</div>
             </div></div></div>
             <div class="col-6 col-lg-3"><div class="card dp-tile momo"><div class="card-body py-3">
-                <div class="small text-muted">MoMo waiting (to withdraw)</div>
+                <div class="small text-muted">MoMo waiting</div>
                 <div class="fs-5 fw-bold">GH&#8373; {{ $gh($momoWaiting->sum('momo_due')) }}</div>
                 <div class="small text-muted">{{ $momoWaiting->count() }} {{ \Illuminate\Support\Str::plural('receipt', $momoWaiting->count()) }}</div>
             </div></div></div>
@@ -82,7 +82,7 @@
                 <div class="small text-muted">since the receipt was written</div>
             </div></div></div>
             <div class="col-6 col-lg-3"><div class="card dp-tile"><div class="card-body py-3">
-                <div class="small text-muted">Total waiting</div>
+                <div class="small text-muted">Total approved, waiting</div>
                 <div class="fs-5 fw-bold">GH&#8373; {{ $gh($waiting->sum('cash_due') + $waiting->sum('momo_due')) }}</div>
                 <div class="small text-muted">before MoMo charges</div>
             </div></div></div>
@@ -96,7 +96,7 @@
                 <div class="{{ $canDeposit ? 'col-lg-8' : 'col-12' }}">
                     <div class="card">
                         <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2 py-3">
-                            <h6 class="mb-0">Waiting to be deposited <span class="small text-primary fw-normal ms-1" id="pickedNote"></span></h6>
+                            <h6 class="mb-0">Approved, waiting to be banked or kept <span class="small text-primary fw-normal ms-1" id="pickedNote"></span></h6>
                             @if($canDeposit && $waiting->isNotEmpty())
                             <div class="d-flex flex-wrap gap-2">
                                 <button type="button" class="btn btn-sm btn-outline-primary" data-tick="cash">Tick all cash</button>
@@ -178,16 +178,25 @@
                 <div class="col-lg-4">
                     <div class="card dp-slip">
                         <div class="card-body">
-                            <h6 class="mb-3"><i class="bx bx-receipt me-1"></i> Deposit slip</h6>
+                            <h6 class="mb-1"><i class="bx bx-receipt me-1"></i> Where does this money go?</h6>
+                            <p class="small text-muted mb-3">Into a bank (deposit slip), or kept in an office cash box or the MoMo wallet to be spent there (salaries, expenses — paid from that account under Payments).</p>
 
                             <div class="mb-2">
-                                <label class="form-label small mb-0" for="bank_id">Bank account <span class="text-danger">*</span></label>
+                                <label class="form-label small mb-0" for="bank_id">Into <span class="text-danger">*</span></label>
                                 <select name="bank_id" id="bank_id" class="form-select form-select-sm" required>
                                     <option value="">Choose…</option>
-                                    @foreach($banks as $bank)
-                                        <option value="{{ $bank->id }}" {{ (string) old('bank_id') === (string) $bank->id ? 'selected' : '' }}>{{ $bank->name }}@if($bank->acc_number) — {{ $bank->acc_number }}@endif</option>
+                                    @foreach(['bank' => 'Bank accounts (deposit)', 'cash' => 'Office cash (kept to spend)', 'momo' => 'MoMo wallet (kept to spend)'] as $kind => $group)
+                                        @php $inGroup = $banks->where('kind', $kind); @endphp
+                                        @if($inGroup->isNotEmpty())
+                                        <optgroup label="{{ $group }}">
+                                            @foreach($inGroup as $bank)
+                                                <option value="{{ $bank->id }}" data-kind="{{ $bank->kind }}" data-name="{{ $bank->name }}" {{ (string) old('bank_id') === (string) $bank->id ? 'selected' : '' }}>{{ $bank->name }}@if($bank->field) · {{ $bank->field->name }}@endif @if($bank->isCash() && $bank->custodian) — {{ $bank->custodian }}@elseif($bank->acc_number) — {{ $bank->acc_number }}@endif</option>
+                                            @endforeach
+                                        </optgroup>
+                                        @endif
                                     @endforeach
                                 </select>
+                                <div class="form-text" id="intoNote"></div>
                             </div>
                             <div class="row g-2 mb-2">
                                 <div class="col-6">
@@ -218,11 +227,11 @@
                             </div>
 
                             <hr class="my-2">
-                            <div class="dp-line align-items-baseline"><span class="fw-semibold">Amount on slip</span><span class="dp-num dp-total">GH&#8373; <span id="slipSum">0.00</span></span></div>
+                            <div class="dp-line align-items-baseline"><span class="fw-semibold" id="slipLabel">Amount on slip</span><span class="dp-num dp-total">GH&#8373; <span id="slipSum">0.00</span></span></div>
 
                             <div class="dp-ledger mt-2" id="ledgerPreview" style="display:none">
-                                <div class="text-muted mb-1">On the bank account this shows as:</div>
-                                <div class="dp-line"><span>Deposit (cash + MoMo)</span><span class="dp-num in">+ <span id="pvIn">0.00</span></span></div>
+                                <div class="text-muted mb-1" id="pvHead">On the bank account this shows as:</div>
+                                <div class="dp-line"><span id="pvInLabel">Deposit (cash + MoMo)</span><span class="dp-num in">+ <span id="pvIn">0.00</span></span></div>
                                 <div class="dp-line" id="pvChargeRow"><span>MoMo withdrawal charge</span><span class="dp-num out">− <span id="pvOut">0.00</span></span></div>
                             </div>
 
@@ -243,6 +252,28 @@
                 @endif
             </div>
         </form>
+
+        @if($pending->isNotEmpty())
+        <div class="card mt-3">
+            <div class="card-header py-2 d-flex flex-wrap justify-content-between align-items-center gap-2">
+                <h6 class="mb-0"><i class="bx bx-time-five text-warning me-1"></i> Awaiting finance approval
+                    <span class="small text-muted fw-normal">— not available to bank or spend until the Finance Manager / a Director approves the receipt</span></h6>
+                <div class="small">Cash <strong>GH₵ {{ number_format($pending->sum('cash_due'), 2) }}</strong> · MoMo <strong>GH₵ {{ number_format($pending->sum('momo_due'), 2) }}</strong>
+                    @if(Auth::user()?->hasRole(['Finance Manager', 'Director'])) · <a href="{{ route('receipt.pending') }}">Approve receipts</a>@endif</div>
+            </div>
+            <div class="table-responsive" style="max-height: 18rem; overflow-y: auto;">
+                <table class="table table-sm mb-0">
+                    <thead><tr><th>Receipt</th><th>Client</th><th>Office</th><th>Received</th><th class="text-end">Cash</th><th class="text-end">MoMo</th></tr></thead>
+                    <tbody>
+                    @foreach($pending as $c)
+                        <tr><td>@if($c->receipt_id)<a href="{{ url('receipt', $c->receipt_id) }}">FWSSR{{ $c->receipt_id }}</a>@endif</td><td>{{ $c->client_name ?? $c->paid_by }}</td><td>{{ $c->office }}</td>
+                            <td>{{ $c->created_at?->format('d M Y') }}</td><td class="text-end">{{ $c->cash_due > 0 ? number_format($c->cash_due, 2) : '' }}</td><td class="text-end">{{ $c->momo_due > 0 ? number_format($c->momo_due, 2) : '' }}</td></tr>
+                    @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        @endif
 
         @if($canCorrect && $waiting->isNotEmpty())
         <div class="modal fade" id="bankedModal" tabindex="-1" aria-hidden="true">
@@ -321,8 +352,16 @@
             document.getElementById('cashCount').textContent = count(cash.length);
             document.getElementById('momoCount').textContent = count(momo.length);
 
-            document.getElementById('chargeBox').style.display = momoSum > 0 ? '' : 'none';
-            if (momoSum > 0 && rate && !chargeTouched) charge.value = (Math.round(momoSum * rate) / 100).toFixed(2);
+            // MoMo kept in the MoMo wallet is not withdrawn: no charge.
+            var into = document.getElementById('bank_id'), intoOpt = into.options[into.selectedIndex];
+            var intoKind = intoOpt && intoOpt.value ? intoOpt.dataset.kind : '';
+            var noCharge = intoKind === 'momo';
+            if (noCharge) { charge.value = '0'; }
+            document.getElementById('intoNote').textContent = intoKind === 'cash'
+                ? 'Kept as cash in ' + intoOpt.dataset.name + ' — pay salaries or expenses from it under Payments.'
+                : intoKind === 'momo' ? 'Kept in the MoMo wallet — no withdrawal charge; pay by MoMo from it under Payments.' : '';
+            document.getElementById('chargeBox').style.display = momoSum > 0 && !noCharge ? '' : 'none';
+            if (momoSum > 0 && !noCharge && rate && !chargeTouched) charge.value = (Math.round(momoSum * rate) / 100).toFixed(2);
             if (momoSum <= 0 && !chargeTouched) charge.value = '';
             var chg = momoSum > 0 ? (parseFloat(charge.value) || 0) : 0;
             document.getElementById('chargeShow').textContent = '(' + money(chg) + ')';
@@ -333,6 +372,10 @@
             document.getElementById('pvIn').textContent = money(gross);
             document.getElementById('pvOut').textContent = money(chg);
             document.getElementById('pvChargeRow').style.display = chg > 0 ? '' : 'none';
+            var what = cashSum > 0 && momoSum > 0 ? 'cash + MoMo' : (momoSum > 0 ? 'MoMo' : 'cash');
+            document.getElementById('slipLabel').textContent = intoKind && intoKind !== 'bank' ? 'Amount added' : 'Amount on slip';
+            document.getElementById('pvHead').textContent = intoKind && intoKind !== 'bank' ? 'On ' + intoOpt.dataset.name + ' this shows as:' : 'On the bank account this shows as:';
+            document.getElementById('pvInLabel').textContent = (intoKind === 'cash' ? 'Collections kept as cash' : intoKind === 'momo' ? 'Collections into the MoMo wallet' : 'Deposit') + ' (' + what + ')';
 
             var offPage = cash.concat(momo).filter(function (c) { return !document.body.contains(c); }).length;
             var note = document.getElementById('pickedNote');
@@ -348,13 +391,13 @@
 
             var why = '';
             if (gross <= 0) why = 'Tick the cash and/or MoMo you are depositing.';
-            else if (!document.getElementById('bank_id').value) why = 'Choose the bank account.';
+            else if (!document.getElementById('bank_id').value) why = 'Choose where the money goes.';
             else if (momoSum > 0 && charge.value === '') why = 'Enter the MoMo withdrawal charge (0 if none).';
             else if (momoSum > 0 && chg >= momoSum) why = 'The charge must be less than the MoMo withdrawn.';
             var btn = document.getElementById('depositBtn');
             if (form.dataset.submitting !== '1') {
                 btn.disabled = !!why;
-                btn.innerHTML = gross > 0 ? 'Deposit GH&#8373; ' + money(slip) : 'Tick what you are depositing';
+                btn.innerHTML = gross > 0 ? (intoKind && intoKind !== 'bank' ? 'Put GH&#8373; ' + money(slip) + ' into ' + intoOpt.dataset.name : 'Deposit GH&#8373; ' + money(slip)) : 'Tick what you are depositing';
             }
             document.getElementById('whyDisabled').textContent = gross > 0 ? why : '';
 
@@ -382,7 +425,7 @@
         form.addEventListener('submit', function (e) {
             var slip = document.getElementById('slipSum').textContent;
             var bank = document.getElementById('bank_id');
-            if (!confirm('Deposit GH₵ ' + slip + ' to ' + bank.options[bank.selectedIndex].text + '?')) { e.preventDefault(); return; }
+            if (!confirm('Put GH₵ ' + slip + ' into ' + bank.options[bank.selectedIndex].text.trim() + '?')) { e.preventDefault(); return; }
 
             // Ticks on pages not shown are not in the form: send them as hidden fields.
             var carry = document.getElementById('offPageTicks');

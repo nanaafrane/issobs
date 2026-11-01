@@ -26,7 +26,7 @@ class ReceiptWorkflow
         $user = Auth::user();
         $userId = $user?->id;
 
-        if ($user?->role?->id == '2') {
+        if ($user?->role?->id == '2' || $user?->role?->name === 'Director') {
             $receipt->ho_status = 'approved';
             $receipt->user_id2 = $userId;
         }

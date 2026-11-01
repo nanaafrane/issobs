@@ -70,12 +70,14 @@ class BankDepositController extends Controller
 
         $waiting = $this->book->waiting($fieldId ? [$fieldId] : $allowed);
         $fields = $allowed === null ? Field::orderBy('name')->get() : Field::whereIn('id', $allowed)->orderBy('name')->get();
-        $banks = Bank::banksOnly()->operating()->orderBy('name')->get();
+        // Banks first, then office cash boxes and MoMo wallets (collections can be kept and spent there).
+        $banks = Bank::operating()->with('field')->orderByRaw("CASE kind WHEN 'bank' THEN 0 WHEN 'cash' THEN 1 ELSE 2 END")->orderBy('name')->get();
+        $pending = $this->book->awaitingApproval($fieldId ? [$fieldId] : $allowed);
         $canDeposit = Auth::user()?->hasRole(self::DEPOSIT_ROLES) ?? false;
         $canCorrect = Auth::user()?->hasRole(self::CORRECT_ROLES) ?? false;
         $chargeRate = is_numeric(config('banking.momo_charge_rate')) ? (float) config('banking.momo_charge_rate') : null;
 
-        return view('banks.deposit_index', compact('waiting', 'fields', 'fieldId', 'banks', 'canDeposit', 'canCorrect', 'chargeRate'));
+        return view('banks.deposit_index', compact('waiting', 'pending', 'fields', 'fieldId', 'banks', 'canDeposit', 'canCorrect', 'chargeRate'));
     }
 
     public function store(StoreBankDepositRequest $request, SubmissionGuard $guard)

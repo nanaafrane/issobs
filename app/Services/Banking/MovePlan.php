@@ -58,12 +58,13 @@ class MovePlan
 
     public static function leaveOptions(Bank $b): array
     {
-        return $b->isCash() ? ['cash'] : ['transfer', 'cheque', 'withdrawal'];
+        // A MoMo wallet sends MoMo (a transfer) or is cashed out at an agent; no cheques.
+        return $b->isCash() ? ['cash'] : ($b->isWallet() ? ['transfer', 'withdrawal'] : ['transfer', 'cheque', 'withdrawal']);
     }
 
     public static function arriveOptions(Bank $b): array
     {
-        return $b->isCash() ? ['cash'] : ['transfer', 'cheque', 'cash'];
+        return $b->isCash() ? ['cash'] : ($b->isWallet() ? ['transfer', 'cash'] : ['transfer', 'cheque', 'cash']);
     }
 
     /**
