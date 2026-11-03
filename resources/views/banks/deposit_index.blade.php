@@ -30,6 +30,11 @@
     @php
         $cashWaiting = $waiting->where('cash_due', '>', 0);
         $momoWaiting = $waiting->where('momo_due', '>', 0);
+        $wallets = $wallets ?? collect();
+        $walletCan = round((float) $wallets->sum('available_amount'), 2);
+        $walletHeld = round((float) $wallets->sum('pending_amount'), 2);
+        $momoToWithdraw = round($momoWaiting->sum('momo_due') + max(0, $walletCan), 2);
+        $walletSel = (string) old('wallet_id', $wallets->count() === 1 ? $wallets->first()->id : '');
         $oldest = $waiting->max('days_waiting');
         $gh = fn ($v) => number_format((float) $v, 2);
     @endphp
@@ -72,9 +77,13 @@
                 <div class="small text-muted">{{ $cashWaiting->count() }} {{ \Illuminate\Support\Str::plural('receipt', $cashWaiting->count()) }}</div>
             </div></div></div>
             <div class="col-6 col-lg-3"><div class="card dp-tile momo"><div class="card-body py-3">
-                <div class="small text-muted">MoMo waiting</div>
-                <div class="fs-5 fw-bold">GH&#8373; {{ $gh($momoWaiting->sum('momo_due')) }}</div>
-                <div class="small text-muted">{{ $momoWaiting->count() }} {{ \Illuminate\Support\Str::plural('receipt', $momoWaiting->count()) }}</div>
+                <div class="small text-muted">MoMo to withdraw</div>
+                <div class="fs-5 fw-bold">GH&#8373; {{ $gh($momoToWithdraw) }}</div>
+                <div class="small text-muted">
+                    @if($wallets->isNotEmpty())GH&#8373; {{ $gh(max(0, $walletCan)) }} in the wallet @if($walletHeld > 0)· {{ $gh($walletHeld) }} awaiting approval @endif @endif
+                    @if($momoWaiting->isNotEmpty()){{ $wallets->isNotEmpty() ? '· ' : '' }}{{ $momoWaiting->count() }} older {{ \Illuminate\Support\Str::plural('receipt', $momoWaiting->count()) }}@endif
+                    @if($wallets->isEmpty() && $momoWaiting->isEmpty())nothing waiting @endif
+                </div>
             </div></div></div>
             <div class="col-6 col-lg-3"><div class="card dp-tile old"><div class="card-body py-3">
                 <div class="small text-muted">Oldest waiting</div>
@@ -83,7 +92,7 @@
             </div></div></div>
             <div class="col-6 col-lg-3"><div class="card dp-tile"><div class="card-body py-3">
                 <div class="small text-muted">Total approved, waiting</div>
-                <div class="fs-5 fw-bold">GH&#8373; {{ $gh($waiting->sum('cash_due') + $waiting->sum('momo_due')) }}</div>
+                <div class="fs-5 fw-bold">GH&#8373; {{ $gh($waiting->sum('cash_due') + $momoToWithdraw) }}</div>
                 <div class="small text-muted">before MoMo charges</div>
             </div></div></div>
         </div>
@@ -122,6 +131,7 @@
                                     @php
                                         $cashOld = old('cash') ? in_array($c->id, (array) old('cash')) : false;
                                         $momoOld = old('momo') ? in_array($c->id, (array) old('momo')) : false;
+                                        $walletOld = old('wallet') ? in_array($c->id, (array) old('wallet')) : false;
                                     @endphp
                                     <tr data-id="{{ $c->id }}">
                                         <td class="dp-cash dp-num" data-order="{{ $c->cash_due }}">
@@ -134,8 +144,13 @@
                                                 <span class="dp-ref">deposited</span>
                                             @endif
                                         </td>
-                                        <td class="dp-momo dp-num" data-order="{{ $c->momo_due }}">
-                                            @if($c->momo_due > 0)
+                                        <td class="dp-momo dp-num" data-order="{{ $c->momo_due + $c->wallet_due }}">
+                                            @if($c->wallet_due > 0)
+                                                @if($canDeposit)
+                                                <label class="dp-pick justify-content-end"><input type="checkbox" class="form-check-input dp-check" name="wallet[]" value="{{ $c->id }}" data-kind="wallet" data-wallet="{{ $c->wallet_id }}" data-amount="{{ $c->wallet_due }}" {{ $walletOld ? 'checked' : '' }}> {{ $gh($c->wallet_due) }}</label>
+                                                @else {{ $gh($c->wallet_due) }} @endif
+                                                <div class="dp-ref">in wallet @if($c->momo_ref)· ID {{ $c->momo_ref }}@endif</div>
+                                            @elseif($c->momo_due > 0)
                                                 @if($canDeposit)
                                                 <label class="dp-pick justify-content-end"><input type="checkbox" class="form-check-input dp-check" name="momo[]" value="{{ $c->id }}" data-kind="momo" data-amount="{{ $c->momo_due }}" {{ $momoOld ? 'checked' : '' }}> {{ $gh($c->momo_due) }}</label>
                                                 @else {{ $gh($c->momo_due) }} @endif
@@ -214,6 +229,26 @@
                             </div>
 
                             <div class="dp-line"><span>Cash <span class="text-muted small" id="cashCount"></span></span><span class="dp-num" id="cashSum">0.00</span></div>
+                            @if($wallets->isNotEmpty())
+                            <div class="border rounded p-2 my-2" id="walletBox">
+                                <div class="small fw-semibold mb-1"><i class="bx bx-mobile-alt me-1"></i> MoMo from the wallet</div>
+                                @if($wallets->count() > 1)
+                                <select name="wallet_id" id="wallet_id" class="form-select form-select-sm mb-1">
+                                    @foreach($wallets as $w)
+                                        <option value="{{ $w->id }}" data-name="{{ $w->name }}" data-available="{{ max(0, $w->available_amount) }}" data-pending="{{ $w->pending_amount }}" @selected($walletSel === (string) $w->id)>{{ $w->name }}@if($w->acc_number) — {{ $w->acc_number }}@endif</option>
+                                    @endforeach
+                                </select>
+                                @else
+                                @php $w = $wallets->first(); @endphp
+                                <select name="wallet_id" id="wallet_id" class="d-none"><option value="{{ $w->id }}" data-name="{{ $w->name }}" data-available="{{ max(0, $w->available_amount) }}" data-pending="{{ $w->pending_amount }}" selected>{{ $w->name }}</option></select>
+                                <div class="small">{{ $w->name }}@if($w->acc_number) <span class="text-muted">· {{ $w->acc_number }}</span>@endif</div>
+                                @endif
+                                <div class="small text-muted" id="walletInfo"></div>
+                                <label class="form-label small mb-0 mt-1" for="wallet_amount">Withdrawn from the wallet (GH&#8373;)</label>
+                                <input type="number" step="0.01" min="0" name="wallet_amount" id="wallet_amount" class="form-control form-control-sm text-end" value="{{ old('wallet_amount') }}" placeholder="0.00">
+                                <div class="form-text">Tick its MoMo receipts in the list, or type what was cashed out (up to what the wallet can give).</div>
+                            </div>
+                            @endif
                             <div class="dp-line"><span>MoMo withdrawn <span class="text-muted small" id="momoCount"></span></span><span class="dp-num" id="momoSum">0.00</span></div>
 
                             <div id="chargeBox" class="mt-2" style="display:none">
@@ -233,6 +268,10 @@
                                 <div class="text-muted mb-1" id="pvHead">On the bank account this shows as:</div>
                                 <div class="dp-line"><span id="pvInLabel">Deposit (cash + MoMo)</span><span class="dp-num in">+ <span id="pvIn">0.00</span></span></div>
                                 <div class="dp-line" id="pvChargeRow"><span>MoMo withdrawal charge</span><span class="dp-num out">− <span id="pvOut">0.00</span></span></div>
+                                <div id="pvWallet" style="display:none">
+                                    <div class="text-muted mt-2 mb-1">On <span id="pvWalletName"></span>:</div>
+                                    <div class="dp-line"><span>MoMo withdrawn <span id="pvWalletNote" class="text-muted"></span></span><span class="dp-num out">− <span id="pvWalletOut">0.00</span></span></div>
+                                </div>
                             </div>
 
                             <div class="mt-3">
@@ -258,7 +297,7 @@
             <div class="card-header py-2 d-flex flex-wrap justify-content-between align-items-center gap-2">
                 <h6 class="mb-0"><i class="bx bx-time-five text-warning me-1"></i> Awaiting finance approval
                     <span class="small text-muted fw-normal">— not available to bank or spend until the Finance Manager / a Director approves the receipt</span></h6>
-                <div class="small">Cash <strong>GH₵ {{ number_format($pending->sum('cash_due'), 2) }}</strong> · MoMo <strong>GH₵ {{ number_format($pending->sum('momo_due'), 2) }}</strong>
+                <div class="small">Cash <strong>GH₵ {{ number_format($pending->sum('cash_due'), 2) }}</strong> · MoMo <strong>GH₵ {{ number_format($pending->sum('momo_due') + $pending->sum('wallet_due'), 2) }}</strong>
                     @if(Auth::user()?->hasRole(['Finance Manager', 'Director'])) · <a href="{{ route('receipt.pending') }}">Approve receipts</a>@endif</div>
             </div>
             <div class="table-responsive" style="max-height: 18rem; overflow-y: auto;">
@@ -267,7 +306,7 @@
                     <tbody>
                     @foreach($pending as $c)
                         <tr><td>@if($c->receipt_id)<a href="{{ url('receipt', $c->receipt_id) }}">FWSSR{{ $c->receipt_id }}</a>@endif</td><td>{{ $c->client_name ?? $c->paid_by }}</td><td>{{ $c->office }}</td>
-                            <td>{{ $c->created_at?->format('d M Y') }}</td><td class="text-end">{{ $c->cash_due > 0 ? number_format($c->cash_due, 2) : '' }}</td><td class="text-end">{{ $c->momo_due > 0 ? number_format($c->momo_due, 2) : '' }}</td></tr>
+                            <td>{{ $c->created_at?->format('d M Y') }}</td><td class="text-end">{{ $c->cash_due > 0 ? number_format($c->cash_due, 2) : '' }}</td><td class="text-end">{{ $c->momo_due + $c->wallet_due > 0 ? number_format($c->momo_due + $c->wallet_due, 2) : '' }}@if($c->wallet_due > 0)<div class="dp-ref">in wallet</div>@endif</td></tr>
                     @endforeach
                     </tbody>
                 </table>
@@ -344,13 +383,32 @@
         function sum(list) { return list.reduce(function (s, c) { return s + parseFloat(c.dataset.amount || 0); }, 0); }
         function count(n) { return n ? '(' + n + ')' : ''; }
 
+        var walletSel = document.getElementById('wallet_id'), walletAmt = document.getElementById('wallet_amount');
+        var walletFromTicks = false;
+        function walletPart(ticks) {
+            if (!walletAmt) return { amount: 0, name: '', over: false };
+            var opt = walletSel.options[walletSel.selectedIndex];
+            if (ticks.length) {
+                // Ticked wallet receipts decide the amount (and the wallet).
+                if (walletSel.value !== ticks[0].dataset.wallet) { walletSel.value = ticks[0].dataset.wallet; opt = walletSel.options[walletSel.selectedIndex]; }
+                walletAmt.value = sum(ticks).toFixed(2); walletAmt.readOnly = true; walletFromTicks = true;
+            } else if (walletFromTicks) {
+                walletAmt.value = ''; walletAmt.readOnly = false; walletFromTicks = false;
+            }
+            var can = opt ? parseFloat(opt.dataset.available || 0) : 0, held = opt ? parseFloat(opt.dataset.pending || 0) : 0;
+            document.getElementById('walletInfo').textContent = 'Can give GH₵ ' + money(can) + ' now' + (held > 0 ? ' · GH₵ ' + money(held) + ' held until receipts are approved' : '');
+            var amount = parseFloat(walletAmt.value) || 0;
+            return { amount: amount, name: opt ? opt.dataset.name : '', over: amount > can + 0.004, id: walletSel.value };
+        }
+
         function update() {
-            var cash = picked('cash'), momo = picked('momo');
-            var cashSum = sum(cash), momoSum = sum(momo);
+            var cash = picked('cash'), momo = picked('momo'), wticks = picked('wallet');
+            var wallet = walletPart(wticks);
+            var cashSum = sum(cash), momoSum = sum(momo) + wallet.amount;
             document.getElementById('cashSum').textContent = money(cashSum);
             document.getElementById('momoSum').textContent = money(momoSum);
             document.getElementById('cashCount').textContent = count(cash.length);
-            document.getElementById('momoCount').textContent = count(momo.length);
+            document.getElementById('momoCount').textContent = momo.length + wticks.length ? count(momo.length + wticks.length) : (wallet.amount > 0 ? '(from wallet)' : '');
 
             // MoMo kept in the MoMo wallet is not withdrawn: no charge.
             var into = document.getElementById('bank_id'), intoOpt = into.options[into.selectedIndex];
@@ -376,15 +434,20 @@
             document.getElementById('slipLabel').textContent = intoKind && intoKind !== 'bank' ? 'Amount added' : 'Amount on slip';
             document.getElementById('pvHead').textContent = intoKind && intoKind !== 'bank' ? 'On ' + intoOpt.dataset.name + ' this shows as:' : 'On the bank account this shows as:';
             document.getElementById('pvInLabel').textContent = (intoKind === 'cash' ? 'Collections kept as cash' : intoKind === 'momo' ? 'Collections into the MoMo wallet' : 'Deposit') + ' (' + what + ')';
+            var pvW = document.getElementById('pvWallet');
+            pvW.style.display = wallet.amount > 0 ? '' : 'none';
+            document.getElementById('pvWalletName').textContent = wallet.name;
+            document.getElementById('pvWalletOut').textContent = money(wallet.amount);
+            document.getElementById('pvWalletNote').textContent = chg > 0 ? '(charge ' + money(chg) + ' shown on ' + (intoOpt && intoOpt.value ? intoOpt.dataset.name : 'the bank') + ')' : '';
 
-            var offPage = cash.concat(momo).filter(function (c) { return !document.body.contains(c); }).length;
+            var offPage = cash.concat(momo, wticks).filter(function (c) { return !document.body.contains(c); }).length;
             var note = document.getElementById('pickedNote');
-            if (note) note.textContent = cash.length + momo.length
-                ? (cash.length + momo.length) + ' ticked' + (offPage ? ' (' + offPage + ' on other pages)' : '')
+            if (note) note.textContent = cash.length + momo.length + wticks.length
+                ? (cash.length + momo.length + wticks.length) + ' ticked' + (offPage ? ' (' + offPage + ' on other pages)' : '')
                 : '';
 
             rows().forEach(function (tr) {
-                var c = tr.querySelector('.dp-check[data-kind="cash"]'), m = tr.querySelector('.dp-check[data-kind="momo"]');
+                var c = tr.querySelector('.dp-check[data-kind="cash"]'), m = tr.querySelector('.dp-check[data-kind="momo"], .dp-check[data-kind="wallet"]');
                 tr.classList.toggle('dp-on-cash', !!(c && c.checked));
                 tr.classList.toggle('dp-on-momo', !!(m && m.checked));
             });
@@ -392,6 +455,9 @@
             var why = '';
             if (gross <= 0) why = 'Tick the cash and/or MoMo you are depositing.';
             else if (!document.getElementById('bank_id').value) why = 'Choose where the money goes.';
+            else if (wallet.amount > 0 && wallet.id && intoOpt && intoOpt.value === wallet.id) why = 'The MoMo comes out of ' + wallet.name + ' — choose the bank or cash box it goes into.';
+            else if (wallet.over) why = wallet.name + ' cannot give that much now.';
+            else if (wticks.length && wticks.some(function (c) { return c.dataset.wallet !== wticks[0].dataset.wallet; })) why = 'Tick MoMo from one wallet at a time.';
             else if (momoSum > 0 && charge.value === '') why = 'Enter the MoMo withdrawal charge (0 if none).';
             else if (momoSum > 0 && chg >= momoSum) why = 'The charge must be less than the MoMo withdrawn.';
             var btn = document.getElementById('depositBtn');
@@ -413,12 +479,19 @@
         }
 
         form.addEventListener('change', update);
+        if (walletAmt) walletAmt.addEventListener('input', update);
         document.getElementById('bank_id').addEventListener('change', update);
         document.querySelectorAll('[data-tick]').forEach(function (b) {
             b.addEventListener('click', function () {
                 var kind = b.dataset.tick;
                 // "Tick all" ticks every row that matches the search box, on every page.
-                (kind === 'none' ? checks(null) : checks(kind, true)).forEach(function (c) { c.checked = kind !== 'none'; });
+                var list = kind === 'none' ? checks(null) : checks(kind, true);
+                if (kind === 'momo') {
+                    // Wallet MoMo too, from the first wallet ticked (one wallet per slip).
+                    var w = checks('wallet', true), first = w.length ? w[0].dataset.wallet : null;
+                    list = list.concat(w.filter(function (c) { return c.dataset.wallet === first; }));
+                }
+                list.forEach(function (c) { c.checked = kind !== 'none'; });
                 update();
             });
         });
@@ -430,7 +503,7 @@
             // Ticks on pages not shown are not in the form: send them as hidden fields.
             var carry = document.getElementById('offPageTicks');
             carry.innerHTML = '';
-            picked('cash').concat(picked('momo')).forEach(function (c) {
+            picked('cash').concat(picked('momo'), picked('wallet')).forEach(function (c) {
                 if (document.body.contains(c)) return;
                 var h = document.createElement('input');
                 h.type = 'hidden'; h.name = c.name; h.value = c.value;

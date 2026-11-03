@@ -3,6 +3,8 @@
     $badge = [
         'cheque' => ['Cheque received', 'bg-label-success'],
         'transfer' => ['Transfer received', 'bg-label-success'],
+        'momo' => ['MoMo received', 'bg-label-success'],
+        'momo_withdrawal' => ['MoMo withdrawn', 'bg-label-info'],
         'deposit' => ['Deposit', 'bg-label-primary'],
         'momo_charge' => ['MoMo charge', 'bg-label-danger'],
         'transfer_in' => ['Moved in', 'bg-label-info'],

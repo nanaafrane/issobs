@@ -33,6 +33,12 @@ trait PaymentModeRules
 
             'momo_transactin_id' => [$when('momo')],
             'momo_amount' => [$when('momo'), 'nullable', 'numeric', 'min:0'],
+            // Which company MoMo wallet the client paid into (credited straight away). Required once a wallet is set up.
+            'momo_to_bank_id' => [
+                Rule::requiredIf(fn () => in_array('momo', (array) $this->input('mode', []), true)
+                    && \App\Models\Bank::where('kind', 'momo')->operating()->exists()),
+                'nullable', 'integer', Rule::exists('banks', 'id')->where('kind', 'momo'),
+            ],
 
             'other_payment_descri' => [$when('other payments')],
             'other_payment_amnt' => [$when('other payments'), 'nullable', 'numeric', 'min:0'],
@@ -58,6 +64,7 @@ trait PaymentModeRules
         return [
             'cheque_to_bank_id' => 'bank the cheque is paid into',
             'transfer_to_bank_id' => 'bank the transfer was received into',
+            'momo_to_bank_id' => 'MoMo wallet the client paid into',
             'transfer_bank' => "payer's bank (transfer)",
             'cheque_bank' => "payer's bank (cheque)",
         ];

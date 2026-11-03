@@ -46,6 +46,10 @@
                     @else {{ $bank->branch }}@if($bank->acc_number) · Account {{ $bank->acc_number }}@endif @endif
                     · Statement {{ $st['from']->format('d M Y') }} – {{ $st['to']->format('d M Y') }}
                 </div>
+                @if($bank->isWallet() && ($held = $bank->awaitingApproval()) > 0)
+                <div class="small mt-1"><span class="badge bg-label-warning">GH₵ {{ number_format($held, 2) }} awaiting approval</span>
+                    <span class="st-muted">from receipts not yet approved — held in the wallet; GH₵ {{ number_format(max(0, $bank->available()), 2) }} can be withdrawn or spent now.</span></div>
+                @endif
             </div>
             @if($bank->is_active !== false)
             <div class="d-flex gap-2 no-print">

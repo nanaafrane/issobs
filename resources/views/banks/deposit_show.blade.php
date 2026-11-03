@@ -58,16 +58,17 @@
 
             <div class="col-lg-8">
                 <div class="card h-100">
-                    <div class="card-body pb-0"><h6>On the bank account</h6></div>
+                    <div class="card-body pb-0"><h6>{{ $deposit->wallet_id ? 'On the accounts' : 'On the bank account' }}</h6></div>
                     <div class="table-responsive">
                         <table class="table table-sm mb-0">
-                            <thead><tr><th>Recorded</th><th>Details</th><th class="text-end">Money in</th><th class="text-end">Money out</th><th class="text-end">Balance</th></tr></thead>
+                            <thead><tr><th>Recorded</th>@if($deposit->wallet_id)<th>Account</th>@endif<th>Details</th><th class="text-end">Money in</th><th class="text-end">Money out</th><th class="text-end">Balance</th></tr></thead>
                             <tbody>
                             @forelse($deposit->bankLines as $line)
                                 <tr>
                                     <td class="text-nowrap">{{ $line->created_at?->format('d M Y H:i') }}</td>
+                                    @if($deposit->wallet_id)<td class="text-nowrap">{{ (int) $line->bank_id === (int) $deposit->wallet_id ? $deposit->wallet?->name : $deposit->bank?->name }}</td>@endif
                                     <td>
-                                        <span class="badge {{ $line->channel === 'momo_charge' ? 'bg-label-danger' : 'bg-label-primary' }} me-1">{{ $line->channel === 'momo_charge' ? 'MoMo charge' : $line->channel }}</span>
+                                        @include('banks.partials.channel_badge', ['t' => $line])
                                         {{ $line->narration }}
                                     </td>
                                     <td class="dp-num text-success">{{ $line->credit > 0 ? $gh($line->credit) : '' }}</td>
@@ -75,7 +76,7 @@
                                     <td class="dp-num">{{ $gh($line->balance) }}</td>
                                 </tr>
                             @empty
-                                <tr><td colspan="5" class="text-muted">No bank lines.</td></tr>
+                                <tr><td colspan="6" class="text-muted">No bank lines.</td></tr>
                             @endforelse
                             </tbody>
                         </table>

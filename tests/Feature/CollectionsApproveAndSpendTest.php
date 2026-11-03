@@ -51,12 +51,14 @@ class CollectionsApproveAndSpendTest extends TestCase
     }
 
     /** A receipt as the branch enters it: not yet approved at head office. */
-    private function receipt(float $cash = 0, float $momo = 0, bool $approved = false): Collection
+    private function receipt(float $cash = 0, float $momo = 0, bool $approved = false, ?Bank $wallet = null): Collection
     {
+        $wallet ??= $momo > 0 ? $this->wallet : null;
         $inv = Invoice::create(['client_id' => $this->client->id, 'total' => 9000, 'sub_amount' => 9000, 'sub_total' => 0, 'invoice_month' => '2026-10-01', 'due_date' => now()->addDays(10), 'status' => 'unpaid', 'balance' => 0]);
         $mode = array_values(array_filter([$cash > 0 ? 'cash' : null, $momo > 0 ? 'momo' : null]));
         $this->post(route('receipt.multi.store'), ['client_id' => $this->client->id, 'receipt_month' => now()->toDateString(), 'from' => 'Kofi', 'mode' => $mode,
             'cash_amount' => $cash ?: null, 'momo_amount' => $momo ?: null, 'momo_transactin_id' => $momo ? 'MP' . random_int(1000, 99999) : null,
+            'momo_to_bank_id' => $wallet?->id,
             'invoices' => [$inv->id => ['selected' => '1']], 'confirm_duplicate' => '1'])->assertSessionHasNoErrors();
         $r = Receipt::latest('id')->first();
         if (! $approved) {
@@ -118,14 +120,12 @@ class CollectionsApproveAndSpendTest extends TestCase
         $this->assertEquals(200, $this->temaCash->fresh()->total);
     }
 
-    public function test_momo_kept_in_the_wallet_has_no_charge_and_pays_by_momo(): void
+    public function test_momo_received_into_the_wallet_pays_by_momo(): void
     {
-        $c = $this->receipt(momo: 1200, approved: true);
-        $this->into($this->wallet, ['momo' => [$c->id], 'momo_charge' => '12'])->assertSessionHasErrors('momo_charge');
-        $this->into($this->wallet, ['momo' => [$c->id]])->assertSessionHasNoErrors();
-        $this->assertEquals(1200, $this->wallet->fresh()->total);
+        $this->receipt(momo: 1200, approved: true);
+        $this->assertEquals(1200, $this->wallet->fresh()->total);    // in the wallet the moment the receipt is saved
         $this->assertSame(0, BankTransaction::where('channel', 'momo_charge')->count());
-        $this->assertStringStartsWith('Collections into the MoMo wallet', BankTransaction::where('bank_id', $this->wallet->id)->value('narration'));
+        $this->assertStringStartsWith('MoMo received', BankTransaction::where('bank_id', $this->wallet->id)->value('narration'));
 
         $this->post(route('money.payments.store'), ['mode' => 'other', 'bank_id' => $this->wallet->id, 'method' => 'cash', 'payee' => 'X',
             'payment_date' => now()->toDateString(), 'amount' => 100, 'category' => 'salaries'])->assertSessionHasErrors('method');
@@ -139,9 +139,10 @@ class CollectionsApproveAndSpendTest extends TestCase
     public function test_momo_withdrawn_into_the_office_cash_box_records_the_charge(): void
     {
         $c = $this->receipt(cash: 500, momo: 300, approved: true);
-        $this->into($this->temaCash, ['cash' => [$c->id], 'momo' => [$c->id]])->assertSessionHasErrors('momo_charge');
-        $this->into($this->temaCash, ['cash' => [$c->id], 'momo' => [$c->id], 'momo_charge' => '3'])->assertSessionHasNoErrors();
+        $this->into($this->temaCash, ['cash' => [$c->id], 'wallet' => [$c->id]])->assertSessionHasErrors('momo_charge');
+        $this->into($this->temaCash, ['cash' => [$c->id], 'wallet' => [$c->id], 'momo_charge' => '3'])->assertSessionHasNoErrors();
         $this->assertEquals(797, $this->temaCash->fresh()->total);
+        $this->assertEquals(0, $this->wallet->fresh()->total);
         $this->assertEquals(3, BankTransaction::where('bank_id', $this->temaCash->id)->where('channel', 'momo_charge')->value('debit'));
     }
 
@@ -163,8 +164,7 @@ class CollectionsApproveAndSpendTest extends TestCase
 
     public function test_wallet_cashed_out_into_the_office_cash_box(): void
     {
-        $c = $this->receipt(momo: 1000, approved: true);
-        $this->into($this->wallet, ['momo' => [$c->id]]);
+        $this->receipt(momo: 1000, approved: true);
         $this->post(route('money.transfers.store'), ['to_bank_id' => $this->temaCash->id, 'transfer_date' => now()->toDateString(),
             'lines' => [['from_bank_id' => $this->wallet->id, 'method' => 'withdrawal', 'amount' => 600]]])->assertSessionHasNoErrors();
         $this->assertEquals(400, $this->wallet->fresh()->total);

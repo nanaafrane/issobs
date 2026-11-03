@@ -211,6 +211,9 @@
                             <div class="mt-3">
                                 <div class="amount-display">GH&#8373; {{number_format($receipt->momo_amount, 2) }}</div>
                                 <div class="text-muted small mt-1">Trans ID: {{$receipt->momo_transactin_id}}</div>
+                                @if($receipt->momoWallet)
+                                <div class="small mt-1"><i class="bx bx-mobile-alt"></i> Paid into <strong>{{ $receipt->momoWallet->name }}</strong> {{ $receipt->momoWallet->acc_number }}</div>
+                                @endif
                             </div>
                         </div>
                     </div>

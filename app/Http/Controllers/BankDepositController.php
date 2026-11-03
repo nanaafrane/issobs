@@ -73,11 +73,16 @@ class BankDepositController extends Controller
         // Banks first, then office cash boxes and MoMo wallets (collections can be kept and spent there).
         $banks = Bank::operating()->with('field')->orderByRaw("CASE kind WHEN 'bank' THEN 0 WHEN 'cash' THEN 1 ELSE 2 END")->orderBy('name')->get();
         $pending = $this->book->awaitingApproval($fieldId ? [$fieldId] : $allowed);
+        // Company MoMo wallets: what each can give now, and what is held until receipts are approved.
+        $wallets = $banks->where('kind', 'momo')->values()->each(function (Bank $w) {
+            $w->setAttribute('pending_amount', $w->awaitingApproval());
+            $w->setAttribute('available_amount', $w->available());
+        });
         $canDeposit = Auth::user()?->hasRole(self::DEPOSIT_ROLES) ?? false;
         $canCorrect = Auth::user()?->hasRole(self::CORRECT_ROLES) ?? false;
         $chargeRate = is_numeric(config('banking.momo_charge_rate')) ? (float) config('banking.momo_charge_rate') : null;
 
-        return view('banks.deposit_index', compact('waiting', 'pending', 'fields', 'fieldId', 'banks', 'canDeposit', 'canCorrect', 'chargeRate'));
+        return view('banks.deposit_index', compact('waiting', 'pending', 'fields', 'fieldId', 'banks', 'wallets', 'canDeposit', 'canCorrect', 'chargeRate'));
     }
 
     public function store(StoreBankDepositRequest $request, SubmissionGuard $guard)
@@ -87,6 +92,7 @@ class BankDepositController extends Controller
 
             return redirect()->route('deposit.show', $deposit)
                 ->with('success', 'Deposit saved: GH₵ ' . number_format($deposit->total, 2) . ' to ' . $deposit->bank?->name
+                    . ($deposit->wallet_id ? ' — GH₵ ' . number_format($deposit->wallet_amount, 2) . ' of MoMo withdrawn from ' . $deposit->wallet?->name : '')
                     . ((float) $deposit->momo_charge > 0 ? ' (MoMo withdrawal charge GH₵ ' . number_format($deposit->momo_charge, 2) . ' posted as a bank debit)' : '') . '.');
         });
     }
@@ -95,7 +101,7 @@ class BankDepositController extends Controller
     public function show(BankDeposit $deposit)
     {
         abort_unless(Auth::user()?->hasRole(self::DEPOSIT_ROLES), 403);
-        $deposit->load(['bank', 'user', 'reversedBy', 'bankLines']);
+        $deposit->load(['bank', 'wallet', 'user', 'reversedBy', 'bankLines']);
         $collections = $deposit->collections()
             ->leftJoin('receipts', 'receipts.id', '=', 'collections.receipt_id')
             ->leftJoin('clients', 'clients.id', '=', 'receipts.client_id')

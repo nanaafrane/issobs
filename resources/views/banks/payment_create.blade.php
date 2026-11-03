@@ -72,7 +72,7 @@
                                 <select name="bank_id" id="bank_id" class="form-select" required>
                                     <option value="">Choose…</option>
                                     @foreach($accounts as $a)
-                                        <option value="{{ $a->id }}" data-cash="{{ $a->cannotOverdraw() ? 1 : 0 }}" data-kind="{{ $a->kind }}" data-balance="{{ (float) $a->total }}" @selected($bankSel === (string) $a->id)>{{ $a->label }} · {{ number_format($a->total, 2) }}</option>
+                                        <option value="{{ $a->id }}" data-cash="{{ $a->cannotOverdraw() ? 1 : 0 }}" data-kind="{{ $a->kind }}" data-balance="{{ $a->isWallet() ? max(0, $a->available()) : (float) $a->total }}" @selected($bankSel === (string) $a->id)>{{ $a->label }} · {{ number_format($a->total, 2) }}</option>
                                     @endforeach
                                 </select>
                             </div>

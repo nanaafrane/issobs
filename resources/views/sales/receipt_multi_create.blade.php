@@ -254,10 +254,27 @@
                                         <label for="momo_transactin_id" class="form-label">MOMO TRANSACTION ID</label>
                                         <input type="text" name="momo_transactin_id" id="momo_transactin_id" class="form-control" value="{{ $val('momo_transactin_id') }}">
                                     </div>
-                                    <div class="col-md-4">
+                                    <div class="col-md-3">
                                         <label for="momo_amount" class="form-label">MOMO AMOUNT</label>
                                         <input type="number" step="0.01" min="0" name="momo_amount" id="momo_amount" class="form-control mi-money" value="{{ $val('momo_amount') }}" placeholder="GH&#8373;">
                                     </div>
+                                    @php
+                                        $wallets = $wallets ?? collect();
+                                        $walletSel = (string) old('momo_to_bank_id', $editing?->momo_to_bank_id ?? ($editing ? '' : ($wallets->count() === 1 ? $wallets->first()->id : '')));
+                                    @endphp
+                                    @if($wallets->isNotEmpty() || $editing?->momo_to_bank_id)
+                                    <div class="col-md-3">
+                                        <label for="momo_to_bank_id" class="form-label">PAID INTO (OUR MOMO WALLET)</label>
+                                        <select name="momo_to_bank_id" id="momo_to_bank_id" class="form-select @error('momo_to_bank_id') is-invalid @enderror">
+                                            <option value="">Select wallet…</option>
+                                            @foreach($wallets as $w)
+                                                <option value="{{ $w->id }}" @selected($walletSel === (string) $w->id)>{{ $w->name }}@if($w->acc_number) — {{ $w->acc_number }}@endif</option>
+                                            @endforeach
+                                        </select>
+                                        <small class="text-muted d-block">Credited to the wallet when saved; withdrawn to the bank later at Bank Deposit.</small>
+                                        @error('momo_to_bank_id')<span class="invalid-feedback d-block"><strong>{{ $message }}</strong></span>@enderror
+                                    </div>
+                                    @endif
                                 </div>
                             </div>
 
@@ -432,7 +449,7 @@
         // ---- payment modes: show the row of each ticked mode ----
         const modes = {
             'cash': { row: '#cashrow', required: ['#cash_amount'] },
-            'momo': { row: '#momorow', required: ['#momo_transactin_id', '#momo_amount'] },
+            'momo': { row: '#momorow', required: ['#momo_transactin_id', '#momo_amount'].concat($('#momo_to_bank_id option').length > 1 ? ['#momo_to_bank_id'] : []) },
             'cheque': { row: '#chequerow', required: ['#cheque_reference', '#cheque_amount', '#cheque_bank', '#cheque_to_bank_id'] },
             'transfer': { row: '#transferrow', required: ['#transfer_reference', '#transfer_amount', '#transfer_bank', '#transfer_to_bank_id'] },
             'other payments': { row: '#otherpayrow', required: ['#other_payment_descri', '#other_payment_amnt'] },

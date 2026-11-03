@@ -26,6 +26,7 @@ class AccountReports
     public const SOURCES = [
         'receipt_cheque' => 'Cheques received from clients',
         'receipt_transfer' => 'Transfers received from clients',
+        'receipt_momo' => 'MoMo received from clients (into the wallet)',
         'deposit' => 'Cash & MoMo collected (banked or kept)',
         'momo_charge' => 'MoMo withdrawal charges',
         'adjustment' => 'Adjustments',
@@ -78,9 +79,10 @@ class AccountReports
     {
         $rows = BankTransaction::query()
             ->leftJoin('account_payments', 'account_payments.id', '=', 'bank_transactions.payment_id')
+            ->leftJoin('bank_deposits', 'bank_deposits.id', '=', 'bank_transactions.deposit_id')
             ->whereBetween('bank_transactions.entry_date', [$from->toDateString(), $to->toDateString()])
             ->when($bankIds !== null, fn ($q) => $q->whereIn('bank_transactions.bank_id', $bankIds ?: [0]))
-            ->get(['bank_transactions.channel', 'bank_transactions.receipt_id', 'bank_transactions.credit', 'bank_transactions.debit', 'account_payments.category']);
+            ->get(['bank_transactions.channel', 'bank_transactions.receipt_id', 'bank_transactions.credit', 'bank_transactions.debit', 'account_payments.category', 'bank_deposits.wallet_amount']);
 
         $in = [];
         $out = [];
@@ -89,10 +91,25 @@ class AccountReports
         // Borrowed money (creditors / director's loan) and paying it back: financing, not income or spending.
         $financing = ['received' => 0.0, 'repaid' => 0.0];
         foreach ($rows as $r) {
-            if (in_array($r->channel, ['transfer_in', 'transfer_out'], true)) {
+            if (in_array($r->channel, ['transfer_in', 'transfer_out', 'momo_withdrawal'], true)) {
+                // Between our own accounts (incl. MoMo withdrawn from the wallet for a deposit slip).
                 $internal += (float) $r->credit;
                 $internalCount += $r->credit > 0 ? 1 : 0;
                 continue;
+            }
+            if ($r->channel === 'deposit' && (float) $r->wallet_amount > 0) {
+                // The MoMo part of this slip came out of our own wallet: already counted when it was received.
+                $w = (float) $r->wallet_amount;
+                if ((float) $r->credit > 0) {
+                    $r->credit = round((float) $r->credit - $w, 2);
+                    $internal += $w;
+                    $internalCount++;
+                } elseif ((float) $r->debit > 0) {
+                    $r->debit = round((float) $r->debit - $w, 2);   // a reversal: the wallet line puts it back
+                }
+                if (abs((float) $r->credit) < 0.005 && abs((float) $r->debit) < 0.005) {
+                    continue;
+                }
             }
             if ($r->channel === 'loan_in') {
                 $financing['received'] += (float) $r->credit - (float) $r->debit;
@@ -168,7 +185,7 @@ class AccountReports
 
             return ['pay_' . $cat, AccountPayment::CATEGORIES[$cat] ?? ucfirst($cat)];
         }
-        if (in_array($r->channel, ['cheque', 'transfer'], true) && $r->receipt_id) {
+        if (in_array($r->channel, ['cheque', 'transfer', 'momo'], true) && $r->receipt_id) {
             $k = 'receipt_' . $r->channel;
 
             return [$k, self::SOURCES[$k]];

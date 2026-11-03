@@ -94,6 +94,32 @@ class Bank extends Model
         return $this->isCash() || $this->isWallet();
     }
 
+    /**
+     * MoMo in this wallet from receipts the Finance Manager / a Director has not yet approved.
+     * It is really in the wallet, but cannot be withdrawn or spent until approved.
+     */
+    public function awaitingApproval(): float
+    {
+        if (! $this->isWallet() || ! $this->exists) {
+            return 0.0;
+        }
+        $net = BankTransaction::query()
+            ->join('receipts', 'receipts.id', '=', 'bank_transactions.receipt_id')
+            ->where('bank_transactions.bank_id', $this->id)
+            ->where('bank_transactions.channel', 'momo')
+            ->where(fn ($q) => $q->whereNull('receipts.ho_status')->orWhere('receipts.ho_status', '!=', 'approved'))
+            ->selectRaw('COALESCE(SUM(bank_transactions.credit),0) - COALESCE(SUM(bank_transactions.debit),0) AS net')
+            ->value('net');
+
+        return max(0.0, round((float) $net, 2));
+    }
+
+    /** What can be withdrawn or spent now: the balance less MoMo still awaiting approval. */
+    public function available(): float
+    {
+        return round((float) $this->total - $this->awaitingApproval(), 2);
+    }
+
     /** The office a cash box or wallet belongs to (e.g. Tema office cash). */
     public function field()
     {

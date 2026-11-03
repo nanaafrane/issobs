@@ -26,6 +26,7 @@ class Receipt extends Model
         'unapplied_amount',
         'transfer_amount',
         'momo_transactin_id',
+        'momo_to_bank_id',
         'other_payment_descri',
         'other_payment_amnt',
         'momo_amount',
@@ -84,6 +85,12 @@ class Receipt extends Model
     public function transferToBank()
     {
         return $this->belongsTo(Bank::class, 'transfer_to_bank_id');
+    }
+
+    /** The company MoMo wallet the client paid into. */
+    public function momoWallet()
+    {
+        return $this->belongsTo(Bank::class, 'momo_to_bank_id');
     }
 
     /** True when the receipt pays more than one invoice. */

@@ -593,6 +593,52 @@ box with Move money (method "withdrawal"); a cash box can be paid into the walle
 **Setting up.** Bank & cash → Add account → "MoMo wallet" (wallet number required) or
 "Cash on hand" (choose the office and who holds it). Create one cash box per office.
 
+## 14. MoMo paid into the company MoMo wallet
+
+All branches receive client MoMo into one company wallet, so the app now treats the wallet as an
+account, like a bank:
+
+**At the receipt.** When MoMo is ticked, "PAID INTO (OUR MOMO WALLET)" picks the wallet (the only
+wallet is chosen automatically). Saving the receipt credits the wallet at once
+("MoMo received — receipt FWSSR…", channel `momo`), the same way cheques and transfers go
+straight into their bank. Editing the receipt re-posts the difference; voiding it takes the MoMo
+back out. Once a wallet exists, a MoMo receipt must name it.
+
+**Finance approval.** MoMo from a receipt the Finance Manager / a Director has not approved is
+really in the wallet but is *held*: the wallet page shows "GH₵ X awaiting approval", and it can
+be neither withdrawn at Bank Deposit nor spent (Payments, pay-outs, Move money). What can be used
+is `available = balance − awaiting approval`.
+
+**Withdrawing at Bank Deposit.** The slip panel has "MoMo from the wallet". Either
+
+* tick the MoMo receipts in the list (marked "in wallet") — the amount is their total and those
+  receipts show as banked on this slip (and are locked, as before); or
+* type the amount actually cashed out, any amount up to what the wallet can give.
+
+The MoMo can go on a slip alone or with cash. The list only shows wallet MoMo still in the
+wallet: newest receipts first, up to the wallet's available balance (older MoMo already
+withdrawn by amount or spent drops off).
+
+**How a slip is booked** (MoMo W from the wallet, cash K, charge C):
+
+| Account | Line | Amount |
+|---|---|---|
+| Wallet | MoMo withdrawn for slip … — "withdrawal charge GH₵ C (debited on GCB …)" | − W |
+| Bank | Deposit slip … — cash K + MoMo from the wallet W | + (K + W) |
+| Bank | MoMo withdrawal charge | − C |
+
+The charge is shown on both statements but booked once (on the bank, as before), so the total
+of all accounts falls by exactly C. If the network takes the fee from the wallet on top of the
+cash-out, enter W as the total that left the wallet (cash + fee) and C as the fee: the slip is
+still W − C. Reversing a slip puts W back into the wallet.
+
+**Reports.** Client MoMo counts as money in when it reaches the wallet ("MoMo received from
+clients"); withdrawing it to the bank is a move between our own accounts, not new income.
+
+**Older MoMo** (receipts saved before the wallet, with no wallet on them) stays on Bank Deposit
+as before: tick it and deposit it with its charge, or put it into the wallet ("Into" → the
+wallet, no charge).
+
 ## Code map
 
 | File | Purpose |
@@ -614,6 +660,8 @@ box with Move money (method "withdrawal"); a cash box can be paid into the walle
 | `app/Services/Overtime/OvertimePayouts.php`, `app/Http/Controllers/OvertimePayoutController.php`, `resources/views/overtime/payout*` | Overtime pay-outs: one expense + payment per office and period, disbursement per guard, returns, cancel, payroll check |
 | `tests/Feature/OvertimePayoutTest.php` | Cash / MoMo / payroll pay-outs, disbursement, returns, locks, office scope, migration |
 | `app/Services/Banking/CreditorBook.php`, `app/Http/Controllers/CreditorController.php`, `resources/views/creditors/*` | Creditors: money received, paid on our behalf, repaid (+ interest), reversals, statements |
+| `database/migrations/2026_11_02_090000_add_momo_wallet_to_receipts_and_deposits.php`, `Bank::awaitingApproval()/available()` | Receipt's MoMo wallet; slip's wallet part; MoMo held until approval |
+| `tests/Feature/MomoWalletReceiptsTest.php` | MoMo credited to the wallet, held until approval, withdrawn by ticks or amount, charge once, reversal, edit/void, reports, older MoMo |
 | `tests/Feature/CollectionsApproveAndSpendTest.php` | Finance approval before deposit, office cash boxes, MoMo wallet, salaries paid from collections, no overdraw, reversal guard |
 | `tests/Feature/CreditorsTest.php` | Director's loan in, on behalf, repay, interest, reversals, statement, financing kept out of in/out |
 | `app/Services/Receipts/BalanceRecompute.php` + `routes/console.php` | `receipts:recompute` |

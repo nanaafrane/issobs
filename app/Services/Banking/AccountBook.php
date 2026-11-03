@@ -380,6 +380,12 @@ class AccountBook
             throw ValidationException::withMessages([$errorField ?? 'amount' => $bank->name . ' only holds GH₵ ' . number_format((float) $bank->total, 2)
                 . ' — it cannot pay out GH₵ ' . number_format(-$amount, 2) . '. Fund it from a bank first.']);
         }
+        if ($amount < 0 && $bank->isWallet() && $balance < $bank->awaitingApproval() - 0.004) {
+            // MoMo from receipts not yet approved by the Finance Manager / a Director is held back.
+            throw ValidationException::withMessages([$errorField ?? 'amount' => $bank->name . ' holds GH₵ ' . number_format((float) $bank->total, 2)
+                . ', but GH₵ ' . number_format($bank->awaitingApproval(), 2) . ' of it is from receipts not yet approved — only GH₵ '
+                . number_format(max(0, $bank->available()), 2) . ' can be used now.']);
+        }
 
         $line = BankTransaction::create(array_merge([
             'bank_id' => $bank->id,

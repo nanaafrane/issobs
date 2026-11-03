@@ -14,7 +14,9 @@ use App\Models\Receipt;
  *   cash      -> Collections -> Bank Deposit
  *   cheque    -> credited to receipts.cheque_to_bank_id immediately
  *   transfer  -> credited to receipts.transfer_to_bank_id immediately
- *   momo      -> Collections -> Bank Deposit (withdrawn, charge posted as a debit)
+ *   momo      -> credited to receipts.momo_to_bank_id (the company MoMo wallet) immediately;
+ *                withdrawn later at Bank Deposit (charge posted as a debit there).
+ *                Old receipts with no wallet: Collections -> Bank Deposit as before.
  *
  * Editing a receipt re-posts it; deleting it reverses it. Nothing is ever
  * deleted from the bank ledger: a change adds a reversal line (debit) and a
@@ -28,6 +30,7 @@ class BankPosting
     public const CHANNELS = [
         'cheque' => ['amount' => 'cheque_amount', 'bank' => 'cheque_to_bank_id', 'ref' => 'cheque_reference', 'label' => 'Cheque received'],
         'transfer' => ['amount' => 'transfer_amount', 'bank' => 'transfer_to_bank_id', 'ref' => 'transfer_reference', 'label' => 'Transfer received'],
+        'momo' => ['amount' => 'momo_amount', 'bank' => 'momo_to_bank_id', 'ref' => 'momo_transactin_id', 'label' => 'MoMo received'],
     ];
 
     /** Make the bank ledger match the receipt's current cheque and transfer. */
@@ -63,6 +66,16 @@ class BankPosting
         }
 
         return BankTransaction::where('receipt_id', $receiptId)->where('channel', 'cheque')->exists();
+    }
+
+    /** True when this receipt's MoMo went straight into the company MoMo wallet. */
+    public static function momoInWallet(?int $receiptId): bool
+    {
+        if (! $receiptId) {
+            return false;
+        }
+
+        return BankTransaction::where('receipt_id', $receiptId)->where('channel', 'momo')->whereNull('deposit_id')->exists();
     }
 
     /**
@@ -112,8 +125,10 @@ class BankPosting
             return;
         }
 
-        $wentToBank = (float) $receipt->cheque_amount > 0 || (float) $receipt->transfer_amount > 0;
-        if (self::depositable($collection)['total'] > 0 || (float) $collection->momo_amount > 0 || ! $wentToBank) {
+        $momoInWallet = self::momoInWallet($receipt->id);
+        $wentToBank = (float) $receipt->cheque_amount > 0 || (float) $receipt->transfer_amount > 0 || $momoInWallet;
+        $momoWaiting = (float) $collection->momo_amount > 0 && ! $momoInWallet;
+        if (self::depositable($collection)['total'] > 0 || $momoWaiting || ! $wentToBank) {
             $collection->status = 'undeposited';   // cash or MoMo still to deposit (Bank Deposit)
         } else {
             $collection->status = 'Banked';        // everything already went straight to the bank
@@ -142,6 +157,11 @@ class BankPosting
         }
 
         $newBalance = round((float) $bank->total + $amount, 2);
+        if ($amount < 0 && $bank->cannotOverdraw() && $newBalance < -0.004) {
+            // e.g. a receipt's MoMo cut down after the wallet money was already withdrawn or spent.
+            throw \Illuminate\Validation\ValidationException::withMessages([self::CHANNELS[$channel]['amount'] => $bank->name . ' only holds GH₵ '
+                . number_format((float) $bank->total, 2) . ' — GH₵ ' . number_format(-$amount, 2) . ' of this receipt\'s MoMo cannot be taken back out of it.']);
+        }
         $ref = $receipt->{self::CHANNELS[$channel]['ref']} ?? null;
 
         BankTransaction::create([

@@ -17,6 +17,9 @@ class StoreBankDepositRequest extends FormRequest
         if ($this->input('momo_charge') === '') {
             $this->merge(['momo_charge' => null]);
         }
+        if ($this->input('wallet_amount') === '') {
+            $this->merge(['wallet_amount' => null]);
+        }
     }
 
     public function rules(): array
@@ -33,6 +36,11 @@ class StoreBankDepositRequest extends FormRequest
             'momo' => ['nullable', 'array'],
             'momo.*' => ['integer'],
             'momo_charge' => ['nullable', 'numeric', 'min:0'],
+            // MoMo withdrawn from the company wallet: tick its receipts, or type the amount cashed out.
+            'wallet' => ['nullable', 'array'],
+            'wallet.*' => ['integer'],
+            'wallet_id' => ['nullable', 'integer', 'exists:banks,id'],
+            'wallet_amount' => ['nullable', 'numeric', 'min:0'],
         ];
     }
 
@@ -43,6 +51,7 @@ class StoreBankDepositRequest extends FormRequest
             'deposit_date' => 'date on the slip',
             'slip_number' => 'slip number',
             'momo_charge' => 'MoMo withdrawal charge',
+            'wallet_amount' => 'MoMo withdrawn from the wallet',
         ];
     }
 }

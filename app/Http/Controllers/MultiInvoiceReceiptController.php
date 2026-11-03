@@ -60,11 +60,12 @@ class MultiInvoiceReceiptController extends Controller
 
         $mode = DB::table('receipt_mode')->get();
         $banks = Bank::banksOnly()->operating()->orderBy('name')->get();
+        $wallets = Bank::where('kind', 'momo')->operating()->orderBy('name')->get();
         $wht_rate = new Wht();
         $assign_staff = $this->assignableStaff();
 
         return view('sales.receipt_multi_create', compact(
-            'clients', 'client', 'invoices', 'creditReceipts', 'mode', 'banks', 'wht_rate', 'assign_staff', 'preselected'
+            'clients', 'client', 'invoices', 'creditReceipts', 'mode', 'banks', 'wallets', 'wht_rate', 'assign_staff', 'preselected'
         ));
     }
 
@@ -121,13 +122,15 @@ class MultiInvoiceReceiptController extends Controller
         $mode = DB::table('receipt_mode')->get();
         $banks = Bank::banksOnly()->operating()->orderBy('name')
             ->orWhereIn('id', array_filter([$receipt->cheque_to_bank_id, $receipt->transfer_to_bank_id]))->get();
+        $wallets = Bank::where('kind', 'momo')->where(fn ($q) => $q->where('is_active', true)->orWhereNull('is_active')->orWhere('id', (int) $receipt->momo_to_bank_id))
+            ->orderBy('name')->get();
         $wht_rate = new Wht();
         $assign_staff = collect();     // the approval routing is not changed by an edit
         $preselected = array_keys($prefill);
         $editing = $receipt;
 
         return view('sales.receipt_multi_create', compact(
-            'clients', 'client', 'invoices', 'creditReceipts', 'mode', 'banks', 'wht_rate', 'assign_staff', 'preselected',
+            'clients', 'client', 'invoices', 'creditReceipts', 'mode', 'banks', 'wallets', 'wht_rate', 'assign_staff', 'preselected',
             'editing', 'prefill', 'creditLines', 'creditUsed'
         ));
     }

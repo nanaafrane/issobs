@@ -17,6 +17,8 @@ class BankDeposit extends Model
         'cheque_amount',
         'momo_amount',
         'momo_charge',
+        'wallet_id',
+        'wallet_amount',
         'gross_amount',
         'total',
         'deposit_date',
@@ -38,6 +40,12 @@ class BankDeposit extends Model
     public function bank()
     {
         return $this->belongsTo(Bank::class);
+    }
+
+    /** The MoMo wallet the MoMo on this slip was withdrawn from (new-style receipts). */
+    public function wallet()
+    {
+        return $this->belongsTo(Bank::class, 'wallet_id');
     }
 
     public function user()

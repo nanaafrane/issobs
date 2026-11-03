@@ -43,7 +43,7 @@ class ReceiptRecorder
     public const MODE_FIELDS = [
         'cheque' => ['cheque_reference', 'cheque_amount', 'cheque_bank', 'cheque_to_bank_id'],
         'transfer' => ['transfer_reference', 'transfer_amount', 'transfer_bank', 'transfer_to_bank_id'],
-        'momo' => ['momo_transactin_id', 'momo_amount'],
+        'momo' => ['momo_transactin_id', 'momo_amount', 'momo_to_bank_id'],
         'other payments' => ['other_payment_descri', 'other_payment_amnt'],
         'cash' => ['cash_amount'],
     ];
