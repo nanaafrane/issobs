@@ -289,7 +289,7 @@ class SalaryUploadTest extends TestCase
 
         $res = $this->uploadBook($book, $this->officer);
         $upload = SalaryUploadBatch::sole();
-        $res->assertRedirect(route('salary-upload.show', $upload));
+        $res->assertRedirect(route('salary-upload.show', ['upload' => $upload, 'month' => '2026-10']));
         $this->assertNull($this->sKofi->fresh()->overtime);   // nothing saved
 
         $page = $this->actingAs($this->officer)->get(route('salary-upload.show', $upload));
@@ -439,7 +439,7 @@ class SalaryUploadTest extends TestCase
             [null, 'October, 2026', $this->kofi->id, 'KOFI', 'Accra', 1550, 200, 10, null],
         ]);
         $this->uploadBook($book, $this->finance, 'salaries.upload', 'excelFile')
-            ->assertRedirect(route('salary-upload.show', SalaryUploadBatch::sole()));
+            ->assertRedirect(route('salary-upload.show', ['upload' => SalaryUploadBatch::sole(), 'month' => '2026-10']));
         $upload = SalaryUploadBatch::sole();
         $this->actingAs($this->finance)->get(route('salary-upload.show', $upload))->assertOk()->assertSee('older export')->assertSee('Apply 2 salaries');
         $this->assertNull($this->sAma->fresh()->overtime);
@@ -447,6 +447,27 @@ class SalaryUploadTest extends TestCase
         $this->actingAs($this->finance)->post(route('salary-upload.apply', $upload), ['columns' => ['basic_salary', 'allowances', 'overtime', 'loan']]);
         $this->assertEqualsWithDelta(60, (float) $this->sAma->fresh()->overtime, 0.001);
         $this->assertEqualsWithDelta(10, (float) $this->sKofi->fresh()->overtime, 0.001);    // found by Employee ID + month
+    }
+
+    public function test_the_page_stays_on_the_uploads_own_month(): void
+    {
+        // A September salary, uploaded in November (the page's default month is October).
+        $sept = $this->salary($this->ama, ['salary_month' => '2026-09-01']);
+        $book = new Spreadsheet();
+        $book->getActiveSheet()->fromArray([['id', 'overtime'], [$sept->id, 30]]);
+        $path = tempnam(sys_get_temp_dir(), 'up') . '.xlsx';
+        (new Xlsx($book))->save($path);
+        $this->actingAs($this->finance)->post(route('salary-upload.check'), ['file' => new UploadedFile($path, 'sept.xlsx', null, null, true)]);
+        $upload = SalaryUploadBatch::sole();
+
+        $this->actingAs($this->finance)->get(route('salary-upload.show', $upload))->assertOk()
+            ->assertSee('salariesCreate?month=2026-09', false)->assertSee('September 2026 salaries')
+            ->assertSee(route('salary-upload.index', ['month' => '2026-09']), false)
+            ->assertDontSee('October 2026 salaries');
+
+        $this->actingAs($this->finance)->post(route('salary-upload.apply', $upload), ['columns' => ['overtime']])->assertSessionHas('success');
+        $this->actingAs($this->finance)->get(route('salary-upload.show', $upload))->assertOk()
+            ->assertSee('salariesCreate?month=2026-09', false)->assertDontSee('October 2026 salaries');
     }
 
     public function test_a_file_that_is_not_a_salary_file(): void

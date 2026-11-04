@@ -39,6 +39,27 @@ class SalaryUploadController extends Controller
         return PayrollMonth::parse(is_string($m) && preg_match('/^\d{4}-\d{2}/', $m) ? substr($m, 0, 7) : now()->subMonthNoOverflow()->format('Y-m'));
     }
 
+    /**
+     * The salary month an upload belongs to, so the page's links (back to that month's
+     * salaries, another upload) stay on it: the month most of its salaries are in, else
+     * the month saved with it, else the month in the address.
+     */
+    private function uploadMonth(SalaryUploadBatch $upload, \Illuminate\Support\Collection $salaries, Request $request): \Carbon\Carbon
+    {
+        $ym = $salaries->map(fn ($s) => $s->salary_month?->format('Y-m'))->filter()->countBy()->sortDesc()->keys()->first();
+        if ($ym) {
+            return PayrollMonth::parse($ym);
+        }
+        if ($upload->months) {
+            try {
+                return PayrollMonth::parse(\Carbon\Carbon::parse('1 ' . explode(',', $upload->months)[0])->format('Y-m'));
+            } catch (\Throwable $e) {
+            }
+        }
+
+        return $this->month($request);
+    }
+
     private function pageData(Request $request): array
     {
         $user = Auth::user();
@@ -110,7 +131,7 @@ class SalaryUploadController extends Controller
             return redirect()->route('salary-upload.index', ['month' => $request->input('month')])->withErrors([$field => $read['error']])->withInput();
         }
 
-        return redirect()->route('salary-upload.show', $upload);
+        return redirect()->route('salary-upload.show', ['upload' => $upload, 'month' => $request->input('month')]);
     }
 
     public function show(Request $request, SalaryUploadBatch $upload)
@@ -119,7 +140,12 @@ class SalaryUploadController extends Controller
         if ($upload->status !== 'checked') {
             $names = \App\Models\employee::whereIn('id', array_column($upload->changes ?? [], 'employee_id') ?: [0])->pluck('name', 'id');
 
-            return view('salaries.upload', $this->pageData($request) + ['upload' => $upload, 'done' => true, 'names' => $names]);
+            $salaries = \App\Models\Salary::whereIn('id', array_keys($upload->changes ?? []) ?: [0])->get(['id', 'salary_month']);
+
+            return view('salaries.upload', array_merge($this->pageData($request), [
+                'upload' => $upload, 'done' => true, 'names' => $names,
+                'month' => $this->uploadMonth($upload, $salaries, $request),
+            ]));
         }
 
         $read = SalaryUpload::read($upload->stored_path);
@@ -134,16 +160,15 @@ class SalaryUploadController extends Controller
             'months' => implode(', ', $s['months']) ?: null,
             'total_rows' => $s['total'], 'ready_rows' => $s['ready'], 'error_rows' => $s['errors'], 'warning_rows' => $s['warnings'],
         ]);
-        $first = $check['results'] ? collect($check['results'])->pluck('salary')->filter()->first() : null;
 
-        return view('salaries.upload', $this->pageData($request) + [
+        return view('salaries.upload', array_merge($this->pageData($request), [
             'upload' => $upload,
             'read' => $read,
             'results' => $check['results'],
             'summary' => $s,
             'labels' => SalaryCalculator::editable(),
-            'month' => $first?->salary_month ?? $this->month($request),
-        ]);
+            'month' => $this->uploadMonth($upload, collect($check['results'])->pluck('salary')->filter(), $request),
+        ]));
     }
 
     public function apply(Request $request, SalaryUploadBatch $upload)
