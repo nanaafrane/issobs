@@ -888,6 +888,23 @@ class SalaryController extends Controller
             return $response;
         }
 
+        if ($action === 'delete') {
+            $approved = Salary::whereIn('id', $salaryIds)->where('payment_status', 'approved')->get();
+            $deletable = Salary::whereIn('id', $salaryIds)->where('payment_status', '!=', 'approved')->get();
+
+            if ($approved->isNotEmpty()) {
+                return back()->with('error', 'Approved (paid) salaries cannot be deleted: '
+                    . $approved->map(fn ($s) => ($s->employee?->name ?? 'Unknown') . ' (ID ' . $s->id . ')')->implode(', ')
+                    . ($deletable->isNotEmpty() ? '. The others were left untouched.' : ''));
+            }
+
+            DB::transaction(function () use ($salaryIds) {
+                Salary::whereIn('id', $salaryIds)->delete();
+            });
+
+            return back()->with('success', 'Deleted salaries with IDs: ' . $salaryIds->implode(', '));
+        }
+
         // Hold
         $reasons = (array) $request->input('hold_reason', []);
         DB::transaction(function () use ($salaryIds, $reasons) {

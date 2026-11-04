@@ -47,7 +47,7 @@
               @if($upload)
                   <a href="{{ route('salary-upload.index', ['month' => $ym]) }}" class="btn btn-sm btn-outline-primary"><i class="bx bx-upload me-1"></i>Another upload</a>
               @endif
-              <a href="{{ url('salariesCreate') . '?month=' . $ym }}" class="btn btn-sm btn-outline-secondary"><i class="bx bx-arrow-back me-1"></i>{{ $month->format('F Y') }} salaries</a>
+              <a id="salaryMonthBackLink" data-base-url="{{ route('salaries.salariesMonth') }}" href="{{ route('salaries.salariesMonth', ['month' => $ym]) }}" class="btn btn-sm btn-outline-secondary"><i class="bx bx-arrow-back me-1"></i>{{ $month->format('F Y') }} salaries</a>
           </div>
       </div>
 
@@ -66,20 +66,23 @@
                       <div class="row g-3 mb-3">
                           <div class="col-sm-5">
                               <label class="form-label small mb-1">Salary month</label>
-                              <input type="month" name="month" class="form-control form-control-sm" value="{{ old('month', $ym) }}" required>
+                              <input type="month" id="salaryUploadMonth" name="month" class="form-control form-control-sm" value="{{ old('month', $ym) }}" required>
                           </div>
                           <div class="col-sm-7">
                               <label class="form-label small mb-1">Office</label>
-                              <select name="field_id" class="form-select form-select-sm">
+                              <select name="field_id" id="salaryUploadField" class="form-select form-select-sm">
                                   <option value="">All offices</option>
                                   @foreach($fields as $f)<option value="{{ $f->id }}" @selected($fieldId == $f->id)>{{ $f->name }}</option>@endforeach
                               </select>
                           </div>
                       </div>
 
+                      <div id="templateMonthMessage" class="alert alert-warning small py-2 mb-2 d-none"></div>
+
                       <label class="form-label small mb-1">Columns to put in the file <span class="text-muted">(only these can be changed by this file)</span></label>
                       <div class="d-flex flex-wrap gap-1 mb-2">
                           <button type="button" class="btn btn-xs btn-sm btn-outline-secondary py-0" data-pick="all">All</button>
+                          <button type="button" class="btn btn-sm btn-outline-secondary py-0" data-pick="untick">Untick all</button>
                           <button type="button" class="btn btn-sm btn-outline-secondary py-0" data-pick="earnings">Earnings</button>
                           <button type="button" class="btn btn-sm btn-outline-secondary py-0" data-pick="deductions">Deductions</button>
                           <button type="button" class="btn btn-sm btn-outline-secondary py-0" data-pick="absent">Absent only</button>
@@ -105,7 +108,7 @@
                           </div></div>
                       </div>
                       <div class="small text-muted mt-2">The file has one row per unpaid salary (pending, rejected or held) with today's amounts, and a <strong>Row check</strong> column that says OK, CHECK or ERROR as you type. Approved salaries are left out.</div>
-                      <button class="btn btn-primary btn-sm mt-3" type="submit"><i class="bx bx-download me-1"></i>Download template</button>
+                      <button id="downloadTemplateBtn" class="btn btn-primary btn-sm mt-3" type="submit" @disabled(! ($canDownloadTemplate ?? true))><i class="bx bx-download me-1"></i>Download template</button>
                   </form>
               </div></div>
           </div>
@@ -375,9 +378,71 @@
   @section('scripts')
   <script>
   (function () {
+      var monthInput = document.getElementById('salaryUploadMonth');
+      var fieldSelect = document.getElementById('salaryUploadField');
+      var backLink = document.getElementById('salaryMonthBackLink');
+      var downloadBtn = document.getElementById('downloadTemplateBtn');
+      var messageBox = document.getElementById('templateMonthMessage');
+
+      if (monthInput && backLink) {
+          var syncBackLink = function () {
+              var value = monthInput.value;
+              if (!value) return;
+              var url = new URL(backLink.dataset.baseUrl || '{{ route('salaries.salariesMonth') }}', window.location.origin);
+              url.searchParams.set('month', value);
+              backLink.href = url.pathname + url.search;
+          };
+          monthInput.addEventListener('input', syncBackLink);
+          syncBackLink();
+      }
+
+      function setTemplateAvailability(hasRows, msg) {
+          if (!downloadBtn) return;
+          downloadBtn.disabled = !hasRows;
+          if (messageBox) {
+              if (!hasRows && msg) {
+                  messageBox.textContent = msg;
+                  messageBox.classList.remove('d-none');
+              } else {
+                  messageBox.textContent = '';
+                  messageBox.classList.add('d-none');
+              }
+          }
+      }
+
+      function checkTemplateAvailability() {
+          if (!monthInput || !monthInput.value || !downloadBtn) return;
+          var params = new URLSearchParams({ month: monthInput.value });
+          if (fieldSelect && fieldSelect.value) {
+              params.set('field_id', fieldSelect.value);
+          }
+          fetch('{{ route('salary-upload.availability') }}?' + params.toString(), {
+              headers: { 'X-Requested-With': 'XMLHttpRequest' }
+          })
+          .then(function (response) { return response.ok ? response.json() : null; })
+          .then(function (json) {
+              if (!json) return;
+              setTemplateAvailability(Boolean(json.has_rows), json.message || '');
+          })
+          .catch(function () {
+              setTemplateAvailability(true, '');
+          });
+      }
+
+      if (monthInput) {
+          monthInput.addEventListener('change', checkTemplateAvailability);
+          monthInput.addEventListener('input', checkTemplateAvailability);
+      }
+      if (fieldSelect) {
+          fieldSelect.addEventListener('change', checkTemplateAvailability);
+      }
+      if (downloadBtn) {
+          checkTemplateAvailability();
+      }
+
       // Template column presets.
       var presets = {
-          all: null, earnings: 'earnings', deductions: 'deductions',
+          all: null, untick: 'untick', earnings: 'earnings', deductions: 'deductions',
           absent: ['absent'], loans: ['loan', 'iou', 'other_deductions'],
           overtime: ['overtime', 'allowances', 'airtime_allowance', 'transport_allowance', 'reimbursements']
       };
@@ -385,7 +450,15 @@
           b.addEventListener('click', function () {
               var p = presets[b.dataset.pick];
               document.querySelectorAll('#templateForm input[name="columns[]"]').forEach(function (cb) {
-                  cb.checked = p === null ? true : (typeof p === 'string' ? cb.dataset.group === p : p.indexOf(cb.value) !== -1);
+                  if (p === null) {
+                      cb.checked = true;
+                  } else if (p === 'untick') {
+                      cb.checked = false;
+                  } else if (typeof p === 'string') {
+                      cb.checked = cb.dataset.group === p;
+                  } else {
+                      cb.checked = p.indexOf(cb.value) !== -1;
+                  }
               });
           });
       });

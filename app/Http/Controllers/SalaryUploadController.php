@@ -39,6 +39,14 @@ class SalaryUploadController extends Controller
         return PayrollMonth::parse(is_string($m) && preg_match('/^\d{4}-\d{2}/', $m) ? substr($m, 0, 7) : now()->subMonthNoOverflow()->format('Y-m'));
     }
 
+    private function hasTemplateRows(\Carbon\Carbon $month, ?int $fieldId = null): bool
+    {
+        return (bool) \App\Models\Salary::whereBetween('salary_month', PayrollMonth::span($month))
+            ->whereIn('payment_status', SalaryUpload::EDITABLE_STATUSES)
+            ->when($fieldId, fn ($q) => $q->where('field_id', $fieldId))
+            ->exists();
+    }
+
     /**
      * The salary month an upload belongs to, so the page's links (back to that month's
      * salaries, another upload) stay on it: the month most of its salaries are in, else
@@ -67,20 +75,43 @@ class SalaryUploadController extends Controller
             ->when(! SalaryUpload::canApply($user), fn ($q) => $q->where('user_id', $user->id))
             ->latest()->limit(15)->get();
 
+        $month = $this->month($request);
+        $fieldId = $request->integer('field_id') ?: null;
+
         return [
-            'month' => $this->month($request),
-            'fieldId' => $request->integer('field_id') ?: null,
+            'month' => $month,
+            'fieldId' => $fieldId,
             'fields' => Field::orderBy('id')->get(['id', 'name']),
             'earnings' => SalaryCalculator::EARNINGS,
             'deductions' => SalaryCalculator::DEDUCTIONS,
             'canApply' => SalaryUpload::canApply($user),
             'recent' => $recent,
+            'canDownloadTemplate' => $this->hasTemplateRows($month, $fieldId),
         ];
     }
 
     public function index(Request $request)
     {
         return view('salaries.upload', $this->pageData($request));
+    }
+
+    public function availability(Request $request)
+    {
+        $request->validate([
+            'month' => ['required', 'regex:/^\d{4}-(0[1-9]|1[0-2])/'],
+            'field_id' => ['nullable', 'integer'],
+        ]);
+
+        $month = $this->month($request);
+        $fieldId = $request->integer('field_id') ?: null;
+        $hasRows = $this->hasTemplateRows($month, $fieldId);
+
+        return response()->json([
+            'has_rows' => $hasRows,
+            'message' => $hasRows
+                ? ''
+                : 'No unpaid salaries have been added for ' . $month->format('F Y') . ($fieldId ? ' for that office' : '') . '. Add employees on "Add to Salaries" first before downloading the template.',
+        ]);
     }
 
     public function template(Request $request)

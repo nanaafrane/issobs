@@ -931,6 +931,9 @@
                             <button class="btn btn-dark btn-sm" type="submit" data-action="topup" disabled>
                                 <i class="icon-base bx bx-bxs-file-plus"></i> Add salary top ups
                             </button>
+                            <button class="btn btn-outline-danger btn-sm" type="submit" data-action="delete" disabled>
+                                <i class="icon-base bx bx-trash"></i> Delete selected
+                            </button>
                             <span class="small" id="masterSelectionText">No salary selected.</span>
                             <a href="#" class="small text-danger d-none" id="masterClear">Clear selection</a>
                         </div>
@@ -3630,8 +3633,12 @@
             });
             $('#masterForm').on('submit', function (e) {
                 const action = $('#salaries_bulk_action_type').val();
-                const label = action === 'topup' ? 'add top ups for' : 'HOLD';
-                if (selected.size === 0 || !confirm('Kindly confirm: ' + label + ' ' + selected.size + ' salary(ies)?')) { e.preventDefault(); return; }
+                const label = action === 'topup' ? 'add top ups for' : action === 'delete' ? 'delete' : 'HOLD';
+                let confirmMessage = 'Kindly confirm: ' + label + ' ' + selected.size + ' salary(ies)?';
+                if (action === 'delete') {
+                    confirmMessage = 'Warning: approved (paid) salaries cannot be deleted. This action will remove only the selected non-approved salaries. Continue deleting ' + selected.size + ' salary(ies)?';
+                }
+                if (selected.size === 0 || !confirm(confirmMessage)) { e.preventDefault(); return; }
                 const $box = $('#masterSelectionInputs').empty();
                 selected.forEach(function (id) {
                     $box.append($('<input type="hidden" name="salary[]">').val(id));

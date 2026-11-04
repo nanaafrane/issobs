@@ -230,13 +230,65 @@
         </li>
 
         @if($canViewPayroll)
-        <li class="menu-header small text-uppercase"><span class="menu-header-text">Payroll</span></li>
-        <li @class(['menu-item', 'active' => request()->is('salaries*') || request()->is('salariesTransaction') || request()->is('salary-payments*') || request()->is('absent-deductions*') || request()->is('pay-priority*') || request()->is('salaries-report')])>
-            <a href="{{ url('salariesTransaction') }}" class="menu-link">
-                <i class="menu-icon tf-icons bx bx-money-withdraw text-primary me-2"></i>
-                <div class="text-truncate">Payroll</div>
-            </a>
-        </li>
+   <li class="menu-header small text-uppercase"><span class="menu-header-text">PAYROLL</span></li>
+            <li @class(['menu-item', 'active open' => request()->is('salaries*') || request()->is('salariesTransaction') || request()->is('salariesTaxMonth*') || request()->is('salariesPensionMonth*') || request()->is('salariesOvertimeMonth*') || request()->is('salariesIouMonth*') || request()->is('salariesBootMonth*') || request()->is('salariesAbsentMonth*') || request()->is('salariessDateMonth*') || request()->is('salariesOdedMonth*') || request()->is('salariesReprimandMonth*') || request()->is('salariesLoanMonth*') || request()->is('salary-upload') || request()->is('salary-payments*') || request()->is('absent-deductions*') || request()->is('pay-priority*') || request()->is('salaries-report')])>
+                <a href="javascript:void(0);" class="menu-link menu-toggle">
+                <i class="menu-icon tf-icons bx bx-money-withdraw"></i>
+                <div class="text-truncate" data-i18n="Payroll">Payroll</div>
+                </a>
+                <ul class="menu-sub">
+                @if(Auth::user()->hasRole(['Finance Manager']) )
+                <li @class(['menu-item', 'active' => request()->is('salaries') || request()->routeIs('salaries.index') || (request()->is('salaries/*') && !request()->is('salaries/*/edit') && !request()->is('salariesTransaction') && !request()->is('salariesMonth*') && !request()->is('salaries/*/show') && !request()->routeIs('salaries.show'))])>
+                    <a href="{{ url('salaries') }}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bxs-user-account"></i>
+                    <div class="text-truncate" data-i18n="Employees">Add to Salaries</div>
+                    </a>
+                </li>
+
+                <li @class(['menu-item', 'active' => request()->is('salary-upload')])>
+                    <a href="{{ url('salary-upload') }}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-money-withdraw"></i>
+                    <div class="text-truncate" data-i18n="Salaries">Salaries</div>
+                    </a>
+                </li>
+                @endif
+
+                <li @class(['menu-item', 'active' => request()->is('salariesTransaction') || request()->is('salariesMonth*') || request()->is('salariesTaxMonth*') || request()->is('salariesPensionMonth*') || request()->is('salariesOvertimeMonth*') || request()->is('salariesIouMonth*') || request()->is('salariesBootMonth*') || request()->is('salariesAbsentMonth*') || request()->is('salariessDateMonth*') || request()->is('salariesOdedMonth*') || request()->is('salariesReprimandMonth*') || request()->is('salariesLoanMonth*') || request()->is('salaries/*/edit') || (request()->is('salaries/*') && !request()->is('salaries/create') && !request()->is('salaries') && !request()->routeIs('salaries.index')) || request()->routeIs('salaries.salariesMonth')])>
+                    <a href="{{ url('salariesTransaction') }}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-transfer-alt"></i>
+                    <div class="text-truncate" data-i18n="Transaction">Transactions</div>
+                    </a>
+                </li>
+
+               @if(Auth::user()->hasRole(['Finance Manager']) )
+                <li @class(['menu-item', 'active' => request()->is('salaries-report')])>
+                    <a href="{{ route('salaries.report') }}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-line-chart"></i>
+                    <div class="text-truncate" data-i18n="SalariesReport">Salaries Report</div>
+                    </a>
+                </li>
+                <li @class(['menu-item', 'active' => request()->is('salary-payments')])>
+                    <a href="{{ route('salary-payments.index') }}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-list-check"></i>
+                    <div class="text-truncate" data-i18n="SalaryPayments">Salary payments</div>
+                    </a>
+                </li>
+                <li @class(['menu-item', 'active' => request()->is('absent-deductions')])>
+                    <a href="{{ route('absent-deductions.index') }}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-calendar-x"></i>
+                    <div class="text-truncate" data-i18n="AbsentDeductions">Absent deductions</div>
+                    </a>
+                </li>
+                <li @class(['menu-item', 'active' => request()->is('pay-priority')])>
+                    <a href="{{ route('pay-priority.index') }}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bxs-bolt"></i>
+                    <div class="text-truncate" data-i18n="PayPriority">Pay priority rules</div>
+                    </a>
+                </li>
+                @endif
+
+                </ul>
+            </li>
         @endif
     </ul>
 </aside>

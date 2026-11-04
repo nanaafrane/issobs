@@ -369,6 +369,7 @@ Route::get('invToPayroll', [SalaryController::class, 'InvToParollMonth'])->name(
 Route::post('uploadSalaries', [SalaryController::class, 'uploadSalaries'])->name('salaries.upload');
 // Salary upload with checks (salariesCreate > Upload salaries).
 Route::get('salary-upload', [\App\Http\Controllers\SalaryUploadController::class, 'index'])->name('salary-upload.index');
+Route::get('salary-upload/availability', [\App\Http\Controllers\SalaryUploadController::class, 'availability'])->name('salary-upload.availability');
 Route::get('salary-upload/template', [\App\Http\Controllers\SalaryUploadController::class, 'template'])->name('salary-upload.template');
 Route::post('salary-upload/check', [\App\Http\Controllers\SalaryUploadController::class, 'check'])->name('salary-upload.check');
 Route::get('salary-upload/{upload}', [\App\Http\Controllers\SalaryUploadController::class, 'show'])->whereNumber('upload')->name('salary-upload.show');

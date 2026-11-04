@@ -174,17 +174,9 @@
                 <label for="excelFile" class="form-label"> <strong>   UPLOAD SALARIES: </strong> </label>
                 <a href="{{ route('salary-upload.index', ['month' => $month->format('Y-m')]) }}" class="btn btn-sm btn-outline-primary ms-2"><i class="icon-base bx bx-download"></i> Download template (with row checks)</a>
                 <br>
-                <input
-                      type="file"
-                      id="excelFile"
-                      name="excelFile"
-                      class="account-file-input  @error('excelFile') is-invalid @enderror"
-                      accept=".xls, .xlsx"
-                      required/>
-
-                <button class="btn btn-dark ml-5" type="submit"> <i class="icon-base bx bx-check-shield"> </i> {{ __('Check file') }}</button>
-                <div class="small text-muted mt-1">Nothing is saved yet: the next page lists errors, changes and net pay per office, and you choose which columns to apply.</div>
-                @error('excelFile')<div class="text-danger small">{{ $message }}</div>@enderror
+                @error('excelFile')
+                <div class="text-danger small">{{ $message }}</div>
+                @enderror
             </div>
           </form>
         </div> <br> <br>
@@ -213,7 +205,7 @@
                                         <thead>
                                             <tr>
                                                 <th> </th>
-                                                <th> Edit </th>
+                                                <!-- <th> Edit </th> -->
                                                 <th> id</th>
                                                 <th> Salary Month </th>
                                                 <th> employee_id </th>
@@ -221,27 +213,7 @@
                                                 <th> Field </th>
                                                 <th> Client </th>
                                                 <th> Location </th>
-                                                <th> Basic Salary</th>
-                                                <th> Allowances</th>
-                                                <th> airtime_allowance</th>
-                                                <th> overtime</th>
-                                                <th> reimbursements </th>
-                                                <th> transport_allowance</th>
-                                                <th> welfare </th>
-                                                <th> maintenance</th>
-                                                <th> absent</th>
-                                                <th> boot</th>
-                                                <th> iou</th>
-                                                <th> hostel</th>
-                                                <th> insurance</th>
-                                                <th> reprimand</th>
-                                                <th> scouter </th>
-                                                <th> raincoat </th>
-                                                <th> meal</th>
-                                                <th> loan</th>
-                                                <th> walkin</th>
-                                                <th> amnt_ded_cof_start_date</th>
-                                                <th> other_deductions</th>
+                                              
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -249,35 +221,14 @@
                                         @foreach ($salaries as $key => $salary )
                                             <tr>
                                                 <td> <input class="checkBoxes form-check-input" type="checkbox" name="salary[]" value="{{ $salary->id }}" /> </td>
-                                                <td><a class="dropdown-item" href="/salaries/{{$salary->id}}/edit"><i class="icon-base bx bx-edit-alt me-1"></i></a> </td>
+                                                <!-- <td><a class="dropdown-item" href="/salaries/{{$salary->id}}/edit"><i class="icon-base bx bx-edit-alt me-1"></i></a> </td> -->
                                                 <td> {{ $salary->id }} </td>
                                                 <td> {{$salary->salary_month?->format('F, Y')}} </td>
                                                 <td> {{ $salary?->employee_id }} </td>
                                                 <td> {{ strtoupper($salary->employee?->name) }} </td>
                                                 <td> {{ $salary->field?->name }} </td>
                                                 <td> {{ $salary->client?->name }} {{ $salary->client?->business_name }}</td>
-                                                <td> {{ $salary->location }} </td>
-                                                <td> {{$salary->basic_salary}}</td>
-                                                <td> {{$salary->allowances}}</td>
-                                                <td> {{$salary->airtime_allowance}}</td>
-                                                <td> {{$salary->overtime}}</td>
-                                                <td> {{$salary->reimbursements}}</td>
-                                                <td> {{$salary->transport_allowance}}</td>
-                                               <td> {{$salary->welfare}} </td>                            
-                                                <td> {{$salary->maintenance}} </td>                            
-                                                <td> {{$salary->absent}} </td>                            
-                                                <td> {{$salary->boot}} </td>                            
-                                                <td> {{$salary->iou}} </td>                            
-                                                <td> {{$salary->hostel}} </td>                            
-                                                <td> {{$salary->insurance}} </td>                            
-                                                <td> {{$salary->reprimand}} </td>                            
-                                                <td> {{$salary->scouter}} </td>                            
-                                                <td> {{$salary->raincoat}} </td>                            
-                                                <td> {{$salary->meal}} </td>                            
-                                                <td> {{$salary->loan}} </td>                            
-                                                <td> {{$salary->walkin}} </td>                            
-                                                <td> {{$salary->amnt_ded_cof_start_date}} </td>                            
-                                                <td> {{$salary->other_deductions}} </td>                            
+                                                <td> {{ $salary->location }} </td>                         
 
                                             </tr>
                                         @endforeach
@@ -325,25 +276,25 @@
                     text: 'Show',
                     className: 'btn btn-secondary',
                     Options: [10, 25, 50, 100, 250, 500, 1000, 2000], 
-                },
-                    {
-                        extend: 'excelHtml5',
-                        title: 'Salaries',
-                        className: 'btn btn-secondary',
-                        exportOptions: {
-                            columns: ':visible'
-                        }
-                    },
-                    'colvis'
+                }
+                    // {
+                    //     extend: 'excelHtml5',
+                    //     title: 'Salaries',
+                    //     className: 'btn btn-secondary',
+                    //     exportOptions: {
+                    //         columns: ':visible'
+                    //     }
+                    // },
+                    // // 'colvis'
                 ]
             }
         },
-                  columnDefs: [
-              {
-                  targets: [0,1],
-                  visible: false
-              }
-          ]
+        //           columnDefs: [
+        //       {
+        //           targets: [0,1],
+        //           visible: false
+        //       }
+        //   ]
     });
     </script>
 
