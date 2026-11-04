@@ -167,10 +167,13 @@
         @endif
 
         <div class="row">
-          <form action="{{ route('salaries.upload') }}" method="POST" enctype="multipart/form-data"> 
+          <form action="{{ route('salaries.upload') }}" method="POST" enctype="multipart/form-data">
             @csrf
+            <input type="hidden" name="month" value="{{ $month->format('Y-m') }}">
             <div class="col">
-                <label for="acc_number" class="form-label"> <strong>   UPLOAD SALARIES: </strong> </label>
+                <label for="excelFile" class="form-label"> <strong>   UPLOAD SALARIES: </strong> </label>
+                <a href="{{ route('salary-upload.index', ['month' => $month->format('Y-m')]) }}" class="btn btn-sm btn-outline-primary ms-2"><i class="icon-base bx bx-download"></i> Download template (with row checks)</a>
+                <br>
                 <input
                       type="file"
                       id="excelFile"
@@ -179,7 +182,9 @@
                       accept=".xls, .xlsx"
                       required/>
 
-                <button class="btn btn-dark ml-5" onclick="return confirm('Kindly Confirm?')" type="submit"> <i class="icon-base bx bx-recycle"> </i> {{ __('Upload') }}</button>
+                <button class="btn btn-dark ml-5" type="submit"> <i class="icon-base bx bx-check-shield"> </i> {{ __('Check file') }}</button>
+                <div class="small text-muted mt-1">Nothing is saved yet: the next page lists errors, changes and net pay per office, and you choose which columns to apply.</div>
+                @error('excelFile')<div class="text-danger small">{{ $message }}</div>@enderror
             </div>
           </form>
         </div> <br> <br>

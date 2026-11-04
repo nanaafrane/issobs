@@ -367,6 +367,14 @@ Route::get('salariesMonth', [SalaryController::class, 'salariesMonth'])->name('s
 Route::get('salariesInvPayroll', [SalaryController::class, 'InvToParoll']);
 Route::get('invToPayroll', [SalaryController::class, 'InvToParollMonth'])->name('salaries.invToPayroll');
 Route::post('uploadSalaries', [SalaryController::class, 'uploadSalaries'])->name('salaries.upload');
+// Salary upload with checks (salariesCreate > Upload salaries).
+Route::get('salary-upload', [\App\Http\Controllers\SalaryUploadController::class, 'index'])->name('salary-upload.index');
+Route::get('salary-upload/template', [\App\Http\Controllers\SalaryUploadController::class, 'template'])->name('salary-upload.template');
+Route::post('salary-upload/check', [\App\Http\Controllers\SalaryUploadController::class, 'check'])->name('salary-upload.check');
+Route::get('salary-upload/{upload}', [\App\Http\Controllers\SalaryUploadController::class, 'show'])->whereNumber('upload')->name('salary-upload.show');
+Route::post('salary-upload/{upload}/apply', [\App\Http\Controllers\SalaryUploadController::class, 'apply'])->whereNumber('upload')->name('salary-upload.apply');
+Route::get('salary-upload/{upload}/errors', [\App\Http\Controllers\SalaryUploadController::class, 'errors'])->whereNumber('upload')->name('salary-upload.errors');
+Route::post('salary-upload/{upload}/undo', [\App\Http\Controllers\SalaryUploadController::class, 'undo'])->whereNumber('upload')->name('salary-upload.undo');
 Route::get('invToPayrollInvoice/{client_id}/{month}', [InvoiceController::class, 'PayrollInvoice']);
 Route::get('invToPayrollGuards/{client_id}/{month}', [SalaryController::class, 'PayrollGuards']);
 

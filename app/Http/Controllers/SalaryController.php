@@ -13,6 +13,7 @@ use App\Models\Receipt;
 use App\Exports\FilteredQueryExport;
 use App\Support\Attendance\AbsentDeduction;
 use App\Support\PayrollMonth;
+use App\Support\SalaryCalculator;
 use App\Support\InvoiceGuards;
 use App\Support\ClientInvoiceStatus;
 use App\Support\PayPriority;
@@ -1680,127 +1681,14 @@ class SalaryController extends Controller
 
 
     /**
-     * Upload salaries from Excel file.
+     * Upload salaries from Excel file: the file is checked first (Payroll > Upload salaries),
+     * nothing is saved until the changes are reviewed and applied there.
      */
     public function uploadSalaries(SalariesUploadRequest $request)
     {
+        abort_unless(\App\Support\SalaryUpload::canUse(Auth::user()), 403, 'Only Accounts can upload salaries.');
 
-        $collection = (new SalaryImport)->toCollection( $request->file('excelFile'));
-        // dd($collection);
-        foreach ($collection[0] as $row) {
-            // echo 'Updating salary for Employee ID: '. $row['employee_id']. ' -  ' . Carbon::createFromFormat('F, Y', $row['salary_month'])->startOfMonth()->format('Y-m-d H:i:s') . '<br>';   
-        //  change date to start of month format Y-m-d H:i:s
-
-            $salary = Salary::where('employee_id', $row['employee_id'])
-                            ->where('salary_month', Carbon::createFromFormat('F, Y', $row['salary_month'])->startOfMonth()->format('Y-m-d H:i:s'))
-                            ->first();
-          
-        //   echo 'Updating salary for Employees: '. $salary->employee->tax_button. " ---".$row['employee_id'] . " " .$row['basic_salary']. " / ". $row['allowances'] . " / ". $row['airtime_allowance'] . " / ". $row['reimbursements'] . " / ". $row['transport_allowance'] ." / ". $row['welfare'] ." / ". $row['maintenance'] ." / ". $row['absent'] ." / ". $row['boot'] ." / ". $row['iou'] ." / ". $row['hostel'] ." / ". $row['insurance'] ." / ". $row['reprimand'] ." / ". $row['scouter'] ." / ". $row['raincoat'] ." / ". $row['meal'] ." / ". $row['loan'] ." / ". $row['meal']  ." / ". $row['walkin'] ." / ". $row['amnt_ded_cof_start_date'] ." / ". $row['other_deductions'] .'<br>';   
-            
-
-                // Deduct Tax
-                // $ssnitNumber = PaymentInfo::where('employee_id', $employee->id)->whereNotNull('ssnit_number')->get();
-                $ssnit_tier2_5 = 0;
-                $ssnit_tier1_0_5 = 0;
-                $ssnit_13 = 0;
-                $ssnit_13_5 = 0;
-
-                $tax = 0;
-                $employee_basic_taxAmount_minus_ssnt = 0;
-
-                // CHECK IF THE PERSON HAS SSNIT BUTTON TURNED ON
-                if(isset($salary->employee->ssnit_button) == "on")
-                {
-                    if($salary->employee?->ssnit_number !== '' && $salary->employee?->ssnit_number !== null)
-                        {
-                            // echo "Processing salary for Employee SSNIT ID: " . $employee->paymentInfo->ssnit_number . "<br><br>";
-
-                            //  SSNIT transactions HERE
-                            $ssnit_tier2_5 = $row['basic_salary'] * 0.05;
-                            $ssnit_tier1_0_5 = $row['basic_salary'] * 0.005;
-                            $ssnit5_5 = $row['basic_salary'] * 0.055;
-                            $ssnit_13 = $row['basic_salary'] * 0.13;
-                            $ssnit_13_5 = $row['basic_salary'] * 0.135;
-
-                            $employee_basic_taxAmount_minus_ssnt = $row['basic_salary'] - $ssnit5_5  ;
-                            // echo "Processing salary Tier 2 (5%) = " . $ssnit_tier2_5 .  " Tier 1 (0.5%) = ". $ssnit_tier1_0_5 . "  SSNIT (13%) = ".$ssnit_13. " SSNIT (13.5%) = ".  $ssnit_13_5   ."<br><br>";
-                        }
-                }
-
-                 // CHECK IF THE PERSON HAS TAX BUTTON TURNED ON
-                if(isset($salary->employee->tax_button) == "on")
-                {
-                    
-                    if($row['basic_salary'] > 490.00 )
-                    {
-                        // TAX CALCULATIONS
-                            // echo "Employee Basic salary = "  .$row['basic_salary'] ." ----/ TAX === ".  $this->taxEmployee($employee_basic_taxAmount_minus_ssnt)  ."<br>";
-                        if($salary->employee?->ssnit_number !== '' && $salary->employee?->ssnit_number !== null && $employee_basic_taxAmount_minus_ssnt >= 0)
-                            {
-                            $tax = $this->taxEmployee($employee_basic_taxAmount_minus_ssnt) ;
-                            // echo "Employee SSNIT Basic salary ---------------" .  " - " . " - "  .$row['basic_salary'] ."-------------- TAX = ".  $tax  ."<br>";
-
-                            }else{
-                            $tax = $this->taxEmployee($row['basic_salary']) ;
-                            // echo "Employee NO SSNIT Basic salary -----------"  . " - " . " - "   .$row['basic_salary'] ."--------------- TAX = ".  $tax  ."<br>";
-                            }                    
-                    } 
-                }
-
-
-
-
-            $salary->basic_salary = $row['basic_salary'] ?? $salary->basic_salary ;
-            $salary->allowances = $row['allowances'] ?? $salary->allowances ;
-            $salary->airtime_allowance = $row['airtime_allowance'] ?? $salary->airtime_allowance ;
-            $salary->overtime = $row['overtime'] ?? $salary->overtime ;
-            $salary->reimbursements = $row['reimbursements'] ?? $salary->reimbursements ;
-            $salary->transport_allowance = $row['transport_allowance'] ?? $salary->transport_allowance ;
-           
-            $salary->welfare = $row['welfare'] ?? $salary->welfare ;
-            $salary->maintenance = $row['maintenance'] ?? $salary->maintenance ;
-            $salary->absent = $row['absent'] ?? $salary->absent ;
-            $salary->boot = $row['boot'] ?? $salary->boot ;                            
-            $salary->iou = $row['iou'] ?? $salary->iou ;
-            $salary->hostel = $row['hostel'] ?? $salary->hostel ;
-            $salary->insurance = $row['insurance'] ?? $salary->insurance ;
-            $salary->reprimand = $row['reprimand'] ?? $salary->reprimand ;          
-            $salary->scouter = $row['scouter'] ?? $salary->scouter ;
-            $salary->raincoat = $row['raincoat'] ?? $salary->raincoat ;
-            $salary->meal = $row['meal'] ?? $salary->meal ;
-            $salary->loan = $row['loan'] ?? $salary->loan ;
-            $salary->walkin = $row['walkin'] ?? $salary->walkin ;
-            $salary->amnt_ded_cof_start_date = $row['amnt_ded_cof_start_date'] ?? $salary->amnt_ded_cof_start_date ;
-            $salary->other_deductions = $row['other_deductions'] ?? $salary->other_deductions ;
-
-            // // WORK SSNIT
-            $salary->ssnit_tier2_5d = $ssnit_tier2_5  ?? $salary->ssnit_tier2_5d ;
-            $salary->ssnit_tier2_5 = $ssnit_tier2_5 ?? $salary->ssnit_tier2_5 ;
-            $salary->ssnit_tier1_0_5 =  $ssnit_tier1_0_5 ?? $salary->ssnit_tier1_0_5 ;
-
-            // // WORK TAX
-            $salary->tax = $tax ??  $salary->tax;
-
-            // // SUM GROSS, TOTAL DEDUCTTIONS AND NET SALARY
-            $grossSalary = $row['basic_salary'] + $row['allowances'] + $row['airtime_allowance'] + $row['overtime'] + $row['reimbursements'] + $row['transport_allowance'] +  $ssnit_tier2_5;
-            $totalDeduction = $tax + $ssnit_tier2_5 +  $row['welfare'] + $row['maintenance'] + (float) $salary->absent  +  $row['boot'] +  $row['iou'] +  $row['hostel'] + $row['insurance'] + $row['reprimand'] + $row['scouter'] +  $row['raincoat'] +  $row['meal'] + $row['loan'] + $row['walkin'] + $row['amnt_ded_cof_start_date'] + $row['other_deductions'];
-            $netSalay = $grossSalary - $totalDeduction ;
-           
-            $salary->gross_salary = $grossSalary ?? $salary->gross_salary ;
-            $salary->total_deductions = $totalDeduction ?? $salary->total_deductions ;
-            $salary->net_salary = $netSalay ?? $salary->net_salary ;
-
-            // // WORK 
-            $salary->ssnit_comp_cont_13 =  $ssnit_13 ?? $salary->ssnit_comp_cont_13 ;
-            $salary->ssnit_tobe_paid13_5 = $ssnit_13_5 ?? $salary->ssnit_tobe_paid13_5 ;
-            $salary->cost_to_company = $netSalay + $ssnit_13_5 ?? $salary->cost_to_company ;  
-            $salary->user_id1 = Auth::id();
-
-            $salary->save();    
-            
-            }
-
-        return back()->with('success', 'Salaries uploaded and updated successfully.');
+        return app(SalaryUploadController::class)->check($request, 'excelFile');
     }
 
 
@@ -1810,103 +1698,9 @@ class SalaryController extends Controller
      */
     public function update(UpdateSalaryRequest $request, Salary $salary)
     {
-        //
-        // dd($request->all()); 
-
-        // $salary->update($request->all());
-               // Deduct Tax
-                // $ssnitNumber = PaymentInfo::where('employee_id', $employee->id)->whereNotNull('ssnit_number')->get();
-                $ssnit_tier2_5 = 0;
-                $ssnit_tier1_0_5 = 0;
-                $ssnit_13 = 0;
-                $ssnit_13_5 = 0;
-
-                $tax = 0;
-                $employee_basic_taxAmount_minus_ssnt = 0;
-
-                // CHECK IF THE PERSON HAS SSNIT BUTTON TURNED ON
-                if(isset($salary->employee->ssnit_button) == "on")
-                {
-                    if($salary->employee?->ssnit_number !== '' && $salary->employee?->ssnit_number !== null)
-                        {
-                            // echo "Processing salary for Employee SSNIT ID: " . $employee->paymentInfo->ssnit_number . "<br><br>";
-
-                            //  SSNIT transactions HERE
-                            $ssnit_tier2_5 = $request['basic_salary'] * 0.05;
-                            $ssnit_tier1_0_5 = $request['basic_salary'] * 0.005;
-                            $ssnit5_5 = $request['basic_salary'] * 0.055;
-                            $ssnit_13 = $request['basic_salary'] * 0.13;
-                            $ssnit_13_5 = $request['basic_salary'] * 0.135;
-
-                            $employee_basic_taxAmount_minus_ssnt = $request['basic_salary'] - $ssnit5_5  ;
-                            // echo "Processing salary Tier 2 (5%) = " . $ssnit_tier2_5 .  " Tier 1 (0.5%) = ". $ssnit_tier1_0_5 . "  SSNIT (13%) = ".$ssnit_13. " SSNIT (13.5%) = ".  $ssnit_13_5   ."<br><br>";
-                        }
-                }
-
-                 // CHECK IF THE PERSON HAS TAX BUTTON TURNED ON
-                if(isset($salary->employee->tax_button) == "on")
-                {
-                    
-                    if($request['basic_salary'] > 490.00 )
-                    {
-                        // TAX CALCULATIONS
-                            // echo "Employee Basic salary = "  .$request['basic_salary'] ." ----/ TAX === ".  $this->taxEmployee($employee_basic_taxAmount_minus_ssnt)  ."<br>";
-                        if($salary->employee?->ssnit_number !== '' && $salary->employee?->ssnit_number !== null && $employee_basic_taxAmount_minus_ssnt >= 0)
-                            {
-                            $tax = $this->taxEmployee($employee_basic_taxAmount_minus_ssnt) ;
-                            // echo "Employee with SSNIT Basic salary = ".$request['employee_id'] . " / "  .$request['basic_salary'] ." TAX = ".  $tax  ."<br>";
-
-                            }else{
-                            $tax = $this->taxEmployee($request['basic_salary']) ;
-                            // echo "Employee WITHOUT SSNIT Basic salary = ".$request['employee_id'] . " / "  .$request['basic_salary'] ." TAX = ".  $tax  ."<br>";
-                            }                    
-                    } 
-                }
-
-            $salary->basic_salary = $request['basic_salary']  ;
-            $salary->allowances = $request['allowances'] ;
-            $salary->airtime_allowance = $request['airtime_allowance']  ;
-            $salary->overtime = $request['overtime'];
-            $salary->reimbursements = $request['reimbursements'] ;
-            $salary->transport_allowance = $request['transport_allowance'] ;
-           
-            $salary->welfare = $request['welfare'] ;
-            $salary->maintenance = $request['maintenance'] ;
-            $salary->absent = $request['absent'] ;
-            $salary->boot = $request['boot'] ;                            
-            $salary->iou = $request['iou'] ;
-            $salary->hostel = $request['hostel'] ;
-            $salary->insurance = $request['insurance'] ;
-            $salary->reprimand = $request['reprimand'] ;          
-            $salary->scouter = $request['scouter'] ;
-            $salary->raincoat = $request['raincoat'] ;
-            $salary->meal = $request['meal'] ;
-            $salary->loan = $request['loan'] ;
-            $salary->walkin = $request['walkin'] ;
-            $salary->amnt_ded_cof_start_date = $request['amnt_ded_cof_start_date'] ;
-            $salary->other_deductions = $request['other_deductions'] ;
-
-            // // WORK SSNIT
-            $salary->ssnit_tier2_5d = $ssnit_tier2_5   ;
-            $salary->ssnit_tier2_5 = $ssnit_tier2_5  ;
-            $salary->ssnit_tier1_0_5 =  $ssnit_tier1_0_5 ;
-
-            // // WORK TAX
-            $salary->tax = $tax ??  $salary->tax;
-
-            // // SUM GROSS, TOTAL DEDUCTTIONS AND NET SALARY
-            $grossSalary = $request['basic_salary'] + $request['allowances'] + $request['airtime_allowance'] + $request['overtime'] + $request['reimbursements'] + $request['transport_allowance'] + $ssnit_tier2_5;
-            $totalDeduction = $tax + $ssnit_tier2_5 +  $request['welfare'] + $request['maintenance'] + $request['absent']  +  $request['boot'] +  $request['iou'] +  $request['hostel'] + $request['insurance'] + $request['reprimand'] + $request['scouter'] +  $request['raincoat'] +  $request['meal'] + $request['loan'] + $request['walkin'] + $request['amnt_ded_cof_start_date'] + $request['other_deductions'];
-            $netSalay = $grossSalary - $totalDeduction ;
-           
-            $salary->gross_salary = $grossSalary  ;
-            $salary->total_deductions = $totalDeduction  ;
-            $salary->net_salary = $netSalay ;
-
-            // // WORK 
-            $salary->ssnit_comp_cont_13 =  $ssnit_13  ;
-            $salary->ssnit_tobe_paid13_5 = $ssnit_13_5 ;
-            $salary->cost_to_company = $netSalay + $ssnit_13_5  ;
+            // Amounts as typed; tax, SSNIT and totals worked out the same way as the salary upload.
+            $salary->loadMissing('employee.paymentInfo');
+            SalaryCalculator::fill($salary, $request->only(array_keys(SalaryCalculator::editable())));
 
             // UPDATE PAYMENT DETAILS FOR A MONTH SALARY
             $salary->payment_type = $request['payment_type']  ;
