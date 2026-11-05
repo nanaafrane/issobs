@@ -238,3 +238,16 @@ Artisan::command('subscription:check-pending', function () {
 })->purpose('Ask Hubtel about subscription payments still pending');
 
 \Illuminate\Support\Facades\Schedule::command('subscription:check-pending')->everyTenMinutes()->withoutOverlapping();
+
+// Test data for overtime paid with the salary (November 2026): see NovemberOvertimeTestSeeder.
+Artisan::command('testdata:november-overtime {--remove : take the TEST-NOV data out} {--fresh : remove, then add again}', function () {
+    if ($this->option('remove') || $this->option('fresh')) {
+        \Database\Seeders\NovemberOvertimeTestSeeder::remove($this);
+        if ($this->option('remove')) {
+            return 0;
+        }
+    }
+    $this->call('db:seed', ['--class' => \Database\Seeders\NovemberOvertimeTestSeeder::class, '--force' => true]);
+
+    return 0;
+})->purpose('Add (or remove) TEST-NOV invoices, receipts and overtime to try November salaries');
