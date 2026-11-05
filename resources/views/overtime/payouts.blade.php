@@ -20,12 +20,18 @@
         <div class="d-flex flex-wrap justify-content-between align-items-end gap-2 mb-3">
             <div>
                 <h3 class="text-primary mb-1"><i class="bx bx-money-withdraw me-1"></i> Overtime pay-outs</h3>
-                <div class="text-muted small">Approved overtime is paid per office and period — one expense and one payment — and the office ticks each guard as paid.</div>
+                <div class="text-muted small">Approved overtime is paid per office and period — one expense and one payment — and the office ticks each guard as paid. Overtime the officer marked "with salary" goes on the month's salaries when they are generated.</div>
             </div>
             <div class="d-flex gap-2">
                 @if($canFund)
                 <a href="{{ route('overtime.payouts.payrollCheck') }}" class="btn btn-outline-secondary btn-sm">Payroll check</a>
                 <a href="{{ route('overtime.payouts.create') }}" class="btn btn-primary btn-sm">New pay-out</a>
+                <form method="POST" action="{{ route('overtime.payouts.settings') }}" class="d-flex align-items-center gap-1 ms-2" title="The amount new overtime entries start with">
+                    @csrf
+                    <label class="small text-muted text-nowrap mb-0" for="default_amount">Default per shift GH₵</label>
+                    <input type="number" step="0.01" min="0" name="default_amount" id="default_amount" class="form-control form-control-sm" style="width:6rem" value="{{ number_format($defaultAmount, 2, '.', '') }}">
+                    <button class="btn btn-sm btn-outline-secondary">Save</button>
+                </form>
                 @endif
             </div>
         </div>
@@ -54,18 +60,20 @@
             <div class="card-header py-2"><h6 class="mb-0">Owed by office</h6></div>
             <div class="table-responsive">
                 <table class="table table-sm mb-0">
-                    <thead><tr><th>Office</th><th class="op-num">Entries</th><th>Dates</th><th class="op-num">Amount</th><th></th></tr></thead>
+                    <thead><tr><th>Office</th><th class="op-num">Entries</th><th>Dates</th><th class="op-num">Cash today</th><th class="op-num">With salary</th><th class="op-num">Amount</th><th></th></tr></thead>
                     <tbody>
                     @forelse($owedByOffice as $o)
                         <tr>
                             <td>{{ $o['field']?->name }}</td>
                             <td class="op-num">{{ $o['count'] }}</td>
                             <td>{{ $o['from']?->format('d M') }} – {{ $o['to']?->format('d M Y') }}</td>
+                            <td class="op-num">{{ number_format($o['cash'], 2) }}</td>
+                            <td class="op-num" title="Goes with the month's salaries when they are generated">{{ number_format($o['salary'], 2) }}</td>
                             <td class="op-num fw-semibold">{{ number_format($o['amount'], 2) }}</td>
                             <td class="text-end">@if($canFund)<a class="btn btn-sm btn-outline-primary py-0" href="{{ route('overtime.payouts.create', ['field' => $o['field']?->id, 'from' => $o['from']?->toDateString(), 'to' => $o['to']?->toDateString()]) }}">Pay these</a>@endif</td>
                         </tr>
                     @empty
-                        <tr><td colspan="5" class="text-muted text-center py-3">No approved overtime is waiting to be paid.</td></tr>
+                        <tr><td colspan="7" class="text-muted text-center py-3">No approved overtime is waiting to be paid.</td></tr>
                     @endforelse
                     </tbody>
                 </table>

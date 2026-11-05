@@ -1500,8 +1500,14 @@ class SalaryController extends Controller
             AbsentDeduction::logNewRows($month, $absentFilled, Auth::id());
         });
 
+        // Overtime the officer marked "with salary": sent to payroll and onto these salaries.
+        $overtime = $rows->isEmpty() ? ['entries' => 0] : \App\Support\OvertimePay::salariesGenerated($month, $rows->pluck('employee_id')->all());
+
         $rejected = $rows->where('payment_status', 'rejected')->count();
         $message = $rows->count() . ' employee(s) added to ' . $month->format('F Y') . ' salaries.';
+        if ($overtime['entries']) {
+            $message .= ' Overtime with salary added for ' . $overtime['guards'] . ' guard(s): ' . $overtime['entries'] . ' entries, GH₵ ' . number_format($overtime['amount'], 2) . '.';
+        }
         if ($absentFilled) {
             $message .= ' Absent deduction filled from attendance for ' . count($absentFilled) . ' guard(s).';
         }

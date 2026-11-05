@@ -184,7 +184,9 @@ class OvertimeAttendanceSync
             }
             // Moved off his own post: his mark there for this shift (even a sign-in) is replaced, and put back if the entry goes.
             $movedOffHomeMark = $role === 'cover' && ! empty($t['moved_from']) && (int) $existing->client_id === (int) $t['moved_from'];
-            if (! $movedOffHomeMark && ($signedIn || $role === 'cover')) {
+            // Working his own off day: his OFF mark becomes Present (and comes back if the entry goes).
+            $offDayWorked = $role === 'cover' && $o->type === 'off_day' && $existing->status === Attendance::OFF && ! $existing->overtime_id;
+            if (! $movedOffHomeMark && ! $offDayWorked && ($signedIn || $role === 'cover')) {
                 $where = $existing->client?->business_name ?: $existing->client?->name ?: 'another client';
                 self::saveLink($link, $base + ['state' => 'conflict', 'attendance_id' => $existing->id, 'previous' => null,
                     'message' => ($role === 'absent' ? 'The guard signed in for this shift' : 'The O.T guard is already on the sheet for this shift')

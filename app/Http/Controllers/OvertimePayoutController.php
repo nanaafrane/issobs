@@ -32,6 +32,8 @@ class OvertimePayoutController extends Controller
             'field' => $g->first()->field,
             'count' => $g->count(),
             'amount' => round((float) $g->sum('amount'), 2),
+            'cash' => round((float) $g->where('pay_by', '!=', 'salary')->sum('amount'), 2),
+            'salary' => round((float) $g->where('pay_by', 'salary')->sum('amount'), 2),
             'from' => $g->min('entry_date'),
             'to' => $g->max('entry_date'),
         ])->sortByDesc('amount')->values();
@@ -47,7 +49,9 @@ class OvertimePayoutController extends Controller
         $held = $payouts->where('status', 'open')->where('method', 'cash');
         $canFund = $this->canFund();
 
-        return view('overtime.payouts', compact('owed', 'owedByOffice', 'payouts', 'held', 'status', 'canFund'));
+        $defaultAmount = \App\Support\OvertimePay::defaultAmount();
+
+        return view('overtime.payouts', compact('owed', 'owedByOffice', 'payouts', 'held', 'status', 'canFund', 'defaultAmount'));
     }
 
     public function create(Request $request)
@@ -149,6 +153,17 @@ class OvertimePayoutController extends Controller
         $rows = $this->payouts->payrollCheck($month);
 
         return view('overtime.payroll_check', compact('rows', 'month'));
+    }
+
+    /** The amount new overtime entries start with (each entry can still be changed). */
+    public function settings(Request $request)
+    {
+        abort_unless($this->canFund(), 403);
+        $data = $request->validate(['default_amount' => ['required', 'numeric', 'min:0', 'max:100000']],
+            ['default_amount.required' => 'Type the default amount per shift.']);
+        \App\Support\OvertimePay::saveDefaultAmount((float) $data['default_amount'], Auth::id());
+
+        return back()->with('success', 'New overtime entries now start at GH₵ ' . number_format((float) $data['default_amount'], 2) . ' per shift.');
     }
 
     /** Head-office finance raises and funds pay-outs. */

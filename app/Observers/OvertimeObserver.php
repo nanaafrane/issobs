@@ -22,6 +22,14 @@ class OvertimeObserver
     {
         // Attendance sheet: "?" while in review, the reason once fully approved, put back on reject.
         OvertimeAttendanceSync::sync($overtime);
+
+        // Warnings kept on the entry: no weekly off day, no own shift next to a shortage, cash exception.
+        $fresh = $overtime->fresh() ?? $overtime;
+        $checks = \App\Support\OvertimePay::checks($fresh);
+        if ($checks !== (array) ($fresh->checks ?? [])) {
+            Overtime::withoutEvents(fn () => Overtime::whereKey($overtime->id)->update(['checks' => $checks ? json_encode($checks) : null]));
+            $overtime->checks = $checks ?: null;
+        }
     }
 
     public function deleted(Overtime $overtime): void

@@ -216,6 +216,7 @@ Route::get('overtime-payouts', [\App\Http\Controllers\OvertimePayoutController::
 Route::get('overtime-payouts/create', [\App\Http\Controllers\OvertimePayoutController::class, 'create'])->name('overtime.payouts.create');
 Route::post('overtime-payouts', [\App\Http\Controllers\OvertimePayoutController::class, 'store'])->name('overtime.payouts.store')->middleware('once');
 Route::get('overtime-payouts/payroll-check', [\App\Http\Controllers\OvertimePayoutController::class, 'payrollCheck'])->name('overtime.payouts.payrollCheck');
+Route::post('overtime-payouts/settings', [\App\Http\Controllers\OvertimePayoutController::class, 'settings'])->name('overtime.payouts.settings');
 Route::get('overtime-payouts/{payout}', [\App\Http\Controllers\OvertimePayoutController::class, 'show'])->whereNumber('payout')->name('overtime.payouts.show');
 Route::post('overtime-payouts/{payout}/disburse', [\App\Http\Controllers\OvertimePayoutController::class, 'disburse'])->name('overtime.payouts.disburse')->middleware('once');
 Route::post('overtime-payouts/{payout}/give-back', [\App\Http\Controllers\OvertimePayoutController::class, 'giveBack'])->name('overtime.payouts.giveBack')->middleware('once');

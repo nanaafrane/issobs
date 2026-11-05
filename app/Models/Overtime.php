@@ -29,6 +29,7 @@ class Overtime extends Model
         'user_2', 'status_2', 'date_2',
         'user_3', 'status_3', 'date_3',
         'expense_id',
+        'type', 'pay_by', 'pay_note', 'checks',
     ];
 
     public const DISBURSE_METHODS = [
@@ -45,7 +46,27 @@ class Overtime extends Model
         'date_2' => 'datetime',
         'date_3' => 'datetime',
         'disbursed_at' => 'date',
+        'checks' => 'array',
     ];
+
+    /** Type and pay route default from the entry itself (App\Support\OvertimePay). */
+    protected static function booted(): void
+    {
+        static::saving(function (self $o) {
+            $o->type = $o->type ?: \App\Support\OvertimePay::guessType($o->absent_employee_id ? (int) $o->absent_employee_id : null, $o->reason);
+            $o->pay_by = $o->pay_by ?: 'cash';
+        });
+    }
+
+    public function typeLabel(): string
+    {
+        return \App\Support\OvertimePay::TYPES[$this->type] ?? 'Other';
+    }
+
+    public function payByLabel(): string
+    {
+        return \App\Support\OvertimePay::PAY_BY[$this->pay_by ?: 'cash'];
+    }
 
     public function setDisbursedAtAttribute($v): void
     {

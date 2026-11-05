@@ -75,12 +75,12 @@ class OvertimeController extends Controller
             return view('hr.index', compact(
             'date', 'fields', 'fieldId', 'day', 'night', 'dayTotal', 'nightTotal',
             'reasons', 'weekTotal', 'monthTotal'
-        ));
+        ) + ['defaultAmount' => \App\Support\OvertimePay::defaultAmount()]);
             }
         return view('overtime.index', compact(
             'date', 'fields', 'fieldId', 'day', 'night', 'dayTotal', 'nightTotal',
             'reasons', 'weekTotal', 'monthTotal'
-        ));
+        ) + ['defaultAmount' => \App\Support\OvertimePay::defaultAmount()]);
     }
 
     /**
@@ -347,7 +347,8 @@ class OvertimeController extends Controller
             'This entry can no longer be edited - Branch Review has already started.');
 
         $this->ensureOtGuardIsFree($request->validated(), $overtime->id);
-        $overtime->update($request->validated());
+        // Type and pay route left out of the request stay as they are.
+        $overtime->update(array_filter($request->validated(), fn ($v, $k) => ! in_array($k, ['type', 'pay_by'], true) || $v !== null, ARRAY_FILTER_USE_BOTH));
 
         if ($request->wantsJson()) {
             return response()->json(['success' => true]);

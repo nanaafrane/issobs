@@ -22,7 +22,9 @@ use Illuminate\Validation\ValidationException;
  * period, instead of one bank payment per guard per shift.
  *
  *  create()     cash / MoMo: one expense (type Overtime) + one payment from a bank or Main Cash
- *               for the ticked entries. Payroll: no money moves; entries are paid with salaries.
+ *               for the ticked entries. Payroll: no money moves; the amounts go on the guards'
+ *               salaries of that month (App\Support\OvertimePay). Each entry goes on a pay-out of
+ *               the kind the officer chose on it ("Pay by": cash today / with salary).
  *  disburse()   the office ticks each guard as paid (cash, or the MoMo reference).
  *  giveBack()   entries not paid out (guard did not collect, MoMo bounced): their money goes
  *               back into an account and the entries are owed again.
@@ -83,6 +85,18 @@ class OvertimePayouts
                 throw ValidationException::withMessages(['overtime_ids' => 'Overtime #' . $bad->implode(', #')
                     . ' is not approved, already on a pay-out, or not ' . $field->name . ' overtime between those dates. Refresh and try again.']);
             }
+            // Paid the way the officer asked on the entry (cash today / with salary).
+            $want = $method === 'payroll' ? 'salary' : 'cash';
+            $other = $entries->filter(fn (Overtime $o) => ($o->pay_by ?: 'cash') !== $want);
+            if ($other->isNotEmpty()) {
+                throw ValidationException::withMessages(['overtime_ids' => 'Overtime #' . $other->pluck('id')->implode(', #')
+                    . ($want === 'salary' ? ' is to be paid in cash' : ' is to be paid with the salary')
+                    . ' (the officer\'s choice on the entry). Untick ' . ($other->count() === 1 ? 'it' : 'them') . ', or change "Pay by" on the entry first.']);
+            }
+            if ($method === 'payroll' && ($paid = \App\Support\OvertimePay::paidSalaries($entries->pluck('ot_employee_id')->unique()->all(), $input['payroll_month']))) {
+                throw ValidationException::withMessages(['payroll_month' => 'The ' . Carbon::parse($input['payroll_month'])->format('F Y') . ' salary is already paid for '
+                    . implode(', ', $paid) . '. Choose the next month.']);
+            }
             $total = round((float) $entries->sum('amount'), 2);
             if ($total <= 0) {
                 throw ValidationException::withMessages(['overtime_ids' => 'The ticked entries add up to GH₵ 0.00.']);
@@ -105,6 +119,8 @@ class OvertimePayouts
                 // Paid with the salaries: nothing leaves an account here.
                 $this->markPaid($payout, $ids, Carbon::parse($input['payroll_month'])->endOfMonth(), 'payroll', 'Salary ' . Carbon::parse($input['payroll_month'])->format('M Y'));
                 $this->closeIfDone($payout);
+                // On the guards' salaries of that month (those generated later get it then).
+                \App\Support\OvertimePay::syncGuards($entries->pluck('ot_employee_id')->unique()->all(), $input['payroll_month']);
 
                 return $payout->fresh();
             }
@@ -246,6 +262,12 @@ class OvertimePayouts
                 throw ValidationException::withMessages(['cancel_reason' => 'Some of this pay-out has already been paid out or returned, so it cannot be cancelled. Return the entries not paid instead.']);
             }
 
+            $guards = $payout->entries()->pluck('ot_employee_id')->unique()->all();
+            if ($payout->method === 'payroll' && ($paid = \App\Support\OvertimePay::paidSalaries($guards, $payout->payroll_month))) {
+                throw ValidationException::withMessages(['cancel_reason' => 'The ' . $payout->payroll_month->format('F Y') . ' salary is already paid for '
+                    . implode(', ', $paid) . ', with this overtime on it, so the pay-out cannot be cancelled.']);
+            }
+
             if ($payout->payment_id) {
                 $this->book->cancelPayment(AccountPayment::findOrFail($payout->payment_id), 'Overtime pay-out #' . $payout->id . ' cancelled: ' . $reason);
             }
@@ -261,6 +283,9 @@ class OvertimePayouts
             $payout->cancelled_by = Auth::id();
             $payout->cancel_reason = mb_substr($reason, 0, 500);
             $payout->save();
+            if ($payout->method === 'payroll') {
+                \App\Support\OvertimePay::syncGuards($guards, $payout->payroll_month);   // off the salaries again
+            }
 
             return $payout;
         });

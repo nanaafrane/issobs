@@ -44,6 +44,7 @@ class SalaryUpload
         'status' => 'Status',
         'absent_days' => 'Absent days (attendance)',
         'absent_attendance' => 'Absent from attendance',
+        'overtime_entries' => 'Overtime from entries',
         'earnings_elsewhere' => 'Earnings not in this file',
         'deductions_elsewhere' => 'Deductions not in this file',
         'current_net' => 'Net pay now',
@@ -142,6 +143,7 @@ class SalaryUpload
                 'values' => array_intersect_key($amounts, array_flip($columns)),
                 'absent_days' => $a ? $a['absent'] : null,
                 'absent_attendance' => $a ? AbsentDeduction::amount($a['absent'], (float) $s->basic_salary, (float) $s->allowances, $month, $settings) : null,
+                'overtime_entries' => $s->overtime_from_entries === null ? null : round((float) $s->overtime_from_entries, 2),
                 'earnings_elsewhere' => round($earn, 2),
                 'deductions_elsewhere' => round($ded, 2),
                 'current_net' => $s->net_salary === null ? null : round((float) $s->net_salary, 2),
@@ -504,6 +506,11 @@ class SalaryUpload
                                     . ($a['pending'] ? ' ' . $a['pending'] . ' day(s) are still pending review.' : ''));
                             }
                         }
+                    }
+                    $fromEntries = (float) ($salary->overtime_from_entries ?? 0);
+                    if (in_array('overtime', $apply, true) && $fromEntries > 0 && round((float) $values['overtime'], 2) < round($fromEntries, 2)) {
+                        $warn('overtime', 'Overtime ' . self::money($values['overtime']) . ' is below the ' . number_format($fromEntries, 2)
+                            . ' of overtime sent to payroll for this guard (Overtime pay-outs).');
                     }
                     $oldNet = (float) ($old['net_salary'] ?? 0);
                     if ($res['changes'] && $old['net_salary'] !== null && abs($new['net_salary'] - $oldNet) >= 200 && abs($new['net_salary'] - $oldNet) > 0.5 * max(1, abs($oldNet))) {

@@ -10,6 +10,13 @@
         .op-total { font-size: 1.4rem; font-weight: 700; }
         tr.op-off td:not(:first-child) { opacity: .45; }
         .op-method { border: 1px solid #e5e7eb; border-radius: .5rem; padding: .75rem 1rem; }
+        tr.op-other td { opacity: .35; }
+        .ot-warn { color: #a16207; }
+        .badge.ot-type { font-weight: 500; }
+        .badge.ot-type-replacement { background: #e0f2fe; color: #075985; }
+        .badge.ot-type-shortage { background: #fef3c7; color: #92400e; }
+        .badge.ot-type-off_day { background: #ede9fe; color: #5b21b6; }
+        .badge.ot-type-other { background: #f3f4f6; color: #374151; }
     </style>
     @endsection
 
@@ -54,21 +61,24 @@
                         </div>
                         <div class="table-responsive" style="max-height: 30rem; overflow-y: auto;">
                             <table class="table table-sm mb-0">
-                                <thead><tr><th></th><th>Date</th><th>Shift</th><th>Guard</th><th>Phone</th><th>Covering</th><th>Client</th><th class="op-num">Amount</th></tr></thead>
+                                <thead><tr><th></th><th>Date</th><th>Shift</th><th>Guard</th><th>Phone</th><th>Covering</th><th>Client</th><th>Type · officer asked</th><th class="op-num">Amount</th></tr></thead>
                                 <tbody>
                                 @forelse($entries as $o)
                                     <tr class="{{ in_array($o->id, $oldIds, true) ? '' : 'op-off' }}">
-                                        <td><input type="checkbox" class="form-check-input po-pick" name="overtime_ids[]" value="{{ $o->id }}" data-amount="{{ (float) $o->amount }}" data-guard="{{ $o->ot_employee_id }}" @checked(in_array($o->id, $oldIds, true))></td>
+                                        <td><input type="checkbox" class="form-check-input po-pick" name="overtime_ids[]" value="{{ $o->id }}" data-amount="{{ (float) $o->amount }}" data-guard="{{ $o->ot_employee_id }}" data-pay="{{ $o->pay_by ?: 'cash' }}" @checked(in_array($o->id, $oldIds, true))></td>
                                         <td class="text-nowrap">{{ $o->entry_date->format('D d M') }}</td>
                                         <td>{{ ucfirst($o->shift) }}</td>
                                         <td>{{ $o->otEmployee?->name ?? '—' }}</td>
                                         <td class="small">{{ $o->phone_number }}</td>
                                         <td class="small">{{ $o->absentLabel() }}</td>
                                         <td class="small">{{ $o->clientLabel() }}</td>
+                                        <td class="small text-nowrap"><span class="badge ot-type ot-type-{{ $o->type ?? 'other' }}">{{ $o->typeLabel() }}</span>
+                                            <span class="{{ $o->pay_by === 'salary' ? 'text-primary' : '' }}">{{ $o->payByLabel() }}</span>
+                                            @if($o->checks)<i class="bx bx-error ot-warn" title="{{ implode(' ', (array) $o->checks) }}"></i>@endif</td>
                                         <td class="op-num">{{ number_format($o->amount, 2) }}</td>
                                     </tr>
                                 @empty
-                                    <tr><td colspan="8" class="text-muted text-center py-3">No approved overtime is owed for {{ $field?->name }} between these dates.</td></tr>
+                                    <tr><td colspan="9" class="text-muted text-center py-3">No approved overtime is owed for {{ $field?->name }} between these dates.</td></tr>
                                 @endforelse
                                 </tbody>
                             </table>
@@ -119,7 +129,7 @@
                         <div class="op-method mt-3" data-for="payroll">
                             <label class="form-label small mb-0" for="payroll_month">Paid with the salaries of <span class="text-danger">*</span></label>
                             <input type="month" name="payroll_month" id="payroll_month" class="form-control" style="max-width: 14rem" value="{{ old('payroll_month', now()->format('Y-m')) }}">
-                            <div class="small text-muted mt-2">No money moves now. Each guard's total goes on that month's payroll; the payroll check shows any guard whose salary overtime does not match.</div>
+                            <div class="small text-muted mt-2">No money moves now. Each guard's total is added to his Overtime on that month's salary (now, or when the salaries are generated). Overtime the officer asked to be paid "with salary" is sent here by itself when the month's salaries are generated.</div>
                         </div>
 
                         <div class="mt-3">
@@ -138,6 +148,7 @@
                         <div class="small text-muted" id="poCount"></div>
                         <div class="small mt-2" id="poBalance"></div>
                         <div class="small text-danger mt-1" id="poWarn"></div>
+                        <div class="small text-muted mt-1" id="poOther"></div>
                         <button class="btn btn-primary w-100 mt-3" id="poBtn" data-loading>Create pay-out</button>
                     </div></div>
                 </div>
@@ -156,8 +167,20 @@
         var bank = document.getElementById('bank_id');
         function money(v) { return (Math.round(v * 100) / 100).toLocaleString('en-GH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
         function method() { return (form.querySelector('.po-method:checked') || {}).value || 'cash'; }
+        var lastMethod = null;
         function update() {
             var m = method();
+            // Only entries the officer asked to be paid this way: cash / MoMo = "Cash today", payroll = "With salary".
+            var want = m === 'payroll' ? 'salary' : 'cash', other = 0;
+            form.querySelectorAll('.po-pick').forEach(function (c) {
+                var ok = c.dataset.pay === want;
+                if (!ok) { c.checked = false; other++; }
+                else if (lastMethod !== null && lastMethod !== m && (lastMethod === 'payroll') !== (m === 'payroll')) { c.checked = true; }
+                c.disabled = !ok;
+                c.closest('tr').classList.toggle('op-other', !ok);
+            });
+            lastMethod = m;
+            document.getElementById('poOther').textContent = other ? other + (other === 1 ? ' entry is' : ' entries are') + ' to be paid ' + (want === 'salary' ? 'in cash' : 'with the salary') + ' (the officer\'s choice), so ' + (other === 1 ? 'it is' : 'they are') + ' not on this pay-out.' : '';
             form.querySelectorAll('[data-for]').forEach(function (el) { el.style.display = el.dataset.for.split(' ').indexOf(m) >= 0 ? '' : 'none'; });
             var opt = bank.options[bank.selectedIndex], isCash = opt && opt.dataset.cash === '1';
             document.getElementById('payMethodBox').style.display = (m === 'cash' && opt && opt.value && opt.dataset.kind === 'bank') ? '' : 'none';
@@ -183,7 +206,7 @@
             }
         }
         var all = document.getElementById('poAll');
-        if (all) all.addEventListener('change', function () { form.querySelectorAll('.po-pick').forEach(function (c) { c.checked = all.checked; }); update(); });
+        if (all) all.addEventListener('change', function () { form.querySelectorAll('.po-pick').forEach(function (c) { if (!c.disabled) c.checked = all.checked; }); update(); });
         form.addEventListener('change', update);
         form.addEventListener('submit', function (e) { if (!confirm(document.getElementById('poBtn').textContent + '?')) e.preventDefault(); });
         update();

@@ -57,6 +57,9 @@ class SalariesSheet implements FromArray, WithTitle, WithEvents
             $this->cols[] = ['absent_days', SalaryUpload::INFO['absent_days'], 'info_num', 11, 'Days marked Absent on the attendance sheet this month (blank = guard not on attendance).'];
             $this->cols[] = ['absent_attendance', SalaryUpload::INFO['absent_attendance'], 'info_money', 13, 'What those days come to with the Absent deductions rule. The Row check flags an Absent amount that differs.'];
         }
+        if (in_array('overtime', $columns, true)) {
+            $this->cols[] = ['overtime_entries', SalaryUpload::INFO['overtime_entries'], 'info_money', 13, 'Approved overtime sent to payroll for this guard and month (Overtime pay-outs). It is part of Overtime: the Row check flags an Overtime below this.'];
+        }
         if (count($columns) < count(SalaryCalculator::editable())) {
             $this->cols[] = ['earnings_elsewhere', SalaryUpload::INFO['earnings_elsewhere'], 'info_money', 13, 'The earnings this file leaves out, as they are now. Used by the Row check only.'];
             $this->cols[] = ['deductions_elsewhere', SalaryUpload::INFO['deductions_elsewhere'], 'info_money', 13, 'The deductions this file leaves out, as they are now (tax and SSNIT not included).'];
@@ -194,6 +197,12 @@ class SalariesSheet implements FromArray, WithTitle, WithEvents
                 $t = $col['absent_attendance'];
                 $tests[] = ["AND({$t}{$r}<>\"\",ISNUMBER({$a}{$r}),ROUND(N({$a}{$r}),2)<>ROUND(N({$t}{$r}),2))",
                     "\"CHECK: absent differs from attendance (\"&TEXT(N({$t}{$r}),\"#,##0.00\")&\")\""];
+            }
+            if (isset($col['overtime'], $col['overtime_entries'])) {
+                $o = $col['overtime'];
+                $t = $col['overtime_entries'];
+                $tests[] = ["AND(N({$t}{$r})>0,ISNUMBER({$o}{$r}),ROUND(N({$o}{$r}),2)<ROUND(N({$t}{$r}),2))",
+                    "\"CHECK: overtime is below the overtime entries (\"&TEXT(N({$t}{$r}),\"#,##0.00\")&\")\""];
             }
             $formula = '"OK"';
             foreach (array_reverse($tests) as [$test, $value]) {

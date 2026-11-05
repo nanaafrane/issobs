@@ -234,8 +234,17 @@
                             <td>{{ $row->clientLabel() }}</td>
                             <td><strong>{{ $row->otEmployee?->name }}</strong><div>@include('partials.guard_contact', ['emp' => $row->otEmployee])</div></td>
                             <td>{{ $row->officer?->name }}<div>@include('partials.guard_contact', ['emp' => $row->officer])</div></td>
-                            <td>{{ $row->reason }}@include('overtime._attendance_badge')</td>
-                            <td>GH&#x20B5; {{ number_format($row->amount, 2) }}</td>
+                            <td>
+                                <span class="badge ot-type ot-type-{{ $row->type ?? 'other' }}">{{ $row->typeLabel() }}</span>
+                                {{ $row->reason }}@include('overtime._attendance_badge')
+                                @foreach((array) $row->checks as $check)
+                                    <div class="small ot-warn"><i class="bx bx-error"></i> {{ $check }}</div>
+                                @endforeach
+                            </td>
+                            <td class="text-nowrap">GH&#x20B5; {{ number_format($row->amount, 2) }}
+                                <div class="small {{ $row->pay_by === 'salary' ? 'text-primary' : 'text-muted' }}">{{ $row->payByLabel() }}{{ $row->payout_id ? ' · pay-out #' . $row->payout_id : '' }}</div>
+                                @if($row->pay_note)<div class="small text-muted" title="Why cash">{{ $row->pay_note }}</div>@endif
+                            </td>
                             <td>{{ $row->phone_number }}</td>
                             <td>
                                 @foreach($row->approvalTimeline() as $stage)
@@ -266,6 +275,14 @@
                                     <input type="hidden" name="shift" value="{{ $shiftKey }}">
                                     <input type="hidden" name="field_id" value="{{ $fieldId }}">
 
+                                    <div class="ot-types mb-2">
+                                        <span class="small fw-semibold me-1">Type:</span>
+                                        @foreach(\App\Support\OvertimePay::TYPES as $tk => $tl)
+                                            <input type="radio" class="btn-check" name="type" value="{{ $tk }}" id="type-{{ $shiftKey }}-{{ $tk }}" autocomplete="off" @checked($tk === 'replacement')>
+                                            <label class="btn btn-sm btn-outline-dark py-0" for="type-{{ $shiftKey }}-{{ $tk }}">{{ $tl }}</label>
+                                        @endforeach
+                                        <span class="small text-muted ms-2 ot-type-help"></span>
+                                    </div>
                                     <div class="ot-steps">
                                         <div class="ot-step">
                                             <label class="ot-step-label"><span class="ot-num">1</span> Client / post</label>
@@ -275,7 +292,8 @@
                                         </div>
 
                                         <div class="ot-step">
-                                            <label class="ot-step-label"><span class="ot-num">2</span> Who didn't show up?</label>
+                                            <label class="ot-step-label"><span class="ot-num">2</span> <span class="ot-absent-label">Who didn't show up?</span></label>
+                                            <div class="small text-muted ot-noabsent d-none">Nobody absent.</div>
                                             <select class="form-select form-select-sm ot-select-absent" name="absent_employee_id" disabled></select>
                                             <input type="text" class="form-control form-control-sm mt-1 d-none" name="absent_employee_note" placeholder="Note, e.g. Shortage / new post">
                                             <select class="form-select form-select-sm mt-1 ot-reason" name="reason">
@@ -290,19 +308,24 @@
                                         </div>
 
                                         <div class="ot-step">
-                                            <label class="ot-step-label"><span class="ot-num">3</span> Who fills the gap?</label>
+                                            <label class="ot-step-label"><span class="ot-num">3</span> <span class="ot-cover-label">Who fills the gap?</span></label>
                                             <select class="form-select form-select-sm ot-select-cover" name="ot_employee_id" required disabled></select>
                                             <div class="small text-muted mt-1">Only guards not already working this shift.</div>
                                             <div class="ot-move-note small mt-1 d-none" style="color:#0e7490"></div>
                                         </div>
 
                                         <div class="ot-step ot-step-last">
-                                            <label class="ot-step-label"><span class="ot-num">4</span> Officer, amount</label>
+                                            <label class="ot-step-label"><span class="ot-num">4</span> Officer, amount, pay</label>
                                             <select class="form-select form-select-sm ot-select-employee" name="officer_id" data-placeholder="Officer on duty"></select>
                                             <div class="d-flex gap-1 mt-1">
-                                                <input type="number" step="0.01" min="0" class="form-control form-control-sm" name="amount" placeholder="Amount" value="30" required>
+                                                <input type="number" step="0.01" min="0" class="form-control form-control-sm" name="amount" placeholder="Amount" value="{{ number_format($defaultAmount ?? 30, 2, '.', '') }}" required title="Default amount per shift (Overtime pay-outs)">
                                                 <input type="text" class="form-control form-control-sm" name="phone_number" placeholder="Phone">
                                             </div>
+                                            <select class="form-select form-select-sm mt-1 ot-pay-by" name="pay_by" required>
+                                                <option value="">Pay by...</option>
+                                                @foreach(\App\Support\OvertimePay::PAY_BY as $pk => $pl)<option value="{{ $pk }}">{{ $pl }}{{ $pk === 'salary' ? ' (month end)' : ' (cash / MoMo)' }}</option>@endforeach
+                                            </select>
+                                            <input type="text" class="form-control form-control-sm mt-1 d-none ot-pay-note" name="pay_note" placeholder="Why cash? (shortage is paid with salary)">
                                             <button type="submit" class="btn btn-dark btn-sm mt-1 w-100"><i class="bx bx-plus"></i> Add overtime</button>
                                         </div>
                                     </div>
@@ -329,6 +352,13 @@
         .ot-step-label { display: block; font-size: .75rem; font-weight: 600; color: #374151; margin-bottom: .3rem; text-transform: none; }
         .ot-num { display: inline-block; width: 1.25rem; height: 1.25rem; line-height: 1.25rem; text-align: center; border-radius: 50%; background: #111827; color: #fff; font-size: .7rem; margin-right: .25rem; }
         .ot-step .select2-container { width: 100% !important; }
+        .ot-types { white-space: normal; }
+        .ot-type { font-weight: 500; margin-right: .25rem; }
+        .ot-warn { color: #a16207; }
+        .badge.ot-type-replacement { background: #e0f2fe; color: #075985; }
+        .badge.ot-type-shortage { background: #fef3c7; color: #92400e; }
+        .badge.ot-type-off_day { background: #ede9fe; color: #5b21b6; }
+        .badge.ot-type-other { background: #f3f4f6; color: #374151; }
     </style>
     <script>
     $(function () {
@@ -408,6 +438,10 @@
                 if (v && !vacant && (!r || !guardReasons.includes(r))) { $reason.val('Absent'); }
                 if (vacant && (!r || guardReasons.includes(r))) { $reason.val('Shortage'); }
                 $cover.val(null).trigger('change');   // the absent guard can't cover
+                // "Nobody (post vacant / shortage)" under Replacement: it is a shortage.
+                if (vacant && form.find('[name=type]:checked').val() === 'replacement') {
+                    form.find('[name=type][value=shortage]').prop('checked', true).trigger('change');
+                }
             });
 
             // Guard taken off his own active shift: it's a move. His post shows "M", not absent, and is one short.
@@ -424,12 +458,44 @@
             });
             $cover.on('select2:clear', () => $moveNote.addClass('d-none').empty());
 
+            // Type: what the form asks for.
+            const help = {
+                replacement: 'A guard was absent, sick or on pass, and another covered. Cash today or with salary.',
+                shortage: 'Nobody absent, the post was short: a guard worked it after his own shift. Paid with the salary.',
+                off_day: 'The guard worked his own weekly day off. Cash today or with salary.',
+                other: 'Extra post, event, ...'
+            };
+            const $payBy = form.find('.ot-pay-by');
+            const $payNote = form.find('.ot-pay-note');
+            const type = () => form.find('[name=type]:checked').val();
+            function applyPay() {
+                const exception = type() === 'shortage' && $payBy.val() === 'cash';
+                $payNote.toggleClass('d-none', !exception).prop('required', exception);
+            }
+            function applyType() {
+                const t = type();
+                const noAbsent = t === 'shortage' || t === 'off_day';
+                form.find('.ot-type-help').text(help[t] || '');
+                form.find('.ot-absent-label').text(t === 'off_day' ? 'His off day' : (t === 'shortage' ? 'Shortage' : 'Who didn\u2019t show up?'));
+                form.find('.ot-cover-label').text(t === 'off_day' ? 'Guard working his off day' : (t === 'shortage' ? 'Guard doing the double duty' : 'Who fills the gap?'));
+                $absent.next('.select2').toggleClass('d-none', noAbsent);
+                $reason.toggleClass('d-none', noAbsent);
+                form.find('.ot-noabsent').toggleClass('d-none', !noAbsent).text(t === 'off_day' ? 'Nobody absent: his own post, on his day off.' : 'Nobody absent: the post was one guard short.');
+                if (noAbsent) { $absent.val(null).trigger('change.select2'); $note.addClass('d-none').val(t === 'off_day' ? 'OFF-DAY WORK' : 'SHORTAGE'); $reason.val(t === 'off_day' ? 'Off-day work' : 'Shortage'); }
+                else if ($note.val() === 'OFF-DAY WORK' || $note.val() === 'SHORTAGE') { $note.val(''); }
+                if (t === 'shortage' && !$payBy.val()) { $payBy.val('salary'); }
+                applyPay();
+            }
+            form.find('[name=type]').on('change', applyType);
+            $payBy.on('change', applyPay);
+            applyType();
+
             refreshSteps();
 
             // Submit via AJAX, then reload for totals / approval state.
             form.on('submit', function (e) {
                 e.preventDefault();
-                const payload = form.serializeArray().filter(f => !(f.name === 'absent_employee_id' && (f.value === 'vacant' || f.value === '')));
+                const payload = form.serializeArray().filter(f => !(f.name === 'absent_employee_id' && (f.value === 'vacant' || f.value === '' || type() === 'shortage' || type() === 'off_day')));
                 $.ajax({
                     url: storeUrl, method: 'POST', data: $.param(payload), headers: { 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
                     success: () => window.location.reload(),

@@ -12,7 +12,7 @@ namespace App\Support\Attendance;
 final class ShiftReasons
 {
     /** The overtime reason list (same order as before). */
-    public const ALL = ['Shortage', 'Absent', 'Sick', 'Terminated', 'Extra Post', 'Event/Function', 'Other', 'Off Duty', 'Pass'];
+    public const ALL = ['Shortage', 'Absent', 'Sick', 'Terminated', 'Extra Post', 'Event/Function', 'Other', 'Off Duty', 'Pass', 'Off-day work'];
 
     /** Reason => attendance status for the named guard; null = post vacant, the guard is not marked. */
     public const GUARD_STATUS = [
@@ -25,6 +25,7 @@ final class ShiftReasons
         'Extra Post' => null,
         'Event/Function' => null,
         'Other' => null,
+        'Off-day work' => null,   // the guard works his own weekly off day (nobody absent)
     ];
 
     /** Attendance status => the reason name shown on the sheet (same words as overtime). */
