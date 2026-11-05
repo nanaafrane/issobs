@@ -4,6 +4,7 @@ namespace App\Support\Dashboards;
 
 use App\Models\Bank;
 use App\Services\Receipts\ReceivablesAging;
+use App\Support\OutstandingInvoices;
 use App\Support\ReceiptReport;
 use Illuminate\Support\Facades\DB;
 
@@ -25,6 +26,8 @@ use Illuminate\Support\Facades\DB;
  *  - Expenses:   expenses approved at head office (stage 3), by the date they were entered.
  *  - Payroll:    salaries of the period's months in a live status (pending / approved), as on
  *                the salaries report; paid = approved.
+ *  - Outstanding: invoices of the period's months not yet fully paid (unpaid + part paid), owed
+ *                as of today (OutstandingInvoices — the same rule as aged receivables).
  *
  * Column aliases are plain words that are not reserved in MySQL / MariaDB / SQLite
  * (a reserved alias such as "terminated" breaks MariaDB).
@@ -87,6 +90,7 @@ class AccountsDashboard
                 'vat_withheld' => $collected->vat,
                 'unpaid_invoices' => $invoiced['unpaid_count'],
             ],
+            'outstanding' => (new OutstandingInvoices($ctx->fieldIds, $ctx->from, $ctx->to))->summary(),
             'modes' => collect(self::MODES)->map(fn ($label, $k) => ['label' => $label, 'value' => round((float) $collected->{$k}, 2)])->values()->all(),
             'trend' => $trend,
             'aging' => [

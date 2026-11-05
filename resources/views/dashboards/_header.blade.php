@@ -38,25 +38,8 @@
         @endif
       </div>
 
-      <label class="visually-hidden" for="dash-period">Period</label>
-      <select id="dash-period" name="period" class="form-select form-select-sm">
-        @foreach(DashboardContext::PERIODS as $key => $label)
-          <option value="{{ $key }}" @selected($ctx->period === $key)>{{ $label }}</option>
-        @endforeach
-      </select>
-
-      <span class="dash-named" @if($isCustom) hidden @endif>
-        <label class="visually-hidden" for="dash-date">Any day in the period</label>
-        <input type="date" id="dash-date" name="date" class="form-control form-control-sm" value="{{ $ctx->anchor->toDateString() }}"
-               max="{{ $today }}" title="Any day in the period" @disabled($isCustom)>
-      </span>
-      <span class="dash-range d-inline-flex gap-1 align-items-center" @unless($isCustom) hidden @endunless>
-        <label class="visually-hidden" for="dash-from">From</label>
-        <input type="date" id="dash-from" name="from" class="form-control form-control-sm" value="{{ $ctx->from->toDateString() }}" max="{{ $today }}" @disabled(! $isCustom)>
-        <span class="small" style="color:var(--ink-3)">to</span>
-        <label class="visually-hidden" for="dash-to">To</label>
-        <input type="date" id="dash-to" name="to" class="form-control form-control-sm" value="{{ $ctx->to->toDateString() }}" max="{{ $today }}" @disabled(! $isCustom)>
-      </span>
+      @include('partials.period_picker', ['id' => 'dash', 'period' => $ctx->period, 'anchor' => $ctx->anchor, 'from' => $ctx->from, 'to' => $ctx->to,
+          'labels' => false, 'wrap' => 'dash-pp', 'periods' => DashboardContext::PERIODS])
 
       @if($offices->count() > 1)
         <label class="visually-hidden" for="dash-field">Office</label>
@@ -73,19 +56,8 @@
 </div>
 <script>
   (function () {
-    var form = document.getElementById('dash-filters');
-    var period = document.getElementById('dash-period');
-    function sync() {
-      var custom = period.value === 'custom';
-      form.querySelector('.dash-named').hidden = custom;
-      form.querySelector('.dash-range').hidden = !custom;
-      document.getElementById('dash-date').disabled = custom;          // disabled inputs are not submitted
-      document.getElementById('dash-from').disabled = !custom;
-      document.getElementById('dash-to').disabled = !custom;
-    }
-    period.addEventListener('change', function () { sync(); if (period.value !== 'custom') form.submit(); });
+    // The period picker submits by itself; the office list does too.
     var field = document.getElementById('dash-field');
-    if (field) field.addEventListener('change', function () { form.submit(); });
-    document.getElementById('dash-date').addEventListener('change', function () { form.submit(); });
+    if (field) field.addEventListener('change', function () { var f = field.form; f.requestSubmit ? f.requestSubmit() : f.submit(); });
   })();
 </script>

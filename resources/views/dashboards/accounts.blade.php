@@ -26,7 +26,7 @@
           'label' => 'Invoiced', 'value' => Fmt::short($k['invoiced']), 'title' => Fmt::money($k['invoiced']),
           'delta' => $mtd ? null : Fmt::delta($k['invoiced'], $k['invoiced_prev'], $prevLabel),
           'note' => Fmt::int($k['invoiced_count']) . ' invoices for ' . $k['invoiced_months'],
-          'href' => url('invoice-report'),
+          'href' => route('invoice.report', $ctx->query()),
         ])
       </div>
       <div class="col-xl-2 col-md-4 col-6">
@@ -70,6 +70,45 @@
       </div>
     </div>
 
+    {{-- Outstanding invoices for the period's months: each figure opens the list (with Excel) --}}
+    @php
+      $os = $d['outstanding'];
+      $osUrl = fn (array $over = []) => route('invoices.outstanding', $ctx->query() + $over);
+    @endphp
+    <div class="row g-3 mb-3">
+      <div class="col-12">
+        <div class="panel h-auto">
+          <div class="panel-h">
+            <h6>Outstanding invoices · {{ $os['months'] }}</h6>
+            <span class="hint">Invoices for {{ $os['months'] }} not yet fully paid · balances as of today</span>
+          </div>
+          <div class="panel-b os-tiles">
+            <a class="os-tile" href="{{ $osUrl() }}">
+              <span class="lbl">Outstanding</span>
+              <span class="val {{ $os['owed'] > 0 ? 'neg' : '' }}" title="{{ Fmt::money($os['owed']) }}">{{ Fmt::short($os['owed']) }}</span>
+              <span class="note">{{ Fmt::int($os['count']) }} invoices · {{ Fmt::int($os['clients']) }} clients</span>
+            </a>
+            <a class="os-tile" href="{{ $osUrl(['status' => 'unpaid']) }}">
+              <span class="lbl">Unpaid</span>
+              <span class="val" title="{{ Fmt::money($os['unpaid']['owed']) }}">{{ Fmt::short($os['unpaid']['owed']) }}</span>
+              <span class="note">{{ Fmt::int($os['unpaid']['count']) }} with nothing paid</span>
+            </a>
+            <a class="os-tile" href="{{ $osUrl(['status' => 'part']) }}">
+              <span class="lbl">Part paid (uncompleted)</span>
+              <span class="val" title="{{ Fmt::money($os['part']['owed']) }}">{{ Fmt::short($os['part']['owed']) }}</span>
+              <span class="note">{{ Fmt::int($os['part']['count']) }} with a balance left</span>
+            </a>
+            <div class="os-tile os-plain">
+              <span class="lbl">Paid of what was billed</span>
+              <span class="val">{{ $os['billed'] > 0 ? Fmt::pct(($os['billed'] - $os['owed']) / $os['billed'] * 100) : '—' }}</span>
+              <span class="note">on these {{ Fmt::int($os['count']) }} invoices ({{ Fmt::short($os['billed']) }} billed)</span>
+            </div>
+            <a class="os-tile os-go" href="{{ $osUrl() }}">View the list →<span class="note">with Excel download</span></a>
+          </div>
+        </div>
+      </div>
+    </div>
+
     {{-- Things waiting for someone --}}
     @if($k['awaiting']->cnt || $k['expenses_pending_count'] || $k['unpaid_invoices'])
     <div class="row g-3 mb-3">
@@ -84,7 +123,7 @@
               <a href="{{ route('expense.list') }}"><span class="chip warn">▲ {{ Fmt::int($k['expenses_pending_count']) }}</span> expenses waiting for a decision</a>
             @endif
             @if($k['unpaid_invoices'])
-              <a href="{{ url('invoiceOutstanding') }}"><span class="chip flat">■ {{ Fmt::int($k['unpaid_invoices']) }}</span> of the invoices for {{ $k['invoiced_months'] }} have nothing paid yet</a>
+              <a href="{{ route('invoices.outstanding', $ctx->query() + ['status' => 'unpaid']) }}"><span class="chip flat">■ {{ Fmt::int($k['unpaid_invoices']) }}</span> of the invoices for {{ $k['invoiced_months'] }} have nothing paid yet</a>
             @endif
           </div>
         </div>

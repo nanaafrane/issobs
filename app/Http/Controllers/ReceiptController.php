@@ -84,6 +84,10 @@ class ReceiptController extends Controller
             'topCollectors' => $report->topCollectors(),
             'trend' => $report->trend(),
             'projection' => $report->projection(),
+            // Invoices for the months this period touches that are not yet fully paid (same offices as the Accounts dashboard).
+            'outstanding' => (new \App\Support\OutstandingInvoices(
+                \App\Support\Dashboards\DashboardContext::allowedFieldIds(Auth::user(), \App\Support\Dashboards\DashboardContext::ACCOUNTS),
+                $report->from, $report->to))->summary(),
         ]);
     }
 

@@ -10,6 +10,7 @@
         .rep-kpi .value { font-size: 1.5rem; font-weight: 700; }
         .rep-kpi .pct { font-size: 1.25rem; font-weight: 800; color: #111827; }
         .rep-kpi .sub { font-size: .85rem; color: #6b7280; }
+        a.rep-kpi:hover { border-color: #696cff; box-shadow: 0 0 0 2px rgba(105,108,255,.15); }
         .rep-card { border-radius: 12px; border: 1px solid #e5e7eb; }
         .rep-card .card-header { background: #f9fafb; border-bottom: 1px solid #e5e7eb; font-weight: 600; }
     </style>
@@ -22,29 +23,59 @@
             <div class="col-12"><h3 class="mb-0"><i class="bx bx-bar-chart-alt-2"></i> Invoices Reports</h3></div>
         </div>
 
-        <form method="GET" action="{{ url('invoice-report') }}" class="row g-2 align-items-end mb-4">
+        @php
+            $officeOpts = $ctx->officeOptions();
+            $osUrl = fn (array $over = []) => route('invoices.outstanding', $ctx->query() + $over);
+            $ghs = fn ($v) => 'GH₵ ' . number_format((float) $v, 2);
+        @endphp
+        <form method="GET" action="{{ url('invoice-report') }}" class="row g-2 align-items-end mb-2" id="inv-window">
+            @include('partials.period_picker', ['id' => 'inv', 'period' => $period, 'anchor' => $anchor, 'from' => $from, 'to' => $to])
+            <div class="col-auto" data-calendar-group="range" @if($period !== 'custom') hidden @endif>
+                <button type="submit" class="btn btn-sm btn-dark">Show</button>
+            </div>
+            @if($officeOpts->count() > 1)
             <div class="col-auto">
-                <label class="form-label small mb-0">Period</label>
-                <select name="period" class="form-select form-select-sm" onchange="this.form.submit()">
-                    @foreach(['daily'=>'Daily','weekly'=>'Weekly','monthly'=>'Monthly','quarterly'=>'Quarterly','semiannual'=>'Semiannual','yearly'=>'Yearly'] as $val=>$label)
-                        <option value="{{ $val }}" @selected($period == $val)>{{ $label }}</option>
+                <label class="form-label small mb-0" for="inv-field">Office</label>
+                <select name="field" id="inv-field" class="form-select form-select-sm" onchange="this.form.requestSubmit ? this.form.requestSubmit() : this.form.submit()">
+                    <option value="">{{ $ctx->allowedIds === null ? 'All offices' : 'All my offices' }}</option>
+                    @foreach($officeOpts as $o)
+                        <option value="{{ $o->id }}" @selected($ctx->fieldId === (int) $o->id)>{{ $o->parent_field_id ? '— ' : '' }}{{ $o->name }}</option>
                     @endforeach
                 </select>
             </div>
-            <div class="col-auto">
-                <label class="form-label small mb-0">Anchor Date</label>
-                <input type="date" name="date" value="{{ $anchor->format('Y-m-d') }}" class="form-control form-control-sm" onchange="this.form.submit()">
-            </div>
-            <div class="col-auto text-muted small pb-1">Showing: {{ $from->format('d M Y') }} &ndash; {{ $to->format('d M Y') }}</div>
+            @endif
         </form>
+        <div class="text-muted small mb-4">
+            {{ $ctx->label() }} · invoices for <strong>{{ $months }}</strong> (invoices are monthly: a period shows the months it touches) · {{ $ctx->scopeLabel() }}
+        </div>
 
         <div class="row g-3 mb-4">
             <div class="col-lg-3 col-6"><div class="rep-kpi"><small class="text-muted">TOTAL INVOICED</small><div class="value">GH&#x20B5; {{ number_format($total,2) }}</div></div></div>
             <div class="col-lg-3 col-6"><div class="rep-kpi"><small class="text-muted">INVOICES</small><div class="value">{{ $count }}</div></div></div>
             <div class="col-lg-3 col-6"><div class="rep-kpi"><small class="text-muted">AVG PER INVOICE</small><div class="value">GH&#x20B5; {{ $count ? number_format($total / $count, 2) : '0.00' }}</div></div></div>
-            <div class="col-lg-3 col-6"><div class="rep-kpi"><small class="text-muted">PROJECTED NEXT {{ strtoupper($period) }}</small><div class="value text-primary">GH&#x20B5; {{ number_format($projection,2) }}</div>
-                <small class="text-muted">avg of last 4 {{ $period }} periods</small>
+            @php $nextWord = ['monthly' => 'month', 'quarterly' => 'quarter', 'semiannual' => 'half-year', 'yearly' => 'year'][$period] ?? 'period'; @endphp
+            <div class="col-lg-3 col-6"><div class="rep-kpi"><small class="text-muted">PROJECTED NEXT {{ strtoupper($nextWord) }}</small>
+                @if($projection !== null)
+                    <div class="value text-primary">GH&#x20B5; {{ number_format($projection,2) }}</div>
+                    <small class="text-muted">avg of the previous 4 periods</small>
+                @else
+                    <div class="value text-muted">–</div><small class="text-muted">forecast for monthly, quarterly, half-year and yearly views</small>
+                @endif
             </div></div>
+        </div>
+
+        {{-- Outstanding invoices for these months: click a figure for the list + Excel --}}
+        <div class="card rep-card mb-4">
+            <div class="card-header d-flex flex-wrap justify-content-between gap-2">
+                <span>Outstanding invoices · {{ $outstanding['months'] }} <span class="text-muted fw-normal small">not yet fully paid, balances as of today</span></span>
+                <a href="{{ $osUrl() }}" class="small fw-normal">View the list and download Excel →</a>
+            </div>
+            <div class="card-body row g-3">
+                <div class="col-lg-3 col-6"><a href="{{ $osUrl() }}" class="rep-kpi h-100 text-body"><small class="text-muted">OUTSTANDING</small><div class="value text-danger">{{ $ghs($outstanding['owed']) }}</div><div class="sub">{{ number_format($outstanding['count']) }} {{ \Illuminate\Support\Str::plural('invoice', $outstanding['count']) }} · {{ number_format($outstanding['clients']) }} {{ \Illuminate\Support\Str::plural('client', $outstanding['clients']) }}</div></a></div>
+                <div class="col-lg-3 col-6"><a href="{{ $osUrl(['status' => 'unpaid']) }}" class="rep-kpi h-100 text-body"><small class="text-muted">UNPAID</small><div class="value">{{ $ghs($outstanding['unpaid']['owed']) }}</div><div class="sub">{{ number_format($outstanding['unpaid']['count']) }} with nothing paid yet</div></a></div>
+                <div class="col-lg-3 col-6"><a href="{{ $osUrl(['status' => 'part']) }}" class="rep-kpi h-100 text-body"><small class="text-muted">PART PAID (UNCOMPLETED)</small><div class="value">{{ $ghs($outstanding['part']['owed']) }}</div><div class="sub">{{ number_format($outstanding['part']['count']) }} with a balance left</div></a></div>
+                <div class="col-lg-3 col-6"><div class="rep-kpi h-100"><small class="text-muted">PAID OF WHAT WAS BILLED</small><div class="value">{{ $outstanding['billed'] > 0 ? number_format(($outstanding['billed'] - $outstanding['owed']) / $outstanding['billed'] * 100, 1) . '%' : '—' }}</div><div class="sub">on these invoices ({{ $ghs($outstanding['billed']) }})</div></div></div>
+            </div>
         </div>
 
         <div class="row g-3 mb-4">
@@ -71,11 +102,12 @@
                                             $pct = $statusTotals ? round(($r->total / $statusTotals) * 100, 1) : 0;
                                         @endphp
                                         <div class="col-12 col-md-4 mb-2">
-                                            <div class="rep-kpi">
+                                            @php $osStatus = ['unpaid' => 'unpaid', 'uncompleted' => 'part'][$st] ?? null; @endphp
+                                            <{{ $osStatus ? 'a' : 'div' }} @if($osStatus) href="{{ $osUrl(['status' => $osStatus]) }}" title="List them (with Excel)" @endif class="rep-kpi text-body">
                                                 <div class="small text-muted">{{ ucfirst($st) }}</div>
                                                 <div class="pct">{{ $pct }}%</div>
                                                 <div class="sub">{{ $r->cnt }} · GH&#x20B5; {{ number_format($r->total,2) }}</div>
-                                            </div>
+                                            </{{ $osStatus ? 'a' : 'div' }}>
                                         </div>
                                     @endforeach
                                 </div>
@@ -149,7 +181,7 @@
             </div>
             <div class="col-lg-6">
                 <div class="alert alert-info">
-                    <i class="bx bx-info-circle"></i> This report uses `invoice_month` as the anchor date.
+                    <i class="bx bx-info-circle"></i> Invoices are counted by their invoice month: a week or a date range shows the invoices of the months it touches.
                 </div>
             </div>
         </div>
@@ -303,7 +335,7 @@
             else if (type === 'issuer') url = `/invoice/issuer/${encodeURIComponent(key)}/details`;
             else return;
 
-            url += `?period=${encodeURIComponent(reportPeriod)}&date=${encodeURIComponent(@json($anchor->format('Y-m-d')))}`;
+            url += '?' + new URLSearchParams(@json($ctx->query())).toString();   // same window and office as the report
 
             fetch(url, { headers: { 'Accept': 'application/json' } })
                 .then(r => r.json())

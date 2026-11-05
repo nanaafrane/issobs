@@ -14,6 +14,7 @@
   .dash .dash-filters { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
   .dash .dash-filters .form-control, .dash .dash-filters .form-select { width: auto; min-width: 9rem; }
   .dash [hidden] { display: none !important; }
+  .dash .dash-pp { display: contents; }
 
   .dash .kpi { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 1rem 1.1rem; height: 100%; display: flex; flex-direction: column; gap: .2rem; }
   .dash .kpi .lbl { color: var(--ink-2); font-size: .78rem; font-weight: 600; text-transform: uppercase; letter-spacing: .03em; }
@@ -56,4 +57,14 @@
   .dash .alert-list li:last-child { border-bottom: 0; }
   .dash .empty { color: var(--ink-3); font-size: .85rem; padding: 1rem 0; text-align: center; }
   .dash .chart { min-height: 260px; }
+
+  /* Outstanding invoices: each figure is a link to the list */
+  .dash .os-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: .75rem; }
+  .dash .os-tile { display: flex; flex-direction: column; gap: .15rem; border: 1px solid var(--line); border-radius: 8px; padding: .7rem .85rem; color: var(--ink); background: var(--surface); }
+  .dash a.os-tile:hover, .dash a.os-tile:focus-visible { border-color: var(--s1); box-shadow: 0 0 0 2px rgba(42,120,214,.15); }
+  .dash .os-tile .lbl { color: var(--ink-2); font-size: .74rem; font-weight: 600; text-transform: uppercase; letter-spacing: .03em; }
+  .dash .os-tile .val { font-size: 1.25rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .dash .os-tile .note { color: var(--ink-3); font-size: .78rem; }
+  .dash .os-tile.os-plain { background: var(--wash); }
+  .dash .os-tile.os-go { justify-content: center; font-weight: 600; color: var(--s1); }
 </style>

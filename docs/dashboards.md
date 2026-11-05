@@ -30,6 +30,12 @@ Quarterly, Half-year, Yearly — each the calendar period containing the date pi
 (from–to, up to five years, never past today). Default: this month. ‹ › step to the previous / next
 period. A period that includes today is shown "to date" and is not compared with the previous one.
 
+**The calendar follows the period** (`partials/period_picker`, also on the receipts report, the invoices
+report and the outstanding-invoices list): Monthly, Quarterly, Half-year and Yearly show a **month**
+picker (any month in the period: October → Q4, H2, 2026); Daily and Weekly show a **date** picker; Date
+range shows **From / To**. Only the input that applies is sent (`?month=YYYY-MM`, `?date=Y-m-d`, or
+`?from=…&to=…`); `?date=` still works for every period (old links, the ‹ › buttons).
+
 * Figures with a date (receipts, expenses, movements, sign-ins, overtime) cover exactly the period.
 * Monthly records (invoices, salaries, shift plans) cover **the months the period touches**: a week in
   October shows October's invoices and payroll. The tiles say which months.
@@ -100,6 +106,27 @@ and the month's net pay, absence deductions and overtime for payroll roles.
 Also: guards present each day vs required, the office table, the clients with the biggest shortages
 (link to each client's attendance sheet), set-up gaps (no shift plan, no QR poster, no site location),
 and guards on record per office.
+
+### Outstanding invoices
+
+On the Accounts dashboard, the receipts report and the invoices report, a row **Outstanding invoices**
+shows, for the invoices of the months the period touches (`App\Support\OutstandingInvoices`):
+
+| Figure | Meaning |
+|---|---|
+| Outstanding | Owed on those invoices today: total − everything settled against them (cash, tax withheld, deductions) — the same rule as aged receivables and statements |
+| Unpaid | Nothing settled yet (status *unpaid*) |
+| Part paid (uncompleted) | Something settled, a balance left (status *uncompleted*) |
+| Paid of what was billed | (billed − outstanding) ÷ billed, on those invoices |
+
+Each figure opens **Outstanding invoices** (`/invoices/outstanding`, same period and office): one row per
+invoice with month, client, office, due date, days overdue, status, total, paid and outstanding; filters
+by status, office and client; a quick search; **Download Excel** (the same list, with totals). Offices
+follow the Accounts dashboard: head-office roles see every office, everyone else their own.
+
+The invoices report now has the same periods as the others (including Date range) and the office
+filter, and counts invoices by the months the period touches (before, a week only matched an invoice
+dated in it). Its "projected next" figure is shown for monthly and longer periods only.
 
 ## 3. MySQL / MariaDB
 

@@ -163,7 +163,8 @@ class ReceiptReport
             $period = 'monthly'; // incomplete range: show this month
         }
 
-        $anchor = self::date($request->input('date')) ?? $today;
+        // ?date=Y-m-d, or ?month=YYYY-MM from the month picker (monthly, quarterly, half-year, yearly)
+        $anchor = (PeriodPicker::anchor($request) ?? $today)->min($today);
         [$from, $to] = self::namedWindow($period, $anchor);
 
         return new self($fieldIds, $period, $from, $to, $anchor);

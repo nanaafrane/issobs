@@ -43,36 +43,32 @@ class InvoiceController extends Controller
      * Invoices reporting: period windows with breakdowns by field, status,
      * top clients and top issuers, plus trend data for charts.
      */
+    /**
+     * Invoices report. Same periods as the receipts report and the dashboards (daily … yearly,
+     * or a date range) and the same office scope as the Accounts dashboard. Invoices are
+     * monthly, so a period shows the invoices of the months it touches.
+     */
     public function report(Request $request)
     {
-        $period = $request->input('period', 'monthly');
-        $anchor = $request->filled('date') ? Carbon::parse($request->date) : Carbon::today();
+        $ctx = $this->reportContext($request);
+        $period = $ctx->period;
+        $anchor = $ctx->anchor;
+        [$from, $to] = [$ctx->from, $ctx->to];
 
-        [$from, $to] = match ($period) {
-            'daily' => [$anchor->copy()->startOfDay(), $anchor->copy()->endOfDay()],
-            'weekly' => [$anchor->copy()->startOfWeek(), $anchor->copy()->endOfWeek()],
-            'quarterly' => [$anchor->copy()->startOfQuarter(), $anchor->copy()->endOfQuarter()],
-            'semiannual' => ($anchor->month <= 6)
-                ? [$anchor->copy()->startOfYear(), $anchor->copy()->startOfYear()->addMonths(5)->endOfMonth()]
-                : [$anchor->copy()->startOfYear()->addMonths(6), $anchor->copy()->endOfYear()],
-            'yearly' => [$anchor->copy()->startOfYear(), $anchor->copy()->endOfYear()],
-            default => [$anchor->copy()->startOfMonth(), $anchor->copy()->endOfMonth()],
-        };
+        $base = $this->reportBase($ctx);
 
-        $base = Invoice::whereBetween('invoice_month', [$from, $to]);
-
-        $total = (clone $base)->sum('total');
+        $total = (clone $base)->sum('invoices.total');
         $count = (clone $base)->count();
 
-        $byField = (clone $base)->join('clients', 'clients.id', '=', 'invoices.client_id')
+        $byField = (clone $base)
             ->join('fields', 'fields.id', '=', 'clients.field_id')
             ->select('fields.id as field_id', 'fields.name as field_name', DB::raw('SUM(invoices.total) as total'), DB::raw('COUNT(invoices.id) as cnt'))
             ->groupBy('fields.id', 'fields.name')->orderByDesc('total')->get();
 
-        $byStatus = (clone $base)->select('status', DB::raw('SUM(total) as total'), DB::raw('COUNT(*) as cnt'))
-            ->groupBy('status')->get();
+        $byStatus = (clone $base)->select('invoices.status', DB::raw('SUM(invoices.total) as total'), DB::raw('COUNT(*) as cnt'))
+            ->groupBy('invoices.status')->get();
 
-        $topClients = (clone $base)->join('clients', 'clients.id', '=', 'invoices.client_id')
+        $topClients = (clone $base)
             ->select('clients.id', 'clients.business_name', 'clients.name', DB::raw('SUM(invoices.total) as total'), DB::raw('COUNT(invoices.id) as cnt'))
             ->groupBy('clients.id', 'clients.business_name', 'clients.name')
             ->orderByDesc('total')->limit(10)->get();
@@ -82,58 +78,35 @@ class InvoiceController extends Controller
             ->groupBy('users.id', 'users.name')
             ->orderByDesc('total')->limit(10)->get();
 
-        $trend = (clone $base)->select('invoice_month', DB::raw('SUM(total) as total'))
-            ->groupBy('invoice_month')->orderBy('invoice_month')->get();
+        $trend = (clone $base)->select('invoices.invoice_month', DB::raw('SUM(invoices.total) as total'))
+            ->groupBy('invoices.invoice_month')->orderBy('invoices.invoice_month')->get();
 
-        $projection = $this->projectNextPeriodInvoices($period, $anchor);
+        // Average of the previous 4 periods: only for months or longer (a day or week shows its month's invoices).
+        $projection = ! in_array($period, \App\Support\PeriodPicker::MONTH_PERIODS, true) ? null : round(collect(range(1, 4))
+            ->map(fn ($i) => (float) $this->reportBase($ctx->shifted($i))->sum('invoices.total'))->avg(), 2);
+
+        $outstanding = (new \App\Support\OutstandingInvoices($ctx->fieldIds, $ctx->from, $ctx->to))->summary();
+        $months = $ctx->monthsLabel();
 
         return view('sales.invoice_report', compact(
-            'period', 'anchor', 'from', 'to', 'total', 'count',
-            'byField', 'byStatus', 'topClients', 'topIssuers', 'trend', 'projection'
+            'ctx', 'period', 'anchor', 'from', 'to', 'total', 'count', 'months',
+            'byField', 'byStatus', 'topClients', 'topIssuers', 'trend', 'projection', 'outstanding'
         ));
     }
 
-    protected function projectNextPeriodInvoices(string $period, Carbon $anchor): float
+    /** The report's window and offices (period / date / month / from / to / field in the query string). */
+    protected function reportContext(Request $request): \App\Support\Dashboards\DashboardContext
     {
-        $samples = [];
-        for ($i = 1; $i <= 4; $i++) {
-            [$from, $to] = match ($period) {
-                'daily' => [$anchor->copy()->subDays($i)->startOfDay(), $anchor->copy()->subDays($i)->endOfDay()],
-                'weekly' => [$anchor->copy()->subWeeks($i)->startOfWeek(), $anchor->copy()->subWeeks($i)->endOfWeek()],
-                'quarterly' => [
-                    $anchor->copy()->subMonths(3 * $i)->startOfQuarter(),
-                    $anchor->copy()->subMonths(3 * $i)->endOfQuarter(),
-                ],
-                'semiannual' => ($anchor->copy()->subMonths(6 * $i)->month <= 6)
-                    ? [$anchor->copy()->subMonths(6 * $i)->startOfYear(), $anchor->copy()->subMonths(6 * $i)->startOfYear()->addMonths(5)->endOfMonth()]
-                    : [$anchor->copy()->subMonths(6 * $i)->startOfYear()->addMonths(6), $anchor->copy()->subMonths(6 * $i)->endOfYear()],
-                'yearly' => [$anchor->copy()->subYears($i)->startOfYear(), $anchor->copy()->subYears($i)->endOfYear()],
-                default => [$anchor->copy()->subMonths($i)->startOfMonth(), $anchor->copy()->subMonths($i)->endOfMonth()],
-            };
-            $samples[] = Invoice::whereBetween('invoice_month', [$from, $to])->sum('total');
-        }
-
-        return $samples ? round(array_sum($samples) / count($samples), 2) : 0.0;
+        return \App\Support\Dashboards\DashboardContext::fromRequest($request, $request->user(), \App\Support\Dashboards\DashboardContext::ACCOUNTS);
     }
 
-    /**
-     * Resolve the [from, to] window for a report period + anchor date.
-     * Shared by the report's drilldown endpoints so every window matches
-     * the one the report() action used to build the tables.
-     */
-    protected function reportRange(string $period, Carbon $anchor): array
+    /** Invoices for the months the window touches, in the user's offices, joined to their client. */
+    protected function reportBase(\App\Support\Dashboards\DashboardContext $ctx)
     {
-        return match ($period) {
-            'daily' => [$anchor->copy()->startOfDay(), $anchor->copy()->endOfDay()],
-            'weekly' => [$anchor->copy()->startOfWeek(), $anchor->copy()->endOfWeek()],
-            'monthly' => [$anchor->copy()->startOfMonth(), $anchor->copy()->endOfMonth()],
-            'quarterly' => [$anchor->copy()->startOfQuarter(), $anchor->copy()->endOfQuarter()],
-            'semiannual' => ($anchor->month <= 6)
-                ? [$anchor->copy()->startOfYear(), $anchor->copy()->startOfYear()->addMonths(5)->endOfMonth()]
-                : [$anchor->copy()->startOfYear()->addMonths(6), $anchor->copy()->endOfYear()],
-            'yearly' => [$anchor->copy()->startOfYear(), $anchor->copy()->endOfYear()],
-            default => [$anchor->copy()->startOfMonth(), $anchor->copy()->endOfMonth()],
-        };
+        return Invoice::query()
+            ->join('clients', 'clients.id', '=', 'invoices.client_id')
+            ->whereBetween('invoices.invoice_month', $ctx->monthSpan())
+            ->when($ctx->fieldIds !== null, fn ($q) => $q->whereIn('clients.field_id', $ctx->fieldIds ?: [0]));
     }
 
     /**
@@ -142,14 +115,10 @@ class InvoiceController extends Controller
      */
     public function fieldDetails(Request $request, $fieldId)
     {
-        $period = $request->input('period', 'monthly');
-        $anchor = $request->filled('date') ? Carbon::parse($request->date) : Carbon::today();
-        [$from, $to] = $this->reportRange($period, $anchor);
+        $ctx = $this->reportContext($request);
 
-        $clients = Invoice::query()
-            ->join('clients', 'clients.id', '=', 'invoices.client_id')
+        $clients = $this->reportBase($ctx)
             ->where('clients.field_id', $fieldId)
-            ->whereBetween('invoices.invoice_month', [$from, $to])
             ->select('clients.id', 'clients.business_name', 'clients.name', DB::raw('COUNT(invoices.id) as cnt'), DB::raw('SUM(invoices.total) as total'))
             ->groupBy('clients.id', 'clients.business_name', 'clients.name')
             ->orderByDesc('total')
@@ -171,14 +140,11 @@ class InvoiceController extends Controller
      */
     public function clientDetails(Request $request, $clientId)
     {
-        $period = $request->input('period', 'monthly');
-        $anchor = $request->filled('date') ? Carbon::parse($request->date) : Carbon::today();
-        [$from, $to] = $this->reportRange($period, $anchor);
+        $ctx = $this->reportContext($request);
 
-        $issuers = Invoice::query()
+        $issuers = $this->reportBase($ctx)
             ->join('users', 'users.id', '=', 'invoices.user_id')
             ->where('invoices.client_id', $clientId)
-            ->whereBetween('invoices.invoice_month', [$from, $to])
             ->select('users.id', 'users.name', DB::raw('COUNT(invoices.id) as cnt'), DB::raw('SUM(invoices.total) as total'))
             ->groupBy('users.id', 'users.name')
             ->orderByDesc('total')
@@ -194,14 +160,10 @@ class InvoiceController extends Controller
      */
     public function issuerDetails(Request $request, $issuerId)
     {
-        $period = $request->input('period', 'monthly');
-        $anchor = $request->filled('date') ? Carbon::parse($request->date) : Carbon::today();
-        [$from, $to] = $this->reportRange($period, $anchor);
+        $ctx = $this->reportContext($request);
 
-        $clients = Invoice::query()
-            ->join('clients', 'clients.id', '=', 'invoices.client_id')
+        $clients = $this->reportBase($ctx)
             ->where('invoices.user_id', $issuerId)
-            ->whereBetween('invoices.invoice_month', [$from, $to])
             ->select('clients.id', 'clients.business_name', 'clients.name', DB::raw('COUNT(invoices.id) as cnt'), DB::raw('SUM(invoices.total) as total'))
             ->groupBy('clients.id', 'clients.business_name', 'clients.name')
             ->orderByDesc('total')

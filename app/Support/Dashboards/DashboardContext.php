@@ -6,6 +6,7 @@ use App\Models\Field;
 use App\Models\User;
 use App\Support\Attendance\Roster;
 use App\Support\EmployeeMovementsReport;
+use App\Support\PeriodPicker;
 use App\Support\ReceiptReport;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -19,7 +20,8 @@ use Illuminate\Http\Request;
  *
  *  - period: ?period=daily|weekly|monthly|quarterly|semiannual|yearly&date=Y-m-d
  *            (the calendar day / week / month / quarter / half-year / year containing
- *            the date), or ?period=custom&from=Y-m-d&to=Y-m-d. Default: this month.
+ *            the date; ?month=YYYY-MM from the month picker works too), or
+ *            ?period=custom&from=Y-m-d&to=Y-m-d. Default: this month.
  *            Old links with ?month=YYYY-MM still open that month. A date in the
  *            future falls back to today; a range longer than five years is cut.
  *  - office: ?field=<id> narrows to that office and its sub-offices (Tema includes
@@ -114,14 +116,8 @@ class DashboardContext
             $period = 'monthly';
         }
 
-        // ?month=YYYY-MM (links from the first version of the dashboards)
-        $anchor = self::date($request->input('date'));
-        if (! $anchor && preg_match('/^\d{4}-\d{2}$/', (string) $request->input('month'))) {
-            $anchor = self::date($request->input('month') . '-01');
-            if ($anchor && ! $request->filled('period')) {
-                $period = 'monthly';
-            }
-        }
+        // ?date=Y-m-d, or ?month=YYYY-MM from the month picker (and links from the first dashboards)
+        $anchor = PeriodPicker::anchor($request);
         $anchor = ($anchor ?? $today)->min($today);
         [$from, $to] = ReceiptReport::namedWindow($period, $anchor);
 

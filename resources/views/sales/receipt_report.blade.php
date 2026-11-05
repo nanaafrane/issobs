@@ -10,6 +10,7 @@
         .rep-kpi .value { font-size: 1.5rem; font-weight: 700; }
         .rep-kpi .pct { font-size: 1.25rem; font-weight: 800; color: #111827; }
         .rep-kpi .sub { font-size: .85rem; color: #6b7280; }
+        a.rep-kpi:hover { border-color: #696cff; box-shadow: 0 0 0 2px rgba(105,108,255,.15); }
         .rep-card { border-radius: 12px; border: 1px solid #e5e7eb; }
         .rep-card .card-header { background: #f9fafb; border-bottom: 1px solid #e5e7eb; font-weight: 600; }
         .rcpt-timing-bar { display: flex; height: .7rem; border-radius: 4px; overflow: hidden; background: #f1f5f9; }
@@ -45,30 +46,11 @@
 
         {{-- Window: a named period around a date, or any range between two dates --}}
         <form method="GET" action="{{ url('receipt-report') }}" class="row g-2 align-items-end mb-2" id="rcpt-window">
-            <div class="col-auto">
-                <label class="form-label small mb-0" for="rcpt-period">Period</label>
-                <select name="period" id="rcpt-period" class="form-select form-select-sm">
-                    @foreach(\App\Support\ReceiptReport::PERIODS as $val => $label)
-                        <option value="{{ $val }}" @selected($period === $val)>{{ $label }}</option>
-                    @endforeach
-                </select>
-            </div>
-            <div class="col-auto rcpt-named" @if($period === 'custom') hidden @endif>
-                <label class="form-label small mb-0" for="rcpt-date">Date in period</label>
-                <input type="date" name="date" id="rcpt-date" value="{{ $anchor->format('Y-m-d') }}" class="form-control form-control-sm" @disabled($period === 'custom')>
-            </div>
-            <div class="col-auto rcpt-range" @if($period !== 'custom') hidden @endif>
-                <label class="form-label small mb-0" for="rcpt-from">From</label>
-                <input type="date" name="from" id="rcpt-from" value="{{ $from->format('Y-m-d') }}" class="form-control form-control-sm" @disabled($period !== 'custom')>
-            </div>
-            <div class="col-auto rcpt-range" @if($period !== 'custom') hidden @endif>
-                <label class="form-label small mb-0" for="rcpt-to">To</label>
-                <input type="date" name="to" id="rcpt-to" value="{{ $to->format('Y-m-d') }}" class="form-control form-control-sm" @disabled($period !== 'custom')>
-            </div>
-            <div class="col-auto rcpt-range" @if($period !== 'custom') hidden @endif>
+            @include('partials.period_picker', ['id' => 'rcpt', 'period' => $period, 'anchor' => $anchor, 'from' => $from, 'to' => $to])
+            <div class="col-auto" data-calendar-group="range" @if($period !== 'custom') hidden @endif>
                 <button type="submit" class="btn btn-sm btn-dark">Show</button>
             </div>
-            <div class="col-auto rcpt-range d-flex flex-wrap gap-1 pb-1" @if($period !== 'custom') hidden @endif>
+            <div class="col-auto d-flex flex-wrap gap-1 pb-1" data-calendar-group="range" @if($period !== 'custom') hidden @endif>
                 @foreach(['last7' => 'Last 7 days', 'last30' => 'Last 30 days', 'month' => 'This month', 'lastmonth' => 'Last month', 'quarter' => 'This quarter', 'year' => 'This year'] as $key => $label)
                     <button type="button" class="btn btn-xs btn-sm btn-outline-secondary py-0 js-rcpt-preset" data-preset="{{ $key }}">{{ $label }}</button>
                 @endforeach
@@ -143,6 +125,21 @@
             <div class="col-lg-3 col-6"><div class="rep-kpi h-100"><small class="text-muted">DEDUCTIONS ALLOWED</small><div class="value">{{ $ghs($t->deductions) }}</div></div></div>
             <div class="col-lg-3 col-6"><div class="rep-kpi h-100"><small class="text-muted">CLEARED OFF INVOICES</small><div class="value">{{ $ghs($t->settled) }}</div><div class="sub">received + tax withheld + deductions</div></div></div>
             <div class="col-lg-3 col-6"><div class="rep-kpi h-100 @if($pending->cnt) border-warning @endif"><small class="text-muted">AWAITING HO APPROVAL</small><div class="value {{ $pending->cnt ? 'text-warning' : '' }}">{{ $ghs($pending->received) }}</div><div class="sub">{{ $pending->cnt }} {{ \Illuminate\Support\Str::plural('receipt', $pending->cnt) }}, not in the figures above</div></div></div>
+        </div>
+
+        {{-- Outstanding invoices for the months this period touches (click a figure for the list + Excel) --}}
+        @php $osUrl = fn (array $over = []) => route('invoices.outstanding', $report->query(false) + $over); @endphp
+        <div class="card rep-card mb-4">
+            <div class="card-header d-flex flex-wrap justify-content-between gap-2">
+                <span>Outstanding invoices · {{ $outstanding['months'] }} <span class="text-muted fw-normal small">not yet fully paid, balances as of today</span></span>
+                <a href="{{ $osUrl() }}" class="small fw-normal">View the list and download Excel →</a>
+            </div>
+            <div class="card-body row g-3">
+                <div class="col-lg-3 col-6"><a href="{{ $osUrl() }}" class="rep-kpi h-100 text-body"><small class="text-muted">OUTSTANDING</small><div class="value text-danger">{{ $ghs($outstanding['owed']) }}</div><div class="sub">{{ number_format($outstanding['count']) }} {{ \Illuminate\Support\Str::plural('invoice', $outstanding['count']) }} · {{ number_format($outstanding['clients']) }} {{ \Illuminate\Support\Str::plural('client', $outstanding['clients']) }}</div></a></div>
+                <div class="col-lg-3 col-6"><a href="{{ $osUrl(['status' => 'unpaid']) }}" class="rep-kpi h-100 text-body"><small class="text-muted">UNPAID</small><div class="value">{{ $ghs($outstanding['unpaid']['owed']) }}</div><div class="sub">{{ number_format($outstanding['unpaid']['count']) }} with nothing paid yet</div></a></div>
+                <div class="col-lg-3 col-6"><a href="{{ $osUrl(['status' => 'part']) }}" class="rep-kpi h-100 text-body"><small class="text-muted">PART PAID (UNCOMPLETED)</small><div class="value">{{ $ghs($outstanding['part']['owed']) }}</div><div class="sub">{{ number_format($outstanding['part']['count']) }} with a balance left</div></a></div>
+                <div class="col-lg-3 col-6"><div class="rep-kpi h-100"><small class="text-muted">PAID OF WHAT WAS BILLED</small><div class="value">{{ $outstanding['billed'] > 0 ? number_format(($outstanding['billed'] - $outstanding['owed']) / $outstanding['billed'] * 100, 1) . '%' : '—' }}</div><div class="sub">on these invoices ({{ $ghs($outstanding['billed']) }})</div></div></div>
+            </div>
         </div>
 
         {{-- Which invoice months were paid in this period, and how late --}}
@@ -414,10 +411,9 @@
             document.head.appendChild(s);
         }
 
-        // Period selector: named periods submit at once; "Date range" shows From / To.
+        // Date-range presets and the optional invoice-month filter.
         (function () {
             const form = document.getElementById('rcpt-window');
-            const sel = document.getElementById('rcpt-period');
             const fromEl = document.getElementById('rcpt-from'), toEl = document.getElementById('rcpt-to');
             const pad = n => String(n).padStart(2, '0');
             const ymd = d => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); // local date, never UTC
@@ -433,19 +429,7 @@
             }));
             const go = () => { dropEmpty(); form.submit(); };   // automatic submits below
 
-            function mode(custom) {
-                form.querySelectorAll('.rcpt-range').forEach(el => { el.hidden = !custom; });
-                form.querySelectorAll('.rcpt-named').forEach(el => { el.hidden = custom; });
-                fromEl.disabled = toEl.disabled = !custom;
-                document.getElementById('rcpt-date').disabled = custom;
-            }
-            sel.addEventListener('change', function () {
-                const custom = sel.value === 'custom';
-                mode(custom);
-                if (!custom) go(); // custom waits for From / To + Show
-            });
-            document.getElementById('rcpt-date').addEventListener('change', () => form.submit());
-            toEl.addEventListener('change', () => { if (fromEl.value && toEl.value) go(); });
+            // Period list, month / date / range calendars: partials.period_picker.
 
             const PRESETS = {
                 last7:     n => [new Date(n.getFullYear(), n.getMonth(), n.getDate() - 6), n],

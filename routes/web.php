@@ -115,6 +115,8 @@ Route::resource('service', ServiceController::class);
 Route::resource('transaction', TransactionController::class);
 Route::get('invoice/export', [InvoiceController::class, 'export'])->name('invoice.export');
 Route::get('invoice-report', [InvoiceController::class, 'report'])->name('invoice.report');
+// Outstanding (unpaid + part paid) invoices for a period, with an Excel download.
+Route::get('invoices/outstanding', [\App\Http\Controllers\OutstandingInvoiceController::class, 'index'])->name('invoices.outstanding');
 Route::get('invoice/field/{field}/details', [InvoiceController::class, 'fieldDetails']);
 Route::get('invoice/client/{client}/details', [InvoiceController::class, 'clientDetails']);
 Route::get('invoice/issuer/{issuer}/details', [InvoiceController::class, 'issuerDetails']);
