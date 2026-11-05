@@ -85,6 +85,8 @@
 
                         <ul class="navbar-nav flex-row align-items-center ms-md-auto">
 
+                            @include('partials.approvals_bell')
+
                             <!-- User -->
                             <li class="nav-item navbar-dropdown dropdown-user dropdown">
                                 <a

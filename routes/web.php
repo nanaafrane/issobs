@@ -43,6 +43,8 @@ Auth::routes();
 Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
 Route::get('dashboard/{board}', [App\Http\Controllers\DashboardController::class, 'show'])
     ->whereIn('board', ['accounts', 'hr', 'operations'])->name('dashboard.show');
+// Everything waiting for the signed-in user's approval (also the bell in the top bar).
+Route::get('approvals', [App\Http\Controllers\ApprovalController::class, 'index'])->name('approvals.index');
 Route::get('staffAdd', [HomeController::class, 'staffCreate']);
 Route::get('staff', [HomeController::class, 'showAllStaffs']);
 Route::get('staff/{id}', [HomeController::class, 'show']);

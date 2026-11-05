@@ -290,7 +290,7 @@ class ClientController extends Controller
     
          if($user->role->name == 'Invoice' || $user->role->name == 'Finance Manager' || ($user->role->name == 'Manager' && $user->department->name == 'HR' ) )
         {
-                $clients = Client::where('status', '!=','active')->where('ho_status', 'pending')->orwhere('ho_status', null)->get();
+                $clients = Client::where('status', '!=','active')->where(fn ($q) => $q->where('ho_status', 'pending')->orWhereNull('ho_status'))->get();
 
 
                 $fields = Field::all();
@@ -302,7 +302,7 @@ class ClientController extends Controller
 
         }elseif($user->field?->name == 'Accra')
         {
-            $clients = Client::where('field_id', 1)->where('status', '!=','active')->where('ho_status', 'pending')->orwhere('ho_status', null)->get();
+            $clients = Client::where('field_id', 1)->where('status', '!=','active')->where(fn ($q) => $q->where('ho_status', 'pending')->orWhereNull('ho_status'))->get();
 
             $totalGuards = employee::where('department_id', '6')->where('field_id', 1)->count();
             return view('clients.pending', compact('clients'));
@@ -313,7 +313,7 @@ class ClientController extends Controller
         if ($user->field?->name == 'Botwe')
         {
 
-            $clients = Client::where('field_id', 2)->where('status', '!=','active')->where('ho_status', 'pending')->orwhere('ho_status', null)->get();
+            $clients = Client::where('field_id', 2)->where('status', '!=','active')->where(fn ($q) => $q->where('ho_status', 'pending')->orWhereNull('ho_status'))->get();
 
             $totalGuards = employee::where('department_id', '6')->where('field_id', 2)->count();
             return view('clients.pending', compact('clients'));
@@ -324,7 +324,7 @@ class ClientController extends Controller
 
         if ($user->field?->name == 'Tema')
         {
-            $clients = Client::whereIn('field_id', [3,7])->where('status', '!=','active')->where('ho_status', 'pending')->orwhere('ho_status', null)->get();
+            $clients = Client::whereIn('field_id', [3,7])->where('status', '!=','active')->where(fn ($q) => $q->where('ho_status', 'pending')->orWhereNull('ho_status'))->get();
 
             $totalGuards = employee::where('department_id', '6')->whereIn('field_id', [3,7])->count();
             return view('clients.pending', compact('clients'));
@@ -334,7 +334,7 @@ class ClientController extends Controller
 
         if ($user->field?->name == 'Takoradi')
         {
-            $clients = Client::where('field_id', 4)->where('status', '!=','active')->where('ho_status', 'pending')->orwhere('ho_status', null)->get();
+            $clients = Client::where('field_id', 4)->where('status', '!=','active')->where(fn ($q) => $q->where('ho_status', 'pending')->orWhereNull('ho_status'))->get();
 
             $totalGuards = employee::where('department_id', '6')->where('field_id', 4)->count();
             return view('clients.pending', compact('clients'));
@@ -343,7 +343,7 @@ class ClientController extends Controller
 
         if ($user->field?->name == 'Koforidua')
         {
-            $clients = Client::where('field_id', 5)->where('status', '!=','active')->where('ho_status', 'pending')->orwhere('ho_status', null)->get();
+            $clients = Client::where('field_id', 5)->where('status', '!=','active')->where(fn ($q) => $q->where('ho_status', 'pending')->orWhereNull('ho_status'))->get();
 
             $totalGuards = employee::where('department_id', '6')->where('field_id', 5)->count();
             return view('clients.pending', compact('clients'));
@@ -352,7 +352,7 @@ class ClientController extends Controller
 
         if ($user->field?->name == 'Kumasi')
         {
-            $clients = Client::where('field_id', 6)->where('status', '!=','active')->where('ho_status', 'pending')->orwhere('ho_status', null)->get();
+            $clients = Client::where('field_id', 6)->where('status', '!=','active')->where(fn ($q) => $q->where('ho_status', 'pending')->orWhereNull('ho_status'))->get();
 
             $totalGuards = employee::where('department_id', '6')->where('field_id', 6)->count();
             return view('clients.pending', compact('clients'));

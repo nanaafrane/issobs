@@ -61,3 +61,6 @@
     if (field) field.addEventListener('change', function () { var f = field.form; f.requestSubmit ? f.requestSubmit() : f.submit(); });
   })();
 </script>
+
+{{-- What is waiting for this user's approval, whatever the period. --}}
+@include('dashboards._approvals')
