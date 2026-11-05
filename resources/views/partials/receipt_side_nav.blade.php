@@ -49,7 +49,7 @@
       </li>
       <!-- Pages -->
       @if($canViewInvoices)
-      <li @class(['menu-item', 'active open' => request()->is('invoice*')])>
+      <li @class(['menu-item', 'active open' => request()->is('invoice*') || request()->routeIs('invoices.outstanding')])>
         <a href="javascript:void(0);" class="menu-link menu-toggle">
            <i class="menu-icon tf-icons bx bx-receipt text-primary me-2"></i>
                 <div class="text-truncate" data-i18n="Invoices">Invoices</div>
@@ -58,6 +58,12 @@
               <li @class(['menu-item', 'active' => request()->is('invoice') || request()->is('invoice/*')])>
                   <a href="{{url('invoice')}}" class="menu-link">
                   <div class="text-truncate" data-i18n="SList">Invoices</div>
+                  </a>
+              </li>
+
+              <li @class(['menu-item', 'active' => request()->routeIs('invoices.outstanding')])>
+                  <a href="{{ route('invoices.outstanding') }}" class="menu-link">
+                  <div class="text-truncate" data-i18n="SList">Outstanding</div>
                   </a>
               </li>
 
