@@ -61,6 +61,12 @@
               </li>
 
               <li class="menu-item">
+                  <a href="{{ route('invoices.outstanding') }}" class="menu-link">
+                  <div class="text-truncate" data-i18n="SList">Outstanding</div>
+                  </a>
+              </li>
+
+              <li class="menu-item">
                   <a href="{{url('invoice-report')}}" class="menu-link">
                   <div class="text-truncate" data-i18n="SList">Reports</div>
                   </a>
