@@ -190,6 +190,21 @@ class ApprovalInboxTest extends TestCase
         $this->assertSame(0, ApprovalInbox::for($fm)->total());
     }
 
+    public function test_approvals_page_lists_receipts_with_several_payment_modes(): void
+    {
+        $fin = $this->user('Finance Manager', 'Accounts', $this->accra);
+        $client = DB::table('clients')->insertGetId(['name' => 'Tema Co', 'field_id' => $this->tema, 'status' => 'Active', 'ho_status' => 'approved', 'created_at' => now(), 'updated_at' => now()]);
+        DB::table('receipts')->insert([
+            ['client_id' => $client, 'total' => 10, 'mode' => json_encode(['cash', 'momo']), 'bran_status' => 'approved', 'ho_status' => 'pending', 'created_at' => now(), 'updated_at' => now()],
+            ['client_id' => $client, 'total' => 20, 'mode' => null, 'bran_status' => 'approved', 'ho_status' => 'pending', 'created_at' => now(), 'updated_at' => now()],
+        ]);
+
+        $this->actingAs($fin)->get(route('approvals.index'))
+            ->assertOk()
+            ->assertSee('Cash, Momo')
+            ->assertSee('Tema Co');
+    }
+
     public function test_dashboard_shows_the_bell_and_the_waiting_strip(): void
     {
         $fin = $this->user('Finance Manager', 'Accounts', $this->accra);

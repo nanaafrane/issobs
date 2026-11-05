@@ -470,7 +470,9 @@ class ApprovalInbox
             ],
             'receipt' => [
                 'title' => 'Receipt #' . $m->id . ' · ' . ($m->client?->business_name ?: ($m->client?->name ?? 'Client')),
-                'detail' => $m->mode ? ucfirst((string) $m->mode) : '',
+                // mode is cast to an array (a receipt can mix cash, MoMo, cheque, ...).
+                'detail' => implode(', ', array_map(fn ($v) => ucfirst((string) $v),
+                    array_filter(is_array($m->mode) ? $m->mode : [$m->mode]))),
                 'office' => $m->client?->field?->name,
                 'amount' => (float) $m->total,
                 'date' => $m->receipt_month ?? $m->created_at,
