@@ -201,6 +201,10 @@
                             <div class="card-body"> 
                                 <div class="table-responsive text-normal-dark"> 
 
+                                    @php $shiftInfo = \App\Support\SalaryShifts::forSalaries($salaries); @endphp
+
+                                    @include('salaries._shifts_bar')
+
                                     <table id="myTable" class="display">
                                         <thead>
                                             <tr>
@@ -210,6 +214,8 @@
                                                 <th> Salary Month </th>
                                                 <th> employee_id </th>
                                                 <th> Name</th>
+                                                <th>SHIFT</th>
+                                                <th>WORKED</th>
                                                 <th> Field </th>
                                                 <th> Client </th>
                                                 <th> Location </th>
@@ -226,6 +232,8 @@
                                                 <td> {{$salary->salary_month?->format('F, Y')}} </td>
                                                 <td> {{ $salary?->employee_id }} </td>
                                                 <td> {{ strtoupper($salary->employee?->name) }} </td>
+                                                <td data-order="{{ $shiftInfo[$salary->id]['shift'] ?? 'zz' }}">{!! \App\Support\SalaryShifts::badge($shiftInfo[$salary->id]['shift'] ?? null, $shiftInfo[$salary->id]['snapshot'] ?? true, $shiftInfo[$salary->id]['now'] ?? null) !!}</td>
+                                                <td>{!! \App\Support\SalaryShifts::worked($shiftInfo[$salary->id]['worked'] ?? null, $shiftInfo[$salary->id]['shift'] ?? null) !!}</td>
                                                 <td> {{ $salary->field?->name }} </td>
                                                 <td> {{ $salary->client?->name }} {{ $salary->client?->business_name }}</td>
                                                 <td> {{ $salary->location }} </td>                         

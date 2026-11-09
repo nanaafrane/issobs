@@ -27,7 +27,14 @@
                 <div class="row">
                     <div class="col"> 
                             <div class="card mb-4">
-                            <h5 class="card-header"><strong>  Employee Name: {{ $salary->employee->name }} </strong> </h5>
+                            <h5 class="card-header"><strong>  Employee Name: {{ $salary->employee->name }} </strong>
+                                @php $shiftInfo = \App\Support\SalaryShifts::forSalaries([$salary])[$salary->id] ?? null; @endphp
+                                <div class="d-flex flex-wrap align-items-center gap-2 mt-2 fs-6 fw-normal">
+                                    {!! \App\Support\SalaryShifts::badge($shiftInfo['shift'] ?? null, $shiftInfo['snapshot'] ?? true, $shiftInfo['now'] ?? null) !!}
+                                    <span class="text-muted small">{{ $salary->client?->business_name ?: $salary->client?->name }}{{ $salary->location ? ' · ' . $salary->location : '' }} · {{ $salary->salary_month?->format('F Y') }}:</span>
+                                    {!! \App\Support\SalaryShifts::worked($shiftInfo['worked'] ?? null, $shiftInfo['shift'] ?? null) !!}
+                                </div>
+                            </h5>
                             <div class="card-body">
                                 <div class="row">
 

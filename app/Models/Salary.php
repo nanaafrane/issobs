@@ -17,6 +17,7 @@ class Salary extends Model
         'role_id',
         'client_id',
         'location',
+        'shift',
         'account_number',
         'bank_id',
         'branch',

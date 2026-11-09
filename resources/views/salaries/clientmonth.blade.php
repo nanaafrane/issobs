@@ -97,6 +97,8 @@
                             <h5 class="card-header"> Client Employee Salaries  </h5>
                             <div class="card-body"> 
                             <div class="table-responsive text-nowrap">
+                                @php $shiftInfo = \App\Support\SalaryShifts::forSalaries($salariesClients); @endphp
+                                @include('salaries._shifts_bar')
                                 <table class="display" id="myTable">
                                     <thead class="table-border-bottom-0">
                                         <tr>
@@ -109,6 +111,8 @@
                                         <th>Hold Reason</th>
                                         <th>Month</th>
                                         <th>Name</th>
+                                        <th>SHIFT</th>
+                                        <th>WORKED</th>
                                         <th> Department </th>
                                         <th> Role</th>
                                         <th> Field </th>
@@ -177,6 +181,8 @@
                                                     <td> <textarea type="text" name="hold_reason[{{ $salary->id }}]" class="form-control"> {{ $salary?->hold_reason }} </textarea> </td>
                                                     <td> {{$salary->salary_month?->format('F, Y')}} </td>
                                                     <td> {{ strtoupper($salary->employee?->name) }} </td>
+                                                    <td data-order="{{ $shiftInfo[$salary->id]['shift'] ?? 'zz' }}">{!! \App\Support\SalaryShifts::badge($shiftInfo[$salary->id]['shift'] ?? null, $shiftInfo[$salary->id]['snapshot'] ?? true, $shiftInfo[$salary->id]['now'] ?? null) !!}</td>
+                                                    <td>{!! \App\Support\SalaryShifts::worked($shiftInfo[$salary->id]['worked'] ?? null, $shiftInfo[$salary->id]['shift'] ?? null) !!}</td>
                                                     <td> {{ $salary->department?->name }} </td>
                                                     <td> {{ $salary->role?->name }} </td>
                                                     <td> {{ $salary->field?->name }} </td>

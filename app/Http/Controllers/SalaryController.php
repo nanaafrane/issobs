@@ -1461,6 +1461,9 @@ class SalaryController extends Controller
             ->whereBetween('invoice_month', [$start, $end])
             ->distinct()->pluck('client_id')->flip();
 
+        // Each guard's shift at his client now (attendance roster): kept on the salary.
+        $shifts = \App\Support\SalaryShifts::current($employees->mapWithKeys(fn ($e) => [(int) $e->id => (int) $e->client_id])->all());
+
         $now = now();
         $rows = $employees->map(fn ($employee) => [
             // Salary::insert() skips model events, so payment priority is set here from the snapshot.
@@ -1474,6 +1477,7 @@ class SalaryController extends Controller
             'role_id' => $employee->role_id,
             'client_id' => $employee->client_id,
             'location' => $employee->location,
+            'shift' => $shifts[(int) $employee->id] ?? null,
             'payment_type' => $employee->payment_type,
             'account_number' => $employee->paymentInfo?->acc_number,
             'bank_id' => $employee->paymentInfo?->bank_id,

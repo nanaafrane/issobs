@@ -72,6 +72,8 @@
                         <h5 class="card-header"> Salaries Paid via Cash  </h5>
                         <div class="card-body"> 
                         <div class="table-responsive text-nowrap">
+                            @php $shiftInfo = \App\Support\SalaryShifts::forSalaries($HoldSalaries); @endphp
+                            @include('salaries._shifts_bar')
                             <table class="table table-hover" id="myTable">
                                 <thead class="table-dark">
                                     <tr>
@@ -81,6 +83,8 @@
                                         <th>STAFF ID</th>
                                         <th>STATUS</th>
                                         <th> NAME </th>
+                                        <th>SHIFT</th>
+                                        <th>WORKED</th>
                                         <th>FIELD</th>
                                         <th> ROLE</th>
                                         <th>CLIENT</th>
@@ -106,6 +110,8 @@
                                                             <td> <span class="badge bg-label-danger">  {{ $salary->payment_status }} </span> </td>
                                                         @endif
                                         <td> {{ strtoupper($salary->employee?->name) }} </td>
+                                        <td data-order="{{ $shiftInfo[$salary->id]['shift'] ?? 'zz' }}">{!! \App\Support\SalaryShifts::badge($shiftInfo[$salary->id]['shift'] ?? null, $shiftInfo[$salary->id]['snapshot'] ?? true, $shiftInfo[$salary->id]['now'] ?? null) !!}</td>
+                                        <td>{!! \App\Support\SalaryShifts::worked($shiftInfo[$salary->id]['worked'] ?? null, $shiftInfo[$salary->id]['shift'] ?? null) !!}</td>
                                         <td> {{ strtoupper($salary->field?->name) }} </td>
                                         <td> {{ $salary->employee?->role?->name }} </td>
                                         <td> {{ $salary->client?->name || $salary->client?->business_name ? $salary->client?->name . $salary->client?->business_name :  $salary->location }} </td>

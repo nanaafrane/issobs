@@ -54,7 +54,7 @@ class SalaryUpload
     private const IGNORED = [
         'row_check_automatic', 'row_check', 'errors_from_upload', 'errors', 'sheet_row', 'field', 'location',
         'salary_month', 'month', 'gross_salary', 'net_salary', 'total_deductions', 'tax', 'cost_to_company',
-        'action', 'actions', 'edit', 'no', 'select',
+        'action', 'actions', 'edit', 'no', 'select', 'shift', 'worked',
     ];
 
     /** Download the template and check files: Finance Manager and the Accounts department. */
