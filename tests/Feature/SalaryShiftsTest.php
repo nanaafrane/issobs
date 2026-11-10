@@ -25,6 +25,7 @@ class SalaryShiftsTest extends TestCase
     private User $finance;
     private Field $field;
     private Client $client;
+    private Client $mall;
     private Bank $bank;
     private employee $kofi;   // night, cash (MoMo)
     private employee $ama;    // day, bank
@@ -40,6 +41,8 @@ class SalaryShiftsTest extends TestCase
         $this->finance->update(['field_id' => $this->field->id]);
         $this->client = Client::create(['name' => 'DVLA', 'business_name' => 'DVLA HQ', 'phone_number' => '0240000000', 'address' => 'Accra',
             'field_id' => $this->field->id, 'status' => 'active', 'ho_status' => 'approved', 'user_id' => $this->finance->id]);
+        $this->mall = Client::create(['name' => 'Mall', 'business_name' => 'ACCRA MALL', 'phone_number' => '0240000001', 'address' => 'Accra',
+            'field_id' => $this->field->id, 'status' => 'active', 'ho_status' => 'approved', 'user_id' => $this->finance->id]);
         $this->bank = Bank::create(['name' => 'GCB', 'kind' => 'bank', 'branch' => 'HQ', 'acc_number' => '1']);
 
         $this->kofi = $this->guard('KOFI MENSAH', 'Cash', 'night');
@@ -49,8 +52,18 @@ class SalaryShiftsTest extends TestCase
         // Kofi: 3 nights, a double on the 4th (day + night), 1 absent, 1 off.
         foreach ([['2026-11-02', 'night', 'present'], ['2026-11-03', 'night', 'present'], ['2026-11-04', 'night', 'present'],
             ['2026-11-04', 'day', 'present'], ['2026-11-05', 'night', 'absent'], ['2026-11-06', 'night', 'off']] as [$d, $sh, $st]) {
-            Attendance::create(['client_id' => $this->client->id, 'employee_id' => $this->kofi->id, 'work_date' => $d, 'shift' => $sh, 'status' => $st, 'source' => 'manual']);
+            $at = $d === '2026-11-04' && $sh === 'day' ? $this->mall : $this->client;   // the double: day shift at the Mall
+            Attendance::create(['client_id' => $at->id, 'employee_id' => $this->kofi->id, 'work_date' => $d, 'shift' => $sh, 'status' => $st, 'source' => 'manual']);
         }
+        // His overtime this month: the Mall day shift (approved, with salary) and one still in review (cash).
+        \App\Models\Overtime::withoutEvents(function () {
+            foreach ([['2026-11-04', 'day', 'salary', 'approved', 30], ['2026-11-09', 'night', 'cash', 'pending', 25]] as [$d, $sh, $pay, $st, $amt]) {
+                \App\Models\Overtime::create(['entry_date' => $d, 'shift' => $sh, 'field_id' => $this->field->id, 'client_id' => $this->mall->id,
+                    'ot_employee_id' => $this->kofi->id, 'absent_employee_note' => 'SHORTAGE', 'reason' => 'Shortage', 'type' => 'shortage',
+                    'amount' => $amt, 'pay_by' => $pay, 'status_1' => 'approved', 'status_2' => $st === 'approved' ? 'approved' : 'pending',
+                    'status_3' => $st === 'approved' ? 'approved' : 'pending', 'user_1' => $this->finance->id]);
+            }
+        });
         // Ama is rostered on days but worked 4 nights.
         foreach (['2026-11-02', '2026-11-03', '2026-11-04', '2026-11-05'] as $d) {
             Attendance::create(['client_id' => $this->client->id, 'employee_id' => $this->ama->id, 'work_date' => $d, 'shift' => 'night', 'status' => 'present', 'source' => 'manual']);
@@ -114,6 +127,20 @@ class SalaryShiftsTest extends TestCase
         $this->assertStringContainsString('1 absent', $html);
         $this->assertStringContainsString('mostly night', SalaryShifts::worked($info[$a->id]['worked'], 'day'));
         $this->assertSame(['day' => 1, 'night' => 1, 'rotate' => 0, 'none' => 0], SalaryShifts::counts($info));
+
+        // Where he worked, his double duty and his overtime - no attendance sheet needed.
+        $this->assertSame([['name' => 'DVLA HQ', 'day' => 0, 'night' => 3], ['name' => 'ACCRA MALL', 'day' => 1, 'night' => 0]], $w['clients']);
+        $this->assertSame([['date' => 'Wed 4 Nov', 'day' => 'ACCRA MALL', 'night' => 'DVLA HQ']], $w['doubles']);
+        $this->assertSame([1, 30.0, 30.0, 0.0, 1], [$w['ot']['approved'], $w['ot']['amount'], $w['ot']['salary'], $w['ot']['cash'], $w['ot']['review']]);
+        $this->assertSame(['Wed 4 Nov', 'ACCRA MALL', 'Shortage (double duty)', 'With salary', 'Approved'],
+            [$w['ot_rows'][0]['date'], $w['ot_rows'][0]['client'], $w['ot_rows'][0]['type'], $w['ot_rows'][0]['pay'], $w['ot_rows'][0]['state']]);
+        $this->assertSame('In review', $w['ot_rows'][1]['state']);
+        $this->assertStringContainsString('DVLA HQ <strong>3</strong>', $html);
+        $this->assertStringContainsString('ACCRA MALL <strong>1</strong>', $html);
+        $this->assertStringContainsString('2 clients', $html);
+        $this->assertStringContainsString('OT <strong>1</strong> · GH₵ 30.00 <span class="text-muted">(30.00 with salary)</span>', $html);
+        $this->assertStringContainsString('1 in review', $html);
+        $this->assertStringContainsString('class="btn btn-link btn-sm p-0 shift-detail-btn"', $html);
     }
 
     public function test_older_salaries_show_the_current_shift_marked_now(): void
@@ -134,11 +161,11 @@ class SalaryShiftsTest extends TestCase
 
         // Cash (MoMo), bank and client pages; their hold pages; salariesCreate; the edit page.
         $pages = [
-            '/salariesCashMonth/' . $this->field->id . '/2026-11-01' => ['KOFI MENSAH', 'Night'],
+            '/salariesCashMonth/' . $this->field->id . '/2026-11-01' => ['KOFI MENSAH', 'Night', 'ACCRA MALL', 'OT <strong>1</strong>', 'id="shiftDetail"'],
             '/salariesBankMonth/' . $this->bank->id . '/2026-11-01' => ['AMA SERWAA', 'Day', 'mostly night'],
             '/salariesClientMonth/' . $this->client->id . '/2026-11-01' => ['KOFI MENSAH', 'AMA SERWAA', 'No shift'],
             '/salariesCreate?month=2026-11' => ['KOFI MENSAH', 'Night'],
-            '/salaries/' . $kofi->id . '/edit' => ['Night', '1 double', '1 absent'],
+            '/salaries/' . $kofi->id . '/edit' => ['Night', '1 double', '1 absent', 'ACCRA MALL', 'id="shiftDetail"'],
         ];
         foreach ($pages as $url => $texts) {
             $res = $this->actingAs($this->finance)->get($url);

@@ -52,3 +52,4 @@ document.addEventListener('DOMContentLoaded', function () {
 </script>
 @endonce
 @endif
+@include('salaries._shift_detail_modal')

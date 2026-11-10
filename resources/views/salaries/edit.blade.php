@@ -34,6 +34,7 @@
                                     <span class="text-muted small">{{ $salary->client?->business_name ?: $salary->client?->name }}{{ $salary->location ? ' · ' . $salary->location : '' }} · {{ $salary->salary_month?->format('F Y') }}:</span>
                                     {!! \App\Support\SalaryShifts::worked($shiftInfo['worked'] ?? null, $shiftInfo['shift'] ?? null) !!}
                                 </div>
+                                @include('salaries._shift_detail_modal')
                             </h5>
                             <div class="card-body">
                                 <div class="row">
