@@ -11,3 +11,7 @@ Route::get('/user', function (Request $request) {
 
 Route::resource('/sendEmployeeMoney', SendEmployeeMoneyController::class)->withoutMiddleware([VerifyCsrfToken::class]);
 Route::post('/webhook-endpoint', [SendEmployeeMoneyController::class, 'webHook']);
+
+// Supervisor kiosk offline outbox upload (Bearer token from attendance/kiosk-token). See docs/offline-sync.md.
+Route::post('/attendance/kiosk-sync', [\App\Http\Controllers\AttendanceSyncController::class, 'kiosk'])
+    ->middleware(['auth:sanctum', 'throttle:60,1'])->name('api.attendance.kioskSync');

@@ -42,7 +42,7 @@ class SendMoneyController extends Controller
 
     //         $response = Http::withHeaders([
     //             'Content-Type' => 'application/json',
-    //             'Authorization' => 'Basic ' . base64_encode('B81PkQQ:a239c6cf6e8d4dec8ae1d866ef0c633a'), 
+    //             'Authorization' => 'Basic ' . base64_encode(config('services.hubtel_momo.client_id') . ':' . config('services.hubtel_momo.client_secret')), 
     //         ])->post($url, [
     //             'RecipientName' => $name,
     //             'RecipientMsisdn' => $number,
@@ -88,7 +88,7 @@ class SendMoneyController extends Controller
 
     //         $response = Http::withHeaders([
     //             'Content-Type' => 'application/json',
-    //             'Authorization' => 'Basic ' . base64_encode('B81PkQQ:a239c6cf6e8d4dec8ae1d866ef0c633a')
+    //             'Authorization' => 'Basic ' . base64_encode(config('services.hubtel_momo.client_id') . ':' . config('services.hubtel_momo.client_secret'))
     //         ])->get($url);
 
     //         return $response->json();

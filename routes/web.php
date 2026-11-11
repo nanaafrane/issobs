@@ -84,6 +84,7 @@ Route::get('attendance/{client}/export', [AttendanceController::class, 'export']
 Route::get('attendance/{client}/poster', [AttendanceController::class, 'poster'])->whereNumber('client')->name('attendance.poster');
 Route::get('attendance/{client}/kiosk', [AttendanceController::class, 'kiosk'])->whereNumber('client')->name('attendance.kiosk');
 Route::post('attendance/{client}/kiosk', [AttendanceController::class, 'kioskMark'])->whereNumber('client')->name('attendance.kioskMark');
+Route::post('attendance/kiosk-token', [AttendanceController::class, 'kioskToken'])->name('attendance.kioskToken');
 Route::get('attendance/{client}/id-cards', [AttendanceController::class, 'idCards'])->whereNumber('client')->name('attendance.idCards');
 Route::post('attendance/{client}/move', [AttendanceController::class, 'move'])->whereNumber('client')->name('attendance.move');
 Route::post('attendance/{client}/mark', [AttendanceController::class, 'mark'])->whereNumber('client')->name('attendance.mark');
@@ -99,6 +100,9 @@ Route::post('attendance/{client}/guard/{employee}/forget-phone', [AttendanceCont
 Route::get('attend/{token}', [AttendanceScanController::class, 'show'])->middleware('throttle:60,1')->name('attend.show');
 Route::post('attend/{token}', [AttendanceScanController::class, 'store'])->middleware('throttle:20,1')
     ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class, VerifyCsrfToken::class])->name('attend.store');
+// Upload from the sign-in page's offline outbox (docs/offline-sync.md). Same no-login, no-CSRF rules as above.
+Route::post('attend/{token}/sync', [AttendanceScanController::class, 'sync'])->middleware('throttle:30,1')
+    ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class, VerifyCsrfToken::class])->name('attend.sync');
 
 Route::resource('category', CategoryController::class); 
 Route::post('categoryAssign', [CategoryController::class, 'categoryAssign']); 

@@ -1,10 +1,10 @@
 <x-hr-dashboard>
 
     @section('css')
-    <link rel="stylesheet" href="https://cdn.datatables.net/2.3.3/css/dataTables.dataTables.css" />
-    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/3.2.4/css/buttons.dataTables.css">
+    <link rel="stylesheet" href="{{ asset('libs/datatables/2.3.3/css/dataTables.dataTables.css') }}" />
+    <link rel="stylesheet" href="{{ asset('libs/datatables/buttons/3.2.4/css/buttons.dataTables.css') }}">
 
-    <link href="https://cdn.datatables.net/columncontrol/1.1.1/css/columnControl.dataTables.min.css" rel="stylesheet">
+    <link href="{{ asset('libs/datatables/columncontrol/1.1.1/css/columnControl.dataTables.min.css') }}" rel="stylesheet">
     @endsection
 
 
@@ -253,11 +253,11 @@
 
 
     @section('scripts')
-    <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
-    <script src="https://cdn.datatables.net/2.3.3/js/dataTables.js"></script>
-    <script src="https://cdn.datatables.net/buttons/3.2.4/js/dataTables.buttons.js"></script>
-    <script src="https://cdn.datatables.net/buttons/3.2.4/js/buttons.dataTables.js"></script>
-    <script src="https://cdn.datatables.net/columncontrol/1.1.1/js/dataTables.columnControl.min.js"></script>
+    <script src="{{ asset('libs/jquery/3.7.1/jquery.js') }}"></script>
+    <script src="{{ asset('libs/datatables/2.3.3/js/dataTables.js') }}"></script>
+    <script src="{{ asset('libs/datatables/buttons/3.2.4/js/dataTables.buttons.js') }}"></script>
+    <script src="{{ asset('libs/datatables/buttons/3.2.4/js/buttons.dataTables.js') }}"></script>
+    <script src="{{ asset('libs/datatables/columncontrol/1.1.1/js/dataTables.columnControl.min.js') }}"></script>
 
     <script>
     $(function () {

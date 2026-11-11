@@ -1,12 +1,12 @@
 <x-hr-dashboard>
 
     @section('css')
-    <link rel="stylesheet" href="https://cdn.datatables.net/2.3.5/css/dataTables.dataTables.css" />
-    <!-- <link rel="stylesheet" href="https://cdn.datatables.net/buttons/3.2.5/css/buttons.dataTables.css">     -->
-    <link href="https://cdn.datatables.net/columncontrol/1.1.1/css/columnControl.dataTables.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ asset('libs/datatables/2.3.5/css/dataTables.dataTables.css') }}" />
+    <!-- <link rel="stylesheet" href="{{ asset('libs/datatables/buttons/3.2.5/css/buttons.dataTables.css') }}">     -->
+    <link href="{{ asset('libs/datatables/columncontrol/1.1.1/css/columnControl.dataTables.min.css') }}" rel="stylesheet">
 
-    <link rel="stylesheet" href="https://cdn.datatables.net/fixedheader/4.0.5/css/fixedHeader.dataTables.css">
-    <link rel="stylesheet" href="https://cdn.datatables.net/fixedcolumns/5.0.5/css/fixedColumns.dataTables.css">
+    <link rel="stylesheet" href="{{ asset('libs/datatables/fixedheader/4.0.5/css/fixedHeader.dataTables.css') }}">
+    <link rel="stylesheet" href="{{ asset('libs/datatables/fixedcolumns/5.0.5/css/fixedColumns.dataTables.css') }}">
 
     @endsection
 
@@ -191,21 +191,21 @@
 
     @section('scripts')
 
-    <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
-    <script src="https://cdn.datatables.net/2.3.5/js/dataTables.js"></script>
-    <script src="https://cdn.datatables.net/fixedcolumns/5.0.5/js/dataTables.fixedColumns.js"> </script>           
-    <script src="https://cdn.datatables.net/fixedcolumns/5.0.5/js/fixedColumns.dataTables.js"></script>     
-    <script src="https://cdn.datatables.net/fixedheader/4.0.5/js/dataTables.fixedHeader.js"></script>      
-    <script src="https://cdn.datatables.net/fixedheader/4.0.5/js/fixedHeader.dataTables.js"></script>  
-    <script src="https://cdn.datatables.net/columncontrol/1.1.1/js/dataTables.columnControl.min.js"></script>
+    <script src="{{ asset('libs/jquery/3.7.1/jquery.js') }}"></script>
+    <script src="{{ asset('libs/datatables/2.3.5/js/dataTables.js') }}"></script>
+    <script src="{{ asset('libs/datatables/fixedcolumns/5.0.5/js/dataTables.fixedColumns.js') }}"> </script>           
+    <script src="{{ asset('libs/datatables/fixedcolumns/5.0.5/js/fixedColumns.dataTables.js') }}"></script>     
+    <script src="{{ asset('libs/datatables/fixedheader/4.0.5/js/dataTables.fixedHeader.js') }}"></script>      
+    <script src="{{ asset('libs/datatables/fixedheader/4.0.5/js/fixedHeader.dataTables.js') }}"></script>  
+    <script src="{{ asset('libs/datatables/columncontrol/1.1.1/js/dataTables.columnControl.min.js') }}"></script>
 
-    <!-- <script src="https://cdn.datatables.net/buttons/3.2.5/js/dataTables.buttons.js"></script>
-    <script src="https://cdn.datatables.net/buttons/3.2.5/js/buttons.dataTables.js"></script>
-    <script src="https://cdn.datatables.net/buttons/3.2.5/js/buttons.html5.min.js"></script>
-    <script src="https://cdn.datatables.net/buttons/3.2.5/js/buttons.colVis.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script> -->
+    <!-- <script src="{{ asset('libs/datatables/buttons/3.2.5/js/dataTables.buttons.js') }}"></script>
+    <script src="{{ asset('libs/datatables/buttons/3.2.5/js/buttons.dataTables.js') }}"></script>
+    <script src="{{ asset('libs/datatables/buttons/3.2.5/js/buttons.html5.min.js') }}"></script>
+    <script src="{{ asset('libs/datatables/buttons/3.2.5/js/buttons.colVis.min.js') }}"></script>
+    <script src="{{ asset('libs/jszip/3.10.1/jszip.min.js') }}"></script>
+    <script src="{{ asset('libs/pdfmake/0.2.7/pdfmake.min.js') }}"></script>
+    <script src="{{ asset('libs/pdfmake/0.2.7/vfs_fonts.js') }}"></script> -->
 
 
     <script>

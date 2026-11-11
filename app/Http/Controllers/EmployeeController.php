@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\VerifyMomoName;
+use App\Services\Hubtel\MomoNameCheck;
+
 use App\Http\Requests\EmployeeClientRequest;
 use App\Models\employee;
 use Illuminate\Http\Request;
@@ -1144,40 +1147,21 @@ class EmployeeController extends Controller
         $employees =  employee::findOrFail($request->employees);
         // dd($employees);
 
-        foreach($employees as $employee)
-            {
-              $result =   $this->verifyMoMoName($employee->phone_number, $employee->channel);
+        // Each number is checked with Hubtel on the queue (VerifyMomoName), so the page returns at once
+        // and a dropped connection to Hubtel is retried instead of stopping the whole batch.
+        foreach ($employees as $employee) {
+            VerifyMomoName::dispatch($employee->id);
+        }
 
-                //   UPDATE DATABASE OF EMPLOYEE
-                $employee->message =  $result['message'];
-                $employee->responseCode =  $result['responseCode'];
-                $employee->reg_name =  $result['data']['name'] ?? null;
-                $employee->status_momo =  $result['data']['isRegistered'] ?? null;
-                $employee->save();
-                
-            }
-
-        return back()->with('success', 'Selected Employees MoMo Name and Number has completed Processing.');
+        return back()->with('success', count($employees) . ' MoMo number(s) queued for checking with Hubtel. Reload in a minute to see the names.');
 
 
     }
 
-    public function verifyMoMoName($number , $channel)
+    /** Kept for any caller outside this class; the lookup itself lives in MomoNameCheck (credentials in .env). */
+    public function verifyMoMoName($number, $channel)
     {
-        // echo $number . " ". $channel . "<br>";
-        $url = "https://rnv.hubtel.com/v2/merchantaccount/merchants/2037745/mobilemoney/verify?channel=".$channel."&customerMsisdn=".$number ;
-        // $url = "https://webhook.site/832174de-8b79-4453-ac08-168031956be1";
-            
-        // echo $url  . "<br>";
-           $data = Http::withHeaders([
-                'Content-Type' => 'application/json',
-                'Authorization' => 'Basic ' . base64_encode('B81PkQQ:a239c6cf6e8d4dec8ae1d866ef0c633a')
-            ])->get($url);
-
-            $result =  $data->json();
-        // dd( $result);
-            return $result;
-
+        return app(MomoNameCheck::class)->check($number, $channel);
     }
 
     public function employeesPending()

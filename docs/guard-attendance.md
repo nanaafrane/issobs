@@ -145,7 +145,7 @@ Then, per client:
 Notes:
 
 * The app timezone is UTC, which is Ghana time, so shift times need no conversion.
-* The QR poster, ID cards and kiosk camera load small libraries from cdnjs (`qrcodejs 1.0.0`, `html5-qrcode 2.3.8`).
+* The QR poster, ID cards and kiosk camera use `qrcodejs 1.0.0` and `html5-qrcode 2.3.8`, served from `public/libs` (see docs/offline-sync.md for offline sign-in).
   The kiosk camera needs HTTPS, which production already has.
 * `clients.phone_number1` exists in production but no migration creates it. The new client-form test adds it on SQLite.
 

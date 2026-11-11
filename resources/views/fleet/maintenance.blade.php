@@ -5,8 +5,8 @@
     @endsection
 
     @section('css')
-    <link rel="stylesheet" href="https://cdn.datatables.net/2.3.3/css/dataTables.dataTables.css" />
-    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/3.2.4/css/buttons.dataTables.css">
+    <link rel="stylesheet" href="{{ asset('libs/datatables/2.3.3/css/dataTables.dataTables.css') }}" />
+    <link rel="stylesheet" href="{{ asset('libs/datatables/buttons/3.2.4/css/buttons.dataTables.css') }}">
     <style>
         .fl-num { font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
         table.fl-table td { font-size: .82rem; vertical-align: middle; }
@@ -107,12 +107,12 @@
     @endsection
 
     @section('scripts')
-    <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
-    <script src="https://cdn.datatables.net/2.3.3/js/dataTables.js"></script>
-    <script src="https://cdn.datatables.net/buttons/3.2.4/js/dataTables.buttons.js"></script>
-    <script src="https://cdn.datatables.net/buttons/3.2.4/js/buttons.dataTables.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <script src="https://cdn.datatables.net/buttons/3.2.4/js/buttons.html5.min.js"></script>
+    <script src="{{ asset('libs/jquery/3.7.1/jquery.js') }}"></script>
+    <script src="{{ asset('libs/datatables/2.3.3/js/dataTables.js') }}"></script>
+    <script src="{{ asset('libs/datatables/buttons/3.2.4/js/dataTables.buttons.js') }}"></script>
+    <script src="{{ asset('libs/datatables/buttons/3.2.4/js/buttons.dataTables.js') }}"></script>
+    <script src="{{ asset('libs/jszip/3.10.1/jszip.min.js') }}"></script>
+    <script src="{{ asset('libs/datatables/buttons/3.2.4/js/buttons.html5.min.js') }}"></script>
     <script>
         if (window.DataTable && document.querySelector('#mtTable tbody tr')) try {
             new DataTable('#mtTable', { order: [[0, 'desc']], pageLength: 50, columnDefs: [{ targets: 10, orderable: false }],

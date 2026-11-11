@@ -5,7 +5,7 @@
     @endsection
 
     @section('css')
-    <link rel="stylesheet" href="https://cdn.datatables.net/2.3.3/css/dataTables.dataTables.css" />
+    <link rel="stylesheet" href="{{ asset('libs/datatables/2.3.3/css/dataTables.dataTables.css') }}" />
     <style>
         .dp-num { font-variant-numeric: tabular-nums; white-space: nowrap; text-align: right; }
         .dp-tile { border-left: 3px solid var(--bs-primary, #696cff); }
@@ -341,8 +341,8 @@
     @endsection
 
     @section('scripts')
-    <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
-    <script src="https://cdn.datatables.net/2.3.3/js/dataTables.js"></script>
+    <script src="{{ asset('libs/jquery/3.7.1/jquery.js') }}"></script>
+    <script src="{{ asset('libs/datatables/2.3.3/js/dataTables.js') }}"></script>
     <script>
     (function () {
         // Paged list. Ticks on other pages still count: totals read every row, and on

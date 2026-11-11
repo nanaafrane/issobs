@@ -5,7 +5,7 @@
     @endsection
 
     @section('css')
-    <link rel="stylesheet" href="https://cdn.datatables.net/2.3.3/css/dataTables.dataTables.css" />
+    <link rel="stylesheet" href="{{ asset('libs/datatables/2.3.3/css/dataTables.dataTables.css') }}" />
     <style>
         .op-num { font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
         .op-tile { border-left: 3px solid var(--bs-primary, #696cff); }
@@ -117,8 +117,8 @@
     @endsection
 
     @section('scripts')
-    <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
-    <script src="https://cdn.datatables.net/2.3.3/js/dataTables.js"></script>
+    <script src="{{ asset('libs/jquery/3.7.1/jquery.js') }}"></script>
+    <script src="{{ asset('libs/datatables/2.3.3/js/dataTables.js') }}"></script>
     <script>if (window.DataTable && document.querySelector('#poTable tbody tr')) new DataTable('#poTable', { order: [[0, 'desc']], pageLength: 25, columnDefs: [{ targets: 9, orderable: false }] });</script>
     @endsection
 </x-sales-dashboard>

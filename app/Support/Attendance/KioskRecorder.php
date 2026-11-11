@@ -22,9 +22,10 @@ class KioskRecorder
 {
     /**
      * @param  array{latitude?:mixed, longitude?:mixed, accuracy?:mixed, device_id?:string}  $where
-     * @return array{ok: bool, status?: string, message: string}
+     * @param  array{flags?: array<int,string>, notes?: array<int,string>, values?: array<string,mixed>}  $extra  added by OfflineSync for a mark made offline
+     * @return array{ok: bool, status?: string, message: string, attendance?: Attendance}
      */
-    public static function record(Client $client, employee $guard, string $date, string $shift, string $status, User $supervisor, array $where, ?CarbonInterface $at = null): array
+    public static function record(Client $client, employee $guard, string $date, string $shift, string $status, User $supervisor, array $where, ?CarbonInterface $at = null, array $extra = []): array
     {
         $at = Carbon::instance($at ?? now());
 
@@ -70,7 +71,15 @@ class KioskRecorder
             return ['ok' => true, 'status' => Attendance::PRESENT, 'message' => $guard->name . ' already signed in with their own phone at ' . $existing->checked_in_at?->format('H:i') . '.'];
         }
 
+        // Offline flags only matter for a "present": an absence is never held for review.
+        if ($status === Attendance::PRESENT) {
+            $flags = array_merge($flags, $extra['flags'] ?? []);
+        }
         $finalStatus = $flags ? Attendance::PENDING : $status;
+        $note = 'Marked on supervisor kiosk by ' . $supervisor->name . ($relief ? ' (moved here from their own post)' : '');
+        if (! empty($extra['notes'])) {
+            $note .= '; ' . implode('; ', $extra['notes']);
+        }
         $values = [
             'client_id' => $client->id,
             'status' => $finalStatus,
@@ -82,9 +91,9 @@ class KioskRecorder
             'flags' => $flags ?: null,
             'reason' => ShiftReasons::FOR_STATUS[$finalStatus] ?? null,
             'marked_by' => $supervisor->id,
-            'note' => 'Marked on supervisor kiosk by ' . $supervisor->name . ($relief ? ' (moved here from their own post)' : ''),
+            'note' => mb_substr($note, 0, 255),
             'moved_from_client_id' => $relief ? $guard->client_id : null,
-        ];
+        ] + ($extra['values'] ?? []);
 
         if ($existing) {
             // A guard's own scan held for review, confirmed in person at the site, counts as reviewed.
@@ -92,8 +101,9 @@ class KioskRecorder
                 $values += ['reviewed_by' => $supervisor->id, 'reviewed_at' => $at];
             }
             $existing->fill($values + ['source' => $existing->source === 'scan' ? 'scan' : 'kiosk'])->save();
+            $attendance = $existing;
         } else {
-            Attendance::create($values + [
+            $attendance = Attendance::create($values + [
                 'employee_id' => $guard->id, 'work_date' => $date, 'shift' => $shift, 'source' => 'kiosk',
                 'device_id' => preg_match('/^[A-Za-z0-9-]{16,64}$/', (string) ($where['device_id'] ?? '')) ? $where['device_id'] : null,
             ]);
@@ -101,7 +111,7 @@ class KioskRecorder
 
         $label = strtolower(Attendance::LABELS[$finalStatus]);
 
-        return ['ok' => true, 'status' => $finalStatus,
+        return ['ok' => true, 'status' => $finalStatus, 'attendance' => $attendance,
             'message' => $flags ? $guard->name . ': saved, but held for review (' . implode('; ', $flags) . ').' : $guard->name . ': ' . $label . '.'];
     }
 }

@@ -34,9 +34,10 @@ class ScanRecorder
 
     /**
      * @param  array{employee_number?:string, pin?:string, latitude?:mixed, longitude?:mixed, accuracy?:mixed, device_id?:string}  $input
-     * @return array{ok: bool, status?: string, message: string, attendance?: Attendance}
+     * @param  array{flags?: array<int,string>, notes?: array<int,string>, values?: array<string,mixed>}  $extra  added by OfflineSync for a sign-in made offline
+     * @return array{ok: bool, status?: string, message: string, attendance?: Attendance, locked?: bool}
      */
-    public static function record(Client $client, array $input, ?CarbonInterface $at = null, ?string $ip = null): array
+    public static function record(Client $client, array $input, ?CarbonInterface $at = null, ?string $ip = null, array $extra = []): array
     {
         $at = Carbon::instance($at ?? now());
         $id = self::employeeId($input['employee_number'] ?? null);
@@ -50,7 +51,7 @@ class ScanRecorder
         if (RateLimiter::tooManyAttempts($lockKey, self::MAX_PIN_TRIES)) {
             $minutes = (int) ceil(RateLimiter::availableIn($lockKey) / 60);
 
-            return ['ok' => false, 'message' => "Too many wrong PINs. Try again in {$minutes} minute(s) or call your supervisor."];
+            return ['ok' => false, 'locked' => true, 'message' => "Too many wrong PINs. Try again in {$minutes} minute(s) or call your supervisor."];
         }
 
         $guard = employee::find($id);
@@ -150,8 +151,11 @@ class ScanRecorder
             }
         }
 
+        $flags = array_merge($flags, $extra['flags'] ?? []);
+        $notes = array_merge($notes, $extra['notes'] ?? []);
+
         try {
-            $attendance = Attendance::create([
+            $attendance = Attendance::create(($extra['values'] ?? []) + [
                 'client_id' => $client->id,
                 'employee_id' => $guard->id,
                 'work_date' => $date,
@@ -167,7 +171,7 @@ class ScanRecorder
                 'device_id' => $device,
                 'ip' => $ip,
                 'flags' => $flags ?: null,
-                'note' => $notes ? implode('; ', $notes) : null,
+                'note' => $notes ? mb_substr(implode('; ', $notes), 0, 255) : null,
             ]);
         } catch (UniqueConstraintViolationException) {
             // The same guard pressed "Sign in" twice at once: the first one won.

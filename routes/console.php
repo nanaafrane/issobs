@@ -251,3 +251,19 @@ Artisan::command('testdata:november-overtime {--remove : take the TEST-NOV data 
 
     return 0;
 })->purpose('Add (or remove) TEST-NOV invoices, receipts and overtime to try November salaries');
+
+// Background jobs (statement emails, Hubtel MoMo checks, ...). The server cron already runs
+// schedule:run every minute, so this drains the queue without a separate worker process.
+// If you run a real worker (supervisor / systemd: php artisan queue:work), set QUEUE_WORKER_VIA_SCHEDULER=false.
+if (config('queue.worker_via_scheduler')) {
+    \Illuminate\Support\Facades\Schedule::command('queue:work --stop-when-empty --tries=3 --max-time=50')
+        ->everyMinute()->withoutOverlapping(5)->runInBackground();
+}
+
+// Key that seals guards' PINs in the attendance offline outbox (made automatically on first use).
+Artisan::command('attendance:offline-key {--rotate : replace the key; sign-ins waiting on phones must be made again}', function () {
+    $path = \App\Support\Attendance\PinSeal::generate((bool) $this->option('rotate'));
+    $this->info(($this->option('rotate') ? 'New key written to ' : 'Key ready at ') . $path);
+
+    return 0;
+})->purpose('Make (or rotate) the RSA key that seals PINs in the attendance offline outbox');

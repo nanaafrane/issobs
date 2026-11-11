@@ -12,7 +12,7 @@
 
     @section('css')
     <style>tr.ot-highlight > td { background: #fff4d6 !important; } tr.ot-highlight { outline: 2px solid #f0ad4e; outline-offset: -2px; } tr[id^="ot-"] { scroll-margin-top: 120px; }</style>
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link href="{{ asset('libs/select2/4.1.0-rc.0/css/select2.min.css') }}" rel="stylesheet" />
     <style>
         .ot-card { border-radius: 12px; border: 1px solid #e5e7eb; }
         .ot-card .card-header { background: #f9fafb; border-bottom: 1px solid #e5e7eb; }
@@ -213,8 +213,8 @@
     @endsection
 
     @section('scripts')
-    <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="{{ asset('libs/jquery/3.7.1/jquery.js') }}"></script>
+    <script src="{{ asset('libs/select2/4.1.0-rc.0/js/select2.min.js') }}"></script>
     <style>
         .ot-steps { display: grid; grid-template-columns: repeat(4, minmax(200px, 1fr)); gap: .75rem; align-items: start; white-space: normal; }
         @media (max-width: 1100px) { .ot-steps { grid-template-columns: repeat(2, minmax(200px, 1fr)); } }

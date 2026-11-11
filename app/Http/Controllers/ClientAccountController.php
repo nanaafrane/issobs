@@ -2,17 +2,15 @@
 
 namespace App\Http\Controllers;
 
-use App\Mail\StatementOfAccountMail;
+use App\Jobs\SendClientStatement;
 use App\Models\Client;
 use App\Models\Field;
-use App\Models\StatementSend;
 use App\Services\Receipts\ClientStatement;
 use App\Services\Receipts\ReceivablesAging;
 use App\Services\Receipts\StatementPdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Mail;
 
 /**
  * Sending statements to clients, and the aged receivables report.
@@ -26,7 +24,7 @@ class ClientAccountController extends Controller
     }
 
     /** Email the statement for the chosen period to the client. */
-    public function email(Request $request, Client $client, StatementPdf $pdf)
+    public function email(Request $request, Client $client)
     {
         $this->authorizeClient($client);
         $data = $request->validate([
@@ -43,28 +41,14 @@ class ClientAccountController extends Controller
             return back()->withInput()->withErrors(['to' => 'Check the email address(es) — separate several with commas.']);
         }
 
-        $statement = $this->statements->build($client, $this->date($data['from'] ?? null), $this->date($data['period_to'] ?? null));
-        $file = $pdf->render($statement);
+        // Built and sent in the background (SendClientStatement): the page doesn't wait for the
+        // mail server, and a dropped connection to it is retried instead of losing the email.
+        SendClientStatement::dispatch(
+            $client->id, $to, $cc, $data['note'] ?? null,
+            $this->date($data['from'] ?? null)?->toDateString(), $this->date($data['period_to'] ?? null)?->toDateString(), Auth::id(),
+        );
 
-        Mail::to($to)->cc($cc)->send(new StatementOfAccountMail($statement, $data['note'] ?? null, $file));
-
-        StatementSend::create([
-            'client_id' => $client->id,
-            'sent_to' => implode(', ', array_merge($to, $cc)),
-            'period_from' => $statement['from'],
-            'period_to' => $statement['to'] ?? now(),
-            'closing_balance' => $statement['closing'],
-            'with_pdf' => $file !== null,
-            'user_id' => Auth::id(),
-        ]);
-
-        // Remember the address for next time if the client had none.
-        if (! $client->email) {
-            $client->email = $to[0];
-            $client->save();
-        }
-
-        return back()->with('primary', 'Statement emailed to ' . implode(', ', $to) . ($file ? ' with PDF attached.' : '.'));
+        return back()->with('primary', 'Statement queued for ' . implode(', ', $to) . '. It is sent within a minute or two; it shows under "Sent" once it has gone.');
     }
 
     /** Download the statement as a PDF (needs dompdf). */

@@ -6,7 +6,7 @@
     <meta name="robots" content="noindex">
     <meta name="theme-color" content="#1f2a44">
     <title>Supervisor Kiosk</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+    <script src="{{ asset('libs/html5-qrcode/2.3.8/html5-qrcode.min.js') }}"></script>
     <style>
         :root { --ink: #111827; --muted: #6b7280; --line: #e5e7eb; --brand: #1f2a44; --ok: #15803d; --okbg: #e8f6ed; --hold: #92400e; --holdbg: #fff4d6; --bad: #b91c1c; --badbg: #fdecec; }
         * { box-sizing: border-box; }
@@ -42,6 +42,10 @@
         #toast.hold { display: block; background: var(--holdbg); color: var(--hold); }
         #toast.bad { display: block; background: var(--badbg); color: var(--bad); }
         .count { font-size: 13px; margin-top: 6px; }
+        .net { display: none; margin: 0 0 10px; padding: 10px 12px; border-radius: 10px; font-size: 14px; font-weight: 600; background: var(--holdbg); color: var(--hold); }
+        .net.on { display: block; }
+        .net button { margin-top: 6px; }
+        .s-waiting { background: #fff4d6; color: var(--hold); border: 1px dashed #e0b44c; }
     </style>
 </head>
 <body>
@@ -60,6 +64,7 @@
     </div>
 </header>
 <main>
+    <div class="net" id="net"></div>
     <div class="loc" id="loc">Finding your location… your location proves the marks were made at the site.</div>
     <div id="reader"></div>
     <div class="bar">
@@ -91,6 +96,7 @@
     @endif
 </main>
 <div id="toast" role="status" aria-live="polite"></div>
+@if(config('attendance.offline.enabled'))<script src="{{ asset('offline/outbox.js') }}"></script>@endif
 <script>
 (function () {
     const url = @json(route('attendance.kioskMark', $client->id));
@@ -119,27 +125,104 @@
         { enableHighAccuracy: true, maximumAge: 30000, timeout: 30000 });
     }
 
+    function setBadge(employeeId, status, waiting) {
+        const row = $('g-' + employeeId);
+        if (!row) return;
+        const b = row.querySelector('.st');
+        const was = b.classList.contains('s-present');
+        b.textContent = waiting ? (LABELS[status] || status) + ' · waiting to send' : (LABELS[status] || status);
+        b.className = 'badge st s-' + (waiting ? 'waiting' : (['present', 'absent', 'pending'].includes(status) ? status : 'other'));
+        const c = $('present-count'); const now = !waiting && status === 'present';
+        if (now !== was) c.textContent = Math.max(0, (+c.textContent) + (now ? 1 : -1));
+    }
+
+    // ---- Offline outbox (docs/offline-sync.md): marks are saved on this phone first, then uploaded with the
+    // kiosk's own token, so they still go up after the login session has expired.
+    const OFFLINE = @json((bool) config('attendance.offline.enabled')) && !!(window.indexedDB && window.IssobsOutbox);
+    const ME = @json(Auth::id());
+    // One queue and one upload token per supervisor: marks saved by one supervisor are never sent under another's login.
+    const QUEUE = 'kiosk:' + @json($client->id) + ':' + ME;
+    const TOKEN_KEY = 'kioskToken:' + ME;
+    const RENDERED = @json(now()->getTimestampMs());
+    const AGE_MIN = Math.round((Date.now() - RENDERED) / 60000);
+
+    function netBanner(html) { const n = $('net'); n.innerHTML = html || ''; n.className = 'net' + (html ? ' on' : ''); }
+
+    function refreshBanner(summary) {
+        if (!OFFLINE) return Promise.resolve();
+        return IssobsOutbox.pending(QUEUE).then(waiting => {
+            waiting.filter(w => w.payload.date === date && w.payload.shift === shift).forEach(w => { const id = (String(w.payload.employee).match(/(\d+)\s*$/) || [])[1]; if (id) setBadge(id, w.payload.status, true); });
+            const parts = [];
+            if (AGE_MIN > 2) parts.push('Saved copy of this page from ' + new Date(RENDERED).toLocaleString([], { weekday: 'short', hour: '2-digit', minute: '2-digit' }) + ' (no signal when it opened). Statuses may be out of date.');
+            if (waiting.length) {
+                if (summary && summary.auth) parts.push(waiting.length + ' mark(s) saved on this phone. Open the kiosk once while online and logged in to send them.');
+                else if (summary && summary.locked) parts.push(waiting.length + ' mark(s) saved on this phone. The system is read-only; they are sent once it is open again.');
+                else parts.push(waiting.length + ' mark(s) saved on this phone, waiting for signal. They are sent automatically. <button class="btn btn-brand" id="send-now">Send now</button>');
+            } else if (!navigator.onLine) {
+                parts.push('No signal. Keep marking: marks are saved on this phone and sent when it is back online.');
+            }
+            netBanner(parts.join('<br>'));
+            const b = $('send-now'); if (b) b.onclick = () => flush(true);
+        });
+    }
+
+    function apply(results, quiet) {
+        (results || []).forEach(r => {
+            if (r.result === 'retry') return;
+            if (r.employee_id && r.status) setBadge(r.employee_id, r.status, false);
+            if (!quiet || r.result === 'rejected' || r.result === 'skipped') toast(r.message || 'Saved', r.result === 'rejected' || r.result === 'skipped' ? 'bad' : (r.status === 'pending' ? 'hold' : 'ok'));
+        });
+    }
+
+    function flush(loud) {
+        if (!OFFLINE) return Promise.resolve({ results: [] });
+        return IssobsOutbox.flush(QUEUE).then(s => { apply(s.results, !loud); return refreshBanner(s).then(() => s); });
+    }
+
+    // Upload token for this phone: renewed while online and logged in (the page itself proves the login).
+    function ensureToken() {
+        return IssobsOutbox.get(TOKEN_KEY).then(kt => {
+            const fresh = kt && kt.user_id === ME && kt.expires_at > Date.now() + 3 * 864e5;
+            if (fresh || !navigator.onLine || AGE_MIN > 2) return kt;
+            return fetch(@json(route('attendance.kioskToken')), { method: 'POST', credentials: 'same-origin',
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': csrf }, body: JSON.stringify({ device_id: deviceId() }) })
+                .then(r => r.ok ? r.json() : null).then(j => j && j.token ? IssobsOutbox.set(TOKEN_KEY, j).then(() => j) : kt).catch(() => kt);
+        });
+    }
+
+    if (OFFLINE) {
+        IssobsOutbox.setQueue(QUEUE, { url: @json(route('api.attendance.kioskSync')), auth: 'kiosk', tokenKey: TOKEN_KEY, body: { client_id: @json($client->id) } })
+            .then(ensureToken).then(() => flush(false));
+        window.addEventListener('online', () => ensureToken().then(() => flush(false)));
+        window.addEventListener('offline', () => refreshBanner());
+        if (navigator.serviceWorker) {
+            navigator.serviceWorker.register(@json(asset('sw.js'))).catch(() => {});
+            navigator.serviceWorker.addEventListener('message', e => { if (e.data && e.data.type === 'issobs-outbox-flushed') refreshBanner(); });
+        }
+    }
+
     function mark(employee, status) {
-        const body = { employee: String(employee), status, date, shift, device_id: deviceId() };
-        if (pos) { body.latitude = pos.coords.latitude; body.longitude = pos.coords.longitude; body.accuracy = pos.coords.accuracy; }
-        return fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': csrf }, body: JSON.stringify(body) })
-            .then(r => r.json().catch(() => ({ ok: false, message: r.status === 419 ? 'Session expired: reload the page.' : 'Error ' + r.status })))
-            .then(j => {
-                toast(j.message || 'Saved', !j.ok ? 'bad' : (j.status === 'pending' ? 'hold' : 'ok'));
-                if (j.ok && j.employee_id) {
-                    const row = $('g-' + j.employee_id);
-                    if (row) {
-                        const b = row.querySelector('.st');
-                        const was = b.classList.contains('s-present');
-                        b.textContent = LABELS[j.status] || j.status;
-                        b.className = 'badge st s-' + (['present', 'absent', 'pending'].includes(j.status) ? j.status : 'other');
-                        const c = $('present-count'); const now = j.status === 'present';
-                        if (now !== was) c.textContent = (+c.textContent) + (now ? 1 : -1);
-                    }
-                }
-                return j;
+        const where = pos ? { latitude: pos.coords.latitude, longitude: pos.coords.longitude, accuracy: pos.coords.accuracy } : {};
+        if (!OFFLINE) {
+            const body = Object.assign({ employee: String(employee), status, date, shift, device_id: deviceId() }, where);
+            return fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': csrf }, body: JSON.stringify(body) })
+                .then(r => r.json().catch(() => ({ ok: false, message: r.status === 419 ? 'Session expired: reload the page.' : 'Error ' + r.status })))
+                .then(j => { toast(j.message || 'Saved', !j.ok ? 'bad' : (j.status === 'pending' ? 'hold' : 'ok')); if (j.ok && j.employee_id) setBadge(j.employee_id, j.status, false); return j; })
+                .catch(() => toast('No connection. Try again.', 'bad'));
+        }
+
+        const uuid = IssobsOutbox.uuid();
+        const item = Object.assign({ uuid, captured_at: Date.now(), offline: !navigator.onLine, employee: String(employee), status, date, shift, device_id: deviceId() }, where);
+        return IssobsOutbox.add(QUEUE, item, String(employee) + ' · ' + status)
+            .then(() => { const id = (String(employee).match(/(\d+)\s*$/) || [])[1]; if (id) setBadge(id, status, true); return flush(false); })
+            .then(s => {
+                const mine = (s.results || []).find(r => r.uuid === uuid);
+                if (mine && mine.result !== 'retry') { apply([mine], false); return mine; }
+                if (navigator.serviceWorker && navigator.serviceWorker.ready) navigator.serviceWorker.ready.then(reg => reg.sync && reg.sync.register('issobs-outbox')).catch(() => {});
+                toast('Saved on this phone. It is sent when there is signal.', 'hold');
+                return null;
             })
-            .catch(() => toast('No connection. Try again.', 'bad'));
+            .catch(err => toast('Could not save on this phone: ' + (err && err.message || err), 'bad'));
     }
 
     document.querySelectorAll('[data-status]').forEach(b => b.addEventListener('click', () => mark(b.dataset.id, b.dataset.status)));

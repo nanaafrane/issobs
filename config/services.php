@@ -41,4 +41,13 @@ return [
       'scheme' => 'https',
   ],
 
+    // Hubtel "verify MoMo name" lookup (Employees > Cash > Verify). Keys belong in .env, never in code.
+    'hubtel_momo' => [
+        'merchant_account' => env('HUBTEL_MOMO_MERCHANT_ACCOUNT'),
+        'client_id' => env('HUBTEL_MOMO_CLIENT_ID'),
+        'client_secret' => env('HUBTEL_MOMO_CLIENT_SECRET'),
+        'verify_url' => env('HUBTEL_MOMO_VERIFY_URL', 'https://rnv.hubtel.com/v2/merchantaccount/merchants/{merchant}/mobilemoney/verify'),
+        'timeout' => (int) env('HUBTEL_MOMO_TIMEOUT', 15),
+    ],
+
 ];

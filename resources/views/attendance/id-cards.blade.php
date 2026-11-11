@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Guard ID Cards</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="{{ asset('libs/qrcodejs/1.0.0/qrcode.min.js') }}"></script>
     <style>
         @page { size: A4 portrait; margin: 10mm; }
         body { margin: 0; font-family: Arial, sans-serif; color: #111827; background: #eef0f4; }

@@ -49,12 +49,15 @@ class Attendance extends Model
         'client_id', 'moved_from_client_id', 'employee_id', 'work_date', 'shift', 'status', 'reason', 'source', 'overtime_id',
         'checked_in_at', 'latitude', 'longitude', 'accuracy_m', 'distance_m',
         'device_id', 'ip', 'flags', 'note', 'marked_by', 'reviewed_by', 'reviewed_at',
+        'captured_offline', 'synced_at',
     ];
 
     protected $casts = [
         'work_date' => DateOnly::class,
         'checked_in_at' => 'datetime',
         'reviewed_at' => 'datetime',
+        'synced_at' => 'datetime',
+        'captured_offline' => 'boolean',
         'flags' => 'array',
     ];
 

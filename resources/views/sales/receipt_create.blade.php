@@ -6,7 +6,7 @@
     
     @section('css')
     <link rel="stylesheet" href="{{asset('vendor/css/datatables.css')}}" />
-    <link href="https://cdn.datatables.net/columncontrol/1.1.1/css/columnControl.dataTables.min.css" rel="stylesheet">
+    <link href="{{ asset('libs/datatables/columncontrol/1.1.1/css/columnControl.dataTables.min.css') }}" rel="stylesheet">
 
     @endsection
 
@@ -92,9 +92,9 @@
 
     @section('scripts')
 
-    <!-- <script src="https://cdn.datatables.net/2.3.2/js/dataTables.js"></script> -->
+    <!-- <script src="{{ asset('libs/datatables/2.3.2/js/dataTables.js') }}"></script> -->
     <script src="{{asset('vendor/js/datatables.js')}}"></script>
-    <script src="https://cdn.datatables.net/columncontrol/1.1.1/js/dataTables.columnControl.min.js"></script>
+    <script src="{{ asset('libs/datatables/columncontrol/1.1.1/js/dataTables.columnControl.min.js') }}"></script>
 
     <script>
             new DataTable('#myTable', {

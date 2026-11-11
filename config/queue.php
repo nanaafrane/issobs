@@ -15,6 +15,10 @@ return [
 
     'default' => env('QUEUE_CONNECTION', 'database'),
 
+    // routes/console.php drains the queue every minute from the scheduler (no separate worker needed).
+    // Set QUEUE_WORKER_VIA_SCHEDULER=false if a supervisor/systemd worker runs php artisan queue:work.
+    'worker_via_scheduler' => (bool) env('QUEUE_WORKER_VIA_SCHEDULER', true),
+
     /*
     |--------------------------------------------------------------------------
     | Queue Connections

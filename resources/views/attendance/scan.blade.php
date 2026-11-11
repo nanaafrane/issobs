@@ -33,6 +33,14 @@
         .result.hold { display: block; background: var(--holdbg); color: var(--hold); }
         .result.bad { display: block; background: var(--badbg); color: var(--bad); }
         .foot { color: var(--muted); font-size: 12.5px; margin-top: 22px; line-height: 1.5; }
+        .net { display: none; margin: 0 0 12px; padding: 10px 12px; border-radius: 8px; font-size: 14px; font-weight: 600; background: var(--holdbg); color: var(--hold); }
+        .net.on { display: block; }
+        .outbox { margin-top: 20px; font-size: 14px; }
+        .outbox h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin: 0 0 6px; }
+        .outbox .row { background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; margin-bottom: 6px; line-height: 1.4; }
+        .outbox .row b { display: block; }
+        .outbox .accepted b { color: var(--ok); } .outbox .held b, .outbox .waiting b { color: var(--hold); }
+        .outbox .rejected b, .outbox .skipped b { color: var(--bad); }
     </style>
 </head>
 <body>
@@ -42,6 +50,7 @@
     @if($client->branch)<div class="br">{{ $client->branch }}</div>@endif
 </header>
 <main>
+    <div class="net" id="net"></div>
     <div class="clock"><span class="t" id="clock">--:--</span><span class="d" id="today"></span></div>
 
     <form id="f" autocomplete="off" novalidate>
@@ -58,12 +67,18 @@
 
     <div class="result" id="result" role="status" aria-live="polite"></div>
 
+    <div class="outbox" id="outbox" hidden>
+        <h2>Sign-ins on this phone</h2>
+        <div id="outbox-rows"></div>
+    </div>
+
     <div class="foot">Sign in at the start of every shift, at this site, with your own phone and PIN.
-        Forgot your PIN or changed your phone? Tell your supervisor.</div>
+        Forgot your PIN or changed your phone? Tell your supervisor.
+        @if($offline) No signal? Sign in anyway: it is saved on this phone and sent when the phone is back online.@endif</div>
 </main>
+@if($offline)<script src="{{ asset('offline/outbox.js') }}"></script>@endif
 <script>
 (function () {
-    const url = @json(route('attend.store', $token));
     const $ = id => document.getElementById(id);
     let pos = null;
 
@@ -105,30 +120,116 @@
         }, { enableHighAccuracy: true, maximumAge: 30000, timeout: 30000 });
     }
 
+    const esc = s => { const d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; };
+    function show(cls, title, text) {
+        const r = $('result'); r.className = 'result ' + cls; r.innerHTML = '<div class="big">' + esc(title) + '</div>' + esc(text);
+        r.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+    function showAnswer(j) {
+        if (j.result === 'accepted' && j.status === 'present') show('ok', '✓ Signed in', j.message);
+        else if (j.result === 'accepted' || j.result === 'held') show('hold', 'Received', j.message);
+        else show('bad', 'Not signed in', j.message || 'Check your details and try again.');
+    }
+    const hhmm = ms => new Date(ms).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    // ---- Offline outbox (docs/offline-sync.md). Needs IndexedDB + WebCrypto (HTTPS); otherwise the page works online only, as before.
+    const OFFLINE = @json((bool) $offline) && !!(window.indexedDB && window.crypto && crypto.subtle && window.IssobsOutbox);
+    const QUEUE = 'scan:' + @json($token);
+    const PIN_KEY = @json($pinKey);
+    let keyPromise = null;
+
+    function sealPin(uuid, emp, pin) {
+        if (!keyPromise) {
+            const der = Uint8Array.from(atob(PIN_KEY), c => c.charCodeAt(0));
+            keyPromise = crypto.subtle.importKey('spki', der, { name: 'RSA-OAEP', hash: 'SHA-1' }, false, ['encrypt']);
+        }
+        return keyPromise.then(k => crypto.subtle.encrypt({ name: 'RSA-OAEP' }, k, new TextEncoder().encode(uuid + '|' + emp + '|' + pin)))
+            .then(buf => btoa(String.fromCharCode.apply(null, new Uint8Array(buf))));
+    }
+
+    function netBanner(text) { const n = $('net'); n.textContent = text || ''; n.className = 'net' + (text ? ' on' : ''); }
+
+    function renderOutbox() {
+        if (!OFFLINE) return Promise.resolve();
+        return Promise.all([IssobsOutbox.pending(QUEUE), IssobsOutbox.results(QUEUE, 5)]).then(([waiting, done]) => {
+            const rows = waiting.map(w => ({ cls: 'waiting', title: 'Waiting to send · ' + w.label, text: 'Saved on this phone at ' + hhmm(w.created) + '. It is sent automatically when the phone is online.' }))
+                .concat(done.map(d => ({ cls: d.result, title: ({ accepted: 'Sent', held: 'Sent · operations will check', rejected: 'Not accepted', skipped: 'Not needed' }[d.result] || d.result) + ' · ' + d.label, text: d.message })));
+            $('outbox').hidden = !rows.length;
+            $('outbox-rows').innerHTML = rows.map(r => '<div class="row ' + esc(r.cls) + '"><b>' + esc(r.title) + '</b>' + esc(r.text) + '</div>').join('');
+            if (waiting.length) netBanner(waiting.length + ' sign-in(s) waiting on this phone. They are sent when the phone is online.');
+            else netBanner(navigator.onLine ? '' : 'No signal. You can still sign in: it is saved on this phone.');
+        });
+    }
+
+    // The last sign-in saved while offline: when it is finally sent, the box above shows the real answer.
+    let lastSaved = null;
+    function answerLastSaved(results) {
+        const mine = lastSaved && (results || []).find(r => r.uuid === lastSaved && r.result !== 'retry');
+        if (mine) { lastSaved = null; showAnswer(mine); }
+    }
+
+    function flush() {
+        if (!OFFLINE) return Promise.resolve({ results: [] });
+        return IssobsOutbox.flush(QUEUE).then(s => { answerLastSaved(s.results); return renderOutbox().then(() => s); });
+    }
+
+    function askBackgroundSync() {
+        if (navigator.serviceWorker && navigator.serviceWorker.ready) {
+            navigator.serviceWorker.ready.then(reg => reg.sync && reg.sync.register('issobs-outbox')).catch(() => {});
+        }
+    }
+
+    if (OFFLINE) {
+        IssobsOutbox.setQueue(QUEUE, { url: @json(route('attend.sync', $token)), auth: 'none' }).then(flush);
+        window.addEventListener('online', flush);
+        window.addEventListener('offline', renderOutbox);
+        if (navigator.serviceWorker) {
+            navigator.serviceWorker.register(@json(asset('sw.js'))).catch(() => {});
+            navigator.serviceWorker.addEventListener('message', e => {
+                if (!e.data || e.data.type !== 'issobs-outbox-flushed') return;
+                (e.data.summaries || []).forEach(s => answerLastSaved(s.results));
+                renderOutbox();
+            });
+        }
+    }
+
     $('f').addEventListener('submit', function (ev) {
         ev.preventDefault();
         const emp = $('emp').value.trim(), pin = $('pin').value.trim();
-        const r = $('result');
-        if (!emp || !pin) { r.className = 'result bad'; r.innerHTML = 'Enter your employee number and PIN.'; return; }
+        if (!emp || !pin) { show('bad', 'Not signed in', 'Enter your employee number and PIN.'); return; }
         $('go').disabled = true; $('go').textContent = 'Signing in…';
-        const body = { employee_number: emp, pin, device_id: deviceId() };
-        if (pos) { body.latitude = pos.coords.latitude; body.longitude = pos.coords.longitude; body.accuracy = pos.coords.accuracy; }
+        const where = pos ? { latitude: pos.coords.latitude, longitude: pos.coords.longitude, accuracy: pos.coords.accuracy } : {};
+        const done = () => { $('go').disabled = false; $('go').textContent = 'Sign in'; };
+        const remember = () => { try { localStorage.setItem('issobs_emp', emp); } catch (e) {} $('pin').value = ''; };
 
-        fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }, body: JSON.stringify(body) })
-            .then(res => res.json().catch(() => ({ ok: false, message: res.status === 429 ? 'Too many tries. Wait a minute and try again.' : 'Something went wrong (' + res.status + '). Try again.' })))
-            .then(j => {
-                const esc = s => { const d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; };
-                if (j.ok && j.status === 'present') {
-                    r.className = 'result ok'; r.innerHTML = '<div class="big">✓ Signed in</div>' + esc(j.message);
-                } else if (j.ok) {
-                    r.className = 'result hold'; r.innerHTML = '<div class="big">Received</div>' + esc(j.message);
-                } else {
-                    r.className = 'result bad'; r.innerHTML = '<div class="big">Not signed in</div>' + esc(j.message || 'Check your details and try again.');
-                }
-                if (j.ok) { try { localStorage.setItem('issobs_emp', emp); } catch (e) {} $('pin').value = ''; }
+        if (!OFFLINE) {
+            // Online only (old browser / no HTTPS): straight to the server, as before.
+            fetch(@json(route('attend.store', $token)), { method: 'POST', headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                body: JSON.stringify(Object.assign({ employee_number: emp, pin, device_id: deviceId() }, where)) })
+                .then(res => res.json().catch(() => ({ ok: false, message: res.status === 429 ? 'Too many tries. Wait a minute and try again.' : 'Something went wrong (' + res.status + '). Try again.' })))
+                .then(j => { showAnswer({ result: j.ok ? (j.status === 'pending' ? 'held' : 'accepted') : 'rejected', status: j.status, message: j.message }); if (j.ok) remember(); })
+                .catch(() => show('bad', 'No connection', 'Check your data or Wi-Fi and press Sign in again.'))
+                .finally(done);
+            return;
+        }
+
+        // Save on the phone first (PIN sealed with the server's key), then send. Same path with or without signal.
+        const uuid = IssobsOutbox.uuid(), madeAt = Date.now();
+        sealPin(uuid, emp, pin)
+            .then(sealed => IssobsOutbox.add(QUEUE, Object.assign({ uuid, captured_at: madeAt, offline: !navigator.onLine, employee_number: emp, pin_sealed: sealed, device_id: deviceId() }, where),
+                emp.toUpperCase() + ' · ' + hhmm(madeAt)))
+            .then(() => { remember(); return flush(); })
+            .then(s => {
+                const mine = (s.results || []).find(r => r.uuid === uuid);
+                if (mine && mine.result !== 'retry') { showAnswer(mine); return; }
+                askBackgroundSync();
+                lastSaved = uuid;
+                if (mine) show('hold', 'Saved on this phone', mine.message + ' It will be sent again automatically.');
+                else if (s.locked) show('hold', 'Saved on this phone', 'The system is read-only at the moment. Your sign-in at ' + hhmm(madeAt) + ' is kept and sent once it is open again.');
+                else show('hold', 'Saved on this phone', 'No signal right now. Your sign-in at ' + hhmm(madeAt) + ' is saved and will be sent automatically when the phone is online. You can close this page.');
             })
-            .catch(() => { r.className = 'result bad'; r.innerHTML = '<div class="big">No connection</div>Check your data or Wi-Fi and press Sign in again.'; })
-            .finally(() => { $('go').disabled = false; $('go').textContent = 'Sign in'; r.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); });
+            .catch(err => show('bad', 'Not saved', 'This phone could not save the sign-in (' + (err && err.message || err) + '). Try again, or ask your supervisor to mark you on the kiosk.'))
+            .finally(done);
     });
 })();
 </script>

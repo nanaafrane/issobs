@@ -402,8 +402,27 @@ class AttendanceController extends Controller
         }
 
         $result = KioskRecorder::record($client, $guard, $date->toDateString(), $data['shift'], $data['status'], Auth::user(), $data);
+        unset($result['attendance']);
 
         return response()->json($result + ['employee_id' => $guard->id], $result['ok'] ? 200 : 422);
+    }
+
+    /**
+     * A long-lived upload token for this supervisor's phone, so marks made offline can still be
+     * uploaded after the login session has expired (POST api/attendance/kiosk-sync). One token per
+     * phone: asking again replaces it. It can only upload kiosk marks.
+     */
+    public function kioskToken(Request $request)
+    {
+        abort_unless(config('attendance.offline.enabled'), 404);
+        $data = $request->validate(['device_id' => ['required', 'string', 'regex:/^[A-Za-z0-9-]{16,64}$/']]);
+        $user = Auth::user();
+        $name = 'attendance-kiosk:' . $data['device_id'];
+        $user->tokens()->where('name', $name)->delete();
+        $expires = now()->addDays((int) config('attendance.offline.kiosk_token_days'));
+        $token = $user->createToken($name, ['attendance-kiosk'], $expires);
+
+        return response()->json(['token' => $token->plainTextToken, 'expires_at' => $expires->getTimestampMs(), 'user_id' => $user->id]);
     }
 
     /** Printable ID cards with a QR for the kiosk to scan (one per guard posted here). */
