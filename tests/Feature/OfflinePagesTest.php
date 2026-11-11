@@ -31,7 +31,21 @@ class OfflinePagesTest extends TestCase
         $this->actingAs($this->finance)->get(route('receipt.voided'))->assertOk()
             ->assertSee('offline/connection.js')->assertSee('offline/drafts.js')
             ->assertSee(json_encode(route('forms.saved')), false)
-            ->assertDontSee('connection-status')->assertDontSee('No internet connection detected');
+            ->assertDontSee('connection-status')->assertDontSee('No internet connection detected')
+            ->assertSee('id="issobs-drafts-tray"', false)->assertSee('Drafts on this device');
+    }
+
+    public function test_back_online_needs_the_browser_and_two_answers_from_the_server(): void
+    {
+        $js = file_get_contents(public_path('offline/connection.js'));
+        $this->assertStringContainsString("if (!navigator.onLine) { okStreak = 0; setState('offline'); return; }", $js);
+        $this->assertStringContainsString("if (okStreak >= 2) setState('online')", $js);
+        $this->assertStringContainsString("Can\\'t reach ISSOBS right now.", $js);
+        $this->assertStringNotContainsString('issobs-off', $js);   // the full-screen panel is gone
+
+        $page = file_get_contents(public_path('offline/offline.html'));
+        $this->assertStringContainsString('Having trouble?', $page);
+        $this->assertStringContainsString('if (!navigator.onLine) return still();', $page);
     }
 
     public function test_the_login_page_registers_the_offline_page_too(): void

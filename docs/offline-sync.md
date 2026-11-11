@@ -107,19 +107,25 @@ poster*. A read-only subscription (402) or an expired kiosk token (401) leaves i
 ## 2. When the connection drops (every page)
 
 `resources/views/partials/connection.blade.php` (in the HR and Sales layouts and the login layout) loads
-`public/offline/connection.js` and `public/offline/drafts.js`. It replaces the red "Offline - No internet connection
-detected" banner.
+`public/offline/connection.js` and `public/offline/drafts.js`. It replaces the old red banner.
 
-* **Connection lost on an open page:** a "You're offline" panel says what is safe (everything saved before), what
-  still works (attendance, drafts), what to check (Wi-Fi/data, other websites, router, tell the administrator if only
-  ISSOBS is down), and lists the drafts on this device. *Keep reading this page* shrinks it to a small note. It asks the
-  server (`/up`) every 10 seconds, so Wi-Fi with no internet counts as offline too, and closes itself with
-  "Back online" when the server answers.
-* **Save pressed while offline:** the form is not sent (the browser would show an error and drop what was typed).
-  On a draft form the entry is kept on the device as *waiting to send*; on any other form what was typed stays on the page.
-* **A page that can't be reached:** the service worker shows `public/offline/offline.html` instead of the browser's
-  error: which page was being opened, the drafts and attendance sign-ins waiting on the device, what to check, and it
-  opens the page by itself when the connection is back. Pages that load normally are not touched or kept.
+* **A thin bar under the top bar, for as long as there is no connection:** "You're offline. Keep working: everything
+  is saved on this device. Save when you're back online." It shows since when, and *What works offline?* opens four
+  short lines. Nothing covers the page. When the internet works but the ISSOBS server doesn't answer, it says
+  "Can't reach ISSOBS right now…" instead.
+* **"Back online" only when it's true:** the browser must report a connection *and* the server (`/up`) must answer
+  twice in a row, two seconds apart. A server on the same machine or office network answers even with the internet
+  down; that no longer counts. The message then says how many drafts are ready to save, with *Review drafts*.
+* **Save pressed with no connection:** the form is not sent. On a draft form the entry is kept as *ready to save* and a
+  short note appears by the button: "Saved as a draft · 14:32. Save it when you're back online." Any other form: "Not
+  sent: you're offline. Press it again when you're back online."
+* **Drafts icon next to the approvals bell** (`partials/drafts_tray.blade.php`): shown when this device has drafts,
+  with a count (amber when some are ready to save). The list shows each draft (ready to save first, then not finished),
+  how many lines it has and when it was kept, with *Discard* (press twice). Opening one fills the form straight back in.
+  The list comes from the device, so it works offline.
+* **A page that can't be reached:** the service worker shows `public/offline/offline.html`: "You're offline", one
+  sentence, your drafts, *Try again*; the checklist is under *Having trouble?*. It opens the page by itself once back
+  online (same rule as above).
 * **Logging out** removes the form pages kept on the device.
 
 ## 3. Drafts on the device (invoice, proforma, receipt, fuel, maintenance)
@@ -133,7 +139,7 @@ and add its address to `DRAFT_PAGES` in `public/sw.js`.
   token, the one-time save code, passwords and attached files (attach the scan again).
 * The form page, and the theme scripts and styles it needs, are kept on the device each time it opens online, so it
   opens with no signal. Coming back to the form shows *You have an unsent draft… Restore it / Discard*; an entry saved
-  while offline is put back at once with *Saved while offline… check and press Save*. Repeating rows (invoice lines)
+  while offline, or a draft opened from the drafts icon, is put back at once (*Draft from …, not saved yet. Check it and press Save*). Repeating rows (invoice lines)
   are added with the form's own "+" button.
 * **Drafts are never sent on their own.** A person checks and saves them online, so every server check runs as usual:
   balances, invoice numbers, duplicate receipts, approvals.

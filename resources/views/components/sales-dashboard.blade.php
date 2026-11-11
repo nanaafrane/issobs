@@ -83,6 +83,7 @@
 
                         <ul class="navbar-nav flex-row align-items-center ms-md-auto">
 
+                            @include('partials.drafts_tray')
                             @include('partials.approvals_bell')
 
                             <!-- User -->

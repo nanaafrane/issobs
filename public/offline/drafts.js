@@ -44,8 +44,8 @@
 
     var api = {
         get: function (key) { return run('readonly', function (s) { return s.get(key); }); },
-        put: function (rec) { return run('readwrite', function (s) { s.put(rec); }); },
-        remove: function (key) { return run('readwrite', function (s) { s.delete(key); }); },
+        put: function (rec) { return run('readwrite', function (s) { s.put(rec); }).then(changed); },
+        remove: function (key) { return run('readwrite', function (s) { s.delete(key); }).then(changed); },
         list: function (user) {
             return run('readonly', function (s) { return s.index('user').getAll(String(user)); })
                 .then(function (rows) { return (rows || []).sort(function (a, b) { return b.savedAt - a.savedAt; }); });
@@ -78,7 +78,21 @@
         serialize: serialize,
         restore: restore,
         attach: attach,
+        when: when,
     };
+
+    /** Tell the page (drafts icon in the top bar) that drafts changed. */
+    function changed(v) {
+        try { root.dispatchEvent(new CustomEvent('issobs-drafts-changed')); } catch (e) {}
+        return v;
+    }
+
+    /** Number of repeating rows (invoice lines) in a saved form: the most repeated name[]. */
+    function lines(saved) {
+        var n = {};
+        saved.forEach(function (f) { if (/\[\]$/.test(f[0]) && f.length === 2) n[f[0]] = (n[f[0]] || 0) + 1; });
+        return Object.keys(n).reduce(function (m, k) { return Math.max(m, n[k]); }, 0);
+    }
 
     function fields(form) {
         return Array.prototype.filter.call(form.elements, function (el) {
@@ -166,6 +180,7 @@
                 label: form.dataset.draftLabel || document.title, url: location.pathname + location.search,
                 fields: serialize(form), savedAt: now,
             }, extra || {});
+            rec.lines = lines(rec.fields);
             return api.put(rec).catch(function () {});
         }
 
@@ -191,13 +206,16 @@
                 rec.sentAt = null; api.put(rec);
                 return;
             }
-            if (found.pending) {
+            // Opened from the drafts list in the top bar (#issobs-draft): put it back straight away.
+            var asked = location.hash === '#issobs-draft';
+            if (asked) history.replaceState(null, '', location.pathname + location.search);
+            if (found.pending || asked) {
                 restore(form, found.fields); dirty = true;
-                bar(form, 'alert-warning', '<strong>Saved while offline</strong> on ' + when(found.savedAt) + ' and not sent yet. Check the entries below, then press Save.',
+                bar(form, 'alert-warning', '<strong>Draft from ' + when(found.savedAt) + '</strong>, not saved yet. Check it and press Save.',
                     [['Discard this draft', 'btn-outline-secondary', function () { api.remove(key); rec = null; location.reload(); }]]);
                 return;
             }
-            bar(form, 'alert-info', 'You have an <strong>unsent draft</strong> of this form on this device from ' + when(found.savedAt) + '.', [
+            bar(form, 'alert-info', 'You have a <strong>draft</strong> of this form from ' + when(found.savedAt) + '.', [
                 ['Restore it', 'btn-primary', function () { restore(form, found.fields); dirty = true; }],
                 ['Discard', 'btn-outline-secondary', function () { api.remove(key); rec = null; }],
             ]);

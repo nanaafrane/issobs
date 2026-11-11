@@ -12,7 +12,7 @@
  */
 importScripts('offline/outbox.js');
 
-var VERSION = 'issobs-offline-v2';          // scripts, offline page, attendance pages
+var VERSION = 'issobs-offline-v3';          // scripts, offline page, attendance pages
 var PAGES = 'issobs-pages-v1';             // draft-capable form pages (cleared on logout)
 var SCOPE = new URL(self.registration.scope).pathname;            // e.g. "/" or "/issobs/public/"
 var PRECACHE = ['offline/outbox.js', 'offline/drafts.js', 'offline/connection.js', 'offline/offline.html',
