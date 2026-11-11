@@ -66,7 +66,7 @@
                         </div>
 
                         <hr />
-                        <form method="POST" action="/invoice">
+                        <form method="POST" action="/invoice" data-draft="invoice:{{ $client->id }}" data-draft-label="Invoice for {{ $client->business_name ?: $client->name }}" data-draft-add="#add">
                             @csrf
                             {!! \App\Support\SubmissionGuard::field() !!}
                             <input type="text" name="client_id" value="{{$client->id}}" hidden>

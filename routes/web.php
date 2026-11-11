@@ -153,8 +153,19 @@ Route::get('receipt-multi/create', [MultiInvoiceReceiptController::class, 'creat
 Route::post('receipt-multi', [MultiInvoiceReceiptController::class, 'store'])->name('receipt.multi.store')->middleware('once');
 Route::get('receipt-multi/{receipt}/edit', [MultiInvoiceReceiptController::class, 'edit'])->name('receipt.multi.edit');
 Route::post('receipt/{receipt}/apply-credit', [MultiInvoiceReceiptController::class, 'applyCredit'])->name('receipt.applyCredit')->middleware('once');
+// Drafts kept on the device ask whether their form has since been saved (public/offline/drafts.js).
+Route::get('forms/saved', [\App\Http\Controllers\FormDraftController::class, 'saved'])->middleware('auth')->name('forms.saved');
 Route::get('receipt-voided', [ReceiptController::class, 'voided'])->name('receipt.voided');
-Route::resource('receipt', ReceiptController::class)->middleware('once');
+Route::get('receipt-voided/{void}', [ReceiptController::class, 'voidedShow'])->whereNumber('void')->name('receipt.voided.show');
+// A link to a receipt that has since been voided opens its voided page instead of "404 not found".
+Route::resource('receipt', ReceiptController::class)->middleware('once')
+    ->missing(function (\Illuminate\Http\Request $request) {
+        $id = (int) preg_replace('/\D/', '', (string) $request->route('receipt'));
+        $void = $request->isMethod('GET') && $id ? \App\Models\ReceiptVoid::where('receipt_id', $id)->latest('id')->first() : null;
+        abort_unless($void, 404);
+
+        return redirect()->route('receipt.voided.show', $void)->with('warning', 'Receipt FWSSR' . $id . ' was voided on ' . $void->created_at->format('d M Y') . '. This is what it recorded.');
+    });
 Route::get('receiptPending', [ReceiptController::class, 'PendingReceipts'])->name('receipt.pending');
 Route::post('receiptChannels', [ReceiptController::class, 'receiptChannels']);
 

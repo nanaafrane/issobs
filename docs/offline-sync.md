@@ -9,6 +9,8 @@ balances everyone shares, and two offices saving payments offline against the sa
 | **Every page** | Scripts and fonts come from our own server (`public/libs`), not from CDNs. A slow or blocked CDN no longer breaks DataTables, Excel/PDF export or the QR pages. |
 | **Statement emails, Hubtel MoMo checks** | Run on the queue. The page returns at once; if Mailgun or Hubtel is unreachable the job is retried (3 tries) instead of the action being lost. |
 | **Guard sign-in (QR page) and supervisor kiosk** | Work with no signal. Sign-ins are saved on the phone and uploaded automatically when the phone is back online. |
+| **Every page, when the connection drops** | A "You're offline" panel (no more red banner) and, for a page that can't be reached, an offline page instead of the browser's error. Save is paused while offline instead of ending on an error. |
+| **Invoice, proforma, receipt, fuel and maintenance forms** | Kept as a draft on the device as you type. Save pressed offline keeps the entry waiting; the form opens offline and puts it back; a person sends it once online. |
 
 ---
 
@@ -102,13 +104,61 @@ poster*. A read-only subscription (402) or an expired kiosk token (401) leaves i
 
 ---
 
-## 2. Scripts and fonts served locally
+## 2. When the connection drops (every page)
+
+`resources/views/partials/connection.blade.php` (in the HR and Sales layouts and the login layout) loads
+`public/offline/connection.js` and `public/offline/drafts.js`. It replaces the red "Offline - No internet connection
+detected" banner.
+
+* **Connection lost on an open page:** a "You're offline" panel says what is safe (everything saved before), what
+  still works (attendance, drafts), what to check (Wi-Fi/data, other websites, router, tell the administrator if only
+  ISSOBS is down), and lists the drafts on this device. *Keep reading this page* shrinks it to a small note. It asks the
+  server (`/up`) every 10 seconds, so Wi-Fi with no internet counts as offline too, and closes itself with
+  "Back online" when the server answers.
+* **Save pressed while offline:** the form is not sent (the browser would show an error and drop what was typed).
+  On a draft form the entry is kept on the device as *waiting to send*; on any other form what was typed stays on the page.
+* **A page that can't be reached:** the service worker shows `public/offline/offline.html` instead of the browser's
+  error: which page was being opened, the drafts and attendance sign-ins waiting on the device, what to check, and it
+  opens the page by itself when the connection is back. Pages that load normally are not touched or kept.
+* **Logging out** removes the form pages kept on the device.
+
+## 3. Drafts on the device (invoice, proforma, receipt, fuel, maintenance)
+
+The forms carry `data-draft` (invoice: `sales/invoice_generate`, proforma: `sales/proforma_create`, new receipt:
+`sales/receipt_multi_create`, `fleet/fuel`, `fleet/maintenance`). To add another form, give its `<form>`
+`data-draft="name"` (plus `data-draft-label`, and `data-draft-add="#add"` if it has a "+" button for repeating rows)
+and add its address to `DRAFT_PAGES` in `public/sw.js`.
+
+* What is typed is kept on the device (IndexedDB, per user) a moment after each change. Not kept: the security
+  token, the one-time save code, passwords and attached files (attach the scan again).
+* The form page, and the theme scripts and styles it needs, are kept on the device each time it opens online, so it
+  opens with no signal. Coming back to the form shows *You have an unsent draft… Restore it / Discard*; an entry saved
+  while offline is put back at once with *Saved while offline… check and press Save*. Repeating rows (invoice lines)
+  are added with the form's own "+" button.
+* **Drafts are never sent on their own.** A person checks and saves them online, so every server check runs as usual:
+  balances, invoice numbers, duplicate receipts, approvals.
+* A copy of the page kept on the device carries an old security token and one-time save code, so Save on it first
+  keeps the draft and reloads a fresh page (the draft comes back on it). This also stops the save code of an earlier
+  invoice being reused for a new one.
+* A draft is removed once its form has been saved: the draft remembers the form's one-time save code and asks
+  `GET forms/saved` whether the server saved it (forms without a save code: the page after Save shows a success message).
+  Drafts older than 14 days are removed.
+
+## 4. Voided receipts
+
+`receipt-voided` lists voided receipts; each now opens its own page (`receipt-voided/{id}`) with what it recorded:
+client, date, payer, how it was paid with the cheque / transfer / MoMo references and the account it went into, who
+recorded and approved it, the scanned receipt, the invoices it paid (linked, with their balance now), the bank lines
+including the reversal, and the client-ledger entries including the reversal. An old link to a voided receipt
+(`receipt/{id}`) opens this page instead of "404".
+
+## 5. Scripts and fonts served locally
 
 `public/libs/` holds the exact versions the views used from CDNs: jQuery 3.7.1, DataTables 2.3.2/2.3.3/2.3.5 with Buttons
 3.2.4/3.2.5, ColumnControl, FixedHeader, FixedColumns, JSZip, pdfMake, Select2, qrcodejs, html5-qrcode, and the Public Sans
 font (`libs/fonts/public-sans/`). Every view that loaded them from a CDN (about 100) now uses `asset('libs/...')`. Nothing to build: the files are committed.
 
-## 3. Background jobs
+## 6. Background jobs
 
 * **Statement emails** (`SendClientStatement`): the statement and PDF are built when the job runs; `statement_sends` is
   written only once the mail has gone. Failures after 3 tries are logged.
@@ -132,7 +182,7 @@ HUBTEL_MOMO_CLIENT_SECRET=...
 
 ---
 
-## 4. Install
+## 7. Install
 
 ```bash
 git pull
@@ -143,17 +193,20 @@ php artisan config:clear && php artisan view:clear
 
 Make sure `public/sw.js`, `public/offline/` and `public/libs/` are deployed with the rest of `public/`.
 
-## 5. Tests
+## 8. Tests
 
+`tests/Feature/OfflinePagesTest.php` (offline panel, draft forms, `forms/saved`), `tests/Feature/VoidedReceiptPageTest.php`,
 `tests/Feature/AttendanceOfflineSyncTest.php` (18 tests: duplicates, clock correction, night shifts, sealed PINs, locks,
 replaced posters, kiosk tokens, newer-entry rule, office permissions) and `tests/Feature/BackgroundJobsTest.php`.
 The full offline flow was also run in Chrome: sign in with the network off, reopen the page offline, reconnect, and the
-sign-ins arrive with their original times; kiosk marks upload after the login cookie is deleted.
+sign-ins arrive with their original times; kiosk marks upload after the login cookie is deleted. Drafts: a 3-line
+invoice typed online, connection cut, Save pressed (kept as a draft, nothing sent), another page opened (offline page
+listing the draft), the invoice form reopened offline (lines put back), connection restored, page reloaded and saved:
+one invoice with 3 lines, and the draft removed.
 
-## 6. Not in this change (next steps)
+## 9. Not in this change (next steps)
 
-* **Drafts for invoices, proformas and receipts** on the same outbox: saved on the device, submitted online with the
-  real number assigned by the server, refused cleanly if the balance changed meanwhile.
-* Fuel and maintenance entries from the field, same pattern as attendance.
+* Sending drafts from the device in the background (without opening the form). Left out on purpose for money
+  documents; possible for fuel and maintenance entries with an upload API like attendance's.
 * If head office's line is the main problem: a 4G backup router, or the app on an office server with a one-way copy to
   the cloud.

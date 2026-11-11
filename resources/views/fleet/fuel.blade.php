@@ -33,7 +33,7 @@
             @if($vehicles->isEmpty())
                 <div class="text-muted small">Add your vehicles first under <a href="{{ route('fleet.vehicles') }}">Vehicles</a>.</div>
             @else
-            <form method="POST" action="{{ route('fleet.fuel.store') }}" class="row g-2" autocomplete="off">
+            <form method="POST" action="{{ route('fleet.fuel.store') }}" class="row g-2" autocomplete="off" data-draft="fuel" data-draft-label="Fuel entry">
                 @csrf
                 @include('fleet._fuel_fields', ['f' => null])
                 <div class="col-md-2 col-6 d-grid align-items-end"><button class="btn btn-primary btn-sm mt-3">Add</button></div>

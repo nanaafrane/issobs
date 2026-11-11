@@ -43,7 +43,7 @@
                                 </address>
                             </div>
                         </div>
-                    <form method="POST" action="/proforma">
+                    <form method="POST" action="/proforma" data-draft="proforma" data-draft-label="Proforma invoice" data-draft-add="#add">
                         @csrf
                         <div class="row mb-3">
                             <div class="col-12 col-sm-6 col-md-8">

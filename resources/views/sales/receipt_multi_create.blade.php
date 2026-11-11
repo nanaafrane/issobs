@@ -106,7 +106,7 @@
         @endif
 
         @if($client)
-        <form method="POST" action="{{ $editing ? route('receipt.update', $editing->id) : route('receipt.multi.store') }}" enctype="multipart/form-data" id="multiForm">
+        <form method="POST" action="{{ $editing ? route('receipt.update', $editing->id) : route('receipt.multi.store') }}" enctype="multipart/form-data" id="multiForm" @unless($editing) data-draft="receipt:{{ $client->id }}" data-draft-label="Receipt from {{ $client->business_name ?: $client->name }}" @endunless>
             @csrf
             @if($editing) @method('PUT') @endif
             {!! \App\Support\SubmissionGuard::field() !!}

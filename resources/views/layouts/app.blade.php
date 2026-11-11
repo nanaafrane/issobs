@@ -105,6 +105,7 @@
         <!-- Main JS -->
 
         <script src="{{ asset('js/main.js')}}"></script>
+        @include('partials.connection')
 
 
     </div>

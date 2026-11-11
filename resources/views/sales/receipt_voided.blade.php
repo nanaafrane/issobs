@@ -7,7 +7,7 @@
     @section('content')
     <div class="container-xxl flex-grow-1 container-p-y">
         <h3 class="text-primary mb-1"><i class="icon-base bx bx-block me-2"></i> Voided receipts</h3>
-        <p class="text-muted">Receipts are voided, not deleted: each one is kept here with the reason. Its payments were reversed on the day shown.</p>
+        <p class="text-muted">Receipts are voided, not deleted: each one is kept here with the reason. Its payments were reversed on the day shown. Open one to see everything it recorded: how it was paid, references, the invoices it paid, and the bank and ledger reversals.</p>
 
         @include('flash-messages')
 
@@ -30,10 +30,10 @@
                     @forelse($voids as $v)
                         @php $r = $v->snapshot['receipt'] ?? []; @endphp
                         <tr>
-                            <td><strong>FWSSR{{ $v->receipt_id }}</strong></td>
+                            <td><a href="{{ route('receipt.voided.show', $v) }}"><strong>FWSSR{{ $v->receipt_id }}</strong></a></td>
                             <td>
                                 @if($v->client)
-                                    <a href="{{ url('clientStatement', $v->client_id) }}">{{ $v->client->business_name ?: $v->client->name }}</a>
+                                    <a href="{{ route('receipt.voided.show', $v) }}">{{ $v->client->business_name ?: $v->client->name }}</a>
                                 @endif
                             </td>
                             <td>{{ !empty($r['receipt_month']) ? \Carbon\Carbon::parse($r['receipt_month'])->format('d M Y') : '' }}</td>

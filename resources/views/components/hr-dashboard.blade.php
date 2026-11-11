@@ -144,9 +144,6 @@
                 <!-- Content wrapper -->
                 <div class="content-wrapper">
 
-                <div id="connection-status" class="alert" style="display:none;">
-                    You are currently offline.
-                </div>
                 @include('partials.subscription_banner')
                     @yield('content')
 
@@ -205,26 +202,8 @@
     <!-- Page JS -->
     <script src="{{asset('js/dashboards-analytics.js')}}"></script>
 
-    <script>
-        function updateOnlineStatus() {
-            var status = document.getElementById("connection-status");
-            if (navigator.onLine) {
-                status.style.display = "none";
-            } else {
-                status.style.display = "block";
-                status.innerHTML = "Offline - No internet connection detected.";
-                status.style.backgroundColor = "red";
-                status.style.color = "white";
-            }
-        }
 
-        window.addEventListener('online', updateOnlineStatus);
-        window.addEventListener('offline', updateOnlineStatus);
-        
-        // Initial check
-        updateOnlineStatus();
-    </script>
-
+    @include('partials.connection')
     @include('partials.submit_lock')
     @include('partials.subscription_readonly')
     @yield('scripts')

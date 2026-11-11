@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Offline · ISSOBS</title>
+<!--
+  Shown by the service worker (public/sw.js) when a page can't be reached, instead of the browser's
+  own error. Everything is in this file: it has to work with no connection at all.
+  __SCOPE__ is replaced by the service worker with the app's base path.
+-->
+<style>
+    :root { --ink: #22303e; --text: #384551; --muted: #8592a3; --line: #eceef1; --brand: #696cff; --warn: #ff9f43; --warnbg: #fff2d6; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: "Public Sans", -apple-system, "Segoe UI", Roboto, Arial, sans-serif; background: #f5f5f9; color: var(--text); font-size: 15px; line-height: 1.5; }
+    header { background: var(--ink); color: #fff; padding: 14px 20px; font-weight: 700; letter-spacing: .02em; }
+    header small { display: block; font-weight: 400; opacity: .7; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; }
+    main { max-width: 680px; margin: 0 auto; padding: 28px 16px 40px; }
+    .box { background: #fff; border-radius: 14px; box-shadow: 0 6px 30px rgba(34,48,62,.08); padding: 28px; }
+    h1 { margin: 0 0 4px; font-size: 26px; color: var(--ink); display: flex; align-items: center; gap: 12px; }
+    .dot { width: 13px; height: 13px; border-radius: 50%; background: var(--warn); box-shadow: 0 0 0 5px rgba(255,159,67,.2); flex: none; }
+    .lead { color: #646e78; margin: 0 0 6px; }
+    .page { color: var(--muted); font-size: 13px; word-break: break-all; margin: 0 0 18px; }
+    h2 { font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: 22px 0 6px; }
+    ul { margin: 0; padding-left: 20px; } li { margin: 5px 0; }
+    a { color: var(--brand); font-weight: 600; }
+    .waiting { background: var(--warnbg); color: #8a5a00; border-radius: 8px; padding: 10px 12px; font-weight: 600; margin-top: 14px; }
+    .foot { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 24px; border-top: 1px solid var(--line); padding-top: 16px; }
+    .status { color: var(--muted); font-size: 13px; margin-right: auto; }
+    button { font: inherit; font-weight: 600; border-radius: 8px; padding: 9px 16px; border: 1px solid var(--brand); background: var(--brand); color: #fff; cursor: pointer; }
+    button.ghost { background: #fff; color: var(--brand); }
+</style>
+</head>
+<body>
+<header><small>First Watch Security Services</small>ISSOBS</header>
+<main>
+    <div class="box">
+        <h1><span class="dot"></span>You're offline</h1>
+        <p class="lead">This page needs the ISSOBS server, which can't be reached from this device right now. It opens by itself as soon as the connection is back.</p>
+        <p class="page" id="page"></p>
+
+        <h2>Your work</h2>
+        <ul>
+            <li>Everything saved before the connection dropped is safe on the server.</li>
+            <li>If you pressed Save just as the connection dropped, check the list (receipts, invoices…) once you're back before entering it again. Pressing Save again on the same form never saves it twice.</li>
+            <li>Invoices, proformas, receipts, fuel and maintenance forms keep a draft on this device as you type.</li>
+        </ul>
+        <div id="drafts"></div>
+        <div id="outbox"></div>
+
+        <h2>Still works without internet</h2>
+        <ul>
+            <li>Guard sign-in (scan the QR poster) and the supervisor kiosk: sign-ins are saved on the phone and sent automatically.</li>
+            <li>The draft forms above, if they were opened on this device before.</li>
+        </ul>
+
+        <h2>Check</h2>
+        <ul>
+            <li>Is Wi-Fi or mobile data on? Try opening another website.</li>
+            <li>Other websites open but ISSOBS doesn't: the server may be down. Tell your administrator.</li>
+            <li>Nothing opens: restart the router, or switch to mobile data.</li>
+        </ul>
+
+        <div class="foot">
+            <span class="status" id="status">Checking the connection every 10 seconds…</span>
+            <button class="ghost" type="button" onclick="history.back()">Go back</button>
+            <button type="button" id="retry">Try again now</button>
+        </div>
+    </div>
+</main>
+<script>
+(function () {
+    var SCOPE = '__SCOPE__';
+    var $ = function (id) { return document.getElementById(id); };
+    var esc = function (s) { var d = document.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; };
+    var time = function (ms) { return new Date(ms).toLocaleString([], { weekday: 'short', hour: '2-digit', minute: '2-digit' }); };
+
+    $('page').textContent = 'You were opening: ' + location.pathname.replace(SCOPE, '/') + location.search;
+
+    function probe(manual) {
+        if (manual) $('status').textContent = 'Checking…';
+        fetch(SCOPE + 'up?t=' + Date.now(), { cache: 'no-store' })
+            .then(function (r) { if (r.ok) { $('status').textContent = 'Back online, opening the page…'; location.reload(); } else throw 0; })
+            .catch(function () { $('status').textContent = 'Still offline · last checked ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ' · checking every 10 seconds'; });
+    }
+    $('retry').onclick = function () { probe(true); };
+    setInterval(probe, 10000);
+    window.addEventListener('online', function () { probe(); });
+
+    function idb(name, store, fn) {
+        return new Promise(function (resolve) {
+            if (!window.indexedDB) return resolve([]);
+            var r = indexedDB.open(name);
+            r.onerror = function () { resolve([]); };
+            r.onupgradeneeded = function () { r.transaction.abort(); };   // the database doesn't exist here yet
+            r.onsuccess = function () {
+                var db = r.result;
+                if (!db.objectStoreNames.contains(store)) { db.close(); return resolve([]); }
+                var q = fn(db.transaction(store).objectStore(store));
+                q.onsuccess = function () { resolve(q.result || []); db.close(); };
+                q.onerror = function () { resolve([]); db.close(); };
+            };
+        });
+    }
+
+    var user = null;
+    try { user = JSON.parse(localStorage.getItem('issobs_user') || 'null'); } catch (e) {}
+
+    if (user) {
+        idb('issobs-drafts', 'drafts', function (s) { return s.index('user').getAll(String(user.id)); }).then(function (rows) {
+            if (!rows.length) return;
+            rows.sort(function (a, b) { return b.savedAt - a.savedAt; });
+            $('drafts').innerHTML = '<h2>Drafts on this device' + (user.name ? ' (' + esc(user.name) + ')' : '') + '</h2><ul>' + rows.slice(0, 10).map(function (r) {
+                return '<li><a href="' + esc(r.url) + '">' + esc(r.label) + '</a> · ' + (r.pending ? 'waiting to send' : 'unsent draft') + ', ' + esc(time(r.savedAt)) + '</li>';
+            }).join('') + '</ul>';
+        });
+    }
+    idb('issobs-outbox', 'items', function (s) { return s.getAll(); }).then(function (rows) {
+        if (rows.length) $('outbox').innerHTML = '<div class="waiting">' + rows.length + ' attendance sign-in(s) are saved on this device, waiting for signal. They are sent automatically.</div>';
+    });
+})();
+</script>
+</body>
+</html>

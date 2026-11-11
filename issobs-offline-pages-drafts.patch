@@ -1,0 +1,1559 @@
+diff --git a/app/Http/Controllers/FormDraftController.php b/app/Http/Controllers/FormDraftController.php
+new file mode 100644
+index 0000000..0bbf3f1
+--- /dev/null
++++ b/app/Http/Controllers/FormDraftController.php
+@@ -0,0 +1,30 @@
++<?php
++
++namespace App\Http\Controllers;
++
++use App\Support\SubmissionGuard;
++use Illuminate\Http\Request;
++use Illuminate\Support\Facades\Auth;
++use Illuminate\Support\Facades\DB;
++
++/**
++ * Drafts kept on the device (public/offline/drafts.js) ask here whether the form they were made
++ * from has since been saved: the one-time save code (SubmissionGuard) of a saved form is in
++ * form_submissions. Saved drafts are then removed from the device, wherever the save ended.
++ */
++class FormDraftController extends Controller
++{
++    public function saved(Request $request)
++    {
++        $keys = array_slice(array_filter((array) $request->query('keys', []), fn ($k) => is_string($k) && strlen($k) <= 64), 0, 50);
++        if (! $keys) {
++            return response()->json(['saved' => []]);
++        }
++
++        $saved = DB::table('form_submissions')->whereIn('submission_key', $keys)->whereNotNull('result_url')
++            ->where(fn ($q) => $q->where('user_id', Auth::id())->orWhereNull('user_id'))
++            ->pluck('submission_key');
++
++        return response()->json(['saved' => $saved->values()]);
++    }
++}
+diff --git a/app/Http/Controllers/ReceiptController.php b/app/Http/Controllers/ReceiptController.php
+index 75aaff1..0b41c6a 100644
+--- a/app/Http/Controllers/ReceiptController.php
++++ b/app/Http/Controllers/ReceiptController.php
+@@ -839,6 +839,46 @@ public function voided()
+         return view('sales.receipt_voided', compact('voids'));
+     }
+ 
++    /**
++     * One voided receipt: everything it recorded (kept in receipt_voids.snapshot), the invoices
++     * it paid, and what voiding it reversed in the banks and the client's ledger.
++     */
++    public function voidedShow(ReceiptVoid $void)
++    {
++        $this->authorizeOffice($void->client_id);
++        $void->load(['client', 'voidedBy']);
++
++        $receipt = $void->snapshot['receipt'] ?? [];
++        $allocations = collect($void->snapshot['allocations'] ?? []);
++        $invoices = Invoice::whereIn('id', $allocations->pluck('invoice_id')->push($receipt['invoice_id'] ?? null)->filter()->unique())
++            ->get()->keyBy('id');
++
++        // Bank lines: what the receipt posted (kept in the snapshot) and what is in the bank now for it,
++        // which includes the reversal lines written when it was voided.
++        $bankLines = \App\Models\BankTransaction::where('receipt_id', $void->receipt_id)->orderBy('id')->get();
++        $ledger = \App\Models\ClientLedgerEntry::where('receipt_id', $void->receipt_id)->orderBy('entry_date')->orderBy('id')->get();
++
++        $bankIds = collect([$receipt['cheque_to_bank_id'] ?? null, $receipt['transfer_to_bank_id'] ?? null, $receipt['momo_to_bank_id'] ?? null])
++            ->merge($bankLines->pluck('bank_id'))->merge(collect($void->snapshot['bank_lines'] ?? [])->pluck('bank_id'))->filter()->unique();
++        $banks = \App\Models\Bank::whereIn('id', $bankIds)->pluck('name', 'id');
++        $userIds = collect(['user_id', 'user_id1', 'user_id2'])->map(fn ($k) => $receipt[$k] ?? null)
++            ->push($void->snapshot['collection']['user_id'] ?? null)->filter()->unique();
++        $users = \App\Models\User::whereIn('id', $userIds)->pluck('name', 'id');
++
++        return view('sales.receipt_voided_show', compact('void', 'receipt', 'allocations', 'invoices', 'bankLines', 'ledger', 'banks', 'users'));
++    }
++
++    /** Same office rule as the receipt screens, by client. */
++    private function authorizeOffice(?int $clientId): void
++    {
++        $user = Auth::user();
++        if (! $clientId || $user?->hasRole(['Finance Manager', 'Invoice'])) {
++            return;
++        }
++        $fieldIds = $user?->field_id == 3 ? [3, 7] : array_filter([$user?->field_id]);
++        abort_unless(\App\Models\Client::whereKey($clientId)->whereIn('field_id', $fieldIds ?: [0])->exists(), 403);
++    }
++
+ 
+     /**
+      * "Create receipt" on an invoice. There is one receipt screen for one or
+diff --git a/docs/offline-sync.md b/docs/offline-sync.md
+index c0aa484..1b34f22 100644
+--- a/docs/offline-sync.md
++++ b/docs/offline-sync.md
+@@ -9,6 +9,8 @@ # Working with a bad connection: offline attendance, local assets, background jo
+ | **Every page** | Scripts and fonts come from our own server (`public/libs`), not from CDNs. A slow or blocked CDN no longer breaks DataTables, Excel/PDF export or the QR pages. |
+ | **Statement emails, Hubtel MoMo checks** | Run on the queue. The page returns at once; if Mailgun or Hubtel is unreachable the job is retried (3 tries) instead of the action being lost. |
+ | **Guard sign-in (QR page) and supervisor kiosk** | Work with no signal. Sign-ins are saved on the phone and uploaded automatically when the phone is back online. |
++| **Every page, when the connection drops** | A "You're offline" panel (no more red banner) and, for a page that can't be reached, an offline page instead of the browser's error. Save is paused while offline instead of ending on an error. |
++| **Invoice, proforma, receipt, fuel and maintenance forms** | Kept as a draft on the device as you type. Save pressed offline keeps the entry waiting; the form opens offline and puts it back; a person sends it once online. |
+ 
+ ---
+ 
+@@ -102,13 +104,61 @@ ### Needs
+ 
+ ---
+ 
+-## 2. Scripts and fonts served locally
++## 2. When the connection drops (every page)
++
++`resources/views/partials/connection.blade.php` (in the HR and Sales layouts and the login layout) loads
++`public/offline/connection.js` and `public/offline/drafts.js`. It replaces the red "Offline - No internet connection
++detected" banner.
++
++* **Connection lost on an open page:** a "You're offline" panel says what is safe (everything saved before), what
++  still works (attendance, drafts), what to check (Wi-Fi/data, other websites, router, tell the administrator if only
++  ISSOBS is down), and lists the drafts on this device. *Keep reading this page* shrinks it to a small note. It asks the
++  server (`/up`) every 10 seconds, so Wi-Fi with no internet counts as offline too, and closes itself with
++  "Back online" when the server answers.
++* **Save pressed while offline:** the form is not sent (the browser would show an error and drop what was typed).
++  On a draft form the entry is kept on the device as *waiting to send*; on any other form what was typed stays on the page.
++* **A page that can't be reached:** the service worker shows `public/offline/offline.html` instead of the browser's
++  error: which page was being opened, the drafts and attendance sign-ins waiting on the device, what to check, and it
++  opens the page by itself when the connection is back. Pages that load normally are not touched or kept.
++* **Logging out** removes the form pages kept on the device.
++
++## 3. Drafts on the device (invoice, proforma, receipt, fuel, maintenance)
++
++The forms carry `data-draft` (invoice: `sales/invoice_generate`, proforma: `sales/proforma_create`, new receipt:
++`sales/receipt_multi_create`, `fleet/fuel`, `fleet/maintenance`). To add another form, give its `<form>`
++`data-draft="name"` (plus `data-draft-label`, and `data-draft-add="#add"` if it has a "+" button for repeating rows)
++and add its address to `DRAFT_PAGES` in `public/sw.js`.
++
++* What is typed is kept on the device (IndexedDB, per user) a moment after each change. Not kept: the security
++  token, the one-time save code, passwords and attached files (attach the scan again).
++* The form page, and the theme scripts and styles it needs, are kept on the device each time it opens online, so it
++  opens with no signal. Coming back to the form shows *You have an unsent draft… Restore it / Discard*; an entry saved
++  while offline is put back at once with *Saved while offline… check and press Save*. Repeating rows (invoice lines)
++  are added with the form's own "+" button.
++* **Drafts are never sent on their own.** A person checks and saves them online, so every server check runs as usual:
++  balances, invoice numbers, duplicate receipts, approvals.
++* A copy of the page kept on the device carries an old security token and one-time save code, so Save on it first
++  keeps the draft and reloads a fresh page (the draft comes back on it). This also stops the save code of an earlier
++  invoice being reused for a new one.
++* A draft is removed once its form has been saved: the draft remembers the form's one-time save code and asks
++  `GET forms/saved` whether the server saved it (forms without a save code: the page after Save shows a success message).
++  Drafts older than 14 days are removed.
++
++## 4. Voided receipts
++
++`receipt-voided` lists voided receipts; each now opens its own page (`receipt-voided/{id}`) with what it recorded:
++client, date, payer, how it was paid with the cheque / transfer / MoMo references and the account it went into, who
++recorded and approved it, the scanned receipt, the invoices it paid (linked, with their balance now), the bank lines
++including the reversal, and the client-ledger entries including the reversal. An old link to a voided receipt
++(`receipt/{id}`) opens this page instead of "404".
++
++## 5. Scripts and fonts served locally
+ 
+ `public/libs/` holds the exact versions the views used from CDNs: jQuery 3.7.1, DataTables 2.3.2/2.3.3/2.3.5 with Buttons
+ 3.2.4/3.2.5, ColumnControl, FixedHeader, FixedColumns, JSZip, pdfMake, Select2, qrcodejs, html5-qrcode, and the Public Sans
+ font (`libs/fonts/public-sans/`). Every view that loaded them from a CDN (about 100) now uses `asset('libs/...')`. Nothing to build: the files are committed.
+ 
+-## 3. Background jobs
++## 6. Background jobs
+ 
+ * **Statement emails** (`SendClientStatement`): the statement and PDF are built when the job runs; `statement_sends` is
+   written only once the mail has gone. Failures after 3 tries are logged.
+@@ -132,7 +182,7 @@ ### Hubtel credentials (action needed)
+ 
+ ---
+ 
+-## 4. Install
++## 7. Install
+ 
+ ```bash
+ git pull
+@@ -143,17 +193,20 @@ # .env: HUBTEL_MOMO_* (new keys); optional ATTENDANCE_OFFLINE_* settings above
+ 
+ Make sure `public/sw.js`, `public/offline/` and `public/libs/` are deployed with the rest of `public/`.
+ 
+-## 5. Tests
++## 8. Tests
+ 
++`tests/Feature/OfflinePagesTest.php` (offline panel, draft forms, `forms/saved`), `tests/Feature/VoidedReceiptPageTest.php`,
+ `tests/Feature/AttendanceOfflineSyncTest.php` (18 tests: duplicates, clock correction, night shifts, sealed PINs, locks,
+ replaced posters, kiosk tokens, newer-entry rule, office permissions) and `tests/Feature/BackgroundJobsTest.php`.
+ The full offline flow was also run in Chrome: sign in with the network off, reopen the page offline, reconnect, and the
+-sign-ins arrive with their original times; kiosk marks upload after the login cookie is deleted.
++sign-ins arrive with their original times; kiosk marks upload after the login cookie is deleted. Drafts: a 3-line
++invoice typed online, connection cut, Save pressed (kept as a draft, nothing sent), another page opened (offline page
++listing the draft), the invoice form reopened offline (lines put back), connection restored, page reloaded and saved:
++one invoice with 3 lines, and the draft removed.
+ 
+-## 6. Not in this change (next steps)
++## 9. Not in this change (next steps)
+ 
+-* **Drafts for invoices, proformas and receipts** on the same outbox: saved on the device, submitted online with the
+-  real number assigned by the server, refused cleanly if the balance changed meanwhile.
+-* Fuel and maintenance entries from the field, same pattern as attendance.
++* Sending drafts from the device in the background (without opening the form). Left out on purpose for money
++  documents; possible for fuel and maintenance entries with an upload API like attendance's.
+ * If head office's line is the main problem: a 4G backup router, or the app on an office server with a one-way copy to
+   the cloud.
+diff --git a/public/offline/connection.js b/public/offline/connection.js
+new file mode 100644
+index 0000000..a3c414b
+--- /dev/null
++++ b/public/offline/connection.js
+@@ -0,0 +1,214 @@
++/*
++ * ISSOBS connection helper, on every page (docs/offline-sync.md, "When the connection drops").
++ *
++ *  - Registers the service worker, which shows a helpful "You're offline" page instead of the
++ *    browser's error when a page can't be reached, and keeps the draft-capable forms and the
++ *    attendance pages on the device.
++ *  - When the connection drops while a page is open: a full "You're offline" panel (instead of the
++ *    old red banner) saying what is safe, what still works and what to check. It can be shrunk to
++ *    a small note to keep reading the page. It closes by itself when the server answers again.
++ *  - Save pressed while offline: the form is NOT sent (which would end on a browser error and lose
++ *    what was typed). On forms that keep drafts, the entry is kept on this device to send later.
++ *  - Logging out clears the pages kept on this device.
++ *
++ * Config: window.ISSOBS_CONN = { sw, up, user, userName, rendered, saved, errors }
++ */
++(function () {
++    'use strict';
++    var cfg = window.ISSOBS_CONN || {};
++    var offlineSince = null, probeTimer = null, panel = null, pill = null, stale = false;
++
++    try { if (cfg.user) localStorage.setItem('issobs_user', JSON.stringify({ id: cfg.user, name: cfg.userName || '' })); } catch (e) {}
++
++    // Opened from the copy kept on this device (the service worker marks it)?
++    var kept = document.querySelector('meta[name="issobs-kept-copy"]');
++    stale = !!kept;
++    var keptAt = kept && kept.content ? new Date(kept.content) : null;
++
++    if ('serviceWorker' in navigator && cfg.sw) {
++        navigator.serviceWorker.register(cfg.sw).catch(function () {});
++    }
++
++    function hhmm(d) { return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); }
++    function esc(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; }
++
++    var css = '' +
++        '.issobs-off{position:fixed;inset:0;z-index:2050;background:rgba(245,246,250,.97);overflow:auto;display:flex;align-items:flex-start;justify-content:center;padding:6vh 16px 24px;font-size:15px;line-height:1.5;color:#384551;font-family:"Public Sans",-apple-system,"Segoe UI",Roboto,Arial,sans-serif}' +
++        '.issobs-off .box{max-width:640px;width:100%;background:#fff;border-radius:14px;box-shadow:0 10px 40px rgba(34,48,62,.12);padding:28px 28px 22px}' +
++        '.issobs-off h2{margin:0 0 4px;font-size:24px;color:#22303e;display:flex;align-items:center;gap:10px}' +
++        '.issobs-off .dot{width:12px;height:12px;border-radius:50%;background:#ff9f43;box-shadow:0 0 0 4px rgba(255,159,67,.2)}' +
++        '.issobs-off .lead{color:#646e78;margin:0 0 18px}' +
++        '.issobs-off h3{font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:#8592a3;margin:18px 0 6px}' +
++        '.issobs-off ul{margin:0;padding-left:20px}.issobs-off li{margin:4px 0;line-height:1.45}' +
++        '.issobs-off .note{background:#fff2d6;color:#8a5a00;border-radius:8px;padding:10px 12px;margin:0 0 14px;font-weight:600}' +
++        '.issobs-off .drafts a{font-weight:600}' +
++        '.issobs-off .foot{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:22px;border-top:1px solid #eceef1;padding-top:16px}' +
++        '.issobs-off .status{color:#8592a3;font-size:13px;margin-right:auto}' +
++        '.issobs-off a{color:#696cff;font-weight:600}' +
++        '.issobs-btn{font:inherit;font-weight:600;font-size:14px;border-radius:8px;padding:8px 14px;border:1px solid #696cff;background:#696cff;color:#fff;cursor:pointer}' +
++        '.issobs-btn.ghost{background:#fff;color:#696cff}' +
++        '.issobs-pill{font-family:"Public Sans",-apple-system,"Segoe UI",Roboto,Arial,sans-serif;position:fixed;left:16px;bottom:16px;z-index:2050;background:#22303e;color:#fff;border-radius:999px;padding:8px 14px;font-size:14px;box-shadow:0 6px 20px rgba(0,0,0,.2);cursor:pointer;display:flex;gap:8px;align-items:center}' +
++        '.issobs-pill .dot{width:9px;height:9px;border-radius:50%;background:#ff9f43}' +
++        '.issobs-toast{font-family:"Public Sans",-apple-system,"Segoe UI",Roboto,Arial,sans-serif;position:fixed;left:50%;transform:translateX(-50%);bottom:18px;z-index:2060;background:#28c76f;color:#fff;border-radius:10px;padding:10px 16px;font-weight:600;box-shadow:0 6px 20px rgba(0,0,0,.2);display:flex;gap:10px;align-items:center}' +
++        '.issobs-toast button{font:inherit;background:#fff;color:#22303e;border:0;border-radius:6px;padding:4px 10px;font-weight:600;cursor:pointer}';
++
++    function style() {
++        if (document.getElementById('issobs-off-css')) return;
++        var s = document.createElement('style'); s.id = 'issobs-off-css'; s.textContent = css; document.head.appendChild(s);
++    }
++
++    function draftsHtml() {
++        if (!window.IssobsDrafts || !cfg.user) return Promise.resolve('');
++        return IssobsDrafts.list(cfg.user).then(function (rows) {
++            if (!rows.length) return '';
++            return '<h3>Drafts on this device</h3><ul class="drafts">' + rows.slice(0, 8).map(function (r) {
++                return '<li><a href="' + esc(r.url) + '">' + esc(r.label) + '</a> · ' + (r.pending ? 'waiting to send' : 'unsent draft') + ', ' + esc(new Date(r.savedAt).toLocaleString([], { weekday: 'short', hour: '2-digit', minute: '2-digit' })) + '</li>';
++            }).join('') + '</ul>';
++        }).catch(function () { return ''; });
++    }
++
++    function showPanel(note) {
++        style();
++        if (pill) { pill.remove(); pill = null; }
++        if (!panel) {
++            panel = document.createElement('div');
++            panel.className = 'issobs-off'; panel.setAttribute('role', 'alertdialog'); panel.setAttribute('aria-live', 'assertive');
++            document.body.appendChild(panel);
++        }
++        draftsHtml().then(function (drafts) {
++            if (!panel) return;
++            panel.innerHTML = '<div class="box">' +
++                '<h2><span class="dot"></span>You\'re offline</h2>' +
++                '<p class="lead">No connection to the ISSOBS server' + (offlineSince ? ' since ' + hhmm(offlineSince) : '') + '. Stay on this page: it reconnects by itself.' +
++                (stale ? ' You are looking at the copy of this page kept on this device' + (keptAt && !isNaN(keptAt) ? ' (from ' + keptAt.toLocaleString([], { weekday: 'short', hour: '2-digit', minute: '2-digit' }) + ')' : '') + '.' : '') + '</p>' +
++                (note ? '<div class="note">' + note + '</div>' : '') +
++                '<h3>Your work</h3><ul>' +
++                '<li>Everything saved before the connection dropped is safe on the server.</li>' +
++                '<li>What you have typed on this page is still here. Saving is paused until the connection is back.</li>' +
++                '<li>Invoices, proformas, receipts, fuel and maintenance entries are kept as drafts on this device as you type. Press Save while offline and the entry waits on this device for you to send it.</li>' +
++                '</ul>' + drafts +
++                '<h3>Still works without internet</h3><ul>' +
++                '<li>Guard sign-in (QR poster) and the supervisor kiosk: sign-ins are saved on the phone and sent automatically.</li>' +
++                '<li>The forms above, if you opened them on this device before.</li>' +
++                '</ul>' +
++                '<h3>Check</h3><ul>' +
++                '<li>Is Wi-Fi or mobile data on? Try opening another website.</li>' +
++                '<li>Other websites work but ISSOBS doesn\'t: the server may be down. Tell your administrator.</li>' +
++                '<li>Nothing opens: restart the router or switch to mobile data.</li>' +
++                '</ul>' +
++                '<div class="foot"><span class="status" id="issobs-off-status">Checking the connection every 10 seconds…</span>' +
++                '<button type="button" class="issobs-btn ghost" id="issobs-off-hide">Keep reading this page</button>' +
++                '<button type="button" class="issobs-btn" id="issobs-off-retry">Try again now</button></div>' +
++                '</div>';
++            document.getElementById('issobs-off-hide').onclick = shrink;
++            document.getElementById('issobs-off-retry').onclick = function () { probe(true); };
++        });
++    }
++
++    function shrink() {
++        if (panel) { panel.remove(); panel = null; }
++        if (pill) return;
++        pill = document.createElement('div');
++        pill.className = 'issobs-pill'; pill.setAttribute('role', 'status');
++        pill.innerHTML = '<span class="dot"></span><span>Offline' + (offlineSince ? ' since ' + hhmm(offlineSince) : '') + ' · saving paused</span><u>Details</u>';
++        pill.onclick = function () { showPanel(); };
++        document.body.appendChild(pill);
++    }
++
++    function toast(text, button) {
++        style();
++        var t = document.createElement('div');
++        t.className = 'issobs-toast'; t.setAttribute('role', 'status');
++        t.innerHTML = '<span>' + esc(text) + '</span>';
++        if (button) {
++            var b = document.createElement('button'); b.textContent = button[0]; b.onclick = button[1]; t.appendChild(b);
++        }
++        document.body.appendChild(t);
++        if (!button) setTimeout(function () { t.remove(); }, 3500);
++    }
++
++    function goOffline(note) {
++        if (!offlineSince) offlineSince = new Date();
++        if (note || !pill) showPanel(note); else shrink();
++        clearInterval(probeTimer);
++        probeTimer = setInterval(probe, 10000);
++    }
++
++    function backOnline() {
++        if (!offlineSince) return;
++        offlineSince = null;
++        clearInterval(probeTimer);
++        if (panel) { panel.remove(); panel = null; }
++        if (pill) { pill.remove(); pill = null; }
++        if (stale) {
++            toast('Back online. This page was opened from the copy on this device: reload it before saving (your entries are kept as a draft).',
++                ['Reload', function () { location.reload(); }]);
++        } else {
++            toast('Back online. You can save again.');
++        }
++    }
++
++    /** Ask the server, not just the network card: Wi-Fi without internet also counts as offline. */
++    function probe(manual) {
++        var s = document.getElementById('issobs-off-status');
++        if (s && manual) s.textContent = 'Checking…';
++        return fetch(cfg.up + (cfg.up.indexOf('?') < 0 ? '?' : '&') + 't=' + Date.now(), { method: 'GET', cache: 'no-store', credentials: 'same-origin' })
++            .then(function (r) { if (r.ok) { backOnline(); return true; } throw new Error(r.status); })
++            .catch(function () {
++                var s2 = document.getElementById('issobs-off-status');
++                if (s2) s2.textContent = 'Still offline · last checked ' + hhmm(new Date()) + ' · checking every 10 seconds';
++                return false;
++            });
++    }
++
++    window.addEventListener('offline', function () { goOffline(); });
++    window.addEventListener('online', function () { probe(); });
++    document.addEventListener('DOMContentLoaded', function () {
++        if (!navigator.onLine) goOffline();
++        else if (stale) toast('This is the copy of the page kept on this device (the connection was slow).', ['Reload', function () { location.reload(); }]);
++    });
++
++    // Save pressed with no connection: don't send (the browser would show an error and drop the typing).
++    document.addEventListener('submit', function (e) {
++        var form = e.target;
++        var method = (form.getAttribute('method') || 'get').toLowerCase();
++        if (method !== 'post') return;
++        if (navigator.onLine && !offlineSince) {
++            // A copy kept on this device carries an old one-time save code and security token:
++            // keep the entries as a draft, get a fresh page, and the draft comes back on it.
++            if (!stale || !form.issobsDraft) return;
++            e.preventDefault();
++            e.stopImmediatePropagation();
++            form.issobsDraft.keepForLater().then(function () { location.reload(); });
++            return;
++        }
++        e.preventDefault();
++        e.stopImmediatePropagation();
++        if (form.issobsDraft) {
++            form.issobsDraft.keepForLater().then(function () {
++                goOffline('Not sent: there is no connection. Your entries are saved on this device as a draft, waiting to send. When the connection is back, open this form again (or stay here) and press Save.');
++            });
++        } else {
++            goOffline('Not sent: there is no connection. What you typed is still on the page. Press the button again when the connection is back.');
++        }
++    }, true);
++
++    // Drafts: forms marked data-draft keep what is typed on this device.
++    document.addEventListener('DOMContentLoaded', function () {
++        if (!window.IssobsDrafts || !cfg.user) return;
++        IssobsDrafts.tidy(cfg.user, !!cfg.saved, cfg.savedCheck).catch(function () {}).then(function () {
++            // After the page's own scripts (e.g. the "+" row button) are ready.
++            var go = function () { document.querySelectorAll('form[data-draft]').forEach(function (f) { IssobsDrafts.attach(f, cfg); }); };
++            if (document.readyState === 'complete') go(); else window.addEventListener('load', go);
++        });
++    });
++
++    // Logging out: remove the pages kept on this device for offline use.
++    document.addEventListener('click', function (e) {
++        var a = e.target.closest && e.target.closest('a[href$="/logout"], [data-logout]');
++        if (!a || !window.caches) return;
++        caches.keys().then(function (keys) {
++            keys.filter(function (k) { return k.indexOf('issobs-pages') === 0; }).forEach(function (k) { caches.delete(k); });
++        });
++    }, true);
++})();
+diff --git a/public/offline/drafts.js b/public/offline/drafts.js
+new file mode 100644
+index 0000000..d9b36da
+--- /dev/null
++++ b/public/offline/drafts.js
+@@ -0,0 +1,208 @@
++/*
++ * ISSOBS drafts on this device (docs/offline-sync.md, "Drafts").
++ *
++ * A form marked <form data-draft="invoice:12" data-draft-label="Invoice for DVLA" data-draft-add="#add">
++ * is saved on this device (IndexedDB) as you type. If the connection drops, nothing typed is lost:
++ *  - press Save while offline and the entry is kept as a draft "waiting to send";
++ *  - open the form again (even with no signal: the page is kept on the device) and the draft is
++ *    put back, to check and save once the connection is back.
++ * A draft is removed once the server has really saved the form (the next page shows a success message).
++ *
++ * Drafts never go to the server on their own: invoices, receipts and the rest are always checked
++ * and saved by a person, online, with all the usual checks (balances, numbers, approvals).
++ * Not kept: the one-time save code, the security token, passwords and attached files.
++ */
++(function (root) {
++    'use strict';
++
++    var DB = 'issobs-drafts', SKIP = { _token: 1, _method: 1, submission_key: 1 };
++    var MAX_AGE = 14 * 864e5, SENT_WINDOW = 15 * 60e3;
++    var dbp = null;
++
++    function open() {
++        if (dbp) return dbp;
++        dbp = new Promise(function (resolve, reject) {
++            var r = indexedDB.open(DB, 1);
++            r.onupgradeneeded = function () { r.result.createObjectStore('drafts', { keyPath: 'key' }).createIndex('user', 'user'); };
++            r.onsuccess = function () { resolve(r.result); };
++            r.onerror = function () { dbp = null; reject(r.error); };
++        });
++        return dbp;
++    }
++
++    function run(mode, fn) {
++        return open().then(function (db) {
++            return new Promise(function (resolve, reject) {
++                var t = db.transaction('drafts', mode), out;
++                var r = fn(t.objectStore('drafts'));
++                if (r) r.onsuccess = function () { out = r.result; };
++                t.oncomplete = function () { resolve(out); };
++                t.onerror = t.onabort = function () { reject(t.error); };
++            });
++        });
++    }
++
++    var api = {
++        get: function (key) { return run('readonly', function (s) { return s.get(key); }); },
++        put: function (rec) { return run('readwrite', function (s) { s.put(rec); }); },
++        remove: function (key) { return run('readwrite', function (s) { s.delete(key); }); },
++        list: function (user) {
++            return run('readonly', function (s) { return s.index('user').getAll(String(user)); })
++                .then(function (rows) { return (rows || []).sort(function (a, b) { return b.savedAt - a.savedAt; }); });
++        },
++
++        /**
++         * On every page: forget drafts the server has saved, and old ones. A draft knows it was saved
++         * when the server confirms its form's one-time save code (savedCheck), or, for forms without
++         * one, when the page after Save shows a success message (savedNow).
++         */
++        tidy: function (user, savedNow, savedCheck) {
++            if (!user) return Promise.resolve();
++            return api.list(user).then(function (rows) {
++                var gone = rows.filter(function (r) {
++                    return Date.now() - r.savedAt > MAX_AGE || (savedNow && r.sentAt && !r.sentKey && Date.now() - r.sentAt < SENT_WINDOW);
++                });
++                var ask = rows.filter(function (r) { return r.sentKey && gone.indexOf(r) < 0; });
++                var check = ask.length && savedCheck && navigator.onLine
++                    ? fetch(savedCheck + '?' + ask.map(function (r) { return 'keys[]=' + encodeURIComponent(r.sentKey); }).join('&'), { credentials: 'same-origin', headers: { Accept: 'application/json' } })
++                        .then(function (res) { return res.ok ? res.json() : { saved: [] }; })
++                        .then(function (j) { return ask.filter(function (r) { return (j.saved || []).indexOf(r.sentKey) >= 0; }); })
++                        .catch(function () { return []; })
++                    : Promise.resolve([]);
++                return check.then(function (saved) {
++                    return Promise.all(gone.concat(saved).map(function (r) { return api.remove(r.key); }));
++                });
++            });
++        },
++
++        serialize: serialize,
++        restore: restore,
++        attach: attach,
++    };
++
++    function fields(form) {
++        return Array.prototype.filter.call(form.elements, function (el) {
++            if (!el.name || SKIP[el.name] || el.disabled) return false;
++            var t = (el.type || '').toLowerCase();
++            return ['file', 'submit', 'button', 'reset', 'password', 'image'].indexOf(t) < 0;
++        });
++    }
++
++    function serialize(form) {
++        return fields(form).map(function (el) {
++            var t = (el.type || '').toLowerCase();
++            if (t === 'checkbox' || t === 'radio') return [el.name, el.value, el.checked];
++            if (t === 'select-multiple') return [el.name, Array.prototype.filter.call(el.options, function (o) { return o.selected; }).map(function (o) { return o.value; })];
++            return [el.name, el.value];
++        });
++    }
++
++    function fire(el) {
++        ['input', 'change'].forEach(function (type) { el.dispatchEvent(new Event(type, { bubbles: true })); });
++        if (root.jQuery && root.jQuery(el).data('select2')) root.jQuery(el).trigger('change.select2');
++    }
++
++    /** Put saved values back. Repeating rows (name[]) are added with the form's "+" button first. */
++    function restore(form, saved) {
++        var want = {}, have = {};
++        saved.forEach(function (f) { if (/\[\]$/.test(f[0]) && f.length === 2) want[f[0]] = (want[f[0]] || 0) + 1; });
++        fields(form).forEach(function (el) { if (/\[\]$/.test(el.name) && el.type !== 'checkbox' && el.type !== 'radio') have[el.name] = (have[el.name] || 0) + 1; });
++        var add = form.dataset.draftAdd && document.querySelector(form.dataset.draftAdd);
++        if (add) {
++            var missing = 0;
++            Object.keys(want).forEach(function (n) { missing = Math.max(missing, want[n] - (have[n] || 0)); });
++            for (var i = 0; i < missing; i++) add.click();
++        }
++
++        var els = fields(form), used = {}, byName = {};
++        els.forEach(function (el) { (byName[el.name] = byName[el.name] || []).push(el); });
++        saved.forEach(function (f) {
++            var list = byName[f[0]] || [];
++            if (f.length === 3) {                       // checkbox / radio: by name and value
++                list.forEach(function (el) { if (el.value === f[1] && el.checked !== f[2]) { el.checked = f[2]; fire(el); } });
++                return;
++            }
++            var i = used[f[0]] || 0, el = list[i];
++            used[f[0]] = i + 1;
++            if (!el) return;
++            if (Array.isArray(f[1])) Array.prototype.forEach.call(el.options, function (o) { o.selected = f[1].indexOf(o.value) >= 0; });
++            else if (el.value !== f[1]) el.value = f[1];
++            fire(el);
++        });
++    }
++
++    function when(ms) {
++        var d = new Date(ms);
++        return d.toLocaleDateString([], { weekday: 'short', day: 'numeric', month: 'short' }) + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
++    }
++
++    function bar(form, cls, html, buttons) {
++        var old = form.previousElementSibling;
++        if (old && old.classList.contains('issobs-draft-bar')) old.remove();
++        var div = document.createElement('div');
++        div.className = 'alert ' + cls + ' issobs-draft-bar d-flex flex-wrap align-items-center gap-2';
++        div.innerHTML = '<div class="me-auto">' + html + '</div>';
++        (buttons || []).forEach(function (b) {
++            var btn = document.createElement('button');
++            btn.type = 'button'; btn.className = 'btn btn-sm ' + b[1]; btn.textContent = b[0];
++            btn.addEventListener('click', function () { b[2](); div.remove(); });
++            div.appendChild(btn);
++        });
++        form.parentNode.insertBefore(div, form);
++        return div;
++    }
++
++    /**
++     * cfg: { user, saved (the page shows a success message), errors (the page shows form errors) }
++     */
++    function attach(form, cfg) {
++        if (!cfg.user || !root.indexedDB) return;
++        var key = cfg.user + ':' + form.dataset.draft;
++        var rec = null, dirty = false, timer = null;
++
++        function save(extra) {
++            var now = Date.now();
++            rec = Object.assign(rec || { key: key, user: String(cfg.user), formKey: form.dataset.draft }, {
++                label: form.dataset.draftLabel || document.title, url: location.pathname + location.search,
++                fields: serialize(form), savedAt: now,
++            }, extra || {});
++            return api.put(rec).catch(function () {});
++        }
++
++        form.issobsDraft = {
++            /** Called by connection.js when Save is pressed with no connection. */
++            keepForLater: function () { return save({ pending: true, sentAt: null }); },
++        };
++
++        form.addEventListener('input', function (e) { if (e.isTrusted) { dirty = true; clearTimeout(timer); timer = setTimeout(save, 600); } });
++        form.addEventListener('change', function (e) { if (e.isTrusted) { dirty = true; clearTimeout(timer); timer = setTimeout(save, 600); } });
++        form.addEventListener('submit', function (e) {
++            // Runs after connection.js: if the save was stopped (offline), the draft is already kept.
++            var code = form.querySelector('[name="submission_key"]');
++            setTimeout(function () { if (!e.defaultPrevented && dirty) save({ pending: false, sentAt: Date.now(), sentKey: code ? code.value : null }); }, 0);
++        });
++
++        api.get(key).then(function (found) {
++            if (!found || !found.fields || !found.fields.length) return;
++            rec = found;
++            if (cfg.saved && found.sentAt && !found.sentKey && Date.now() - found.sentAt < SENT_WINDOW) { api.remove(key); rec = null; return; }
++            if (cfg.errors && found.sentAt) {
++                // The server sent the form back with errors and refilled it: keep the draft, just say so.
++                rec.sentAt = null; api.put(rec);
++                return;
++            }
++            if (found.pending) {
++                restore(form, found.fields); dirty = true;
++                bar(form, 'alert-warning', '<strong>Saved while offline</strong> on ' + when(found.savedAt) + ' and not sent yet. Check the entries below, then press Save.',
++                    [['Discard this draft', 'btn-outline-secondary', function () { api.remove(key); rec = null; location.reload(); }]]);
++                return;
++            }
++            bar(form, 'alert-info', 'You have an <strong>unsent draft</strong> of this form on this device from ' + when(found.savedAt) + '.', [
++                ['Restore it', 'btn-primary', function () { restore(form, found.fields); dirty = true; }],
++                ['Discard', 'btn-outline-secondary', function () { api.remove(key); rec = null; }],
++            ]);
++        }).catch(function () {});
++    }
++
++    root.IssobsDrafts = api;
++})(typeof self !== 'undefined' ? self : this);
+diff --git a/public/offline/offline.html b/public/offline/offline.html
+new file mode 100644
+index 0000000..ea75688
+--- /dev/null
++++ b/public/offline/offline.html
+@@ -0,0 +1,125 @@
++<!DOCTYPE html>
++<html lang="en">
++<head>
++<meta charset="utf-8">
++<meta name="viewport" content="width=device-width, initial-scale=1">
++<meta name="robots" content="noindex">
++<title>Offline · ISSOBS</title>
++<!--
++  Shown by the service worker (public/sw.js) when a page can't be reached, instead of the browser's
++  own error. Everything is in this file: it has to work with no connection at all.
++  __SCOPE__ is replaced by the service worker with the app's base path.
++-->
++<style>
++    :root { --ink: #22303e; --text: #384551; --muted: #8592a3; --line: #eceef1; --brand: #696cff; --warn: #ff9f43; --warnbg: #fff2d6; }
++    * { box-sizing: border-box; }
++    body { margin: 0; font-family: "Public Sans", -apple-system, "Segoe UI", Roboto, Arial, sans-serif; background: #f5f5f9; color: var(--text); font-size: 15px; line-height: 1.5; }
++    header { background: var(--ink); color: #fff; padding: 14px 20px; font-weight: 700; letter-spacing: .02em; }
++    header small { display: block; font-weight: 400; opacity: .7; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; }
++    main { max-width: 680px; margin: 0 auto; padding: 28px 16px 40px; }
++    .box { background: #fff; border-radius: 14px; box-shadow: 0 6px 30px rgba(34,48,62,.08); padding: 28px; }
++    h1 { margin: 0 0 4px; font-size: 26px; color: var(--ink); display: flex; align-items: center; gap: 12px; }
++    .dot { width: 13px; height: 13px; border-radius: 50%; background: var(--warn); box-shadow: 0 0 0 5px rgba(255,159,67,.2); flex: none; }
++    .lead { color: #646e78; margin: 0 0 6px; }
++    .page { color: var(--muted); font-size: 13px; word-break: break-all; margin: 0 0 18px; }
++    h2 { font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: 22px 0 6px; }
++    ul { margin: 0; padding-left: 20px; } li { margin: 5px 0; }
++    a { color: var(--brand); font-weight: 600; }
++    .waiting { background: var(--warnbg); color: #8a5a00; border-radius: 8px; padding: 10px 12px; font-weight: 600; margin-top: 14px; }
++    .foot { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 24px; border-top: 1px solid var(--line); padding-top: 16px; }
++    .status { color: var(--muted); font-size: 13px; margin-right: auto; }
++    button { font: inherit; font-weight: 600; border-radius: 8px; padding: 9px 16px; border: 1px solid var(--brand); background: var(--brand); color: #fff; cursor: pointer; }
++    button.ghost { background: #fff; color: var(--brand); }
++</style>
++</head>
++<body>
++<header><small>First Watch Security Services</small>ISSOBS</header>
++<main>
++    <div class="box">
++        <h1><span class="dot"></span>You're offline</h1>
++        <p class="lead">This page needs the ISSOBS server, which can't be reached from this device right now. It opens by itself as soon as the connection is back.</p>
++        <p class="page" id="page"></p>
++
++        <h2>Your work</h2>
++        <ul>
++            <li>Everything saved before the connection dropped is safe on the server.</li>
++            <li>If you pressed Save just as the connection dropped, check the list (receipts, invoices…) once you're back before entering it again. Pressing Save again on the same form never saves it twice.</li>
++            <li>Invoices, proformas, receipts, fuel and maintenance forms keep a draft on this device as you type.</li>
++        </ul>
++        <div id="drafts"></div>
++        <div id="outbox"></div>
++
++        <h2>Still works without internet</h2>
++        <ul>
++            <li>Guard sign-in (scan the QR poster) and the supervisor kiosk: sign-ins are saved on the phone and sent automatically.</li>
++            <li>The draft forms above, if they were opened on this device before.</li>
++        </ul>
++
++        <h2>Check</h2>
++        <ul>
++            <li>Is Wi-Fi or mobile data on? Try opening another website.</li>
++            <li>Other websites open but ISSOBS doesn't: the server may be down. Tell your administrator.</li>
++            <li>Nothing opens: restart the router, or switch to mobile data.</li>
++        </ul>
++
++        <div class="foot">
++            <span class="status" id="status">Checking the connection every 10 seconds…</span>
++            <button class="ghost" type="button" onclick="history.back()">Go back</button>
++            <button type="button" id="retry">Try again now</button>
++        </div>
++    </div>
++</main>
++<script>
++(function () {
++    var SCOPE = '__SCOPE__';
++    var $ = function (id) { return document.getElementById(id); };
++    var esc = function (s) { var d = document.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; };
++    var time = function (ms) { return new Date(ms).toLocaleString([], { weekday: 'short', hour: '2-digit', minute: '2-digit' }); };
++
++    $('page').textContent = 'You were opening: ' + location.pathname.replace(SCOPE, '/') + location.search;
++
++    function probe(manual) {
++        if (manual) $('status').textContent = 'Checking…';
++        fetch(SCOPE + 'up?t=' + Date.now(), { cache: 'no-store' })
++            .then(function (r) { if (r.ok) { $('status').textContent = 'Back online, opening the page…'; location.reload(); } else throw 0; })
++            .catch(function () { $('status').textContent = 'Still offline · last checked ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ' · checking every 10 seconds'; });
++    }
++    $('retry').onclick = function () { probe(true); };
++    setInterval(probe, 10000);
++    window.addEventListener('online', function () { probe(); });
++
++    function idb(name, store, fn) {
++        return new Promise(function (resolve) {
++            if (!window.indexedDB) return resolve([]);
++            var r = indexedDB.open(name);
++            r.onerror = function () { resolve([]); };
++            r.onupgradeneeded = function () { r.transaction.abort(); };   // the database doesn't exist here yet
++            r.onsuccess = function () {
++                var db = r.result;
++                if (!db.objectStoreNames.contains(store)) { db.close(); return resolve([]); }
++                var q = fn(db.transaction(store).objectStore(store));
++                q.onsuccess = function () { resolve(q.result || []); db.close(); };
++                q.onerror = function () { resolve([]); db.close(); };
++            };
++        });
++    }
++
++    var user = null;
++    try { user = JSON.parse(localStorage.getItem('issobs_user') || 'null'); } catch (e) {}
++
++    if (user) {
++        idb('issobs-drafts', 'drafts', function (s) { return s.index('user').getAll(String(user.id)); }).then(function (rows) {
++            if (!rows.length) return;
++            rows.sort(function (a, b) { return b.savedAt - a.savedAt; });
++            $('drafts').innerHTML = '<h2>Drafts on this device' + (user.name ? ' (' + esc(user.name) + ')' : '') + '</h2><ul>' + rows.slice(0, 10).map(function (r) {
++                return '<li><a href="' + esc(r.url) + '">' + esc(r.label) + '</a> · ' + (r.pending ? 'waiting to send' : 'unsent draft') + ', ' + esc(time(r.savedAt)) + '</li>';
++            }).join('') + '</ul>';
++        });
++    }
++    idb('issobs-outbox', 'items', function (s) { return s.getAll(); }).then(function (rows) {
++        if (rows.length) $('outbox').innerHTML = '<div class="waiting">' + rows.length + ' attendance sign-in(s) are saved on this device, waiting for signal. They are sent automatically.</div>';
++    });
++})();
++</script>
++</body>
++</html>
+diff --git a/public/sw.js b/public/sw.js
+index 46e2657..55f12fa 100644
+--- a/public/sw.js
++++ b/public/sw.js
+@@ -1,22 +1,28 @@
+ /*
+  * ISSOBS service worker (docs/offline-sync.md).
+  *
+- * Only the guard sign-in page (attend/{token}) and the supervisor kiosk (attendance/{id}/kiosk)
+- * work offline. Every other page goes straight to the network as before: this worker does not
+- * touch it.
+- *
+- *  - Those two pages: network first; if there is no answer within a few seconds, the copy saved
+- *    the last time the page opened online.
+- *  - Their scripts (libs/, offline/): saved copy first.
+- *  - Background Sync (Android Chrome) and messages from the pages: upload the outbox.
++ *  - Guard sign-in page (attend/{token}) and supervisor kiosk (attendance/{id}/kiosk), and the forms
++ *    that keep drafts (invoice, proforma, receipt, fuel, maintenance): network first; with no answer
++ *    within a few seconds, the copy kept from the last time the page opened online.
++ *  - Any other page that can't be reached: the "You're offline" page (offline/offline.html) instead of
++ *    the browser's error. Pages that load normally are not touched or kept.
++ *  - Libraries in libs/: kept copy first. Our scripts in offline/: kept copy at once, refreshed in the background.
++ *  - Background Sync (Android Chrome) and messages from the pages: upload the attendance outbox.
++ *  - Logging out removes the kept form pages.
+  */
+ importScripts('offline/outbox.js');
+ 
+-var VERSION = 'issobs-offline-v1';
++var VERSION = 'issobs-offline-v2';          // scripts, offline page, attendance pages
++var PAGES = 'issobs-pages-v1';             // draft-capable form pages (cleared on logout)
+ var SCOPE = new URL(self.registration.scope).pathname;            // e.g. "/" or "/issobs/public/"
+-var PRECACHE = ['offline/outbox.js', 'libs/html5-qrcode/2.3.8/html5-qrcode.min.js'];
+-var OFFLINE_PAGES = [/^attend\/[A-Za-z0-9]{32}$/, /^attendance\/\d+\/kiosk$/];
+-var STATIC = [/^libs\//, /^offline\//];
++var PRECACHE = ['offline/outbox.js', 'offline/drafts.js', 'offline/connection.js', 'offline/offline.html',
++    'libs/html5-qrcode/2.3.8/html5-qrcode.min.js'];
++var ATTENDANCE_PAGES = [/^attend\/[A-Za-z0-9]{32}$/, /^attendance\/\d+\/kiosk$/];
++var DRAFT_PAGES = [/^generate\/\d+$/, /^proforma\/create$/, /^receipt-multi\/create$/, /^fleet\/fuel$/, /^fleet\/maintenance$/];
++var VERSIONED = [/^libs\//];               // file names carry the library version: kept copy is always right
++var OWN_SCRIPTS = [/^offline\//];         // our own scripts: kept copy at once, refreshed in the background
++var THEME = [/^(vendor|assets|js|css|fonts|img|images|build)\//];   // what the kept pages need: network first, kept copy offline
++var ASSETS = 'issobs-assets-v1';
+ var NETWORK_WAIT_MS = 5000;
+ 
+ self.addEventListener('install', function (event) {
+@@ -34,37 +40,84 @@ function relPath(url) {
+     return p.indexOf(SCOPE) === 0 ? p.slice(SCOPE.length) : null;
+ }
+ 
++function matches(list, path) { return list.some(function (r) { return r.test(path); }); }
++
+ self.addEventListener('fetch', function (event) {
+     var req = event.request;
+-    if (req.method !== 'GET') return;
+     var url = new URL(req.url);
+     if (url.origin !== self.location.origin) return;
+     var path = relPath(url);
+     if (path === null) return;
+ 
+-    if (req.mode === 'navigate' && OFFLINE_PAGES.some(function (r) { return r.test(path); })) {
+-        event.respondWith(networkFirst(req));
+-    } else if (STATIC.some(function (r) { return r.test(path); })) {
++    if (req.method === 'POST' && path === 'logout') {
++        event.waitUntil(caches.delete(PAGES));
++        return;
++    }
++    if (req.method !== 'GET') return;
++
++    if (req.mode === 'navigate') {
++        if (matches(ATTENDANCE_PAGES, path)) event.respondWith(networkFirst(req, VERSION, attendanceKey(req)));
++        else if (matches(DRAFT_PAGES, path)) event.respondWith(networkFirst(req, PAGES, req.url));
++        else event.respondWith(fetch(req).catch(offlinePage));
++    } else if (matches(VERSIONED, path)) {
+         event.respondWith(cacheFirst(req));
++    } else if (matches(OWN_SCRIPTS, path)) {
++        event.respondWith(staleWhileRevalidate(req, event));
++    } else if (matches(THEME, path)) {
++        event.respondWith(fetch(req).then(function (res) {
++            if (res.ok && res.type === 'basic') { var copy = res.clone(); caches.open(ASSETS).then(function (c) { c.put(req, copy); }); }
++            return res;
++        }).catch(function () {
++            return caches.open(ASSETS).then(function (c) { return c.match(req); }).then(function (saved) { return saved || Response.error(); });
++        }));
+     }
+ });
+ 
+-function networkFirst(req) {
+-    var key = req.url.split('?')[0] + (new URL(req.url).search.indexOf('shift=') >= 0 ? new URL(req.url).search : '');
+-    return caches.open(VERSION).then(function (cache) {
++function attendanceKey(req) {
++    var u = new URL(req.url);
++    return u.origin + u.pathname + (u.search.indexOf('shift=') >= 0 ? u.search : '');
++}
++
++function offlinePage() {
++    return caches.open(VERSION).then(function (c) { return c.match('offline/offline.html'); }).then(function (res) {
++        if (!res) return Response.error();
++        return res.text().then(function (html) {
++            return new Response(html.split('__SCOPE__').join(SCOPE), {
++                status: 503, headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' },
++            });
++        });
++    });
++}
++
++function networkFirst(req, cacheName, key) {
++    return caches.open(cacheName).then(function (cache) {
+         var network = fetch(req).then(function (res) {
+-            // Keep only real pages: not the login page a logged-out kiosk is sent to, not errors.
++            // Keep only real pages: not the login page a logged-out user is sent to, not errors.
+             if (res.ok && !res.redirected && res.type === 'basic') cache.put(key, res.clone());
+             return res;
+         });
+         var timeout = new Promise(function (resolve) { setTimeout(resolve, NETWORK_WAIT_MS); });
+         return Promise.race([network.catch(function () { return null; }), timeout]).then(function (res) {
+             if (res) return res;
+-            return cache.match(key).then(function (saved) { return saved || network; });
++            return cache.match(key).then(function (saved) {
++                return saved ? markKept(saved) : network.catch(offlinePage);
++            });
+         });
+     });
+ }
+ 
++/** Tell the page it is the copy kept on this device (connection.js reads the meta tag). */
++function markKept(res) {
++    var when = res.headers.get('Date') ? new Date(res.headers.get('Date')).toISOString() : '';
++    return res.text().then(function (html) {
++        var tag = '<meta name="issobs-kept-copy" content="' + when + '">';
++        html = html.indexOf('</head>') >= 0 ? html.replace('</head>', tag + '</head>') : tag + html;
++        var headers = new Headers(res.headers);
++        headers.delete('Content-Length');
++        return new Response(html, { status: 200, headers: headers });
++    });
++}
++
+ function cacheFirst(req) {
+     return caches.open(VERSION).then(function (cache) {
+         return cache.match(req).then(function (saved) {
+@@ -73,6 +126,17 @@ function cacheFirst(req) {
+     });
+ }
+ 
++function staleWhileRevalidate(req, event) {
++    var key = req.url.split('?')[0];
++    return caches.open(VERSION).then(function (cache) {
++        return cache.match(key).then(function (saved) {
++            var fresh = fetch(req).then(function (res) { if (res.ok) cache.put(key, res.clone()); return res; });
++            if (saved) { event.waitUntil(fresh.catch(function () {})); return saved; }
++            return fresh;
++        });
++    });
++}
++
+ function flushAndTell() {
+     return IssobsOutbox.flushAll().then(function (summaries) {
+         return self.clients.matchAll({ type: 'window' }).then(function (clients) {
+diff --git a/resources/views/components/hr-dashboard.blade.php b/resources/views/components/hr-dashboard.blade.php
+index affec27..4739a62 100644
+--- a/resources/views/components/hr-dashboard.blade.php
++++ b/resources/views/components/hr-dashboard.blade.php
+@@ -144,9 +144,6 @@ class="nav-link dropdown-toggle hide-arrow p-0"
+                 <!-- Content wrapper -->
+                 <div class="content-wrapper">
+ 
+-                <div id="connection-status" class="alert" style="display:none;">
+-                    You are currently offline.
+-                </div>
+                 @include('partials.subscription_banner')
+                     @yield('content')
+ 
+@@ -205,26 +202,8 @@ class="footer-container d-flex align-items-right justify-content-right py-4 flex
+     <!-- Page JS -->
+     <script src="{{asset('js/dashboards-analytics.js')}}"></script>
+ 
+-    <script>
+-        function updateOnlineStatus() {
+-            var status = document.getElementById("connection-status");
+-            if (navigator.onLine) {
+-                status.style.display = "none";
+-            } else {
+-                status.style.display = "block";
+-                status.innerHTML = "Offline - No internet connection detected.";
+-                status.style.backgroundColor = "red";
+-                status.style.color = "white";
+-            }
+-        }
+-
+-        window.addEventListener('online', updateOnlineStatus);
+-        window.addEventListener('offline', updateOnlineStatus);
+-        
+-        // Initial check
+-        updateOnlineStatus();
+-    </script>
+ 
++    @include('partials.connection')
+     @include('partials.submit_lock')
+     @include('partials.subscription_readonly')
+     @yield('scripts')
+diff --git a/resources/views/components/sales-dashboard.blade.php b/resources/views/components/sales-dashboard.blade.php
+index ee1888f..495edbb 100644
+--- a/resources/views/components/sales-dashboard.blade.php
++++ b/resources/views/components/sales-dashboard.blade.php
+@@ -144,9 +144,6 @@ class="nav-link dropdown-toggle hide-arrow p-0"
+                 <!-- Content wrapper -->
+                 <div class="content-wrapper">
+ 
+-                <div id="connection-status" class="alert" style="display:none;">
+-                    You are currently offline.
+-                </div>
+                 @include('partials.subscription_banner')
+                     @yield('content')
+ 
+@@ -205,26 +202,8 @@ class="footer-container d-flex align-items-right justify-content-right py-4 flex
+     <!-- Page JS -->
+     <script src="{{asset('js/dashboards-analytics.js')}}"></script>
+ 
+-    <script>
+-        function updateOnlineStatus() {
+-            var status = document.getElementById("connection-status");
+-            if (navigator.onLine) {
+-                status.style.display = "none";
+-            } else {
+-                status.style.display = "block";
+-                status.innerHTML = "Offline - No internet connection detected.";
+-                status.style.backgroundColor = "red";
+-                status.style.color = "white";
+-            }
+-        }
+-
+-        window.addEventListener('online', updateOnlineStatus);
+-        window.addEventListener('offline', updateOnlineStatus);
+-        
+-        // Initial check
+-        updateOnlineStatus();
+-    </script>
+ 
++    @include('partials.connection')
+     @include('partials.submit_lock')
+     @include('partials.subscription_readonly')
+     @yield('scripts')
+diff --git a/resources/views/fleet/fuel.blade.php b/resources/views/fleet/fuel.blade.php
+index 2bd2a96..2808491 100644
+--- a/resources/views/fleet/fuel.blade.php
++++ b/resources/views/fleet/fuel.blade.php
+@@ -33,7 +33,7 @@
+             @if($vehicles->isEmpty())
+                 <div class="text-muted small">Add your vehicles first under <a href="{{ route('fleet.vehicles') }}">Vehicles</a>.</div>
+             @else
+-            <form method="POST" action="{{ route('fleet.fuel.store') }}" class="row g-2" autocomplete="off">
++            <form method="POST" action="{{ route('fleet.fuel.store') }}" class="row g-2" autocomplete="off" data-draft="fuel" data-draft-label="Fuel entry">
+                 @csrf
+                 @include('fleet._fuel_fields', ['f' => null])
+                 <div class="col-md-2 col-6 d-grid align-items-end"><button class="btn btn-primary btn-sm mt-3">Add</button></div>
+diff --git a/resources/views/fleet/maintenance.blade.php b/resources/views/fleet/maintenance.blade.php
+index 3fb63a7..bd92e7e 100644
+--- a/resources/views/fleet/maintenance.blade.php
++++ b/resources/views/fleet/maintenance.blade.php
+@@ -30,7 +30,7 @@
+             @if($vehicles->isEmpty())
+                 <div class="text-muted small">Add your vehicles first under <a href="{{ route('fleet.vehicles') }}">Vehicles</a>.</div>
+             @else
+-            <form method="POST" action="{{ route('fleet.maintenance.store') }}" class="row g-2" autocomplete="off">
++            <form method="POST" action="{{ route('fleet.maintenance.store') }}" class="row g-2" autocomplete="off" data-draft="maintenance" data-draft-label="Maintenance record">
+                 @csrf
+                 @include('fleet._maintenance_fields', ['r' => null])
+                 <div class="col-md-2 col-12 d-grid align-items-end"><button class="btn btn-primary btn-sm mt-3">Record</button></div>
+diff --git a/resources/views/layouts/app.blade.php b/resources/views/layouts/app.blade.php
+index 1b7bf8f..d129403 100644
+--- a/resources/views/layouts/app.blade.php
++++ b/resources/views/layouts/app.blade.php
+@@ -105,6 +105,7 @@
+         <!-- Main JS -->
+ 
+         <script src="{{ asset('js/main.js')}}"></script>
++        @include('partials.connection')
+ 
+ 
+     </div>
+diff --git a/resources/views/partials/connection.blade.php b/resources/views/partials/connection.blade.php
+new file mode 100644
+index 0000000..d88d779
+--- /dev/null
++++ b/resources/views/partials/connection.blade.php
+@@ -0,0 +1,20 @@
++{{--
++    Connection helper on every page (docs/offline-sync.md, "When the connection drops"): a
++    "You're offline" panel instead of the old red banner, Save paused while offline, drafts of
++    invoice / proforma / receipt / fuel / maintenance forms kept on this device, and the service
++    worker that shows an offline page instead of the browser's error.
++--}}
++<script>
++    window.ISSOBS_CONN = {
++        sw: @json(asset('sw.js')),
++        up: @json(url('up')),
++        savedCheck: @json(Auth::check() ? route('forms.saved') : null),
++        user: @json(Auth::id()),
++        userName: @json(Auth::user()?->name),
++        rendered: @json(now()->getTimestampMs()),
++        saved: @json(session()->has('success') || session()->has('primary')),
++        errors: @json(isset($errors) && $errors->any()),
++    };
++</script>
++<script src="{{ asset('offline/drafts.js') }}"></script>
++<script src="{{ asset('offline/connection.js') }}"></script>
+diff --git a/resources/views/sales/invoice_generate.blade.php b/resources/views/sales/invoice_generate.blade.php
+index cd95939..5d586eb 100644
+--- a/resources/views/sales/invoice_generate.blade.php
++++ b/resources/views/sales/invoice_generate.blade.php
+@@ -66,7 +66,7 @@
+                         </div>
+ 
+                         <hr />
+-                        <form method="POST" action="/invoice">
++                        <form method="POST" action="/invoice" data-draft="invoice:{{ $client->id }}" data-draft-label="Invoice for {{ $client->business_name ?: $client->name }}" data-draft-add="#add">
+                             @csrf
+                             {!! \App\Support\SubmissionGuard::field() !!}
+                             <input type="text" name="client_id" value="{{$client->id}}" hidden>
+diff --git a/resources/views/sales/proforma_create.blade.php b/resources/views/sales/proforma_create.blade.php
+index 51a5bac..69ea10a 100644
+--- a/resources/views/sales/proforma_create.blade.php
++++ b/resources/views/sales/proforma_create.blade.php
+@@ -43,7 +43,7 @@
+                                 </address>
+                             </div>
+                         </div>
+-                    <form method="POST" action="/proforma">
++                    <form method="POST" action="/proforma" data-draft="proforma" data-draft-label="Proforma invoice" data-draft-add="#add">
+                         @csrf
+                         <div class="row mb-3">
+                             <div class="col-12 col-sm-6 col-md-8">
+diff --git a/resources/views/sales/receipt_multi_create.blade.php b/resources/views/sales/receipt_multi_create.blade.php
+index 48ce58e..1226a70 100644
+--- a/resources/views/sales/receipt_multi_create.blade.php
++++ b/resources/views/sales/receipt_multi_create.blade.php
+@@ -106,7 +106,7 @@
+         @endif
+ 
+         @if($client)
+-        <form method="POST" action="{{ $editing ? route('receipt.update', $editing->id) : route('receipt.multi.store') }}" enctype="multipart/form-data" id="multiForm">
++        <form method="POST" action="{{ $editing ? route('receipt.update', $editing->id) : route('receipt.multi.store') }}" enctype="multipart/form-data" id="multiForm" @unless($editing) data-draft="receipt:{{ $client->id }}" data-draft-label="Receipt from {{ $client->business_name ?: $client->name }}" @endunless>
+             @csrf
+             @if($editing) @method('PUT') @endif
+             {!! \App\Support\SubmissionGuard::field() !!}
+diff --git a/resources/views/sales/receipt_voided.blade.php b/resources/views/sales/receipt_voided.blade.php
+index 0bfea04..e052240 100644
+--- a/resources/views/sales/receipt_voided.blade.php
++++ b/resources/views/sales/receipt_voided.blade.php
+@@ -7,7 +7,7 @@
+     @section('content')
+     <div class="container-xxl flex-grow-1 container-p-y">
+         <h3 class="text-primary mb-1"><i class="icon-base bx bx-block me-2"></i> Voided receipts</h3>
+-        <p class="text-muted">Receipts are voided, not deleted: each one is kept here with the reason. Its payments were reversed on the day shown.</p>
++        <p class="text-muted">Receipts are voided, not deleted: each one is kept here with the reason. Its payments were reversed on the day shown. Open one to see everything it recorded: how it was paid, references, the invoices it paid, and the bank and ledger reversals.</p>
+ 
+         @include('flash-messages')
+ 
+@@ -30,10 +30,10 @@
+                     @forelse($voids as $v)
+                         @php $r = $v->snapshot['receipt'] ?? []; @endphp
+                         <tr>
+-                            <td><strong>FWSSR{{ $v->receipt_id }}</strong></td>
++                            <td><a href="{{ route('receipt.voided.show', $v) }}"><strong>FWSSR{{ $v->receipt_id }}</strong></a></td>
+                             <td>
+                                 @if($v->client)
+-                                    <a href="{{ url('clientStatement', $v->client_id) }}">{{ $v->client->business_name ?: $v->client->name }}</a>
++                                    <a href="{{ route('receipt.voided.show', $v) }}">{{ $v->client->business_name ?: $v->client->name }}</a>
+                                 @endif
+                             </td>
+                             <td>{{ !empty($r['receipt_month']) ? \Carbon\Carbon::parse($r['receipt_month'])->format('d M Y') : '' }}</td>
+diff --git a/resources/views/sales/receipt_voided_show.blade.php b/resources/views/sales/receipt_voided_show.blade.php
+new file mode 100644
+index 0000000..efb6fac
+--- /dev/null
++++ b/resources/views/sales/receipt_voided_show.blade.php
+@@ -0,0 +1,217 @@
++<x-sales-dashboard>
++
++    @section('side_nav')
++        @include('partials.receipt_side_nav')
++    @endsection
++
++    @section('content')
++    @php
++        $money = fn ($v) => number_format((float) $v, 2);
++        $date = fn ($v, $f = 'd M Y') => $v ? \Carbon\Carbon::parse($v)->format($f) : '';
++        $bank = fn ($id) => $id ? ($banks[$id] ?? 'Bank #' . $id) : '';
++        $methods = array_values(array_filter([
++            ['Cash', $receipt['cash_amount'] ?? 0, null, null, null],
++            ['MoMo', $receipt['momo_amount'] ?? 0, $receipt['momo_transactin_id'] ?? null, null, $receipt['momo_to_bank_id'] ?? null],
++            ['Cheque', $receipt['cheque_amount'] ?? 0, $receipt['cheque_reference'] ?? null, $receipt['cheque_bank'] ?? null, $receipt['cheque_to_bank_id'] ?? null],
++            ['Bank transfer', $receipt['transfer_amount'] ?? 0, $receipt['transfer_reference'] ?? null, $receipt['transfer_bank'] ?? null, $receipt['transfer_to_bank_id'] ?? null],
++            ['Other', $receipt['other_payment_amnt'] ?? 0, $receipt['other_payment_descri'] ?? null, null, null],
++        ], fn ($m) => (float) $m[1] > 0));
++        $deductions = array_values(array_filter([
++            ['Withholding tax (WHT)', $receipt['wht_amount'] ?? 0],
++            ['VAT withheld (7%)', $receipt['vat7_amount'] ?? 0],
++        ], fn ($m) => (float) $m[1] > 0));
++        $collection = $void->snapshot['collection'] ?? null;
++        $before = collect($void->snapshot['bank_lines'] ?? []);
++    @endphp
++
++    <div class="container-xxl flex-grow-1 container-p-y">
++        <a href="{{ route('receipt.voided') }}" class="small"><i class="bx bx-chevron-left"></i> Voided receipts</a>
++        <h3 class="text-primary mb-1 mt-2">
++            Receipt FWSSR{{ $void->receipt_id }} <span class="badge bg-label-danger align-middle ms-1">Voided</span>
++        </h3>
++        <p class="text-muted mb-3">
++            Voided on {{ $void->created_at->format('d M Y H:i') }}{{ $void->voidedBy ? ' by ' . $void->voidedBy->name : '' }}.
++            The receipt no longer counts anywhere; below is what it recorded and what voiding it reversed.
++        </p>
++
++        @include('flash-messages')
++
++        <div class="alert alert-warning"><strong>Reason:</strong> {{ $void->reason }}</div>
++
++        <div class="row g-4">
++            <div class="col-lg-6">
++                <div class="card h-100">
++                    <div class="card-header"><h5 class="mb-0">What the receipt recorded</h5></div>
++                    <div class="card-body">
++                        <dl class="row mb-0">
++                            <dt class="col-sm-5 text-muted fw-normal">Client</dt>
++                            <dd class="col-sm-7">{{ $void->client?->business_name ?: $void->client?->name ?: '—' }}</dd>
++                            <dt class="col-sm-5 text-muted fw-normal">Receipt date</dt>
++                            <dd class="col-sm-7">{{ $date($receipt['receipt_month'] ?? null) ?: '—' }}</dd>
++                            @if(!empty($receipt['from']))
++                                <dt class="col-sm-5 text-muted fw-normal">Received from</dt>
++                                <dd class="col-sm-7">{{ $receipt['from'] }}</dd>
++                            @endif
++                            @if(!empty($receipt['description']))
++                                <dt class="col-sm-5 text-muted fw-normal">Description</dt>
++                                <dd class="col-sm-7">{{ $receipt['description'] }}</dd>
++                            @endif
++                            <dt class="col-sm-5 text-muted fw-normal">Money received</dt>
++                            <dd class="col-sm-7 fw-semibold">GH₵ {{ $money($void->amount) }}</dd>
++                            @if((float) ($receipt['unapplied_amount'] ?? 0) > 0)
++                                <dt class="col-sm-5 text-muted fw-normal">Unapplied credit</dt>
++                                <dd class="col-sm-7">GH₵ {{ $money($receipt['unapplied_amount']) }}</dd>
++                            @endif
++                            <dt class="col-sm-5 text-muted fw-normal">Recorded by</dt>
++                            <dd class="col-sm-7">{{ $users[$receipt['user_id'] ?? 0] ?? '—' }}{{ !empty($receipt['created_at']) ? ', ' . $date($receipt['created_at'], 'd M Y H:i') : '' }}</dd>
++                            @if(!empty($receipt['user_id1']) || !empty($receipt['coll_date']))
++                                <dt class="col-sm-5 text-muted fw-normal">Collection approved</dt>
++                                <dd class="col-sm-7">{{ $users[$receipt['user_id1'] ?? 0] ?? '' }} {{ $date($receipt['coll_date'] ?? null) }}</dd>
++                            @endif
++                            @if(!empty($receipt['user_id2']) || !empty($receipt['bran_date']))
++                                <dt class="col-sm-5 text-muted fw-normal">Branch approved</dt>
++                                <dd class="col-sm-7">{{ $users[$receipt['user_id2'] ?? 0] ?? '' }} {{ $date($receipt['bran_date'] ?? null) }}</dd>
++                            @endif
++                            @if(!empty($receipt['ho_status']))
++                                <dt class="col-sm-5 text-muted fw-normal">Head office</dt>
++                                <dd class="col-sm-7">{{ $receipt['ho_status'] }} {{ $date($receipt['ho_date'] ?? null) }}</dd>
++                            @endif
++                            @if(!empty($receipt['image']))
++                                <dt class="col-sm-5 text-muted fw-normal">Attachment</dt>
++                                <dd class="col-sm-7"><a href="{{ asset('storage/' . $receipt['image']) }}" target="_blank" rel="noopener">Open the scanned receipt</a></dd>
++                            @endif
++                        </dl>
++                    </div>
++                </div>
++            </div>
++
++            <div class="col-lg-6">
++                <div class="card h-100">
++                    <div class="card-header"><h5 class="mb-0">How it was paid</h5></div>
++                    <div class="table-responsive">
++                        <table class="table table-sm mb-0">
++                            <thead><tr><th>Method</th><th class="text-end">GH₵</th><th>Reference</th><th>Into</th></tr></thead>
++                            <tbody>
++                            @forelse($methods as [$name, $amount, $ref, $fromBank, $toBank])
++                                <tr>
++                                    <td>{{ $name }}</td>
++                                    <td class="text-end">{{ $money($amount) }}</td>
++                                    <td class="small">{{ $ref ?: '—' }}{{ $fromBank ? ' · ' . $fromBank : '' }}</td>
++                                    <td class="small">{{ $bank($toBank) ?: ($name === 'Cash' ? 'Cash collection' : '—') }}</td>
++                                </tr>
++                            @empty
++                                <tr><td colspan="4" class="text-muted">No money recorded.</td></tr>
++                            @endforelse
++                            @foreach($deductions as [$name, $amount])
++                                <tr class="text-muted"><td>{{ $name }}</td><td class="text-end">{{ $money($amount) }}</td><td colspan="2" class="small">deducted by the client</td></tr>
++                            @endforeach
++                            </tbody>
++                        </table>
++                    </div>
++                    @if($collection)
++                        <div class="card-body small text-muted border-top">
++                            Cash collection #{{ $collection['id'] ?? '' }} ({{ $collection['status'] ?? 'pending' }}):
++                            GH₵ {{ $money($collection['total_amount'] ?? 0) }}{{ !empty($collection['user_id']) && isset($users[$collection['user_id']]) ? ', collected by ' . $users[$collection['user_id']] : '' }}.
++                            It was removed when the receipt was voided (nothing of it had been deposited).
++                        </div>
++                    @endif
++                </div>
++            </div>
++
++            <div class="col-12">
++                <div class="card">
++                    <div class="card-header"><h5 class="mb-0">Invoices it paid</h5></div>
++                    <div class="table-responsive">
++                        <table class="table table-sm mb-0">
++                            <thead><tr><th>Invoice</th><th>Invoice date</th><th class="text-end">Settled by this receipt</th><th class="text-end">WHT</th><th>Invoice now</th></tr></thead>
++                            <tbody>
++                            @forelse($allocations as $a)
++                                @php $inv = $invoices[$a['invoice_id']] ?? null; @endphp
++                                <tr>
++                                    <td>
++                                        @if($inv)
++                                            <a href="{{ route('invoice.show', $inv->id) }}">FWSSi{{ $a['invoice_id'] }}</a>
++                                        @else
++                                            FWSSi{{ $a['invoice_id'] }} <span class="text-muted small">(deleted)</span>
++                                        @endif
++                                    </td>
++                                    <td>{{ $inv ? $date($inv->invoice_month) : '' }}</td>
++                                    <td class="text-end">{{ $money($a['settled'] ?? 0) }}</td>
++                                    <td class="text-end">{{ (float) ($a['wht_amount'] ?? 0) > 0 ? $money($a['wht_amount']) : '' }}</td>
++                                    <td>
++                                        @if($inv)
++                                            <span class="badge {{ $inv->status === 'completed' ? 'bg-label-success' : 'bg-label-warning' }}">{{ $inv->status === 'completed' ? 'paid' : $inv->status }}</span>
++                                            @if($inv->status !== 'completed') <span class="small text-muted">balance {{ $money($inv->balance) }}</span>@endif
++                                        @endif
++                                    </td>
++                                </tr>
++                            @empty
++                                @if(!empty($receipt['invoice_id']) && ($inv = $invoices[$receipt['invoice_id']] ?? null))
++                                    <tr><td><a href="{{ route('invoice.show', $inv->id) }}">FWSSi{{ $inv->id }}</a></td><td>{{ $date($inv->invoice_month) }}</td><td class="text-end">—</td><td></td><td>{{ $inv->status }}</td></tr>
++                                @else
++                                    <tr><td colspan="5" class="text-muted">This receipt was not applied to any invoice (an advance or credit).</td></tr>
++                                @endif
++                            @endforelse
++                            </tbody>
++                        </table>
++                    </div>
++                    <div class="card-body small text-muted border-top py-2">Each invoice's balance was worked out again from the receipts that remain.</div>
++                </div>
++            </div>
++
++            <div class="col-lg-6">
++                <div class="card h-100">
++                    <div class="card-header"><h5 class="mb-0">Bank lines</h5></div>
++                    <div class="table-responsive">
++                        <table class="table table-sm mb-0">
++                            <thead><tr><th>Date</th><th>Account</th><th>Narration</th><th class="text-end">In</th><th class="text-end">Out</th></tr></thead>
++                            <tbody>
++                            @forelse($bankLines as $line)
++                                <tr class="{{ $line->debit ? 'table-danger' : '' }}">
++                                    <td class="text-nowrap">{{ $date($line->entry_date ?: $line->created_at) }}</td>
++                                    <td>{{ $bank($line->bank_id) }}</td>
++                                    <td class="small">{{ $line->narration }}</td>
++                                    <td class="text-end">{{ $line->credit ? $money($line->credit) : '' }}</td>
++                                    <td class="text-end">{{ $line->debit ? $money($line->debit) : '' }}</td>
++                                </tr>
++                            @empty
++                                <tr><td colspan="5" class="text-muted">{{ $before->isEmpty() ? 'Nothing from this receipt went straight into a bank account (cash goes through Bank Deposit).' : 'No bank lines are left for this receipt.' }}</td></tr>
++                            @endforelse
++                            </tbody>
++                        </table>
++                    </div>
++                </div>
++            </div>
++
++            <div class="col-lg-6">
++                <div class="card h-100">
++                    <div class="card-header d-flex justify-content-between align-items-center">
++                        <h5 class="mb-0">Client ledger</h5>
++                        @if($void->client_id)
++                            <a href="{{ url('clientStatement', $void->client_id) }}" class="small">Full statement</a>
++                        @endif
++                    </div>
++                    <div class="table-responsive">
++                        <table class="table table-sm mb-0">
++                            <thead><tr><th>Date</th><th>Entry</th><th class="text-end">Debit</th><th class="text-end">Credit</th></tr></thead>
++                            <tbody>
++                            @forelse($ledger as $e)
++                                <tr class="{{ $e->reverses_id ? 'table-danger' : '' }}">
++                                    <td class="text-nowrap">{{ $e->entry_date?->format('d M Y') }}</td>
++                                    <td class="small">{{ $e->description }}@if($e->details)<br><span class="text-muted">{{ $e->details }}</span>@endif</td>
++                                    <td class="text-end">{{ $e->debit ? $money($e->debit) : '' }}</td>
++                                    <td class="text-end">{{ $e->credit ? $money($e->credit) : '' }}</td>
++                                </tr>
++                            @empty
++                                <tr><td colspan="4" class="text-muted">No ledger entries for this receipt.</td></tr>
++                            @endforelse
++                            </tbody>
++                        </table>
++                    </div>
++                    <div class="card-body small text-muted border-top py-2">Red rows are the reversals posted on the day it was voided; earlier statements stay as they were sent.</div>
++                </div>
++            </div>
++        </div>
++    </div>
++    @endsection
++</x-sales-dashboard>
+diff --git a/routes/web.php b/routes/web.php
+index 08f4ee4..78d58d5 100644
+--- a/routes/web.php
++++ b/routes/web.php
+@@ -153,8 +153,19 @@
+ Route::post('receipt-multi', [MultiInvoiceReceiptController::class, 'store'])->name('receipt.multi.store')->middleware('once');
+ Route::get('receipt-multi/{receipt}/edit', [MultiInvoiceReceiptController::class, 'edit'])->name('receipt.multi.edit');
+ Route::post('receipt/{receipt}/apply-credit', [MultiInvoiceReceiptController::class, 'applyCredit'])->name('receipt.applyCredit')->middleware('once');
++// Drafts kept on the device ask whether their form has since been saved (public/offline/drafts.js).
++Route::get('forms/saved', [\App\Http\Controllers\FormDraftController::class, 'saved'])->middleware('auth')->name('forms.saved');
+ Route::get('receipt-voided', [ReceiptController::class, 'voided'])->name('receipt.voided');
+-Route::resource('receipt', ReceiptController::class)->middleware('once');
++Route::get('receipt-voided/{void}', [ReceiptController::class, 'voidedShow'])->whereNumber('void')->name('receipt.voided.show');
++// A link to a receipt that has since been voided opens its voided page instead of "404 not found".
++Route::resource('receipt', ReceiptController::class)->middleware('once')
++    ->missing(function (\Illuminate\Http\Request $request) {
++        $id = (int) preg_replace('/\D/', '', (string) $request->route('receipt'));
++        $void = $request->isMethod('GET') && $id ? \App\Models\ReceiptVoid::where('receipt_id', $id)->latest('id')->first() : null;
++        abort_unless($void, 404);
++
++        return redirect()->route('receipt.voided.show', $void)->with('warning', 'Receipt FWSSR' . $id . ' was voided on ' . $void->created_at->format('d M Y') . '. This is what it recorded.');
++    });
+ Route::get('receiptPending', [ReceiptController::class, 'PendingReceipts'])->name('receipt.pending');
+ Route::post('receiptChannels', [ReceiptController::class, 'receiptChannels']);
+ 
+diff --git a/tests/Feature/OfflinePagesTest.php b/tests/Feature/OfflinePagesTest.php
+new file mode 100644
+index 0000000..7db6d9c
+--- /dev/null
++++ b/tests/Feature/OfflinePagesTest.php
+@@ -0,0 +1,82 @@
++<?php
++
++namespace Tests\Feature;
++
++use App\Models\Department;
++use App\Models\Field;
++use App\Models\Role;
++use App\Models\User;
++use Illuminate\Foundation\Testing\RefreshDatabase;
++use Illuminate\Support\Facades\DB;
++use Tests\TestCase;
++
++/** "You're offline" panel and page instead of the red banner; drafts on the device. */
++class OfflinePagesTest extends TestCase
++{
++    use RefreshDatabase;
++
++    private User $finance;
++
++    protected function setUp(): void
++    {
++        parent::setUp();
++        $dept = Department::create(['name' => 'Accounts']);
++        $this->finance = User::factory()->create(['department_id' => $dept->id, 'name' => 'Abena Fin',
++            'role_id' => Role::create(['name' => 'Finance Manager', 'department_id' => $dept->id])->id]);
++        $this->finance->update(['field_id' => Field::create(['name' => 'Accra', 'user_id' => $this->finance->id, 'number' => '030'])->id]);
++    }
++
++    public function test_pages_carry_the_connection_helper_instead_of_the_red_banner(): void
++    {
++        $this->actingAs($this->finance)->get(route('receipt.voided'))->assertOk()
++            ->assertSee('offline/connection.js')->assertSee('offline/drafts.js')
++            ->assertSee(json_encode(route('forms.saved')), false)
++            ->assertDontSee('connection-status')->assertDontSee('No internet connection detected');
++    }
++
++    public function test_the_login_page_registers_the_offline_page_too(): void
++    {
++        $this->get('/login')->assertOk()->assertSee('offline/connection.js');
++    }
++
++    public function test_the_offline_page_and_worker_ship_together(): void
++    {
++        $sw = file_get_contents(public_path('sw.js'));
++        $page = file_get_contents(public_path('offline/offline.html'));
++
++        $this->assertStringContainsString("'offline/offline.html'", $sw);
++        $this->assertStringContainsString('__SCOPE__', $page);
++        foreach (['/^generate\\/\\d+$/', '/^proforma\\/create$/', '/^receipt-multi\\/create$/', '/^fleet\\/fuel$/', '/^fleet\\/maintenance$/'] as $pattern) {
++            $this->assertStringContainsString($pattern, $sw);
++        }
++    }
++
++    public function test_draft_forms_are_marked(): void
++    {
++        foreach ([
++            'sales/invoice_generate' => 'data-draft="invoice:',
++            'sales/proforma_create' => 'data-draft="proforma"',
++            'sales/receipt_multi_create' => 'data-draft="receipt:',
++            'fleet/fuel' => 'data-draft="fuel"',
++            'fleet/maintenance' => 'data-draft="maintenance"',
++        ] as $view => $attr) {
++            $this->assertStringContainsString($attr, file_get_contents(resource_path("views/$view.blade.php")), $view);
++        }
++    }
++
++    public function test_a_draft_learns_only_its_own_saved_forms(): void
++    {
++        $other = User::factory()->create(['department_id' => $this->finance->department_id, 'role_id' => $this->finance->role_id]);
++        DB::table('form_submissions')->insert([
++            ['submission_key' => 'mine-saved', 'form' => 'invoice', 'user_id' => $this->finance->id, 'result_url' => '/invoice/1', 'created_at' => now(), 'updated_at' => now()],
++            ['submission_key' => 'mine-working', 'form' => 'invoice', 'user_id' => $this->finance->id, 'result_url' => null, 'created_at' => now(), 'updated_at' => now()],
++            ['submission_key' => 'theirs', 'form' => 'invoice', 'user_id' => $other->id, 'result_url' => '/invoice/2', 'created_at' => now(), 'updated_at' => now()],
++        ]);
++
++        $this->actingAs($this->finance)->getJson(route('forms.saved', ['keys' => ['mine-saved', 'mine-working', 'theirs', 'unknown']]))
++            ->assertOk()->assertExactJson(['saved' => ['mine-saved']]);
++
++        $this->app['auth']->forgetGuards();
++        $this->getJson(route('forms.saved', ['keys' => ['mine-saved']]))->assertUnauthorized();
++    }
++}
+diff --git a/tests/Feature/VoidedReceiptPageTest.php b/tests/Feature/VoidedReceiptPageTest.php
+new file mode 100644
+index 0000000..b08557d
+--- /dev/null
++++ b/tests/Feature/VoidedReceiptPageTest.php
+@@ -0,0 +1,82 @@
++<?php
++
++namespace Tests\Feature;
++
++use App\Models\Bank;
++use App\Models\BankTransaction;
++use App\Models\Client;
++use App\Models\Department;
++use App\Models\Field;
++use App\Models\Invoice;
++use App\Models\Receipt;
++use App\Models\ReceiptAllocation;
++use App\Models\ReceiptVoid;
++use App\Models\Role;
++use App\Models\User;
++use App\Services\Receipts\ReceiptVoider;
++use Illuminate\Foundation\Testing\RefreshDatabase;
++use Tests\TestCase;
++
++/** receipt-voided/{void}: a voided receipt's own page, with its references. */
++class VoidedReceiptPageTest extends TestCase
++{
++    use RefreshDatabase;
++
++    private User $finance;
++    private ReceiptVoid $void;
++    private Invoice $invoice;
++
++    protected function setUp(): void
++    {
++        parent::setUp();
++        $dept = Department::create(['name' => 'Accounts']);
++        $this->finance = User::factory()->create(['department_id' => $dept->id, 'name' => 'Abena Fin',
++            'role_id' => Role::create(['name' => 'Finance Manager', 'department_id' => $dept->id])->id]);
++        $field = Field::create(['name' => 'Accra', 'user_id' => $this->finance->id, 'number' => '030']);
++        $client = Client::create(['name' => 'DVLA', 'business_name' => 'DVLA HQ', 'phone_number' => '024', 'address' => 'Accra',
++            'field_id' => $field->id, 'status' => 'active', 'ho_status' => 'approved', 'user_id' => $this->finance->id]);
++        $bank = Bank::forceCreate(['name' => 'GCB Main', 'branch' => 'Ring Road', 'acc_number' => '1000200', 'field_id' => $field->id, 'user_id' => $this->finance->id, 'total' => 0]);
++
++        $this->invoice = Invoice::create(['client_id' => $client->id, 'sub_amount' => 1000, 'total' => 1000, 'balance' => 0, 'status' => 'completed',
++            'invoice_month' => '2026-10-01', 'due_date' => '2026-10-31', 'user_id' => $this->finance->id]);
++        $receipt = Receipt::create(['client_id' => $client->id, 'invoice_id' => $this->invoice->id, 'receipt_month' => '2026-11-03', 'from' => 'DVLA Accounts',
++            'transfer_amount' => 1000, 'transfer_reference' => 'GIP-778812', 'transfer_bank' => 'Ecobank', 'transfer_to_bank_id' => $bank->id,
++            'total' => 1000, 'status' => 'approved', 'user_id' => $this->finance->id]);
++        ReceiptAllocation::create(['receipt_id' => $receipt->id, 'invoice_id' => $this->invoice->id, 'client_id' => $client->id,
++            'amount_applied' => 1000, 'settled' => 1000, 'user_id' => $this->finance->id]);
++        BankTransaction::create(['bank_id' => $bank->id, 'receipt_id' => $receipt->id, 'channel' => 'transfer', 'credit' => 1000, 'balance' => 1000,
++            'narration' => 'Transfer — receipt FWSSR' . $receipt->id . ' (ref GIP-778812)']);
++        $bank->forceFill(['total' => 1000])->save();
++
++        $this->actingAs($this->finance);
++        $this->void = app(ReceiptVoider::class)->void($receipt, 'Client paid twice by mistake');
++    }
++
++    public function test_the_list_links_to_the_receipt_not_the_client_statement(): void
++    {
++        $this->get(route('receipt.voided'))->assertOk()
++            ->assertSee(route('receipt.voided.show', $this->void), false)
++            ->assertDontSee(url('clientStatement', $this->void->client_id), false);
++    }
++
++    public function test_the_page_shows_what_the_receipt_recorded_and_what_was_reversed(): void
++    {
++        $this->get(route('receipt.voided.show', $this->void))->assertOk()
++            ->assertSee('FWSSR' . $this->void->receipt_id)
++            ->assertSee('Client paid twice by mistake')
++            ->assertSee('GIP-778812')                                    // transfer reference
++            ->assertSee('GCB Main')                                      // account it went into
++            ->assertSee('FWSSi' . $this->invoice->id)
++            ->assertSee(route('invoice.show', $this->invoice->id), false)
++            ->assertSee('Receipt voided: Client paid twice by mistake')   // bank reversal line
++            ->assertSee('Abena Fin');
++    }
++
++    public function test_an_old_link_to_the_voided_receipt_opens_its_voided_page(): void
++    {
++        $this->get(route('receipt.show', $this->void->receipt_id))
++            ->assertRedirect(route('receipt.voided.show', $this->void));
++
++        $this->get(route('receipt.show', 999999))->assertNotFound();
++    }
++}

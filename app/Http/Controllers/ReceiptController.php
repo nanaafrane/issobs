@@ -839,6 +839,46 @@ class ReceiptController extends Controller
         return view('sales.receipt_voided', compact('voids'));
     }
 
+    /**
+     * One voided receipt: everything it recorded (kept in receipt_voids.snapshot), the invoices
+     * it paid, and what voiding it reversed in the banks and the client's ledger.
+     */
+    public function voidedShow(ReceiptVoid $void)
+    {
+        $this->authorizeOffice($void->client_id);
+        $void->load(['client', 'voidedBy']);
+
+        $receipt = $void->snapshot['receipt'] ?? [];
+        $allocations = collect($void->snapshot['allocations'] ?? []);
+        $invoices = Invoice::whereIn('id', $allocations->pluck('invoice_id')->push($receipt['invoice_id'] ?? null)->filter()->unique())
+            ->get()->keyBy('id');
+
+        // Bank lines: what the receipt posted (kept in the snapshot) and what is in the bank now for it,
+        // which includes the reversal lines written when it was voided.
+        $bankLines = \App\Models\BankTransaction::where('receipt_id', $void->receipt_id)->orderBy('id')->get();
+        $ledger = \App\Models\ClientLedgerEntry::where('receipt_id', $void->receipt_id)->orderBy('entry_date')->orderBy('id')->get();
+
+        $bankIds = collect([$receipt['cheque_to_bank_id'] ?? null, $receipt['transfer_to_bank_id'] ?? null, $receipt['momo_to_bank_id'] ?? null])
+            ->merge($bankLines->pluck('bank_id'))->merge(collect($void->snapshot['bank_lines'] ?? [])->pluck('bank_id'))->filter()->unique();
+        $banks = \App\Models\Bank::whereIn('id', $bankIds)->pluck('name', 'id');
+        $userIds = collect(['user_id', 'user_id1', 'user_id2'])->map(fn ($k) => $receipt[$k] ?? null)
+            ->push($void->snapshot['collection']['user_id'] ?? null)->filter()->unique();
+        $users = \App\Models\User::whereIn('id', $userIds)->pluck('name', 'id');
+
+        return view('sales.receipt_voided_show', compact('void', 'receipt', 'allocations', 'invoices', 'bankLines', 'ledger', 'banks', 'users'));
+    }
+
+    /** Same office rule as the receipt screens, by client. */
+    private function authorizeOffice(?int $clientId): void
+    {
+        $user = Auth::user();
+        if (! $clientId || $user?->hasRole(['Finance Manager', 'Invoice'])) {
+            return;
+        }
+        $fieldIds = $user?->field_id == 3 ? [3, 7] : array_filter([$user?->field_id]);
+        abort_unless(\App\Models\Client::whereKey($clientId)->whereIn('field_id', $fieldIds ?: [0])->exists(), 403);
+    }
+
 
     /**
      * "Create receipt" on an invoice. There is one receipt screen for one or
